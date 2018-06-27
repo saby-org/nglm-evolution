@@ -54,7 +54,6 @@ export NGLM_KAFKA_RUNTIME=$NGLM_ROOT/nglm-kafka-runtime
 export NGLM_ES_RUNTIME=$NGLM_ROOT/nglm-es-runtime
 export NGLM_REDIS_RUNTIME=$NGLM_ROOT/nglm-redis-runtime
 export NGLM_STREAMS_RUNTIME=$NGLM_ROOT/nglm-streams-runtime
-export NGLM_NBO_TO_REDIS_RUNTIME=$NGLM_ROOT/nglm-nbo-to-redis-runtime
 export NGLM_DATA=$NGLM_ROOT/data
 export NGLM_SUBSCRIBERGROUP_DATA=$NGLM_DATA/subscribergroup
 
@@ -95,13 +94,11 @@ export CADVISOR_CONFIGURATION="001:${HOST1}:9701"
 export ELASTICSEARCH_CONFIGURATION="1:001:${HOST1}:9201:9301"
 export ESROUTER_CONFIGURATION="1:001:${HOST1}:9200:9300"
 export REDIS_CONFIGURATION_SUBSCRIBERPROFILE="001:${HOST1}:${HOST1_IP}:6379"
-export REDIS_CONFIGURATION_IOMCACHE="001:${HOST1}:${HOST1_IP}:6380"
 export REDIS_CONFIGURATION_SUBSCRIBERIDS="001:${HOST1}:${HOST1_IP}:6381"
 export REDISSENTINEL_CONFIGURATION="001:${HOST1}:6451 002:${HOST1}:6452 003:${HOST1}:6453"
-export SIMPLETRANSFORM_CONFIGURATION="presentationlog-001:${HOST1}:com.evolving.nglm.evolution.PresentationLogTransformer:PRESENTATIONLOG_JSON_TOPIC:PRESENTATIONLOG_TOPIC presentationdetailslog-001:${HOST1}:com.evolving.nglm.evolution.PresentationDetailsLogTransformer:PRESENTATIONDETAILSLOG_JSON_TOPIC:PRESENTATIONDETAILSLOG_TOPIC acceptancelog-001:${HOST3}:com.evolving.nglm.evolution.AcceptanceLogTransformer:ACCEPTANCELOG_JSON_TOPIC:ACCEPTANCELOG_TOPIC interactionlog-001:${HOST1}:com.evolving.nglm.evolution.InteractionLogTransformer:INTERACTIONLOG_JSON_TOPIC:INTERACTIONLOG_TOPIC"
+export SIMPLETRANSFORM_CONFIGURATION=
 export PROFILEENGINE_CONFIGURATION="001:${HOST1}:9601"
 export SUBSCRIBERMANAGER_CONFIGURATION="001:${HOST1}:9621"
-export NBO_TO_REDIS_CONFIGURATION="accept-001:${HOST1}:IOMKafkaAcceptedItems:2 present-001:${HOST1}:IOMKafkaPresentedItems:1 present-details-001:${HOST1}:IOMKafkaPresentedDetailsItems:3"
 export LICENSEMANAGER_CONFIGURATION="001:${HOST1}:7443:7051"
 export NGLM_EXPORTER_CONFIGURATION="001:${KAFKA_HOST}:7450:/evol/nglm/data/externalaggregates,$NGLM_DATA/externalaggregates;/evol/nglm/data/subscribergroup,$NGLM_DATA/subscribergroup"
 
@@ -128,13 +125,6 @@ export CRITERIAAPI_PORT=7084
 export CRITERIAAPI_MONITORING_PORT=7085
 
 #
-#  IOM configuration loader
-#
-
-export IOMCONFIGURATIONLOADER_HOST=${HOST1}
-export IOMCONFIGURATIONLOADER_MONITORING_PORT=7083
-
-#
 #  heap opts
 #
 
@@ -147,7 +137,6 @@ export CONNECT_MEMORY="512m"
 export SIMPLETRANSFORM_MEMORY="256m"
 export GUIMANAGER_MEMORY="256m"
 export CRITERIAAPI_MEMORY="256m"
-export IOMCONFIGURATIONLOADER_MEMORY="256m"
 export PROFILEENGINE_MEMORY="256m"
 export SUBSCRIBERMANAGER_MEMORY="256m"
 export LICENSEMANAGER_MEMORY="256m"
@@ -193,17 +182,6 @@ export LANDING_PAGE_PORT=9110
 export SLACK_USERNAME=
 export SLACK_CHANNEL=
 export SLACK_URL=
-
-#
-#  IOM database
-#
-
-export IOM_DB_PRODUCTION=TRUE
-export IOM_DB_HOST=172.30.128.155
-export IOM_DB_USER=reporter
-export IOM_DB_PASSWORD='blogic'
-export IOM_DB_DATABASE=db_inbound_offer_logs_history_11_0
-export IOM_DB_JDBC_URL="jdbc:sqlserver://${IOM_DB_HOST}:1433;user=${IOM_DB_USER};password=${IOM_DB_PASSWORD};databaseName=${IOM_DB_DATABASE};"
 
 #
 #  trace level

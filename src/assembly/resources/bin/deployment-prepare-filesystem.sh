@@ -61,18 +61,3 @@ ssh $MASTER_SWARM_HOST "
    mkdir -p $NGLM_SUBSCRIBERGROUP_DATA
 "
 
-#
-# nbo-to-redis runtime
-#
-
-NBO_TO_REDIS_CONFIGURATION=`echo $NBO_TO_REDIS_CONFIGURATION | sed 's/ /\n/g' | uniq`
-for SWARM_HOST in $SWARM_HOSTS
-do
-  for TUPLE in $NBO_TO_REDIS_CONFIGURATION
-  do
-    KEY=`echo $TUPLE | cut -d: -f1`
-    ssh $SWARM_HOST "
-       mkdir -p $NGLM_NBO_TO_REDIS_RUNTIME/nbo-to-redis-$KEY/logs
-    "
-  done
-done

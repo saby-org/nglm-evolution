@@ -102,9 +102,6 @@ public abstract class GUIManagedObject
     List<ConnectSerde<? extends GUIManagedObject>> guiManagedObjectSerdes = new ArrayList<ConnectSerde<? extends GUIManagedObject>>();
     guiManagedObjectSerdes.add(Journey.serde());
     guiManagedObjectSerdes.add(Offer.serde());
-    guiManagedObjectSerdes.add(PresentationStrategy.serde());
-    guiManagedObjectSerdes.add(ScoringStrategy.serde());
-    guiManagedObjectSerdes.add(CriteriaStory.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));

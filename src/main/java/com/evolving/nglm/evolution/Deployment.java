@@ -29,33 +29,15 @@ public class Deployment
 {
   /*****************************************
   *
-  *  timezone formatting
-  *
-  *****************************************/
-
-  public static String getSqlServerDateTimeOffsetFormat()
-  {
-    return "UTC".equals(getBaseTimeZone()) ? "yyyyMMdd HH:mm:ss.SSS +00:00" : "yyyyMMdd HH:mm:ss.SSS XXX";
-  }
-
-  /*****************************************
-  *
   *  data
   *
   *****************************************/
 
   private static String journeyTopic;
   private static String offerTopic;
-  private static String presentationStrategyTopic;
-  private static String scoringStrategyTopic;
-  private static String criteriaStoryTopic;
   private static String subscriberUpdateTopic;
   private static String externalAggregatesTopic;
   private static String externalAggregatesAssignSubscriberIDTopic;
-  private static String presentationLogTopic;
-  private static String presentationDetailsLogTopic;
-  private static String acceptanceLogTopic;
-  private static String interactionLogTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
   private static String subscriberGroupEpochTopic;
@@ -66,16 +48,11 @@ public class Deployment
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
-  private static Map<String,PresentationChannel> presentationChannels = new LinkedHashMap<String,PresentationChannel>();
-  private static Map<String,CallingChannel> callingChannels = new LinkedHashMap<String,CallingChannel>();
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
-  private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,ProductType> productTypes = new LinkedHashMap<String,ProductType>();
-  private static Map<String,RewardType> rewardTypes = new LinkedHashMap<String,RewardType>();
-  private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
 
   /*****************************************
   *
@@ -103,16 +80,9 @@ public class Deployment
 
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getOfferTopic() { return offerTopic; }
-  public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
-  public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
-  public static String getCriteriaStoryTopic() { return criteriaStoryTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getExternalAggregatesTopic() { return externalAggregatesTopic; }
   public static String getExternalAggregatesAssignSubscriberIDTopic() { return externalAggregatesAssignSubscriberIDTopic; }
-  public static String getPresentationLogTopic() { return presentationLogTopic; }
-  public static String getPresentationDetailsLogTopic() { return presentationDetailsLogTopic; }
-  public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
-  public static String getInteractionLogTopic() { return interactionLogTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
@@ -123,16 +93,11 @@ public class Deployment
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
-  public static Map<String,PresentationChannel> getPresentationChannels() { return presentationChannels; }
-  public static Map<String,CallingChannel> getCallingChannels() { return callingChannels; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
-  public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,ProductType> getProductTypes() { return productTypes; }
-  public static Map<String,RewardType> getRewardTypes() { return rewardTypes; }
-  public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
 
   /*****************************************
   *
@@ -147,9 +112,6 @@ public class Deployment
       {
         case Profile:
           result = profileCriterionFields;
-          break;
-        case Presentation:
-          result = presentationCriterionFields;
           break;
         default:
           throw new ServerRuntimeException("unknown criterionContext: " + criterionContext);
@@ -206,45 +168,6 @@ public class Deployment
       }
     
     //
-    //  presentationStrategyTopic
-    //
-
-    try
-      {
-        presentationStrategyTopic = JSONUtilities.decodeString(jsonRoot, "presentationStrategyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  scoringStrategyTopic
-    //
-
-    try
-      {
-        scoringStrategyTopic = JSONUtilities.decodeString(jsonRoot, "scoringStrategyTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  criteriaStoryTopic
-    //
-
-    try
-      {
-        criteriaStoryTopic = JSONUtilities.decodeString(jsonRoot, "criteriaStoryTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
     //  subscriberUpdateTopic
     //
 
@@ -283,58 +206,6 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
-    //
-    //  presentationLogTopic
-    //
-
-    try
-      {
-        presentationLogTopic = JSONUtilities.decodeString(jsonRoot, "presentationLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  presentationDetailsLogTopic
-    //
-
-    try
-      {
-        presentationDetailsLogTopic = JSONUtilities.decodeString(jsonRoot, "presentationDetailsLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  acceptanceLogTopic
-    //
-
-    try
-      {
-        acceptanceLogTopic = JSONUtilities.decodeString(jsonRoot, "acceptanceLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  interactionLogTopic
-    //
-
-    try
-      {
-        interactionLogTopic = JSONUtilities.decodeString(jsonRoot, "interactionLogTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
     //
     //  subscriberGroupTopic
     //
@@ -484,44 +355,6 @@ public class Deployment
       }
 
     //
-    //  presentationChannels
-    //
-
-    try
-      {
-        JSONArray presentationChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannels", true);
-        for (int i=0; i<presentationChannelValues.size(); i++)
-          {
-            JSONObject presentationChannelJSON = (JSONObject) presentationChannelValues.get(i);
-            PresentationChannel presentationChannel = new PresentationChannel(presentationChannelJSON);
-            presentationChannels.put(presentationChannel.getPresentationChannelName(), presentationChannel);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  callingChannels
-    //
-
-    try
-      {
-        JSONArray callingChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", true);
-        for (int i=0; i<callingChannelValues.size(); i++)
-          {
-            JSONObject callingChannelJSON = (JSONObject) callingChannelValues.get(i);
-            CallingChannel callingChannel = new CallingChannel(callingChannelJSON);
-            callingChannels.put(callingChannel.getCallingChannelName(), callingChannel);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
     //  salesChannels
     //
 
@@ -579,25 +412,6 @@ public class Deployment
       }
 
     //
-    //  presentationCriterionFields
-    //
-
-    try
-      {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", true);
-        for (int i=0; i<criterionFieldValues.size(); i++)
-          {
-            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
-            CriterionField criterionField = new CriterionField(criterionFieldJSON);
-            presentationCriterionFields.put(criterionField.getCriterionFieldName(), criterionField);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
     //  offerTypes
     //
 
@@ -628,44 +442,6 @@ public class Deployment
             JSONObject productTypeJSON = (JSONObject) productTypeValues.get(i);
             ProductType productType = new ProductType(productTypeJSON);
             productTypes.put(productType.getProductTypeName(), productType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  rewardTypes
-    //
-
-    try
-      {
-        JSONArray rewardTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "rewardTypes", true);
-        for (int i=0; i<rewardTypeValues.size(); i++)
-          {
-            JSONObject rewardTypeJSON = (JSONObject) rewardTypeValues.get(i);
-            RewardType rewardType = new RewardType(rewardTypeJSON);
-            rewardTypes.put(rewardType.getRewardTypeName(), rewardType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  offerOptimizationAlgorithms
-    //
-
-    try
-      {
-        JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", true);
-        for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
-          {
-            JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);
-            OfferOptimizationAlgorithm offerOptimizationAlgorithm = new OfferOptimizationAlgorithm(offerOptimizationAlgorithmJSON);
-            offerOptimizationAlgorithms.put(offerOptimizationAlgorithm.getOfferOptimizationAlgorithmName(), offerOptimizationAlgorithm);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

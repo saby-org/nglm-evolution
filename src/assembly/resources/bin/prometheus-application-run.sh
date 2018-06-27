@@ -25,8 +25,6 @@ sed -i "s/<_GUIMANAGER_HOST_>/${GUIMANAGER_HOST}/g" /etc/prometheus/prometheus-a
 sed -i "s/<_GUIMANAGER_MONITORING_PORT_>/${GUIMANAGER_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_CRITERIAAPI_HOST_>/${CRITERIAAPI_HOST}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_CRITERIAAPI_MONITORING_PORT_>/${CRITERIAAPI_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
-sed -i "s/<_IOMCONFIGURATIONLOADER_HOST_>/${IOMCONFIGURATIONLOADER_HOST}/g" /etc/prometheus/prometheus-application.yml
-sed -i "s/<_IOMCONFIGURATIONLOADER_MONITORING_PORT_>/${IOMCONFIGURATIONLOADER_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
 
 #
 #  run

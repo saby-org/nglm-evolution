@@ -40,9 +40,6 @@
 
   <properties>
     
-    <!-- dependencies -->
-    <nbo-to-redis.version>nbo-0.0.2</nbo-to-redis.version>
-
     <!-- common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
     <common.build.phase.generate-setup-stack>package</common.build.phase.generate-setup-stack>
@@ -70,9 +67,6 @@
     <!-- topics -->
     <topic.journey>journey</topic.journey>
     <topic.offer>offer</topic.offer>
-    <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
-    <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
-    <topic.criteriastory>criteriastory</topic.criteriastory>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.assignsubscriberids_fileconnector>assignsubscriberids-fileconnector</topic.assignsubscriberids_fileconnector>
     <topic.assignsubscriberids>assignsubscriberids</topic.assignsubscriberids>
@@ -82,18 +76,6 @@
     <topic.externalaggregates>externalaggregates</topic.externalaggregates>
     <topic.externalaggregates.assignsubscriberid>externalaggregates-assignsubscriberid</topic.externalaggregates.assignsubscriberid>
     <topic.externalaggregates_fileconnector>externalaggregates-fileconnector</topic.externalaggregates_fileconnector>
-    <topic.presentationlog>presentationlog</topic.presentationlog>
-    <topic.presentationlog_json>IOMKafkaPresentedItems</topic.presentationlog_json>
-    <topic.presentationlog_fileconnector>presentationlog-fileconnector</topic.presentationlog_fileconnector>
-    <topic.presentationdetailslog>presentationdetailslog</topic.presentationdetailslog>
-    <topic.presentationdetailslog_json>IOMKafkaPresentedDetailsItems</topic.presentationdetailslog_json>
-    <topic.presentationdetailslog_fileconnector>presentationdetailslog-fileconnector</topic.presentationdetailslog_fileconnector>
-    <topic.acceptancelog>acceptancelog</topic.acceptancelog>
-    <topic.acceptancelog_json>IOMKafkaAcceptedItems</topic.acceptancelog_json>
-    <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
-    <topic.interactionlog>interactionlog</topic.interactionlog>
-    <topic.interactionlog_json>IOMKafkaInteractionsItems</topic.interactionlog_json>
-    <topic.interactionlog_fileconnector>interactionlog-fileconnector</topic.interactionlog_fileconnector>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
@@ -124,13 +106,6 @@
 
   <dependencies>
 
-    <dependency>
-      <groupId>com.evolving</groupId>
-      <artifactId>mssql-jdbc</artifactId>
-      <version>6.2.1.jre8</version>
-      <scope>compile</scope>
-    </dependency>
-    
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
@@ -182,7 +157,6 @@
                 <resource>
                   <directory>src/assembly/resources</directory>
                   <includes>
-                    <include>support/offerlogs.sql</include>
                     <include>license/license.bin</include>
                     <include>license/licenseToken.bin</include>
                   </includes>
@@ -323,48 +297,6 @@
                   <includes>
                     <include>bin/criteriaapi-run.sh</include>
                     <include>config/criteriaapi_jmx.yml</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}/assembled-resources</directory>
-                  <includes>
-                    <include>config/log4j-evol.properties</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}</directory>
-                  <includes>
-                    <include>lib/*.jar</include>
-                    <include>${project.artifactId}-${project.version}.jar</include>
-                  </includes>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>              
-            </configuration>            
-          </execution>
-          <execution>
-            <id>generate-iomconfigurationloader-docker-stack</id>
-            <phase>package</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/assembled-docker/iomconfigurationloader</outputDirectory>
-              <resources>          
-                <resource>
-                  <directory>src/assembly/resources/docker/iomconfigurationloader</directory>
-                  <includes>
-                    <include>Dockerfile</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>src/assembly/resources</directory>
-                  <includes>
-                    <include>bin/iomconfigurationloader-run.sh</include>
-                    <include>config/iomconfigurationloader_jmx.yml</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -558,19 +490,6 @@
               <contextDirectory>${project.build.directory}/assembled-docker/criteriaapi</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-criteriaapi</repository>
               <classifier>docker-info-criteriaapi</classifier>
-              <tag>${project.name}-${project.version}</tag>
-            </configuration>
-          </execution>
-          <execution>
-            <id>docker-iomconfigurationloader</id>
-            <goals>
-              <goal>build</goal>
-              <goal>push</goal>
-            </goals>
-            <configuration>
-              <contextDirectory>${project.build.directory}/assembled-docker/iomconfigurationloader</contextDirectory>
-              <repository>${env.DOCKER_REGISTRY}ev-iomconfigurationloader</repository>
-              <classifier>docker-info-iomconfigurationloader</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

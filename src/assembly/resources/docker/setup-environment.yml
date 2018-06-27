@@ -1,9 +1,4 @@
     #
     #  environment variables required by setup.sh
     #
-    IOM_DB_JDBC_URL: <_IOM_DB_JDBC_URL_>
-    IOM_DB_HOST: <_IOM_DB_HOST_>
-    IOM_DB_USER: <_IOM_DB_USER_>
-    IOM_DB_PASSWORD: <_IOM_DB_PASSWORD_>
-    IOM_DB_DATABASE: <_IOM_DB_DATABASE_>
     REDIS_SENTINELS: <_REDIS_SENTINELS_>

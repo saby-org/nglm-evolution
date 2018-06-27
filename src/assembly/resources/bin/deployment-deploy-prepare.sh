@@ -29,11 +29,3 @@ ssh $MASTER_SWARM_HOST "
 #
 #########################################
 
-#
-# IOM tables for testing
-#
-
-if [ "$IOM_DB_PRODUCTION" = "FALSE" ]; then
-  exit | /opt/mssql-tools/bin/sqlcmd -S $IOM_DB_HOST -U $IOM_DB_USER -P "$IOM_DB_PASSWORD" -i $DEPLOY_ROOT/support/offerlogs.sql
-fi  
-

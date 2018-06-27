@@ -16,9 +16,7 @@ do
    ssh $SWARM_HOST "
       docker pull ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-criteriaapi:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-iomconfigurationloader:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-profileengine:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-nbo-to-redis:${nbo-to-redis.version}
       docker pull ${env.DOCKER_REGISTRY}ev-simpletransform:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-connect:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribermanager:${project.name}-${project.version}

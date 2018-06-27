@@ -95,7 +95,6 @@
       <outputDirectory>${file.separator}support${file.separator}resources</outputDirectory>
       <includes>
         <include>ptt.properties</include>
-        <include>offerlogs.sql</include>
       </includes>
       <filtered>true</filtered>
     </fileSet>
@@ -109,7 +108,6 @@
       <excludes>
         <exclude>support/README</exclude>
         <exclude>support/ptt.properties</exclude>
-        <exclude>support/offerlogs.sql</exclude>
         <exclude>support/*.json</exclude>
       </excludes>
       <filtered>true</filtered>

@@ -1,11 +1,3 @@
     #
     #  environment variables required for SIMPLETRANSFORM_CONFIGURATION
     #
-    PRESENTATIONLOG_JSON_TOPIC: ${topic.presentationlog_json}
-    PRESENTATIONLOG_TOPIC: ${topic.presentationlog}
-    PRESENTATIONDETAILSLOG_JSON_TOPIC: ${topic.presentationdetailslog_json}
-    PRESENTATIONDETAILSLOG_TOPIC: ${topic.presentationdetailslog}
-    ACCEPTANCELOG_JSON_TOPIC: ${topic.acceptancelog_json}
-    ACCEPTANCELOG_TOPIC: ${topic.acceptancelog}
-    INTERACTIONLOG_JSON_TOPIC: ${topic.interactionlog_json}
-    INTERACTIONLOG_TOPIC: ${topic.interactionlog}

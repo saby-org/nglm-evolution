@@ -12,7 +12,7 @@
   "active"              : true,
 
   -- 
-  -- E4O  and IOM
+  -- 
   --
 
   "name"                           : "offer-001",
@@ -25,7 +25,7 @@
   "maximumAcceptancesPeriodDays"   : 7,
 
   -- 
-  -- E4O
+  -- 
   -- 
 
   "defaultPropensity"   : 30,
@@ -41,29 +41,9 @@
     ],
 
   -- 
-  -- IOM
+  -- 
   -- 
 
   "offerType"   : "icdp",
-  "productType" : "data",
-  "rewardType"  : "reward-1",
-  "presentationChannelProperties" :
-    [
-      {
-        "presentationChannel" : "ussd",
-        "properties"          :
-         [
-           { "language" : "en", "offerName" : "offer 001", "offerShortDescription" : "offer 001 is the best data offer", "offerCategory" : "data" },
-           { "language" : "ar", "offerName" : "xxxxx xxx", "offerShortDescription" : "yyyy yyyy yyyy", "offerCategory" : "data" }
-         ]
-      },
-      {
-        "presentationChannel" : "callCenter",
-        "properties"          :
-         [
-           { "language" : "en", "offerName" : "offer 001", "offerShortDescription" : "offer 001 is the best data offer" },
-           { "language" : "ar", "offerName" : "xxxxx xxx", "offerShortDescription" : "yyyy yyyy yyyy" }
-         ]
-      }  
-    ]
+  "productType" : "data"
 }

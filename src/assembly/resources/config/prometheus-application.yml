@@ -54,10 +54,3 @@ scrape_configs:
     static_configs:
       - targets: ['<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_MONITORING_PORT_>']
 
-  # iomconfigurationloader job
-  - job_name: 'iomconfigurationloader'
-
-    # main config
-    static_configs:
-      - targets: ['<_IOMCONFIGURATIONLOADER_HOST_>:<_IOMCONFIGURATIONLOADER_MONITORING_PORT_>']
-

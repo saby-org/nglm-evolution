@@ -482,13 +482,6 @@ public class SubscriberProfileService
     offerService.start();
 
     //
-    //  instantiate scoring-strategy service
-    //
-
-    ScoringStrategyService scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "example-scoringstrategyservice-001", Deployment.getScoringStrategyTopic(), false);
-    scoringStrategyService.start();
-
-    //
     //  instantiate subscriberGroupEpochReader
     //
     
@@ -565,17 +558,6 @@ public class SubscriberProfileService
                       {
                         boolean qualifiedOffer = offer.evaluateProfileCriteria(evaluationRequest);
                         System.out.println("  offer: " + offer.getOfferID() + " " + (qualifiedOffer ? "true" : "false"));
-                      }
-
-                    //
-                    //  active scoring strategies
-                    //
-
-                    for (ScoringStrategy scoringStrategy : scoringStrategyService.getActiveScoringStrategies(now))
-                      {
-                        ScoringGroup scoringGroup = scoringStrategy.evaluateScoringGroups(evaluationRequest);
-                        JsonNode scoringGroupNode = deserializer.deserialize(null, converter.fromConnectData(null, ScoringGroup.schema(),  ScoringGroup.pack(scoringGroup)));
-                        System.out.println("  scoringStrategy: " + scoringStrategy.getScoringStrategyID() + " " + scoringGroupNode.toString());
                       }
 
                     //

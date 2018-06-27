@@ -162,8 +162,6 @@ public class ProfileEngine
 
     String recordAlternateIDTopic = Deployment.getRecordAlternateIDTopic();
     String externalAggregatesTopic = Deployment.getExternalAggregatesTopic();
-    String presentationLogTopic = Deployment.getPresentationLogTopic();
-    String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
 
@@ -234,8 +232,6 @@ public class ProfileEngine
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<RecordAlternateID> recordAlternateIDSerde = RecordAlternateID.serde();
     final ConnectSerde<ExternalAggregates> externalAggregatesSerde = ExternalAggregates.serde();
-    final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
-    final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.serde();
@@ -250,7 +246,7 @@ public class ProfileEngine
     *
     *****************************************/
 
-    final ConnectSerde<SubscriberStreamEvent> profileEventSerde = new ConnectSerde<SubscriberStreamEvent>("profileevent", false, recordAlternateIDSerde, externalAggregatesSerde, presentationLogSerde, acceptanceLogSerde, subscriberGroupSerde, subscriberTraceControlSerde);
+    final ConnectSerde<SubscriberStreamEvent> profileEventSerde = new ConnectSerde<SubscriberStreamEvent>("profileevent", false, recordAlternateIDSerde, externalAggregatesSerde, subscriberGroupSerde, subscriberTraceControlSerde);
 
     /****************************************
     *
@@ -261,8 +257,6 @@ public class ProfileEngine
     List<String> sourceNodes = new ArrayList<String>();
     sourceNodes.add(recordAlternateIDTopic);
     sourceNodes.add(externalAggregatesTopic);
-    sourceNodes.add(presentationLogTopic);
-    sourceNodes.add(acceptanceLogTopic);
     sourceNodes.add(subscriberGroupTopic);
     sourceNodes.add(subscriberTraceControlTopic);
     sourceNodes.add(subscriberProfileChangeLogTopic);
@@ -276,8 +270,6 @@ public class ProfileEngine
 
     KStream<StringKey, RecordAlternateID> recordAlternateIDSourceStream = builder.stream(stringKeySerde, recordAlternateIDSerde, recordAlternateIDTopic);
     KStream<StringKey, ExternalAggregates> externalAggregatesSourceStream = builder.stream(stringKeySerde, externalAggregatesSerde, externalAggregatesTopic);
-    KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(stringKeySerde, presentationLogSerde, presentationLogTopic);
-    KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(stringKeySerde, acceptanceLogSerde, acceptanceLogTopic);
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(stringKeySerde, subscriberGroupSerde, subscriberGroupTopic);
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(stringKeySerde, subscriberTraceControlSerde, subscriberTraceControlTopic);
     
@@ -291,7 +283,7 @@ public class ProfileEngine
     //  merge source streams
     //
 
-    KStream<StringKey, SubscriberStreamEvent> profileEventStream = builder.merge(filteredRecordAlternateIDSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), externalAggregatesSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), presentationLogSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), acceptanceLogSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), subscriberGroupSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), subscriberTraceControlSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent));
+    KStream<StringKey, SubscriberStreamEvent> profileEventStream = builder.merge(filteredRecordAlternateIDSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), externalAggregatesSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), subscriberGroupSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent), subscriberTraceControlSourceStream.mapValues(ProfileEngine::castToSubscriberStreamEvent));
     
     /*****************************************
     *

@@ -5,15 +5,6 @@
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.Deployment
 
 --
--- console-producer for JSON topic (from stdin)
---
-
-docker run --attach STDIN --interactive --net=host --rm confluentinc/cp-kafka:${confluent.version} kafka-console-producer --broker-list <_BROKER_SERVERS_> --compression-codec none --topic ${topic.presentationlog_json} < $DEPLOY_ROOT/support/presentationlog.001.json
-docker run --attach STDIN --interactive --net=host --rm confluentinc/cp-kafka:${confluent.version} kafka-console-producer --broker-list <_BROKER_SERVERS_> --compression-codec none --topic ${topic.presentationdetailslog_json} < $DEPLOY_ROOT/support/presentationdetailslog.001.json
-docker run --attach STDIN --interactive --net=host --rm confluentinc/cp-kafka:${confluent.version} kafka-console-producer --broker-list <_BROKER_SERVERS_> --compression-codec none --topic ${topic.acceptancelog_json} < $DEPLOY_ROOT/support/acceptancelog.001.json
-docker run --attach STDIN --interactive --net=host --rm confluentinc/cp-kafka:${confluent.version} kafka-console-producer --broker-list <_BROKER_SERVERS_> --compression-codec none --topic ${topic.interactionlog_json} < $DEPLOY_ROOT/support/interactionlog.001.json
-
---
 --  guiManager
 -- 
 
@@ -21,35 +12,19 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http:
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedLanguages; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedCurrencies; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationChannels; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannels; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannels; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFields; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFieldNames; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "name" : "subscriber.contractID"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionField; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFields; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFieldNames; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "name" : "subscriber.balance"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionField; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferTypes; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getRewardTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferOptimizationAlgorithms; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/journey.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putJourney; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "journeyID" : "journey-001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourney; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOfferList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/offer.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putOffer; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "offerID" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeOffer; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringStrategyList; echo
-curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/scoring-strategy.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putScoringStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "scoringStrategyID" : "basicPxV" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeScoringStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriteriaStoryList; echo
-curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/criteria-story.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriteriaStory; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "criteriaStoryID" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCriteriaStory; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategyList; echo
-curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/presentation-strategy.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPresentationStrategy; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "presentationStrategyID" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePresentationStrategy; echo
 
 --
 --  examples of mananging subscriber groups / segments  - new, add, remove, delete
@@ -83,8 +58,5 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCr
 
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.JourneyService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.OfferService
-java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.ScoringStrategyService
-java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.PresentationStrategyService
-java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.CriteriaStoryService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.SubscriberProfileService 001
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.core.SubscriberIDService msisdn 19195551000 19195551001
