@@ -1,0 +1,11 @@
+--
+--  assign-subscriberids.004.json
+--
+
+{
+  "alternateIDs" :
+    [
+      { "name" : "msisdn", "value" : "19195551001" },
+      { "name" : "contractID", "value" : "23456" }
+    ]
+}

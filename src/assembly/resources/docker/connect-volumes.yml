@@ -1,0 +1,4 @@
+  volumes:
+    - type: bind
+      source: <_NGLM_DATA_>
+      target: /app/data

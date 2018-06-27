@@ -1,0 +1,7 @@
+    #
+    #  sentinel environment variables for redis.conf
+    #
+    REDIS_SENTINEL_FLAG: 1
+    REDIS_PROTECTED_MODE: 'no'
+    REDIS_PORT: <_PORT_>
+    REDIS_DIR: './'

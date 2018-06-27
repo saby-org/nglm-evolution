@@ -1,0 +1,69 @@
+--
+--  offer.001.json
+--    
+
+{
+  --
+  -- api
+  --
+
+  "apiVersion"          : 1,
+  "valid"               : true,
+  "active"              : true,
+
+  -- 
+  -- E4O  and IOM
+  --
+
+  "name"                           : "offer-001",
+  "description"                    : "offer-001 (description)",
+  "effectiveStartDate"             : "2018-02-21T13:45:00:000+0200",
+  "effectiveEndDate"               : "2018-12-01T00:00:00:000+0200",
+  "maximumPresentations"           : 2,
+  "maximumPresentationsPeriodDays" : 1,
+  "maximumAcceptances"             : 1,
+  "maximumAcceptancesPeriodDays"   : 7,
+
+  -- 
+  -- E4O
+  -- 
+
+  "defaultPropensity"   : 30,
+  "marginFactor"        : 45,
+  "cost"                : 120,
+  "price"               : 180,
+  "currency"            : "USD",
+  "salesChannels"       : [ "DataGrow-A", "Data" ],
+  "profileCriteria" :
+    [
+      { "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ 'active', 'inactive' ]" } },
+      { "criterionField" : "history.moCallCount.previous14Days", "criterionOperator" : ">=", "argument" : { "valueType" : "simple",  "value" : 7, "expression" : "7" } }
+    ],
+
+  -- 
+  -- IOM
+  -- 
+
+  "offerType"   : "icdp",
+  "productType" : "data",
+  "rewardType"  : "reward-1",
+  "presentationChannelProperties" :
+    [
+      {
+        "presentationChannel" : "ussd",
+        "properties"          :
+         [
+           { "language" : "en", "offerName" : "offer 001", "offerShortDescription" : "offer 001 is the best data offer", "offerCategory" : "data" },
+           { "language" : "ar", "offerName" : "xxxxx xxx", "offerShortDescription" : "yyyy yyyy yyyy", "offerCategory" : "data" }
+         ]
+      },
+      {
+        "presentationChannel" : "callCenter",
+        "properties"          :
+         [
+           { "language" : "en", "offerName" : "offer 001", "offerShortDescription" : "offer 001 is the best data offer" },
+           { "language" : "ar", "offerName" : "xxxxx xxx", "offerShortDescription" : "yyyy yyyy yyyy" }
+         ]
+      }  
+    ]
+}

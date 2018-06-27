@@ -1,0 +1,129 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+  
+  <id>evolution</id>
+  
+  <formats>
+    <format>tgz</format>
+  </formats>
+  
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <baseDirectory>${project.artifactId}-${project.version}</baseDirectory>
+
+  <fileSets>
+    
+    <fileSet>
+      <directory>${project.build.directory}/assembled-resources/bin</directory>
+      <outputDirectory>${file.separator}bin${file.separator}resources</outputDirectory>
+      <includes>
+        <include>setup.sh</include>
+        <include>launch.sh</include>
+        <include>launch-environment.sh</include>
+        <include>stop.sh</include>
+        <include>update-subscribergroup.sh</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/assembled-resources</directory>
+      <outputDirectory>${file.separator}</outputDirectory>
+      <includes>
+        <include>bin/*.sh</include>
+      </includes>
+      <excludes>
+        <exclude>bin/setup.sh</exclude>
+        <exclude>bin/launch.sh</exclude>
+        <exclude>bin/launch-environment.sh</exclude>
+        <exclude>bin/stop.sh</exclude>
+        <exclude>bin/update-subscribergroup.sh</exclude>
+      </excludes>
+      <filtered>true</filtered>
+      <fileMode>0755</fileMode>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/assembled-resources</directory>
+      <outputDirectory>${file.separator}</outputDirectory>
+      <includes>
+        <include>support/*.json</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/assembled-resources/config</directory>
+      <outputDirectory>${file.separator}config${file.separator}resources</outputDirectory>
+      <includes>
+        <include>deployment.json</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/assembled-resources</directory>
+      <outputDirectory>${file.separator}</outputDirectory>
+      <includes>
+        <include>config/log4j-evol.properties</include>
+        <include>docker/*.yml</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/nglm-core-resources</directory>
+      <outputDirectory>${file.separator}</outputDirectory>
+      <includes>
+        <include>support/*</include>
+      </includes>
+      <excludes>
+        <exclude>support/README</exclude>
+      </excludes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.build.directory}/assembled-resources/support</directory>
+      <outputDirectory>${file.separator}support${file.separator}resources</outputDirectory>
+      <includes>
+        <include>README</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>src/assembly/resources/support</directory>
+      <outputDirectory>${file.separator}support${file.separator}resources</outputDirectory>
+      <includes>
+        <include>ptt.properties</include>
+        <include>offerlogs.sql</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>src/assembly/resources</directory>
+      <outputDirectory>${file.separator}</outputDirectory>
+      <includes>
+        <include>support/*</include>
+      </includes>
+      <excludes>
+        <exclude>support/README</exclude>
+        <exclude>support/ptt.properties</exclude>
+        <exclude>support/offerlogs.sql</exclude>
+        <exclude>support/*.json</exclude>
+      </excludes>
+      <filtered>true</filtered>
+    </fileSet>
+
+    <fileSet>
+      <directory>src</directory>
+      <outputDirectory>${file.separator}</outputDirectory>
+      <includes>
+        <include>regression/**</include>
+      </includes>
+      <filtered>true</filtered>
+    </fileSet>
+    
+  </fileSets>
+  
+</assembly>

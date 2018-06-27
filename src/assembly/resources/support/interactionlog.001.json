@@ -1,0 +1,7 @@
+{ 
+  "subscriberID" : "12345", 
+  "channelID" : "3", 
+  "userID" : "4444", 
+  "eventDate" : "2018-02-14T13:45:00:000-05:00", 
+  "isAvailable" : true 
+}

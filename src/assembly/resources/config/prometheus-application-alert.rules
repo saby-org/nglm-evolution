@@ -1,0 +1,12 @@
+#
+#  prometheus-application-alert.rules
+#
+
+ALERT profileengine_events_processed_count
+  IF sum(rate(evolving_nglm_profileengines_eventprocessed_count[1m])) <= 0
+  FOR 1m
+  LABELS { severity = "warning" }
+  ANNOTATIONS {
+    summary = "profileengine events not processing",
+    description = "No profileengine events processed for more than 60 seconds."
+  }

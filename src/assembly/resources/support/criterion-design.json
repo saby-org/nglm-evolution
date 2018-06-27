@@ -1,0 +1,55 @@
+
+--
+-- all types -- no-argument operator
+--
+
+{ "criterionField" : "fieldA", "criterionOperator" : "is not null" }
+
+--
+--  integer/double -- single-valued operator/argument
+-- 
+
+{ "criterionField" : "fieldA", "criterionOperator" : "<", "argument" : { "valueType" : "simple",  "value" : 7, "expression" : "7" } }
+{ "criterionField" : "fieldA", "criterionOperator" : "<", "argument" : { "valueType" : "complex", "value" : "fieldB", "valueMultiply" : null, "expression" : "fieldB" }
+{ "criterionField" : "fieldA", "criterionOperator" : "<", "argument" : { "valueType" : "complex", "value" : "fieldB", "valueMultiply" : 2,    "expression" : "2 * fieldB" }
+
+--
+--  integer -- multi-valued operator/argument
+-- 
+
+{ "criterionField" : "fieldA", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ 7, 8, 10 ], "expression" : "[ 7, 8, 10 ]" }
+
+--
+--  boolean
+-- 
+
+{ "criterionField" : "fieldA", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : false,    "expression" : "false" } }
+{ "criterionField" : "fieldA", "criterionOperator" : "==", "argument" : { "valueType" : "complex", "value" : "fieldB", "expression" : "fieldB" } }
+
+--
+--  string
+-- 
+
+{ "criterionField" : "fieldA", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "the value", "expression" : "'the value'" } }
+{ "criterionField" : "fieldA", "criterionOperator" : "==", "argument" : { "valueType" : "complex", "value" : "fieldB",    "expression" : "fieldB" }
+
+--
+--  string  -- multi-valued operator/argument
+-- 
+
+{ "criterionField" : "fieldA", "criterionOperator" : "is in set", "argumentDataType" : "string", "argument" : { "valueType" : "multiple", "value" : [ "valueA", "valueB", "valueC" ], "expression" : "[ 'valueA', 'valueB', 'valueC' ]" }
+
+--
+--  date
+--
+
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "simple",  "value" : "2018-04-22T14:00:00", "timeUnit" : "instant", "expression" : "dateConstant('2018-04-22')" } }                    -- instant in time (from date picker) (day-only, uses deployment timezone)
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "simple",  "value" : "2018-04-22T14:00:00", "timeUnit" : "instant", "expression" : "dateConstant('2018-04-22T14:00:00')" } }           -- instant in time (from date picker) (to the second, uses deployment timezone)
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "complex", "value" : "evaluation",          "timeUnit" : "instant", "valueAdd" : 0,  "expression" : "dateAdd(evaluation.date, 0, 'instant')" } } -- instant criterion is evaluated
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "complex", "value" : "evaluation",          "timeUnit" : "month",   "valueAdd" : 0,  "expression" : "dateAdd(evaluation.date, 0, 'month')" } }   -- start of month when criterion is evaluated
+{ "criterionField" : "fieldA", "criterionOperator" : "<=", "argument" : { "valueType" : "complex", "value" : "evaluation",          "timeUnit" : "hour",    "valueAdd" : -3, "expression" : "dateAdd(evaluation.date, -3, 'hour')" } }   -- start of hour three hours before criterion is evaluated
+{ "criterionField" : "fieldA", "criterionOperator" : "<=", "argument" : { "valueType" : "complex", "value" : "evaluation",          "timeUnit" : "day",     "valueAdd" : -3, "expression" : "dateAdd(evaluation.date, -3, 'day')" } }    -- start of day three days before criterion is evaluated
+{ "criterionField" : "fieldA", "criterionOperator" : "<=", "argument" : { "valueType" : "complex", "value" : "evaluation",          "timeUnit" : "month",   "valueAdd" : -2, "expression" : "dateAdd(evaluation.date, -2, 'month')" } }  -- start of month two months before criterion is evaluated
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "complex", "value" : "fieldB",              "timeUnit" : "instant", "valueAdd" : 0,  "expression" : "dateAdd(fieldB, 0, 'instant')" } }     -- instant in time stored in fieldB
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "complex", "value" : "fieldB",              "timeUnit" : "day",     "valueAdd" : 0,  "expression" : "dateAdd(fieldB, 0, 'day')" } }         -- start of the day stored in fieldB
+{ "criterionField" : "fieldA", "criterionOperator" : ">=", "argument" : { "valueType" : "complex", "value" : "fieldB",              "timeUnit" : "day",     "valueAdd" : -3, "expression" : "dateAdd(fieldB, -3, 'day')" } }        -- start of the day three days before day stored in fieldB

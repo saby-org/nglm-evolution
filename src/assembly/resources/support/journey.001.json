@@ -1,0 +1,99 @@
+--
+--  putJourney
+--
+
+{
+  --
+  -- api
+  -- 
+
+  "journeyID"              : "journey-001",
+  "apiVersion"             : 1,
+  "valid"                  : true,
+  "active"                 : false,
+  "name"                   : "standard",
+  "description"            : "standard (description)",
+  "effectiveStartDate"     : "2018-02-21T13:45:00:000+0100",
+  "effectiveEndDate"       : "2018-12-01T00:00:00:000+0100",
+  
+  --
+  --  journey-level
+  --
+
+  "journeyMetrics" :
+    [
+      { "name" : "journey.totalCharge",    "baseMetric" : "history.totalCharge.yesterday" },
+      { "name" : "journey.rechargeAmount", "baseMetric" : "history.rechargeAmount.yesterday" }
+    ],
+
+  "journeyParameters" :
+    [
+      { "name" : "bonusPercentage", "display" : "Bonus (% of value)", "type" : "double" }
+    ],
+
+  "autoTargeted" : true,
+  "targetConditions" :
+    [
+      { "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ 'active', 'inactive' ]" } },
+      { "criterionField" : "history.rechargeCount.yesterday", "criterionOperator" : ">=", "argument" : { "valueType" : "simple", "value" : 1, "expression" : "1" } },
+      { "criterionField" : "history.moCallCount.previous14Days", "criterionOperator" : ">=", "argument" : { "valueType" : "simple",  "value" : 7, "expression" : "7" } }
+    ],
+
+  -- 
+  -- nodes
+  -- 
+
+  "nodes" :
+    [
+      { 
+        "nodeID"        : "node-001",
+        "nodeName"      : "node-001 (display)",
+        "nodeType"      : "start",
+	"guiDetails"    : { },
+	"incomingConnectionPoints" : 
+	  [ 
+	  ],
+	"outgoingConnectionPoints" : 
+	  [
+	    { "type" : "unconditional", "guiDetails" : { } }
+	  ]
+      },
+      { 
+        "nodeID"        : "node-002",
+        "nodeName"      : "node-002 (display)",
+        "nodeType"      : "wait",
+	"guiDetails"    : { },
+	"incomingConnectionPoints" : 
+	  [ 
+	    { "guiDetails" : { } }
+	  ],
+	"outgoingConnectionPoints" : 
+	  [
+	    { "type" : "timeout", "guiDetails" : { }, "transitionCriteria" : [ { "criterionField" : "evaluation.date", "criterionOperator" : ">=", "argument" : { "valueType" : "complex", "value" : "node.entryDate", "timeUnit" : "day", "valueAdd" : 7, "expression" : "dateAdd(node.entryDate, 7, 'day')" } } ] }
+	  ]
+      },
+      { 
+        "nodeID"        : "node-003",
+        "nodeName"      : "node-003 (display)",
+        "nodeType"      : "end",
+	"guiDetails"    : { },
+	"incomingConnectionPoints" : 
+	  [ 
+	    { "guiDetails" : { } }
+	  ],
+	"outgoingConnectionPoints" : 
+          [ 
+	  ]
+      }
+    ],
+
+  -- 
+  -- links
+  --  
+
+  "links" :
+    [
+      { "sourceNodeID" : "node-001", "sourceConnectionPoint" : 0, "destinationNodeID" : "node-002", "destinationConnectionPoint": 0, "guiDetails" : { } },
+      { "sourceNodeID" : "node-002", "sourceConnectionPoint" : 0, "destinationNodeID" : "node-003", "destinationConnectionPoint": 0, "guiDetails" : { } }
+    ]
+}

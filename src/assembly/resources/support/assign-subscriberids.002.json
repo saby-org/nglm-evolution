@@ -1,0 +1,10 @@
+--
+--  assign-subscriberids.002.json
+--
+
+{
+  "alternateIDs" :
+    [
+      { "name" : "msisdn", "originalValue" : "19195551000", "newValue" : "12125559999" }
+    ]
+}

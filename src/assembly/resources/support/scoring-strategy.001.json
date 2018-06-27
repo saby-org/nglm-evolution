@@ -1,0 +1,74 @@
+--
+--  scoring-strategy.001.json
+--    
+
+{
+  --
+  -- api
+  --
+
+  "apiVersion"             : 1,
+  "scoringStrategyID"      : "basicPxV",
+  "valid"                  : true,
+  "active"                 : true,
+
+  -- 
+  -- E4O  and IOM
+  --
+
+  "name"                   : "scoringStrategy-basicPxV",
+  
+  --
+  --  IOM
+  -- 
+
+  "offerType"              : "provisioning",
+
+  -- 
+  -- E4O
+  -- 
+
+  "universalControlGroup" : 
+    {
+      "profileCriteria" : [ { "criterionField" : "subscriber.universalControlGroup", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "true",  "expression" : "true" } } ],    
+      "scoringSplits"   : [ { "offerOptimizationAlgorithm" : "random", "salesChannels" : [ "Data" ] } ]
+    },
+
+  "controlGroup" : 
+    {
+      "profileCriteria" : [ { "criterionField" : "subscriber.controlGroup", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "true",  "expression" : "true" } } ],    
+      "scoringSplits"   : [ { "offerOptimizationAlgorithm" : "random", "salesChannels" : [ "Data" ] } ]
+    },
+
+  "targetGroups" :
+    [
+      {
+        "profileCriteria" :
+          [
+            { "criterionField" : "subscriber.status", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "active",  "expression" : "'active'" } }
+          ],    
+        "scoringSplits" :
+          [
+            { "offerOptimizationAlgorithm" : "PxV", "parameters" : { "propensityFactor" : 70 }, "salesChannels" : [ "DataGrow-A" ] },
+            { "offerOptimizationAlgorithm" : "PxV", "parameters" : { "propensityFactor" : 65 }, "salesChannels" : [ "DataGrow-B" ] }
+          ]
+      },
+
+      {
+        "profileCriteria" :
+          [
+            { "criterionField" : "subscriber.status", "criterionOperator" : "==", "argument" : { "valueType" : "simple",  "value" : "inactive",  "expression" : "'inactive'" } }
+          ],    
+        "scoringSplits" :
+          [
+            { "offerOptimizationAlgorithm" : "PxV", "parameters" : { "propensityFactor" : 10 }, "salesChannels" : [ "Data" ] }
+          ]
+      }
+    ],
+
+  "defaultGroup" :
+    {
+      "profileCriteria" : [ ],
+      "scoringSplits"   : [ { "offerOptimizationAlgorithm" : "random", "salesChannels" : [ "Data" ] } ]
+    }
+}

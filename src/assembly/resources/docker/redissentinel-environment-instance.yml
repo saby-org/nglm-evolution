@@ -1,0 +1,5 @@
+    #  environment variables for cluster instance <_INSTANCE_>
+    REDIS_SENTINEL<_COUNTER1_>: "monitor <_INSTANCE_> <_INSTANCE_HOST_> <_INSTANCE_PORT_> <_REDIS_SENTINEL_QUORUM_>"
+    REDIS_SENTINEL<_COUNTER2_>: "down-after-milliseconds <_INSTANCE_> 60000"
+    REDIS_SENTINEL<_COUNTER3_>: "parallel-syncs <_INSTANCE_> 1"
+    REDIS_SENTINEL<_COUNTER4_>: "failover-timeout <_INSTANCE_> 180000"

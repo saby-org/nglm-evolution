@@ -1,0 +1,63 @@
+#
+#  global configh
+#
+
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+      monitor: 'prometheus-application'
+
+#
+#  rules -- load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+#    
+
+rule_files:
+  - "prometheus-application-alert.rules"
+
+# 
+#  scrape configs
+#
+
+scrape_configs:
+  # prometheus job
+  - job_name: 'prometheus_application'
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ['<_MONITORING_HOST_>:<_PROMETHEUS_APPLICATION_PORT_>']
+
+  # profileengine job
+  - job_name: 'profileengine'
+
+    # main config
+    static_configs:
+      - targets: [<_PROFILEENGINE_PROMETHEUS_>]
+
+  # guimanager job
+  - job_name: 'guimanager'
+
+    # main config
+    static_configs:
+      - targets: ['<_GUIMANAGER_HOST_>:<_GUIMANAGER_MONITORING_PORT_>']
+
+  # criteriaapi job
+  - job_name: 'criteriaapi'
+
+    # main config
+    static_configs:
+      - targets: ['<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_MONITORING_PORT_>']
+
+  # iomconfigurationloader job
+  - job_name: 'iomconfigurationloader'
+
+    # main config
+    static_configs:
+      - targets: ['<_IOMCONFIGURATIONLOADER_HOST_>:<_IOMCONFIGURATIONLOADER_MONITORING_PORT_>']
+

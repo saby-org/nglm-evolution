@@ -1,0 +1,33 @@
+criteriaapi:
+  image: ${env.DOCKER_REGISTRY}ev-criteriaapi:${project.name}-${project.version}
+  user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
+  environment:
+    KAFKA_BROKER_ID: ignored
+    KAFKA_ZOOKEEPER_CONNECT: ignored
+    CUB_ZOOKEEPER_TIMEOUT: 120
+    BROKER_SERVERS: <_BROKER_SERVERS_>
+    BROKER_COUNT: <_BROKER_COUNT_>
+    CUB_KAFKA_TIMEOUT: 120
+    MASTER_REGISTRY_HOST: <_MASTER_REGISTRY_HOST_>
+    MASTER_REGISTRY_PORT: <_MASTER_REGISTRY_PORT_>
+    CUB_SCHEMA_REGISTRY_TIMEOUT: 120
+    ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
+    CRITERIAAPI_PORT: <_CRITERIAAPI_PORT_>
+    ELASTICSEARCH_HOST: <_MASTER_ESROUTER_HOST_>
+    ELASTICSEARCH_PORT: <_MASTER_ESROUTER_PORT_>
+    TRACE_LEVEL: <_TRACE_LEVEL_>
+    KAFKA_HEAP_OPTS: <_CRITERIAAPI_HEAP_OPTS_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-0.7.jar=<_CRITERIAAPI_MONITORING_PORT_>:/app/config/criteriaapi_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>
+  deploy: 
+    restart_policy:
+      condition: <_DOCKER_RESTART_POLICY_>
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_CRITERIAAPI_HOST_>
+  networks:
+    - outside
