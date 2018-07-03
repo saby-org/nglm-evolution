@@ -277,10 +277,7 @@ public class SubscriberProfileService
         try
           {
             SubscriberProfile subscriberUpdate = listenerQueue.take();
-            if (subscriberUpdate.getSubscriberStatusUpdated())
-              {
-                subscriberUpdateListener.subscriberStatusUpdated(subscriberUpdate);
-              }
+            subscriberUpdateListener.subscriberStatusUpdated(subscriberUpdate);
           }
         catch (InterruptedException e)
           {
@@ -392,7 +389,7 @@ public class SubscriberProfileService
         
         SubscriberProfile subscriberProfile;
         if (encodedSubscriberProfile != null)
-          subscriberProfile = SubscriberProfile.serde().deserializer().deserialize(Deployment.getSubscriberProfileChangeLogTopic(), encodedSubscriberProfile);
+          subscriberProfile = SubscriberProfile.serde().deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), encodedSubscriberProfile);
         else
           subscriberProfile = null;
 

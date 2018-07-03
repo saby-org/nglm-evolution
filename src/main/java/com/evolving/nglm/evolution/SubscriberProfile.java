@@ -103,8 +103,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("dataBundleChargeHistory", MetricHistory.schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("region", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("subscriberStatusUpdated", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -162,8 +160,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
   private MetricHistory dataBundleChargeHistory;
   private String language;
   private String region;
-  private boolean subscriberStatusUpdated;
-  private SubscriberTrace subscriberTrace;
 
   /****************************************
   *
@@ -208,8 +204,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
   public MetricHistory getDataBundleChargeHistory() { return dataBundleChargeHistory; }
   public String getLanguage() { return language; }
   public String getRegion() { return region; }
-  public boolean getSubscriberStatusUpdated() { return subscriberStatusUpdated; }
-  public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
 
   /****************************************
   *
@@ -480,8 +474,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
   public void setMainBalanceValue(Long mainBalanceValue) { this.mainBalanceValue = mainBalanceValue; }
   public void setLanguage(String language) { this.language = language; }
   public void setRegion(String region) { this.region = region; }
-  public void setSubscriberStatusUpdated(boolean subscriberStatusUpdated) { this.subscriberStatusUpdated = subscriberStatusUpdated; }
-  public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
 
   //
   //  setSubscriberGroup
@@ -543,8 +535,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
     this.dataBundleChargeHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS);
     this.language = null;
     this.region = null;
-    this.subscriberStatusUpdated = true;
-    this.subscriberTrace = null;
   }
   
   /*****************************************
@@ -553,7 +543,7 @@ public class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberProfile(String subscriberID, boolean subscriberTraceEnabled, String msisdn, String contractID, String accountTypeID, String ratePlan, Date activationDate, SubscriberStatus subscriberStatus, Date statusChangeDate, SubscriberStatus previousSubscriberStatus, Date lastRechargeDate, Date ratePlanChangeDate, Long mainBalanceValue, Map<String,Integer> subscriberGroups, MetricHistory totalChargeHistory, MetricHistory dataChargeHistory, MetricHistory callsChargeHistory, MetricHistory rechargeChargeHistory, MetricHistory rechargeCountHistory, MetricHistory moCallsChargeHistory, MetricHistory moCallsCountHistory, MetricHistory moCallsDurationHistory, MetricHistory mtCallsCountHistory, MetricHistory mtCallsDurationHistory, MetricHistory mtCallsIntCountHistory, MetricHistory mtCallsIntDurationHistory, MetricHistory moCallsIntChargeHistory, MetricHistory moCallsIntCountHistory, MetricHistory moCallsIntDurationHistory, MetricHistory moSMSChargeHistory, MetricHistory moSMSCountHistory, MetricHistory dataVolumeHistory, MetricHistory dataBundleChargeHistory, String language, String region, boolean subscriberStatusUpdated, SubscriberTrace subscriberTrace)
+  private SubscriberProfile(String subscriberID, boolean subscriberTraceEnabled, String msisdn, String contractID, String accountTypeID, String ratePlan, Date activationDate, SubscriberStatus subscriberStatus, Date statusChangeDate, SubscriberStatus previousSubscriberStatus, Date lastRechargeDate, Date ratePlanChangeDate, Long mainBalanceValue, Map<String,Integer> subscriberGroups, MetricHistory totalChargeHistory, MetricHistory dataChargeHistory, MetricHistory callsChargeHistory, MetricHistory rechargeChargeHistory, MetricHistory rechargeCountHistory, MetricHistory moCallsChargeHistory, MetricHistory moCallsCountHistory, MetricHistory moCallsDurationHistory, MetricHistory mtCallsCountHistory, MetricHistory mtCallsDurationHistory, MetricHistory mtCallsIntCountHistory, MetricHistory mtCallsIntDurationHistory, MetricHistory moCallsIntChargeHistory, MetricHistory moCallsIntCountHistory, MetricHistory moCallsIntDurationHistory, MetricHistory moSMSChargeHistory, MetricHistory moSMSCountHistory, MetricHistory dataVolumeHistory, MetricHistory dataBundleChargeHistory, String language, String region)
   {
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = subscriberTraceEnabled;
@@ -590,8 +580,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
     this.dataBundleChargeHistory = dataBundleChargeHistory;
     this.language = language;
     this.region = region;
-    this.subscriberStatusUpdated = subscriberStatusUpdated;
-    this.subscriberTrace = subscriberTrace;
   }
 
   /*****************************************
@@ -637,8 +625,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
     this.dataBundleChargeHistory = new MetricHistory(subscriberProfile.getDataBundleChargeHistory());
     this.language = subscriberProfile.getLanguage();
     this.region = subscriberProfile.getRegion();
-    this.subscriberStatusUpdated = subscriberProfile.getSubscriberStatusUpdated();
-    this.subscriberTrace = subscriberProfile.getSubscriberTrace();
   }
 
   /*****************************************
@@ -686,8 +672,6 @@ public class SubscriberProfile implements SubscriberStreamOutput
     struct.put("dataBundleChargeHistory", MetricHistory.pack(subscriberProfile.getDataBundleChargeHistory()));
     struct.put("language", subscriberProfile.getLanguage());
     struct.put("region", subscriberProfile.getRegion());
-    struct.put("subscriberStatusUpdated", subscriberProfile.getSubscriberStatusUpdated());
-    struct.put("subscriberTraceMessage", subscriberProfile.getSubscriberTrace() != null ? subscriberProfile.getSubscriberTrace().getSubscriberTraceMessage() : null);
     return struct;
   }
 
@@ -747,13 +731,11 @@ public class SubscriberProfile implements SubscriberStreamOutput
     MetricHistory dataBundleChargeHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("dataBundleChargeHistory").schema(), valueStruct.get("dataBundleChargeHistory")));
     String language = valueStruct.getString("language");
     String region = valueStruct.getString("region");
-    boolean subscriberStatusUpdated = valueStruct.getBoolean("subscriberStatusUpdated");
-    SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
 
     //
     //  return
     //
 
-    return new SubscriberProfile(subscriberID, subscriberTraceEnabled, msisdn, contractID, accountTypeID, ratePlan, activationDate, subscriberStatus, statusChangeDate, previousSubscriberStatus, lastRechargeDate, ratePlanChangeDate, mainBalanceValue, subscriberGroups, totalChargeHistory, dataChargeHistory, callsChargeHistory, rechargeChargeHistory, rechargeCountHistory, moCallsChargeHistory, moCallsCountHistory, moCallsDurationHistory, mtCallsCountHistory, mtCallsDurationHistory, mtCallsIntCountHistory, mtCallsIntDurationHistory, moCallsIntChargeHistory, moCallsIntCountHistory, moCallsIntDurationHistory, moSMSChargeHistory, moSMSCountHistory, dataVolumeHistory, dataBundleChargeHistory, language, region, subscriberStatusUpdated, subscriberTrace);
+    return new SubscriberProfile(subscriberID, subscriberTraceEnabled, msisdn, contractID, accountTypeID, ratePlan, activationDate, subscriberStatus, statusChangeDate, previousSubscriberStatus, lastRechargeDate, ratePlanChangeDate, mainBalanceValue, subscriberGroups, totalChargeHistory, dataChargeHistory, callsChargeHistory, rechargeChargeHistory, rechargeCountHistory, moCallsChargeHistory, moCallsCountHistory, moCallsDurationHistory, mtCallsCountHistory, mtCallsDurationHistory, mtCallsIntCountHistory, mtCallsIntDurationHistory, moCallsIntChargeHistory, moCallsIntCountHistory, moCallsIntDurationHistory, moSMSChargeHistory, moSMSCountHistory, dataVolumeHistory, dataBundleChargeHistory, language, region);
   }
 }

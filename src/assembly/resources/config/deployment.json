@@ -45,11 +45,18 @@
    "subscriberGroupEpochTopic"                            : "${topic.subscribergroupepoch}",
    "subscriberTraceControlTopic"                          : "${topic.subscribertracecontrol}",
    "subscriberTraceTopic"                                 : "${topic.subscribertrace}",
-   "subscriberProfileChangeLog"                           : "${changelog.profileengine.subscriberprofile}",
-   "subscriberProfileChangeLogTopic"                      : "${changelog.profileengine.subscriberprofile.topic}",
+   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
+   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
    "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
    "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
    "rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic" : "${rekeyed.subscribermanager.autoprovisionedsubscriber.topic}",
+   "journeyStatisticTopic"                                : "${topic.journeystatistic}",
+
+   --
+   --  registry "topics" -- fake topic names used to register Avro schemas when objects are serialized/deserialized to non-Kafka places (e.g., Redis)
+   --
+
+   "subscriberProfileRegistrySubject"                     : "${registrysubject.subscriberprofile}",
 
    -- 
    -- supported languages
@@ -308,6 +315,24 @@
    ],
 
    --
+   --  fulfillment managers
+   -- 
+
+  "fulfillmentManagers":
+    [
+      { 
+        "requestType"           : "inFulfillment", 
+        "requestClassName"      : "com.evolving.nglm.evolution.INFulfillmentManager$INFulfillmentRequest", 
+        "requestTopic"          : "${topic.fulfillment.infulfillment.request}", 
+        "responseTopic"         : "${topic.fulfillment.infulfillment.response}",
+        "internalTopic"         : "${topic.fulfillment.infulfillment.internal}",
+        "deliveryRatePerMinute" : 200,
+        "deliveryGuarantee"     : "atLeastOnce",
+        "availableAccounts"     : [ "intra", "extra" ]
+      }
+    ],
+
+   --
    --  licenseManagement (internal)
    --
    
@@ -322,13 +347,13 @@
            ],
         "nodeLimit" :   
           { "defaultAlarmLevel" : 4
-	    "configuredAlarmLevels" :
+            "configuredAlarmLevels" :
                [
                ]
           },
         "componentLimit" : 
-	  { "defaultAlarmLevel" : 3,
-	    "configuredAlarmLevels" :
+          { "defaultAlarmLevel" : 3,
+            "configuredAlarmLevels" :
                [
                  { "name" : "JourneyManager", "alarmLevel" : 4 },
                  { "name" : "OfferManager", "alarmLevel" : 4 },

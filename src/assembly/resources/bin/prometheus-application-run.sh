@@ -20,7 +20,7 @@ set -o errexit \
 
 sed -i "s/<_MONITORING_HOST_>/${MONITORING_HOST}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_PROMETHEUS_APPLICATION_PORT_>/${PROMETHEUS_APPLICATION_PORT}/g" /etc/prometheus/prometheus-application.yml
-sed -i "s/<_PROFILEENGINE_PROMETHEUS_>/${PROFILEENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
+sed -i "s/<_EVOLUTIONENGINE_PROMETHEUS_>/${EVOLUTIONENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_GUIMANAGER_HOST_>/${GUIMANAGER_HOST}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_GUIMANAGER_MONITORING_PORT_>/${GUIMANAGER_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_CRITERIAAPI_HOST_>/${CRITERIAAPI_HOST}/g" /etc/prometheus/prometheus-application.yml

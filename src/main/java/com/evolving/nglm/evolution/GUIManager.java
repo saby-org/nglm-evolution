@@ -251,6 +251,14 @@ public class GUIManager
       {
         throw new ServerRuntimeException("could not initialize REST server", e);
       }
+
+    /*****************************************
+    *
+    *  log restServerStarted
+    *
+    *****************************************/
+
+    log.info("main restServerStarted");
   }
 
   /*****************************************

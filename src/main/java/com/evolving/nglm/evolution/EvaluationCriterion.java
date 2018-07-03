@@ -914,19 +914,24 @@ public class EvaluationCriterion
               break;
 
             case StringCriterion:
-              String stringArgument = (String) evaluatedArgument;
-              evaluatedArgument = stringArgument.toLowerCase();
-              break;
-
             case StringSetCriterion:
-              Set<String> normalizedStringSetArgument = new HashSet<String>();
-              for (String stringValue : (Set<String>) evaluatedArgument)
+              switch (argument.getType())
                 {
-                  normalizedStringSetArgument.add(stringValue.toLowerCase());
+                  case StringExpression:
+                    String stringArgument = (String) evaluatedArgument;
+                    evaluatedArgument = stringArgument.toLowerCase();
+                    break;
+                    
+                  case StringSetExpression:
+                    Set<String> normalizedStringSetArgument = new HashSet<String>();
+                    for (String stringValue : (Set<String>) evaluatedArgument)
+                      {
+                        normalizedStringSetArgument.add(stringValue.toLowerCase());
+                      }
+                    evaluatedArgument = normalizedStringSetArgument;
+                    break;
                 }
-              evaluatedArgument = normalizedStringSetArgument;
               break;
-
 
             case DateCriterion:
               {

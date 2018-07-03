@@ -79,9 +79,9 @@ public class SubscriberProfileESSinkConnector extends SimpleESSinkConnector
       *
       ****************************************/
 
-      Object subscriberProfileValue = sinkRecord.value();
-      Schema subscriberProfileValueSchema = sinkRecord.valueSchema();
-      SubscriberProfile subscriberProfile = SubscriberProfile.unpack(new SchemaAndValue(subscriberProfileValueSchema, subscriberProfileValue));
+      Object subscriberStateValue = sinkRecord.value();
+      Schema subscriberStateValueSchema = sinkRecord.valueSchema();
+      SubscriberState subscriberState = SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
 
       /****************************************
       *
@@ -89,7 +89,7 @@ public class SubscriberProfileESSinkConnector extends SimpleESSinkConnector
       *
       ****************************************/
 
-      return subscriberProfile.getSubscriberID();
+      return subscriberState.getSubscriberID();
     }
 
     /*****************************************
@@ -106,9 +106,10 @@ public class SubscriberProfileESSinkConnector extends SimpleESSinkConnector
       *
       ****************************************/
 
-      Object subscriberProfileValue = sinkRecord.value();
-      Schema subscriberProfileValueSchema = sinkRecord.valueSchema();
-      SubscriberProfile subscriberProfile = SubscriberProfile.unpack(new SchemaAndValue(subscriberProfileValueSchema, subscriberProfileValue));
+      Object subscriberStateValue = sinkRecord.value();
+      Schema subscriberStateValueSchema = sinkRecord.valueSchema();
+      SubscriberState subscriberState = SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
+      SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
 
       /*****************************************
       *

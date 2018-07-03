@@ -40,7 +40,7 @@
         {
         "connector.class" : "com.evolving.nglm.evolution.SubscriberProfileRedisSinkConnector",
         "tasks.max" : 1,
-        "topics" : "${changelog.profileengine.subscriberprofile.topic}",
+        "topics" : "${changelog.evolutionengine.subscriberstate.topic}",
         "redisSentinels" : "'$REDIS_SENTINELS'",
         "redisInstance" : "subscriberprofile",
         "defaultDBIndex"   : "0",
@@ -60,7 +60,7 @@
         {
         "connector.class" : "com.evolving.nglm.evolution.SubscriberProfileESSinkConnector",
         "tasks.max" : 1,
-        "topics" : "${changelog.profileengine.subscriberprofile.topic}",
+        "topics" : "${changelog.evolutionengine.subscriberstate.topic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "indexName" : "subscriberprofile"
@@ -69,20 +69,20 @@
   echo
 
   #
-  #  sink connector -- subscriberUpdate (elasticsearch)
+  #  sink connector -- journeyStatistic (elasticsearch)
   #
 
   curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
     {
-      "name" : "subscriberupdate_es_sink_connector",
+      "name" : "journeystatistic_es_sink_connector",
       "config" :
         {
-        "connector.class" : "com.evolving.nglm.evolution.SubscriberUpdateESSinkConnector",
+        "connector.class" : "com.evolving.nglm.evolution.JourneyStatisticESSinkConnector",
         "tasks.max" : 1,
-        "topics" : "${topic.subscriberupdate}",
+        "topics" : "${topic.journeystatistic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-        "indexName" : "subscriberupdate"
+        "indexName" : "journeystatistic"
         }
     }'
   echo

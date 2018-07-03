@@ -35,7 +35,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.0.1-build180611-SNAPSHOT</version>
+    <version>4.0.1-build180703-SNAPSHOT</version>
   </parent>
 
   <properties>
@@ -61,7 +61,7 @@
     <nglm.core.version>${project.parent.version}</nglm.core.version>
 
     <!-- configuration -->
-    <profileengine.streamthreads>2</profileengine.streamthreads>
+    <evolutionengine.streamthreads>2</evolutionengine.streamthreads>
     <subscribermanager.streamthreads>2</subscribermanager.streamthreads>
 
     <!-- topics -->
@@ -79,10 +79,19 @@
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
+    <topic.journeystatistic>journeystatistic</topic.journeystatistic>
+
+    <!-- registry subjects -->
+    <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
     
-    <!-- profileengine -->
-    <changelog.profileengine.subscriberprofile>subscriberprofile</changelog.profileengine.subscriberprofile>
-    <changelog.profileengine.subscriberprofile.topic>streams-profileengine-${changelog.profileengine.subscriberprofile}-changelog</changelog.profileengine.subscriberprofile.topic>
+    <!-- deliverymanager -->
+    <topic.fulfillment.infulfillment.request>infulfillment-request</topic.fulfillment.infulfillment.request>
+    <topic.fulfillment.infulfillment.response>infulfillment-response</topic.fulfillment.infulfillment.response>
+    <topic.fulfillment.infulfillment.internal>infulfillment-internal</topic.fulfillment.infulfillment.internal>
+    
+    <!-- evolutionengine -->
+    <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
+    <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>
 
     <!-- subscribermanager -->
     <subscribermanager.enabled>true</subscribermanager.enabled>
@@ -101,7 +110,7 @@
     <rekeyed.subscribermanager.contractid.topic>streams-subscribermanager-${changelog.subscribermanager.contractid}-rekeyed</rekeyed.subscribermanager.contractid.topic>
     <backchannel.subscribermanager.contractid.subscriberid.topic>streams-subscribermanager-${changelog.subscribermanager.contractid}-backchannel-subscriberid</backchannel.subscribermanager.contractid.subscriberid.topic>
     <backchannel.subscribermanager.contractid.alternateid.topic>streams-subscribermanager-${changelog.subscribermanager.contractid}-backchannel-alternateid</backchannel.subscribermanager.contractid.alternateid.topic>
-    
+
   </properties>
 
   <dependencies>
@@ -319,16 +328,16 @@
             </configuration>            
           </execution>
           <execution>
-            <id>generate-profileengine-docker-stack</id>
+            <id>generate-evolutionengine-docker-stack</id>
             <phase>package</phase>
             <goals>
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/assembled-docker/profileengine</outputDirectory>
+              <outputDirectory>${project.build.directory}/assembled-docker/evolutionengine</outputDirectory>
               <resources>          
                 <resource>
-                  <directory>src/assembly/resources/docker/profileengine</directory>
+                  <directory>src/assembly/resources/docker/evolutionengine</directory>
                   <includes>
                     <include>Dockerfile</include>
                   </includes>
@@ -337,8 +346,8 @@
                 <resource>
                   <directory>src/assembly/resources</directory>
                   <includes>
-                    <include>bin/profileengine-run.sh</include>
-                    <include>config/profileengine_jmx.yml</include>
+                    <include>bin/evolutionengine-run.sh</include>
+                    <include>config/evolutionengine_jmx.yml</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -494,15 +503,15 @@
             </configuration>
           </execution>
           <execution>
-            <id>docker-profileengine</id>
+            <id>docker-evolutionengine</id>
             <goals>
               <goal>build</goal>
               <goal>push</goal>
             </goals>
             <configuration>
-              <contextDirectory>${project.build.directory}/assembled-docker/profileengine</contextDirectory>
-              <repository>${env.DOCKER_REGISTRY}ev-profileengine</repository>
-              <classifier>docker-info-profileengine</classifier>
+              <contextDirectory>${project.build.directory}/assembled-docker/evolutionengine</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-evolutionengine</repository>
+              <classifier>docker-info-evolutionengine</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

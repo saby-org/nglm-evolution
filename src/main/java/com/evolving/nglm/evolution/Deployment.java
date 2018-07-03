@@ -43,8 +43,10 @@ public class Deployment
   private static String subscriberGroupEpochTopic;
   private static String subscriberTraceControlTopic;
   private static String subscriberTraceTopic;
-  private static String subscriberProfileChangeLog;
-  private static String subscriberProfileChangeLogTopic;
+  private static String subscriberStateChangeLog;
+  private static String subscriberStateChangeLogTopic;
+  private static String journeyStatisticTopic;
+  private static String subscriberProfileRegistrySubject;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
@@ -53,6 +55,7 @@ public class Deployment
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,ProductType> productTypes = new LinkedHashMap<String,ProductType>();
+  private static Map<String,DeliveryManagerDeclaration> fulfillmentManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
 
   /*****************************************
   *
@@ -88,8 +91,10 @@ public class Deployment
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
   public static String getSubscriberTraceControlTopic() { return subscriberTraceControlTopic; }
   public static String getSubscriberTraceTopic() { return subscriberTraceTopic; }
-  public static String getSubscriberProfileChangeLog() { return subscriberProfileChangeLog; }
-  public static String getSubscriberProfileChangeLogTopic() { return subscriberProfileChangeLogTopic; }
+  public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
+  public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
+  public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
+  public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
@@ -98,6 +103,7 @@ public class Deployment
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,ProductType> getProductTypes() { return productTypes; }
+  public static Map<String,DeliveryManagerDeclaration> getFulfillmentManagers() { return fulfillmentManagers; }
 
   /*****************************************
   *
@@ -272,12 +278,12 @@ public class Deployment
       }
 
     //
-    //  subscriberProfileChangeLog
+    //  subscriberStateChangeLog
     //
 
     try
       {
-        subscriberProfileChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberProfileChangeLog", true);
+        subscriberStateChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLog", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -285,18 +291,44 @@ public class Deployment
       }
     
     //
-    //  subscriberProfileChangeLogTopic
+    //  subscriberStateChangeLogTopic
     //
 
     try
       {
-        subscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberProfileChangeLogTopic", true);
+        subscriberStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberStateChangeLogTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  journeyStatisticTopic
+    //
+
+    try
+      {
+        journeyStatisticTopic = JSONUtilities.decodeString(jsonRoot, "journeyStatisticTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  subscriberProfileRegistrySubject
+    //
+
+    try
+      {
+        subscriberProfileRegistrySubject = JSONUtilities.decodeString(jsonRoot, "subscriberProfileRegistrySubject", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  supportedLanguages
     //
@@ -448,6 +480,25 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+
+    //
+    //  fulfillmentManagers
+    //
+
+    try
+      {
+        JSONArray fulfillmentManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentManagers", true);
+        for (int i=0; i<fulfillmentManagerValues.size(); i++)
+          {
+            JSONObject fulfillmentManagerJSON = (JSONObject) fulfillmentManagerValues.get(i);
+            DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(fulfillmentManagerJSON);
+            fulfillmentManagers.put(deliveryManagerDeclaration.getRequestType(), deliveryManagerDeclaration);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
   }
 
   /*****************************************
@@ -483,7 +534,7 @@ public class Deployment
   public static Object getAccountTypeID(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getAccountTypeID(); }
   public static Object getRatePlan(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getRatePlan(); }
   public static Object getRatePlanChangeDate(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getRatePlanChangeDate(); }
-  public static Object getSubscriberStatus(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getSubscriberStatus().getStringRepresentation(); }
+  public static Object getSubscriberStatus(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return (evaluationRequest.getSubscriberProfile().getSubscriberStatus() != null) ? evaluationRequest.getSubscriberProfile().getSubscriberStatus().getStringRepresentation() : null; }
   public static Object getPreviousSubscriberStatus(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getPreviousSubscriberStatus().getStringRepresentation(); }
   public static Object getStatusChangeDate(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getStatusChangeDate(); }
   public static Object getUniversalControlGroup(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getControlGroup(evaluationRequest.getSubscriberGroupEpochReader()); }

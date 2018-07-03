@@ -78,7 +78,7 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-guimanag
 
 #########################################
 #
-#  construct stack -- profileengine
+#  construct stack -- evolutionengine
 #
 #########################################
 
@@ -87,24 +87,24 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-guimanag
 #
 
 mkdir -p $DEPLOY_ROOT/stack
-cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-profileengine.yml
+cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-evolutionengine.yml
 
 #
-#  profileengine
+#  evolutionengine
 #
 
-for TUPLE in $PROFILEENGINE_CONFIGURATION
+for TUPLE in $EVOLUTIONENGINE_CONFIGURATION
 do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
-   cat $DEPLOY_ROOT/docker/profileengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-profileengine.yml
-   echo >> $DEPLOY_ROOT/stack/stack-profileengine.yml
+   cat $DEPLOY_ROOT/docker/evolutionengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
+   echo >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
 done
 
 #
 #  postamble
 #
 
-cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-profileengine.yml
+cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
 

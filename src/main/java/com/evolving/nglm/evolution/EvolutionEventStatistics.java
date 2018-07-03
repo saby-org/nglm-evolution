@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  ProfileEventStatistics.java
+*  EvolutionEventStatistics.java
 *
 ****************************************************************************/
 
@@ -13,7 +13,7 @@ import com.evolving.nglm.core.ServerException;
 import java.util.Map;
 import java.util.HashMap;
 
-public class ProfileEventStatistics implements ProfileEventStatisticsMBean, NGLMMonitoringObject
+public class EvolutionEventStatistics implements EvolutionEventStatisticsMBean, NGLMMonitoringObject
 {
   //
   //  attributes
@@ -21,15 +21,15 @@ public class ProfileEventStatistics implements ProfileEventStatisticsMBean, NGLM
 
   String namePrefix;
   String objectNameForManagement;
-  String profileEventName;
-  int profileEventCount;
+  String evolutionEventName;
+  int evolutionEventCount;
 
   //
-  // Interface: ProfileEngineStatisticsMBean
+  // Interface: EvolutionEngineStatisticsMBean
   //
 
-  public String getProfileEventName() { return profileEventName; }
-  public int getProfileEventCount() { return profileEventCount; }
+  public String getEvolutionEventName() { return evolutionEventName; }
+  public int getEvolutionEventCount() { return evolutionEventCount; }
 
   //
   // Interface: NGLMMonitoringObject
@@ -43,16 +43,16 @@ public class ProfileEventStatistics implements ProfileEventStatisticsMBean, NGLM
   *
   *****************************************/
   
-  public ProfileEventStatistics(String namePrefix, String profileEventName) throws ServerException
+  public EvolutionEventStatistics(String namePrefix, String evolutionEventName) throws ServerException
   {
     //
     // initialize
     //
 
     this.namePrefix = namePrefix;
-    this.profileEventName = profileEventName;
-    this.profileEventCount = 0;
-    this.objectNameForManagement = ProfileEngineStatistics.BaseJMXObjectName + ",name=" + namePrefix + ",profileEvent=" + profileEventName;
+    this.evolutionEventName = evolutionEventName;
+    this.evolutionEventCount = 0;
+    this.objectNameForManagement = EvolutionEngineStatistics.BaseJMXObjectName + ",name=" + namePrefix + ",evolutionEvent=" + evolutionEventName;
 
     //
     // register
@@ -65,7 +65,7 @@ public class ProfileEventStatistics implements ProfileEventStatisticsMBean, NGLM
   // update
   //
       
-  synchronized void updateProfileEventCount(int amount) { profileEventCount = profileEventCount + amount; }
+  synchronized void updateEvolutionEventCount(int amount) { evolutionEventCount = evolutionEventCount + amount; }
 
   //
   // unregister

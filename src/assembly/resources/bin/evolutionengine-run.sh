@@ -2,7 +2,7 @@
 
 #################################################################################
 #
-#  profileengine-run.sh
+#  evolutionengine-run.sh
 #
 #################################################################################
 
@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name profileengine -loggc com.evolving.nglm.evolution.ProfileEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS ${profileengine.streamthreads}
+exec kafka-run-class -name evolutionengine -loggc com.evolving.nglm.evolution.EvolutionEngine /app/runtime $BROKER_SERVERS $KEY $KAFKA_REPLICATION_FACTOR $KAFKA_STREAMS_STANDBY_REPLICAS ${evolutionengine.streamthreads}

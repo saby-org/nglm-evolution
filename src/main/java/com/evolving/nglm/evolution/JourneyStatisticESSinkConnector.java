@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  SubscriberUpdateESSinkConnector.java
+*  JourneyStatisticESSinkConnector.java
 *
 ****************************************************************************/
 
@@ -21,7 +21,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SubscriberUpdateESSinkConnector extends SimpleESSinkConnector
+public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
 {
   /****************************************
   *
@@ -31,7 +31,7 @@ public class SubscriberUpdateESSinkConnector extends SimpleESSinkConnector
   
   @Override public Class<? extends Task> taskClass()
   {
-    return SubscriberUpdateESSinkTask.class;
+    return JourneyStatisticESSinkTask.class;
   }
 
   /****************************************
@@ -40,19 +40,19 @@ public class SubscriberUpdateESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class SubscriberUpdateESSinkTask extends StreamESSinkTask
+  public static class JourneyStatisticESSinkTask extends StreamESSinkTask
   {
     @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
     {
       /****************************************
       *
-      *  extract SubscriberProfile
+      *  extract JourneyStatistic
       *
       ****************************************/
 
-      Object subscriberProfileValue = sinkRecord.value();
-      Schema subscriberProfileValueSchema = sinkRecord.valueSchema();
-      SubscriberProfile subscriberProfile = SubscriberProfile.unpack(new SchemaAndValue(subscriberProfileValueSchema, subscriberProfileValue));
+      Object journeyStatisticValue = sinkRecord.value();
+      Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
+      JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
 
       /****************************************
       *
@@ -66,11 +66,14 @@ public class SubscriberUpdateESSinkConnector extends SimpleESSinkConnector
       //  flat fields
       //
       
-      documentMap.put("subscriberID", subscriberProfile.getSubscriberID());
-      documentMap.put("activationDate", subscriberProfile.getActivationDate());
-      documentMap.put("subscriberStatus", (subscriberProfile.getSubscriberStatus() != null) ? subscriberProfile.getSubscriberStatus().getExternalRepresentation() : null);
-      documentMap.put("statusChangeDate", subscriberProfile.getStatusChangeDate());
-      documentMap.put("previousSubscriberStatus", (subscriberProfile.getPreviousSubscriberStatus() != null) ? subscriberProfile.getPreviousSubscriberStatus().getExternalRepresentation() : null);
+      documentMap.put("journeyInstanceID", journeyStatistic.getJourneyInstanceID());
+      documentMap.put("journeyID", journeyStatistic.getJourneyID());
+      documentMap.put("subscriberID", journeyStatistic.getSubscriberID());
+      documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
+      documentMap.put("linkID", journeyStatistic.getLinkID());
+      documentMap.put("fromNodeID", journeyStatistic.getFromNodeID());
+      documentMap.put("toNodeID", journeyStatistic.getToNodeID());
+      documentMap.put("exited", journeyStatistic.getExited());
 
       //
       //  return

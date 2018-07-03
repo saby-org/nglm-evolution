@@ -115,6 +115,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("journey_journey_parameters").schema());
     schemaBuilder.field("autoTargeted", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("autoTargetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
+    schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyNodes", SchemaBuilder.array(JourneyNode.schema()).schema());
     schemaBuilder.field("journeyLinks", SchemaBuilder.array(JourneyLink.schema()).schema());
     schema = schemaBuilder.build();
@@ -143,6 +144,7 @@ public class Journey extends GUIManagedObject
   private Map<String,CriterionDataType> journeyParameters;
   private boolean autoTargeted;
   private List<EvaluationCriterion> autoTargetingCriteria;
+  private String startNodeID;
   private Map<String,JourneyNode> journeyNodes;
   private Map<String,JourneyLink> journeyLinks;
 
@@ -161,6 +163,7 @@ public class Journey extends GUIManagedObject
   public Map<String,CriterionDataType> getJourneyParameters() { return journeyParameters; }
   public boolean getAutoTargeted() { return autoTargeted; }
   public List<EvaluationCriterion> getAutoTargetingCriteria() { return autoTargetingCriteria; }
+  public String getStartNodeID() { return startNodeID; }
   public Map<String,JourneyNode> getJourneyNodes() { return journeyNodes; }
   public Map<String,JourneyLink> getJourneyLinks() { return journeyLinks; }
 
@@ -170,13 +173,14 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionDataType> journeyParameters, boolean autoTargeted, List<EvaluationCriterion> autoTargetingCriteria, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionDataType> journeyParameters, boolean autoTargeted, List<EvaluationCriterion> autoTargetingCriteria, String startNodeID, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
   {
     super(schemaAndValue);
     this.journeyMetrics = journeyMetrics;
     this.journeyParameters = journeyParameters;
     this.autoTargeted = autoTargeted;
     this.autoTargetingCriteria = autoTargetingCriteria;
+    this.startNodeID = startNodeID;
     this.journeyNodes = journeyNodes;
     this.journeyLinks = journeyLinks;
   }
@@ -196,6 +200,7 @@ public class Journey extends GUIManagedObject
     struct.put("journeyParameters", packJourneyParameters(journey.getJourneyParameters()));
     struct.put("autoTargeted", journey.getAutoTargeted());
     struct.put("autoTargetingCriteria", packAutoTargetingCriteria(journey.getAutoTargetingCriteria()));
+    struct.put("startNodeID", journey.getStartNodeID());
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
     struct.put("journeyLinks", packJourneyLinks(journey.getJourneyLinks()));
     return struct;
@@ -308,6 +313,7 @@ public class Journey extends GUIManagedObject
     Map<String,CriterionDataType> journeyParameters = unpackJourneyParameters((Map<String,String>) valueStruct.get("journeyParameters"));
     boolean autoTargeted = valueStruct.getBoolean("autoTargeted");
     List<EvaluationCriterion> autoTargetingCriteria = unpackAutoTargetingCriteria(schema.field("autoTargetingCriteria").schema(), valueStruct.get("autoTargetingCriteria"));
+    String startNodeID = valueStruct.getString("startNodeID");
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
     Map<String,JourneyLink> journeyLinks = unpackJourneyLinks(schema.field("journeyLinks").schema(), valueStruct.get("journeyLinks"));
 
@@ -352,7 +358,7 @@ public class Journey extends GUIManagedObject
     //  return
     //
 
-    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, autoTargetingCriteria, journeyNodes, journeyLinks);
+    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, autoTargetingCriteria, startNodeID, journeyNodes, journeyLinks);
   }
   
   /*****************************************
@@ -541,6 +547,22 @@ public class Journey extends GUIManagedObject
     for (GUINode jsonNode : jsonNodes.values())
       {
         journeyNodes.put(jsonNode.getNodeID(), new JourneyNode(jsonNode.getNodeID(), jsonNode.getNodeName(), jsonNode.getNodeType(), new ArrayList<String>(), new ArrayList<String>()));
+      }
+
+    //
+    //  startNodeID
+    //
+
+    this.startNodeID = null;
+    for (JourneyNode journeyNode : this.journeyNodes.values())
+      {
+        switch (journeyNode.getNodeType())
+          {
+            case Start:
+              if (this.startNodeID != null) throw new GUIManagerException("multiple start nodes", journeyNode.getNodeID());
+              this.startNodeID = journeyNode.getNodeID();
+              break;
+          }
       }
 
     //
@@ -901,6 +923,7 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(journeyParameters, existingJourney.getJourneyParameters());
         epochChanged = epochChanged || ! (autoTargeted == existingJourney.getAutoTargeted());
         epochChanged = epochChanged || ! Objects.equals(autoTargetingCriteria, existingJourney.getAutoTargetingCriteria());
+        epochChanged = epochChanged || ! Objects.equals(startNodeID, existingJourney.getStartNodeID());
         epochChanged = epochChanged || ! Objects.equals(journeyNodes, existingJourney.getJourneyNodes());
         epochChanged = epochChanged || ! Objects.equals(journeyLinks, existingJourney.getJourneyLinks());
         return epochChanged;

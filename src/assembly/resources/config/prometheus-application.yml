@@ -33,12 +33,12 @@ scrape_configs:
     static_configs:
       - targets: ['<_MONITORING_HOST_>:<_PROMETHEUS_APPLICATION_PORT_>']
 
-  # profileengine job
-  - job_name: 'profileengine'
+  # evolutionengine job
+  - job_name: 'evolutionengine'
 
     # main config
     static_configs:
-      - targets: [<_PROFILEENGINE_PROMETHEUS_>]
+      - targets: [<_EVOLUTIONENGINE_PROMETHEUS_>]
 
   # guimanager job
   - job_name: 'guimanager'

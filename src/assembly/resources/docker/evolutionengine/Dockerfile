@@ -37,17 +37,17 @@ ENV CLASSPATH=/app/jars/log4j-1.2.17.jar:/app/jars/${project.artifactId}-${proje
 #  run.sh
 #
 
-COPY bin/profileengine-run.sh /app/bin/profileengine-run.sh
-RUN chmod 0755 /app/bin/profileengine-run.sh
+COPY bin/evolutionengine-run.sh /app/bin/evolutionengine-run.sh
+RUN chmod 0755 /app/bin/evolutionengine-run.sh
 
 #
 #  configuration
 #
 
-COPY config/profileengine_jmx.yml /app/config/profileengine_jmx.yml
+COPY config/evolutionengine_jmx.yml /app/config/evolutionengine_jmx.yml
 
 #
 #  run
 #
 
-CMD [ "/app/bin/profileengine-run.sh" ]
+CMD [ "/app/bin/evolutionengine-run.sh" ]

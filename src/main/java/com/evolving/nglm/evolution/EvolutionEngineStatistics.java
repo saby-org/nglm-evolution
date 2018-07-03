@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  ProfileEngineStatisticsMBean.java
+*  EvolutionEngineStatisticsMBean.java
 *
 ****************************************************************************/
 
@@ -16,13 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-public class ProfileEngineStatistics implements ProfileEngineStatisticsMBean, NGLMMonitoringObject
+public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean, NGLMMonitoringObject
 {
   //
   //  JMXBaseObjectName
   //
 
-  public static final String BaseJMXObjectName = "com.evolving.nglm.evolution:type=ProfileEngine";
+  public static final String BaseJMXObjectName = "com.evolving.nglm.evolution:type=EvolutionEngine";
 
   //
   //  attributes
@@ -36,10 +36,10 @@ public class ProfileEngineStatistics implements ProfileEngineStatisticsMBean, NG
   //  profile event counts, profile counts
   //
 
-  Map<String,ProfileEventStatistics> profileEventCounts;
+  Map<String,EvolutionEventStatistics> evolutionEventCounts;
 
   //
-  // Interface: ProfileEngineStatisticsMBean
+  // Interface: EvolutionEngineStatisticsMBean
   //
 
   public int getEventProcessedCount() { return eventProcessedCount; }
@@ -56,7 +56,7 @@ public class ProfileEngineStatistics implements ProfileEngineStatisticsMBean, NG
   *
   *****************************************/
   
-  public ProfileEngineStatistics(String name) throws ServerException
+  public EvolutionEngineStatistics(String name) throws ServerException
   {
     //
     //  initialize
@@ -64,7 +64,7 @@ public class ProfileEngineStatistics implements ProfileEngineStatisticsMBean, NG
 
     this.name = name;
     this.eventProcessedCount = 0;
-    this.profileEventCounts = new HashMap<String,ProfileEventStatistics>();
+    this.evolutionEventCounts = new HashMap<String,EvolutionEventStatistics>();
     this.objectNameForManagement = BaseJMXObjectName + ",name=" + name;
 
     //
@@ -96,13 +96,13 @@ public class ProfileEngineStatistics implements ProfileEngineStatisticsMBean, NG
     try
       {
         String simpleName = event.getClass().getSimpleName();
-        ProfileEventStatistics stats = profileEventCounts.get(simpleName);
+        EvolutionEventStatistics stats = evolutionEventCounts.get(simpleName);
         if (stats == null)
           {
-            stats = new ProfileEventStatistics(this.name, simpleName);
-            profileEventCounts.put(simpleName, stats);
+            stats = new EvolutionEventStatistics(this.name, simpleName);
+            evolutionEventCounts.put(simpleName, stats);
           }
-        stats.updateProfileEventCount(1);
+        stats.updateEvolutionEventCount(1);
       }
     catch (ServerException se)
       {
@@ -118,7 +118,7 @@ public class ProfileEngineStatistics implements ProfileEngineStatisticsMBean, NG
 
   public void unregister()
   {
-    for (ProfileEventStatistics stats : profileEventCounts.values())
+    for (EvolutionEventStatistics stats : evolutionEventCounts.values())
       {
         stats.unregister();
       }

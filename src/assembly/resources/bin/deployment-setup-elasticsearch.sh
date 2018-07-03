@@ -129,3 +129,53 @@
         }
     }'
   echo
+
+  #
+  #  manually create journeystatistic index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/journeystatistic -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "6",
+              "number_of_replicas" : "1",
+              "refresh_interval" : "30s",
+	      "translog" : 
+	        { 
+		  "durability" : "async", 
+		  "sync_interval" : "10s" 
+		},
+	      "routing" : 
+	        {
+                  "allocation" : { "total_shards_per_node" : 4 }
+                },
+              "merge" : 
+                {
+		  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+		}
+            }
+        },
+      "mappings" :
+        {
+          "doc" :
+            {
+              "properties" :
+                {
+                  "journeyInstanceID" : { "type" : "keyword" },
+                  "journeyID" : { "type" : "keyword" },
+                  "subscriberID" : { "type" : "keyword" },
+                  "transitionDate" : { "type" : "date" },
+                  "linkID" : { "type" : "keyword" },
+                  "fromNodeID" : { "type" : "keyword" },
+                  "toNodeID" : { "type" : "keyword" },
+                  "exited" : { "type" : "boolean" }
+                }
+            }
+        }
+    }'
+  echo
+  

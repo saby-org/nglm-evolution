@@ -1,5 +1,5 @@
-profileengine-<_KEY_>:
-  image: ${env.DOCKER_REGISTRY}ev-profileengine:${project.name}-${project.version}
+evolutionengine-<_KEY_>:
+  image: ${env.DOCKER_REGISTRY}ev-evolutionengine:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     KAFKA_BROKER_ID: ignored
@@ -16,11 +16,11 @@ profileengine-<_KEY_>:
     KAFKA_STREAMS_STANDBY_REPLICAS: <_KAFKA_STREAMS_STANDBY_REPLICAS_>
     TRACE_LEVEL: <_TRACE_LEVEL_>
     KEY: "<_KEY_>"
-    KAFKA_HEAP_OPTS: <_PROFILEENGINE_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-0.7.jar=<_MONITORING_PORT_>:/app/config/profileengine_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>
+    KAFKA_HEAP_OPTS: <_EVOLUTIONENGINE_HEAP_OPTS_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-0.7.jar=<_MONITORING_PORT_>:/app/config/evolutionengine_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>
   volumes:
     - type: bind
-      source: <_NGLM_STREAMS_RUNTIME_>/streams-profileengine-<_KEY_>
+      source: <_NGLM_STREAMS_RUNTIME_>/streams-evolutionengine-<_KEY_>
       target: /app/runtime
   deploy: 
     restart_policy:

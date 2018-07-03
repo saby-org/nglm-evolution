@@ -60,9 +60,9 @@ public class SubscriberProfileRedisSinkConnector extends SimpleRedisSinkConnecto
       *
       ****************************************/
 
-      Object subscriberProfileValue = sinkRecord.value();
-      Schema subscriberProfileValueSchema = sinkRecord.valueSchema();
-      SubscriberProfile subscriberProfile = SubscriberProfile.unpack(new SchemaAndValue(subscriberProfileValueSchema, subscriberProfileValue));
+      Object subscriberStateValue = sinkRecord.value();
+      Schema subscriberStateValueSchema = sinkRecord.valueSchema();
+      SubscriberState subscriberState = SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
           
       /****************************************
       *
@@ -72,8 +72,8 @@ public class SubscriberProfileRedisSinkConnector extends SimpleRedisSinkConnecto
       *
       ****************************************/
 
-      byte[] key = subscriberProfile.getSubscriberID().getBytes(StandardCharsets.UTF_8);
-      byte[] value = SubscriberProfile.serde().serializer().serialize(Deployment.getSubscriberProfileChangeLogTopic(), subscriberProfile);
+      byte[] key = subscriberState.getSubscriberProfile().getSubscriberID().getBytes(StandardCharsets.UTF_8);
+      byte[] value = SubscriberProfile.serde().serializer().serialize(Deployment.getSubscriberProfileRegistrySubject(), subscriberState.getSubscriberProfile());
 
       /****************************************
       *

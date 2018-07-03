@@ -1,13 +1,12 @@
 /****************************************************************************
 *
-*  ProfileEventStatisticsMBean.java
+*  EvolutionEngineStatisticsMBean.java
 *
 ****************************************************************************/
 
 package com.evolving.nglm.evolution;
 
-public interface ProfileEventStatisticsMBean
+public interface EvolutionEngineStatisticsMBean
 {
-  public String getProfileEventName();
-  public int getProfileEventCount();
+  public int getEventProcessedCount();
 }
