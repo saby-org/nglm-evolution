@@ -2733,6 +2733,10 @@ public class EvaluationCriterion
     CriterionDataType evaluationDataType = criterionField.getFieldDataType();
     switch (evaluationDataType)
       {
+        case StringCriterion:
+          script.append("def left = doc." + esField + ".value.toLowerCase(); ");
+          break;
+          
         case DateCriterion:
           script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");
           script.append("def leftMillis = doc." + esField + ".value.getMillis(); ");
@@ -2744,6 +2748,9 @@ public class EvaluationCriterion
           break;
 
         case StringSetCriterion:
+          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i).value.toLowerCase()); ");
+          break;
+
         case IntegerSetCriterion:
           script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
           break;
@@ -2762,7 +2769,20 @@ public class EvaluationCriterion
     if (argument != null)
       {
         argument.esQuery(script, argumentBaseTimeUnit);
-        script.append("def right = right_0; ");
+        switch (argument.getType())
+          {
+            case StringExpression:
+              script.append("def right = right_0.toLowerCase(); ");
+              break;
+              
+            case StringSetExpression:
+              script.append("def right = new ArrayList(); for (int i=0;i<right_0.size();i++) right.add(right_0.get(i).toLowerCase()); ");
+              break;
+
+            default:
+              script.append("def right = right_0; ");
+              break;
+          }
       }
 
     /*****************************************
@@ -3004,10 +3024,19 @@ public class EvaluationCriterion
         case Minute:
         case Hour:
         case Day:
-        case Week:
-        case Month:
-        case Year:
           result = "def " + finalPrefix + nodeID + " = " + rawPrefix + nodeID + ".truncatedTo(ChronoUnit." + timeUnit.getChronoUnit() + "); ";
+          break;
+          
+        case Week:
+          result = "def " + finalPrefix + nodeID + " = " + rawPrefix + nodeID + ".truncatedTo(ChronoUnit.DAYS).minusDays(" + rawPrefix + nodeID + ".getDayOfWeek().getValue() - DayOfWeek.SUNDAY.getValue()); ";
+          break;
+          
+        case Month:
+          result = "def " + finalPrefix + nodeID + " = " + rawPrefix + nodeID + ".truncatedTo(ChronoUnit.DAYS).withDayOfMonth(1); ";
+          break;
+
+        case Year:
+          result = "def " + finalPrefix + nodeID + " = " + rawPrefix + nodeID + ".truncatedTo(ChronoUnit.DAYS).withDayOfYear(1); ";
           break;
       }
     return result;
