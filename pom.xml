@@ -35,7 +35,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.0.1-build180703-SNAPSHOT</version>
+    <version>4.1.1-build180703-SNAPSHOT</version>
   </parent>
 
   <properties>
