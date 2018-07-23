@@ -786,14 +786,14 @@ public class EvaluationCriterion
               {
                 case StringCriterion:
                   String stringFieldValue = (String) criterionFieldValue;
-                  criterionFieldValue = stringFieldValue.toLowerCase();
+                  criterionFieldValue = (stringFieldValue != null) ? stringFieldValue.toLowerCase() : stringFieldValue;
                   break;
                   
                 case StringSetCriterion:
                   Set<String> normalizedStringSetFieldValue = new HashSet<String>();
                   for (String stringValue : (Set<String>) criterionFieldValue)
                     {
-                      normalizedStringSetFieldValue.add(stringValue.toLowerCase());
+                      normalizedStringSetFieldValue.add((stringValue != null) ? stringValue.toLowerCase(): (String) stringValue);
                     }
                   criterionFieldValue = normalizedStringSetFieldValue;
                   break;
@@ -919,14 +919,14 @@ public class EvaluationCriterion
                 {
                   case StringExpression:
                     String stringArgument = (String) evaluatedArgument;
-                    evaluatedArgument = stringArgument.toLowerCase();
+                    evaluatedArgument = (stringArgument != null) ? stringArgument.toLowerCase() : stringArgument;
                     break;
                     
                   case StringSetExpression:
                     Set<String> normalizedStringSetArgument = new HashSet<String>();
                     for (String stringValue : (Set<String>) evaluatedArgument)
                       {
-                        normalizedStringSetArgument.add(stringValue.toLowerCase());
+                        normalizedStringSetArgument.add((stringValue != null) ? stringValue.toLowerCase() : stringValue);
                       }
                     evaluatedArgument = normalizedStringSetArgument;
                     break;
@@ -2734,7 +2734,7 @@ public class EvaluationCriterion
     switch (evaluationDataType)
       {
         case StringCriterion:
-          script.append("def left = doc." + esField + ".value.toLowerCase(); ");
+          script.append("def left = doc." + esField + ".value?.toLowerCase(); ");
           break;
           
         case DateCriterion:
@@ -2748,7 +2748,7 @@ public class EvaluationCriterion
           break;
 
         case StringSetCriterion:
-          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i).value.toLowerCase()); ");
+          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i).value?.toLowerCase()); ");
           break;
 
         case IntegerSetCriterion:
@@ -2772,11 +2772,11 @@ public class EvaluationCriterion
         switch (argument.getType())
           {
             case StringExpression:
-              script.append("def right = right_0.toLowerCase(); ");
+              script.append("def right = right_0?.toLowerCase(); ");
               break;
               
             case StringSetExpression:
-              script.append("def right = new ArrayList(); for (int i=0;i<right_0.size();i++) right.add(right_0.get(i).toLowerCase()); ");
+              script.append("def right = new ArrayList(); for (int i=0;i<right_0.size();i++) right.add(right_0.get(i)?.toLowerCase()); ");
               break;
 
             default:

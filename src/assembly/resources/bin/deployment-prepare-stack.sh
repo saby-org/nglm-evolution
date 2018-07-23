@@ -17,6 +17,12 @@
 cat $DEPLOY_ROOT/bin/resources/update-subscribergroup.sh | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' > $DEPLOY_ROOT/bin/update-subscribergroup.sh
 chmod 755 $DEPLOY_ROOT/bin/update-subscribergroup.sh
 
+#
+#  ptt.properties
+#
+
+cat $DEPLOY_ROOT/support/resources/ptt.properties | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' > $DEPLOY_ROOT/support/ptt.properties
+
 #########################################
 #
 #  construct stack -- application monitoring

@@ -61,7 +61,6 @@ public class GUIService
 
   protected  GUIServiceStatistics serviceStatistics = null;
 
-
   /*****************************************
   *
   *  data

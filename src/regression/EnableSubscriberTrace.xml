@@ -1,0 +1,30 @@
+<suite name="nglm_testing">
+
+  <description>Create Demo Rules</description>
+
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+  <!-- Task:  enable Jill trace for account  -->
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+
+  <tasks name="enable_jilltrace">
+
+    <file name="jill_trace_001_@{-60:yyyyMMddHHmmss}.json" location="${env.NGLM_DATA}/subscribertracecontrol/">
+      <record type="jilltrace">
+        <key>subscriber_id=8801933002007</key>
+      </record>
+    </file>
+     
+  </tasks>
+
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+  <!-- main script                              -->
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+
+  <tasks name="all">
+
+    <!-- enable debugging on account  -->
+    <link>enable_jilltrace</link>
+
+  </tasks>
+
+</suite>

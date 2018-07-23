@@ -87,3 +87,25 @@
     }'
   echo
 
+  #
+  #  sink connector -- offer criterion
+  #
+
+  if [ "${env.USE_REGRESSION}" = "1" ]
+  then
+    curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+      {
+        "name" : "regression_criteria_es_sink_connector",
+        "config" :
+          {
+          "connector.class" : "com.evolving.nglm.evolution.RegressionCriteriaSinkConnector",
+          "tasks.max" : 1,
+          "topics" : "${topic.subscriberupdate}",
+          "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+          "indexName" : "regr_criteria",
+          "batchRecordCount" : "1"
+          }
+      }'
+    echo
+  fi

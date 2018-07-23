@@ -178,4 +178,76 @@
         }
     }'
   echo
+
+  #
+  #  manually create regr_criteria index
+  #
+  
+  if [ "${env.USE_REGRESSION}" = "1" ]
+  then
+    curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_criteria -H'Content-Type: application/json' -d'
+      {
+        "settings" :
+          {
+            "index" :
+              {
+                "number_of_shards" : "12",
+                "number_of_replicas" : "1",
+                "refresh_interval" : "5s"
+              }
+          },
+        "mappings" :
+          {
+            "doc" :
+              {
+                "properties" :
+                  {
+                    "subscriberID" : { "type" : "keyword" },
+                    "offerID" : { "type" : "keyword" },
+                    "eligible" : { "type" : "keyword" },
+  	            "evaluationDate" : { "type" : "date" }
+                  }
+              }
+          }
+      }'
+    echo
+  fi
+
+  #
+  #  manually create regr_counter index
+  #
+
+  if [ "${env.USE_REGRESSION}" = "1" ]
+  then
+    curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter -H'Content-Type: application/json' -d'
+      {
+        "settings" :
+          {
+            "index" :
+              {
+                "number_of_shards" : "12",
+                "number_of_replicas" : "1",
+                "refresh_interval" : "5s"
+              }
+          },
+        "mappings" :
+          {
+            "doc" :
+              {
+                "properties" :
+                  {
+                    "count" : { "type" : "long" }
+                  }
+              }
+          }
+      }'
+
+    curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/doc/1 -H'Content-Type: application/json' -d'
+      {
+        "count" : 100
+      }'
+      
+    echo
+  fi
+
   
