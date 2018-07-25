@@ -32,6 +32,7 @@
    --
 
    "journeyTopic"                                         : "${topic.journey}",
+   "segmentationRuleTopic"                                : "${topic.segmentationrule}",
    "offerTopic"                                           : "${topic.offer}",
    "subscriberUpdateTopic"                                : "${topic.subscriberupdate}",
    "assignSubscriberIDsTopic"                             : "${topic.assignsubscriberids}",
@@ -356,6 +357,7 @@
             "configuredAlarmLevels" :
                [
                  { "name" : "JourneyManager", "alarmLevel" : 4 },
+                 { "name" : "SegmentationRuleManager", "alarmLevel" : 4 },
                  { "name" : "OfferManager", "alarmLevel" : 4 },
                  { "name" : "Analytics", "alarmLevel" : 1 }
                ]

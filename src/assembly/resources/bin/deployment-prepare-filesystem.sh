@@ -48,6 +48,7 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+   export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
    ssh $HOST "
       mkdir -p $NGLM_STREAMS_RUNTIME/streams-evolutionengine-$KEY
    "

@@ -6,46 +6,27 @@
 
 package com.evolving.nglm.evolution;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.metrics.Sensor;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 import org.apache.kafka.streams.kstream.Predicate;
-import org.apache.kafka.streams.kstream.ValueMapper;
-import org.apache.kafka.streams.processor.AbstractProcessor;
-import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.processor.StateStoreSupplier;
 import org.apache.kafka.streams.processor.TimestampExtractor;
-import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.Stores;
+import org.apache.zookeeper.ZooKeeper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import com.evolving.nglm.evolution.ExternalAggregates.SubscriberStatus;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
@@ -59,43 +40,25 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
-
-import com.rii.utilities.InternCache;
-import com.rii.utilities.JSONUtilities;
+import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 import com.rii.utilities.SystemTime;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 public class EvolutionEngine
 {
@@ -125,6 +88,7 @@ public class EvolutionEngine
 
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static JourneyService journeyService;
+  private static SegmentationRuleService segmentationRuleService;
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
 
@@ -198,6 +162,85 @@ public class EvolutionEngine
 
     journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), false);
     journeyService.start();
+    
+    /*****************************************
+    *
+    *  kafka producer for the segmentationRuleListener
+    *
+    *****************************************/
+
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", bootstrapServers);
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
+    //
+    //  segmentationRuleService
+    //
+    
+    SegmentationRuleService.SegmentationRuleListener segmentationRuleListener = new SegmentationRuleService.SegmentationRuleListener()
+    {
+      //
+      //  segmentationRuleActivated
+      //
+
+      @Override public void segmentationRuleActivated(SegmentationRule segmentationRule)
+      {
+        /*****************************************
+        *
+        *  open zookeeper and lock group
+        *
+        *****************************************/
+
+        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationRule.getSubscriberGroupName());
+        
+        /*****************************************
+        *
+        *  create or ensure exists
+        *
+        *****************************************/
+
+        SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationRule.getSubscriberGroupName(), LoadType.New, segmentationRule.getName());
+        
+        /*****************************************
+        *
+        *  epoch
+        *
+        *****************************************/
+
+        int epoch = existingEpoch.getEpoch() + 1;
+
+        /*****************************************
+        *
+        *  submit new epoch (if necessary)
+        *
+        *****************************************/
+
+        SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, existingEpoch, epoch, true, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
+
+        /*****************************************
+        *
+        *  close
+        *
+        *****************************************/
+
+        SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationRule.getSubscriberGroupName());
+      }
+
+      //
+      //  segmentationRuleDeactivated
+      //
+
+      @Override public void segmentationRuleDeactivated(SegmentationRule segmentationRule)
+      {
+        throw new UnsupportedOperationException();
+      }
+    };
+
+    segmentationRuleService = new SegmentationRuleService(bootstrapServers, "evolutionengine-segmentationruleservice-" + evolutionEngineKey, Deployment.getSegmentationRuleTopic(), false, segmentationRuleListener);
+    segmentationRuleService.start();
 
     //
     //  subscriberGroupEpochReader
@@ -695,19 +738,21 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  re-evaluate subscriberGroups for epoch changes
+    *  re-evaluate subscriberGroups for epoch changes and segmentation rules
     *
     *****************************************/
 
-    Iterator<String> groupNames = subscriberProfile.getSubscriberGroups().keySet().iterator();
-    while (groupNames.hasNext())
+    for (SegmentationRule segmentationRule :  segmentationRuleService.getActiveSegmentationRules(evolutionEvent.getEventDate()))
       {
-        String groupName = groupNames.next();
-        int subscriberGroupEpoch = subscriberProfile.getSubscriberGroups().get(groupName);
-        int groupEpoch = (subscriberGroupEpochReader.get(groupName) != null) ? subscriberGroupEpochReader.get(groupName).getEpoch() : 0;
-        if (subscriberGroupEpoch < groupEpoch)
+        //
+        //  ignore if in temporal hole (segmentation rule has been activated but subscriberGroupEpochReader has not seen it yet)
+        //
+
+        if (subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()) != null)
           {
-            groupNames.remove();
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
+            boolean inGroup = EvaluationCriterion.evaluateCriteria(evaluationRequest, segmentationRule.getSegmentationRuleCriteria());
+            subscriberProfile.setSubscriberGroup(segmentationRule.getSubscriberGroupName(), subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()).getEpoch(), inGroup);
             subscriberProfileUpdated = true;
           }
       }

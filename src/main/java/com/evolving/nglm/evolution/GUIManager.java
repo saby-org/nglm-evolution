@@ -106,6 +106,9 @@ public class GUIManager
     getJourneyList,
     putJourney,
     removeJourney,
+    getSegmentationRuleList,
+    putSegmentationRule,
+    removeSegmentationRule,
     getOfferList,
     putOffer,
     removeOffer;
@@ -138,6 +141,7 @@ public class GUIManager
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
   private JourneyService journeyService;
+  private SegmentationRuleService segmentationRuleService;
   private OfferService offerService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
@@ -181,6 +185,7 @@ public class GUIManager
     int apiRestPort = parseInteger("apiRestPort", args[2]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String journeyTopic = Deployment.getJourneyTopic();
+    String segmentationRuleTopic = Deployment.getSegmentationRuleTopic();
     String offerTopic = Deployment.getOfferTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     
@@ -188,7 +193,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, offerTopic, subscriberGroupEpochTopic);
+    log.info("main START: {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationRuleTopic, offerTopic, subscriberGroupEpochTopic);
 
     //
     //  license
@@ -207,6 +212,7 @@ public class GUIManager
     //
 
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
+    segmentationRuleService = new SegmentationRuleService(bootstrapServers, "guimanager-segmentationruleservice-" + apiProcessKey, segmentationRuleTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
@@ -215,6 +221,7 @@ public class GUIManager
     //
 
     journeyService.start();
+    segmentationRuleService.start();
     offerService.start();
 
     /*****************************************
@@ -241,6 +248,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
         restServer.createContext("/nglm-guimanager/putJourney", new APIHandler(API.putJourney));
         restServer.createContext("/nglm-guimanager/removeJourney", new APIHandler(API.removeJourney));
+        restServer.createContext("/nglm-guimanager/getSegmentationRuleList", new APIHandler(API.getSegmentationRuleList));
+        restServer.createContext("/nglm-guimanager/putSegmentationRule", new APIHandler(API.putSegmentationRule));
+        restServer.createContext("/nglm-guimanager/removeSegmentationRule", new APIHandler(API.removeSegmentationRule));
         restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/putOffer", new APIHandler(API.putOffer));
         restServer.createContext("/nglm-guimanager/removeOffer", new APIHandler(API.removeOffer));
@@ -412,6 +422,18 @@ public class GUIManager
                   jsonResponse = processRemoveJourney(jsonRoot);
                   break;
 
+                case getSegmentationRuleList:
+                  jsonResponse = processGetSegmentationRuleList(jsonRoot);
+                  break;
+
+                case putSegmentationRule:
+                    jsonResponse = processPutSegmentationRule(jsonRoot);
+                    break;
+
+                case removeSegmentationRule:
+                    jsonResponse = processRemoveSegmentationRule(jsonRoot);
+                    break;
+                
                 case getOfferList:
                   jsonResponse = processGetOfferList(jsonRoot);
                   break;
@@ -1593,6 +1615,201 @@ public class GUIManager
     *****************************************/
 
     journeyService.removeJourney(journeyID);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetSegmentationRuleList
+  *
+  *****************************************/
+
+  private JSONObject processGetSegmentationRuleList(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert segmentationRules
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> segmentationRules = new ArrayList<JSONObject>();
+    for (GUIManagedObject segmentationRule : segmentationRuleService.getStoredSegmentationRules())
+      {
+        JSONObject segmentationRuleJSON = segmentationRule.getJSONRepresentation();
+        segmentationRuleJSON.put("accepted", segmentationRule.getAccepted());
+        segmentationRuleJSON.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
+        segmentationRules.add(segmentationRuleJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("segmentationRules", JSONUtilities.encodeArray(segmentationRules));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processPutSegmentationRule
+  *
+  *****************************************/
+
+  private JSONObject processPutSegmentationRule(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  segmentationRuleID
+    *
+    *****************************************/
+    
+    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "segmentationRuleID", false);
+    if (segmentationRuleID == null)
+      {
+    	segmentationRuleID = segmentationRuleService.generateSegmentationRuleID();
+        jsonRoot.put("segmentationRuleID", segmentationRuleID);
+      }
+    
+    /*****************************************
+    *
+    *  process segmentationRule
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing segmentationRule
+        *
+        *****************************************/
+
+        GUIManagedObject existingSegmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
+
+        /****************************************
+        *
+        *  instantiate segmentationRule
+        *
+        ****************************************/
+
+        SegmentationRule segmentationRule = new SegmentationRule(jsonRoot, epoch, existingSegmentationRule);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        segmentationRuleService.putSegmentationRule(segmentationRule);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("segmentationRuleID", segmentationRule.getSegmentationRuleID());
+        response.put("accepted", segmentationRule.getAccepted());
+        response.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, "segmentationRuleID", epoch);
+
+        //
+        //  store
+        //
+
+        segmentationRuleService.putSegmentationRule(incompleteObject);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("segmentationRuleID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "segmentationRuleNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveSegmentationRule
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSegmentationRule(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "segmentationRuleID", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    segmentationRuleService.removeSegmentationRule(segmentationRuleID);
 
     /*****************************************
     *

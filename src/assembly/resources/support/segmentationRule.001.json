@@ -1,0 +1,28 @@
+--
+--  segmentationRule.001.json
+--    
+
+{
+  --
+  -- api
+  --
+
+  "apiVersion"          : 1,
+  "valid"               : true,
+  "active"              : true,
+
+  -- 
+  -- 
+  --
+
+  "name"                           : "segmentationRule-001",
+  "description"                    : "segmentationRule-001 (description)",
+  "effectiveStartDate"             : "2018-02-21T13:45:00:000+0200",
+  "effectiveEndDate"               : "2018-12-01T00:00:00:000+0200",
+  "segmentationRuleCriteria" :
+    [
+      { "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active" ], "expression" : "[ 'active' ]" } }
+    ],
+  "subscriberGroupName"               : "activeSubscribers",
+
+}

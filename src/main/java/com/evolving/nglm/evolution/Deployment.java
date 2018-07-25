@@ -34,6 +34,7 @@ public class Deployment
   *****************************************/
 
   private static String journeyTopic;
+  private static String segmentationRuleTopic;
   private static String offerTopic;
   private static String subscriberUpdateTopic;
   private static String externalAggregatesTopic;
@@ -82,6 +83,7 @@ public class Deployment
   //
 
   public static String getJourneyTopic() { return journeyTopic; }
+  public static String getSegmentationRuleTopic() { return segmentationRuleTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getExternalAggregatesTopic() { return externalAggregatesTopic; }
@@ -154,6 +156,19 @@ public class Deployment
     try
       {
         journeyTopic = JSONUtilities.decodeString(jsonRoot, "journeyTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  segmentationRuleTopic
+    //
+
+    try
+      {
+    	segmentationRuleTopic = JSONUtilities.decodeString(jsonRoot, "segmentationRuleTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -708,4 +723,5 @@ public class Deployment
   public static Object getDataBundleChargePrevious7Days(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getHistoryDataBundleChargePrevious7Days(evaluationRequest.getEvaluationDate()); }
   public static Object getDataBundleChargePrevious14Days(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getHistoryDataBundleChargePrevious14Days(evaluationRequest.getEvaluationDate()); }
   public static Object getDataBundleChargePreviousMonth(SubscriberEvaluationRequest evaluationRequest) throws CriterionException { return evaluationRequest.getSubscriberProfile().getHistoryDataBundleChargePreviousMonth(evaluationRequest.getEvaluationDate()); }
+
 }

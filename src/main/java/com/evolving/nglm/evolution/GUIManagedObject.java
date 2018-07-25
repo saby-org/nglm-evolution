@@ -101,6 +101,7 @@ public abstract class GUIManagedObject
   {
     List<ConnectSerde<? extends GUIManagedObject>> guiManagedObjectSerdes = new ArrayList<ConnectSerde<? extends GUIManagedObject>>();
     guiManagedObjectSerdes.add(Journey.serde());
+    guiManagedObjectSerdes.add(SegmentationRule.serde());
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));

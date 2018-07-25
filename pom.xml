@@ -66,6 +66,7 @@
 
     <!-- topics -->
     <topic.journey>journey</topic.journey>
+    <topic.segmentationrule>segmentation-rule</topic.segmentationrule>
     <topic.offer>offer</topic.offer>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.assignsubscriberids_fileconnector>assignsubscriberids-fileconnector</topic.assignsubscriberids_fileconnector>
