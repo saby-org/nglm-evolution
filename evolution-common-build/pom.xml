@@ -1,0 +1,517 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.evolving.nglm</groupId>
+  <artifactId>nglm-evolution-common-build</artifactId>
+  <packaging>pom</packaging>
+  <version>gitversion</version>
+  <name>evolution-common-build</name>
+
+  <repositories> 
+
+    <repository>
+      <id>evolving-internal</id>
+      <name>Evolving Internal Repository</name>
+      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+      <layout>default</layout>
+    </repository>
+
+    <repository>
+      <id>evolving-snapshots</id>
+      <name>Evolving Snapshots Repository</name>
+      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+      <layout>default</layout>
+    </repository>
+
+    <repository>
+      <id>confluent</id>
+      <name>Confluent Repository</name>
+      <url>http://packages.confluent.io/maven/</url>
+    </repository>
+
+  </repositories>  
+
+  <parent>
+    <artifactId>nglm-core-common-build</artifactId>
+    <groupId>com.evolving.nglm</groupId>
+    <version>4.1.1-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+  
+  <properties>
+
+    <!-- nglm versions -->
+    <nglm.core.version>4.1.1-SNAPSHOT</nglm.core.version>
+    <nglm.evolution.version>${project.version}</nglm.evolution.version>
+
+    <!-- evolution-common-build -->
+    <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
+    <common.build.phase.generate-evolution-partially-assembled-resources>none</common.build.phase.generate-evolution-partially-assembled-resources>
+    <common.build.phase.generate-evolution-resources>none</common.build.phase.generate-evolution-resources>
+    <common.build.phase.generate-prometheus-application-image>none</common.build.phase.generate-prometheus-application-image>
+    <common.build.phase.generate-guimanager-image>none</common.build.phase.generate-guimanager-image>
+    <common.build.phase.generate-evolutionengine-image>none</common.build.phase.generate-evolutionengine-image>
+    <common.build.phase.generate-criteriaapi-image>none</common.build.phase.generate-criteriaapi-image>
+    <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
+    <common.build.skip.docker-prometheus-application-image>true</common.build.skip.docker-prometheus-application-image>
+    <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
+    <common.build.skip.docker-evolutionengine-image>true</common.build.skip.docker-evolutionengine-image>
+    <common.build.skip.docker-criteriaapi-image>true</common.build.skip.docker-criteriaapi-image>
+    <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
+
+    <!-- configuration -->
+    <evolutionengine.streamthreads>2</evolutionengine.streamthreads>
+
+    <!-- topics -->
+    <topic.journey>journey</topic.journey>
+    <topic.segmentationrule>segmentation-rule</topic.segmentationrule>
+    <topic.offer>offer</topic.offer>
+    <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
+    <topic.subscribergroup>subscribergroup</topic.subscribergroup>
+    <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
+    <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
+    <topic.journeystatistic>journeystatistic</topic.journeystatistic>
+
+    <!-- registry subjects -->
+    <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
+    
+    <!-- evolutionengine -->
+    <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
+    <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>
+
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.evolving.nglm</groupId>
+      <artifactId>nglm-evolution</artifactId>
+      <version>${nglm.evolution.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.0.1</version>
+        <executions>
+          <execution>
+            <id>unpack-nglm-evolution-resources</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>unpack-dependencies</goal>
+            </goals>
+            <configuration>
+              <includeGroupIds>com.evolving.nglm</includeGroupIds>
+              <includeArtifactIds>nglm-evolution</includeArtifactIds>
+              <excludeTransitive>true</excludeTransitive>
+              <overWrite>true</overWrite>
+              <outputDirectory>${project.build.directory}/nglm-evolution-resources</outputDirectory>
+              <excludes>com/**,META-INF/**</excludes>
+              <overWriteReleases>true</overWriteReleases>
+              <overWriteSnapshots>true</overWriteSnapshots>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <id>generate-evolution-scripts</id>
+            <phase>${common.build.phase.generate-evolution-scripts}</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target>
+                <concat destfile="${project.build.directory}/assembled-resources/bin/prometheus-application-run.sh" force="yes">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="prometheus-application-run-preamble.sh"/>
+                  <fileset dir="${project.basedir}/src/assembly/resources/bin" includes="deployment-prometheus-application-run.sh"/>
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="prometheus-application-run-postamble.sh"/>
+                </concat>
+                <concat destfile="${project.build.directory}/assembled-resources/config/prometheus-application-alert.rules" force="yes">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/config" includes="evolution-prometheus-application-alert.rules"/>
+                  <fileset dir="${project.basedir}/src/assembly/resources/config" includes="deployment-prometheus-application-alert.rules"/>
+                </concat>
+                <concat destfile="${project.build.directory}/assembled-resources/config/prometheus-application.yml" force="yes">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/config" includes="evolution-prometheus-application.yml"/>
+                  <fileset dir="${project.basedir}/src/assembly/resources/config" includes="deployment-prometheus-application.yml"/>
+                </concat>
+                <concat destfile="${project.build.directory}/assembled-resources/docker/prometheus-application.yml" force="yes">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="prometheus-application-preamble.yml"/>
+                  <fileset dir="${project.basedir}/src/assembly/resources/docker" includes="prometheus-application-environment.yml"/>
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="prometheus-application-postamble.yml"/>
+                </concat>
+                <copy todir="${project.build.directory}/assembled-resources/docker">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/docker">
+                    <include name="*.yml"/>
+                    <exclude name="prometheus-application-preamble.yml"/>
+                    <exclude name="prometheus-application-postamble.yml"/>
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+
+          <execution>
+            <id>generate-evolution-assembled-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-resources</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>src/assembly/resources</directory>
+                  <includes>
+                    <include>license/licenseToken.bin</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+
+          <execution>
+            <id>generate-evolution-partially-assembled-resources</id>
+            <phase>${common.build.phase.generate-evolution-partially-assembled-resources}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/partially-assembled-resources</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/*</include>
+                    <include>config/log4j-evolution.properties</include>
+                    <include>docker/*.yml</include>
+                    <include>support/*</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+
+          <execution>
+            <id>generate-prometheus-application-docker-stack</id>
+            <phase>${common.build.phase.generate-prometheus-application-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/prometheus-application</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/prometheus-application</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/prometheus-application.yml</include>
+                    <include>config/prometheus-application-alert.rules</include>
+                    <include>bin/prometheus-application-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+          
+          <execution>
+            <id>generate-guimanager-docker-stack</id>
+            <phase>${common.build.phase.generate-guimanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/guimanager</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/guimanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/guimanager-run.sh</include>
+                    <include>config/guimanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+
+          <execution>
+            <id>generate-evolutionengine-docker-stack</id>
+            <phase>${common.build.phase.generate-evolutionengine-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/evolutionengine</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/evolutionengine</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/evolutionengine-run.sh</include>
+                    <include>config/evolutionengine_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+          
+          <execution>
+            <id>generate-criteriaapi-docker-stack</id>
+            <phase>${common.build.phase.generate-criteriaapi-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/criteriaapi</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/criteriaapi</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/criteriaapi-run.sh</include>
+                    <include>config/criteriaapi_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+
+          <execution>
+            <id>generate-subscribergroup-stack</id>
+            <phase>${common.build.phase.generate-subscribergroup-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/subscribergroup</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/subscribergroup</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/subscribergroup-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+          
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>1.3.5</version>
+        <executions>
+          <execution>
+            <id>docker-prometheus-application</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-prometheus-application-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/prometheus-application</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-prometheus-application</repository>
+              <classifier>docker-info-prometheus-application</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          <execution>
+            <id>docker-guimanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-guimanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/guimanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-guimanager</repository>
+              <classifier>docker-info-guimanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          <execution>
+            <id>docker-evolutionengine</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-evolutionengine-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/evolutionengine</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-evolutionengine</repository>
+              <classifier>docker-info-evolutionengine</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          <execution>
+            <id>docker-criteriaapi</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-criteriaapi-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/criteriaapi</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-criteriaapi</repository>
+              <classifier>docker-info-criteriaapi</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          <execution>
+            <id>docker-subscribergroup</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-subscribergroup-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/subscribergroup</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-subscribergroup</repository>
+              <classifier>docker-info-subscribergroup</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      
+    </plugins>
+
+  </build>
+
+  <distributionManagement>
+
+    <repository>
+      <id>evolving-internal</id>
+      <name>Evolving Internal Repository</name>
+      <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
+    </repository>
+    
+    <snapshotRepository>
+      <id>evolving-snapshots</id>
+      <name>Evolving Snapshots Repository</name>
+      <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
+    </snapshotRepository>
+ 
+  </distributionManagement>
+  
+</project>

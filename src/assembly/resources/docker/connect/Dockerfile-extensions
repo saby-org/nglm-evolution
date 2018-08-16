@@ -1,7 +1,0 @@
-
-#
-#  volume(s)
-#
-
-VOLUME ["/app/data"]
-

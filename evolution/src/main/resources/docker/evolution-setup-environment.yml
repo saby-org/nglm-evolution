@@ -1,0 +1,5 @@
+    #
+    #  environment variables required by setup.sh
+    #
+    REDIS_SENTINELS: <_REDIS_SENTINELS_>
+
