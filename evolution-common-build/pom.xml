@@ -33,14 +33,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.1.1-SNAPSHOT</version>
+    <version>4.1.1-build180816-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.1.1-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.1.1-build180816-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- evolution-common-build -->
@@ -65,6 +65,8 @@
     <topic.journey>journey</topic.journey>
     <topic.segmentationrule>segmentation-rule</topic.segmentationrule>
     <topic.offer>offer</topic.offer>
+    <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
+    <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

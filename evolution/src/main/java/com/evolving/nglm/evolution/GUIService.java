@@ -218,7 +218,7 @@ public class GUIService
     synchronized (this)
       {
         lastGeneratedObjectID += 1;
-        return String.format("%03d", lastGeneratedObjectID);
+        return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedObjectID);
       }
   }
 

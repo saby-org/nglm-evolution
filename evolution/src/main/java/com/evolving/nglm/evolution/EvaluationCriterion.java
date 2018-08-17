@@ -88,6 +88,7 @@ public class EvaluationCriterion
   public enum CriterionContext
   {
     Profile("profile"),
+    Presentation("presentation"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private CriterionContext(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

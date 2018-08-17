@@ -70,6 +70,8 @@ public class Offer extends GUIManagedObject
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
     schemaBuilder.field("productType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("rewardType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("presentationChannelProperties", SchemaBuilder.array(PresentationChannelProperty.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -101,6 +103,8 @@ public class Offer extends GUIManagedObject
   private List<EvaluationCriterion> profileCriteria;
   private OfferType offerType;
   private ProductType productType;
+  private RewardType rewardType;
+  private Set<PresentationChannelProperty> presentationChannelProperties;
 
   /****************************************
   *
@@ -122,6 +126,23 @@ public class Offer extends GUIManagedObject
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public OfferType getOfferType() { return offerType; }
   public ProductType getProductType() { return productType; }
+  public RewardType getRewardType() { return rewardType; }
+  public Set<PresentationChannelProperty> getPresentationChannelProperties() { return presentationChannelProperties; }
+
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override JSONObject getSummaryJSONRepresentation()
+  {
+    JSONObject jsonRepresentation = new JSONObject();
+    jsonRepresentation.putAll(getJSONRepresentation());
+    jsonRepresentation.remove("profileCriteria");
+    jsonRepresentation.remove("presentationChannelProperties");
+    return jsonRepresentation;
+  }
 
   /*****************************************
   *
@@ -140,7 +161,7 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, int defaultPropensity, int marginFactor, int cost, int price, SupportedCurrency currency, Set<SalesChannel> salesChannels, List<EvaluationCriterion> profileCriteria, OfferType offerType, ProductType productType)
+  public Offer(SchemaAndValue schemaAndValue, int defaultPropensity, int marginFactor, int cost, int price, SupportedCurrency currency, Set<SalesChannel> salesChannels, List<EvaluationCriterion> profileCriteria, OfferType offerType, ProductType productType, RewardType rewardType, Set<PresentationChannelProperty> presentationChannelProperties)
   {
     super(schemaAndValue);
     this.defaultPropensity = defaultPropensity;
@@ -152,6 +173,8 @@ public class Offer extends GUIManagedObject
     this.profileCriteria = profileCriteria;
     this.offerType = offerType;
     this.productType = productType;
+    this.rewardType = rewardType;
+    this.presentationChannelProperties = presentationChannelProperties;
   }
 
   /*****************************************
@@ -174,6 +197,8 @@ public class Offer extends GUIManagedObject
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
     struct.put("offerType", offer.getOfferType().getID());
     struct.put("productType", offer.getProductType().getID());
+    struct.put("rewardType", offer.getRewardType().getID());
+    struct.put("presentationChannelProperties", packPresentationChannelProperties(offer.getPresentationChannelProperties()));
     return struct;
   }
 
@@ -209,6 +234,22 @@ public class Offer extends GUIManagedObject
     return result;
   }
 
+  /****************************************
+  *
+  *  packPresentationChannelProperties
+  *
+  ****************************************/
+
+  private static List<Object> packPresentationChannelProperties(Set<PresentationChannelProperty> presentationChannelProperties)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (PresentationChannelProperty presentationChannelProperty : presentationChannelProperties)
+      {
+        result.add(PresentationChannelProperty.pack(presentationChannelProperty));
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  unpack
@@ -239,6 +280,8 @@ public class Offer extends GUIManagedObject
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
     ProductType productType = Deployment.getProductTypes().get(valueStruct.getString("productType"));
+    RewardType rewardType = Deployment.getRewardTypes().get(valueStruct.getString("rewardType"));
+    Set<PresentationChannelProperty> presentationChannelProperties = unpackPresentationChannelProperties(schema.field("presentationChannelProperties").schema(), valueStruct.get("presentationChannelProperties"));
     
     //
     //  validate
@@ -247,12 +290,13 @@ public class Offer extends GUIManagedObject
     if (currency == null) throw new SerializationException("unknown currency: " + valueStruct.getString("currency"));
     if (offerType == null) throw new SerializationException("unknown offerType: " + valueStruct.getString("offerType"));
     if (productType == null) throw new SerializationException("unknown productType: " + valueStruct.getString("productType"));
+    if (rewardType == null) throw new SerializationException("unknown rewardType: " + valueStruct.getString("rewardType"));
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, defaultPropensity, marginFactor, cost, price, currency, salesChannels, profileCriteria, offerType, productType);
+    return new Offer(schemaAndValue, defaultPropensity, marginFactor, cost, price, currency, salesChannels, profileCriteria, offerType, productType, rewardType, presentationChannelProperties);
   }
   
   /*****************************************
@@ -307,6 +351,38 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
+  *  unpackPresentationChannelProperties
+  *
+  *****************************************/
+
+  private static Set<PresentationChannelProperty> unpackPresentationChannelProperties(Schema schema, Object value)
+  {
+    //
+    //  get schema for PresentationChannelProperty
+    //
+
+    Schema presentationChannelPropertySchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    Set<PresentationChannelProperty> result = new HashSet<PresentationChannelProperty>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object presentationChannelProperty : valueArray)
+      {
+        result.add(PresentationChannelProperty.unpack(new SchemaAndValue(presentationChannelPropertySchema, presentationChannelProperty)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
   *  constructor -- JSON
   *
   *****************************************/
@@ -344,6 +420,8 @@ public class Offer extends GUIManagedObject
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
     this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
     this.productType = Deployment.getProductTypes().get(JSONUtilities.decodeString(jsonRoot, "productTypeID", true));
+    this.rewardType = Deployment.getRewardTypes().get(JSONUtilities.decodeString(jsonRoot, "rewardTypeID", true));
+    this.presentationChannelProperties = decodePresentationChannelProperties(JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannelProperties", true));
 
     /*****************************************
     *
@@ -354,6 +432,7 @@ public class Offer extends GUIManagedObject
     if (this.currency == null) throw new GUIManagerException("unsupported currency", JSONUtilities.decodeString(jsonRoot, "currencyID", true));
     if (this.offerType == null) throw new GUIManagerException("unsupported offerType", JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
     if (this.productType == null) throw new GUIManagerException("unsupported productType", JSONUtilities.decodeString(jsonRoot, "productTypeID", true));
+    if (this.rewardType == null) throw new GUIManagerException("unsupported rewardType", JSONUtilities.decodeString(jsonRoot, "rewardTypeID", true));
 
     /*****************************************
     *
@@ -404,6 +483,22 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
+  *  decodePresentationChannelProperties
+  *
+  *****************************************/
+
+  private Set<PresentationChannelProperty> decodePresentationChannelProperties(JSONArray jsonArray) throws GUIManagerException
+  {
+    Set<PresentationChannelProperty> result = new HashSet<PresentationChannelProperty>();
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        result.add(new PresentationChannelProperty((JSONObject) jsonArray.get(i)));
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
   *  epochChanged
   *
   *****************************************/
@@ -423,6 +518,8 @@ public class Offer extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingOffer.getProfileCriteria());
         epochChanged = epochChanged || ! Objects.equals(offerType, existingOffer.getOfferType());
         epochChanged = epochChanged || ! Objects.equals(productType, existingOffer.getProductType());
+        epochChanged = epochChanged || ! Objects.equals(rewardType, existingOffer.getRewardType());
+        epochChanged = epochChanged || ! Objects.equals(presentationChannelProperties, existingOffer.getPresentationChannelProperties());
         return epochChanged;
       }
     else

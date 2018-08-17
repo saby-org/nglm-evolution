@@ -43,6 +43,8 @@ public class Deployment
   private static String journeyTopic;
   private static String segmentationRuleTopic;
   private static String offerTopic;
+  private static String presentationStrategyTopic;
+  private static String scoringStrategyTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
@@ -56,11 +58,17 @@ public class Deployment
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
+  private static Map<String,PresentationChannel> presentationChannels = new LinkedHashMap<String,PresentationChannel>();
+  private static Map<String,CallingChannel> callingChannels = new LinkedHashMap<String,CallingChannel>();
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
+  private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
   private static Map<String,ProductType> productTypes = new LinkedHashMap<String,ProductType>();
+  private static Map<String,RewardType> rewardTypes = new LinkedHashMap<String,RewardType>();
+  private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> fulfillmentManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
 
   /*****************************************
@@ -80,6 +88,7 @@ public class Deployment
   public static String getBaseTimeZone() { return com.evolving.nglm.core.Deployment.getBaseTimeZone(); }
   public static String getBaseLanguage() { return com.evolving.nglm.core.Deployment.getBaseLanguage(); }
   public static String getBaseCountry() { return com.evolving.nglm.core.Deployment.getBaseCountry(); }
+  public static boolean getGenerateNumericIDs() { return com.evolving.nglm.core.Deployment.getGenerateNumericIDs(); }
   public static String getRedisSentinels() { return com.evolving.nglm.core.Deployment.getRedisSentinels(); }
   public static String getRecordAlternateIDTopic() { return com.evolving.nglm.core.Deployment.getRecordAlternateIDTopic(); }
   public static String getExternalSubscriberID() { return com.evolving.nglm.core.Deployment.getExternalSubscriberID(); }
@@ -97,6 +106,8 @@ public class Deployment
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationRuleTopic() { return segmentationRuleTopic; }
   public static String getOfferTopic() { return offerTopic; }
+  public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
+  public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
@@ -110,11 +121,17 @@ public class Deployment
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
+  public static Map<String,PresentationChannel> getPresentationChannels() { return presentationChannels; }
+  public static Map<String,CallingChannel> getCallingChannels() { return callingChannels; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
+  public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
+  public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
   public static Map<String,ProductType> getProductTypes() { return productTypes; }
+  public static Map<String,RewardType> getRewardTypes() { return rewardTypes; }
+  public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getFulfillmentManagers() { return fulfillmentManagers; }
 
   /*****************************************
@@ -130,6 +147,9 @@ public class Deployment
       {
         case Profile:
           result = profileCriterionFields;
+          break;
+        case Presentation:
+          result = presentationCriterionFields;
           break;
         default:
           throw new ServerRuntimeException("unknown criterionContext: " + criterionContext);
@@ -340,6 +360,32 @@ public class Deployment
       }
     
     //
+    //  presentationStrategyTopic
+    //
+
+    try
+      {
+        presentationStrategyTopic = JSONUtilities.decodeString(jsonRoot, "presentationStrategyTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  scoringStrategyTopic
+    //
+
+    try
+      {
+        scoringStrategyTopic = JSONUtilities.decodeString(jsonRoot, "scoringStrategyTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  subscriberUpdateTopic
     //
 
@@ -527,6 +573,44 @@ public class Deployment
       }
 
     //
+    //  presentationChannels
+    //
+
+    try
+      {
+        JSONArray presentationChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannels", true);
+        for (int i=0; i<presentationChannelValues.size(); i++)
+          {
+            JSONObject presentationChannelJSON = (JSONObject) presentationChannelValues.get(i);
+            PresentationChannel presentationChannel = new PresentationChannel(presentationChannelJSON);
+            presentationChannels.put(presentationChannel.getID(), presentationChannel);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  callingChannels
+    //
+
+    try
+      {
+        JSONArray callingChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", true);
+        for (int i=0; i<callingChannelValues.size(); i++)
+          {
+            JSONObject callingChannelJSON = (JSONObject) callingChannelValues.get(i);
+            CallingChannel callingChannel = new CallingChannel(callingChannelJSON);
+            callingChannels.put(callingChannel.getID(), callingChannel);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  salesChannels
     //
 
@@ -584,6 +668,26 @@ public class Deployment
       }
 
     //
+    //  presentationCriterionFields
+    //
+
+    try
+      {
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", false);
+        if (criterionFieldValues == null) criterionFieldValues = new JSONArray();
+        for (int i=0; i<criterionFieldValues.size(); i++)
+          {
+            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+            CriterionField criterionField = new CriterionField(criterionFieldJSON);
+            presentationCriterionFields.put(criterionField.getID(), criterionField);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  offerTypes
     //
 
@@ -595,6 +699,25 @@ public class Deployment
             JSONObject offerTypeJSON = (JSONObject) offerTypeValues.get(i);
             OfferType offerType = new OfferType(offerTypeJSON);
             offerTypes.put(offerType.getID(), offerType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  offerCategory
+    //
+
+    try
+      {
+        JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", true);
+        for (int i=0; i<offerCategoryValues.size(); i++)
+          {
+            JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
+            OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
+            offerCategories.put(offerCategory.getID(), offerCategory);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
@@ -621,6 +744,45 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  rewardTypes
+    //
+
+    try
+      {
+        JSONArray rewardTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "rewardTypes", true);
+        for (int i=0; i<rewardTypeValues.size(); i++)
+          {
+            JSONObject rewardTypeJSON = (JSONObject) rewardTypeValues.get(i);
+            RewardType rewardType = new RewardType(rewardTypeJSON);
+            rewardTypes.put(rewardType.getID(), rewardType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  offerOptimizationAlgorithms
+    //
+
+    try
+      {
+        JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", false);
+        if (offerOptimizationAlgorithmValues == null) offerOptimizationAlgorithmValues = new JSONArray();
+        for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
+          {
+            JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);
+            OfferOptimizationAlgorithm offerOptimizationAlgorithm = new OfferOptimizationAlgorithm(offerOptimizationAlgorithmJSON);
+            offerOptimizationAlgorithms.put(offerOptimizationAlgorithm.getID(), offerOptimizationAlgorithm);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  fulfillmentManagers
     //

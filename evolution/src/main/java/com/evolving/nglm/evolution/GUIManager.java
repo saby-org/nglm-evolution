@@ -96,22 +96,47 @@ public class GUIManager
     getSupportedLanguages,
     getSupportedCurrencies,
     getSupportedTimeUnits,
+    getPresentationChannels,
+    getCallingChannels,
     getSalesChannels,
     getSupportedDataTypes,
     getProfileCriterionFields,
     getProfileCriterionFieldIDs,
     getProfileCriterionField,
+    getPresentationCriterionFields,
+    getPresentationCriterionFieldIDs,
+    getPresentationCriterionField,
     getOfferTypes,
+    getOfferCategories,
     getProductTypes,
+    getRewardTypes,
+    getOfferOptimizationAlgorithms,
     getJourneyList,
+    getJourneySummaryList,
+    getJourney,
     putJourney,
     removeJourney,
     getSegmentationRuleList,
+    getSegmentationRuleSummaryList,
+    getSegmentationRule,
     putSegmentationRule,
     removeSegmentationRule,
     getOfferList,
+    getOfferSummaryList,
+    getOffer,
     putOffer,
-    removeOffer;
+    removeOffer,
+    getPresentationStrategyList,
+    getPresentationStrategySummaryList,
+    getPresentationStrategy,
+    putPresentationStrategy,
+    removePresentationStrategy,
+    getScoringStrategyList,
+    getScoringStrategySummaryList,
+    getScoringStrategy,
+    putScoringStrategy,
+    removeScoringStrategy,
+    getDashboardCounts;
   }
 
   /*****************************************
@@ -143,6 +168,8 @@ public class GUIManager
   private JourneyService journeyService;
   private SegmentationRuleService segmentationRuleService;
   private OfferService offerService;
+  private ScoringStrategyService scoringStrategyService;
+  private PresentationStrategyService presentationStrategyService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
   /*****************************************
@@ -187,13 +214,15 @@ public class GUIManager
     String journeyTopic = Deployment.getJourneyTopic();
     String segmentationRuleTopic = Deployment.getSegmentationRuleTopic();
     String offerTopic = Deployment.getOfferTopic();
+    String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
+    String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     
     //
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationRuleTopic, offerTopic, subscriberGroupEpochTopic);
+    log.info("main START: {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationRuleTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic);
 
     //
     //  license
@@ -214,6 +243,8 @@ public class GUIManager
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
     segmentationRuleService = new SegmentationRuleService(bootstrapServers, "guimanager-segmentationruleservice-" + apiProcessKey, segmentationRuleTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
+    scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
+    presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
     //
@@ -223,6 +254,8 @@ public class GUIManager
     journeyService.start();
     segmentationRuleService.start();
     offerService.start();
+    scoringStrategyService.start();
+    presentationStrategyService.start();
 
     /*****************************************
     *
@@ -238,22 +271,47 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APIHandler(API.getSupportedLanguages));
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APIHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
+        restServer.createContext("/nglm-guimanager/getPresentationChannels", new APIHandler(API.getPresentationChannels));
+        restServer.createContext("/nglm-guimanager/getCallingChannels", new APIHandler(API.getCallingChannels));
         restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APIHandler(API.getProfileCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getProfileCriterionField", new APIHandler(API.getProfileCriterionField));
+        restServer.createContext("/nglm-guimanager/getPresentationCriterionFields", new APIHandler(API.getPresentationCriterionFields));
+        restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APIHandler(API.getPresentationCriterionFieldIDs));
+        restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
+        restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
         restServer.createContext("/nglm-guimanager/getProductTypes", new APIHandler(API.getProductTypes));
+        restServer.createContext("/nglm-guimanager/getRewardTypes", new APIHandler(API.getRewardTypes));
+        restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
+        restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APIHandler(API.getJourneySummaryList));
+        restServer.createContext("/nglm-guimanager/getJourney", new APIHandler(API.getJourney));
         restServer.createContext("/nglm-guimanager/putJourney", new APIHandler(API.putJourney));
         restServer.createContext("/nglm-guimanager/removeJourney", new APIHandler(API.removeJourney));
         restServer.createContext("/nglm-guimanager/getSegmentationRuleList", new APIHandler(API.getSegmentationRuleList));
+        restServer.createContext("/nglm-guimanager/getSegmentationRuleSummaryList", new APIHandler(API.getSegmentationRuleSummaryList));
+        restServer.createContext("/nglm-guimanager/getSegmentationRule", new APIHandler(API.getSegmentationRule));
         restServer.createContext("/nglm-guimanager/putSegmentationRule", new APIHandler(API.putSegmentationRule));
         restServer.createContext("/nglm-guimanager/removeSegmentationRule", new APIHandler(API.removeSegmentationRule));
         restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
+        restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APIHandler(API.getOfferSummaryList));
+        restServer.createContext("/nglm-guimanager/getOffer", new APIHandler(API.getOffer));
         restServer.createContext("/nglm-guimanager/putOffer", new APIHandler(API.putOffer));
         restServer.createContext("/nglm-guimanager/removeOffer", new APIHandler(API.removeOffer));
+        restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APIHandler(API.getPresentationStrategyList));
+        restServer.createContext("/nglm-guimanager/getPresentationStrategySummaryList", new APIHandler(API.getPresentationStrategySummaryList));
+        restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APIHandler(API.getPresentationStrategy));
+        restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APIHandler(API.putPresentationStrategy));
+        restServer.createContext("/nglm-guimanager/removePresentationStrategy", new APIHandler(API.removePresentationStrategy));
+        restServer.createContext("/nglm-guimanager/getScoringStrategyList", new APIHandler(API.getScoringStrategyList));
+        restServer.createContext("/nglm-guimanager/getScoringStrategySummaryList", new APIHandler(API.getScoringStrategySummaryList));
+        restServer.createContext("/nglm-guimanager/getScoringStrategy", new APIHandler(API.getScoringStrategy));
+        restServer.createContext("/nglm-guimanager/putScoringStrategy", new APIHandler(API.putScoringStrategy));
+        restServer.createContext("/nglm-guimanager/removeScoringStrategy", new APIHandler(API.removeScoringStrategy));
+        restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -382,6 +440,14 @@ public class GUIManager
                   jsonResponse = processGetSupportedTimeUnits(jsonRoot);
                   break;
 
+                case getPresentationChannels:
+                  jsonResponse = processGetPresentationChannels(jsonRoot);
+                  break;
+
+                case getCallingChannels:
+                  jsonResponse = processGetCallingChannels(jsonRoot);
+                  break;
+
                 case getSalesChannels:
                   jsonResponse = processGetSalesChannels(jsonRoot);
                   break;
@@ -402,16 +468,48 @@ public class GUIManager
                   jsonResponse = processGetProfileCriterionField(jsonRoot);
                   break;
 
+                case getPresentationCriterionFields:
+                  jsonResponse = processGetPresentationCriterionFields(jsonRoot);
+                  break;
+
+                case getPresentationCriterionFieldIDs:
+                  jsonResponse = processGetPresentationCriterionFieldIDs(jsonRoot);
+                  break;
+
+                case getPresentationCriterionField:
+                  jsonResponse = processGetPresentationCriterionField(jsonRoot);
+                  break;
+
                 case getOfferTypes:
                   jsonResponse = processGetOfferTypes(jsonRoot);
+                  break;
+
+                case getOfferCategories:
+                  jsonResponse = processGetOfferCategories(jsonRoot);
                   break;
 
                 case getProductTypes:
                   jsonResponse = processGetProductTypes(jsonRoot);
                   break;
 
+                case getRewardTypes:
+                  jsonResponse = processGetRewardTypes(jsonRoot);
+                  break;
+
+                case getOfferOptimizationAlgorithms:
+                  jsonResponse = processGetOfferOptimizationAlgorithms(jsonRoot);
+                  break;
+
                 case getJourneyList:
-                  jsonResponse = processGetJourneyList(jsonRoot);
+                  jsonResponse = processGetJourneyList(jsonRoot, true);
+                  break;
+
+                case getJourneySummaryList:
+                  jsonResponse = processGetJourneyList(jsonRoot, false);
+                  break;
+
+                case getJourney:
+                  jsonResponse = processGetJourney(jsonRoot);
                   break;
 
                 case putJourney:
@@ -423,8 +521,16 @@ public class GUIManager
                   break;
 
                 case getSegmentationRuleList:
-                  jsonResponse = processGetSegmentationRuleList(jsonRoot);
+                  jsonResponse = processGetSegmentationRuleList(jsonRoot, true);
                   break;
+
+                case getSegmentationRuleSummaryList:
+                  jsonResponse = processGetSegmentationRuleList(jsonRoot, false);
+                  break;
+
+                case getSegmentationRule:
+                    jsonResponse = processGetSegmentationRule(jsonRoot);
+                    break;
 
                 case putSegmentationRule:
                     jsonResponse = processPutSegmentationRule(jsonRoot);
@@ -435,7 +541,15 @@ public class GUIManager
                     break;
                 
                 case getOfferList:
-                  jsonResponse = processGetOfferList(jsonRoot);
+                  jsonResponse = processGetOfferList(jsonRoot, true);
+                  break;
+
+                case getOfferSummaryList:
+                  jsonResponse = processGetOfferList(jsonRoot, false);
+                  break;
+
+                case getOffer:
+                  jsonResponse = processGetOffer(jsonRoot);
                   break;
 
                 case putOffer:
@@ -444,6 +558,50 @@ public class GUIManager
 
                 case removeOffer:
                   jsonResponse = processRemoveOffer(jsonRoot);
+                  break;
+
+                case getPresentationStrategyList:
+                  jsonResponse = processGetPresentationStrategyList(jsonRoot, true);
+                  break;
+
+                case getPresentationStrategySummaryList:
+                  jsonResponse = processGetPresentationStrategyList(jsonRoot, false);
+                  break;
+
+                case getPresentationStrategy:
+                  jsonResponse = processGetPresentationStrategy(jsonRoot);
+                  break;
+
+                case putPresentationStrategy:
+                  jsonResponse = processPutPresentationStrategy(jsonRoot);
+                  break;
+
+                case removePresentationStrategy:
+                  jsonResponse = processRemovePresentationStrategy(jsonRoot);
+                  break;
+
+                case getScoringStrategyList:
+                  jsonResponse = processGetScoringStrategyList(jsonRoot, true);
+                  break;
+
+                case getScoringStrategySummaryList:
+                  jsonResponse = processGetScoringStrategyList(jsonRoot, false);
+                  break;
+
+                case getScoringStrategy:
+                  jsonResponse = processGetScoringStrategy(jsonRoot);
+                  break;
+
+                case putScoringStrategy:
+                  jsonResponse = processPutScoringStrategy(jsonRoot);
+                  break;
+
+                case removeScoringStrategy:
+                  jsonResponse = processRemoveScoringStrategy(jsonRoot);
+                  break;
+
+                case getDashboardCounts:
+                  jsonResponse = processGetDashboardCounts(jsonRoot);
                   break;
               }
           }
@@ -582,6 +740,32 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve presentationChannels
+    *
+    *****************************************/
+
+    List<JSONObject> presentationChannels = new ArrayList<JSONObject>();
+    for (PresentationChannel presentationChannel : Deployment.getPresentationChannels().values())
+      {
+        JSONObject presentationChannelJSON = presentationChannel.getJSONRepresentation();
+        presentationChannels.add(presentationChannelJSON);
+      }
+
+    /*****************************************
+    *
+    *  retrieve callingChannels
+    *
+    *****************************************/
+
+    List<JSONObject> callingChannels = new ArrayList<JSONObject>();
+    for (CallingChannel callingChannel : Deployment.getCallingChannels().values())
+      {
+        JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
+        callingChannels.add(callingChannelJSON);
+      }
+
+    /*****************************************
+    *
     *  retrieve salesChannels
     *
     *****************************************/
@@ -616,6 +800,14 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve presentation criterion fields
+    *
+    *****************************************/
+
+    List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+    
+    /*****************************************
+    *
     *  retrieve offerTypes
     *
     *****************************************/
@@ -625,6 +817,19 @@ public class GUIManager
       {
         JSONObject offerTypeJSON = offerType.getJSONRepresentation();
         offerTypes.add(offerTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  retrieve offerCategories
+    *
+    *****************************************/
+
+    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
+    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
+      {
+        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
+        offerCategories.add(offerCategoryJSON);
       }
 
     /*****************************************
@@ -642,6 +847,32 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve rewardTypes
+    *
+    *****************************************/
+
+    List<JSONObject> rewardTypes = new ArrayList<JSONObject>();
+    for (RewardType rewardType : Deployment.getRewardTypes().values())
+      {
+        JSONObject rewardTypeJSON = rewardType.getJSONRepresentation();
+        rewardTypes.add(rewardTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  retrieve offerOptimizationAlgorithms
+    *
+    *****************************************/
+
+    List<JSONObject> offerOptimizationAlgorithms = new ArrayList<JSONObject>();
+    for (OfferOptimizationAlgorithm offerOptimizationAlgorithm : Deployment.getOfferOptimizationAlgorithms().values())
+      {
+        JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
+        offerOptimizationAlgorithms.add(offerOptimizationAlgorithmJSON);
+      }
+
+    /*****************************************
+    *
     *  response
     *
     *****************************************/
@@ -650,11 +881,17 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
+    response.put("presentationChannels", JSONUtilities.encodeArray(presentationChannels));
+    response.put("callingChannels", JSONUtilities.encodeArray(callingChannels));
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
+    response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
+    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     response.put("productTypes", JSONUtilities.encodeArray(productTypes));
+    response.put("rewardTypes", JSONUtilities.encodeArray(rewardTypes));
+    response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -754,6 +991,72 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("supportedTimeUnits", JSONUtilities.encodeArray(supportedTimeUnits));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getPresentationChannels
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationChannels(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve presentationChannels
+    *
+    *****************************************/
+
+    List<JSONObject> presentationChannels = new ArrayList<JSONObject>();
+    for (PresentationChannel presentationChannel : Deployment.getPresentationChannels().values())
+      {
+        JSONObject presentationChannelJSON = presentationChannel.getJSONRepresentation();
+        presentationChannels.add(presentationChannelJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("presentationChannels", JSONUtilities.encodeArray(presentationChannels));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getCallingChannels
+  *
+  *****************************************/
+
+  private JSONObject processGetCallingChannels(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve callingChannels
+    *
+    *****************************************/
+
+    List<JSONObject> callingChannels = new ArrayList<JSONObject>();
+    for (CallingChannel callingChannel : Deployment.getCallingChannels().values())
+      {
+        JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
+        callingChannels.add(callingChannelJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("callingChannels", JSONUtilities.encodeArray(callingChannels));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -967,6 +1270,148 @@ public class GUIManager
 
   /*****************************************
   *
+  *  getPresentationCriterionFields
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationCriterionFields(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve presentation criterion fields
+    *
+    *****************************************/
+
+    List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetPresentationCriterionFieldIDs
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationCriterionFieldIDs(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve presentation criterion fields
+    *
+    *****************************************/
+
+    List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+
+    /*****************************************
+    *
+    *  strip out everything but id/display
+    *
+    *****************************************/
+
+    List<JSONObject> presentationCriterionFieldIDs = new ArrayList<JSONObject>();
+    for (JSONObject presentationCriterionField : presentationCriterionFields)
+      {
+        HashMap<String,Object> presentationCriterionFieldID = new HashMap<String,Object>();
+        presentationCriterionFieldID.put("id", presentationCriterionField.get("id"));
+        presentationCriterionFieldID.put("display", presentationCriterionField.get("display"));
+        presentationCriterionFieldIDs.add(JSONUtilities.encodeObject(presentationCriterionFieldID));
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("presentationCriterionFieldIDs", JSONUtilities.encodeArray(presentationCriterionFieldIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getPresentationCriterionField
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationCriterionField(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve field id (setting it to null if blank)
+    *
+    *****************************************/
+
+    String id = JSONUtilities.decodeString(jsonRoot, "id", true);
+    id = (id != null && id.trim().length() == 0) ? null : id;
+
+    /*****************************************
+    *
+    *  retrieve field with id
+    *
+    *****************************************/
+
+    JSONObject requestedPresentationCriterionField = null;
+    if (id != null)
+      {
+        //
+        //  retrieve presentation criterion fields
+        //
+
+        List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+
+        //
+        //  find requested field
+        //
+
+        for (JSONObject presentationCriterionField : presentationCriterionFields)
+          {
+            if (Objects.equals(id, presentationCriterionField.get("id")))
+              {
+                requestedPresentationCriterionField = presentationCriterionField;
+                break;
+              }
+          }
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    if (requestedPresentationCriterionField != null)
+      {
+        response.put("responseCode", "ok");
+        response.put("presentationCriterionField", requestedPresentationCriterionField);
+      }
+    else if (id == null)
+      {
+        response.put("responseCode", "invalidRequest");
+        response.put("responseMessage", "id argument not provided");
+      }
+    else
+      {
+        response.put("responseCode", "fieldNotFound");
+        response.put("responseMessage", "could not find presentation criterion field with id " + id);
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  getOfferTypes
   *
   *****************************************/
@@ -995,6 +1440,39 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getOfferCategories
+  *
+  *****************************************/
+
+  private JSONObject processGetOfferCategories(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve offerCategories
+    *
+    *****************************************/
+
+    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
+    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
+      {
+        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
+        offerCategories.add(offerCategoryJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -1031,6 +1509,72 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+  *
+  *  getRewardTypes
+  *
+  *****************************************/
+
+  private JSONObject processGetRewardTypes(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve rewardTypes
+    *
+    *****************************************/
+
+    List<JSONObject> rewardTypes = new ArrayList<JSONObject>();
+    for (RewardType rewardType : Deployment.getRewardTypes().values())
+      {
+        JSONObject rewardTypeJSON = rewardType.getJSONRepresentation();
+        rewardTypes.add(rewardTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("rewardTypes", JSONUtilities.encodeArray(rewardTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getOfferOptimizationAlgorithms
+  *
+  *****************************************/
+
+  private JSONObject processGetOfferOptimizationAlgorithms(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve offerOptimizationAlgorithms
+    *
+    *****************************************/
+
+    List<JSONObject> offerOptimizationAlgorithms = new ArrayList<JSONObject>();
+    for (OfferOptimizationAlgorithm offerOptimizationAlgorithm : Deployment.getOfferOptimizationAlgorithms().values())
+      {
+        JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
+        offerOptimizationAlgorithms.add(offerOptimizationAlgorithmJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processCriterionFields
@@ -1437,7 +1981,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyList(JSONObject jsonRoot)
+  private JSONObject processGetJourneyList(JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -1449,7 +1993,7 @@ public class GUIManager
     List<JSONObject> journeys = new ArrayList<JSONObject>();
     for (GUIManagedObject journey : journeyService.getStoredJourneys())
       {
-        JSONObject journeyJSON = journey.getJSONRepresentation();
+        JSONObject journeyJSON = fullDetails ? journey.getJSONRepresentation() : journey.getSummaryJSONRepresentation();
         journeyJSON.put("accepted", journey.getAccepted());
         journeyJSON.put("processing", journeyService.isActiveJourney(journey, now));
         journeys.add(journeyJSON);
@@ -1467,6 +2011,57 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
                  
+  /*****************************************
+  *
+  *  processGetJourney
+  *
+  *****************************************/
+
+  private JSONObject processGetJourney(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate journey
+    *
+    *****************************************/
+
+    GUIManagedObject uncheckedJourney = journeyService.getStoredJourney(journeyID);
+    JSONObject journeyJSON = (uncheckedJourney != null) ? uncheckedJourney.getJSONRepresentation() : null;
+    if (journeyJSON != null && uncheckedJourney instanceof Journey)
+      {
+        Date now = SystemTime.getCurrentTime();
+        Journey journey = (Journey) uncheckedJourney;
+        journeyJSON.put("accepted", journey.getAccepted());
+        journeyJSON.put("processing", journeyService.isActiveJourney(journey, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (uncheckedJourney != null) ? "ok" : "journeyNotFound");
+    if (uncheckedJourney != null) response.put("journey", journeyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processPutJourney
@@ -1489,11 +2084,11 @@ public class GUIManager
     *
     *****************************************/
     
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", false);
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (journeyID == null)
       {
         journeyID = journeyService.generateJourneyID();
-        jsonRoot.put("journeyID", journeyID);
+        jsonRoot.put("id", journeyID);
       }
     
     /*****************************************
@@ -1536,7 +2131,7 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("journeyID", journey.getJourneyID());
+        response.put("id", journey.getJourneyID());
         response.put("accepted", journey.getAccepted());
         response.put("processing", journeyService.isActiveJourney(journey, now));
         response.put("responseCode", "ok");
@@ -1606,7 +2201,7 @@ public class GUIManager
     *
     ****************************************/
     
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
@@ -1632,7 +2227,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationRuleList(JSONObject jsonRoot)
+  private JSONObject processGetSegmentationRuleList(JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -1644,7 +2239,7 @@ public class GUIManager
     List<JSONObject> segmentationRules = new ArrayList<JSONObject>();
     for (GUIManagedObject segmentationRule : segmentationRuleService.getStoredSegmentationRules())
       {
-        JSONObject segmentationRuleJSON = segmentationRule.getJSONRepresentation();
+        JSONObject segmentationRuleJSON = fullDetails ? segmentationRule.getJSONRepresentation() : segmentationRule.getSummaryJSONRepresentation();
         segmentationRuleJSON.put("accepted", segmentationRule.getAccepted());
         segmentationRuleJSON.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
         segmentationRules.add(segmentationRuleJSON);
@@ -1662,6 +2257,57 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
                  
+  /*****************************************
+  *
+  *  processGetSegmentationRule
+  *
+  *****************************************/
+
+  private JSONObject processGetSegmentationRule(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate segmentationRule
+    *
+    *****************************************/
+
+    GUIManagedObject uncheckedSegmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
+    JSONObject segmentationRuleJSON = (uncheckedSegmentationRule != null) ? uncheckedSegmentationRule.getJSONRepresentation() : null;
+    if (segmentationRuleJSON != null && uncheckedSegmentationRule instanceof SegmentationRule)
+      {
+        Date now = SystemTime.getCurrentTime();
+        SegmentationRule segmentationRule = (SegmentationRule) uncheckedSegmentationRule;
+        segmentationRuleJSON.put("accepted", segmentationRule.getAccepted());
+        segmentationRuleJSON.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (uncheckedSegmentationRule != null) ? "ok" : "segmentationRuleNotFound");
+    if (uncheckedSegmentationRule != null) response.put("segmentationRule", segmentationRuleJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processPutSegmentationRule
@@ -1684,11 +2330,11 @@ public class GUIManager
     *
     *****************************************/
     
-    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "segmentationRuleID", false);
+    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (segmentationRuleID == null)
       {
     	segmentationRuleID = segmentationRuleService.generateSegmentationRuleID();
-        jsonRoot.put("segmentationRuleID", segmentationRuleID);
+        jsonRoot.put("id", segmentationRuleID);
       }
     
     /*****************************************
@@ -1731,7 +2377,7 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("segmentationRuleID", segmentationRule.getSegmentationRuleID());
+        response.put("id", segmentationRule.getSegmentationRuleID());
         response.put("accepted", segmentationRule.getAccepted());
         response.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
         response.put("responseCode", "ok");
@@ -1801,7 +2447,7 @@ public class GUIManager
     *
     ****************************************/
     
-    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "segmentationRuleID", true);
+    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
@@ -1827,7 +2473,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferList(JSONObject jsonRoot)
+  private JSONObject processGetOfferList(JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -1839,7 +2485,7 @@ public class GUIManager
     List<JSONObject> offers = new ArrayList<JSONObject>();
     for (GUIManagedObject offer : offerService.getStoredOffers())
       {
-        JSONObject offerJSON = offer.getJSONRepresentation();
+        JSONObject offerJSON = fullDetails ? offer.getJSONRepresentation() : offer.getSummaryJSONRepresentation();
         offerJSON.put("accepted", offer.getAccepted());
         offerJSON.put("processing", offerService.isActiveOffer(offer, now));
         offers.add(offerJSON);
@@ -1857,6 +2503,57 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
                  
+  /*****************************************
+  *
+  *  processGetOffer
+  *
+  *****************************************/
+
+  private JSONObject processGetOffer(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate offer
+    *
+    *****************************************/
+
+    GUIManagedObject uncheckedOffer = offerService.getStoredOffer(offerID);
+    JSONObject offerJSON = (uncheckedOffer != null) ? uncheckedOffer.getJSONRepresentation() : null;
+    if (offerJSON != null && uncheckedOffer instanceof Offer)
+      {
+        Date now = SystemTime.getCurrentTime();
+        Offer offer = (Offer) uncheckedOffer;
+        offerJSON.put("accepted", offer.getAccepted());
+        offerJSON.put("processing", offerService.isActiveOffer(offer, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (uncheckedOffer != null) ? "ok" : "offerNotFound");
+    if (uncheckedOffer != null) response.put("offer", offerJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processPutOffer
@@ -1879,11 +2576,11 @@ public class GUIManager
     *
     *****************************************/
     
-    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (offerID == null)
       {
         offerID = offerService.generateOfferID();
-        jsonRoot.put("offerID", offerID);
+        jsonRoot.put("id", offerID);
       }
     
     /*****************************************
@@ -1926,7 +2623,7 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("offerID", offer.getOfferID());
+        response.put("id", offer.getOfferID());
         response.put("accepted", offer.getAccepted());
         response.put("processing", offerService.isActiveOffer(offer, now));
         response.put("responseCode", "ok");
@@ -1958,7 +2655,7 @@ public class GUIManager
         //  response
         //
 
-        response.put("offerID", incompleteObject.getGUIManagedObjectID());
+        response.put("id", incompleteObject.getGUIManagedObjectID());
         response.put("responseCode", "offerNotValid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
@@ -1988,7 +2685,7 @@ public class GUIManager
     *
     ****************************************/
     
-    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
@@ -2005,6 +2702,586 @@ public class GUIManager
     *****************************************/
 
     response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPresentationStrategyList
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationStrategyList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert presentationStrategies
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> presentationStrategies = new ArrayList<JSONObject>();
+    for (GUIManagedObject presentationStrategy : presentationStrategyService.getStoredPresentationStrategies())
+      {
+        JSONObject presentationStrategyJSON = fullDetails ? presentationStrategy.getJSONRepresentation() : presentationStrategy.getSummaryJSONRepresentation();
+        presentationStrategyJSON.put("accepted", presentationStrategy.getAccepted());
+        presentationStrategyJSON.put("processing", presentationStrategyService.isActivePresentationStrategy(presentationStrategy, now));
+        presentationStrategies.add(presentationStrategyJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("presentationStrategies", JSONUtilities.encodeArray(presentationStrategies));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetPresentationStrategy
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate presentation strategy
+    *
+    *****************************************/
+
+    GUIManagedObject uncheckedPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+    JSONObject presentationStrategyJSON = (uncheckedPresentationStrategy != null) ? uncheckedPresentationStrategy.getJSONRepresentation() : null;
+    if (presentationStrategyJSON != null && uncheckedPresentationStrategy instanceof PresentationStrategy)
+      {
+        Date now = SystemTime.getCurrentTime();
+        PresentationStrategy presentationStrategy = (PresentationStrategy) uncheckedPresentationStrategy;
+        presentationStrategyJSON.put("accepted", presentationStrategy.getAccepted());
+        presentationStrategyJSON.put("processing", presentationStrategyService.isActivePresentationStrategy(presentationStrategy, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (uncheckedPresentationStrategy != null) ? "ok" : "presentationStrategyNotFound");
+    if (uncheckedPresentationStrategy != null) response.put("presentationStrategy", presentationStrategyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPresentationStrategy
+  *
+  *****************************************/
+
+  private JSONObject processPutPresentationStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  presentationStrategyID
+    *
+    *****************************************/
+    
+    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (presentationStrategyID == null)
+      {
+        presentationStrategyID = presentationStrategyService.generatePresentationStrategyID();
+        jsonRoot.put("id", presentationStrategyID);
+      }
+    
+    /*****************************************
+    *
+    *  process presentationStrategy
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing presentationStrategy
+        *
+        *****************************************/
+
+        GUIManagedObject existingPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+
+        /****************************************
+        *
+        *  instantiate presentationStrategy
+        *
+        ****************************************/
+
+        PresentationStrategy presentationStrategy = new PresentationStrategy(jsonRoot, epoch, existingPresentationStrategy);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", presentationStrategy.getPresentationStrategyID());
+        response.put("accepted", presentationStrategy.getAccepted());
+        response.put("processing", presentationStrategyService.isActivePresentationStrategy(presentationStrategy, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        presentationStrategyService.putIncompletePresentationStrategy(incompleteObject);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "presentationStrategyNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemovePresentationStrategy
+  *
+  *****************************************/
+
+  private JSONObject processRemovePresentationStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    presentationStrategyService.removePresentationStrategy(presentationStrategyID);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetScoringStrategyList
+  *
+  *****************************************/
+
+  private JSONObject processGetScoringStrategyList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert scoringStrategies
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> scoringStrategies = new ArrayList<JSONObject>();
+    for (GUIManagedObject scoringStrategy : scoringStrategyService.getStoredScoringStrategies())
+      {
+        JSONObject scoringStrategyJSON = fullDetails ?  scoringStrategy.getJSONRepresentation() : scoringStrategy.getSummaryJSONRepresentation();
+        scoringStrategyJSON.put("accepted", scoringStrategy.getAccepted());
+        scoringStrategyJSON.put("processing", scoringStrategyService.isActiveScoringStrategy(scoringStrategy, now));
+        scoringStrategies.add(scoringStrategyJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("scoringStrategies", JSONUtilities.encodeArray(scoringStrategies));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetScoringStrategy
+  *
+  *****************************************/
+
+  private JSONObject processGetScoringStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject uncheckedScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+    JSONObject scoringStrategyJSON = (uncheckedScoringStrategy != null) ? uncheckedScoringStrategy.getJSONRepresentation() : null;
+    if (scoringStrategyJSON != null && uncheckedScoringStrategy instanceof ScoringStrategy)
+      {
+        Date now = SystemTime.getCurrentTime();
+        ScoringStrategy scoringStrategy = (ScoringStrategy) uncheckedScoringStrategy;
+        scoringStrategyJSON.put("accepted", scoringStrategy.getAccepted());
+        scoringStrategyJSON.put("processing", scoringStrategyService.isActiveScoringStrategy(scoringStrategy, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (uncheckedScoringStrategy != null) ? "ok" : "scoringStrategyNotFound");
+    if (uncheckedScoringStrategy != null) response.put("scoringStrategy", scoringStrategyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutScoringStrategy
+  *
+  *****************************************/
+
+  private JSONObject processPutScoringStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  scoringStrategyID
+    *
+    *****************************************/
+    
+    String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (scoringStrategyID == null)
+      {
+        scoringStrategyID = scoringStrategyService.generateScoringStrategyID();
+        jsonRoot.put("id", scoringStrategyID);
+      }
+    
+    /*****************************************
+    *
+    *  process scoringStrategy
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing scoringStrategy
+        *
+        *****************************************/
+
+        GUIManagedObject existingScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+
+        /****************************************
+        *
+        *  instantiate scoringStrategy
+        *
+        ****************************************/
+
+        ScoringStrategy scoringStrategy = new ScoringStrategy(jsonRoot, epoch, existingScoringStrategy);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        scoringStrategyService.putScoringStrategy(scoringStrategy);
+
+        /*****************************************
+        *
+        *  revalidatePresentationStrategies
+        *
+        *****************************************/
+
+        revalidatePresentationStrategies(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", scoringStrategy.getScoringStrategyID());
+        response.put("accepted", scoringStrategy.getAccepted());
+        response.put("processing", scoringStrategyService.isActiveScoringStrategy(scoringStrategy, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        scoringStrategyService.putScoringStrategy(incompleteObject);
+
+        //
+        //  revalidatePresentationStrategies
+        //
+
+        revalidatePresentationStrategies(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "scoringStrategyNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveScoringStrategy
+  *
+  *****************************************/
+
+  private JSONObject processRemoveScoringStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    scoringStrategyService.removeScoringStrategy(scoringStrategyID);
+
+    /*****************************************
+    *
+    *  revalidatePresentationStrategies
+    *
+    *****************************************/
+
+    revalidatePresentationStrategies(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  revalidatePresentationStrategies
+  *
+  *****************************************/
+
+  private void revalidatePresentationStrategies(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedPresentationStrategies = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingPresentationStrategy : presentationStrategyService.getStoredPresentationStrategies())
+      {
+        //
+        //  modifiedPresentationStrategy
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedPresentationStrategy;
+        try
+          {
+            PresentationStrategy presentationStrategy = new PresentationStrategy(existingPresentationStrategy.getJSONRepresentation(), epoch, existingPresentationStrategy);
+            presentationStrategy.validateScoringStrategies(scoringStrategyService, date);
+            modifiedPresentationStrategy = presentationStrategy;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedPresentationStrategy = new IncompleteObject(existingPresentationStrategy.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingPresentationStrategy.getAccepted() != modifiedPresentationStrategy.getAccepted())
+          {
+            modifiedPresentationStrategies.add(modifiedPresentationStrategy);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
+      {
+        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processGetDashboardCounts
+  *
+  *****************************************/
+
+  private JSONObject processGetDashboardCounts(JSONObject jsonRoot)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("journeyCount", journeyService.getStoredJourneys().size());
+    response.put("segmentationRuleCount", segmentationRuleService.getStoredSegmentationRules().size());
+    response.put("offerCount", offerService.getStoredOffers().size());
+    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
+    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
     return JSONUtilities.encodeObject(response);
   }
 
