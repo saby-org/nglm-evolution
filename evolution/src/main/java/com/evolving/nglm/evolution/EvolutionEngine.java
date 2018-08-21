@@ -14,12 +14,17 @@ import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Predicate;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.processor.StateStoreSupplier;
 import org.apache.kafka.streams.processor.TimestampExtractor;
+import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -279,13 +284,12 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationID);
     streamsProperties.put(StreamsConfig.STATE_DIR_CONFIG, stateDirectory);
     streamsProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    streamsProperties.put(StreamsConfig.TIMESTAMP_EXTRACTOR_CLASS_CONFIG, EvolutionEventTimestampExtractor.class.getName());
+    streamsProperties.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, EvolutionEventTimestampExtractor.class.getName());
     streamsProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, Integer.toString(numberOfStreamThreads));
     streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, Integer.toString(kafkaReplicationFactor));
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, Sensor.RecordingLevel.DEBUG.toString());
     streamsProperties.put("producer.batch.size", Integer.toString(100000));
-    StreamsConfig streamsConfig = new StreamsConfig(streamsProperties);
 
     /*****************************************
     *
@@ -293,7 +297,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KStreamBuilder builder = new KStreamBuilder();
+    StreamsBuilder builder = new StreamsBuilder();
     
     /*****************************************
     *
@@ -363,14 +367,9 @@ public class EvolutionEngine
     *
     ****************************************/
     
-    List<String> sourceNodes = new ArrayList<String>();
-    sourceNodes.add(recordAlternateIDTopic);
-    sourceNodes.add(subscriberGroupTopic);
-    sourceNodes.add(subscriberTraceControlTopic);
-    sourceNodes.add(subscriberStateChangeLogTopic);
-    sourceNodes.addAll(evolutionEngineEventTopics.values());
-    sourceNodes.addAll(fulfillmentManagerResponseTopics.values());
-    builder.copartitionSources(sourceNodes);
+    //
+    //  no longer needed in streams 2.0
+    //
     
     /*****************************************
     *
@@ -382,9 +381,9 @@ public class EvolutionEngine
     //  core streams
     //
 
-    KStream<StringKey, RecordAlternateID> recordAlternateIDSourceStream = builder.stream(stringKeySerde, recordAlternateIDSerde, recordAlternateIDTopic);
-    KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(stringKeySerde, subscriberGroupSerde, subscriberGroupTopic);
-    KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(stringKeySerde, subscriberTraceControlSerde, subscriberTraceControlTopic);
+    KStream<StringKey, RecordAlternateID> recordAlternateIDSourceStream = builder.stream(recordAlternateIDTopic, Consumed.with(stringKeySerde, recordAlternateIDSerde));
+    KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
+    KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     
     //
     //  filter (if necessary)
@@ -399,7 +398,7 @@ public class EvolutionEngine
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEngineEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
       {
-        evolutionEngineEventStreams.add(builder.stream(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration), evolutionEngineEventTopics.get(evolutionEngineEventDeclaration)));
+        evolutionEngineEventStreams.add(builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration))));
       }
 
     //
@@ -409,7 +408,7 @@ public class EvolutionEngine
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> fulfillmentManagerResponseStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     for (DeliveryManagerDeclaration fulfillmentManagerDeclaration : Deployment.getFulfillmentManagers().values())
       {
-        fulfillmentManagerResponseStreams.add(builder.stream(stringKeySerde, fulfillmentManagerResponseSerdes.get(fulfillmentManagerDeclaration), fulfillmentManagerResponseTopics.get(fulfillmentManagerDeclaration)));
+        fulfillmentManagerResponseStreams.add(builder.stream(fulfillmentManagerResponseTopics.get(fulfillmentManagerDeclaration), Consumed.with(stringKeySerde, fulfillmentManagerResponseSerdes.get(fulfillmentManagerDeclaration))));
       }
 
     //
@@ -422,7 +421,12 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
     evolutionEventStreams.addAll(fulfillmentManagerResponseStreams);
-    KStream<StringKey, SubscriberStreamEvent> evolutionEventStream = builder.merge(evolutionEventStreams.toArray(new KStream[0]));
+    KStream compositeStream = null;
+    for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : evolutionEventStreams)
+      {
+        compositeStream = (compositeStream == null) ? eventStream : compositeStream.merge(eventStream);
+      }
+    KStream<StringKey, SubscriberStreamEvent> evolutionEventStream = (KStream<StringKey, SubscriberStreamEvent>) compositeStream;
     
     /*****************************************
     *
@@ -430,8 +434,9 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    StateStoreSupplier subscriberStateStore = Stores.create(subscriberStateChangeLog).withKeys(stringKeySerde).withValues(subscriberStateSerde.optionalSerde()).persistent().build();
-    KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(stringKeySerde, evolutionEventSerde).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStore);
+    KeyValueBytesStoreSupplier supplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
+    Materialized subscriberStateStore = Materialized.<StringKey, SubscriberState>as(supplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde.optionalSerde());
+    KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStore);
 
     /*****************************************
     *
@@ -507,9 +512,9 @@ public class EvolutionEngine
     //  sink - core streams
     //
 
-    subscriberUpdateStream.to(stringKeySerde, (Serde<SubscriberProfile>) subscriberProfileSerde, subscriberUpdateTopic);
-    journeyStatisticStream.to(stringKeySerde, journeyStatisticSerde, journeyStatisticTopic);
-    subscriberTraceStream.to(stringKeySerde, subscriberTraceSerde, subscriberTraceTopic);
+    subscriberUpdateStream.to(subscriberUpdateTopic, Produced.with(stringKeySerde, (Serde<SubscriberProfile>) subscriberProfileSerde));
+    journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
+    subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     
     //
     //  sink - fulfillment request streams
@@ -521,7 +526,7 @@ public class EvolutionEngine
         String requestTopic = fulfillmentManager.getRequestTopic();
         ConnectSerde<FulfillmentRequest> requestSerde = (ConnectSerde<FulfillmentRequest>) fulfillmentManager.getRequestSerde();
         KStream<StringKey, FulfillmentRequest> requestStream = fulfillmentRequestStreams.get(fulfillmentType);
-        requestStream.to(stringKeySerde, requestSerde, requestTopic);
+        requestStream.to(requestTopic, Produced.with(stringKeySerde, requestSerde));
       }
 
     /*****************************************
@@ -530,7 +535,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KafkaStreams streams = new KafkaStreams(builder, streamsConfig, new NGLMKafkaClientSupplier());
+    KafkaStreams streams = new KafkaStreams(builder.build(), streamsProperties, new NGLMKafkaClientSupplier());
 
     /*****************************************
     *

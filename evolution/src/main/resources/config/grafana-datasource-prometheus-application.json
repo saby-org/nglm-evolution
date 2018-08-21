@@ -1,7 +1,0 @@
-{
-  "name" : "prometheus-application",
-  "type" : "prometheus",
-  "url" : "http://<_MONITORING_HOST_>:<_PROMETHEUS_APPLICATION_PORT_>",
-  "access" : "proxy",
-  "basicAuth" : false
-}

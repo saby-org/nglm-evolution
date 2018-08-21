@@ -15,7 +15,7 @@ guimanager:
     GUIMANAGER_PORT: <_GUIMANAGER_PORT_>
     TRACE_LEVEL: <_TRACE_LEVEL_>
     KAFKA_HEAP_OPTS: <_GUIMANAGER_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-0.7.jar=<_GUIMANAGER_MONITORING_PORT_>:/app/config/guimanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dnglm.license.nodeid=<_GUIMANAGER_HOST_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_GUIMANAGER_MONITORING_PORT_>:/app/config/guimanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dnglm.license.nodeid=<_GUIMANAGER_HOST_>
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
