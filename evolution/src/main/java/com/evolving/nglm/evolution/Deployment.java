@@ -49,8 +49,6 @@ public class Deployment
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
   private static String subscriberGroupEpochTopic;
-  private static String subscriberTraceControlTopic;
-  private static String subscriberTraceTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
   private static String journeyStatisticTopic;
@@ -92,6 +90,11 @@ public class Deployment
   public static String getRedisSentinels() { return com.evolving.nglm.core.Deployment.getRedisSentinels(); }
   public static String getRecordAlternateIDTopic() { return com.evolving.nglm.core.Deployment.getRecordAlternateIDTopic(); }
   public static String getExternalSubscriberID() { return com.evolving.nglm.core.Deployment.getExternalSubscriberID(); }
+  public static String getSubscriberTraceControlAlternateID() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAlternateID(); }
+  public static boolean getSubscriberTraceControlAutoProvision() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAutoProvision(); }
+  public static String getSubscriberTraceControlTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlTopic(); }
+  public static String getSubscriberTraceControlAssignSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAssignSubscriberIDTopic(); }
+  public static String getSubscriberTraceTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceTopic(); }
   
   //
   //  deployment accessors
@@ -112,8 +115,6 @@ public class Deployment
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
-  public static String getSubscriberTraceControlTopic() { return subscriberTraceControlTopic; }
-  public static String getSubscriberTraceTopic() { return subscriberTraceTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
@@ -431,32 +432,6 @@ public class Deployment
     try
       {
         subscriberGroupEpochTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupEpochTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberTraceControlTopic
-    //
-
-    try
-      {
-        subscriberTraceControlTopic = JSONUtilities.decodeString(jsonRoot, "subscriberTraceControlTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberTraceTopic
-    //
-
-    try
-      {
-        subscriberTraceTopic = JSONUtilities.decodeString(jsonRoot, "subscriberTraceTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
