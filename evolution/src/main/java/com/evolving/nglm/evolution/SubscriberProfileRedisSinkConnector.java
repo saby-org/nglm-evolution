@@ -46,6 +46,18 @@ public class SubscriberProfileRedisSinkConnector extends SimpleRedisSinkConnecto
   
   public static class SubscriberProfileRedisSinkTask extends SimpleRedisSinkTask
   {
+    /*****************************************
+    *
+    *  start
+    *
+    *****************************************/
+
+    @Override public void start(java.util.Map<String, String> taskConfig)
+    {
+      super.start(taskConfig);
+      SubscriberState.forceClassLoad();
+    }
+
     /****************************************
     *
     *  getCacheEntries

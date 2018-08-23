@@ -52,6 +52,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     {
       super();
       this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", sinkTaskKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+      SubscriberState.forceClassLoad();
     }
 
     /*****************************************

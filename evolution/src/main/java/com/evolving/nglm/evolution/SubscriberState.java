@@ -45,6 +45,14 @@ public class SubscriberState implements SubscriberStreamOutput
 {
   /*****************************************
   *
+  *  static
+  *
+  *****************************************/
+  
+  public static void forceClassLoad() {}
+  
+  /*****************************************
+  *
   *  schema
   *
   *****************************************/
