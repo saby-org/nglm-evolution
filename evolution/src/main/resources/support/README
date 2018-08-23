@@ -18,7 +18,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http:
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedLanguages; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedCurrencies; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationChannels; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationChannelProperties; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannels; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannels; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes; echo
@@ -64,6 +64,12 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/p
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationStrategy; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePresentationStrategy; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationChannelList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationChannelSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/presentation-channel.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putPresentationChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationChannel; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removePresentationChannel; echo
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDashboardCounts; echo
 
 --
@@ -99,5 +105,6 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.OfferService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.ScoringStrategyService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.PresentationStrategyService
+java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.PresentationChannelService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> com.evolving.nglm.evolution.SubscriberProfileService 001
 

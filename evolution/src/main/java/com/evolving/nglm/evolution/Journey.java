@@ -169,6 +169,25 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override JSONObject getSummaryJSONRepresentation()
+  {
+    JSONObject jsonRepresentation = new JSONObject();
+    jsonRepresentation.putAll(getJSONRepresentation());
+    jsonRepresentation.remove("journeyMetrics");
+    jsonRepresentation.remove("journeyParameters");
+    jsonRepresentation.remove("autoTargeted");
+    jsonRepresentation.remove("targetConditions");
+    jsonRepresentation.remove("nodes");
+    jsonRepresentation.remove("links");
+    return jsonRepresentation;
+  }
+
+  /*****************************************
+  *
   *  constructor -- unpack
   *
   *****************************************/

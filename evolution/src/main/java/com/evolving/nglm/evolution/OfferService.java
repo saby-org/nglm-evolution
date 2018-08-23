@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -116,7 +119,38 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(GUIManagedObject offer) { putGUIManagedObject(offer, SystemTime.getCurrentTime()); }
+  public void putOffer(Offer offer, PresentationChannelService presentationChannelService) throws GUIManagerException
+  {
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  validate scoring strategies
+    //
+
+    offer.validatePresentationChannels(presentationChannelService, now);
+
+    //
+    //  put
+    //
+
+
+    putGUIManagedObject(offer, now);
+  }
+
+  /*****************************************
+  *
+  *  putIncompleteOffer
+  *
+  *****************************************/
+
+  public void putIncompleteOffer(IncompleteObject offer)
+  {
+    putGUIManagedObject(offer, SystemTime.getCurrentTime());
+  }
 
   /*****************************************
   *

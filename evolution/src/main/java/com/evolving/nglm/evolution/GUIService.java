@@ -13,6 +13,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
 import com.rii.utilities.SystemTime;
+import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -653,10 +654,18 @@ public class GUIService
 
   /*****************************************
   *
-  *  statistics
+  *  generateResponseJSON
   *
   *****************************************/
 
+  JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
+  {
+    JSONObject responseJSON = new JSONObject();
+    responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : guiManagedObject.getSummaryJSONRepresentation());
+    responseJSON.put("accepted", guiManagedObject.getAccepted());
+    responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
+    return responseJSON;
+  }
 
   /****************************************************************************
   *

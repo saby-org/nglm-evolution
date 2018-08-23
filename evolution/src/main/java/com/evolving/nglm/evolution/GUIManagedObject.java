@@ -104,6 +104,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());
+    guiManagedObjectSerdes.add(PresentationChannel.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
@@ -149,11 +150,16 @@ public abstract class GUIManagedObject
   //
 
   JSONObject getJSONRepresentation() { return jsonRepresentation; }
-  JSONObject getSummaryJSONRepresentation() { return jsonRepresentation; }
   Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
   boolean getValid() { return valid; }
   boolean getActive() { return active; }
+
+  //
+  //  abstract
+  //
+
+  abstract JSONObject getSummaryJSONRepresentation();
 
   //
   //  private
@@ -370,6 +376,20 @@ public abstract class GUIManagedObject
 
     public static Schema schema() { return schema; }
     public static ConnectSerde<IncompleteObject> serde() { return serde; }
+
+
+    /*****************************************
+    *
+    *  getSummaryJSONRe
+    *
+    *****************************************/
+
+    @Override JSONObject getSummaryJSONRepresentation()
+    {
+      JSONObject jsonRepresentation = new JSONObject();
+      jsonRepresentation.put("id", getGUIManagedObjectID());
+      return jsonRepresentation;
+    }
 
     /*****************************************
     *
