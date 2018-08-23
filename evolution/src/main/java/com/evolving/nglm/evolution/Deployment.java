@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Deployment
@@ -45,6 +46,7 @@ public class Deployment
   private static String offerTopic;
   private static String presentationStrategyTopic;
   private static String scoringStrategyTopic;
+  private static String presentationChannelTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
@@ -56,7 +58,7 @@ public class Deployment
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
-  private static Map<String,PresentationChannel> presentationChannels = new LinkedHashMap<String,PresentationChannel>();
+  private static Map<String,PresentationChannelProperty> presentationChannelProperties = new LinkedHashMap<String,PresentationChannelProperty>();
   private static Map<String,CallingChannel> callingChannels = new LinkedHashMap<String,CallingChannel>();
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
@@ -111,6 +113,7 @@ public class Deployment
   public static String getOfferTopic() { return offerTopic; }
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
   public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
+  public static String getPresentationChannelTopic() { return presentationChannelTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
@@ -122,7 +125,7 @@ public class Deployment
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
-  public static Map<String,PresentationChannel> getPresentationChannels() { return presentationChannels; }
+  public static Map<String,PresentationChannelProperty> getPresentationChannelProperties() { return presentationChannelProperties; }
   public static Map<String,CallingChannel> getCallingChannels() { return callingChannels; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
@@ -213,6 +216,26 @@ public class Deployment
       {
         throw new RuntimeException(e);
       }
+  }
+
+  /*****************************************
+  *
+  *  getSupportedLanguageID
+  *
+  *****************************************/
+
+  public static String getSupportedLanguageID(String language)
+  {
+    String supportedLanguageID = null;
+    for (SupportedLanguage supportedLanguage : supportedLanguages.values())
+      {
+        if (Objects.equals(language, supportedLanguage.getName()))
+          {
+            supportedLanguageID = supportedLanguage.getID();
+            break;
+          }
+      }
+    return supportedLanguageID;
   }
   
   /*****************************************
@@ -387,6 +410,19 @@ public class Deployment
       }
 
     //
+    //  presentationChannelTopic
+    //
+
+    try
+      {
+        presentationChannelTopic = JSONUtilities.decodeString(jsonRoot, "presentationChannelTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  subscriberUpdateTopic
     //
 
@@ -548,17 +584,17 @@ public class Deployment
       }
 
     //
-    //  presentationChannels
+    //  presentationChannelProperties
     //
 
     try
       {
-        JSONArray presentationChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannels", true);
-        for (int i=0; i<presentationChannelValues.size(); i++)
+        JSONArray presentationChannelPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannelProperties", true);
+        for (int i=0; i<presentationChannelPropertyValues.size(); i++)
           {
-            JSONObject presentationChannelJSON = (JSONObject) presentationChannelValues.get(i);
-            PresentationChannel presentationChannel = new PresentationChannel(presentationChannelJSON);
-            presentationChannels.put(presentationChannel.getID(), presentationChannel);
+            JSONObject presentationChannelPropertyJSON = (JSONObject) presentationChannelPropertyValues.get(i);
+            PresentationChannelProperty presentationChannelProperty = new PresentationChannelProperty(presentationChannelPropertyJSON);
+            presentationChannelProperties.put(presentationChannelProperty.getID(), presentationChannelProperty);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

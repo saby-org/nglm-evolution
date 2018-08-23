@@ -96,7 +96,7 @@ public class GUIManager
     getSupportedLanguages,
     getSupportedCurrencies,
     getSupportedTimeUnits,
-    getPresentationChannels,
+    getPresentationChannelProperties,
     getCallingChannels,
     getSalesChannels,
     getSupportedDataTypes,
@@ -136,6 +136,11 @@ public class GUIManager
     getScoringStrategy,
     putScoringStrategy,
     removeScoringStrategy,
+    getPresentationChannelList,
+    getPresentationChannelSummaryList,
+    getPresentationChannel,
+    putPresentationChannel,
+    removePresentationChannel,
     getDashboardCounts;
   }
 
@@ -170,6 +175,7 @@ public class GUIManager
   private OfferService offerService;
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
+  private PresentationChannelService presentationChannelService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
   /*****************************************
@@ -216,6 +222,7 @@ public class GUIManager
     String offerTopic = Deployment.getOfferTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
+    String presentationChannelTopic = Deployment.getPresentationChannelTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     
     //
@@ -245,6 +252,7 @@ public class GUIManager
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
+    presentationChannelService = new PresentationChannelService(bootstrapServers, "guimanager-presentationchannelservice-" + apiProcessKey, presentationChannelTopic, true);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
     //
@@ -271,7 +279,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APIHandler(API.getSupportedLanguages));
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APIHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
-        restServer.createContext("/nglm-guimanager/getPresentationChannels", new APIHandler(API.getPresentationChannels));
+        restServer.createContext("/nglm-guimanager/getPresentationChannelProperties", new APIHandler(API.getPresentationChannelProperties));
         restServer.createContext("/nglm-guimanager/getCallingChannels", new APIHandler(API.getCallingChannels));
         restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
@@ -311,6 +319,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getScoringStrategy", new APIHandler(API.getScoringStrategy));
         restServer.createContext("/nglm-guimanager/putScoringStrategy", new APIHandler(API.putScoringStrategy));
         restServer.createContext("/nglm-guimanager/removeScoringStrategy", new APIHandler(API.removeScoringStrategy));
+        restServer.createContext("/nglm-guimanager/getPresentationChannelList", new APIHandler(API.getPresentationChannelList));
+        restServer.createContext("/nglm-guimanager/getPresentationChannelSummaryList", new APIHandler(API.getPresentationChannelSummaryList));
+        restServer.createContext("/nglm-guimanager/getPresentationChannel", new APIHandler(API.getPresentationChannel));
+        restServer.createContext("/nglm-guimanager/putPresentationChannel", new APIHandler(API.putPresentationChannel));
+        restServer.createContext("/nglm-guimanager/removePresentationChannel", new APIHandler(API.removePresentationChannel));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -440,8 +453,8 @@ public class GUIManager
                   jsonResponse = processGetSupportedTimeUnits(jsonRoot);
                   break;
 
-                case getPresentationChannels:
-                  jsonResponse = processGetPresentationChannels(jsonRoot);
+                case getPresentationChannelProperties:
+                  jsonResponse = processGetPresentationChannelProperties(jsonRoot);
                   break;
 
                 case getCallingChannels:
@@ -600,6 +613,26 @@ public class GUIManager
                   jsonResponse = processRemoveScoringStrategy(jsonRoot);
                   break;
 
+                case getPresentationChannelList:
+                  jsonResponse = processGetPresentationChannelList(jsonRoot, true);
+                  break;
+
+                case getPresentationChannelSummaryList:
+                  jsonResponse = processGetPresentationChannelList(jsonRoot, false);
+                  break;
+
+                case getPresentationChannel:
+                  jsonResponse = processGetPresentationChannel(jsonRoot);
+                  break;
+
+                case putPresentationChannel:
+                  jsonResponse = processPutPresentationChannel(jsonRoot);
+                  break;
+
+                case removePresentationChannel:
+                  jsonResponse = processRemovePresentationChannel(jsonRoot);
+                  break;
+
                 case getDashboardCounts:
                   jsonResponse = processGetDashboardCounts(jsonRoot);
                   break;
@@ -740,15 +773,15 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve presentationChannels
+    *  retrieve presentationChannelProperties
     *
     *****************************************/
 
-    List<JSONObject> presentationChannels = new ArrayList<JSONObject>();
-    for (PresentationChannel presentationChannel : Deployment.getPresentationChannels().values())
+    List<JSONObject> presentationChannelProperties = new ArrayList<JSONObject>();
+    for (PresentationChannelProperty presentationChannelProperty : Deployment.getPresentationChannelProperties().values())
       {
-        JSONObject presentationChannelJSON = presentationChannel.getJSONRepresentation();
-        presentationChannels.add(presentationChannelJSON);
+        JSONObject presentationChannelPropertyJSON = presentationChannelProperty.getJSONRepresentation();
+        presentationChannelProperties.add(presentationChannelPropertyJSON);
       }
 
     /*****************************************
@@ -881,7 +914,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
-    response.put("presentationChannels", JSONUtilities.encodeArray(presentationChannels));
+    response.put("presentationChannelProperties", JSONUtilities.encodeArray(presentationChannelProperties));
     response.put("callingChannels", JSONUtilities.encodeArray(callingChannels));
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
@@ -996,23 +1029,23 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getPresentationChannels
+  *  getPresentationChannelProperties
   *
   *****************************************/
 
-  private JSONObject processGetPresentationChannels(JSONObject jsonRoot)
+  private JSONObject processGetPresentationChannelProperties(JSONObject jsonRoot)
   {
     /*****************************************
     *
-    *  retrieve presentationChannels
+    *  retrieve presentationChannelProperties
     *
     *****************************************/
 
-    List<JSONObject> presentationChannels = new ArrayList<JSONObject>();
-    for (PresentationChannel presentationChannel : Deployment.getPresentationChannels().values())
+    List<JSONObject> presentationChannelProperties = new ArrayList<JSONObject>();
+    for (PresentationChannelProperty presentationChannelProperty : Deployment.getPresentationChannelProperties().values())
       {
-        JSONObject presentationChannelJSON = presentationChannel.getJSONRepresentation();
-        presentationChannels.add(presentationChannelJSON);
+        JSONObject presentationChannelPropertyJSON = presentationChannelProperty.getJSONRepresentation();
+        presentationChannelProperties.add(presentationChannelPropertyJSON);
       }
 
     /*****************************************
@@ -1023,7 +1056,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("presentationChannels", JSONUtilities.encodeArray(presentationChannels));
+    response.put("presentationChannelProperties", JSONUtilities.encodeArray(presentationChannelProperties));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -1993,10 +2026,7 @@ public class GUIManager
     List<JSONObject> journeys = new ArrayList<JSONObject>();
     for (GUIManagedObject journey : journeyService.getStoredJourneys())
       {
-        JSONObject journeyJSON = fullDetails ? journey.getJSONRepresentation() : journey.getSummaryJSONRepresentation();
-        journeyJSON.put("accepted", journey.getAccepted());
-        journeyJSON.put("processing", journeyService.isActiveJourney(journey, now));
-        journeys.add(journeyJSON);
+        journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
       }
 
     /*****************************************
@@ -2041,15 +2071,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject uncheckedJourney = journeyService.getStoredJourney(journeyID);
-    JSONObject journeyJSON = (uncheckedJourney != null) ? uncheckedJourney.getJSONRepresentation() : null;
-    if (journeyJSON != null && uncheckedJourney instanceof Journey)
-      {
-        Date now = SystemTime.getCurrentTime();
-        Journey journey = (Journey) uncheckedJourney;
-        journeyJSON.put("accepted", journey.getAccepted());
-        journeyJSON.put("processing", journeyService.isActiveJourney(journey, now));
-      }
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -2057,8 +2080,8 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (uncheckedJourney != null) ? "ok" : "journeyNotFound");
-    if (uncheckedJourney != null) response.put("journey", journeyJSON);
+    response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
+    if (journey != null) response.put("journey", journeyJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2239,10 +2262,7 @@ public class GUIManager
     List<JSONObject> segmentationRules = new ArrayList<JSONObject>();
     for (GUIManagedObject segmentationRule : segmentationRuleService.getStoredSegmentationRules())
       {
-        JSONObject segmentationRuleJSON = fullDetails ? segmentationRule.getJSONRepresentation() : segmentationRule.getSummaryJSONRepresentation();
-        segmentationRuleJSON.put("accepted", segmentationRule.getAccepted());
-        segmentationRuleJSON.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
-        segmentationRules.add(segmentationRuleJSON);
+        segmentationRules.add(segmentationRuleService.generateResponseJSON(segmentationRule, fullDetails, now));
       }
 
     /*****************************************
@@ -2287,15 +2307,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject uncheckedSegmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
-    JSONObject segmentationRuleJSON = (uncheckedSegmentationRule != null) ? uncheckedSegmentationRule.getJSONRepresentation() : null;
-    if (segmentationRuleJSON != null && uncheckedSegmentationRule instanceof SegmentationRule)
-      {
-        Date now = SystemTime.getCurrentTime();
-        SegmentationRule segmentationRule = (SegmentationRule) uncheckedSegmentationRule;
-        segmentationRuleJSON.put("accepted", segmentationRule.getAccepted());
-        segmentationRuleJSON.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
-      }
+    GUIManagedObject segmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
+    JSONObject segmentationRuleJSON = segmentationRuleService.generateResponseJSON(segmentationRule, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -2303,8 +2316,8 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (uncheckedSegmentationRule != null) ? "ok" : "segmentationRuleNotFound");
-    if (uncheckedSegmentationRule != null) response.put("segmentationRule", segmentationRuleJSON);
+    response.put("responseCode", (segmentationRule != null) ? "ok" : "segmentationRuleNotFound");
+    if (segmentationRule != null) response.put("segmentationRule", segmentationRuleJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2485,10 +2498,7 @@ public class GUIManager
     List<JSONObject> offers = new ArrayList<JSONObject>();
     for (GUIManagedObject offer : offerService.getStoredOffers())
       {
-        JSONObject offerJSON = fullDetails ? offer.getJSONRepresentation() : offer.getSummaryJSONRepresentation();
-        offerJSON.put("accepted", offer.getAccepted());
-        offerJSON.put("processing", offerService.isActiveOffer(offer, now));
-        offers.add(offerJSON);
+        offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
       }
 
     /*****************************************
@@ -2533,15 +2543,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject uncheckedOffer = offerService.getStoredOffer(offerID);
-    JSONObject offerJSON = (uncheckedOffer != null) ? uncheckedOffer.getJSONRepresentation() : null;
-    if (offerJSON != null && uncheckedOffer instanceof Offer)
-      {
-        Date now = SystemTime.getCurrentTime();
-        Offer offer = (Offer) uncheckedOffer;
-        offerJSON.put("accepted", offer.getAccepted());
-        offerJSON.put("processing", offerService.isActiveOffer(offer, now));
-      }
+    GUIManagedObject offer = offerService.getStoredOffer(offerID);
+    JSONObject offerJSON = offerService.generateResponseJSON(offer, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -2549,8 +2552,8 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (uncheckedOffer != null) ? "ok" : "offerNotFound");
-    if (uncheckedOffer != null) response.put("offer", offerJSON);
+    response.put("responseCode", (offer != null) ? "ok" : "offerNotFound");
+    if (offer != null) response.put("offer", offerJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2615,7 +2618,7 @@ public class GUIManager
         *
         *****************************************/
 
-        offerService.putOffer(offer);
+        offerService.putOffer(offer, presentationChannelService);
 
         /*****************************************
         *
@@ -2641,7 +2644,7 @@ public class GUIManager
         //  store
         //
 
-        offerService.putOffer(incompleteObject);
+        offerService.putIncompleteOffer(incompleteObject);
 
         //
         //  log
@@ -2723,10 +2726,7 @@ public class GUIManager
     List<JSONObject> presentationStrategies = new ArrayList<JSONObject>();
     for (GUIManagedObject presentationStrategy : presentationStrategyService.getStoredPresentationStrategies())
       {
-        JSONObject presentationStrategyJSON = fullDetails ? presentationStrategy.getJSONRepresentation() : presentationStrategy.getSummaryJSONRepresentation();
-        presentationStrategyJSON.put("accepted", presentationStrategy.getAccepted());
-        presentationStrategyJSON.put("processing", presentationStrategyService.isActivePresentationStrategy(presentationStrategy, now));
-        presentationStrategies.add(presentationStrategyJSON);
+        presentationStrategies.add(presentationStrategyService.generateResponseJSON(presentationStrategy, fullDetails, now));
       }
 
     /*****************************************
@@ -2771,15 +2771,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject uncheckedPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
-    JSONObject presentationStrategyJSON = (uncheckedPresentationStrategy != null) ? uncheckedPresentationStrategy.getJSONRepresentation() : null;
-    if (presentationStrategyJSON != null && uncheckedPresentationStrategy instanceof PresentationStrategy)
-      {
-        Date now = SystemTime.getCurrentTime();
-        PresentationStrategy presentationStrategy = (PresentationStrategy) uncheckedPresentationStrategy;
-        presentationStrategyJSON.put("accepted", presentationStrategy.getAccepted());
-        presentationStrategyJSON.put("processing", presentationStrategyService.isActivePresentationStrategy(presentationStrategy, now));
-      }
+    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+    JSONObject presentationStrategyJSON = presentationStrategyService.generateResponseJSON(presentationStrategy, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -2787,8 +2780,8 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (uncheckedPresentationStrategy != null) ? "ok" : "presentationStrategyNotFound");
-    if (uncheckedPresentationStrategy != null) response.put("presentationStrategy", presentationStrategyJSON);
+    response.put("responseCode", (presentationStrategy != null) ? "ok" : "presentationStrategyNotFound");
+    if (presentationStrategy != null) response.put("presentationStrategy", presentationStrategyJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2961,10 +2954,7 @@ public class GUIManager
     List<JSONObject> scoringStrategies = new ArrayList<JSONObject>();
     for (GUIManagedObject scoringStrategy : scoringStrategyService.getStoredScoringStrategies())
       {
-        JSONObject scoringStrategyJSON = fullDetails ?  scoringStrategy.getJSONRepresentation() : scoringStrategy.getSummaryJSONRepresentation();
-        scoringStrategyJSON.put("accepted", scoringStrategy.getAccepted());
-        scoringStrategyJSON.put("processing", scoringStrategyService.isActiveScoringStrategy(scoringStrategy, now));
-        scoringStrategies.add(scoringStrategyJSON);
+        scoringStrategies.add(scoringStrategyService.generateResponseJSON(scoringStrategy, fullDetails, now));
       }
 
     /*****************************************
@@ -3009,15 +2999,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject uncheckedScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
-    JSONObject scoringStrategyJSON = (uncheckedScoringStrategy != null) ? uncheckedScoringStrategy.getJSONRepresentation() : null;
-    if (scoringStrategyJSON != null && uncheckedScoringStrategy instanceof ScoringStrategy)
-      {
-        Date now = SystemTime.getCurrentTime();
-        ScoringStrategy scoringStrategy = (ScoringStrategy) uncheckedScoringStrategy;
-        scoringStrategyJSON.put("accepted", scoringStrategy.getAccepted());
-        scoringStrategyJSON.put("processing", scoringStrategyService.isActiveScoringStrategy(scoringStrategy, now));
-      }
+    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+    JSONObject scoringStrategyJSON = scoringStrategyService.generateResponseJSON(scoringStrategy, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -3025,8 +3008,8 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (uncheckedScoringStrategy != null) ? "ok" : "scoringStrategyNotFound");
-    if (uncheckedScoringStrategy != null) response.put("scoringStrategy", scoringStrategyJSON);
+    response.put("responseCode", (scoringStrategy != null) ? "ok" : "scoringStrategyNotFound");
+    if (scoringStrategy != null) response.put("scoringStrategy", scoringStrategyJSON);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3269,6 +3252,320 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processGetPresentationChannelList
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationChannelList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert presentationChannels
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> presentationChannels = new ArrayList<JSONObject>();
+    for (GUIManagedObject presentationChannel : presentationChannelService.getStoredPresentationChannels())
+      {
+        presentationChannels.add(presentationChannelService.generateResponseJSON(presentationChannel, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("presentationChannels", JSONUtilities.encodeArray(presentationChannels));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetPresentationChannel
+  *
+  *****************************************/
+
+  private JSONObject processGetPresentationChannel(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String presentationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject presentationChannel = presentationChannelService.getStoredPresentationChannel(presentationChannelID);
+    JSONObject presentationChannelJSON = presentationChannelService.generateResponseJSON(presentationChannel, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (presentationChannel != null) ? "ok" : "presentationChannelNotFound");
+    if (presentationChannel != null) response.put("presentationChannel", presentationChannelJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPresentationChannel
+  *
+  *****************************************/
+
+  private JSONObject processPutPresentationChannel(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  presentationChannelID
+    *
+    *****************************************/
+    
+    String presentationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (presentationChannelID == null)
+      {
+        presentationChannelID = presentationChannelService.generatePresentationChannelID();
+        jsonRoot.put("id", presentationChannelID);
+      }
+    
+    /*****************************************
+    *
+    *  process presentationChannel
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing presentationChannel
+        *
+        *****************************************/
+
+        GUIManagedObject existingPresentationChannel = presentationChannelService.getStoredPresentationChannel(presentationChannelID);
+
+        /****************************************
+        *
+        *  instantiate presentationChannel
+        *
+        ****************************************/
+
+        PresentationChannel presentationChannel = new PresentationChannel(jsonRoot, epoch, existingPresentationChannel);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        presentationChannelService.putPresentationChannel(presentationChannel);
+
+        /*****************************************
+        *
+        *  revalidateOffers
+        *
+        *****************************************/
+
+        revalidateOffers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", presentationChannel.getPresentationChannelID());
+        response.put("accepted", presentationChannel.getAccepted());
+        response.put("processing", presentationChannelService.isActivePresentationChannel(presentationChannel, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        presentationChannelService.putPresentationChannel(incompleteObject);
+
+        //
+        //  revalidateOffers
+        //
+
+        revalidateOffers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "presentationChannelNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemovePresentationChannel
+  *
+  *****************************************/
+
+  private JSONObject processRemovePresentationChannel(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String presentationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    presentationChannelService.removePresentationChannel(presentationChannelID);
+
+    /*****************************************
+    *
+    *  revalidateOffers
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  revalidateOffers
+  *
+  *****************************************/
+
+  private void revalidateOffers(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedOffers = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingOffer : offerService.getStoredOffers())
+      {
+        //
+        //  modifiedOffer
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedOffer;
+        try
+          {
+            Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer);
+            offer.validatePresentationChannels(presentationChannelService, date);
+            modifiedOffer = offer;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedOffer = new IncompleteObject(existingOffer.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingOffer.getAccepted() != modifiedOffer.getAccepted())
+          {
+            modifiedOffers.add(modifiedOffer);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedOffer : modifiedOffers)
+      {
+        offerService.putGUIManagedObject(modifiedOffer, date);
+      }
+  }
+
+  /*****************************************
+  *
   *  processGetDashboardCounts
   *
   *****************************************/
@@ -3282,6 +3579,7 @@ public class GUIManager
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
+    response.put("presentationChannelCount", presentationChannelService.getStoredPresentationChannels().size());
     return JSONUtilities.encodeObject(response);
   }
 
