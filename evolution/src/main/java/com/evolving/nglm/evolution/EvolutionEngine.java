@@ -12,10 +12,10 @@ import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
+import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
@@ -290,6 +290,7 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, Sensor.RecordingLevel.DEBUG.toString());
     streamsProperties.put("producer.batch.size", Integer.toString(100000));
+    StreamsConfig streamsConfig = new StreamsConfig(streamsProperties);
 
     /*****************************************
     *
@@ -535,7 +536,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KafkaStreams streams = new KafkaStreams(builder.build(), streamsProperties, new NGLMKafkaClientSupplier());
+    KafkaStreams streams = new KafkaStreams(builder.build(), streamsConfig, new NGLMKafkaClientSupplier());
 
     /*****************************************
     *
