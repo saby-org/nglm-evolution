@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionContext;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.SubscriberProfileService.CompressionType;
 
 import com.evolving.nglm.core.ServerRuntimeException;
 
@@ -55,6 +56,7 @@ public class Deployment
   private static String subscriberStateChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String subscriberProfileRegistrySubject;
+  private static CompressionType subscriberProfileCompressionType;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
@@ -122,6 +124,7 @@ public class Deployment
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
+  public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
@@ -526,6 +529,20 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  subscriberProfileCompressionType
+    //
+
+    try
+      {
+        subscriberProfileCompressionType = CompressionType.fromStringRepresentation(JSONUtilities.decodeString(jsonRoot, "subscriberProfileCompressionType", "unknown"));
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    if (subscriberProfileCompressionType == CompressionType.Unknown) throw new ServerRuntimeException("unsupported compression type");
+    
     //
     //  supportedLanguages
     //

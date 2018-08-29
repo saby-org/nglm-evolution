@@ -34,6 +34,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -53,9 +56,35 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.PatternSyntaxException;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class SubscriberProfileService
 {
+  /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+
+  //
+  //  CompressionType
+  //
+
+  public enum CompressionType
+  {
+    None("none", 0),
+    GZip("gzip", 1),
+    Unknown("(unknown)", 99);
+    private String stringRepresentation;
+    private int externalRepresentation;
+    private CompressionType(String stringRepresentation, int externalRepresentation) { this.stringRepresentation = stringRepresentation; this.externalRepresentation = externalRepresentation; }
+    public String getStringRepresentation() { return stringRepresentation; }
+    public int getExternalRepresentation() { return externalRepresentation; }
+    public static CompressionType fromStringRepresentation(String stringRepresentation) { for (CompressionType enumeratedValue : CompressionType.values()) { if (enumeratedValue.getStringRepresentation().equalsIgnoreCase(stringRepresentation)) return enumeratedValue; } return Unknown; }
+    public static CompressionType fromExternalRepresentation(int externalRepresentation) { for (CompressionType enumeratedValue : CompressionType.values()) { if (enumeratedValue.getExternalRepresentation() ==externalRepresentation) return enumeratedValue; } return Unknown; }
+  }
+
   /*****************************************
   *
   *  configuration
@@ -67,6 +96,15 @@ public class SubscriberProfileService
   //
 
   private static final Logger log = LoggerFactory.getLogger(SubscriberProfileService.class);
+
+  
+  /*****************************************
+  *
+  *  constants
+  *
+  *****************************************/
+
+  public static final byte SubscriberProfileCompressionEpoch = 0;
 
   /*****************************************
   *
@@ -320,7 +358,7 @@ public class SubscriberProfileService
     *
     ****************************************/
     
-    List<byte[]> encodedSubscriberProfiles = null;
+    List<byte[]> rawSubscriberProfiles = null;
     try
       {
         //
@@ -337,7 +375,7 @@ public class SubscriberProfileService
         //  read
         //
 
-        encodedSubscriberProfiles = jedis.mget(binarySubscriberIDs.toArray(new byte[0][0]));
+        rawSubscriberProfiles = jedis.mget(binarySubscriberIDs.toArray(new byte[0][0]));
       }
     catch (JedisException e)
       {
@@ -367,6 +405,24 @@ public class SubscriberProfileService
         throw new SubscriberProfileServiceException(e);
       }
 
+    //
+    //  uncompress
+    //
+
+    List<byte[]> encodedSubscriberProfiles = new ArrayList<byte[]>();
+    for (byte [] rawProfile : rawSubscriberProfiles)
+      {
+        if (rawProfile != null)
+          {
+            byte [] profile = uncompressSubscriberProfile(rawProfile, Deployment.getSubscriberProfileCompressionType());
+            encodedSubscriberProfiles.add(profile);
+          }
+        else
+          {
+            encodedSubscriberProfiles.add(null);
+          }
+      }
+          
     /****************************************
     *
     *  instantiate result map with subscriber profiles
@@ -388,7 +444,7 @@ public class SubscriberProfileService
         //
         
         SubscriberProfile subscriberProfile;
-        if (encodedSubscriberProfile != null)
+        if (encodedSubscriberProfile != null && encodedSubscriberProfile.length > 0)
           subscriberProfile = subscriberProfileSerde.deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), encodedSubscriberProfile);
         else
           subscriberProfile = null;
@@ -588,5 +644,251 @@ public class SubscriberProfileService
             Thread.sleep(1*1000L);
           }
       }
+  }
+
+  /***********************************************************************
+  *
+  *  compression support for profile
+  *
+  ***********************************************************************/
+
+  /*****************************************
+  *
+  *  compressSubscriberProfile
+  *
+  *****************************************/
+
+  public static byte [] compressSubscriberProfile(byte [] data, CompressionType compressionType)
+  {
+    //
+    //  sanity
+    //
+
+    if (SubscriberProfileService.SubscriberProfileCompressionEpoch != 0) throw new ServerRuntimeException("unsupported compression epoch");
+
+    //
+    //  compress (if indicated)
+    //
+    
+    byte[] payload;
+    switch (compressionType)
+      {
+        case None:
+          payload = data;
+          break;
+        case GZip:
+          payload = compress_gzip(data);
+          break;
+        default:
+          throw new RuntimeException("unsupported compression type");
+      }
+
+    //
+    //  prepare result
+    //
+
+    byte[] result = new byte[payload.length+1];
+
+    //
+    //  compression epoch
+    //
+
+    result[0] = SubscriberProfileCompressionEpoch;
+
+    //
+    //  payload
+    //
+
+    System.arraycopy(payload, 0, result, 1, payload.length);
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  uncompressSubscriberProfile
+  *
+  *****************************************/
+
+  public static byte [] uncompressSubscriberProfile(byte [] compressedData, CompressionType compressionType)
+  {
+    /****************************************
+    *
+    *  check epoch
+    *
+    ****************************************/
+    
+    int epoch = compressedData[0];
+    if (epoch != 0) throw new ServerRuntimeException("unsupported compression epoch");
+
+    /****************************************
+    *
+    *  uncompress according to provided algorithm
+    *
+    ****************************************/
+
+    //
+    // extract payload
+    // 
+
+    byte [] rawPayload = new byte[compressedData.length-1];
+    System.arraycopy(compressedData, 1, rawPayload, 0, compressedData.length-1);
+
+    //
+    //  uncompress
+    //
+    
+    byte [] payload;
+    switch (compressionType)
+      {
+        case None:
+          payload = rawPayload;
+          break;
+        case GZip:
+          payload = uncompress_gzip(rawPayload);
+          break;
+        default:
+          throw new RuntimeException("unsupported compression type");
+      }
+
+    //
+    //  return
+    //
+
+    return payload;
+  }
+
+  /*****************************************
+  *
+  *  compress_gzip
+  *
+  *****************************************/
+
+  public static byte[] compress_gzip(byte [] data)
+  {
+    int len = data.length;
+    byte [] compressedData;
+    try
+      {
+        //
+        //  length (to make the uncompress easier)
+        //
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(4 + len);
+        byte[] lengthBytes = integerToBytes(len);
+        bos.write(lengthBytes);
+
+        //
+        //  payload
+        //
+
+        GZIPOutputStream gzip = new GZIPOutputStream(bos);
+        gzip.write(data);
+
+        //
+        // result
+        //
+
+        gzip.close();
+        compressedData = bos.toByteArray();
+        bos.close();
+      }
+    catch (IOException ioe)
+      {
+        throw new ServerRuntimeException("compress", ioe);
+      }
+
+    return compressedData;
+  }
+
+  /*****************************************
+  *
+  *  uncompress_gzip
+  *
+  *****************************************/
+
+  public static byte[] uncompress_gzip(byte [] compressedData)
+  {
+    //
+    // sanity
+    //
+    
+    if (compressedData == null) return null;
+
+    //
+    //  uncompress
+    //
+    
+    byte [] uncompressedData;
+    try
+      {
+        ByteArrayInputStream bis = new ByteArrayInputStream(compressedData);
+
+        //
+        //  extract length
+        //
+
+        byte [] lengthBytes = new byte[4];
+        bis.read(lengthBytes, 0, 4);
+        int dataLength = bytesToInteger(lengthBytes);
+
+        //
+        //  extract payload
+        //
+
+        uncompressedData = new byte[dataLength];
+        GZIPInputStream gis = new GZIPInputStream(bis);
+        int bytesRead = 0;
+        int pos = 0;
+        while (pos < dataLength)
+          {
+            bytesRead = gis.read(uncompressedData, pos, dataLength-pos);
+            pos = pos + bytesRead;                
+          }
+
+        //
+        //  close
+        //
+        
+        gis.close();
+        bis.close();
+      }
+    catch (IOException ioe)
+      {
+        throw new ServerRuntimeException("uncompress", ioe);
+      }
+
+    return uncompressedData;
+  }
+
+  /*****************************************
+  *
+  *  integerToBytes
+  *
+  *****************************************/
+
+  static byte[] integerToBytes(int value)
+  {
+    byte [] result = new byte[4];
+    result[0] = (byte) (value >> 24);
+    result[1] = (byte) (value >> 16);
+    result[2] = (byte) (value >> 8);
+    result[3] = (byte) (value);
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  bytesToInteger
+  *
+  *****************************************/
+
+  static int bytesToInteger(byte[] data)
+  {
+    return ((0x000000FF & data[0]) << 24) + ((0x000000FF & data[0]) << 16) + ((0x000000FF & data[2]) << 8) + ((0x000000FF) & data[3]);
   }
 }

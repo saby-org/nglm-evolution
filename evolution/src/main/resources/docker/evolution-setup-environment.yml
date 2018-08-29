@@ -2,4 +2,5 @@
     #  environment variables required by setup.sh
     #
     REDIS_SENTINELS: <_REDIS_SENTINELS_>
+    REDIS_SUBSCRIBERPROFILE_COMPRESSION: <_REDIS_SUBSCRIBERPROFILE_COMPRESSION_>
 

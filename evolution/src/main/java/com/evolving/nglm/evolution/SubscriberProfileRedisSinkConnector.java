@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.SimpleRedisSinkConnector;
 import com.evolving.nglm.core.SimpleRedisSinkConnector.SimpleRedisSinkTask;
 import com.evolving.nglm.core.SimpleRedisSinkConnector.SimpleRedisSinkTask.CacheEntry;
+import com.evolving.nglm.core.ServerRuntimeException;
 
 import com.rii.utilities.DatabaseUtilities;
 
@@ -84,8 +85,19 @@ public class SubscriberProfileRedisSinkConnector extends SimpleRedisSinkConnecto
       *
       ****************************************/
 
-      byte[] key = subscriberState.getSubscriberProfile().getSubscriberID().getBytes(StandardCharsets.UTF_8);
-      byte[] value = SubscriberProfile.getSubscriberProfileSerde().serializer().serialize(Deployment.getSubscriberProfileRegistrySubject(), subscriberState.getSubscriberProfile());
+      //
+      //  data
+      //
+      
+      byte[] rawKey = subscriberState.getSubscriberProfile().getSubscriberID().getBytes(StandardCharsets.UTF_8);
+      byte[] rawValue = SubscriberProfile.getSubscriberProfileSerde().serializer().serialize(Deployment.getSubscriberProfileRegistrySubject(), subscriberState.getSubscriberProfile());
+
+      //
+      //  compress 
+      //
+
+      byte[] key = rawKey;
+      byte[] value = SubscriberProfileService.compressSubscriberProfile(rawValue, Deployment.getSubscriberProfileCompressionType());
 
       /****************************************
       *
