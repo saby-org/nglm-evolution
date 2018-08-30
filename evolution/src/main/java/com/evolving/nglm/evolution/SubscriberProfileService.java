@@ -50,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
@@ -123,12 +122,15 @@ public class SubscriberProfileService
   //  data
   //
 
+  private volatile boolean stopRequested = false;
   private String bootstrapServers;
+  private Thread listenerThread = null;
+  private Thread subscriberUpdateReaderThread;
   private SubscriberUpdateListener subscriberUpdateListener;
   private BlockingQueue<SubscriberProfile> listenerQueue = new LinkedBlockingQueue<SubscriberProfile>();
-  private JedisSentinelPool jedisSentinelPool;
-  private BinaryJedis jedis;
-  private KafkaConsumer<byte[], byte[]> consumer;
+  private JedisSentinelPool jedisSentinelPool = null;
+  private BinaryJedis jedis = null;
+  private KafkaConsumer<byte[], byte[]> consumer = null;
 
   //
   //  serdes
@@ -220,7 +222,7 @@ public class SubscriberProfileService
     if (subscriberUpdateListener != null)
       {
         Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
-        Thread listenerThread = new Thread(listener, "SubscriberUpdateListener");
+        listenerThread = new Thread(listener, "SubscriberUpdateListener");
         listenerThread.start();
       }
 
@@ -231,8 +233,57 @@ public class SubscriberProfileService
     *****************************************/
 
     Runnable subscriberUpdateReader = new Runnable() { @Override public void run() { readSubscriberUpdates(consumer); } };
-    Thread subscriberUpdateReaderThread = new Thread(subscriberUpdateReader, "SubscriberUpdateReader");
+    subscriberUpdateReaderThread = new Thread(subscriberUpdateReader, "SubscriberUpdateReader");
     subscriberUpdateReaderThread.start();
+  }
+
+  /*****************************************
+  *
+  *  stop
+  *
+  *****************************************/
+
+  public void stop()
+  {
+    //
+    //  mark stopRequested
+    //
+
+    stopRequested = true;
+
+    //
+    //  wake sleeping poll (if necessary)
+    //
+
+    if (consumer != null) consumer.wakeup();
+
+    //
+    //  wake listenerThread (if necessary)
+    //
+
+    if (listenerThread != null) listenerThread.interrupt();
+
+    //
+    //  wait for threads to finish
+    //
+
+    try
+      {
+        if (subscriberUpdateReaderThread != null) subscriberUpdateReaderThread.join();
+        if (listenerThread != null) listenerThread.join();
+      }
+    catch (InterruptedException e)
+      {
+        // nothing
+      }
+
+    //
+    //  close
+    //
+
+    if (consumer != null) consumer.close();
+    if (jedis != null) try { jedis.close(); } catch (JedisException e) { }
+    if (jedisSentinelPool != null) try { jedisSentinelPool.close(); } catch (JedisException e) { }
   }
 
   /*****************************************
@@ -249,11 +300,17 @@ public class SubscriberProfileService
     do
       {
         //
-        // poll
+        //  poll
         //
 
         ConsumerRecords<byte[], byte[]> subscriberUpdateRecords = consumer.poll(5000);
 
+        //
+        //  interrupted?
+        //
+
+        if (stopRequested) continue;
+        
         //
         //  process
         //
@@ -299,7 +356,7 @@ public class SubscriberProfileService
               }
           }
       }
-    while (! consumedAllAvailable || ! readInitialTopicRecords);
+    while (!stopRequested && (! consumedAllAvailable || ! readInitialTopicRecords));
   }
 
   /*****************************************
@@ -310,7 +367,7 @@ public class SubscriberProfileService
 
   private void runListener()
   {
-    while (true)
+    while (!stopRequested)
       {
         try
           {
@@ -340,6 +397,14 @@ public class SubscriberProfileService
 
   public Map<String,SubscriberProfile> getSubscriberProfiles(Set<String> subscriberIDs) throws SubscriberProfileServiceException
   {
+    /****************************************
+    *
+    *  processing?
+    *
+    ****************************************/
+
+    if (stopRequested) throw new SubscriberProfileServiceException("service closed");
+    
     /****************************************
     *
     *  binary keys
@@ -394,7 +459,7 @@ public class SubscriberProfileService
 
         if (jedis != null)
           {
-            jedis.close();
+            try { jedis.close(); } catch (JedisException e1) { }
             jedis = null;
           }
 
@@ -471,6 +536,7 @@ public class SubscriberProfileService
 
   public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException
   {
+    if (stopRequested) throw new SubscriberProfileServiceException("service closed");
     Map<String,SubscriberProfile> result = getSubscriberProfiles(Collections.<String>singleton(subscriberID));
     return result.get(subscriberID);
   }
@@ -494,6 +560,7 @@ public class SubscriberProfileService
 
   public class SubscriberProfileServiceException extends Exception
   {
+    public SubscriberProfileServiceException(String message) { super(message); }
     public SubscriberProfileServiceException(Throwable t) { super(t); }
   }
 

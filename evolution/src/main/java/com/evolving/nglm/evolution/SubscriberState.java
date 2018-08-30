@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;

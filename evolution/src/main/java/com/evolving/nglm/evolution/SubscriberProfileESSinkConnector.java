@@ -21,7 +21,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConnector
 {
@@ -40,7 +39,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     *****************************************/
 
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-    private String sinkTaskKey = Integer.toHexString(getTaskNumber()) + "-" + Integer.toHexString(ThreadLocalRandom.current().nextInt(1000000000));
+    private String sinkTaskKey = Integer.toHexString(getTaskNumber());
 
     /*****************************************
     *
@@ -55,6 +54,27 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       SubscriberState.forceClassLoad();
     }
 
+    /*****************************************
+    *
+    *  stop
+    *
+    *****************************************/
+
+    @Override public void stop()
+    {
+      //
+      //  reference reader
+      //
+
+      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
+      
+      //
+      //  super
+      //
+
+      super.stop();
+    }
+    
     /*****************************************
     *
     *  getDocumentID

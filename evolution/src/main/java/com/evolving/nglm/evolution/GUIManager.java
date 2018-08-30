@@ -26,7 +26,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -68,7 +67,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -264,6 +262,7 @@ public class GUIManager
     offerService.start();
     scoringStrategyService.start();
     presentationStrategyService.start();
+    presentationChannelService.start();
 
     /*****************************************
     *
@@ -335,11 +334,87 @@ public class GUIManager
 
     /*****************************************
     *
+    *  shutdown hook
+    *
+    *****************************************/
+    
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, presentationChannelService, subscriberGroupEpochReader));
+    
+    /*****************************************
+    *
     *  log restServerStarted
     *
     *****************************************/
 
     log.info("main restServerStarted");
+  }
+
+  /*****************************************
+  *
+  *  class ShutdownHook
+  *
+  *****************************************/
+
+  private static class ShutdownHook implements NGLMRuntime.NGLMShutdownHook
+  {
+    //
+    //  data
+    //
+
+    private HttpServer restServer;
+    private JourneyService journeyService;
+    private SegmentationRuleService segmentationRuleService;
+    private OfferService offerService;
+    private ScoringStrategyService scoringStrategyService;
+    private PresentationStrategyService presentationStrategyService;
+    private PresentationChannelService presentationChannelService;
+    private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+
+    //
+    //  constructor
+    //
+
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, PresentationChannelService presentationChannelService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+    {
+      this.restServer = restServer;
+      this.journeyService = journeyService;
+      this.segmentationRuleService = segmentationRuleService;
+      this.offerService = offerService;
+      this.scoringStrategyService = scoringStrategyService;
+      this.presentationStrategyService = presentationStrategyService;
+      this.presentationChannelService = presentationChannelService;
+      this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+    }
+
+    //
+    //  shutdown
+    //
+
+    @Override public void shutdown(boolean normalShutdown)
+    {
+      //
+      //  reference data reader
+      //
+
+      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
+
+      //
+      //  services
+      //
+      
+      if (journeyService != null) journeyService.stop();
+      if (segmentationRuleService != null) segmentationRuleService.stop();
+      if (offerService != null) offerService.stop();
+      if (scoringStrategyService != null) scoringStrategyService.stop();
+      if (presentationStrategyService != null) presentationStrategyService.stop();
+      if (presentationChannelService != null) presentationChannelService.stop();
+
+      //
+      //  rest server
+      //
+
+      if (restServer != null) restServer.stop(1);
+    }
   }
 
   /*****************************************

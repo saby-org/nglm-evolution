@@ -544,7 +544,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationRuleService));
 
     /*****************************************
     *
@@ -601,14 +601,20 @@ public class EvolutionEngine
     //
 
     private KafkaStreams kafkaStreams;
+    private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private JourneyService journeyService;
+    private SegmentationRuleService segmentationRuleService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationRuleService segmentationRuleService)
     {
       this.kafkaStreams = kafkaStreams;
+      this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+      this.journeyService = journeyService;
+      this.segmentationRuleService = segmentationRuleService;
     }
 
     //
@@ -623,6 +629,19 @@ public class EvolutionEngine
 
       if (evolutionEngineStatistics != null) evolutionEngineStatistics.unregister();
 
+      //
+      //  close reference data reader
+      //
+
+      subscriberGroupEpochReader.close();
+      
+      //
+      //  stop services
+      //
+      
+      journeyService.stop();
+      segmentationRuleService.stop();
+      
       //
       //  stop streams
       //

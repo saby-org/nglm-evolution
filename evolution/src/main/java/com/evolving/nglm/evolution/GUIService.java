@@ -68,6 +68,7 @@ public class GUIService
   *
   *****************************************/
 
+  private volatile boolean stopRequested = false;
   private Map<String,GUIManagedObject> storedGUIManagedObjects = new HashMap<String,GUIManagedObject>();
   private Map<String,GUIManagedObject> availableGUIManagedObjects = new HashMap<String,GUIManagedObject>();
   private Map<String,GUIManagedObject> activeGUIManagedObjects = new HashMap<String,GUIManagedObject>();
@@ -77,6 +78,9 @@ public class GUIService
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private KafkaConsumer<byte[], byte[]> guiManagedObjectsConsumer;
   private boolean masterService;
+  Thread schedulerThread = null;
+  Thread listenerThread = null;
+  Thread guiManagedObjectReaderThread = null;
   private GUIManagedObjectListener guiManagedObjectListener = null;
   private BlockingQueue<GUIManagedObject> listenerQueue = new LinkedBlockingQueue<GUIManagedObject>();
   private int lastGeneratedObjectID = 0;
@@ -182,7 +186,7 @@ public class GUIService
     //
 
     Runnable scheduler = new Runnable() { @Override public void run() { runScheduler(); } };
-    Thread schedulerThread = new Thread(scheduler, "GUIManagedObjectScheduler");
+    schedulerThread = new Thread(scheduler, "GUIManagedObjectScheduler");
     schedulerThread.start();
 
     //
@@ -192,7 +196,7 @@ public class GUIService
     if (guiManagedObjectListener != null)
       {
         Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
-        Thread listenerThread = new Thread(listener, "GUIManagedObjectListener");
+        listenerThread = new Thread(listener, "GUIManagedObjectListener");
         listenerThread.start();
       }
 
@@ -203,9 +207,54 @@ public class GUIService
     if (! masterService)
       {
         Runnable guiManagedObjectReader = new Runnable() { @Override public void run() { readGUIManagedObjects(guiManagedObjectsConsumer, false); } };
-        Thread guiManagedObjectReaderThread = new Thread(guiManagedObjectReader, "GUIManagedObjectReader");
+        guiManagedObjectReaderThread = new Thread(guiManagedObjectReader, "GUIManagedObjectReader");
         guiManagedObjectReaderThread.start();
       }
+  }
+  
+  /*****************************************
+  *
+  *  stop
+  *
+  *****************************************/
+
+  public synchronized void stop()
+  {
+    //
+    //  mark stopRequested
+    //
+
+    stopRequested = true;
+    
+    //
+    //  wake sleeping polls/threads (if necessary)
+    //
+
+    if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.wakeup();
+    if (schedulerThread != null) schedulerThread.interrupt();
+    if (listenerThread != null) listenerThread.interrupt();
+
+    //
+    //  wait for threads to finish
+    //
+
+    try
+      {
+        if (schedulerThread != null) schedulerThread.join();
+        if (listenerThread != null) listenerThread.join();
+        if (guiManagedObjectReaderThread != null) guiManagedObjectReaderThread.join();
+      }
+    catch (InterruptedException e)
+      {
+        // nothing
+      }
+
+    //
+    //  close
+    //
+
+    if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.close();
+    if (kafkaProducer != null) kafkaProducer.close();
   }
 
   /*****************************************
@@ -505,6 +554,12 @@ public class GUIService
         ConsumerRecords<byte[], byte[]> guiManagedObjectRecords = consumer.poll(5000);
 
         //
+        //  processing?
+        //
+
+        if (stopRequested) continue;
+        
+        //
         //  process
         //
 
@@ -563,7 +618,7 @@ public class GUIService
               }
           }
       }
-    while (! consumedAllAvailable || ! readInitialTopicRecords);
+    while (!stopRequested && (! consumedAllAvailable || ! readInitialTopicRecords));
   }
 
   /****************************************
@@ -574,7 +629,7 @@ public class GUIService
 
   private void runScheduler()
   {
-    while (true)
+    while (!stopRequested)
       {
         synchronized (this)
           {
@@ -585,7 +640,7 @@ public class GUIService
             Date now = SystemTime.getCurrentTime();
             Date nextEvaluationDate = (schedule.size() > 0) ? schedule.first().getEvaluationDate() : NGLMRuntime.END_OF_TIME;
             long waitTime = nextEvaluationDate.getTime() - now.getTime();
-            while (waitTime > 0)
+            while (!stopRequested && waitTime > 0)
               {
                 try
                   {
@@ -600,6 +655,12 @@ public class GUIService
                 waitTime = nextEvaluationDate.getTime() - now.getTime();
               }
 
+            //
+            //  processing?
+            //
+
+            if (stopRequested) continue;
+            
             //
             //  process
             //
@@ -745,7 +806,7 @@ public class GUIService
   
   private void runListener()
   {
-    while (true)
+    while (!stopRequested)
       {
         try
           {
