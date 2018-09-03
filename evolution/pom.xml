@@ -35,14 +35,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.1.1-build180830-SNAPSHOT</version>
+    <version>4.1.1-build180903-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
     
     <!-- core version -->
-    <nglm.core.version>4.1.1-build180830-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.1.1-build180903-SNAPSHOT</nglm.core.version>
 
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>

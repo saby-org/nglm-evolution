@@ -33,14 +33,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.1.1-build180830-SNAPSHOT</version>
+    <version>4.1.1-build180903-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.1.1-build180830-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.1.1-build180903-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- evolution-common-build -->
