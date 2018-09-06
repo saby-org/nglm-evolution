@@ -139,9 +139,12 @@ public class Offer extends GUIManagedObject
   @Override JSONObject getSummaryJSONRepresentation()
   {
     JSONObject jsonRepresentation = new JSONObject();
+    System.out.println("DEW jsonRepresentation (1): " + getJSONRepresentation());
     jsonRepresentation.putAll(getJSONRepresentation());
+    System.out.println("DEW jsonRepresentation (2): " + jsonRepresentation);
     jsonRepresentation.remove("profileCriteria");
     jsonRepresentation.remove("presentationChannels");
+    System.out.println("DEW jsonRepresentation (3): " + jsonRepresentation);
     return jsonRepresentation;
   }
 
