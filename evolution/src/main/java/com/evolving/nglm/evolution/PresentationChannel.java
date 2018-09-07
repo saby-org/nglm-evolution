@@ -100,20 +100,6 @@ public class PresentationChannel extends GUIManagedObject
 
   /*****************************************
   *
-  *  getSummaryJSONRepresentation
-  *
-  *****************************************/
-
-  @Override JSONObject getSummaryJSONRepresentation()
-  {
-    JSONObject jsonRepresentation = new JSONObject();
-    jsonRepresentation.putAll(getJSONRepresentation());
-    jsonRepresentation.remove("properties");
-    return jsonRepresentation;
-  }
-
-  /*****************************************
-  *
   *  constructor -- unpack
   *
   *****************************************/

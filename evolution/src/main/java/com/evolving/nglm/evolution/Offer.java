@@ -132,21 +132,6 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  getSummaryJSONRepresentation
-  *
-  *****************************************/
-
-  @Override JSONObject getSummaryJSONRepresentation()
-  {
-    JSONObject jsonRepresentation = new JSONObject();
-    jsonRepresentation.putAll(getJSONRepresentation());
-    jsonRepresentation.remove("profileCriteria");
-    jsonRepresentation.remove("presentationChannels");
-    return jsonRepresentation;
-  }
-
-  /*****************************************
-  *
   *  evaluateProfileCriteria
   *
   *****************************************/

@@ -119,22 +119,6 @@ public class PresentationStrategy extends GUIManagedObject
 
   /*****************************************
   *
-  *  getSummaryJSONRepresentation
-  *
-  *****************************************/
-
-  @Override JSONObject getSummaryJSONRepresentation()
-  {
-    JSONObject jsonRepresentation = new JSONObject();
-    jsonRepresentation.putAll(getJSONRepresentation());
-    jsonRepresentation.remove("targetGroupPositions");
-    jsonRepresentation.remove("controlGroupPositions");
-    jsonRepresentation.remove("scoringStrategies");
-    return jsonRepresentation;
-  }
-
-  /*****************************************
-  *
   *  constructor -- unpack
   *
   *****************************************/

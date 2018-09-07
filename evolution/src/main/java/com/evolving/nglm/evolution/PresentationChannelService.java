@@ -20,6 +20,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 
+import org.json.simple.JSONObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +98,19 @@ public class PresentationChannelService extends GUIService
     return superListener;
   }
 
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
+    return result;
+  }
+  
   /*****************************************
   *
   *  getPresentationChannels

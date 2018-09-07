@@ -103,23 +103,6 @@ public class ScoringStrategy extends GUIManagedObject
 
   /*****************************************
   *
-  *  getSummaryJSONRepresentation
-  *
-  *****************************************/
-
-  @Override JSONObject getSummaryJSONRepresentation()
-  {
-    JSONObject jsonRepresentation = new JSONObject();
-    jsonRepresentation.putAll(getJSONRepresentation());
-    jsonRepresentation.remove("universalControlGroup");
-    jsonRepresentation.remove("controlGroup");
-    jsonRepresentation.remove("targetGroups");
-    jsonRepresentation.remove("defaultGroup");
-    return jsonRepresentation;
-  }
-
-  /*****************************************
-  *
   *  evaluateScoringGroups
   *
   *****************************************/

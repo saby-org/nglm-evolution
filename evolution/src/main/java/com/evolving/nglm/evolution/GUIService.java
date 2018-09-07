@@ -722,12 +722,28 @@ public class GUIService
   JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
     JSONObject responseJSON = new JSONObject();
-    responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : guiManagedObject.getSummaryJSONRepresentation());
+    responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : getSummaryJSONRepresentation(guiManagedObject));
     responseJSON.put("accepted", guiManagedObject.getAccepted());
     responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
     return responseJSON;
   }
 
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = new JSONObject();
+    result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
+    result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
+    result.put("valid", guiManagedObject.getJSONRepresentation().get("valid"));
+    result.put("active", guiManagedObject.getJSONRepresentation().get("active"));
+    return result;
+  }
+  
   /****************************************************************************
   *
   *  ScheduleEntry

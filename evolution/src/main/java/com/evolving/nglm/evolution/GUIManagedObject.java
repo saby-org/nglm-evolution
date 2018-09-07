@@ -156,12 +156,6 @@ public abstract class GUIManagedObject
   boolean getActive() { return active; }
 
   //
-  //  abstract
-  //
-
-  abstract JSONObject getSummaryJSONRepresentation();
-
-  //
   //  private
   //
 
@@ -376,20 +370,6 @@ public abstract class GUIManagedObject
 
     public static Schema schema() { return schema; }
     public static ConnectSerde<IncompleteObject> serde() { return serde; }
-
-
-    /*****************************************
-    *
-    *  getSummaryJSONRe
-    *
-    *****************************************/
-
-    @Override JSONObject getSummaryJSONRepresentation()
-    {
-      JSONObject jsonRepresentation = new JSONObject();
-      jsonRepresentation.put("id", getGUIManagedObjectID());
-      return jsonRepresentation;
-    }
 
     /*****************************************
     *

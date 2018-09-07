@@ -88,21 +88,6 @@ public class SegmentationRule extends GUIManagedObject
 
   /*****************************************
   *
-  *  getSummaryJSONRepresentation
-  *
-  *****************************************/
-
-  @Override JSONObject getSummaryJSONRepresentation()
-  {
-    JSONObject jsonRepresentation = new JSONObject();
-    jsonRepresentation.putAll(getJSONRepresentation());
-    jsonRepresentation.remove("segmentationRuleCriteria");
-    jsonRepresentation.remove("subscriberGroupName");
-    return jsonRepresentation;
-  }
-
-  /*****************************************
-  *
   *  constructor -- unpack
   *
   *****************************************/
