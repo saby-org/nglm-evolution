@@ -92,7 +92,7 @@ public class Deployment
   public static String getBaseCountry() { return com.evolving.nglm.core.Deployment.getBaseCountry(); }
   public static boolean getGenerateNumericIDs() { return com.evolving.nglm.core.Deployment.getGenerateNumericIDs(); }
   public static String getRedisSentinels() { return com.evolving.nglm.core.Deployment.getRedisSentinels(); }
-  public static String getRecordAlternateIDTopic() { return com.evolving.nglm.core.Deployment.getRecordAlternateIDTopic(); }
+  public static String getRecordSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getRecordSubscriberIDTopic(); }
   public static String getExternalSubscriberID() { return com.evolving.nglm.core.Deployment.getExternalSubscriberID(); }
   public static String getSubscriberTraceControlAlternateID() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAlternateID(); }
   public static boolean getSubscriberTraceControlAutoProvision() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAutoProvision(); }

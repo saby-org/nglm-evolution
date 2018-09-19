@@ -39,7 +39,7 @@ import com.evolving.nglm.core.NGLMKafkaClientSupplier;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.RecordAlternateID;
+import com.evolving.nglm.core.RecordSubscriberID;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
@@ -138,7 +138,7 @@ public class EvolutionEngine
     //  source topics 
     //
 
-    String recordAlternateIDTopic = Deployment.getRecordAlternateIDTopic();
+    String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
 
@@ -337,7 +337,7 @@ public class EvolutionEngine
     *****************************************/
 
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
-    final ConnectSerde<RecordAlternateID> recordAlternateIDSerde = RecordAlternateID.serde();
+    final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberState> subscriberStateSerde = SubscriberState.serde();
@@ -355,7 +355,7 @@ public class EvolutionEngine
     *****************************************/
 
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
-    evolutionEventSerdes.add(recordAlternateIDSerde);
+    evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
     evolutionEventSerdes.addAll(evolutionEngineEventSerdes.values());
@@ -382,16 +382,10 @@ public class EvolutionEngine
     //  core streams
     //
 
-    KStream<StringKey, RecordAlternateID> recordAlternateIDSourceStream = builder.stream(recordAlternateIDTopic, Consumed.with(stringKeySerde, recordAlternateIDSerde));
+    KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     
-    //
-    //  filter (if necessary)
-    //
-
-    KStream<StringKey, RecordAlternateID> filteredRecordAlternateIDSourceStream = recordAlternateIDSourceStream.filter((key,value) -> (! value.getKeyByAlternateID()));
-
     //
     //  evolution engine event source streams
     //
@@ -417,7 +411,7 @@ public class EvolutionEngine
     //
 
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
-    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) filteredRecordAlternateIDSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
