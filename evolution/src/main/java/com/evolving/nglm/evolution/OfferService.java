@@ -111,6 +111,7 @@ public class OfferService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("default", guiManagedObject.getJSONRepresentation().get("default"));
+    result.put("serviceTypeID", guiManagedObject.getJSONRepresentation().get("serviceTypeID"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
     return result;

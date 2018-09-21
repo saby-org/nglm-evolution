@@ -68,6 +68,7 @@ public class Deployment
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
+  private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,ProductType> productTypes = new LinkedHashMap<String,ProductType>();
   private static Map<String,RewardType> rewardTypes = new LinkedHashMap<String,RewardType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
@@ -136,6 +137,7 @@ public class Deployment
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
+  public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,ProductType> getProductTypes() { return productTypes; }
   public static Map<String,RewardType> getRewardTypes() { return rewardTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
@@ -746,6 +748,25 @@ public class Deployment
             JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
             OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
             offerCategories.put(offerCategory.getID(), offerCategory);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  serviceType
+    //
+
+    try
+      {
+        JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
+        for (int i=0; i<serviceTypeValues.size(); i++)
+          {
+            JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
+            ServiceType serviceType = new ServiceType(serviceTypeJSON);
+            serviceTypes.put(serviceType.getID(), serviceType);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

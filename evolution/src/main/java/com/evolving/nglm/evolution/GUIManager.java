@@ -106,6 +106,7 @@ public class GUIManager
     getPresentationCriterionField,
     getOfferTypes,
     getOfferCategories,
+    getServiceTypes,
     getProductTypes,
     getRewardTypes,
     getOfferOptimizationAlgorithms,
@@ -290,6 +291,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
         restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
+        restServer.createContext("/nglm-guimanager/getServiceTypes", new APIHandler(API.getServiceTypes));
         restServer.createContext("/nglm-guimanager/getProductTypes", new APIHandler(API.getProductTypes));
         restServer.createContext("/nglm-guimanager/getRewardTypes", new APIHandler(API.getRewardTypes));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
@@ -574,6 +576,10 @@ public class GUIManager
 
                 case getOfferCategories:
                   jsonResponse = processGetOfferCategories(jsonRoot);
+                  break;
+
+                case getServiceTypes:
+                  jsonResponse = processGetServiceTypes(jsonRoot);
                   break;
 
                 case getProductTypes:
@@ -942,6 +948,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve serviceTypes
+    *
+    *****************************************/
+
+    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
+    for (ServiceType serviceType : Deployment.getServiceTypes().values())
+      {
+        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
+        serviceTypes.add(serviceTypeJSON);
+      }
+
+    /*****************************************
+    *
     *  retrieve productTypes
     *
     *****************************************/
@@ -997,6 +1016,7 @@ public class GUIManager
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
     response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
+    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
     response.put("productTypes", JSONUtilities.encodeArray(productTypes));
     response.put("rewardTypes", JSONUtilities.encodeArray(rewardTypes));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
@@ -1581,6 +1601,39 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getServiceTypes
+  *
+  *****************************************/
+
+  private JSONObject processGetServiceTypes(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve serviceTypes
+    *
+    *****************************************/
+
+    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
+    for (ServiceType serviceType : Deployment.getServiceTypes().values())
+      {
+        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
+        serviceTypes.add(serviceTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
     return JSONUtilities.encodeObject(response);
   }
 
