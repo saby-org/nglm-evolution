@@ -73,6 +73,7 @@
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
+    <topic.externaldeliveryrequest_fileconnector>externaldeliveryrequest-fileconnector</topic.externaldeliveryrequest_fileconnector>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>

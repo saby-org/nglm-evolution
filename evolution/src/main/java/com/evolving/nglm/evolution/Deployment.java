@@ -72,7 +72,7 @@ public class Deployment
   private static Map<String,ProductType> productTypes = new LinkedHashMap<String,ProductType>();
   private static Map<String,RewardType> rewardTypes = new LinkedHashMap<String,RewardType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
-  private static Map<String,DeliveryManagerDeclaration> fulfillmentManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
 
   /*****************************************
   *
@@ -141,7 +141,7 @@ public class Deployment
   public static Map<String,ProductType> getProductTypes() { return productTypes; }
   public static Map<String,RewardType> getRewardTypes() { return rewardTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
-  public static Map<String,DeliveryManagerDeclaration> getFulfillmentManagers() { return fulfillmentManagers; }
+  public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
 
   /*****************************************
   *
@@ -833,17 +833,17 @@ public class Deployment
       }
     
     //
-    //  fulfillmentManagers
+    //  deliveryManagers
     //
 
     try
       {
-        JSONArray fulfillmentManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentManagers", true);
-        for (int i=0; i<fulfillmentManagerValues.size(); i++)
+        JSONArray deliveryManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", true);
+        for (int i=0; i<deliveryManagerValues.size(); i++)
           {
-            JSONObject fulfillmentManagerJSON = (JSONObject) fulfillmentManagerValues.get(i);
-            DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(fulfillmentManagerJSON);
-            fulfillmentManagers.put(deliveryManagerDeclaration.getRequestType(), deliveryManagerDeclaration);
+            JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
+            DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(deliveryManagerJSON);
+            deliveryManagers.put(deliveryManagerDeclaration.getDeliveryType(), deliveryManagerDeclaration);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

@@ -29,11 +29,12 @@ public class DeliveryManagerDeclaration
   ****************************************/
 
   private JSONObject jsonRepresentation;
-  private String requestType;
+  private String deliveryType;
   private String requestClassName;
   private String requestTopic;
   private String responseTopic;
   private String internalTopic;
+  private String routingTopic;
   private int deliveryRatePerMinute;
   private DeliveryGuarantee deliveryGuarantee;
 
@@ -44,11 +45,12 @@ public class DeliveryManagerDeclaration
   *****************************************/
 
   public JSONObject getJSONRepresentation() { return jsonRepresentation; }
-  public String getRequestType() { return requestType; }
+  public String getDeliveryType() { return deliveryType; }
   public String getRequestClassName() { return requestClassName; }
   public String getRequestTopic() { return requestTopic; }
   public String getResponseTopic() { return responseTopic; }
   public String getInternalTopic() { return internalTopic; }
+  public String getRoutingTopic() { return routingTopic; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
   public DeliveryGuarantee getDeliveryGuarantee() { return deliveryGuarantee; }
 
@@ -84,11 +86,12 @@ public class DeliveryManagerDeclaration
     //
 
     this.jsonRepresentation = jsonRoot;
-    this.requestType = JSONUtilities.decodeString(jsonRoot, "requestType", true);
+    this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
     this.requestClassName = JSONUtilities.decodeString(jsonRoot, "requestClass", true);
     this.requestTopic = JSONUtilities.decodeString(jsonRoot, "requestTopic", true);
     this.responseTopic = JSONUtilities.decodeString(jsonRoot, "responseTopic", true);
     this.internalTopic = JSONUtilities.decodeString(jsonRoot, "internalTopic", true);
+    this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", true);
     this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", true);
     this.deliveryGuarantee = (JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", false) != null) ? DeliveryGuarantee.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", true)) : null;
   }

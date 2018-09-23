@@ -70,7 +70,7 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
     schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
     schemaBuilder.field("evolutionSubscriberStatusUpdated", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("fulfillmentRequests", SchemaBuilder.array(FulfillmentRequest.commonSerde().schema()).schema());
+    schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
@@ -99,7 +99,7 @@ public class SubscriberState implements SubscriberStreamOutput
   private SubscriberProfile subscriberProfile;
   private Set<JourneyState> journeyStates;
   private boolean evolutionSubscriberStatusUpdated;
-  private List<FulfillmentRequest> fulfillmentRequests;
+  private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatistic> journeyStatistics;
   private SubscriberTrace subscriberTrace;
 
@@ -113,7 +113,7 @@ public class SubscriberState implements SubscriberStreamOutput
   public SubscriberProfile getSubscriberProfile() { return subscriberProfile; }
   public Set<JourneyState> getJourneyStates() { return journeyStates; }
   public boolean getEvolutionSubscriberStatusUpdated() { return evolutionSubscriberStatusUpdated; }
-  public List<FulfillmentRequest> getFulfillmentRequests() { return fulfillmentRequests; }
+  public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
 
@@ -140,7 +140,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID);
         this.journeyStates = new HashSet<JourneyState>();
         this.evolutionSubscriberStatusUpdated = true;
-        this.fulfillmentRequests = new ArrayList<FulfillmentRequest>();
+        this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatistics = new ArrayList<JourneyStatistic>();
         this.subscriberTrace = null;
       }
@@ -160,13 +160,13 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, boolean evolutionSubscriberStatusUpdated, List<FulfillmentRequest> fulfillmentRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, boolean evolutionSubscriberStatusUpdated, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
     this.journeyStates = journeyStates;
     this.evolutionSubscriberStatusUpdated = evolutionSubscriberStatusUpdated;
-    this.fulfillmentRequests = fulfillmentRequests;
+    this.deliveryRequests = deliveryRequests;
     this.journeyStatistics = journeyStatistics;
     this.subscriberTrace = subscriberTrace;
   }
@@ -188,7 +188,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.subscriberID = subscriberState.getSubscriberID();
         this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileCopyConstructor().newInstance(subscriberState.getSubscriberProfile());
         this.evolutionSubscriberStatusUpdated = subscriberState.getEvolutionSubscriberStatusUpdated();
-        this.fulfillmentRequests = new ArrayList<FulfillmentRequest>(subscriberState.getFulfillmentRequests());
+        this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatistics());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
 
@@ -226,7 +226,7 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().pack(subscriberState.getSubscriberProfile()));
     struct.put("journeyStates", packJourneyStates(subscriberState.getJourneyStates()));
     struct.put("evolutionSubscriberStatusUpdated", subscriberState.getEvolutionSubscriberStatusUpdated());
-    struct.put("fulfillmentRequests", packFulfillmentRequests(subscriberState.getFulfillmentRequests()));
+    struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatistics", packJourneyStatistics(subscriberState.getJourneyStatistics()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
     return struct;
@@ -250,16 +250,16 @@ public class SubscriberState implements SubscriberStreamOutput
   
   /*****************************************
   *
-  *  packFulfillmentRequests
+  *  packDeliveryRequests
   *
   *****************************************/
 
-  private static List<Object> packFulfillmentRequests(List<FulfillmentRequest> fulfillmentRequests)
+  private static List<Object> packDeliveryRequests(List<DeliveryRequest> deliveryRequests)
   {
     List<Object> result = new ArrayList<Object>();
-    for (FulfillmentRequest fulfillmentRequest : fulfillmentRequests)
+    for (DeliveryRequest deliveryRequest : deliveryRequests)
       {
-        result.add(FulfillmentRequest.commonSerde().pack(fulfillmentRequest));
+        result.add(DeliveryRequest.commonSerde().pack(deliveryRequest));
       }
     return result;
   }
@@ -305,7 +305,7 @@ public class SubscriberState implements SubscriberStreamOutput
     SubscriberProfile subscriberProfile = SubscriberProfile.getSubscriberProfileSerde().unpack(new SchemaAndValue(schema.field("subscriberProfile").schema(), valueStruct.get("subscriberProfile")));
     Set<JourneyState> journeyStates = unpackJourneyStates(schema.field("journeyStates").schema(), valueStruct.get("journeyStates"));
     boolean evolutionSubscriberStatusUpdated = valueStruct.getBoolean("evolutionSubscriberStatusUpdated");
-    List<FulfillmentRequest> fulfillmentRequests = unpackFulfillmentRequests(schema.field("fulfillmentRequests").schema(), valueStruct.get("fulfillmentRequests"));
+    List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
 
@@ -313,7 +313,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, evolutionSubscriberStatusUpdated, fulfillmentRequests, journeyStatistics, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, evolutionSubscriberStatusUpdated, deliveryRequests, journeyStatistics, subscriberTrace);
   }
 
   /*****************************************
@@ -351,28 +351,28 @@ public class SubscriberState implements SubscriberStreamOutput
 
   /*****************************************
   *
-  *  unpackFulfillmentRequests
+  *  unpackDeliveryRequests
   *
   *****************************************/
 
-  private static List<FulfillmentRequest> unpackFulfillmentRequests(Schema schema, Object value)
+  private static List<DeliveryRequest> unpackDeliveryRequests(Schema schema, Object value)
   {
     //
-    //  get schema for FulfillmentRequest
+    //  get schema for DeliveryRequest
     //
 
-    Schema fulfillmentRequestSchema = schema.valueSchema();
+    Schema deliveryRequestSchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    List<FulfillmentRequest> result = new ArrayList<FulfillmentRequest>();
+    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
     List<Object> valueArray = (List<Object>) value;
     for (Object request : valueArray)
       {
-        FulfillmentRequest fulfillmentRequest = FulfillmentRequest.commonSerde().unpack(new SchemaAndValue(fulfillmentRequestSchema, request));
-        result.add(fulfillmentRequest);
+        DeliveryRequest deliveryRequest = DeliveryRequest.commonSerde().unpack(new SchemaAndValue(deliveryRequestSchema, request));
+        result.add(deliveryRequest);
       }
 
     //

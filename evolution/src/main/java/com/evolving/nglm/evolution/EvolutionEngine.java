@@ -14,6 +14,7 @@ import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
@@ -316,18 +317,18 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  fulfillment managers topics/serdes
+    *  delivery managers topics/serdes
     *
     *****************************************/
 
-    Map<DeliveryManagerDeclaration,String> fulfillmentManagerRequestTopics = new HashMap<DeliveryManagerDeclaration,String>();
-    Map<DeliveryManagerDeclaration,String> fulfillmentManagerResponseTopics = new HashMap<DeliveryManagerDeclaration,String>();
-    Map<DeliveryManagerDeclaration,ConnectSerde<? extends DeliveryRequest>> fulfillmentManagerResponseSerdes = new HashMap<DeliveryManagerDeclaration,ConnectSerde<? extends DeliveryRequest>>();
-    for (DeliveryManagerDeclaration fulfillmentManager : Deployment.getFulfillmentManagers().values())
+    Map<DeliveryManagerDeclaration,String> deliveryManagerRequestTopics = new HashMap<DeliveryManagerDeclaration,String>();
+    Map<DeliveryManagerDeclaration,String> deliveryManagerResponseTopics = new HashMap<DeliveryManagerDeclaration,String>();
+    Map<DeliveryManagerDeclaration,ConnectSerde<? extends DeliveryRequest>> deliveryManagerResponseSerdes = new HashMap<DeliveryManagerDeclaration,ConnectSerde<? extends DeliveryRequest>>();
+    for (DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values())
       {
-        fulfillmentManagerRequestTopics.put(fulfillmentManager, fulfillmentManager.getRequestTopic());
-        fulfillmentManagerResponseTopics.put(fulfillmentManager, fulfillmentManager.getResponseTopic());
-        fulfillmentManagerResponseSerdes.put(fulfillmentManager, fulfillmentManager.getRequestSerde());
+        deliveryManagerRequestTopics.put(deliveryManager, deliveryManager.getRequestTopic());
+        deliveryManagerResponseTopics.put(deliveryManager, deliveryManager.getResponseTopic());
+        deliveryManagerResponseSerdes.put(deliveryManager, deliveryManager.getRequestSerde());
       }
 
     /*****************************************
@@ -359,7 +360,7 @@ public class EvolutionEngine
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
     evolutionEventSerdes.addAll(evolutionEngineEventSerdes.values());
-    evolutionEventSerdes.addAll(fulfillmentManagerResponseSerdes.values());
+    evolutionEventSerdes.addAll(deliveryManagerResponseSerdes.values());
     final ConnectSerde<SubscriberStreamEvent> evolutionEventSerde = new ConnectSerde<SubscriberStreamEvent>("evolution_event", false, evolutionEventSerdes.toArray(new ConnectSerde[0]));
 
     /****************************************
@@ -397,13 +398,13 @@ public class EvolutionEngine
       }
 
     //
-    //  fulfillment manager response source streams
+    //  delivery manager response source streams
     //
 
-    List<KStream<StringKey, ? extends SubscriberStreamEvent>> fulfillmentManagerResponseStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
-    for (DeliveryManagerDeclaration fulfillmentManagerDeclaration : Deployment.getFulfillmentManagers().values())
+    List<KStream<StringKey, ? extends SubscriberStreamEvent>> deliveryManagerResponseStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
+    for (DeliveryManagerDeclaration deliveryManagerDeclaration : Deployment.getDeliveryManagers().values())
       {
-        fulfillmentManagerResponseStreams.add(builder.stream(fulfillmentManagerResponseTopics.get(fulfillmentManagerDeclaration), Consumed.with(stringKeySerde, fulfillmentManagerResponseSerdes.get(fulfillmentManagerDeclaration))));
+        deliveryManagerResponseStreams.add(builder.stream(deliveryManagerResponseTopics.get(deliveryManagerDeclaration), Consumed.with(stringKeySerde, deliveryManagerResponseSerdes.get(deliveryManagerDeclaration))));
       }
 
     //
@@ -415,7 +416,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
-    evolutionEventStreams.addAll(fulfillmentManagerResponseStreams);
+    evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream compositeStream = null;
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : evolutionEventStreams)
       {
@@ -455,29 +456,29 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof SubscriberProfile), (key,value) -> (value instanceof FulfillmentRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof SubscriberProfile), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
     KStream<StringKey, SubscriberProfile> subscriberUpdateStream = (KStream<StringKey, SubscriberProfile>) branchedEvolutionEngineOutputs[0];
-    KStream<StringKey, FulfillmentRequest> fulfillmentRequestStream = (KStream<StringKey, FulfillmentRequest>) branchedEvolutionEngineOutputs[1];
+    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[2];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
 
     /*****************************************
     *
-    *  branch fulfillment requests
+    *  branch delivery requests
     *
     *****************************************/
     
     //
-    //  build predicates for fulfillment requests
+    //  build predicates for delivery requests
     //
 
-    String[] fulfillmentManagerFulfillmentTypes = new String[Deployment.getFulfillmentManagers().size()];
-    FulfillmentManagerPredicate[] fulfillmentManagerPredicates = new FulfillmentManagerPredicate[Deployment.getFulfillmentManagers().size()];
+    String[] deliveryManagerDeliveryTypes = new String[Deployment.getDeliveryManagers().size()];
+    DeliveryManagerPredicate[] deliveryManagerPredicates = new DeliveryManagerPredicate[Deployment.getDeliveryManagers().size()];
     int i = 0;
-    for (DeliveryManagerDeclaration fulfillmentManager : Deployment.getFulfillmentManagers().values())
+    for (DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values())
       {
-        fulfillmentManagerFulfillmentTypes[i] = fulfillmentManager.getRequestType();
-        fulfillmentManagerPredicates[i] = new FulfillmentManagerPredicate(fulfillmentManager.getRequestType());
+        deliveryManagerDeliveryTypes[i] = deliveryManager.getDeliveryType();
+        deliveryManagerPredicates[i] = new DeliveryManagerPredicate(deliveryManager.getDeliveryType());
         i += 1;
       }
 
@@ -485,16 +486,16 @@ public class EvolutionEngine
     //  branch
     //
 
-    KStream<StringKey, FulfillmentRequest>[] branchedFulfillmentRequestStreams = (Deployment.getFulfillmentManagers().size() > 0) ? fulfillmentRequestStream.branch(fulfillmentManagerPredicates) : new KStream[0];
+    KStream<StringKey, DeliveryRequest>[] branchedDeliveryRequestStreams = (Deployment.getDeliveryManagers().size() > 0) ? deliveryRequestStream.branch(deliveryManagerPredicates) : new KStream[0];
 
     //
-    //  fulfillment request streams
+    //  delivery request streams
     //
 
-    Map<String, KStream<StringKey, FulfillmentRequest>> fulfillmentRequestStreams = new HashMap<String, KStream<StringKey, FulfillmentRequest>>();
-    for (int j=0; j<branchedFulfillmentRequestStreams.length; j++)
+    Map<String, KStream<StringKey, DeliveryRequest>> deliveryRequestStreams = new HashMap<String, KStream<StringKey, DeliveryRequest>>();
+    for (int j=0; j<branchedDeliveryRequestStreams.length; j++)
       {
-        fulfillmentRequestStreams.put(fulfillmentManagerFulfillmentTypes[j], branchedFulfillmentRequestStreams[j]);
+        deliveryRequestStreams.put(deliveryManagerDeliveryTypes[j], branchedDeliveryRequestStreams[j]);
       }
 
     /*****************************************
@@ -512,16 +513,17 @@ public class EvolutionEngine
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     
     //
-    //  sink - fulfillment request streams
+    //  sink - delivery request streams
     //
 
-    for (String fulfillmentType : fulfillmentRequestStreams.keySet())
+    for (String deliveryType : deliveryRequestStreams.keySet())
       {
-        DeliveryManagerDeclaration fulfillmentManager = Deployment.getFulfillmentManagers().get(fulfillmentType);
-        String requestTopic = fulfillmentManager.getRequestTopic();
-        ConnectSerde<FulfillmentRequest> requestSerde = (ConnectSerde<FulfillmentRequest>) fulfillmentManager.getRequestSerde();
-        KStream<StringKey, FulfillmentRequest> requestStream = fulfillmentRequestStreams.get(fulfillmentType);
-        requestStream.to(requestTopic, Produced.with(stringKeySerde, requestSerde));
+        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get(deliveryType);
+        String requestTopic = deliveryManager.getRequestTopic();
+        ConnectSerde<DeliveryRequest> requestSerde = (ConnectSerde<DeliveryRequest>) deliveryManager.getRequestSerde();
+        KStream<StringKey, DeliveryRequest> requestStream = deliveryRequestStreams.get(deliveryType);
+        KStream<StringKey, DeliveryRequest> rekeyedRequestStream = requestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
+        rekeyedRequestStream.to(requestTopic, Produced.with(stringKeySerde, requestSerde));
       }
 
     /*****************************************
@@ -551,34 +553,34 @@ public class EvolutionEngine
 
   /****************************************
   *
-  *  class FulfillmentManagerPredicate
+  *  class DeliveryManagerPredicate
   *
   ****************************************/
 
-  private static class FulfillmentManagerPredicate implements Predicate<StringKey, FulfillmentRequest>
+  private static class DeliveryManagerPredicate implements Predicate<StringKey, DeliveryRequest>
   {
     //
     //  data
     //
     
-    private String fulfillmentType;
+    private String deliveryType;
 
     //
     //  constructor
     //
 
-    private FulfillmentManagerPredicate(String fulfillmentType)
+    private DeliveryManagerPredicate(String deliveryType)
     {
-      this.fulfillmentType = fulfillmentType;
+      this.deliveryType = deliveryType;
     }
 
     //
     //  test (Predicate interface)
     //
 
-    @Override public boolean test(StringKey stringKey, FulfillmentRequest fulfillmentRequest)
+    @Override public boolean test(StringKey stringKey, DeliveryRequest deliveryRequest)
     {
-      return fulfillmentType.equals(fulfillmentRequest.getFulfillmentType());
+      return deliveryType.equals(deliveryRequest.getDeliveryType());
     }
   }
 
@@ -697,12 +699,12 @@ public class EvolutionEngine
       }
 
     //
-    //  fulfillmentRequests
+    //  deliveryRequests
     //
 
-    if (subscriberState.getFulfillmentRequests().size() > 0)
+    if (subscriberState.getDeliveryRequests().size() > 0)
       {
-        subscriberState.getFulfillmentRequests().clear();
+        subscriberState.getDeliveryRequests().clear();
         subscriberStateUpdated = true;
       }
 
@@ -794,27 +796,6 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  re-evaluate subscriberGroups for epoch changes and segmentation rules
-    *
-    *****************************************/
-
-    for (SegmentationRule segmentationRule :  segmentationRuleService.getActiveSegmentationRules(evolutionEvent.getEventDate()))
-      {
-        //
-        //  ignore if in temporal hole (segmentation rule has been activated but subscriberGroupEpochReader has not seen it yet)
-        //
-
-        if (subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()) != null)
-          {
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
-            boolean inGroup = EvaluationCriterion.evaluateCriteria(evaluationRequest, segmentationRule.getSegmentationRuleCriteria());
-            subscriberProfile.setSubscriberGroup(segmentationRule.getSubscriberGroupName(), subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()).getEpoch(), inGroup);
-            subscriberProfileUpdated = true;
-          }
-      }
-
-    /*****************************************
-    *
     *  process subscriberTraceControl
     *
     *****************************************/
@@ -856,6 +837,27 @@ public class EvolutionEngine
         SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
         subscriberProfile.setSubscriberGroup(subscriberGroup.getGroupName(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
         subscriberProfileUpdated = true;
+      }
+
+    /*****************************************
+    *
+    *  re-evaluate subscriberGroups for epoch changes and segmentation rules
+    *
+    *****************************************/
+
+    for (SegmentationRule segmentationRule :  segmentationRuleService.getActiveSegmentationRules(evolutionEvent.getEventDate()))
+      {
+        //
+        //  ignore if in temporal hole (segmentation rule has been activated but subscriberGroupEpochReader has not seen it yet)
+        //
+
+        if (subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()) != null)
+          {
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
+            boolean inGroup = EvaluationCriterion.evaluateCriteria(evaluationRequest, segmentationRule.getSegmentationRuleCriteria());
+            subscriberProfile.setSubscriberGroup(segmentationRule.getSubscriberGroupName(), subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()).getEpoch(), inGroup);
+            subscriberProfileUpdated = true;
+          }
       }
 
     /*****************************************
@@ -1014,10 +1016,21 @@ public class EvolutionEngine
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     result.addAll(subscriberState.getEvolutionSubscriberStatusUpdated() ? Collections.<SubscriberProfile>singletonList(subscriberState.getSubscriberProfile()) : Collections.<SubscriberProfile>emptyList());
-    result.addAll(subscriberState.getFulfillmentRequests());
+    result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatistics());
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     return result;
+  }
+  
+  /****************************************
+  *
+  *  rekeyDeliveryRequestStream
+  *
+  ****************************************/
+
+  private static KeyValue<StringKey, DeliveryRequest> rekeyDeliveryRequestStream(StringKey key, DeliveryRequest value)
+  {
+    return new KeyValue<StringKey, DeliveryRequest>(new StringKey(value.getDeliveryRequestID()), value);
   }
   
   /*****************************************

@@ -20,7 +20,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.rii.utilities.UniqueKeyServer;
 import com.rii.utilities.SystemTime;
 
 import java.io.BufferedReader;
@@ -84,16 +83,6 @@ public class SubscriberGroupLoader
   *  services
   *
   *****************************************/
-
-  //
-  //  epoch/uniqueKeyServer
-  //
-  
-  private static UniqueKeyServer epochServer = new UniqueKeyServer();
-
-  //
-  //  subscriberIDService
-  //
 
   private static SubscriberIDService subscriberIDService;
   

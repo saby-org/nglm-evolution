@@ -43,4 +43,28 @@
     }'
   echo
 
+  #
+  #  source connector -- externalDeliveryRequest
+  #
+
+  create_topic ${topic.externaldeliveryrequest_fileconnector} $KAFKA_REPLICATION_FACTOR $FILECONNECTOR_PARTITIONS_LARGE "$TOPIC_DATA_TWO_DAYS"
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "externaldeliveryrequest_file_connector",
+      "config" :
+        {
+          "connector.class" : "com.evolving.nglm.evolution.ExternalDeliveryRequestFileSourceConnector",
+          "tasks.max" : 1,
+          "directory" : "/app/data/externaldeliveryrequests",
+          "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+          "pollMaxRecords" : 5,
+          "pollingInterval" : 10,
+          "verifySizeInterval" : 0,
+          "topic" : "(automatically populated)",
+          "bootstrapServers" : "'$BROKER_SERVERS'",
+          "internalTopic" : "${topic.externaldeliveryrequest_fileconnector}",
+          "archiveDirectory" : "/app/data/externaldeliveryrequestsarchive"
+        }
+      }'
+    echo
   
