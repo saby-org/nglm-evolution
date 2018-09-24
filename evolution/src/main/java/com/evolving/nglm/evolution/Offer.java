@@ -7,7 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionContext;
-import com.evolving.nglm.evolution.OfferPresentationChannel.OfferPresentationChannelProperty;
+import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -64,15 +64,12 @@ public class Offer extends GUIManagedObject
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("defaultPropensity", Schema.INT32_SCHEMA);
     schemaBuilder.field("marginFactor", Schema.INT32_SCHEMA);
-    schemaBuilder.field("cost", Schema.INT32_SCHEMA);
-    schemaBuilder.field("price", Schema.INT32_SCHEMA);
-    schemaBuilder.field("currency", Schema.STRING_SCHEMA);
-    schemaBuilder.field("salesChannels", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("productType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("rewardType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("offerPresentationChannels", SchemaBuilder.array(OfferPresentationChannel.schema()).schema());
+    schemaBuilder.field("offerCatalogObjectives", SchemaBuilder.array(OfferCatalogObjective.schema()).schema());
+    schemaBuilder.field("offerProducts", SchemaBuilder.array(OfferProduct.schema()).schema());
+    schemaBuilder.field("offerCallingChannels", SchemaBuilder.array(OfferCallingChannel.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -97,15 +94,12 @@ public class Offer extends GUIManagedObject
 
   private int defaultPropensity;
   private int marginFactor;
-  private int cost;
-  private int price;
-  private SupportedCurrency currency;
-  private Set<SalesChannel> salesChannels; 
+  private int unitaryCost;
   private List<EvaluationCriterion> profileCriteria;
   private OfferType offerType;
-  private ProductType productType;
-  private RewardType rewardType;
-  private Set<OfferPresentationChannel> offerPresentationChannels;
+  private Set<OfferCatalogObjective> offerCatalogObjectives; 
+  private Set<OfferProduct> offerProducts;
+  private Set<OfferCallingChannel> offerCallingChannels;
 
   /****************************************
   *
@@ -120,15 +114,12 @@ public class Offer extends GUIManagedObject
   public String getOfferID() { return getGUIManagedObjectID(); }
   public int getDefaultPropensity() { return defaultPropensity; }
   public int getMarginFactor() { return marginFactor; }
-  public int getCost() { return cost; }
-  public int getPrice() { return price; }
-  public SupportedCurrency getCurrency() { return currency; }
-  public Set<SalesChannel> getSalesChannels() { return salesChannels;  }
+  public int getUnitaryCost() { return unitaryCost; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public OfferType getOfferType() { return offerType; }
-  public ProductType getProductType() { return productType; }
-  public RewardType getRewardType() { return rewardType; }
-  public Set<OfferPresentationChannel> getOfferPresentationChannels() { return offerPresentationChannels; }
+  public Set<OfferCatalogObjective> getOfferCatalogObjectives() { return offerCatalogObjectives;  }
+  public Set<OfferProduct> getOfferProducts() { return offerProducts; }
+  public Set<OfferCallingChannel> getOfferCallingChannels() { return offerCallingChannels; }
 
   /*****************************************
   *
@@ -147,20 +138,17 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, int defaultPropensity, int marginFactor, int cost, int price, SupportedCurrency currency, Set<SalesChannel> salesChannels, List<EvaluationCriterion> profileCriteria, OfferType offerType, ProductType productType, RewardType rewardType, Set<OfferPresentationChannel> offerPresentationChannels)
+  public Offer(SchemaAndValue schemaAndValue, int defaultPropensity, int marginFactor, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferCatalogObjective> offerCatalogObjectives, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
   {
     super(schemaAndValue);
     this.defaultPropensity = defaultPropensity;
     this.marginFactor = marginFactor;
-    this.cost = cost;
-    this.price = price;
-    this.currency = currency;
-    this.salesChannels = salesChannels;
+    this.unitaryCost = unitaryCost;
     this.profileCriteria = profileCriteria;
     this.offerType = offerType;
-    this.productType = productType;
-    this.rewardType = rewardType;
-    this.offerPresentationChannels = offerPresentationChannels;
+    this.offerCatalogObjectives = offerCatalogObjectives;
+    this.offerProducts = offerProducts;
+    this.offerCallingChannels = offerCallingChannels;
   }
 
   /*****************************************
@@ -176,32 +164,13 @@ public class Offer extends GUIManagedObject
     packCommon(struct, offer);
     struct.put("defaultPropensity", offer.getDefaultPropensity());
     struct.put("marginFactor", offer.getMarginFactor());
-    struct.put("cost", offer.getCost());
-    struct.put("price", offer.getPrice());
-    struct.put("currency", offer.getCurrency().getID());
-    struct.put("salesChannels", packSalesChannels(offer.getSalesChannels()));
+    struct.put("unitaryCost", offer.getUnitaryCost());
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
     struct.put("offerType", offer.getOfferType().getID());
-    struct.put("productType", offer.getProductType().getID());
-    struct.put("rewardType", offer.getRewardType().getID());
-    struct.put("offerPresentationChannels", packOfferPresentationChannels(offer.getOfferPresentationChannels()));
+    struct.put("offerCatalogObjectives", packOfferCatalogObjectives(offer.getOfferCatalogObjectives()));
+    struct.put("offerProducts", packOfferProducts(offer.getOfferProducts()));
+    struct.put("offerCallingChannels", packOfferCallingChannels(offer.getOfferCallingChannels()));
     return struct;
-  }
-
-  /****************************************
-  *
-  *  packSalesChannels
-  *
-  ****************************************/
-
-  private static List<Object> packSalesChannels(Set<SalesChannel> salesChannels)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (SalesChannel salesChannel : salesChannels)
-      {
-        result.add(salesChannel.getID());
-      }
-    return result;
   }
 
   /****************************************
@@ -222,16 +191,48 @@ public class Offer extends GUIManagedObject
 
   /****************************************
   *
-  *  packOfferPresentationChannels
+  *  packOfferCatalogObjectives
   *
   ****************************************/
 
-  private static List<Object> packOfferPresentationChannels(Set<OfferPresentationChannel> offerPresentationChannels)
+  private static List<Object> packOfferCatalogObjectives(Set<OfferCatalogObjective> offerCatalogObjectives)
   {
     List<Object> result = new ArrayList<Object>();
-    for (OfferPresentationChannel offerPresentationChannel : offerPresentationChannels)
+    for (OfferCatalogObjective offerCatalogObjective : offerCatalogObjectives)
       {
-        result.add(OfferPresentationChannel.pack(offerPresentationChannel));
+        result.add(OfferCatalogObjective.pack(offerCatalogObjective));
+      }
+    return result;
+  }
+
+  /****************************************
+  *
+  *  packOfferProducts
+  *
+  ****************************************/
+
+  private static List<Object> packOfferProducts(Set<OfferProduct> offerProducts)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (OfferProduct offerProduct : offerProducts)
+      {
+        result.add(OfferProduct.pack(offerProduct));
+      }
+    return result;
+  }
+
+  /****************************************
+  *
+  *  packOfferCallingChannels
+  *
+  ****************************************/
+
+  private static List<Object> packOfferCallingChannels(Set<OfferCallingChannel> offerCallingChannels)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
+      {
+        result.add(OfferCallingChannel.pack(offerCallingChannel));
       }
     return result;
   }
@@ -259,50 +260,26 @@ public class Offer extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     int defaultPropensity = valueStruct.getInt32("defaultPropensity");
     int marginFactor = valueStruct.getInt32("marginFactor");
-    int cost = valueStruct.getInt32("cost");
-    int price = valueStruct.getInt32("price");
-    SupportedCurrency currency = Deployment.getSupportedCurrencies().get(valueStruct.getString("currency"));
-    Set<SalesChannel> salesChannels = unpackSalesChannels((List<String>) valueStruct.get("salesChannels"));
+    int unitaryCost = valueStruct.getInt32("unitaryCost");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
-    ProductType productType = Deployment.getProductTypes().get(valueStruct.getString("productType"));
-    RewardType rewardType = Deployment.getRewardTypes().get(valueStruct.getString("rewardType"));
-    Set<OfferPresentationChannel> offerPresentationChannels = unpackOfferPresentationChannels(schema.field("offerPresentationChannels").schema(), valueStruct.get("offerPresentationChannels"));
+    Set<OfferCatalogObjective> offerCatalogObjectives = unpackOfferCatalogObjectives(schema.field("offerCatalogObjectives").schema(), valueStruct.get("offerCatalogObjectives"));
+    Set<OfferProduct> offerProducts = unpackOfferProducts(schema.field("offerProducts").schema(), valueStruct.get("offerProducts"));
+    Set<OfferCallingChannel> offerCallingChannels = unpackOfferCallingChannels(schema.field("offerCallingChannels").schema(), valueStruct.get("offerCallingChannels"));
     
     //
     //  validate
     //
 
-    if (currency == null) throw new SerializationException("unknown currency: " + valueStruct.getString("currency"));
     if (offerType == null) throw new SerializationException("unknown offerType: " + valueStruct.getString("offerType"));
-    if (productType == null) throw new SerializationException("unknown productType: " + valueStruct.getString("productType"));
-    if (rewardType == null) throw new SerializationException("unknown rewardType: " + valueStruct.getString("rewardType"));
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, defaultPropensity, marginFactor, cost, price, currency, salesChannels, profileCriteria, offerType, productType, rewardType, offerPresentationChannels);
+    return new Offer(schemaAndValue, defaultPropensity, marginFactor, unitaryCost, profileCriteria, offerType, offerCatalogObjectives, offerProducts, offerCallingChannels);
   }
   
-  /*****************************************
-  *
-  *  unpackSalesChannels
-  *
-  *****************************************/
-
-  private static Set<SalesChannel> unpackSalesChannels(List<String> salesChannelIDs)
-  {
-    Set<SalesChannel> salesChannels = new HashSet<SalesChannel>();
-    for (String salesChannelID : salesChannelIDs)
-      {
-        SalesChannel salesChannel = Deployment.getSalesChannels().get(salesChannelID);
-        if (salesChannel == null) throw new SerializationException("unknown salesChannel: " + salesChannelID);
-        salesChannels.add(salesChannel);
-      }
-    return salesChannels;
-  }
-
   /*****************************************
   *
   *  unpackProfileCriteria
@@ -337,27 +314,91 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  unpackOfferPresentationChannels
+  *  unpackOfferCatalogObjectives
   *
   *****************************************/
 
-  private static Set<OfferPresentationChannel> unpackOfferPresentationChannels(Schema schema, Object value)
+  private static Set<OfferCatalogObjective> unpackOfferCatalogObjectives(Schema schema, Object value)
   {
     //
-    //  get schema for OfferPresentationChannel
+    //  get schema for OfferCatalogObjective
     //
 
-    Schema offerPresentationChannelSchema = schema.valueSchema();
+    Schema offerCatalogObjectiveSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<OfferCatalogObjective> result = new HashSet<OfferCatalogObjective>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object offerCatalogObjective : valueArray)
+      {
+        result.add(OfferCatalogObjective.unpack(new SchemaAndValue(offerCatalogObjectiveSchema, offerCatalogObjective)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackOfferProducts
+  *
+  *****************************************/
+
+  private static Set<OfferProduct> unpackOfferProducts(Schema schema, Object value)
+  {
+    //
+    //  get schema for OfferProduct
+    //
+
+    Schema offerProductSchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    Set<OfferPresentationChannel> result = new HashSet<OfferPresentationChannel>();
+    Set<OfferProduct> result = new HashSet<OfferProduct>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object offerPresentationChannel : valueArray)
+    for (Object offerProduct : valueArray)
       {
-        result.add(OfferPresentationChannel.unpack(new SchemaAndValue(offerPresentationChannelSchema, offerPresentationChannel)));
+        result.add(OfferProduct.unpack(new SchemaAndValue(offerProductSchema, offerProduct)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackOfferCallingChannels
+  *
+  *****************************************/
+
+  private static Set<OfferCallingChannel> unpackOfferCallingChannels(Schema schema, Object value)
+  {
+    //
+    //  get schema for OfferCallingChannel
+    //
+
+    Schema offerCallingChannelSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    Set<OfferCallingChannel> result = new HashSet<OfferCallingChannel>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object offerCallingChannel : valueArray)
+      {
+        result.add(OfferCallingChannel.unpack(new SchemaAndValue(offerCallingChannelSchema, offerCallingChannel)));
       }
 
     //
@@ -399,15 +440,12 @@ public class Offer extends GUIManagedObject
     
     this.defaultPropensity = JSONUtilities.decodeInteger(jsonRoot, "defaultPropensity", true);
     this.marginFactor = JSONUtilities.decodeInteger(jsonRoot, "marginFactor", true);
-    this.cost = JSONUtilities.decodeInteger(jsonRoot, "cost", true);
-    this.price = JSONUtilities.decodeInteger(jsonRoot, "price", true);
-    this.currency = Deployment.getSupportedCurrencies().get(JSONUtilities.decodeString(jsonRoot, "currencyID", true));
-    this.salesChannels = decodeSalesChannels(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelIDs", true));
+    this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
     this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
-    this.productType = Deployment.getProductTypes().get(JSONUtilities.decodeString(jsonRoot, "productTypeID", true));
-    this.rewardType = Deployment.getRewardTypes().get(JSONUtilities.decodeString(jsonRoot, "rewardTypeID", true));
-    this.offerPresentationChannels = decodeOfferPresentationChannels(JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannels", false));
+    this.offerCatalogObjectives = decodeOfferCatalogObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectives", true));
+    this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
+    this.offerCallingChannels = decodeOfferCallingChannels(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", false));
 
     /*****************************************
     *
@@ -415,10 +453,7 @@ public class Offer extends GUIManagedObject
     *
     *****************************************/
 
-    if (this.currency == null) throw new GUIManagerException("unsupported currency", JSONUtilities.decodeString(jsonRoot, "currencyID", true));
     if (this.offerType == null) throw new GUIManagerException("unsupported offerType", JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
-    if (this.productType == null) throw new GUIManagerException("unsupported productType", JSONUtilities.decodeString(jsonRoot, "productTypeID", true));
-    if (this.rewardType == null) throw new GUIManagerException("unsupported rewardType", JSONUtilities.decodeString(jsonRoot, "rewardTypeID", true));
 
     /*****************************************
     *
@@ -430,25 +465,6 @@ public class Offer extends GUIManagedObject
       {
         this.setEpoch(epoch);
       }
-  }
-
-  /*****************************************
-  *
-  *  decodeSalesChannels
-  *
-  *****************************************/
-
-  private Set<SalesChannel> decodeSalesChannels(JSONArray jsonArray) throws GUIManagerException
-  {
-    Set<SalesChannel> salesChannels = new HashSet<SalesChannel>();
-    for (int i=0; i<jsonArray.size(); i++)
-      {
-        String salesChannelID = (String) jsonArray.get(i);
-        SalesChannel salesChannel = Deployment.getSalesChannels().get(salesChannelID);
-        if (salesChannel == null) throw new GUIManagerException("unknown salesChannel", salesChannelID);
-        salesChannels.add(salesChannel);
-      }
-    return salesChannels;
   }
 
   /*****************************************
@@ -469,18 +485,56 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeOfferPresentationChannels
+  *  decodeOfferCatalogObjectives
   *
   *****************************************/
 
-  private Set<OfferPresentationChannel> decodeOfferPresentationChannels(JSONArray jsonArray) throws GUIManagerException
+  private Set<OfferCatalogObjective> decodeOfferCatalogObjectives(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<OfferPresentationChannel> result = new HashSet<OfferPresentationChannel>();
+    Set<OfferCatalogObjective> result = new HashSet<OfferCatalogObjective>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferPresentationChannel((JSONObject) jsonArray.get(i)));
+            result.add(new OfferCatalogObjective((JSONObject) jsonArray.get(i)));
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  decodeOfferProducts
+  *
+  *****************************************/
+
+  private Set<OfferProduct> decodeOfferProducts(JSONArray jsonArray) throws GUIManagerException
+  {
+    Set<OfferProduct> result = new HashSet<OfferProduct>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new OfferProduct((JSONObject) jsonArray.get(i)));
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  decodeOfferCallingChannels
+  *
+  *****************************************/
+
+  private Set<OfferCallingChannel> decodeOfferCallingChannels(JSONArray jsonArray) throws GUIManagerException
+  {
+    Set<OfferCallingChannel> result = new HashSet<OfferCallingChannel>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new OfferCallingChannel((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
@@ -500,15 +554,12 @@ public class Offer extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingOffer.getGUIManagedObjectID());
         epochChanged = epochChanged || ! (defaultPropensity == existingOffer.getDefaultPropensity());
         epochChanged = epochChanged || ! (marginFactor == existingOffer.getMarginFactor());
-        epochChanged = epochChanged || ! (cost == existingOffer.getCost());
-        epochChanged = epochChanged || ! (price == existingOffer.getPrice());
-        epochChanged = epochChanged || ! Objects.equals(currency, existingOffer.getCurrency());
-        epochChanged = epochChanged || ! Objects.equals(salesChannels, existingOffer.getSalesChannels());
+        epochChanged = epochChanged || ! (unitaryCost == existingOffer.getUnitaryCost());
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingOffer.getProfileCriteria());
         epochChanged = epochChanged || ! Objects.equals(offerType, existingOffer.getOfferType());
-        epochChanged = epochChanged || ! Objects.equals(productType, existingOffer.getProductType());
-        epochChanged = epochChanged || ! Objects.equals(rewardType, existingOffer.getRewardType());
-        epochChanged = epochChanged || ! Objects.equals(offerPresentationChannels, existingOffer.getOfferPresentationChannels());
+        epochChanged = epochChanged || ! Objects.equals(offerCatalogObjectives, existingOffer.getOfferCatalogObjectives());
+        epochChanged = epochChanged || ! Objects.equals(offerProducts, existingOffer.getOfferProducts());
+        epochChanged = epochChanged || ! Objects.equals(offerCallingChannels, existingOffer.getOfferCallingChannels());
         return epochChanged;
       }
     else
@@ -519,29 +570,29 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  validatePresentationChannels
+  *  validateCallingChannels
   *
   *****************************************/
 
-  public void validatePresentationChannels(PresentationChannelService presentationChannelService, Date date) throws GUIManagerException
+  public void validateCallingChannels(CallingChannelService callingChannelService, Date date) throws GUIManagerException
   {
-    for (OfferPresentationChannel offerPresentationChannel : offerPresentationChannels)
+    for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
       {
         /*****************************************
         *
-        *  retrieve presentationChannel
+        *  retrieve callingChannel
         *
         *****************************************/
 
-        PresentationChannel presentationChannel = presentationChannelService.getActivePresentationChannel(offerPresentationChannel.getPresentationChannelID(), date);
+        CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(offerCallingChannel.getCallingChannelID(), date);
 
         /*****************************************
         *
-        *  validate the presentationChannel exists and is active
+        *  validate the callingChannel exists and is active
         *
         *****************************************/
 
-        if (presentationChannel == null) throw new GUIManagerException("unknown presentation channel", offerPresentationChannel.getPresentationChannelID());
+        if (callingChannel == null) throw new GUIManagerException("unknown calling channel", offerCallingChannel.getCallingChannelID());
 
         /*****************************************
         *
@@ -553,25 +604,25 @@ public class Offer extends GUIManagedObject
         //  set of properties defined for this offer
         //
 
-        Set<PresentationChannelProperty> offerProperties = new HashSet<PresentationChannelProperty>();
-        for (OfferPresentationChannelProperty offerPresentationChannelProperty : offerPresentationChannel.getOfferPresentationChannelProperties())
+        Set<CallingChannelProperty> offerProperties = new HashSet<CallingChannelProperty>();
+        for (OfferCallingChannelProperty offerCallingChannelProperty : offerCallingChannel.getOfferCallingChannelProperties())
           {
-            offerProperties.add(offerPresentationChannelProperty.getProperty());
+            offerProperties.add(offerCallingChannelProperty.getProperty());
           }
 
         //
         //  validate mandatory properties
         //
 
-        if (! offerProperties.containsAll(presentationChannel.getMandatoryPresentationChannelProperties())) throw new GUIManagerException("missing required presentation channel properties", presentationChannel.getGUIManagedObjectID());
+        if (! offerProperties.containsAll(callingChannel.getMandatoryCallingChannelProperties())) throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID());
 
         //
         //  validate optional properties
         //
 
-        offerProperties.removeAll(presentationChannel.getMandatoryPresentationChannelProperties());
-        offerProperties.removeAll(presentationChannel.getOptionalPresentationChannelProperties());
-        if (offerProperties.size() > 0) throw new GUIManagerException("unknown presentation channel properties", presentationChannel.getGUIManagedObjectID());
+        offerProperties.removeAll(callingChannel.getMandatoryCallingChannelProperties());
+        offerProperties.removeAll(callingChannel.getOptionalCallingChannelProperties());
+        if (offerProperties.size() > 0) throw new GUIManagerException("unknown calling channel properties", callingChannel.getGUIManagedObjectID());
       }
   }
 }

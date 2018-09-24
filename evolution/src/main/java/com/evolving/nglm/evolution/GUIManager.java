@@ -21,13 +21,6 @@ import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.common.TopicPartition;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -94,9 +87,10 @@ public class GUIManager
     getSupportedLanguages,
     getSupportedCurrencies,
     getSupportedTimeUnits,
-    getPresentationChannelProperties,
-    getCallingChannels,
+    getCallingChannelProperties,
     getSalesChannels,
+    getCatalogCharacteristics,
+    getCatalogObjectives,
     getSupportedDataTypes,
     getProfileCriterionFields,
     getProfileCriterionFieldIDs,
@@ -105,10 +99,9 @@ public class GUIManager
     getPresentationCriterionFieldIDs,
     getPresentationCriterionField,
     getOfferTypes,
+    getSuppliers,
     getOfferCategories,
-    getServiceTypes,
-    getProductTypes,
-    getRewardTypes,
+    getProducts,
     getOfferOptimizationAlgorithms,
     getJourneyList,
     getJourneySummaryList,
@@ -135,11 +128,11 @@ public class GUIManager
     getScoringStrategy,
     putScoringStrategy,
     removeScoringStrategy,
-    getPresentationChannelList,
-    getPresentationChannelSummaryList,
-    getPresentationChannel,
-    putPresentationChannel,
-    removePresentationChannel,
+    getCallingChannelList,
+    getCallingChannelSummaryList,
+    getCallingChannel,
+    putCallingChannel,
+    removeCallingChannel,
     getDashboardCounts;
   }
 
@@ -174,7 +167,7 @@ public class GUIManager
   private OfferService offerService;
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
-  private PresentationChannelService presentationChannelService;
+  private CallingChannelService callingChannelService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
   /*****************************************
@@ -221,7 +214,7 @@ public class GUIManager
     String offerTopic = Deployment.getOfferTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
-    String presentationChannelTopic = Deployment.getPresentationChannelTopic();
+    String callingChannelTopic = Deployment.getCallingChannelTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     
     //
@@ -251,9 +244,30 @@ public class GUIManager
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
-    presentationChannelService = new PresentationChannelService(bootstrapServers, "guimanager-presentationchannelservice-" + apiProcessKey, presentationChannelTopic, true);
+    callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
+    //
+    //  initialize calling channels list (if necessary)
+    //
+
+    if (callingChannelService.getStoredCallingChannels().size() == 0)
+      {
+        try
+          {
+            JSONArray initialCallingChannelsJSONArray = Deployment.getInitialCallingChannelsJSONArray();
+            for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
+              {
+                JSONObject callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
+                callingChannelService.putCallingChannel(new CallingChannel(callingChannelJSON, epochServer.getKey(), null));
+              }
+          }
+        catch (JSONUtilitiesException | com.evolving.nglm.evolution.GUIManager.GUIManagerException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+    
     //
     //  start
     //
@@ -263,7 +277,7 @@ public class GUIManager
     offerService.start();
     scoringStrategyService.start();
     presentationStrategyService.start();
-    presentationChannelService.start();
+    callingChannelService.start();
 
     /*****************************************
     *
@@ -279,9 +293,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APIHandler(API.getSupportedLanguages));
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APIHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
-        restServer.createContext("/nglm-guimanager/getPresentationChannelProperties", new APIHandler(API.getPresentationChannelProperties));
-        restServer.createContext("/nglm-guimanager/getCallingChannels", new APIHandler(API.getCallingChannels));
+        restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristics", new APIHandler(API.getCatalogCharacteristics));
+        restServer.createContext("/nglm-guimanager/getCatalogObjectives", new APIHandler(API.getCatalogObjectives));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APIHandler(API.getProfileCriterionFieldIDs));
@@ -290,10 +305,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APIHandler(API.getPresentationCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
+        restServer.createContext("/nglm-guimanager/getSuppliers", new APIHandler(API.getSuppliers));
         restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
-        restServer.createContext("/nglm-guimanager/getServiceTypes", new APIHandler(API.getServiceTypes));
-        restServer.createContext("/nglm-guimanager/getProductTypes", new APIHandler(API.getProductTypes));
-        restServer.createContext("/nglm-guimanager/getRewardTypes", new APIHandler(API.getRewardTypes));
+        restServer.createContext("/nglm-guimanager/getProducts", new APIHandler(API.getProducts));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
         restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APIHandler(API.getJourneySummaryList));
@@ -320,11 +334,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getScoringStrategy", new APIHandler(API.getScoringStrategy));
         restServer.createContext("/nglm-guimanager/putScoringStrategy", new APIHandler(API.putScoringStrategy));
         restServer.createContext("/nglm-guimanager/removeScoringStrategy", new APIHandler(API.removeScoringStrategy));
-        restServer.createContext("/nglm-guimanager/getPresentationChannelList", new APIHandler(API.getPresentationChannelList));
-        restServer.createContext("/nglm-guimanager/getPresentationChannelSummaryList", new APIHandler(API.getPresentationChannelSummaryList));
-        restServer.createContext("/nglm-guimanager/getPresentationChannel", new APIHandler(API.getPresentationChannel));
-        restServer.createContext("/nglm-guimanager/putPresentationChannel", new APIHandler(API.putPresentationChannel));
-        restServer.createContext("/nglm-guimanager/removePresentationChannel", new APIHandler(API.removePresentationChannel));
+        restServer.createContext("/nglm-guimanager/getCallingChannelList", new APIHandler(API.getCallingChannelList));
+        restServer.createContext("/nglm-guimanager/getCallingChannelSummaryList", new APIHandler(API.getCallingChannelSummaryList));
+        restServer.createContext("/nglm-guimanager/getCallingChannel", new APIHandler(API.getCallingChannel));
+        restServer.createContext("/nglm-guimanager/putCallingChannel", new APIHandler(API.putCallingChannel));
+        restServer.createContext("/nglm-guimanager/removeCallingChannel", new APIHandler(API.removeCallingChannel));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -340,7 +354,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, presentationChannelService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -369,14 +383,14 @@ public class GUIManager
     private OfferService offerService;
     private ScoringStrategyService scoringStrategyService;
     private PresentationStrategyService presentationStrategyService;
-    private PresentationChannelService presentationChannelService;
+    private CallingChannelService callingChannelService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, PresentationChannelService presentationChannelService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -384,7 +398,7 @@ public class GUIManager
       this.offerService = offerService;
       this.scoringStrategyService = scoringStrategyService;
       this.presentationStrategyService = presentationStrategyService;
-      this.presentationChannelService = presentationChannelService;
+      this.callingChannelService = callingChannelService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
 
@@ -409,7 +423,7 @@ public class GUIManager
       if (offerService != null) offerService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (presentationStrategyService != null) presentationStrategyService.stop();
-      if (presentationChannelService != null) presentationChannelService.stop();
+      if (callingChannelService != null) callingChannelService.stop();
 
       //
       //  rest server
@@ -530,16 +544,20 @@ public class GUIManager
                   jsonResponse = processGetSupportedTimeUnits(jsonRoot);
                   break;
 
-                case getPresentationChannelProperties:
-                  jsonResponse = processGetPresentationChannelProperties(jsonRoot);
-                  break;
-
-                case getCallingChannels:
-                  jsonResponse = processGetCallingChannels(jsonRoot);
+                case getCallingChannelProperties:
+                  jsonResponse = processGetCallingChannelProperties(jsonRoot);
                   break;
 
                 case getSalesChannels:
                   jsonResponse = processGetSalesChannels(jsonRoot);
+                  break;
+
+                case getCatalogCharacteristics:
+                  jsonResponse = processGetCatalogCharacteristics(jsonRoot);
+                  break;
+
+                case getCatalogObjectives:
+                  jsonResponse = processGetCatalogObjectives(jsonRoot);
                   break;
 
                 case getSupportedDataTypes:
@@ -574,20 +592,16 @@ public class GUIManager
                   jsonResponse = processGetOfferTypes(jsonRoot);
                   break;
 
+                case getSuppliers:
+                  jsonResponse = processGetSuppliers(jsonRoot);
+                  break;
+
                 case getOfferCategories:
                   jsonResponse = processGetOfferCategories(jsonRoot);
                   break;
 
-                case getServiceTypes:
-                  jsonResponse = processGetServiceTypes(jsonRoot);
-                  break;
-
-                case getProductTypes:
-                  jsonResponse = processGetProductTypes(jsonRoot);
-                  break;
-
-                case getRewardTypes:
-                  jsonResponse = processGetRewardTypes(jsonRoot);
+                case getProducts:
+                  jsonResponse = processGetProducts(jsonRoot);
                   break;
 
                 case getOfferOptimizationAlgorithms:
@@ -694,24 +708,24 @@ public class GUIManager
                   jsonResponse = processRemoveScoringStrategy(jsonRoot);
                   break;
 
-                case getPresentationChannelList:
-                  jsonResponse = processGetPresentationChannelList(jsonRoot, true);
+                case getCallingChannelList:
+                  jsonResponse = processGetCallingChannelList(jsonRoot, true);
                   break;
 
-                case getPresentationChannelSummaryList:
-                  jsonResponse = processGetPresentationChannelList(jsonRoot, false);
+                case getCallingChannelSummaryList:
+                  jsonResponse = processGetCallingChannelList(jsonRoot, false);
                   break;
 
-                case getPresentationChannel:
-                  jsonResponse = processGetPresentationChannel(jsonRoot);
+                case getCallingChannel:
+                  jsonResponse = processGetCallingChannel(jsonRoot);
                   break;
 
-                case putPresentationChannel:
-                  jsonResponse = processPutPresentationChannel(jsonRoot);
+                case putCallingChannel:
+                  jsonResponse = processPutCallingChannel(jsonRoot);
                   break;
 
-                case removePresentationChannel:
-                  jsonResponse = processRemovePresentationChannel(jsonRoot);
+                case removeCallingChannel:
+                  jsonResponse = processRemoveCallingChannel(jsonRoot);
                   break;
 
                 case getDashboardCounts:
@@ -854,28 +868,15 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve presentationChannelProperties
+    *  retrieve callingChannelProperties
     *
     *****************************************/
 
-    List<JSONObject> presentationChannelProperties = new ArrayList<JSONObject>();
-    for (PresentationChannelProperty presentationChannelProperty : Deployment.getPresentationChannelProperties().values())
+    List<JSONObject> callingChannelProperties = new ArrayList<JSONObject>();
+    for (CallingChannelProperty callingChannelProperty : Deployment.getCallingChannelProperties().values())
       {
-        JSONObject presentationChannelPropertyJSON = presentationChannelProperty.getJSONRepresentation();
-        presentationChannelProperties.add(presentationChannelPropertyJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve callingChannels
-    *
-    *****************************************/
-
-    List<JSONObject> callingChannels = new ArrayList<JSONObject>();
-    for (CallingChannel callingChannel : Deployment.getCallingChannels().values())
-      {
-        JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
-        callingChannels.add(callingChannelJSON);
+        JSONObject callingChannelPropertyJSON = callingChannelProperty.getJSONRepresentation();
+        callingChannelProperties.add(callingChannelPropertyJSON);
       }
 
     /*****************************************
@@ -889,6 +890,32 @@ public class GUIManager
       {
         JSONObject salesChannelJSON = salesChannel.getJSONRepresentation();
         salesChannels.add(salesChannelJSON);
+      }
+
+    /*****************************************
+    *
+    *  retrieve catalogCharacteristics
+    *
+    *****************************************/
+
+    List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
+    for (CatalogCharacteristic catalogCharacteristic : Deployment.getCatalogCharacteristics().values())
+      {
+        JSONObject catalogCharacteristicJSON = catalogCharacteristic.getJSONRepresentation();
+        catalogCharacteristics.add(catalogCharacteristicJSON);
+      }
+
+    /*****************************************
+    *
+    *  retrieve catalogObjectives
+    *
+    *****************************************/
+
+    List<JSONObject> catalogObjectives = new ArrayList<JSONObject>();
+    for (CatalogObjective catalogObjective : Deployment.getCatalogObjectives().values())
+      {
+        JSONObject catalogObjectiveJSON = catalogObjective.getJSONRepresentation();
+        catalogObjectives.add(catalogObjectiveJSON);
       }
 
     /*****************************************
@@ -935,6 +962,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve suppliers
+    *
+    *****************************************/
+
+    List<JSONObject> suppliers = new ArrayList<JSONObject>();
+    for (Supplier supplier : Deployment.getSuppliers().values())
+      {
+        JSONObject supplierJSON = supplier.getJSONRepresentation();
+        suppliers.add(supplierJSON);
+      }
+
+    /*****************************************
+    *
     *  retrieve offerCategories
     *
     *****************************************/
@@ -948,41 +988,15 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve serviceTypes
+    *  retrieve products
     *
     *****************************************/
 
-    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
-    for (ServiceType serviceType : Deployment.getServiceTypes().values())
+    List<JSONObject> products = new ArrayList<JSONObject>();
+    for (Product product : Deployment.getProducts().values())
       {
-        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
-        serviceTypes.add(serviceTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve productTypes
-    *
-    *****************************************/
-
-    List<JSONObject> productTypes = new ArrayList<JSONObject>();
-    for (ProductType productType : Deployment.getProductTypes().values())
-      {
-        JSONObject productTypeJSON = productType.getJSONRepresentation();
-        productTypes.add(productTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve rewardTypes
-    *
-    *****************************************/
-
-    List<JSONObject> rewardTypes = new ArrayList<JSONObject>();
-    for (RewardType rewardType : Deployment.getRewardTypes().values())
-      {
-        JSONObject rewardTypeJSON = rewardType.getJSONRepresentation();
-        rewardTypes.add(rewardTypeJSON);
+        JSONObject productJSON = product.getJSONRepresentation();
+        products.add(productJSON);
       }
 
     /*****************************************
@@ -1008,17 +1022,17 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
-    response.put("presentationChannelProperties", JSONUtilities.encodeArray(presentationChannelProperties));
-    response.put("callingChannels", JSONUtilities.encodeArray(callingChannels));
+    response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
+    response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristics));
+    response.put("catalogObjectives", JSONUtilities.encodeArray(catalogObjectives));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
+    response.put("suppliers", JSONUtilities.encodeArray(suppliers));
     response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
-    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
-    response.put("productTypes", JSONUtilities.encodeArray(productTypes));
-    response.put("rewardTypes", JSONUtilities.encodeArray(rewardTypes));
+    response.put("products", JSONUtilities.encodeArray(products));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
     return JSONUtilities.encodeObject(response);
   }
@@ -1124,23 +1138,23 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getPresentationChannelProperties
+  *  getCallingChannelProperties
   *
   *****************************************/
 
-  private JSONObject processGetPresentationChannelProperties(JSONObject jsonRoot)
+  private JSONObject processGetCallingChannelProperties(JSONObject jsonRoot)
   {
     /*****************************************
     *
-    *  retrieve presentationChannelProperties
+    *  retrieve callingChannelProperties
     *
     *****************************************/
 
-    List<JSONObject> presentationChannelProperties = new ArrayList<JSONObject>();
-    for (PresentationChannelProperty presentationChannelProperty : Deployment.getPresentationChannelProperties().values())
+    List<JSONObject> callingChannelProperties = new ArrayList<JSONObject>();
+    for (CallingChannelProperty callingChannelProperty : Deployment.getCallingChannelProperties().values())
       {
-        JSONObject presentationChannelPropertyJSON = presentationChannelProperty.getJSONRepresentation();
-        presentationChannelProperties.add(presentationChannelPropertyJSON);
+        JSONObject callingChannelPropertyJSON = callingChannelProperty.getJSONRepresentation();
+        callingChannelProperties.add(callingChannelPropertyJSON);
       }
 
     /*****************************************
@@ -1151,40 +1165,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("presentationChannelProperties", JSONUtilities.encodeArray(presentationChannelProperties));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getCallingChannels
-  *
-  *****************************************/
-
-  private JSONObject processGetCallingChannels(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve callingChannels
-    *
-    *****************************************/
-
-    List<JSONObject> callingChannels = new ArrayList<JSONObject>();
-    for (CallingChannel callingChannel : Deployment.getCallingChannels().values())
-      {
-        JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
-        callingChannels.add(callingChannelJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("callingChannels", JSONUtilities.encodeArray(callingChannels));
+    response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -1218,6 +1199,72 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getCatalogCharacteristics
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogCharacteristics(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve catalogCharacteristics
+    *
+    *****************************************/
+
+    List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
+    for (CatalogCharacteristic catalogCharacteristic : Deployment.getCatalogCharacteristics().values())
+      {
+        JSONObject catalogCharacteristicJSON = catalogCharacteristic.getJSONRepresentation();
+        catalogCharacteristics.add(catalogCharacteristicJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristics));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getCatalogObjectives
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogObjectives(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve catalogObjectives
+    *
+    *****************************************/
+
+    List<JSONObject> catalogObjectives = new ArrayList<JSONObject>();
+    for (CatalogObjective catalogObjective : Deployment.getCatalogObjectives().values())
+      {
+        JSONObject catalogObjectiveJSON = catalogObjective.getJSONRepresentation();
+        catalogObjectives.add(catalogObjectiveJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("catalogObjectives", JSONUtilities.encodeArray(catalogObjectives));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -1573,6 +1620,39 @@ public class GUIManager
 
   /*****************************************
   *
+  *  getSuppliers
+  *
+  *****************************************/
+
+  private JSONObject processGetSuppliers(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve suppliers
+    *
+    *****************************************/
+
+    List<JSONObject> suppliers = new ArrayList<JSONObject>();
+    for (Supplier supplier : Deployment.getSuppliers().values())
+      {
+        JSONObject supplierJSON = supplier.getJSONRepresentation();
+        suppliers.add(supplierJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("suppliers", JSONUtilities.encodeArray(suppliers));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  getOfferCategories
   *
   *****************************************/
@@ -1606,23 +1686,23 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getServiceTypes
+  *  getProducts
   *
   *****************************************/
 
-  private JSONObject processGetServiceTypes(JSONObject jsonRoot)
+  private JSONObject processGetProducts(JSONObject jsonRoot)
   {
     /*****************************************
     *
-    *  retrieve serviceTypes
+    *  retrieve products
     *
     *****************************************/
 
-    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
-    for (ServiceType serviceType : Deployment.getServiceTypes().values())
+    List<JSONObject> products = new ArrayList<JSONObject>();
+    for (Product product : Deployment.getProducts().values())
       {
-        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
-        serviceTypes.add(serviceTypeJSON);
+        JSONObject productJSON = product.getJSONRepresentation();
+        products.add(productJSON);
       }
 
     /*****************************************
@@ -1633,73 +1713,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getProductTypes
-  *
-  *****************************************/
-
-  private JSONObject processGetProductTypes(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve productTypes
-    *
-    *****************************************/
-
-    List<JSONObject> productTypes = new ArrayList<JSONObject>();
-    for (ProductType productType : Deployment.getProductTypes().values())
-      {
-        JSONObject productTypeJSON = productType.getJSONRepresentation();
-        productTypes.add(productTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("productTypes", JSONUtilities.encodeArray(productTypes));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  getRewardTypes
-  *
-  *****************************************/
-
-  private JSONObject processGetRewardTypes(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve rewardTypes
-    *
-    *****************************************/
-
-    List<JSONObject> rewardTypes = new ArrayList<JSONObject>();
-    for (RewardType rewardType : Deployment.getRewardTypes().values())
-      {
-        JSONObject rewardTypeJSON = rewardType.getJSONRepresentation();
-        rewardTypes.add(rewardTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("rewardTypes", JSONUtilities.encodeArray(rewardTypes));
+    response.put("products", JSONUtilities.encodeArray(products));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2746,7 +2760,7 @@ public class GUIManager
         *
         *****************************************/
 
-        offerService.putOffer(offer, presentationChannelService);
+        offerService.putOffer(offer, callingChannelService);
 
         /*****************************************
         *
@@ -3380,23 +3394,23 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetPresentationChannelList
+  *  processGetCallingChannelList
   *
   *****************************************/
 
-  private JSONObject processGetPresentationChannelList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCallingChannelList(JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
-    *  retrieve and convert presentationChannels
+    *  retrieve and convert callingChannels
     *
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    List<JSONObject> presentationChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject presentationChannel : presentationChannelService.getStoredPresentationChannels())
+    List<JSONObject> callingChannels = new ArrayList<JSONObject>();
+    for (GUIManagedObject callingChannel : callingChannelService.getStoredCallingChannels())
       {
-        presentationChannels.add(presentationChannelService.generateResponseJSON(presentationChannel, fullDetails, now));
+        callingChannels.add(callingChannelService.generateResponseJSON(callingChannel, fullDetails, now));
       }
 
     /*****************************************
@@ -3407,17 +3421,17 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
-    response.put("presentationChannels", JSONUtilities.encodeArray(presentationChannels));
+    response.put("callingChannels", JSONUtilities.encodeArray(callingChannels));
     return JSONUtilities.encodeObject(response);
   }
                  
   /*****************************************
   *
-  *  processGetPresentationChannel
+  *  processGetCallingChannel
   *
   *****************************************/
 
-  private JSONObject processGetPresentationChannel(JSONObject jsonRoot)
+  private JSONObject processGetCallingChannel(JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3433,7 +3447,7 @@ public class GUIManager
     *
     ****************************************/
 
-    String presentationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
@@ -3441,8 +3455,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject presentationChannel = presentationChannelService.getStoredPresentationChannel(presentationChannelID);
-    JSONObject presentationChannelJSON = presentationChannelService.generateResponseJSON(presentationChannel, true, SystemTime.getCurrentTime());
+    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+    JSONObject callingChannelJSON = callingChannelService.generateResponseJSON(callingChannel, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -3450,18 +3464,18 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (presentationChannel != null) ? "ok" : "presentationChannelNotFound");
-    if (presentationChannel != null) response.put("presentationChannel", presentationChannelJSON);
+    response.put("responseCode", (callingChannel != null) ? "ok" : "callingChannelNotFound");
+    if (callingChannel != null) response.put("callingChannel", callingChannelJSON);
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processPutPresentationChannel
+  *  processPutCallingChannel
   *
   *****************************************/
 
-  private JSONObject processPutPresentationChannel(JSONObject jsonRoot)
+  private JSONObject processPutCallingChannel(JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3473,20 +3487,20 @@ public class GUIManager
     
     /*****************************************
     *
-    *  presentationChannelID
+    *  callingChannelID
     *
     *****************************************/
     
-    String presentationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (presentationChannelID == null)
+    String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (callingChannelID == null)
       {
-        presentationChannelID = presentationChannelService.generatePresentationChannelID();
-        jsonRoot.put("id", presentationChannelID);
+        callingChannelID = callingChannelService.generateCallingChannelID();
+        jsonRoot.put("id", callingChannelID);
       }
     
     /*****************************************
     *
-    *  process presentationChannel
+    *  process callingChannel
     *
     *****************************************/
 
@@ -3496,19 +3510,19 @@ public class GUIManager
       {
         /*****************************************
         *
-        *  existing presentationChannel
+        *  existing callingChannel
         *
         *****************************************/
 
-        GUIManagedObject existingPresentationChannel = presentationChannelService.getStoredPresentationChannel(presentationChannelID);
+        GUIManagedObject existingCallingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
 
         /****************************************
         *
-        *  instantiate presentationChannel
+        *  instantiate callingChannel
         *
         ****************************************/
 
-        PresentationChannel presentationChannel = new PresentationChannel(jsonRoot, epoch, existingPresentationChannel);
+        CallingChannel callingChannel = new CallingChannel(jsonRoot, epoch, existingCallingChannel);
 
         /*****************************************
         *
@@ -3516,7 +3530,7 @@ public class GUIManager
         *
         *****************************************/
 
-        presentationChannelService.putPresentationChannel(presentationChannel);
+        callingChannelService.putCallingChannel(callingChannel);
 
         /*****************************************
         *
@@ -3532,9 +3546,9 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("id", presentationChannel.getPresentationChannelID());
-        response.put("accepted", presentationChannel.getAccepted());
-        response.put("processing", presentationChannelService.isActivePresentationChannel(presentationChannel, now));
+        response.put("id", callingChannel.getCallingChannelID());
+        response.put("accepted", callingChannel.getAccepted());
+        response.put("processing", callingChannelService.isActiveCallingChannel(callingChannel, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -3550,7 +3564,7 @@ public class GUIManager
         //  store
         //
 
-        presentationChannelService.putPresentationChannel(incompleteObject);
+        callingChannelService.putCallingChannel(incompleteObject);
 
         //
         //  revalidateOffers
@@ -3571,7 +3585,7 @@ public class GUIManager
         //
 
         response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "presentationChannelNotValid");
+        response.put("responseCode", "callingChannelNotValid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
@@ -3580,11 +3594,11 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processRemovePresentationChannel
+  *  processRemoveCallingChannel
   *
   *****************************************/
 
-  private JSONObject processRemovePresentationChannel(JSONObject jsonRoot)
+  private JSONObject processRemoveCallingChannel(JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3608,7 +3622,7 @@ public class GUIManager
     *
     ****************************************/
     
-    String presentationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
@@ -3616,7 +3630,7 @@ public class GUIManager
     *
     *****************************************/
 
-    presentationChannelService.removePresentationChannel(presentationChannelID);
+    callingChannelService.removeCallingChannel(callingChannelID);
 
     /*****************************************
     *
@@ -3662,7 +3676,7 @@ public class GUIManager
         try
           {
             Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer);
-            offer.validatePresentationChannels(presentationChannelService, date);
+            offer.validateCallingChannels(callingChannelService, date);
             modifiedOffer = offer;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -3707,7 +3721,7 @@ public class GUIManager
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
-    response.put("presentationChannelCount", presentationChannelService.getStoredPresentationChannels().size());
+    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
     return JSONUtilities.encodeObject(response);
   }
 

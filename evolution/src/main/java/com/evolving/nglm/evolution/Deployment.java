@@ -47,7 +47,7 @@ public class Deployment
   private static String offerTopic;
   private static String presentationStrategyTopic;
   private static String scoringStrategyTopic;
-  private static String presentationChannelTopic;
+  private static String callingChannelTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
@@ -60,17 +60,18 @@ public class Deployment
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
-  private static Map<String,PresentationChannelProperty> presentationChannelProperties = new LinkedHashMap<String,PresentationChannelProperty>();
-  private static Map<String,CallingChannel> callingChannels = new LinkedHashMap<String,CallingChannel>();
+  private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
+  private static JSONArray initialCallingChannelsJSONArray = null;
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
+  private static Map<String,CatalogCharacteristic> catalogCharacteristics = new LinkedHashMap<String,CatalogCharacteristic>();
+  private static Map<String,CatalogObjective> catalogObjectives = new LinkedHashMap<String,CatalogObjective>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
+  private static Map<String,Supplier> suppliers = new LinkedHashMap<String,Supplier>();
   private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
-  private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
-  private static Map<String,ProductType> productTypes = new LinkedHashMap<String,ProductType>();
-  private static Map<String,RewardType> rewardTypes = new LinkedHashMap<String,RewardType>();
+  private static Map<String,Product> products = new LinkedHashMap<String,Product>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
 
@@ -116,7 +117,7 @@ public class Deployment
   public static String getOfferTopic() { return offerTopic; }
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
   public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
-  public static String getPresentationChannelTopic() { return presentationChannelTopic; }
+  public static String getCallingChannelTopic() { return callingChannelTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
@@ -129,17 +130,18 @@ public class Deployment
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
-  public static Map<String,PresentationChannelProperty> getPresentationChannelProperties() { return presentationChannelProperties; }
-  public static Map<String,CallingChannel> getCallingChannels() { return callingChannels; }
+  public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
+  public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
+  public static Map<String,CatalogCharacteristic> getCatalogCharacteristics() { return catalogCharacteristics; }
+  public static Map<String,CatalogObjective> getCatalogObjectives() { return catalogObjectives; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
+  public static Map<String,Supplier> getSuppliers() { return suppliers; }
   public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
-  public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
-  public static Map<String,ProductType> getProductTypes() { return productTypes; }
-  public static Map<String,RewardType> getRewardTypes() { return rewardTypes; }
+  public static Map<String,Product> getProducts() { return products; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
 
@@ -415,12 +417,12 @@ public class Deployment
       }
 
     //
-    //  presentationChannelTopic
+    //  callingChannelTopic
     //
 
     try
       {
-        presentationChannelTopic = JSONUtilities.decodeString(jsonRoot, "presentationChannelTopic", true);
+        callingChannelTopic = JSONUtilities.decodeString(jsonRoot, "callingChannelTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -603,17 +605,17 @@ public class Deployment
       }
 
     //
-    //  presentationChannelProperties
+    //  callingChannelProperties
     //
 
     try
       {
-        JSONArray presentationChannelPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationChannelProperties", true);
-        for (int i=0; i<presentationChannelPropertyValues.size(); i++)
+        JSONArray callingChannelPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelProperties", true);
+        for (int i=0; i<callingChannelPropertyValues.size(); i++)
           {
-            JSONObject presentationChannelPropertyJSON = (JSONObject) presentationChannelPropertyValues.get(i);
-            PresentationChannelProperty presentationChannelProperty = new PresentationChannelProperty(presentationChannelPropertyJSON);
-            presentationChannelProperties.put(presentationChannelProperty.getID(), presentationChannelProperty);
+            JSONObject callingChannelPropertyJSON = (JSONObject) callingChannelPropertyValues.get(i);
+            CallingChannelProperty callingChannelProperty = new CallingChannelProperty(callingChannelPropertyJSON);
+            callingChannelProperties.put(callingChannelProperty.getID(), callingChannelProperty);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
@@ -622,23 +624,10 @@ public class Deployment
       }
 
     //
-    //  callingChannels
+    //  initialCallingChannelsJSONArray
     //
 
-    try
-      {
-        JSONArray callingChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", true);
-        for (int i=0; i<callingChannelValues.size(); i++)
-          {
-            JSONObject callingChannelJSON = (JSONObject) callingChannelValues.get(i);
-            CallingChannel callingChannel = new CallingChannel(callingChannelJSON);
-            callingChannels.put(callingChannel.getID(), callingChannel);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
+    initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", true);
 
     //
     //  salesChannels
@@ -652,6 +641,44 @@ public class Deployment
             JSONObject salesChannelJSON = (JSONObject) salesChannelValues.get(i);
             SalesChannel salesChannel = new SalesChannel(salesChannelJSON);
             salesChannels.put(salesChannel.getID(), salesChannel);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  catalogCharacteristics
+    //
+
+    try
+      {
+        JSONArray catalogCharacteristicValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", true);
+        for (int i=0; i<catalogCharacteristicValues.size(); i++)
+          {
+            JSONObject catalogCharacteristicJSON = (JSONObject) catalogCharacteristicValues.get(i);
+            CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(catalogCharacteristicJSON);
+            catalogCharacteristics.put(catalogCharacteristic.getID(), catalogCharacteristic);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  catalogObjectives
+    //
+
+    try
+      {
+        JSONArray catalogObjectiveValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectives", true);
+        for (int i=0; i<catalogObjectiveValues.size(); i++)
+          {
+            JSONObject catalogObjectiveJSON = (JSONObject) catalogObjectiveValues.get(i);
+            CatalogObjective catalogObjective = new CatalogObjective(catalogObjectiveJSON);
+            catalogObjectives.put(catalogObjective.getID(), catalogObjective);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
@@ -737,6 +764,25 @@ public class Deployment
       }
 
     //
+    //  suppliers
+    //
+
+    try
+      {
+        JSONArray supplierValues = JSONUtilities.decodeJSONArray(jsonRoot, "suppliers", true);
+        for (int i=0; i<supplierValues.size(); i++)
+          {
+            JSONObject supplierJSON = (JSONObject) supplierValues.get(i);
+            Supplier supplier = new Supplier(supplierJSON);
+            suppliers.put(supplier.getID(), supplier);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  offerCategory
     //
 
@@ -756,55 +802,17 @@ public class Deployment
       }
 
     //
-    //  serviceType
+    //  products
     //
 
     try
       {
-        JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
-        for (int i=0; i<serviceTypeValues.size(); i++)
+        JSONArray productValues = JSONUtilities.decodeJSONArray(jsonRoot, "products", true);
+        for (int i=0; i<productValues.size(); i++)
           {
-            JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
-            ServiceType serviceType = new ServiceType(serviceTypeJSON);
-            serviceTypes.put(serviceType.getID(), serviceType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  productTypes
-    //
-
-    try
-      {
-        JSONArray productTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true);
-        for (int i=0; i<productTypeValues.size(); i++)
-          {
-            JSONObject productTypeJSON = (JSONObject) productTypeValues.get(i);
-            ProductType productType = new ProductType(productTypeJSON);
-            productTypes.put(productType.getID(), productType);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  rewardTypes
-    //
-
-    try
-      {
-        JSONArray rewardTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "rewardTypes", true);
-        for (int i=0; i<rewardTypeValues.size(); i++)
-          {
-            JSONObject rewardTypeJSON = (JSONObject) rewardTypeValues.get(i);
-            RewardType rewardType = new RewardType(rewardTypeJSON);
-            rewardTypes.put(rewardType.getID(), rewardType);
+            JSONObject productJSON = (JSONObject) productValues.get(i);
+            Product product = new Product(productJSON);
+            products.put(product.getID(), product);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

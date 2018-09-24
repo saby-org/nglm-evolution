@@ -67,7 +67,7 @@
     <topic.offer>offer</topic.offer>
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
     <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
-    <topic.presentationchannel>presentationchannel</topic.presentationchannel>
+    <topic.callingchannel>callingchannel</topic.callingchannel>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

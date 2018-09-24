@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PresentationChannelProperty.java
+*  CallingChannelProperty.java
 *
 *****************************************************************************/
 
@@ -10,7 +10,7 @@ import com.evolving.nglm.core.DeploymentManagedObject;
 
 import org.json.simple.JSONObject;
 
-public class PresentationChannelProperty extends DeploymentManagedObject
+public class CallingChannelProperty extends DeploymentManagedObject
 {
   /*****************************************
   *
@@ -18,7 +18,7 @@ public class PresentationChannelProperty extends DeploymentManagedObject
   *
   *****************************************/
 
-  public PresentationChannelProperty(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
+  public CallingChannelProperty(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
   {
     super(jsonRoot);
   }

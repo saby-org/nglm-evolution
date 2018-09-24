@@ -1,10 +1,12 @@
 /*****************************************************************************
 *
-*  RewardType.java
+*  Supplier.java
 *
 *****************************************************************************/
 
 package com.evolving.nglm.evolution;
+
+import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 
 import com.evolving.nglm.core.DeploymentManagedObject;
 
@@ -15,7 +17,7 @@ import org.json.simple.JSONObject;
 
 import java.util.Objects;
 
-public class RewardType extends DeploymentManagedObject
+public class Supplier extends DeploymentManagedObject
 {
   /*****************************************
   *
@@ -23,7 +25,7 @@ public class RewardType extends DeploymentManagedObject
   *
   *****************************************/
 
-  public RewardType(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
+  public Supplier(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
   {
     super(jsonRoot);
   }

@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  OfferPresentationChannel.java
+*  OfferCallingChannel.java
 *
 *****************************************************************************/
 
@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class OfferPresentationChannel
+public class OfferCallingChannel
 {
   /*****************************************
   *
@@ -60,7 +60,7 @@ public class OfferPresentationChannel
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(OfferPresentationChannel.class);
+  private static final Logger log = LoggerFactory.getLogger(OfferCallingChannel.class);
 
   /*****************************************
   *
@@ -80,10 +80,10 @@ public class OfferPresentationChannel
     //
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("offer_presentation_channel");
+    schemaBuilder.name("offer_calling_channel");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("presentationChannelID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("properties", SchemaBuilder.array(OfferPresentationChannelProperty.schema()).schema());
+    schemaBuilder.field("callingChannelID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("properties", SchemaBuilder.array(OfferCallingChannelProperty.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -99,8 +99,8 @@ public class OfferPresentationChannel
   *
   *****************************************/
 
-  private String presentationChannelID;
-  private Set<OfferPresentationChannelProperty> properties;
+  private String callingChannelID;
+  private Set<OfferCallingChannelProperty> properties;
 
   /*****************************************
   *
@@ -108,9 +108,9 @@ public class OfferPresentationChannel
   *
   *****************************************/
 
-  private OfferPresentationChannel(String presentationChannelID, Set<OfferPresentationChannelProperty> properties)
+  private OfferCallingChannel(String callingChannelID, Set<OfferCallingChannelProperty> properties)
   {
-    this.presentationChannelID = presentationChannelID;
+    this.callingChannelID = callingChannelID;
     this.properties = properties;
   }
 
@@ -120,7 +120,7 @@ public class OfferPresentationChannel
   *
   *****************************************/
 
-  OfferPresentationChannel(JSONObject jsonRoot) throws GUIManagerException
+  OfferCallingChannel(JSONObject jsonRoot) throws GUIManagerException
   {
     /*****************************************
     *
@@ -128,7 +128,7 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    this.presentationChannelID = JSONUtilities.decodeString(jsonRoot, "presentationChannelID", true);
+    this.callingChannelID = JSONUtilities.decodeString(jsonRoot, "callingChannelID", true);
 
     /*****************************************
     *
@@ -140,21 +140,21 @@ public class OfferPresentationChannel
     //  unprocessed properties
     //
 
-    Set<OfferPresentationChannelProperty> commonProperties = decodeOfferPresentationChannelCommonProperties(JSONUtilities.decodeJSONArray(jsonRoot, "commonProperties", false));
-    Map<String,Set<OfferPresentationChannelProperty>> unprocessedLanguageProperties = decodeOfferPresentationChannelLanguageProperties(JSONUtilities.decodeJSONArray(jsonRoot, "languageProperties", false));
+    Set<OfferCallingChannelProperty> commonProperties = decodeOfferCallingChannelCommonProperties(JSONUtilities.decodeJSONArray(jsonRoot, "commonProperties", false));
+    Map<String,Set<OfferCallingChannelProperty>> unprocessedLanguageProperties = decodeOfferCallingChannelLanguageProperties(JSONUtilities.decodeJSONArray(jsonRoot, "languageProperties", false));
 
     //
     //  identify all languageProperties
     //
 
-    Map<PresentationChannelProperty,OfferPresentationChannelProperty> languageProperties = new HashMap<PresentationChannelProperty,OfferPresentationChannelProperty>();
-    for (Set<OfferPresentationChannelProperty> offerPresentationChannelPropertiesForLanguage : unprocessedLanguageProperties.values())
+    Map<CallingChannelProperty,OfferCallingChannelProperty> languageProperties = new HashMap<CallingChannelProperty,OfferCallingChannelProperty>();
+    for (Set<OfferCallingChannelProperty> offerCallingChannelPropertiesForLanguage : unprocessedLanguageProperties.values())
       {
-        for (OfferPresentationChannelProperty offerPresentationChannelProperty : offerPresentationChannelPropertiesForLanguage)
+        for (OfferCallingChannelProperty offerCallingChannelProperty : offerCallingChannelPropertiesForLanguage)
           {
-            if (! languageProperties.containsKey(offerPresentationChannelProperty.getProperty()))
+            if (! languageProperties.containsKey(offerCallingChannelProperty.getProperty()))
               {
-                languageProperties.put(offerPresentationChannelProperty.getProperty(), new OfferPresentationChannelProperty(offerPresentationChannelProperty.getProperty(), null, new HashMap<String,String>()));
+                languageProperties.put(offerCallingChannelProperty.getProperty(), new OfferCallingChannelProperty(offerCallingChannelProperty.getProperty(), null, new HashMap<String,String>()));
               }
           }
       }
@@ -165,11 +165,11 @@ public class OfferPresentationChannel
 
     for (String languageID : unprocessedLanguageProperties.keySet())
       {
-        Set<OfferPresentationChannelProperty> offerPresentationChannelPropertiesForLanguage = unprocessedLanguageProperties.get(languageID);
-        for (OfferPresentationChannelProperty unprocessedOfferPresentationChannelProperty : offerPresentationChannelPropertiesForLanguage)
+        Set<OfferCallingChannelProperty> offerCallingChannelPropertiesForLanguage = unprocessedLanguageProperties.get(languageID);
+        for (OfferCallingChannelProperty unprocessedOfferCallingChannelProperty : offerCallingChannelPropertiesForLanguage)
           {
-            OfferPresentationChannelProperty offerPresentationChannelProperty = languageProperties.get(unprocessedOfferPresentationChannelProperty.getProperty());
-            offerPresentationChannelProperty.getTextValues().put(languageID, unprocessedOfferPresentationChannelProperty.getPropertyValue());
+            OfferCallingChannelProperty offerCallingChannelProperty = languageProperties.get(unprocessedOfferCallingChannelProperty.getProperty());
+            offerCallingChannelProperty.getTextValues().put(languageID, unprocessedOfferCallingChannelProperty.getPropertyValue());
           }
       }
     
@@ -177,25 +177,25 @@ public class OfferPresentationChannel
     //  rationalize
     //
 
-    this.properties = new HashSet<OfferPresentationChannelProperty>();
+    this.properties = new HashSet<OfferCallingChannelProperty>();
     this.properties.addAll(commonProperties);
     this.properties.addAll(languageProperties.values());
   }
 
   /*****************************************
   *
-  *  decodeOfferPresentationChannelProperties
+  *  decodeOfferCallingChannelProperties
   *
   *****************************************/
 
-  private Set<OfferPresentationChannelProperty> decodeOfferPresentationChannelProperties(JSONArray jsonArray) throws GUIManagerException
+  private Set<OfferCallingChannelProperty> decodeOfferCallingChannelProperties(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<OfferPresentationChannelProperty> result = new HashSet<OfferPresentationChannelProperty>();
+    Set<OfferCallingChannelProperty> result = new HashSet<OfferCallingChannelProperty>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferPresentationChannelProperty((JSONObject) jsonArray.get(i)));
+            result.add(new OfferCallingChannelProperty((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
@@ -203,31 +203,31 @@ public class OfferPresentationChannel
 
   /*****************************************
   *
-  *  decodeOfferPresentationChannelCommonProperties
+  *  decodeOfferCallingChannelCommonProperties
   *
   *****************************************/
 
-  private Set<OfferPresentationChannelProperty> decodeOfferPresentationChannelCommonProperties(JSONArray jsonArray) throws GUIManagerException
+  private Set<OfferCallingChannelProperty> decodeOfferCallingChannelCommonProperties(JSONArray jsonArray) throws GUIManagerException
   {
-    return decodeOfferPresentationChannelProperties(jsonArray);
+    return decodeOfferCallingChannelProperties(jsonArray);
   }
 
   /*****************************************
   *
-  *  decodeOfferPresentationChannelLanguageProperties
+  *  decodeOfferCallingChannelLanguageProperties
   *
   *****************************************/
 
-  private Map<String,Set<OfferPresentationChannelProperty>> decodeOfferPresentationChannelLanguageProperties(JSONArray jsonArray) throws GUIManagerException
+  private Map<String,Set<OfferCallingChannelProperty>> decodeOfferCallingChannelLanguageProperties(JSONArray jsonArray) throws GUIManagerException
   {
-    Map<String,Set<OfferPresentationChannelProperty>> result = new HashMap<String,Set<OfferPresentationChannelProperty>>();
+    Map<String,Set<OfferCallingChannelProperty>> result = new HashMap<String,Set<OfferCallingChannelProperty>>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
             JSONObject languagePropertiesElement = (JSONObject) jsonArray.get(i);
             String languageID = JSONUtilities.decodeString(languagePropertiesElement, "languageID", true);
-            Set<OfferPresentationChannelProperty> properties = decodeOfferPresentationChannelProperties(JSONUtilities.decodeJSONArray(languagePropertiesElement, "properties", false));
+            Set<OfferCallingChannelProperty> properties = decodeOfferCallingChannelProperties(JSONUtilities.decodeJSONArray(languagePropertiesElement, "properties", false));
             result.put(languageID, properties);
           }
       }
@@ -240,8 +240,8 @@ public class OfferPresentationChannel
   *
   *****************************************/
 
-  public String getPresentationChannelID() { return presentationChannelID; }
-  public Set<OfferPresentationChannelProperty> getOfferPresentationChannelProperties() { return properties; }
+  public String getCallingChannelID() { return callingChannelID; }
+  public Set<OfferCallingChannelProperty> getOfferCallingChannelProperties() { return properties; }
 
   /*****************************************
   *
@@ -249,9 +249,9 @@ public class OfferPresentationChannel
   *
   *****************************************/
 
-  public static ConnectSerde<OfferPresentationChannel> serde()
+  public static ConnectSerde<OfferCallingChannel> serde()
   {
-    return new ConnectSerde<OfferPresentationChannel>(schema, false, OfferPresentationChannel.class, OfferPresentationChannel::pack, OfferPresentationChannel::unpack);
+    return new ConnectSerde<OfferCallingChannel>(schema, false, OfferCallingChannel.class, OfferCallingChannel::pack, OfferCallingChannel::unpack);
   }
 
   /*****************************************
@@ -262,25 +262,25 @@ public class OfferPresentationChannel
 
   public static Object pack(Object value)
   {
-    OfferPresentationChannel offerPresentationChannel = (OfferPresentationChannel) value;
+    OfferCallingChannel offerCallingChannel = (OfferCallingChannel) value;
     Struct struct = new Struct(schema);
-    struct.put("presentationChannelID", offerPresentationChannel.getPresentationChannelID());
-    struct.put("properties", packOfferPresentationChannelProperties(offerPresentationChannel.getOfferPresentationChannelProperties()));
+    struct.put("callingChannelID", offerCallingChannel.getCallingChannelID());
+    struct.put("properties", packOfferCallingChannelProperties(offerCallingChannel.getOfferCallingChannelProperties()));
     return struct;
   }
 
   /****************************************
   *
-  *  packOfferPresentationChannelProperties
+  *  packOfferCallingChannelProperties
   *
   ****************************************/
 
-  private static List<Object> packOfferPresentationChannelProperties(Set<OfferPresentationChannelProperty> properties)
+  private static List<Object> packOfferCallingChannelProperties(Set<OfferCallingChannelProperty> properties)
   {
     List<Object> result = new ArrayList<Object>();
-    for (OfferPresentationChannelProperty offerPresentationChannelProperty : properties)
+    for (OfferCallingChannelProperty offerCallingChannelProperty : properties)
       {
-        result.add(OfferPresentationChannelProperty.pack(offerPresentationChannelProperty));
+        result.add(OfferCallingChannelProperty.pack(offerCallingChannelProperty));
       }
     return result;
   }
@@ -291,7 +291,7 @@ public class OfferPresentationChannel
   *
   *****************************************/
 
-  public static OfferPresentationChannel unpack(SchemaAndValue schemaAndValue)
+  public static OfferCallingChannel unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -306,26 +306,26 @@ public class OfferPresentationChannel
     //
 
     Struct valueStruct = (Struct) value;
-    String presentationChannelID = valueStruct.getString("presentationChannelID");
-    Set<OfferPresentationChannelProperty> properties = unpackOfferPresentationChannelProperties(schema.field("properties").schema(), valueStruct.get("properties"));
+    String callingChannelID = valueStruct.getString("callingChannelID");
+    Set<OfferCallingChannelProperty> properties = unpackOfferCallingChannelProperties(schema.field("properties").schema(), valueStruct.get("properties"));
     
     //
     //  return
     //
 
-    return new OfferPresentationChannel(presentationChannelID, properties);
+    return new OfferCallingChannel(callingChannelID, properties);
   }
 
   /*****************************************
   *
-  *  unpackOfferPresentationChannelProperties
+  *  unpackOfferCallingChannelProperties
   *
   *****************************************/
 
-  private static Set<OfferPresentationChannelProperty> unpackOfferPresentationChannelProperties(Schema schema, Object value)
+  private static Set<OfferCallingChannelProperty> unpackOfferCallingChannelProperties(Schema schema, Object value)
   {
     //
-    //  get schema for OfferPresentationChannelProperty
+    //  get schema for OfferCallingChannelProperty
     //
 
     Schema propertySchema = schema.valueSchema();
@@ -334,11 +334,11 @@ public class OfferPresentationChannel
     //  unpack
     //
 
-    Set<OfferPresentationChannelProperty> result = new HashSet<OfferPresentationChannelProperty>();
+    Set<OfferCallingChannelProperty> result = new HashSet<OfferCallingChannelProperty>();
     List<Object> valueArray = (List<Object>) value;
     for (Object property : valueArray)
       {
-        result.add(OfferPresentationChannelProperty.unpack(new SchemaAndValue(propertySchema, property)));
+        result.add(OfferCallingChannelProperty.unpack(new SchemaAndValue(propertySchema, property)));
       }
 
     //
@@ -357,12 +357,12 @@ public class OfferPresentationChannel
   public boolean equals(Object obj)
   {
     boolean result = false;
-    if (obj instanceof OfferPresentationChannel)
+    if (obj instanceof OfferCallingChannel)
       {
-        OfferPresentationChannel offerPresentationChannel = (OfferPresentationChannel) obj;
+        OfferCallingChannel offerCallingChannel = (OfferCallingChannel) obj;
         result = true;
-        result = result && Objects.equals(presentationChannelID, offerPresentationChannel.getPresentationChannelID());
-        result = result && Objects.equals(properties, offerPresentationChannel.getOfferPresentationChannelProperties());
+        result = result && Objects.equals(callingChannelID, offerCallingChannel.getCallingChannelID());
+        result = result && Objects.equals(properties, offerCallingChannel.getOfferCallingChannelProperties());
       }
     return result;
   }
@@ -375,16 +375,16 @@ public class OfferPresentationChannel
 
   public int hashCode()
   {
-    return presentationChannelID.hashCode();
+    return callingChannelID.hashCode();
   }
 
   /****************************************************************************
   *
-  *  OfferPresentationChannelProperty
+  *  OfferCallingChannelProperty
   *
   ****************************************************************************/
 
-  public static class OfferPresentationChannelProperty
+  public static class OfferCallingChannelProperty
   {
     /*****************************************
     *
@@ -406,7 +406,7 @@ public class OfferPresentationChannel
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("offer_presentation_channel_property");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("presentationChannelPropertyID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("callingChannelPropertyID", Schema.STRING_SCHEMA);
       schemaBuilder.field("propertyValue", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("textValues", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("offer_presentation_channel_property_textvalues").schema());
       schema = schemaBuilder.build();
@@ -424,7 +424,7 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    private PresentationChannelProperty property;
+    private CallingChannelProperty property;
     private String propertyValue;
     private Map<String,String> textValues;
 
@@ -434,7 +434,7 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    private OfferPresentationChannelProperty(PresentationChannelProperty property, String propertyValue, Map<String,String> textValues)
+    private OfferCallingChannelProperty(CallingChannelProperty property, String propertyValue, Map<String,String> textValues)
     {
       this.property = property;
       this.propertyValue = propertyValue;
@@ -447,14 +447,14 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    OfferPresentationChannelProperty(JSONObject jsonRoot) throws GUIManagerException
+    OfferCallingChannelProperty(JSONObject jsonRoot) throws GUIManagerException
     {
       //
       //  basic fields
       //
 
-      this.property = Deployment.getPresentationChannelProperties().get(JSONUtilities.decodeString(jsonRoot, "presentationChannelPropertyID", true));
-      String propertyName = JSONUtilities.decodeString(jsonRoot, "presentationChannelPropertyName", true);
+      this.property = Deployment.getCallingChannelProperties().get(JSONUtilities.decodeString(jsonRoot, "callingChannelPropertyID", true));
+      String propertyName = JSONUtilities.decodeString(jsonRoot, "callingChannelPropertyName", true);
       this.propertyValue = JSONUtilities.decodeString(jsonRoot, "propertyValue", false);
       this.textValues = decodeTextValues(JSONUtilities.decodeJSONArray(jsonRoot, "textValues", false));
 
@@ -462,8 +462,8 @@ public class OfferPresentationChannel
       //  validate 
       //
 
-      if (this.property == null) throw new GUIManagerException("property not supported", JSONUtilities.decodeString(jsonRoot, "presentationChannelPropertyID", true));
-      if (! Objects.equals(this.property.getName(),propertyName)) throw new GUIManagerException("propertyName mismatch", "(" + this.property.getName() + ", " + JSONUtilities.decodeString(jsonRoot, "presentationChannelPropertyName", true) + ")");
+      if (this.property == null) throw new GUIManagerException("property not supported", JSONUtilities.decodeString(jsonRoot, "callingChannelPropertyID", true));
+      if (! Objects.equals(this.property.getName(),propertyName)) throw new GUIManagerException("propertyName mismatch", "(" + this.property.getName() + ", " + JSONUtilities.decodeString(jsonRoot, "callingChannelPropertyName", true) + ")");
     }
     
     /*****************************************
@@ -494,7 +494,7 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    public PresentationChannelProperty getProperty() { return property; }
+    public CallingChannelProperty getProperty() { return property; }
     public String getPropertyValue() { return propertyValue; }
     public Map<String,String> getTextValues() { return textValues; }
     public String getValue(String language) { return (propertyValue != null) ? propertyValue : textValues.get(Deployment.getSupportedLanguageID(language)); }
@@ -505,9 +505,9 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    public static ConnectSerde<OfferPresentationChannelProperty> serde()
+    public static ConnectSerde<OfferCallingChannelProperty> serde()
     {
-      return new ConnectSerde<OfferPresentationChannelProperty>(schema, false, OfferPresentationChannelProperty.class, OfferPresentationChannelProperty::pack, OfferPresentationChannelProperty::unpack);
+      return new ConnectSerde<OfferCallingChannelProperty>(schema, false, OfferCallingChannelProperty.class, OfferCallingChannelProperty::pack, OfferCallingChannelProperty::unpack);
     }
 
     /*****************************************
@@ -518,11 +518,11 @@ public class OfferPresentationChannel
 
     public static Object pack(Object value)
     {
-      OfferPresentationChannelProperty offerPresentationChannelProperty = (OfferPresentationChannelProperty) value;
+      OfferCallingChannelProperty offerCallingChannelProperty = (OfferCallingChannelProperty) value;
       Struct struct = new Struct(schema);
-      struct.put("presentationChannelPropertyID", offerPresentationChannelProperty.getProperty().getID());
-      struct.put("propertyValue", offerPresentationChannelProperty.getPropertyValue());
-      struct.put("textValues", offerPresentationChannelProperty.getTextValues());
+      struct.put("callingChannelPropertyID", offerCallingChannelProperty.getProperty().getID());
+      struct.put("propertyValue", offerCallingChannelProperty.getPropertyValue());
+      struct.put("textValues", offerCallingChannelProperty.getTextValues());
       return struct;
     }
 
@@ -532,7 +532,7 @@ public class OfferPresentationChannel
     *
     *****************************************/
 
-    public static OfferPresentationChannelProperty unpack(SchemaAndValue schemaAndValue)
+    public static OfferCallingChannelProperty unpack(SchemaAndValue schemaAndValue)
     {
       //
       //  data
@@ -547,7 +547,7 @@ public class OfferPresentationChannel
       //
 
       Struct valueStruct = (Struct) value;
-      PresentationChannelProperty property = Deployment.getPresentationChannelProperties().get(valueStruct.getString("presentationChannelPropertyID"));
+      CallingChannelProperty property = Deployment.getCallingChannelProperties().get(valueStruct.getString("callingChannelPropertyID"));
       String propertyValue = valueStruct.getString("propertyValue");
       Map<String,String> textValues = (Map<String,String>) valueStruct.get("textValues");
 
@@ -555,13 +555,13 @@ public class OfferPresentationChannel
       //  validate
       //
 
-      if (property == null) throw new SerializationException("property not supported: " + valueStruct.getString("presentationChannelPropertyID"));
+      if (property == null) throw new SerializationException("property not supported: " + valueStruct.getString("callingChannelPropertyID"));
 
       //
       //  return
       //
 
-      return new OfferPresentationChannelProperty(property, propertyValue, textValues);
+      return new OfferCallingChannelProperty(property, propertyValue, textValues);
     }
 
     /*****************************************
@@ -573,13 +573,13 @@ public class OfferPresentationChannel
     public boolean equals(Object obj)
     {
       boolean result = false;
-      if (obj instanceof OfferPresentationChannelProperty)
+      if (obj instanceof OfferCallingChannelProperty)
         {
-          OfferPresentationChannelProperty offerPresentationChannelProperty = (OfferPresentationChannelProperty) obj;
+          OfferCallingChannelProperty offerCallingChannelProperty = (OfferCallingChannelProperty) obj;
           result = true;
-          result = result && Objects.equals(property, offerPresentationChannelProperty.getProperty());
-          result = result && Objects.equals(propertyValue, offerPresentationChannelProperty.getPropertyValue());
-          result = result && Objects.equals(textValues, offerPresentationChannelProperty.getTextValues());
+          result = result && Objects.equals(property, offerCallingChannelProperty.getProperty());
+          result = result && Objects.equals(propertyValue, offerCallingChannelProperty.getPropertyValue());
+          result = result && Objects.equals(textValues, offerCallingChannelProperty.getTextValues());
         }
       return result;
     }

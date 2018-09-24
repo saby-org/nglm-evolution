@@ -136,7 +136,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(Offer offer, PresentationChannelService presentationChannelService) throws GUIManagerException
+  public void putOffer(Offer offer, CallingChannelService callingChannelService) throws GUIManagerException
   {
     //
     //  now
@@ -148,7 +148,7 @@ public class OfferService extends GUIService
     //  validate scoring strategies
     //
 
-    offer.validatePresentationChannels(presentationChannelService, now);
+    offer.validateCallingChannels(callingChannelService, now);
 
     //
     //  put

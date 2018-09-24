@@ -60,7 +60,7 @@ public class ScoringSplit
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("offerOptimizationAlgorithm", Schema.STRING_SCHEMA);
     schemaBuilder.field("parameters", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("scoring_split_parameters").schema());
-    schemaBuilder.field("salesChannels", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("catalogObjectives", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -85,7 +85,7 @@ public class ScoringSplit
 
   private OfferOptimizationAlgorithm offerOptimizationAlgorithm;
   private Map<OfferOptimizationAlgorithmParameter,Integer> parameters;
-  private Set<SalesChannel> salesChannels; 
+  private Set<CatalogObjective> catalogObjectives; 
 
   /*****************************************
   *
@@ -95,7 +95,7 @@ public class ScoringSplit
 
   public OfferOptimizationAlgorithm getOfferOptimizationAlgorithm() { return offerOptimizationAlgorithm; }
   public Map<OfferOptimizationAlgorithmParameter,Integer> getParameters() { return parameters; }
-  public Set<SalesChannel> getSalesChannels() { return salesChannels;  }
+  public Set<CatalogObjective> getCatalogObjectives() { return catalogObjectives;  }
 
   /*****************************************
   *
@@ -103,11 +103,11 @@ public class ScoringSplit
   *
   *****************************************/
 
-  public ScoringSplit(OfferOptimizationAlgorithm offerOptimizationAlgorithm, Map<OfferOptimizationAlgorithmParameter,Integer> parameters, Set<SalesChannel> salesChannels)
+  public ScoringSplit(OfferOptimizationAlgorithm offerOptimizationAlgorithm, Map<OfferOptimizationAlgorithmParameter,Integer> parameters, Set<CatalogObjective> catalogObjectives)
   {
     this.offerOptimizationAlgorithm = offerOptimizationAlgorithm;
     this.parameters = parameters;
-    this.salesChannels = salesChannels;
+    this.catalogObjectives = catalogObjectives;
   }
 
   /*****************************************
@@ -122,7 +122,7 @@ public class ScoringSplit
     Struct struct = new Struct(schema);
     struct.put("offerOptimizationAlgorithm", scoringSplit.getOfferOptimizationAlgorithm().getID());
     struct.put("parameters", packParameters(scoringSplit.getParameters()));
-    struct.put("salesChannels", packSalesChannels(scoringSplit.getSalesChannels()));
+    struct.put("catalogObjectives", packCatalogObjectives(scoringSplit.getCatalogObjectives()));
     return struct;
   }
 
@@ -145,16 +145,16 @@ public class ScoringSplit
 
   /****************************************
   *
-  *  packSalesChannels
+  *  packCatalogObjectives
   *
   ****************************************/
 
-  private static List<Object> packSalesChannels(Set<SalesChannel> salesChannels)
+  private static List<Object> packCatalogObjectives(Set<CatalogObjective> catalogObjectives)
   {
     List<Object> result = new ArrayList<Object>();
-    for (SalesChannel salesChannel : salesChannels)
+    for (CatalogObjective catalogObjective : catalogObjectives)
       {
-        result.add(salesChannel.getID());
+        result.add(catalogObjective.getID());
       }
     return result;
   }
@@ -182,7 +182,7 @@ public class ScoringSplit
     Struct valueStruct = (Struct) value;
     OfferOptimizationAlgorithm offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(valueStruct.getString("offerOptimizationAlgorithm"));
     Map<OfferOptimizationAlgorithmParameter,Integer> parameters = unpackParameters((Map<String,Integer>) valueStruct.get("parameters"));
-    Set<SalesChannel> salesChannels = unpackSalesChannels((List<String>) valueStruct.get("salesChannels"));
+    Set<CatalogObjective> catalogObjectives = unpackCatalogObjectives((List<String>) valueStruct.get("catalogObjectives"));
 
     //
     //  validate
@@ -198,7 +198,7 @@ public class ScoringSplit
     //  return
     //
 
-    return new ScoringSplit(offerOptimizationAlgorithm, parameters, salesChannels);
+    return new ScoringSplit(offerOptimizationAlgorithm, parameters, catalogObjectives);
   }
 
   /*****************************************
@@ -220,20 +220,20 @@ public class ScoringSplit
 
   /*****************************************
   *
-  *  unpackSalesChannels
+  *  unpackCatalogObjectives
   *
   *****************************************/
 
-  private static Set<SalesChannel> unpackSalesChannels(List<String> salesChannelNames)
+  private static Set<CatalogObjective> unpackCatalogObjectives(List<String> catalogObjectiveNames)
   {
-    Set<SalesChannel> salesChannels = new LinkedHashSet<SalesChannel>();
-    for (String salesChannelName : salesChannelNames)
+    Set<CatalogObjective> catalogObjectives = new LinkedHashSet<CatalogObjective>();
+    for (String catalogObjectiveName : catalogObjectiveNames)
       {
-        SalesChannel salesChannel = Deployment.getSalesChannels().get(salesChannelName);
-        if (salesChannel == null) throw new SerializationException("unknown salesChannel: " + salesChannelName);
-        salesChannels.add(salesChannel);
+        CatalogObjective catalogObjective = Deployment.getCatalogObjectives().get(catalogObjectiveName);
+        if (catalogObjective == null) throw new SerializationException("unknown catalogObjective: " + catalogObjectiveName);
+        catalogObjectives.add(catalogObjective);
       }
-    return salesChannels;
+    return catalogObjectives;
   }
 
   /*****************************************
@@ -250,7 +250,7 @@ public class ScoringSplit
     
     this.offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(JSONUtilities.decodeString(jsonRoot, "offerOptimizationAlgorithmID", true));
     this.parameters = decodeParameters(JSONUtilities.decodeJSONObject(jsonRoot, "parameters", false));
-    this.salesChannels = decodeSalesChannels(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelIDs", true));
+    this.catalogObjectives = decodeCatalogObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectiveIDs", true));
     
     //
     //  validate 
@@ -286,21 +286,21 @@ public class ScoringSplit
 
   /*****************************************
   *
-  *  decodeSalesChannels
+  *  decodeCatalogObjectives
   *
   *****************************************/
 
-  private Set<SalesChannel> decodeSalesChannels(JSONArray jsonArray) throws GUIManagerException
+  private Set<CatalogObjective> decodeCatalogObjectives(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<SalesChannel> salesChannels = new LinkedHashSet<SalesChannel>();
+    Set<CatalogObjective> catalogObjectives = new LinkedHashSet<CatalogObjective>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        String salesChannelID = (String) jsonArray.get(i);
-        SalesChannel salesChannel = Deployment.getSalesChannels().get(salesChannelID);
-        if (salesChannel == null) throw new GUIManagerException("unknown salesChannel", salesChannelID);
-        salesChannels.add(salesChannel);
+        String catalogObjectiveID = (String) jsonArray.get(i);
+        CatalogObjective catalogObjective = Deployment.getCatalogObjectives().get(catalogObjectiveID);
+        if (catalogObjective == null) throw new GUIManagerException("unknown catalogObjective", catalogObjectiveID);
+        catalogObjectives.add(catalogObjective);
       }
-    return salesChannels;
+    return catalogObjectives;
   }
 
   /*****************************************
@@ -318,7 +318,7 @@ public class ScoringSplit
         result = true;
         result = result && Objects.equals(offerOptimizationAlgorithm, scoringSplit.getOfferOptimizationAlgorithm());
         result = result && Objects.equals(parameters, scoringSplit.getParameters());
-        result = result && Objects.equals(salesChannels, scoringSplit.getSalesChannels());
+        result = result && Objects.equals(catalogObjectives, scoringSplit.getCatalogObjectives());
       }
     return result;
   }

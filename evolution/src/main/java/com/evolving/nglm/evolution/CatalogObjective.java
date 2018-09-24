@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  ProductType.java
+*  CatalogObjective.java
 *
 *****************************************************************************/
 
@@ -15,7 +15,7 @@ import org.json.simple.JSONObject;
 
 import java.util.Objects;
 
-public class ProductType extends DeploymentManagedObject
+public class CatalogObjective extends DeploymentManagedObject
 {
   /*****************************************
   *
@@ -23,7 +23,7 @@ public class ProductType extends DeploymentManagedObject
   *
   *****************************************/
 
-  public ProductType(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
+  public CatalogObjective(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
   {
     super(jsonRoot);
   }

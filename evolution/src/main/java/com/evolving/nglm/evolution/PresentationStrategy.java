@@ -64,7 +64,7 @@ public class PresentationStrategy extends GUIManagedObject
     schemaBuilder.name("presentation_strategy");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("callingChannels", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("salesChannelIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("maximumPresentations", Schema.INT32_SCHEMA);
     schemaBuilder.field("maximumPresentationsPeriodDays", Schema.INT32_SCHEMA);
     schemaBuilder.field("targetGroupPositions", SchemaBuilder.array(PresentationPosition.schema()).schema());
@@ -92,7 +92,7 @@ public class PresentationStrategy extends GUIManagedObject
   *
   ****************************************/
 
-  private Set<CallingChannel> callingChannels;
+  private Set<String> salesChannelIDs;
   private Integer maximumPresentations;
   private Integer maximumPresentationsPeriodDays;
   private List<PresentationPosition> targetGroupPositions;
@@ -110,7 +110,7 @@ public class PresentationStrategy extends GUIManagedObject
   //
 
   public String getPresentationStrategyID() { return getGUIManagedObjectID(); }
-  public Set<CallingChannel> getCallingChannels() { return callingChannels; }
+  public Set<String> getSalesChannelIDs() { return salesChannelIDs; }
   public Integer getMaximumPresentations() { return maximumPresentations; }
   public Integer getMaximumPresentationsPeriodDays() { return maximumPresentationsPeriodDays; }
   public List<PresentationPosition> getTargetGroupPositions() { return targetGroupPositions; }
@@ -123,10 +123,10 @@ public class PresentationStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  public PresentationStrategy(SchemaAndValue schemaAndValue, Set<CallingChannel> callingChannels, Integer maximumPresentations, Integer maximumPresentationsPeriodDays, List<PresentationPosition> targetGroupPositions, List<PresentationPosition> controlGroupPositions, Map<OfferType,String> scoringStrategies)
+  public PresentationStrategy(SchemaAndValue schemaAndValue, Set<String> salesChannelIDs, Integer maximumPresentations, Integer maximumPresentationsPeriodDays, List<PresentationPosition> targetGroupPositions, List<PresentationPosition> controlGroupPositions, Map<OfferType,String> scoringStrategies)
   {
     super(schemaAndValue);
-    this.callingChannels = callingChannels;
+    this.salesChannelIDs = salesChannelIDs;
     this.maximumPresentations = maximumPresentations;
     this.maximumPresentationsPeriodDays = maximumPresentationsPeriodDays;
     this.targetGroupPositions = targetGroupPositions;
@@ -145,7 +145,7 @@ public class PresentationStrategy extends GUIManagedObject
     PresentationStrategy presentationStrategy = (PresentationStrategy) value;
     Struct struct = new Struct(schema);
     packCommon(struct, presentationStrategy);
-    struct.put("callingChannels", packCallingChannels(presentationStrategy.getCallingChannels()));
+    struct.put("salesChannelIDs", packSalesChannelIDs(presentationStrategy.getSalesChannelIDs()));
     struct.put("maximumPresentations", presentationStrategy.getMaximumPresentations());
     struct.put("maximumPresentationsPeriodDays", presentationStrategy.getMaximumPresentationsPeriodDays());
     struct.put("targetGroupPositions", packPresentationPositions(presentationStrategy.getTargetGroupPositions()));
@@ -156,16 +156,16 @@ public class PresentationStrategy extends GUIManagedObject
 
   /****************************************
   *
-  *  packCallingChannels
+  *  packSalesChannelIDs
   *
   ****************************************/
 
-  private static List<Object> packCallingChannels(Set<CallingChannel> callingChannels)
+  private static List<Object> packSalesChannelIDs(Set<String> salesChannelIDs)
   {
     List<Object> result = new ArrayList<Object>();
-    for (CallingChannel callingChannel : callingChannels)
+    for (String salesChannelID : salesChannelIDs)
       {
-        result.add(callingChannel.getID());
+        result.add(salesChannelID);
       }
     return result;
   }
@@ -224,7 +224,7 @@ public class PresentationStrategy extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    Set<CallingChannel> callingChannels = unpackCallingChannels((List<String>) valueStruct.get("callingChannels"));
+    Set<String> salesChannelIDs = unpackSalesChannels((List<String>) valueStruct.get("salesChannelIDs"));
     Integer maximumPresentations = valueStruct.getInt32("maximumPresentations");
     Integer maximumPresentationsPeriodDays = valueStruct.getInt32("maximumPresentationsPeriodDays");
     List<PresentationPosition> targetGroupPositions = unpackPresentationPositions(schema.field("targetGroupPositions").schema(), valueStruct.get("targetGroupPositions"));
@@ -235,25 +235,23 @@ public class PresentationStrategy extends GUIManagedObject
     //  return
     //
 
-    return new PresentationStrategy(schemaAndValue, callingChannels, maximumPresentations, maximumPresentationsPeriodDays, targetGroupPositions, controlGroupPositions, scoringStrategies);
+    return new PresentationStrategy(schemaAndValue, salesChannelIDs, maximumPresentations, maximumPresentationsPeriodDays, targetGroupPositions, controlGroupPositions, scoringStrategies);
   }
   
   /*****************************************
   *
-  *  unpackCallingChannels
+  *  unpackSalesChannelIDs
   *
   *****************************************/
 
-  private static Set<CallingChannel> unpackCallingChannels(List<String> callingChannelNames)
+  private static Set<String> unpackSalesChannels(List<String> salesChannelIDs)
   {
-    Set<CallingChannel> callingChannels = new LinkedHashSet<CallingChannel>();
-    for (String callingChannelName : callingChannelNames)
+    Set<String> result = new LinkedHashSet<String>();
+    for (String salesChannelID : salesChannelIDs)
       {
-        CallingChannel callingChannel = Deployment.getCallingChannels().get(callingChannelName);
-        if (callingChannel == null) throw new SerializationException("unknown callingChannel: " + callingChannelName);
-        callingChannels.add(callingChannel);
+        result.add(salesChannelID);
       }
-    return callingChannels;
+    return result;
   }
 
   /*****************************************
@@ -337,7 +335,7 @@ public class PresentationStrategy extends GUIManagedObject
     *
     *****************************************/
 
-    this.callingChannels = decodeCallingChannels(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelIDs", true));
+    this.salesChannelIDs = decodeSalesChannelIDs(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelIDs", true));
     this.maximumPresentations = JSONUtilities.decodeInteger(jsonRoot, "maximumPresentations", false);
     this.maximumPresentationsPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumPresentationsPeriodDays", false);
     this.targetGroupPositions = decodePresentationPositions(JSONUtilities.decodeJSONArray(jsonRoot, "targetGroupPositions", true));
@@ -358,21 +356,18 @@ public class PresentationStrategy extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeCallingChannels
+  *  decodeSalesChannelIDs
   *
   *****************************************/
 
-  private Set<CallingChannel> decodeCallingChannels(JSONArray jsonArray) throws GUIManagerException
+  private Set<String> decodeSalesChannelIDs(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<CallingChannel> callingChannels = new LinkedHashSet<CallingChannel>();
+    Set<String> salesChannelIDs = new LinkedHashSet<String>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        String callingChannelName = (String) jsonArray.get(i);
-        CallingChannel callingChannel = Deployment.getCallingChannels().get(callingChannelName);
-        if (callingChannel == null) throw new GUIManagerException("unknown callingChannel", callingChannelName);
-        callingChannels.add(callingChannel);
+        salesChannelIDs.add((String) jsonArray.get(i));
       }
-    return callingChannels;
+    return salesChannelIDs;
   }
 
   /*****************************************
@@ -424,7 +419,7 @@ public class PresentationStrategy extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingPresentationStrategy.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(callingChannels, existingPresentationStrategy.getCallingChannels());
+        epochChanged = epochChanged || ! Objects.equals(salesChannelIDs, existingPresentationStrategy.getSalesChannelIDs());
         epochChanged = epochChanged || ! Objects.equals(maximumPresentations, existingPresentationStrategy.getMaximumPresentations());
         epochChanged = epochChanged || ! Objects.equals(maximumPresentationsPeriodDays, existingPresentationStrategy.getMaximumPresentationsPeriodDays());
         epochChanged = epochChanged || ! Objects.equals(targetGroupPositions, existingPresentationStrategy.getTargetGroupPositions());
