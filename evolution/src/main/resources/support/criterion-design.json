@@ -17,7 +17,7 @@
 --  integer -- multi-valued operator/argument
 -- 
 
-{ "criterionField" : "fieldA", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ 7, 8, 10 ], "expression" : "[ 7, 8, 10 ]" }
+{ "criterionField" : "fieldA", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ 7, 8, 10 ], "expression" : "[ 7, 8, 10 ]" } }
 
 --
 --  boolean

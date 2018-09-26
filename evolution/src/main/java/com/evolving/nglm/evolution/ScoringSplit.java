@@ -59,8 +59,8 @@ public class ScoringSplit
     schemaBuilder.name("scoring_split");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("offerOptimizationAlgorithm", Schema.STRING_SCHEMA);
-    schemaBuilder.field("parameters", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("scoring_split_parameters").schema());
-    schemaBuilder.field("catalogObjectives", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("parameters", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("scoring_split_parameters").schema());
+    schemaBuilder.field("catalogObjectiveIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -84,8 +84,8 @@ public class ScoringSplit
   *****************************************/
 
   private OfferOptimizationAlgorithm offerOptimizationAlgorithm;
-  private Map<OfferOptimizationAlgorithmParameter,Integer> parameters;
-  private Set<CatalogObjective> catalogObjectives; 
+  private Map<OfferOptimizationAlgorithmParameter,String> parameters;
+  private Set<String> catalogObjectiveIDs; 
 
   /*****************************************
   *
@@ -94,8 +94,8 @@ public class ScoringSplit
   *****************************************/
 
   public OfferOptimizationAlgorithm getOfferOptimizationAlgorithm() { return offerOptimizationAlgorithm; }
-  public Map<OfferOptimizationAlgorithmParameter,Integer> getParameters() { return parameters; }
-  public Set<CatalogObjective> getCatalogObjectives() { return catalogObjectives;  }
+  public Map<OfferOptimizationAlgorithmParameter,String> getParameters() { return parameters; }
+  public Set<String> getCatalogObjectiveIDs() { return catalogObjectiveIDs;  }
 
   /*****************************************
   *
@@ -103,11 +103,11 @@ public class ScoringSplit
   *
   *****************************************/
 
-  public ScoringSplit(OfferOptimizationAlgorithm offerOptimizationAlgorithm, Map<OfferOptimizationAlgorithmParameter,Integer> parameters, Set<CatalogObjective> catalogObjectives)
+  public ScoringSplit(OfferOptimizationAlgorithm offerOptimizationAlgorithm, Map<OfferOptimizationAlgorithmParameter,String> parameters, Set<String> catalogObjectiveIDs)
   {
     this.offerOptimizationAlgorithm = offerOptimizationAlgorithm;
     this.parameters = parameters;
-    this.catalogObjectives = catalogObjectives;
+    this.catalogObjectiveIDs = catalogObjectiveIDs;
   }
 
   /*****************************************
@@ -122,7 +122,7 @@ public class ScoringSplit
     Struct struct = new Struct(schema);
     struct.put("offerOptimizationAlgorithm", scoringSplit.getOfferOptimizationAlgorithm().getID());
     struct.put("parameters", packParameters(scoringSplit.getParameters()));
-    struct.put("catalogObjectives", packCatalogObjectives(scoringSplit.getCatalogObjectives()));
+    struct.put("catalogObjectiveIDs", packCatalogObjectiveIDs(scoringSplit.getCatalogObjectiveIDs()));
     return struct;
   }
 
@@ -132,12 +132,12 @@ public class ScoringSplit
   *
   ****************************************/
 
-  private static Map<String,Integer> packParameters(Map<OfferOptimizationAlgorithmParameter,Integer> parameters)
+  private static Map<String,String> packParameters(Map<OfferOptimizationAlgorithmParameter,String> parameters)
   {
-    Map<String,Integer> result = new LinkedHashMap<String,Integer>();
+    Map<String,String> result = new LinkedHashMap<String,String>();
     for (OfferOptimizationAlgorithmParameter parameter : parameters.keySet())
       {
-        Integer parameterValue = parameters.get(parameter);
+        String parameterValue = parameters.get(parameter);
         result.put(parameter.getParameterName(),parameterValue);
       }
     return result;
@@ -145,16 +145,16 @@ public class ScoringSplit
 
   /****************************************
   *
-  *  packCatalogObjectives
+  *  packCatalogObjectiveIDs
   *
   ****************************************/
 
-  private static List<Object> packCatalogObjectives(Set<CatalogObjective> catalogObjectives)
+  private static List<Object> packCatalogObjectiveIDs(Set<String> catalogObjectiveIDs)
   {
     List<Object> result = new ArrayList<Object>();
-    for (CatalogObjective catalogObjective : catalogObjectives)
+    for (String catalogObjectiveID : catalogObjectiveIDs)
       {
-        result.add(catalogObjective.getID());
+        result.add(catalogObjectiveID);
       }
     return result;
   }
@@ -181,8 +181,8 @@ public class ScoringSplit
 
     Struct valueStruct = (Struct) value;
     OfferOptimizationAlgorithm offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(valueStruct.getString("offerOptimizationAlgorithm"));
-    Map<OfferOptimizationAlgorithmParameter,Integer> parameters = unpackParameters((Map<String,Integer>) valueStruct.get("parameters"));
-    Set<CatalogObjective> catalogObjectives = unpackCatalogObjectives((List<String>) valueStruct.get("catalogObjectives"));
+    Map<OfferOptimizationAlgorithmParameter,String> parameters = unpackParameters((Map<String,String>) valueStruct.get("parameters"));
+    Set<String> catalogObjectiveIDs = unpackCatalogObjectiveIDs((List<String>) valueStruct.get("catalogObjectiveIDs"));
 
     //
     //  validate
@@ -198,7 +198,7 @@ public class ScoringSplit
     //  return
     //
 
-    return new ScoringSplit(offerOptimizationAlgorithm, parameters, catalogObjectives);
+    return new ScoringSplit(offerOptimizationAlgorithm, parameters, catalogObjectiveIDs);
   }
 
   /*****************************************
@@ -207,12 +207,12 @@ public class ScoringSplit
   *
   *****************************************/
 
-  private static Map<OfferOptimizationAlgorithmParameter,Integer> unpackParameters(Map<String,Integer> parameters)
+  private static Map<OfferOptimizationAlgorithmParameter,String> unpackParameters(Map<String,String> parameters)
   {
-    Map<OfferOptimizationAlgorithmParameter,Integer> result = new LinkedHashMap<OfferOptimizationAlgorithmParameter,Integer>();
+    Map<OfferOptimizationAlgorithmParameter,String> result = new LinkedHashMap<OfferOptimizationAlgorithmParameter,String>();
     for (String parameterName : parameters.keySet())
       {
-        Integer parameterValue = parameters.get(parameterName);
+        String parameterValue = parameters.get(parameterName);
         result.put(new OfferOptimizationAlgorithmParameter(parameterName), parameterValue);
       }
     return result;
@@ -220,20 +220,18 @@ public class ScoringSplit
 
   /*****************************************
   *
-  *  unpackCatalogObjectives
+  *  unpackCatalogObjectiveIDs
   *
   *****************************************/
 
-  private static Set<CatalogObjective> unpackCatalogObjectives(List<String> catalogObjectiveNames)
+  private static Set<String> unpackCatalogObjectiveIDs(List<String> catalogObjectiveIDs)
   {
-    Set<CatalogObjective> catalogObjectives = new LinkedHashSet<CatalogObjective>();
-    for (String catalogObjectiveName : catalogObjectiveNames)
+    Set<String> result = new LinkedHashSet<String>();
+    for (String catalogObjectiveID : catalogObjectiveIDs)
       {
-        CatalogObjective catalogObjective = Deployment.getCatalogObjectives().get(catalogObjectiveName);
-        if (catalogObjective == null) throw new SerializationException("unknown catalogObjective: " + catalogObjectiveName);
-        catalogObjectives.add(catalogObjective);
+        result.add(catalogObjectiveID);
       }
-    return catalogObjectives;
+    return result;
   }
 
   /*****************************************
@@ -250,7 +248,7 @@ public class ScoringSplit
     
     this.offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(JSONUtilities.decodeString(jsonRoot, "offerOptimizationAlgorithmID", true));
     this.parameters = decodeParameters(JSONUtilities.decodeJSONObject(jsonRoot, "parameters", false));
-    this.catalogObjectives = decodeCatalogObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectiveIDs", true));
+    this.catalogObjectiveIDs = decodeCatalogObjectiveIDs(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectiveIDs", true));
     
     //
     //  validate 
@@ -269,15 +267,15 @@ public class ScoringSplit
   *
   *****************************************/
 
-  private Map<OfferOptimizationAlgorithmParameter,Integer> decodeParameters(JSONObject parametersRoot)
+  private Map<OfferOptimizationAlgorithmParameter,String> decodeParameters(JSONObject parametersRoot)
   {
-    Map<OfferOptimizationAlgorithmParameter,Integer> result = new HashMap<OfferOptimizationAlgorithmParameter,Integer>();
+    Map<OfferOptimizationAlgorithmParameter,String> result = new HashMap<OfferOptimizationAlgorithmParameter,String>();
     if (parametersRoot != null)
       {
         for (Object keyUnchecked : parametersRoot.keySet())
           {
             String key = (String) keyUnchecked;
-            Integer value = new Integer(((Number) parametersRoot.get(key)).intValue());
+            String value = (String) parametersRoot.get(key);
             result.put(new OfferOptimizationAlgorithmParameter(key),value);
           }
       }
@@ -286,21 +284,19 @@ public class ScoringSplit
 
   /*****************************************
   *
-  *  decodeCatalogObjectives
+  *  decodeCatalogObjectiveIDs
   *
   *****************************************/
 
-  private Set<CatalogObjective> decodeCatalogObjectives(JSONArray jsonArray) throws GUIManagerException
+  private Set<String> decodeCatalogObjectiveIDs(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<CatalogObjective> catalogObjectives = new LinkedHashSet<CatalogObjective>();
+    Set<String> catalogObjectiveIDs = new LinkedHashSet<String>();
     for (int i=0; i<jsonArray.size(); i++)
       {
         String catalogObjectiveID = (String) jsonArray.get(i);
-        CatalogObjective catalogObjective = Deployment.getCatalogObjectives().get(catalogObjectiveID);
-        if (catalogObjective == null) throw new GUIManagerException("unknown catalogObjective", catalogObjectiveID);
-        catalogObjectives.add(catalogObjective);
+        catalogObjectiveIDs.add(catalogObjectiveID);
       }
-    return catalogObjectives;
+    return catalogObjectiveIDs;
   }
 
   /*****************************************
@@ -318,7 +314,7 @@ public class ScoringSplit
         result = true;
         result = result && Objects.equals(offerOptimizationAlgorithm, scoringSplit.getOfferOptimizationAlgorithm());
         result = result && Objects.equals(parameters, scoringSplit.getParameters());
-        result = result && Objects.equals(catalogObjectives, scoringSplit.getCatalogObjectives());
+        result = result && Objects.equals(catalogObjectiveIDs, scoringSplit.getCatalogObjectiveIDs());
       }
     return result;
   }

@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.CatalogCharacteristic.CatalogCharacteristicType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -85,7 +84,7 @@ public class OfferCatalogObjective
     schemaBuilder.name("offer_catalog_objective");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("catalogObjectiveID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(OfferCatalogCharacteristic.schema()).schema());
+    schemaBuilder.field("offerCatalogCharacteristics", SchemaBuilder.array(OfferCatalogCharacteristic.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -178,7 +177,7 @@ public class OfferCatalogObjective
     OfferCatalogObjective offerCatalogObjective = (OfferCatalogObjective) value;
     Struct struct = new Struct(schema);
     struct.put("catalogObjectiveID", offerCatalogObjective.getCatalogObjectiveID());
-    struct.put("catalogCharacteristics", packOfferCatalogCharacteristics(offerCatalogObjective.getOfferCatalogCharacteristics()));
+    struct.put("offerCatalogCharacteristics", packOfferCatalogCharacteristics(offerCatalogObjective.getOfferCatalogCharacteristics()));
     return struct;
   }
 
@@ -220,7 +219,7 @@ public class OfferCatalogObjective
 
     Struct valueStruct = (Struct) value;
     String catalogObjectiveID = valueStruct.getString("catalogObjectiveID");
-    Set<OfferCatalogCharacteristic> offerCatalogCharacteristics = unpackOfferCatalogCharacteristics(schema.field("catalogCharacteristics").schema(), valueStruct.get("catalogCharacteristics"));
+    Set<OfferCatalogCharacteristic> offerCatalogCharacteristics = unpackOfferCatalogCharacteristics(schema.field("offerCatalogCharacteristics").schema(), valueStruct.get("offerCatalogCharacteristics"));
     
     //
     //  return
@@ -337,7 +336,7 @@ public class OfferCatalogObjective
     *
     *****************************************/
 
-    private CatalogCharacteristic catalogCharacteristic;
+    private String catalogCharacteristicID;
     private String singletonValue;
     private List<String> listValues;
 
@@ -347,9 +346,9 @@ public class OfferCatalogObjective
     *
     *****************************************/
 
-    private OfferCatalogCharacteristic(CatalogCharacteristic catalogCharacteristic, String singletonValue, List<String> listValues)
+    private OfferCatalogCharacteristic(String catalogCharacteristicID, String singletonValue, List<String> listValues)
     {
-      this.catalogCharacteristic = catalogCharacteristic;
+      this.catalogCharacteristicID = catalogCharacteristicID;
       this.singletonValue = singletonValue;
       this.listValues = listValues;
     }
@@ -363,30 +362,21 @@ public class OfferCatalogObjective
     OfferCatalogCharacteristic(JSONObject jsonRoot) throws GUIManagerException
     {
       //
-      //  basic fields
+      //  catalog characteristic
       //
 
-      this.catalogCharacteristic = Deployment.getCatalogCharacteristics().get(JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true));
-      switch (this.catalogCharacteristic.getCatalogCharacteristicType())
+      this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true);
+      Object valueJSON = JSONUtilities.decodeString(jsonRoot, "value", false);
+      if (valueJSON instanceof JSONArray)
         {
-          case Unit:
-          case Text:
-          case Choice:
-            this.singletonValue = JSONUtilities.decodeString(jsonRoot, "value", false);
-            this.listValues = Collections.<String>emptyList();
-            break;
-            
-          case List:
-            this.singletonValue = null;
-            this.listValues = decodeListValues(JSONUtilities.decodeJSONArray(jsonRoot, "value", false));
-            break;
+          this.singletonValue = null;
+          this.listValues = decodeListValues((JSONArray) valueJSON);
         }
-
-      //
-      //  validate 
-      //
-
-      if (this.catalogCharacteristic == null) throw new GUIManagerException("catalogCharacteristic not supported", JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true));
+      else
+        {
+          this.singletonValue = (String) valueJSON;
+          this.listValues = null;
+        }
     }
     
     /*****************************************
@@ -414,35 +404,10 @@ public class OfferCatalogObjective
     *
     *****************************************/
 
-    public CatalogCharacteristic getCatalogCharacteristic() { return catalogCharacteristic; }
+    public String getCatalogCharacteristicID() { return catalogCharacteristicID; }
     public String getSingletonValue() { return singletonValue; }
     public List<String> getListValues() { return listValues; }
-
-    //
-    //  getValue
-    //
-    
-    public Object getValue()
-    {
-      Object result;
-      switch (this.catalogCharacteristic.getCatalogCharacteristicType())
-        {
-          case Unit:
-          case Text:
-          case Choice:
-            result = getSingletonValue();
-            break;
-            
-          case List:
-            result = getListValues();
-            break;
-
-          default:
-            result = null;
-            break;
-        }
-      return result;
-    }
+    public Object getValue() { return (singletonValue != null) ? singletonValue : listValues; }
     
     /*****************************************
     *
@@ -465,7 +430,7 @@ public class OfferCatalogObjective
     {
       OfferCatalogCharacteristic offerCatalogCharacteristic = (OfferCatalogCharacteristic) value;
       Struct struct = new Struct(schema);
-      struct.put("catalogCharacteristicID", offerCatalogCharacteristic.getCatalogCharacteristic().getID());
+      struct.put("catalogCharacteristicID", offerCatalogCharacteristic.getCatalogCharacteristicID());
       struct.put("singletonValue", offerCatalogCharacteristic.getSingletonValue());
       struct.put("listValues", offerCatalogCharacteristic.getListValues());
       return struct;
@@ -492,7 +457,7 @@ public class OfferCatalogObjective
       //
 
       Struct valueStruct = (Struct) value;
-      CatalogCharacteristic catalogCharacteristic = Deployment.getCatalogCharacteristics().get(valueStruct.getString("catalogCharacteristicID"));
+      String catalogCharacteristicID = valueStruct.getString("catalogCharacteristicID");
       String singletonValue = valueStruct.getString("singletonValue");
       List<String> listValues = (List<String>) valueStruct.get("listValues");
 
@@ -500,13 +465,13 @@ public class OfferCatalogObjective
       //  validate
       //
 
-      if (catalogCharacteristic.getCatalogCharacteristicType() == CatalogCharacteristicType.Unknown) throw new SerializationException("characteristic not supported: " + valueStruct.getString("catalogCharacteristicID"));
+      // TBD
 
       //
       //  return
       //
 
-      return new OfferCatalogCharacteristic(catalogCharacteristic, singletonValue, listValues);
+      return new OfferCatalogCharacteristic(catalogCharacteristicID, singletonValue, listValues);
     }
 
     /*****************************************
@@ -522,7 +487,7 @@ public class OfferCatalogObjective
         {
           OfferCatalogCharacteristic offerCatalogCharacteristic = (OfferCatalogCharacteristic) obj;
           result = true;
-          result = result && Objects.equals(catalogCharacteristic, offerCatalogCharacteristic.getCatalogCharacteristic());
+          result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
           result = result && Objects.equals(singletonValue, offerCatalogCharacteristic.getSingletonValue());
           result = result && Objects.equals(listValues, offerCatalogCharacteristic.getListValues());
         }
@@ -537,7 +502,7 @@ public class OfferCatalogObjective
 
     public int hashCode()
     {
-      return catalogCharacteristic.hashCode();
+      return catalogCharacteristicID.hashCode();
     }
   }
 }

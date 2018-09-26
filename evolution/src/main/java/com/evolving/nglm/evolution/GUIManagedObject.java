@@ -105,6 +105,10 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());
     guiManagedObjectSerdes.add(CallingChannel.serde());
+    guiManagedObjectSerdes.add(Supplier.serde());
+    guiManagedObjectSerdes.add(Product.serde());
+    guiManagedObjectSerdes.add(CatalogCharacteristic.serde());
+    guiManagedObjectSerdes.add(CatalogObjective.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));

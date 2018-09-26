@@ -89,8 +89,6 @@ public class GUIManager
     getSupportedTimeUnits,
     getCallingChannelProperties,
     getSalesChannels,
-    getCatalogCharacteristics,
-    getCatalogObjectives,
     getSupportedDataTypes,
     getProfileCriterionFields,
     getProfileCriterionFieldIDs,
@@ -99,9 +97,6 @@ public class GUIManager
     getPresentationCriterionFieldIDs,
     getPresentationCriterionField,
     getOfferTypes,
-    getSuppliers,
-    getOfferCategories,
-    getProducts,
     getOfferOptimizationAlgorithms,
     getJourneyList,
     getJourneySummaryList,
@@ -133,6 +128,26 @@ public class GUIManager
     getCallingChannel,
     putCallingChannel,
     removeCallingChannel,
+    getSupplierList,
+    getSupplierSummaryList,
+    getSupplier,
+    putSupplier,
+    removeSupplier,
+    getProductList,
+    getProductSummaryList,
+    getProduct,
+    putProduct,
+    removeProduct,
+    getCatalogCharacteristicList,
+    getCatalogCharacteristicSummaryList,
+    getCatalogCharacteristic,
+    putCatalogCharacteristic,
+    removeCatalogCharacteristic,
+    getCatalogObjectiveList,
+    getCatalogObjectiveSummaryList,
+    getCatalogObjective,
+    putCatalogObjective,
+    removeCatalogObjective,
     getDashboardCounts;
   }
 
@@ -168,6 +183,10 @@ public class GUIManager
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
   private CallingChannelService callingChannelService;
+  private SupplierService supplierService;
+  private ProductService productService;
+  private CatalogCharacteristicService catalogCharacteristicService;
+  private CatalogObjectiveService catalogObjectiveService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
   /*****************************************
@@ -215,6 +234,10 @@ public class GUIManager
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String callingChannelTopic = Deployment.getCallingChannelTopic();
+    String supplierTopic = Deployment.getSupplierTopic();
+    String productTopic = Deployment.getProductTopic();
+    String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
+    String catalogObjectiveTopic = Deployment.getCatalogObjectiveTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     
     //
@@ -231,13 +254,9 @@ public class GUIManager
     
     /*****************************************
     *
-    *  services
+    *  services - construct
     *
     *****************************************/
-
-    //
-    //  construct
-    //
 
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
     segmentationRuleService = new SegmentationRuleService(bootstrapServers, "guimanager-segmentationruleservice-" + apiProcessKey, segmentationRuleTopic, true);
@@ -245,10 +264,20 @@ public class GUIManager
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
     callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
+    supplierService = new SupplierService(bootstrapServers, "guimanager-supplierservice-" + apiProcessKey, supplierTopic, true);
+    productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
+    catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
+    catalogObjectiveService = new CatalogObjectiveService(bootstrapServers, "guimanager-catalogobjectiveservice-" + apiProcessKey, catalogObjectiveTopic, true);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
+    /*****************************************
+    *
+    *  services - initialize
+    *
+    *****************************************/
+
     //
-    //  initialize calling channels list (if necessary)
+    //  calling channels
     //
 
     if (callingChannelService.getStoredCallingChannels().size() == 0)
@@ -258,19 +287,105 @@ public class GUIManager
             JSONArray initialCallingChannelsJSONArray = Deployment.getInitialCallingChannelsJSONArray();
             for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
               {
-                JSONObject callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                callingChannelService.putCallingChannel(new CallingChannel(callingChannelJSON, epochServer.getKey(), null));
+                JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
+                processPutCallingChannel(callingChannelJSON);
               }
           }
-        catch (JSONUtilitiesException | com.evolving.nglm.evolution.GUIManager.GUIManagerException e)
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+
+    //
+    //  suppliers
+    //
+
+    if (supplierService.getStoredSuppliers().size() == 0)
+      {
+        try
+          {
+            JSONArray initialSuppliersJSONArray = Deployment.getInitialSuppliersJSONArray();
+            for (int i=0; i<initialSuppliersJSONArray.size(); i++)
+              {
+                JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
+                processPutSupplier(supplierJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
           {
             throw new ServerRuntimeException("deployment", e);
           }
       }
     
     //
-    //  start
+    //  products
     //
+
+    if (productService.getStoredProducts().size() == 0)
+      {
+        try
+          {
+            JSONArray initialProductsJSONArray = Deployment.getInitialProductsJSONArray();
+            for (int i=0; i<initialProductsJSONArray.size(); i++)
+              {
+                JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
+                processPutProduct(productJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+    
+    //
+    //  catalogCharacteristics
+    //
+
+    if (catalogCharacteristicService.getStoredCatalogCharacteristics().size() == 0)
+      {
+        try
+          {
+            JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getInitialCatalogCharacteristicsJSONArray();
+            for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
+              {
+                JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
+                processPutCatalogCharacteristic(catalogCharacteristicJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+    
+    //
+    //  catalogObjectives
+    //
+
+    if (catalogObjectiveService.getStoredCatalogObjectives().size() == 0)
+      {
+        try
+          {
+            JSONArray initialCatalogObjectivesJSONArray = Deployment.getInitialCatalogObjectivesJSONArray();
+            for (int i=0; i<initialCatalogObjectivesJSONArray.size(); i++)
+              {
+                JSONObject catalogObjectiveJSON = (JSONObject) initialCatalogObjectivesJSONArray.get(i);
+                processPutCatalogObjective(catalogObjectiveJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+    
+    /*****************************************
+    *
+    *  services - start
+    *
+    *****************************************/
 
     journeyService.start();
     segmentationRuleService.start();
@@ -278,6 +393,10 @@ public class GUIManager
     scoringStrategyService.start();
     presentationStrategyService.start();
     callingChannelService.start();
+    supplierService.start();
+    productService.start();
+    catalogCharacteristicService.start();
+    catalogObjectiveService.start();
 
     /*****************************************
     *
@@ -295,8 +414,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
-        restServer.createContext("/nglm-guimanager/getCatalogCharacteristics", new APIHandler(API.getCatalogCharacteristics));
-        restServer.createContext("/nglm-guimanager/getCatalogObjectives", new APIHandler(API.getCatalogObjectives));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APIHandler(API.getProfileCriterionFieldIDs));
@@ -305,9 +422,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APIHandler(API.getPresentationCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
-        restServer.createContext("/nglm-guimanager/getSuppliers", new APIHandler(API.getSuppliers));
-        restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
-        restServer.createContext("/nglm-guimanager/getProducts", new APIHandler(API.getProducts));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
         restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APIHandler(API.getJourneySummaryList));
@@ -339,6 +453,26 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCallingChannel", new APIHandler(API.getCallingChannel));
         restServer.createContext("/nglm-guimanager/putCallingChannel", new APIHandler(API.putCallingChannel));
         restServer.createContext("/nglm-guimanager/removeCallingChannel", new APIHandler(API.removeCallingChannel));
+        restServer.createContext("/nglm-guimanager/getSupplierList", new APIHandler(API.getSupplierList));
+        restServer.createContext("/nglm-guimanager/getSupplierSummaryList", new APIHandler(API.getSupplierSummaryList));
+        restServer.createContext("/nglm-guimanager/getSupplier", new APIHandler(API.getSupplier));
+        restServer.createContext("/nglm-guimanager/putSupplier", new APIHandler(API.putSupplier));
+        restServer.createContext("/nglm-guimanager/removeSupplier", new APIHandler(API.removeSupplier));
+        restServer.createContext("/nglm-guimanager/getProductList", new APIHandler(API.getProductList));
+        restServer.createContext("/nglm-guimanager/getProductSummaryList", new APIHandler(API.getProductSummaryList));
+        restServer.createContext("/nglm-guimanager/getProduct", new APIHandler(API.getProduct));
+        restServer.createContext("/nglm-guimanager/putProduct", new APIHandler(API.putProduct));
+        restServer.createContext("/nglm-guimanager/removeProduct", new APIHandler(API.removeProduct));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicList", new APIHandler(API.getCatalogCharacteristicList));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicSummaryList", new APIHandler(API.getCatalogCharacteristicSummaryList));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristic", new APIHandler(API.getCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APIHandler(API.putCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APIHandler(API.removeCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/getCatalogObjectiveList", new APIHandler(API.getCatalogObjectiveList));
+        restServer.createContext("/nglm-guimanager/getCatalogObjectiveSummaryList", new APIHandler(API.getCatalogObjectiveSummaryList));
+        restServer.createContext("/nglm-guimanager/getCatalogObjective", new APIHandler(API.getCatalogObjective));
+        restServer.createContext("/nglm-guimanager/putCatalogObjective", new APIHandler(API.putCatalogObjective));
+        restServer.createContext("/nglm-guimanager/removeCatalogObjective", new APIHandler(API.removeCatalogObjective));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -354,7 +488,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, catalogObjectiveService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -384,13 +518,17 @@ public class GUIManager
     private ScoringStrategyService scoringStrategyService;
     private PresentationStrategyService presentationStrategyService;
     private CallingChannelService callingChannelService;
+    private SupplierService supplierService;
+    private ProductService productService;
+    private CatalogCharacteristicService catalogCharacteristicService;
+    private CatalogObjectiveService catalogObjectiveService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, CatalogObjectiveService catalogObjectiveService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -399,6 +537,10 @@ public class GUIManager
       this.scoringStrategyService = scoringStrategyService;
       this.presentationStrategyService = presentationStrategyService;
       this.callingChannelService = callingChannelService;
+      this.supplierService = supplierService;
+      this.productService = productService;
+      this.catalogCharacteristicService = catalogCharacteristicService;
+      this.catalogObjectiveService = catalogObjectiveService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
 
@@ -424,6 +566,10 @@ public class GUIManager
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (presentationStrategyService != null) presentationStrategyService.stop();
       if (callingChannelService != null) callingChannelService.stop();
+      if (supplierService != null) supplierService.stop();
+      if (productService != null) productService.stop();
+      if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
+      if (catalogObjectiveService != null) catalogObjectiveService.stop();
 
       //
       //  rest server
@@ -552,14 +698,6 @@ public class GUIManager
                   jsonResponse = processGetSalesChannels(jsonRoot);
                   break;
 
-                case getCatalogCharacteristics:
-                  jsonResponse = processGetCatalogCharacteristics(jsonRoot);
-                  break;
-
-                case getCatalogObjectives:
-                  jsonResponse = processGetCatalogObjectives(jsonRoot);
-                  break;
-
                 case getSupportedDataTypes:
                   jsonResponse = processGetSupportedDataTypes(jsonRoot);
                   break;
@@ -590,18 +728,6 @@ public class GUIManager
 
                 case getOfferTypes:
                   jsonResponse = processGetOfferTypes(jsonRoot);
-                  break;
-
-                case getSuppliers:
-                  jsonResponse = processGetSuppliers(jsonRoot);
-                  break;
-
-                case getOfferCategories:
-                  jsonResponse = processGetOfferCategories(jsonRoot);
-                  break;
-
-                case getProducts:
-                  jsonResponse = processGetProducts(jsonRoot);
                   break;
 
                 case getOfferOptimizationAlgorithms:
@@ -728,6 +854,86 @@ public class GUIManager
                   jsonResponse = processRemoveCallingChannel(jsonRoot);
                   break;
 
+                case getSupplierList:
+                  jsonResponse = processGetSupplierList(jsonRoot, true);
+                  break;
+
+                case getSupplierSummaryList:
+                  jsonResponse = processGetSupplierList(jsonRoot, false);
+                  break;
+
+                case getSupplier:
+                  jsonResponse = processGetSupplier(jsonRoot);
+                  break;
+
+                case putSupplier:
+                  jsonResponse = processPutSupplier(jsonRoot);
+                  break;
+
+                case removeSupplier:
+                  jsonResponse = processRemoveSupplier(jsonRoot);
+                  break;
+                  
+                case getProductList:
+                  jsonResponse = processGetProductList(jsonRoot, true);
+                  break;
+
+                case getProductSummaryList:
+                  jsonResponse = processGetProductList(jsonRoot, false);
+                  break;
+
+                case getProduct:
+                  jsonResponse = processGetProduct(jsonRoot);
+                  break;
+
+                case putProduct:
+                  jsonResponse = processPutProduct(jsonRoot);
+                  break;
+
+                case removeProduct:
+                  jsonResponse = processRemoveProduct(jsonRoot);
+                  break;
+                  
+                case getCatalogCharacteristicList:
+                  jsonResponse = processGetCatalogCharacteristicList(jsonRoot, true);
+                  break;
+
+                case getCatalogCharacteristicSummaryList:
+                  jsonResponse = processGetCatalogCharacteristicList(jsonRoot, false);
+                  break;
+
+                case getCatalogCharacteristic:
+                  jsonResponse = processGetCatalogCharacteristic(jsonRoot);
+                  break;
+
+                case putCatalogCharacteristic:
+                  jsonResponse = processPutCatalogCharacteristic(jsonRoot);
+                  break;
+
+                case removeCatalogCharacteristic:
+                  jsonResponse = processRemoveCatalogCharacteristic(jsonRoot);
+                  break;
+                  
+                case getCatalogObjectiveList:
+                  jsonResponse = processGetCatalogObjectiveList(jsonRoot, true);
+                  break;
+
+                case getCatalogObjectiveSummaryList:
+                  jsonResponse = processGetCatalogObjectiveList(jsonRoot, false);
+                  break;
+
+                case getCatalogObjective:
+                  jsonResponse = processGetCatalogObjective(jsonRoot);
+                  break;
+
+                case putCatalogObjective:
+                  jsonResponse = processPutCatalogObjective(jsonRoot);
+                  break;
+
+                case removeCatalogObjective:
+                  jsonResponse = processRemoveCatalogObjective(jsonRoot);
+                  break;
+                  
                 case getDashboardCounts:
                   jsonResponse = processGetDashboardCounts(jsonRoot);
                   break;
@@ -894,32 +1100,6 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve catalogCharacteristics
-    *
-    *****************************************/
-
-    List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
-    for (CatalogCharacteristic catalogCharacteristic : Deployment.getCatalogCharacteristics().values())
-      {
-        JSONObject catalogCharacteristicJSON = catalogCharacteristic.getJSONRepresentation();
-        catalogCharacteristics.add(catalogCharacteristicJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve catalogObjectives
-    *
-    *****************************************/
-
-    List<JSONObject> catalogObjectives = new ArrayList<JSONObject>();
-    for (CatalogObjective catalogObjective : Deployment.getCatalogObjectives().values())
-      {
-        JSONObject catalogObjectiveJSON = catalogObjective.getJSONRepresentation();
-        catalogObjectives.add(catalogObjectiveJSON);
-      }
-
-    /*****************************************
-    *
     *  retrieve supported data types
     *
     *****************************************/
@@ -962,45 +1142,6 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve suppliers
-    *
-    *****************************************/
-
-    List<JSONObject> suppliers = new ArrayList<JSONObject>();
-    for (Supplier supplier : Deployment.getSuppliers().values())
-      {
-        JSONObject supplierJSON = supplier.getJSONRepresentation();
-        suppliers.add(supplierJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve offerCategories
-    *
-    *****************************************/
-
-    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
-    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
-      {
-        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
-        offerCategories.add(offerCategoryJSON);
-      }
-
-    /*****************************************
-    *
-    *  retrieve products
-    *
-    *****************************************/
-
-    List<JSONObject> products = new ArrayList<JSONObject>();
-    for (Product product : Deployment.getProducts().values())
-      {
-        JSONObject productJSON = product.getJSONRepresentation();
-        products.add(productJSON);
-      }
-
-    /*****************************************
-    *
     *  retrieve offerOptimizationAlgorithms
     *
     *****************************************/
@@ -1024,15 +1165,10 @@ public class GUIManager
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
     response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
-    response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristics));
-    response.put("catalogObjectives", JSONUtilities.encodeArray(catalogObjectives));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
-    response.put("suppliers", JSONUtilities.encodeArray(suppliers));
-    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
-    response.put("products", JSONUtilities.encodeArray(products));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
     return JSONUtilities.encodeObject(response);
   }
@@ -1199,72 +1335,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getCatalogCharacteristics
-  *
-  *****************************************/
-
-  private JSONObject processGetCatalogCharacteristics(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve catalogCharacteristics
-    *
-    *****************************************/
-
-    List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
-    for (CatalogCharacteristic catalogCharacteristic : Deployment.getCatalogCharacteristics().values())
-      {
-        JSONObject catalogCharacteristicJSON = catalogCharacteristic.getJSONRepresentation();
-        catalogCharacteristics.add(catalogCharacteristicJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristics));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getCatalogObjectives
-  *
-  *****************************************/
-
-  private JSONObject processGetCatalogObjectives(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve catalogObjectives
-    *
-    *****************************************/
-
-    List<JSONObject> catalogObjectives = new ArrayList<JSONObject>();
-    for (CatalogObjective catalogObjective : Deployment.getCatalogObjectives().values())
-      {
-        JSONObject catalogObjectiveJSON = catalogObjective.getJSONRepresentation();
-        catalogObjectives.add(catalogObjectiveJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("catalogObjectives", JSONUtilities.encodeArray(catalogObjectives));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -1615,105 +1685,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSuppliers
-  *
-  *****************************************/
-
-  private JSONObject processGetSuppliers(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve suppliers
-    *
-    *****************************************/
-
-    List<JSONObject> suppliers = new ArrayList<JSONObject>();
-    for (Supplier supplier : Deployment.getSuppliers().values())
-      {
-        JSONObject supplierJSON = supplier.getJSONRepresentation();
-        suppliers.add(supplierJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("suppliers", JSONUtilities.encodeArray(suppliers));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getOfferCategories
-  *
-  *****************************************/
-
-  private JSONObject processGetOfferCategories(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve offerCategories
-    *
-    *****************************************/
-
-    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
-    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
-      {
-        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
-        offerCategories.add(offerCategoryJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getProducts
-  *
-  *****************************************/
-
-  private JSONObject processGetProducts(JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve products
-    *
-    *****************************************/
-
-    List<JSONObject> products = new ArrayList<JSONObject>();
-    for (Product product : Deployment.getProducts().values())
-      {
-        JSONObject productJSON = product.getJSONRepresentation();
-        products.add(productJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("products", JSONUtilities.encodeArray(products));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2752,7 +2723,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Offer offer = new Offer(jsonRoot, epoch, existingOffer);
+        Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService);
 
         /*****************************************
         *
@@ -2760,7 +2731,7 @@ public class GUIManager
         *
         *****************************************/
 
-        offerService.putOffer(offer, callingChannelService);
+        offerService.putOffer(offer, callingChannelService, productService);
 
         /*****************************************
         *
@@ -3652,6 +3623,1038 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processGetSupplierList
+  *
+  *****************************************/
+
+  private JSONObject processGetSupplierList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert suppliers
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> suppliers = new ArrayList<JSONObject>();
+    for (GUIManagedObject supplier : supplierService.getStoredSuppliers())
+      {
+        suppliers.add(supplierService.generateResponseJSON(supplier, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("suppliers", JSONUtilities.encodeArray(suppliers));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetSupplier
+  *
+  *****************************************/
+
+  private JSONObject processGetSupplier(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
+    JSONObject supplierJSON = supplierService.generateResponseJSON(supplier, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (supplier != null) ? "ok" : "supplierNotFound");
+    if (supplier != null) response.put("supplier", supplierJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutSupplier
+  *
+  *****************************************/
+
+  private JSONObject processPutSupplier(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  supplierID
+    *
+    *****************************************/
+    
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (supplierID == null)
+      {
+        supplierID = supplierService.generateSupplierID();
+        jsonRoot.put("id", supplierID);
+      }
+    
+    /*****************************************
+    *
+    *  process supplier
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing supplier
+        *
+        *****************************************/
+
+        GUIManagedObject existingSupplier = supplierService.getStoredSupplier(supplierID);
+
+        /****************************************
+        *
+        *  instantiate supplier
+        *
+        ****************************************/
+
+        Supplier supplier = new Supplier(jsonRoot, epoch, existingSupplier);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        supplierService.putSupplier(supplier);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", supplier.getSupplierID());
+        response.put("accepted", supplier.getAccepted());
+        response.put("processing", supplierService.isActiveSupplier(supplier, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        supplierService.putSupplier(incompleteObject);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "supplierNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveSupplier
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSupplier(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    supplierService.removeSupplier(supplierID);
+
+    /*****************************************
+    *
+    *  revalidateProducts
+    *
+    *****************************************/
+
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetProductList
+  *
+  *****************************************/
+
+  private JSONObject processGetProductList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert products
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> products = new ArrayList<JSONObject>();
+    for (GUIManagedObject product : productService.getStoredProducts())
+      {
+        products.add(productService.generateResponseJSON(product, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("products", JSONUtilities.encodeArray(products));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetProduct
+  *
+  *****************************************/
+
+  private JSONObject processGetProduct(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String productID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject product = productService.getStoredProduct(productID);
+    JSONObject productJSON = productService.generateResponseJSON(product, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (product != null) ? "ok" : "productNotFound");
+    if (product != null) response.put("product", productJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutProduct
+  *
+  *****************************************/
+
+  private JSONObject processPutProduct(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  productID
+    *
+    *****************************************/
+    
+    String productID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (productID == null)
+      {
+        productID = productService.generateProductID();
+        jsonRoot.put("id", productID);
+      }
+    
+    /*****************************************
+    *
+    *  process product
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing product
+        *
+        *****************************************/
+
+        GUIManagedObject existingProduct = productService.getStoredProduct(productID);
+
+        /****************************************
+        *
+        *  instantiate product
+        *
+        ****************************************/
+
+        Product product = new Product(jsonRoot, epoch, existingProduct);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        productService.putProduct(product, supplierService);
+
+        /*****************************************
+        *
+        *  revalidateOffers
+        *
+        *****************************************/
+
+        revalidateOffers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", product.getProductID());
+        response.put("accepted", product.getAccepted());
+        response.put("processing", productService.isActiveProduct(product, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        productService.putIncompleteProduct(incompleteObject);
+
+        //
+        //  revalidateOffers
+        //
+
+        revalidateOffers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "productNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveProduct
+  *
+  *****************************************/
+
+  private JSONObject processRemoveProduct(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String productID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    productService.removeProduct(productID);
+
+    /*****************************************
+    *
+    *  revalidateOffers
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetCatalogCharacteristicList
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogCharacteristicList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert catalogCharacteristics
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
+    for (GUIManagedObject catalogCharacteristic : catalogCharacteristicService.getStoredCatalogCharacteristics())
+      {
+        catalogCharacteristics.add(catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("catalogCharacteristics", JSONUtilities.encodeArray(catalogCharacteristics));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetCatalogCharacteristic
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogCharacteristic(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+    JSONObject catalogCharacteristicJSON = catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (catalogCharacteristic != null) ? "ok" : "catalogCharacteristicNotFound");
+    if (catalogCharacteristic != null) response.put("catalogCharacteristic", catalogCharacteristicJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutCatalogCharacteristic
+  *
+  *****************************************/
+
+  private JSONObject processPutCatalogCharacteristic(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  catalogCharacteristicID
+    *
+    *****************************************/
+    
+    String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (catalogCharacteristicID == null)
+      {
+        catalogCharacteristicID = catalogCharacteristicService.generateCatalogCharacteristicID();
+        jsonRoot.put("id", catalogCharacteristicID);
+      }
+    
+    /*****************************************
+    *
+    *  process catalogCharacteristic
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing catalogCharacteristic
+        *
+        *****************************************/
+
+        GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+
+        /****************************************
+        *
+        *  instantiate catalogCharacteristic
+        *
+        ****************************************/
+
+        CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(jsonRoot, epoch, existingCatalogCharacteristic);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic);
+
+        /*****************************************
+        *
+        *  revalidateOffers
+        *
+        *****************************************/
+
+        // DEW TBD - revalidateOffers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", catalogCharacteristic.getCatalogCharacteristicID());
+        response.put("accepted", catalogCharacteristic.getAccepted());
+        response.put("processing", catalogCharacteristicService.isActiveCatalogCharacteristic(catalogCharacteristic, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        catalogCharacteristicService.putIncompleteCatalogCharacteristic(incompleteObject);
+
+        //
+        //  revalidateOffers
+        //
+
+        // DEW TBD - revalidateOffers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "catalogCharacteristicNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveCatalogCharacteristic
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCatalogCharacteristic(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID);
+
+    /*****************************************
+    *
+    *  revalidateOffers
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetCatalogObjectiveList
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogObjectiveList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert catalogObjectives
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> catalogObjectives = new ArrayList<JSONObject>();
+    for (GUIManagedObject catalogObjective : catalogObjectiveService.getStoredCatalogObjectives())
+      {
+        catalogObjectives.add(catalogObjectiveService.generateResponseJSON(catalogObjective, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("catalogObjectives", JSONUtilities.encodeArray(catalogObjectives));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetCatalogObjective
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogObjective(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String catalogObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject catalogObjective = catalogObjectiveService.getStoredCatalogObjective(catalogObjectiveID);
+    JSONObject catalogObjectiveJSON = catalogObjectiveService.generateResponseJSON(catalogObjective, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (catalogObjective != null) ? "ok" : "catalogObjectiveNotFound");
+    if (catalogObjective != null) response.put("catalogObjective", catalogObjectiveJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutCatalogObjective
+  *
+  *****************************************/
+
+  private JSONObject processPutCatalogObjective(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  catalogObjectiveID
+    *
+    *****************************************/
+    
+    String catalogObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (catalogObjectiveID == null)
+      {
+        catalogObjectiveID = catalogObjectiveService.generateCatalogObjectiveID();
+        jsonRoot.put("id", catalogObjectiveID);
+      }
+    
+    /*****************************************
+    *
+    *  process catalogObjective
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing catalogObjective
+        *
+        *****************************************/
+
+        GUIManagedObject existingCatalogObjective = catalogObjectiveService.getStoredCatalogObjective(catalogObjectiveID);
+
+        /****************************************
+        *
+        *  instantiate catalogObjective
+        *
+        ****************************************/
+
+        CatalogObjective catalogObjective = new CatalogObjective(jsonRoot, epoch, existingCatalogObjective);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        catalogObjectiveService.putCatalogObjective(catalogObjective);
+
+        /*****************************************
+        *
+        *  revalidateOffers
+        *
+        *****************************************/
+
+        // DEW TBD - revalidateOffers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", catalogObjective.getCatalogObjectiveID());
+        response.put("accepted", catalogObjective.getAccepted());
+        response.put("processing", catalogObjectiveService.isActiveCatalogObjective(catalogObjective, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        catalogObjectiveService.putIncompleteCatalogObjective(incompleteObject);
+
+        //
+        //  revalidateOffers
+        //
+
+        // DEW TBD - revalidateOffers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "catalogObjectiveNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveCatalogObjective
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCatalogObjective(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String catalogObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    catalogObjectiveService.removeCatalogObjective(catalogObjectiveID);
+
+    /*****************************************
+    *
+    *  revalidateOffers
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
   *  revalidateOffers
   *
   *****************************************/
@@ -3675,8 +4678,9 @@ public class GUIManager
         GUIManagedObject modifiedOffer;
         try
           {
-            Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer);
+            Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer, catalogCharacteristicService);
             offer.validateCallingChannels(callingChannelService, date);
+            offer.validateProducts(productService, date);
             modifiedOffer = offer;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -3708,6 +4712,70 @@ public class GUIManager
 
   /*****************************************
   *
+  *  revalidateProducts
+  *
+  *****************************************/
+
+  private void revalidateProducts(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedProducts = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingProduct : productService.getStoredProducts())
+      {
+        //
+        //  modifiedProduct
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedProduct;
+        try
+          {
+            Product product = new Product(existingProduct.getJSONRepresentation(), epoch, existingProduct);
+            product.validateSupplier(supplierService, date);
+            modifiedProduct = product;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedProduct = new IncompleteObject(existingProduct.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingProduct.getAccepted() != modifiedProduct.getAccepted())
+          {
+            modifiedProducts.add(modifiedProduct);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedProduct : modifiedProducts)
+      {
+        productService.putGUIManagedObject(modifiedProduct, date);
+      }
+    
+    /****************************************
+    *
+    *  revalidate offers
+    *
+    ****************************************/
+
+    revalidateOffers(date);
+  }
+
+  /*****************************************
+  *
   *  processGetDashboardCounts
   *
   *****************************************/
@@ -3722,6 +4790,10 @@ public class GUIManager
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
     response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
+    response.put("supplierCount", supplierService.getStoredSuppliers().size());
+    response.put("productCount", productService.getStoredProducts().size());
+    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
+    response.put("catalogObjectiveCount", catalogObjectiveService.getStoredCatalogObjectives().size());
     return JSONUtilities.encodeObject(response);
   }
 

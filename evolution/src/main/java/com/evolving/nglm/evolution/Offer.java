@@ -62,8 +62,7 @@ public class Offer extends GUIManagedObject
     schemaBuilder.name("offer");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("defaultPropensity", Schema.INT32_SCHEMA);
-    schemaBuilder.field("marginFactor", Schema.INT32_SCHEMA);
+    schemaBuilder.field("initialPropensity", Schema.INT32_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
@@ -92,8 +91,7 @@ public class Offer extends GUIManagedObject
   *
   ****************************************/
 
-  private int defaultPropensity;
-  private int marginFactor;
+  private int initialPropensity;
   private int unitaryCost;
   private List<EvaluationCriterion> profileCriteria;
   private OfferType offerType;
@@ -112,8 +110,7 @@ public class Offer extends GUIManagedObject
   //
 
   public String getOfferID() { return getGUIManagedObjectID(); }
-  public int getDefaultPropensity() { return defaultPropensity; }
-  public int getMarginFactor() { return marginFactor; }
+  public int getInitialPropensity() { return initialPropensity; }
   public int getUnitaryCost() { return unitaryCost; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public OfferType getOfferType() { return offerType; }
@@ -138,11 +135,10 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, int defaultPropensity, int marginFactor, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferCatalogObjective> offerCatalogObjectives, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
+  public Offer(SchemaAndValue schemaAndValue, int initialPropensity, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferCatalogObjective> offerCatalogObjectives, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
   {
     super(schemaAndValue);
-    this.defaultPropensity = defaultPropensity;
-    this.marginFactor = marginFactor;
+    this.initialPropensity = initialPropensity;
     this.unitaryCost = unitaryCost;
     this.profileCriteria = profileCriteria;
     this.offerType = offerType;
@@ -162,8 +158,7 @@ public class Offer extends GUIManagedObject
     Offer offer = (Offer) value;
     Struct struct = new Struct(schema);
     packCommon(struct, offer);
-    struct.put("defaultPropensity", offer.getDefaultPropensity());
-    struct.put("marginFactor", offer.getMarginFactor());
+    struct.put("initialPropensity", offer.getInitialPropensity());
     struct.put("unitaryCost", offer.getUnitaryCost());
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
     struct.put("offerType", offer.getOfferType().getID());
@@ -258,8 +253,7 @@ public class Offer extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    int defaultPropensity = valueStruct.getInt32("defaultPropensity");
-    int marginFactor = valueStruct.getInt32("marginFactor");
+    int initialPropensity = valueStruct.getInt32("initialPropensity");
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
@@ -277,7 +271,7 @@ public class Offer extends GUIManagedObject
     //  return
     //
 
-    return new Offer(schemaAndValue, defaultPropensity, marginFactor, unitaryCost, profileCriteria, offerType, offerCatalogObjectives, offerProducts, offerCallingChannels);
+    return new Offer(schemaAndValue, initialPropensity, unitaryCost, profileCriteria, offerType, offerCatalogObjectives, offerProducts, offerCallingChannels);
   }
   
   /*****************************************
@@ -414,7 +408,7 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  public Offer(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferUnchecked) throws GUIManagerException
+  public Offer(JSONObject jsonRoot, long epoch, GUIManagedObject existingOfferUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     /*****************************************
     *
@@ -438,12 +432,11 @@ public class Offer extends GUIManagedObject
     *
     *****************************************/
     
-    this.defaultPropensity = JSONUtilities.decodeInteger(jsonRoot, "defaultPropensity", true);
-    this.marginFactor = JSONUtilities.decodeInteger(jsonRoot, "marginFactor", true);
+    this.initialPropensity = JSONUtilities.decodeInteger(jsonRoot, "initialPropensity", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
     this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
-    this.offerCatalogObjectives = decodeOfferCatalogObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectives", true));
+    this.offerCatalogObjectives = decodeOfferCatalogObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectives", true), catalogCharacteristicService);
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
     this.offerCallingChannels = decodeOfferCallingChannels(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", false));
 
@@ -489,7 +482,7 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  private Set<OfferCatalogObjective> decodeOfferCatalogObjectives(JSONArray jsonArray) throws GUIManagerException
+  private Set<OfferCatalogObjective> decodeOfferCatalogObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<OfferCatalogObjective> result = new HashSet<OfferCatalogObjective>();
     if (jsonArray != null)
@@ -552,8 +545,7 @@ public class Offer extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingOffer.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! (defaultPropensity == existingOffer.getDefaultPropensity());
-        epochChanged = epochChanged || ! (marginFactor == existingOffer.getMarginFactor());
+        epochChanged = epochChanged || ! (initialPropensity == existingOffer.getInitialPropensity());
         epochChanged = epochChanged || ! (unitaryCost == existingOffer.getUnitaryCost());
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingOffer.getProfileCriteria());
         epochChanged = epochChanged || ! Objects.equals(offerType, existingOffer.getOfferType());
@@ -623,6 +615,34 @@ public class Offer extends GUIManagedObject
         offerProperties.removeAll(callingChannel.getMandatoryCallingChannelProperties());
         offerProperties.removeAll(callingChannel.getOptionalCallingChannelProperties());
         if (offerProperties.size() > 0) throw new GUIManagerException("unknown calling channel properties", callingChannel.getGUIManagedObjectID());
+      }
+  }
+  
+  /*****************************************
+  *
+  *  validateProducts
+  *
+  *****************************************/
+
+  public void validateProducts(ProductService productService, Date date) throws GUIManagerException
+  {
+    for (OfferProduct offerProduct : offerProducts)
+      {
+        /*****************************************
+        *
+        *  retrieve product
+        *
+        *****************************************/
+
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), date);
+
+        /*****************************************
+        *
+        *  validate the product exists and is active
+        *
+        *****************************************/
+
+        if (product == null) throw new GUIManagerException("unknown product", offerProduct.getProductID());
       }
   }
 }

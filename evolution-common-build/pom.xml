@@ -68,6 +68,10 @@
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
     <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
     <topic.callingchannel>callingchannel</topic.callingchannel>
+    <topic.supplier>supplier</topic.supplier>
+    <topic.product>product</topic.product>
+    <topic.catalogcharacteristic>catalogcharacteristic</topic.catalogcharacteristic>
+    <topic.catalogobjective>catalogobjective</topic.catalogobjective>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

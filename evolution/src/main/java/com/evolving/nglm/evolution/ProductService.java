@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  OfferService.java
+*  ProductService.java
 *
 ****************************************************************************/
 
@@ -41,7 +41,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class OfferService extends GUIService
+public class ProductService extends GUIService
 {
   /*****************************************
   *
@@ -53,7 +53,7 @@ public class OfferService extends GUIService
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(OfferService.class);
+  private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
   /*****************************************
   *
@@ -61,7 +61,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  private OfferListener offerListener = null;
+  private ProductListener productListener = null;
 
   /*****************************************
   *
@@ -69,33 +69,33 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public OfferService(String bootstrapServers, String groupID, String offerTopic, boolean masterService, OfferListener offerListener)
+  public ProductService(String bootstrapServers, String groupID, String productTopic, boolean masterService, ProductListener productListener)
   {
-    super(bootstrapServers, "OfferService", groupID, offerTopic, masterService, getSuperListener(offerListener));
+    super(bootstrapServers, "ProductService", groupID, productTopic, masterService, getSuperListener(productListener));
   }
 
   //
   //  constructor
   //
 
-  public OfferService(String bootstrapServers, String groupID, String offerTopic, boolean masterService)
+  public ProductService(String bootstrapServers, String groupID, String productTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, offerTopic, masterService, (OfferListener) null);
+    this(bootstrapServers, groupID, productTopic, masterService, (ProductListener) null);
   }
 
   //
   //  getSuperListener
   //
 
-  private static GUIManagedObjectListener getSuperListener(OfferListener offerListener)
+  private static GUIManagedObjectListener getSuperListener(ProductListener productListener)
   {
     GUIManagedObjectListener superListener = null;
-    if (offerListener != null)
+    if (productListener != null)
       {
         superListener = new GUIManagedObjectListener()
         {
-          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { offerListener.offerActivated((Offer) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { offerListener.offerDeactivated((Offer) guiManagedObject); }
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { productListener.productActivated((Product) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { productListener.productDeactivated((Product) guiManagedObject); }
         };
       }
     return superListener;
@@ -110,8 +110,7 @@ public class OfferService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("default", guiManagedObject.getJSONRepresentation().get("default"));
-    result.put("serviceTypeID", guiManagedObject.getJSONRepresentation().get("serviceTypeID"));
+    result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
     return result;
@@ -119,24 +118,24 @@ public class OfferService extends GUIService
   
   /*****************************************
   *
-  *  getOffers
+  *  getProducts
   *
   *****************************************/
 
-  public String generateOfferID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredOffer(String offerID) { return getStoredGUIManagedObject(offerID); }
-  public Collection<GUIManagedObject> getStoredOffers() { return getStoredGUIManagedObjects(); }
-  public boolean isActiveOffer(GUIManagedObject offerUnchecked, Date date) { return isActiveGUIManagedObject(offerUnchecked, date); }
-  public Offer getActiveOffer(String offerID, Date date) { return (Offer) getActiveGUIManagedObject(offerID, date); }
-  public Collection<Offer> getActiveOffers(Date date) { return (Collection<Offer>) getActiveGUIManagedObjects(date); }
+  public String generateProductID() { return generateGUIManagedObjectID(); }
+  public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
+  public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveProduct(GUIManagedObject productUnchecked, Date date) { return isActiveGUIManagedObject(productUnchecked, date); }
+  public Product getActiveProduct(String productID, Date date) { return (Product) getActiveGUIManagedObject(productID, date); }
+  public Collection<Product> getActiveProducts(Date date) { return (Collection<Product>) getActiveGUIManagedObjects(date); }
 
   /*****************************************
   *
-  *  putOffer
+  *  putProduct
   *
   *****************************************/
 
-  public void putOffer(Offer offer, CallingChannelService callingChannelService, ProductService productService) throws GUIManagerException
+  public void putProduct(Product product, SupplierService supplierService) throws GUIManagerException
   {
     //
     //  now
@@ -145,48 +144,47 @@ public class OfferService extends GUIService
     Date now = SystemTime.getCurrentTime();
 
     //
-    //  validate
+    //  validate supplier
     //
 
-    offer.validateCallingChannels(callingChannelService, now);
-    offer.validateProducts(productService, now);
+    product.validateSupplier(supplierService, now);
 
     //
     //  put
     //
 
-    putGUIManagedObject(offer, now);
+    putGUIManagedObject(product, now);
   }
 
   /*****************************************
   *
-  *  putIncompleteOffer
+  *  putIncompleteProduct
   *
   *****************************************/
 
-  public void putIncompleteOffer(IncompleteObject offer)
+  public void putIncompleteProduct(IncompleteObject product)
   {
-    putGUIManagedObject(offer, SystemTime.getCurrentTime());
+    putGUIManagedObject(product, SystemTime.getCurrentTime());
   }
-
+  
   /*****************************************
   *
-  *  removeOffer
+  *  removeProduct
   *
   *****************************************/
 
-  public void removeOffer(String offerID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime()); }
+  public void removeProduct(String productID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime()); }
 
   /*****************************************
   *
-  *  interface OfferListener
+  *  interface ProductListener
   *
   *****************************************/
 
-  public interface OfferListener
+  public interface ProductListener
   {
-    public void offerActivated(Offer offer);
-    public void offerDeactivated(Offer offer);
+    public void productActivated(Product product);
+    public void productDeactivated(Product product);
   }
 
   /*****************************************
@@ -198,21 +196,21 @@ public class OfferService extends GUIService
   public static void main(String[] args)
   {
     //
-    //  offerListener
+    //  productListener
     //
 
-    OfferListener offerListener = new OfferListener()
+    ProductListener productListener = new ProductListener()
     {
-      @Override public void offerActivated(Offer offer) { System.out.println("offer activated: " + offer.getOfferID()); }
-      @Override public void offerDeactivated(Offer offer) { System.out.println("offer deactivated: " + offer.getOfferID()); }
+      @Override public void productActivated(Product product) { System.out.println("product activated: " + product.getProductID()); }
+      @Override public void productDeactivated(Product product) { System.out.println("product deactivated: " + product.getProductID()); }
     };
 
     //
-    //  offerService
+    //  productService
     //
 
-    OfferService offerService = new OfferService(Deployment.getBrokerServers(), "example-001", Deployment.getOfferTopic(), false, offerListener);
-    offerService.start();
+    ProductService productService = new ProductService(Deployment.getBrokerServers(), "example-productservice-001", Deployment.getProductTopic(), false, productListener);
+    productService.start();
 
     //
     //  sleep forever
