@@ -110,9 +110,9 @@ public class CatalogCharacteristicService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("name", guiManagedObject.getJSONRepresentation().get("display"));
-    result.put("type", guiManagedObject.getJSONRepresentation().get("display"));
-    result.put("unit", guiManagedObject.getJSONRepresentation().get("display"));
+    result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
+    result.put("type", guiManagedObject.getJSONRepresentation().get("type"));
+    result.put("unit", guiManagedObject.getJSONRepresentation().get("unit"));
     return result;
   }
   

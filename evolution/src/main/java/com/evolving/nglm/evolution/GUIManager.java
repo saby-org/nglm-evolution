@@ -89,6 +89,7 @@ public class GUIManager
     getSupportedTimeUnits,
     getCallingChannelProperties,
     getSalesChannels,
+    getCatalogObjectiveSections,
     getSupportedDataTypes,
     getProfileCriterionFields,
     getProfileCriterionFieldIDs,
@@ -414,6 +415,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
+        restServer.createContext("/nglm-guimanager/getCatalogObjectiveSections", new APIHandler(API.getCatalogObjectiveSections));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APIHandler(API.getProfileCriterionFieldIDs));
@@ -696,6 +698,10 @@ public class GUIManager
 
                 case getSalesChannels:
                   jsonResponse = processGetSalesChannels(jsonRoot);
+                  break;
+
+                case getCatalogObjectiveSections:
+                  jsonResponse = processGetCatalogObjectiveSections(jsonRoot);
                   break;
 
                 case getSupportedDataTypes:
@@ -1100,6 +1106,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve catalogObjectiveSections
+    *
+    *****************************************/
+
+    List<JSONObject> catalogObjectiveSections = new ArrayList<JSONObject>();
+    for (CatalogObjectiveSection catalogObjectiveSection : Deployment.getCatalogObjectiveSections().values())
+      {
+        JSONObject catalogObjectiveSectionJSON = catalogObjectiveSection.getJSONRepresentation();
+        catalogObjectiveSections.add(catalogObjectiveSectionJSON);
+      }
+    
+    /*****************************************
+    *
     *  retrieve supported data types
     *
     *****************************************/
@@ -1165,6 +1184,7 @@ public class GUIManager
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
     response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
+    response.put("catalogObjectiveSections", JSONUtilities.encodeArray(catalogObjectiveSections));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
@@ -1335,6 +1355,39 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getCatalogObjectiveSections
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogObjectiveSections(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve catalogObjectiveSections
+    *
+    *****************************************/
+
+    List<JSONObject> catalogObjectiveSections = new ArrayList<JSONObject>();
+    for (CatalogObjectiveSection catalogObjectiveSection : Deployment.getCatalogObjectiveSections().values())
+      {
+        JSONObject catalogObjectiveSectionJSON = catalogObjectiveSection.getJSONRepresentation();
+        catalogObjectiveSections.add(catalogObjectiveSectionJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("catalogObjectiveSections", JSONUtilities.encodeArray(catalogObjectiveSections));
     return JSONUtilities.encodeObject(response);
   }
 

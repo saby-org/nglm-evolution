@@ -71,6 +71,7 @@ public class Deployment
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
   private static JSONArray initialCatalogObjectivesJSONArray = null;
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
+  private static Map<String,CatalogObjectiveSection> catalogObjectiveSections = new LinkedHashMap<String,CatalogObjectiveSection>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -144,6 +145,7 @@ public class Deployment
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
   public static JSONArray getInitialCatalogObjectivesJSONArray() { return initialCatalogObjectivesJSONArray; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
+  public static Map<String,CatalogObjectiveSection> getCatalogObjectiveSections() { return catalogObjectiveSections; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
@@ -723,6 +725,25 @@ public class Deployment
             JSONObject salesChannelJSON = (JSONObject) salesChannelValues.get(i);
             SalesChannel salesChannel = new SalesChannel(salesChannelJSON);
             salesChannels.put(salesChannel.getID(), salesChannel);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  catalogObjectiveSections
+    //
+
+    try
+      {
+        JSONArray catalogObjectiveSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectiveSections", true);
+        for (int i=0; i<catalogObjectiveSectionValues.size(); i++)
+          {
+            JSONObject catalogObjectiveSectionJSON = (JSONObject) catalogObjectiveSectionValues.get(i);
+            CatalogObjectiveSection catalogObjectiveSection = new CatalogObjectiveSection(catalogObjectiveSectionJSON);
+            catalogObjectiveSections.put(catalogObjectiveSection.getID(), catalogObjectiveSection);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

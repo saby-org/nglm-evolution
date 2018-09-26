@@ -45,10 +45,10 @@ public class CatalogObjective extends GUIManagedObject
 
   public enum Section
   {
-    Product("product"),
-    Offer("offer"),
-    Journey("journey"),
-    Unknown("(unknown)");
+    Product("1"),
+    Offer("2"),
+    Journey("3"),
+    Unknown("-1");
     private String externalRepresentation;
     private Section(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
@@ -199,7 +199,7 @@ public class CatalogObjective extends GUIManagedObject
     *
     *****************************************/
 
-    this.section = Section.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "section", true));
+    this.section = Section.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "catalogObjectiveSectionID", true));
     this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", true));
 
     /*****************************************
