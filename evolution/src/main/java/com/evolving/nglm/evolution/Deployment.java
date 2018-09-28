@@ -64,6 +64,7 @@ public class Deployment
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
+  private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static JSONArray initialCallingChannelsJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
@@ -138,6 +139,7 @@ public class Deployment
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
+  public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
@@ -664,6 +666,25 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  serviceTypes
+    //
+
+    try
+      {
+        JSONArray serviceTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "serviceTypes", true);
+        for (int i=0; i<serviceTypeValues.size(); i++)
+          {
+            JSONObject serviceTypeJSON = (JSONObject) serviceTypeValues.get(i);
+            ServiceType serviceType = new ServiceType(serviceTypeJSON);
+            serviceTypes.put(serviceType.getID(), serviceType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  callingChannelProperties
     //

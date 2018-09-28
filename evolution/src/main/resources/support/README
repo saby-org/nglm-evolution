@@ -18,6 +18,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http:
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedLanguages; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedCurrencies; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getServiceTypes; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCallingChannelProperties; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSalesChannels; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCatalogObjectiveSections; echo

@@ -87,6 +87,7 @@ public class GUIManager
     getSupportedLanguages,
     getSupportedCurrencies,
     getSupportedTimeUnits,
+    getServiceTypes,
     getCallingChannelProperties,
     getSalesChannels,
     getCatalogObjectiveSections,
@@ -413,6 +414,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APIHandler(API.getSupportedLanguages));
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APIHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
+        restServer.createContext("/nglm-guimanager/getServiceTypes", new APIHandler(API.getServiceTypes));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
         restServer.createContext("/nglm-guimanager/getCatalogObjectiveSections", new APIHandler(API.getCatalogObjectiveSections));
@@ -692,6 +694,10 @@ public class GUIManager
                   jsonResponse = processGetSupportedTimeUnits(jsonRoot);
                   break;
 
+                case getServiceTypes:
+                  jsonResponse = processGetServiceTypes(jsonRoot);
+                  break;
+                  
                 case getCallingChannelProperties:
                   jsonResponse = processGetCallingChannelProperties(jsonRoot);
                   break;
@@ -1080,6 +1086,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve serviceTypes
+    *
+    *****************************************/
+
+    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
+    for (ServiceType serviceType : Deployment.getServiceTypes().values())
+      {
+        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
+        serviceTypes.add(serviceTypeJSON);
+      }
+    
+    /*****************************************
+    *
     *  retrieve callingChannelProperties
     *
     *****************************************/
@@ -1292,6 +1311,39 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  getServiceTypes
+  *
+  *****************************************/
+
+  private JSONObject processGetServiceTypes(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve serviceTypes
+    *
+    *****************************************/
+
+    List<JSONObject> serviceTypes = new ArrayList<JSONObject>();
+    for (ServiceType serviceType : Deployment.getServiceTypes().values())
+      {
+        JSONObject serviceTypeJSON = serviceType.getJSONRepresentation();
+        serviceTypes.add(serviceTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  getCallingChannelProperties
