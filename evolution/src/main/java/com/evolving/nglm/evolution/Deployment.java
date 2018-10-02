@@ -76,6 +76,7 @@ public class Deployment
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
@@ -151,6 +152,7 @@ public class Deployment
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
+  public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
@@ -823,6 +825,25 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             presentationCriterionFields.put(criterionField.getID(), criterionField);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  offerCategories
+    //
+
+    try
+      {
+        JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", true);
+        for (int i=0; i<offerCategoryValues.size(); i++)
+          {
+            JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
+            OfferCategory offerCategory = new OfferCategory(offerCategoryJSON);
+            offerCategories.put(offerCategory.getID(), offerCategory);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

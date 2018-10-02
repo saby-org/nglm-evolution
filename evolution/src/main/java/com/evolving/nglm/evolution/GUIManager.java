@@ -98,6 +98,7 @@ public class GUIManager
     getPresentationCriterionFields,
     getPresentationCriterionFieldIDs,
     getPresentationCriterionField,
+    getOfferCategories,
     getOfferTypes,
     getOfferOptimizationAlgorithms,
     getJourneyList,
@@ -425,6 +426,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFields", new APIHandler(API.getPresentationCriterionFields));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APIHandler(API.getPresentationCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
+        restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
@@ -736,6 +738,10 @@ public class GUIManager
 
                 case getPresentationCriterionField:
                   jsonResponse = processGetPresentationCriterionField(jsonRoot);
+                  break;
+
+                case getOfferCategories:
+                  jsonResponse = processGetOfferCategories(jsonRoot);
                   break;
 
                 case getOfferTypes:
@@ -1167,6 +1173,19 @@ public class GUIManager
     
     /*****************************************
     *
+    *  retrieve offerCategories
+    *
+    *****************************************/
+
+    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
+    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
+      {
+        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
+        offerCategories.add(offerCategoryJSON);
+      }
+
+    /*****************************************
+    *
     *  retrieve offerTypes
     *
     *****************************************/
@@ -1207,6 +1226,7 @@ public class GUIManager
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
+    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
     return JSONUtilities.encodeObject(response);
@@ -1757,6 +1777,39 @@ public class GUIManager
         response.put("responseCode", "fieldNotFound");
         response.put("responseMessage", "could not find presentation criterion field with id " + id);
       }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getOfferCategories
+  *
+  *****************************************/
+
+  private JSONObject processGetOfferCategories(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve offerCategories
+    *
+    *****************************************/
+
+    List<JSONObject> offerCategories = new ArrayList<JSONObject>();
+    for (OfferCategory offerCategory : Deployment.getOfferCategories().values())
+      {
+        JSONObject offerCategoryJSON = offerCategory.getJSONRepresentation();
+        offerCategories.add(offerCategoryJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     return JSONUtilities.encodeObject(response);
   }
 
