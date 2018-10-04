@@ -111,6 +111,7 @@ public class ProductService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
+    result.put("offerTypeID", guiManagedObject.getJSONRepresentation().get("offerTypeID"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
     return result;
