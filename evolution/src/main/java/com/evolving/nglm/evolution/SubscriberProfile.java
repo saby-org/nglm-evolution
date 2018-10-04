@@ -179,6 +179,15 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   /****************************************
   *
+  *  abstract -- scoring
+  *
+  ****************************************/
+
+  public abstract MetricHistory getDataRevenueAmountMetricHistory();
+  public abstract MetricHistory getVoiceRevenueAmountMetricHistory();
+  
+  /****************************************
+  *
   *  accessors - subscriberGroups
   *
   ****************************************/
@@ -264,6 +273,18 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getBaseTimeZone());
     Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getBaseTimeZone());
+    return metricHistory.getValue(startDay, endDay);
+  }
+
+  //
+  //  getPrevious90Days
+  //
+
+  protected long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
   
