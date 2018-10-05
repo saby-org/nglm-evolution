@@ -320,7 +320,7 @@ public class OfferCatalogObjective
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("catalogCharacteristicID", Schema.STRING_SCHEMA);
       schemaBuilder.field("singletonValue", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("listValues", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+      schemaBuilder.field("listValues", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
       schema = schemaBuilder.build();
     };
 
