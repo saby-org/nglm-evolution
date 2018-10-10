@@ -2503,7 +2503,8 @@ public class GUIManager
     *
     *****************************************/
 
-    journeyService.removeJourney(journeyID);
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    if (journey != null) journeyService.removeJourney(journeyID);
 
     /*****************************************
     *
@@ -2511,7 +2512,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2739,7 +2740,8 @@ public class GUIManager
     *
     *****************************************/
 
-    segmentationRuleService.removeSegmentationRule(segmentationRuleID);
+    GUIManagedObject segmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
+    if (segmentationRule != null) segmentationRuleService.removeSegmentationRule(segmentationRuleID);
 
     /*****************************************
     *
@@ -2747,7 +2749,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (segmentationRule != null) ? "ok" : "segmentationRuleNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2967,7 +2969,8 @@ public class GUIManager
     *
     *****************************************/
 
-    offerService.removeOffer(offerID);
+    GUIManagedObject offer = offerService.getStoredOffer(offerID);
+    if (offer != null) offerService.removeOffer(offerID);
 
     /*****************************************
     *
@@ -2975,7 +2978,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (offer != null) ? "ok" : "offerNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3195,7 +3198,8 @@ public class GUIManager
     *
     *****************************************/
 
-    presentationStrategyService.removePresentationStrategy(presentationStrategyID);
+    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+    if (presentationStrategy != null) presentationStrategyService.removePresentationStrategy(presentationStrategyID);
 
     /*****************************************
     *
@@ -3203,7 +3207,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (presentationStrategy != null) ? "ok" : "presentationStrategyNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3445,7 +3449,8 @@ public class GUIManager
     *
     *****************************************/
 
-    scoringStrategyService.removeScoringStrategy(scoringStrategyID);
+    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+    if (scoringStrategy != null) scoringStrategyService.removeScoringStrategy(scoringStrategyID);
 
     /*****************************************
     *
@@ -3461,7 +3466,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (scoringStrategy != null) ? "ok" : "scoringStrategyNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3759,7 +3764,8 @@ public class GUIManager
     *
     *****************************************/
 
-    callingChannelService.removeCallingChannel(callingChannelID);
+    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+    if (callingChannel != null) callingChannelService.removeCallingChannel(callingChannelID);
 
     /*****************************************
     *
@@ -3775,7 +3781,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (callingChannel != null) ? "ok" : "callingChannelNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4017,7 +4023,8 @@ public class GUIManager
     *
     *****************************************/
 
-    supplierService.removeSupplier(supplierID);
+    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
+    if (supplier != null) supplierService.removeSupplier(supplierID);
 
     /*****************************************
     *
@@ -4033,7 +4040,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (supplier != null) ? "ok" : "supplierNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4275,7 +4282,8 @@ public class GUIManager
     *
     *****************************************/
 
-    productService.removeProduct(productID);
+    GUIManagedObject product = productService.getStoredProduct(productID);
+    if (product != null) productService.removeProduct(productID);
 
     /*****************************************
     *
@@ -4291,7 +4299,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (product != null) ? "ok" : "productNotFound");
     return JSONUtilities.encodeObject(response);
   }
   
@@ -4533,7 +4541,8 @@ public class GUIManager
     *
     *****************************************/
 
-    catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID);
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+    if (catalogCharacteristic != null) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID);
 
     /*****************************************
     *
@@ -4549,7 +4558,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (catalogCharacteristic != null) ? "ok" : "catalogCharacterisicNotFound");
     return JSONUtilities.encodeObject(response);
   }
   
@@ -4791,7 +4800,8 @@ public class GUIManager
     *
     *****************************************/
 
-    catalogObjectiveService.removeCatalogObjective(catalogObjectiveID);
+    GUIManagedObject catalogObjective = catalogObjectiveService.getStoredCatalogObjective(catalogObjectiveID);
+    if (catalogObjective != null) catalogObjectiveService.removeCatalogObjective(catalogObjectiveID);
 
     /*****************************************
     *
@@ -4807,7 +4817,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", "ok");
+    response.put("responseCode", (catalogObjective != null) ? "ok" : "catalogObjectiveNotFound");
     return JSONUtilities.encodeObject(response);
   }
   

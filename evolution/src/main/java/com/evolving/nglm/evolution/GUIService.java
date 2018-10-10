@@ -722,9 +722,12 @@ public class GUIService
   JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
     JSONObject responseJSON = new JSONObject();
-    responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : getSummaryJSONRepresentation(guiManagedObject));
-    responseJSON.put("accepted", guiManagedObject.getAccepted());
-    responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
+    if (guiManagedObject != null)
+      {
+        responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : getSummaryJSONRepresentation(guiManagedObject));
+        responseJSON.put("accepted", guiManagedObject.getAccepted());
+        responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
+      }
     return responseJSON;
   }
 
