@@ -96,6 +96,14 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDashboardCounts; echo
 
 --
+-- thirdpartymanager
+--
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/ping; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/getActiveOffer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/getActiveOffers; echo
+
+--
 --  examples of mananging subscriber groups / segments  - new, add, remove, delete
 --
 

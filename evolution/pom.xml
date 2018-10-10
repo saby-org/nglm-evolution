@@ -156,10 +156,12 @@
                     <include>bin/criteriaapi-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
+                    <include>bin/thirdpartymanager-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/guimanager_jmx.yml</include>
+                    <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/criteriaapi_jmx.yml</include>
                     <include>config/evolution-prometheus-application-alert.rules</include>
                     <include>config/evolution-prometheus-application.yml</include>
@@ -167,7 +169,9 @@
                     <include>docker/prometheus-application-preamble.yml</include>
                     <include>docker/prometheus-application-postamble.yml</include>
                     <include>docker/guimanager/*</include>
+                    <include>docker/thirdpartymanager/*</include>
                     <include>docker/guimanager.yml</include>
+                    <include>docker/thirdpartymanager.yml</include>
                     <include>docker/evolutionengine/*</include>
                     <include>docker/evolutionengine.yml</include>
                     <include>docker/criteriaapi/*</include>
@@ -188,6 +192,7 @@
                     <exclude>docker/prometheus-application-preamble.yml</exclude>
                     <exclude>docker/prometheus-application-postamble.yml</exclude>
                     <exclude>docker/guimanager.yml</exclude>
+                    <exclude>docker/thirdpartymanager.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
                     <exclude>docker/criteriaapi.yml</exclude>
                   </excludes>

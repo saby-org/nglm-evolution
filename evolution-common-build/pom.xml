@@ -49,11 +49,13 @@
     <common.build.phase.generate-evolution-resources>none</common.build.phase.generate-evolution-resources>
     <common.build.phase.generate-prometheus-application-image>none</common.build.phase.generate-prometheus-application-image>
     <common.build.phase.generate-guimanager-image>none</common.build.phase.generate-guimanager-image>
+    <common.build.phase.generate-thirdpartymanager-image>none</common.build.phase.generate-thirdpartymanager-image>
     <common.build.phase.generate-evolutionengine-image>none</common.build.phase.generate-evolutionengine-image>
     <common.build.phase.generate-criteriaapi-image>none</common.build.phase.generate-criteriaapi-image>
     <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
     <common.build.skip.docker-prometheus-application-image>true</common.build.skip.docker-prometheus-application-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
+    <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-evolutionengine-image>true</common.build.skip.docker-evolutionengine-image>
     <common.build.skip.docker-criteriaapi-image>true</common.build.skip.docker-criteriaapi-image>
     <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
@@ -292,6 +294,49 @@
               </resources>              
             </configuration>            
           </execution>
+	
+	  <execution>
+            <id>generate-thirdpartymanager-docker-stack</id>
+            <phase>${common.build.phase.generate-thirdpartymanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/thirdpartymanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/thirdpartymanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/thirdpartymanager-run.sh</include>
+                    <include>config/thirdpartymanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
 
           <execution>
             <id>generate-evolutionengine-docker-stack</id>
@@ -454,6 +499,20 @@
               <contextDirectory>${project.build.directory}/assembled-docker/guimanager</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-guimanager</repository>
               <classifier>docker-info-guimanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          <execution>
+            <id>docker-thirdpartymanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-thirdpartymanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/thirdpartymanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-thirdpartymanager</repository>
+              <classifier>docker-info-thirdpartymanager</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

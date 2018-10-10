@@ -47,6 +47,13 @@ scrape_configs:
     static_configs:
       - targets: ['<_GUIMANAGER_HOST_>:<_GUIMANAGER_MONITORING_PORT_>']
 
+  # thirdpartymanager job
+  - job_name: 'thirdpartymanager'
+
+    # main config
+    static_configs:
+      - targets: ['<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_MONITORING_PORT_>']
+
   # criteriaapi job
   - job_name: 'criteriaapi'
 
