@@ -78,29 +78,33 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-guimanag
 
 #########################################
 #
-#  construct stack -- thirdpartymanager
+#  construct stack -- thirdpartymanager(if necessary)
 #
 #########################################
 
-#
-#  preamble
-#
+if [ "${thirdpartymanager.enabled}" = "true" ]; then
+  
+  #
+  #  preamble
+  #
+  
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  
+  #
+  #  thirdpartymanager
+  #
+  
+  cat $DEPLOY_ROOT/docker/thirdpartymanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  
+  #
+  #  postamble
+  #
+  
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+fi
 
-mkdir -p $DEPLOY_ROOT/stack
-cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
-
-#
-#  thirdpartymanager
-#
-
-cat $DEPLOY_ROOT/docker/thirdpartymanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
-echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
-
-#
-#  postamble
-#
-
-cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
 
 #########################################
 #

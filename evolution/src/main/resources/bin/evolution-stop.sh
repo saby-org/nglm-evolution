@@ -10,6 +10,14 @@
 
 docker stack rm <_DOCKER_STACK_>-application-monitoring
 docker stack rm <_DOCKER_STACK_>-guimanager
-docker stack rm <_DOCKER_STACK_>-thirdpartymanager
+
+#
+#  thirdpartymanager(if necessary)
+#
+
+if [ "${thirdpartymanager.enabled}" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-thirdpartymanager
+fi
+
 docker stack rm <_DOCKER_STACK_>-evolutionengine
 

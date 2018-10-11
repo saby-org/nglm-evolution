@@ -63,6 +63,9 @@
     <!-- configuration -->
     <evolutionengine.streamthreads>2</evolutionengine.streamthreads>
 
+    <!-- thirdpartymanager -->
+    <thirdpartymanager.enabled>false</thirdpartymanager.enabled>
+
     <!-- topics -->
     <topic.journey>journey</topic.journey>
     <topic.segmentationrule>segmentation-rule</topic.segmentationrule>
