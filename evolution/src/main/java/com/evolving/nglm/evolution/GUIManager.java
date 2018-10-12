@@ -151,6 +151,9 @@ public class GUIManager
     getCatalogObjective,
     putCatalogObjective,
     removeCatalogObjective,
+    getFulfillmentProviders,
+    getOfferDeliverables,
+    getPaymentMeans,
     getDashboardCounts;
   }
 
@@ -479,6 +482,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCatalogObjective", new APIHandler(API.getCatalogObjective));
         restServer.createContext("/nglm-guimanager/putCatalogObjective", new APIHandler(API.putCatalogObjective));
         restServer.createContext("/nglm-guimanager/removeCatalogObjective", new APIHandler(API.removeCatalogObjective));
+        restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APIHandler(API.getFulfillmentProviders));
+        restServer.createContext("/nglm-guimanager/getOfferDeliverables", new APIHandler(API.getOfferDeliverables));
+        restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -950,6 +956,18 @@ public class GUIManager
 
                 case removeCatalogObjective:
                   jsonResponse = processRemoveCatalogObjective(jsonRoot);
+                  break;
+
+                case getFulfillmentProviders:
+                  jsonResponse = processGetFulfillmentProviders(jsonRoot);
+                  break;
+
+                case getOfferDeliverables:
+                  jsonResponse = processGetOfferDeliverables(jsonRoot);
+                  break;
+
+                case getPaymentMeans:
+                  jsonResponse = processGetPaymentMeans(jsonRoot);
                   break;
                   
                 case getDashboardCounts:
@@ -4940,6 +4958,105 @@ public class GUIManager
     ****************************************/
 
     revalidateOffers(date);
+  }
+  
+  /*****************************************
+  *
+  *  getFulfillmentProviders
+  *
+  *****************************************/
+
+  private JSONObject processGetFulfillmentProviders(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve fulfillment providers
+    *
+    *****************************************/
+    JSONArray fulfillmentProviders = Deployment.getFulfillmentProvidersJSONArray();
+    ArrayList<JSONObject> fulfillmentProvidersList = new ArrayList<>();
+    for (int i=0; i<fulfillmentProviders.size(); i++)
+      {
+        JSONObject fulfillmentProvider = (JSONObject) fulfillmentProviders.get(i);
+        fulfillmentProvidersList.add(fulfillmentProvider);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProvidersList));
+    return JSONUtilities.encodeObject(response);
+  }  
+  
+  /*****************************************
+  *
+  *  getOfferDeliverables
+  *
+  *****************************************/
+
+  private JSONObject processGetOfferDeliverables(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve offerDeliverables 
+    *
+    *****************************************/
+    JSONArray offerDeliverables = Deployment.getOfferDeliverablesJSONArray();
+    ArrayList<JSONObject> offerDeliverableList = new ArrayList<>();
+    for (int i=0; i<offerDeliverables.size(); i++)
+      {
+        JSONObject deliverable = (JSONObject) offerDeliverables.get(i);
+        offerDeliverableList.add(deliverable);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("offerDeliverables", JSONUtilities.encodeArray(offerDeliverableList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  getPaymentMeans
+  *
+  *****************************************/
+
+  private JSONObject processGetPaymentMeans(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve payment means
+    *
+    *****************************************/
+    JSONArray paymentMeans = Deployment.getPaymentMeansJSONArray();
+    ArrayList<JSONObject> paymentMeanList = new ArrayList<>();
+    for (int i=0; i<paymentMeans.size(); i++)
+      {
+        JSONObject paymentMean = (JSONObject) paymentMeans.get(i);
+        paymentMeanList.add(paymentMean);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeanList));
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************

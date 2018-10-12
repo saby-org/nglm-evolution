@@ -71,6 +71,9 @@ public class Deployment
   private static JSONArray initialProductsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
   private static JSONArray initialCatalogObjectivesJSONArray = null;
+  private static JSONArray fulfillmentProvidersJSONArray = null;
+  private static JSONArray offerDeliverablesJSONArray = null;
+  private static JSONArray paymentMeansJSONArray = null;
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,CatalogObjectiveSection> catalogObjectiveSections = new LinkedHashMap<String,CatalogObjectiveSection>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
@@ -147,6 +150,9 @@ public class Deployment
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
   public static JSONArray getInitialCatalogObjectivesJSONArray() { return initialCatalogObjectivesJSONArray; }
+  public static JSONArray getFulfillmentProvidersJSONArray() { return fulfillmentProvidersJSONArray; }
+  public static JSONArray getOfferDeliverablesJSONArray() { return offerDeliverablesJSONArray; }
+  public static JSONArray getPaymentMeansJSONArray() { return paymentMeansJSONArray; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,CatalogObjectiveSection> getCatalogObjectiveSections() { return catalogObjectiveSections; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
@@ -735,7 +741,25 @@ public class Deployment
     //
 
     initialCatalogObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogObjectives", true);
+    
+    //
+    //  fulfillmentProvidersJSONArray
+    //
 
+    fulfillmentProvidersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", true);
+    
+    //
+    //  offerDeliverablesJSONArray
+    //
+
+    offerDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "offerDeliverables", true);
+    
+    //
+    //  paymentMeansJSONArray
+    //
+
+    paymentMeansJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "paymentMeans", true);
+    
     //
     //  salesChannels
     //
