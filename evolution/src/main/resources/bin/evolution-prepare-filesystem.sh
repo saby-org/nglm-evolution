@@ -62,3 +62,36 @@ ssh $MASTER_SWARM_HOST "
    mkdir -p $NGLM_SUBSCRIBERGROUP_DATA
 "
 
+#
+# fwk-api runtime
+#
+
+for SWARM_HOST in $SWARM_HOSTS
+do
+  ssh $SWARM_HOST "
+     mkdir -p $NGLM_GUI_RUNTIME/fwk-api/mnt
+  "
+done
+
+#
+# fwkauth-api runtime
+#
+
+for SWARM_HOST in $SWARM_HOSTS
+do
+  ssh $SWARM_HOST "
+     mkdir -p $NGLM_GUI_RUNTIME/fwkauth-api/mnt
+  "
+done
+
+#
+# fwk-mysqldb runtime
+#
+
+for SWARM_HOST in $SWARM_HOSTS
+do
+  ssh $SWARM_HOST "
+     mkdir -p $NGLM_GUI_RUNTIME/fwk-mysqldb/mysql
+  "
+done
+

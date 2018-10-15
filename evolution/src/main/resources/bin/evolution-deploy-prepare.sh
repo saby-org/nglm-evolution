@@ -12,6 +12,7 @@ for SWARM_HOST in $SWARM_HOSTS
 do
    ssh $SWARM_HOST "
       rm -rf ${NGLM_STREAMS_RUNTIME}
+      rm -rf ${NGLM_GUI_RUNTIME}
    "
 done
 
