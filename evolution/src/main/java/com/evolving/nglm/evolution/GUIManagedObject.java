@@ -60,7 +60,7 @@ public abstract class GUIManagedObject
   private static SimpleDateFormat standardDateFormat;
   static
   {
-    standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXX");
+    standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX");
     standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
   }
 
