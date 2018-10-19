@@ -10,7 +10,7 @@ import com.evolving.nglm.core.NGLMMonitoringObject;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerException;
 
-import com.rii.utilities.SystemTime;
+import com.evolving.nglm.core.SystemTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

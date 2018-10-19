@@ -11,10 +11,10 @@ import com.evolving.nglm.core.FileSourceConnector;
 import com.evolving.nglm.core.FileSourceTask;
 import com.evolving.nglm.core.FileSourceTask.KeyValue;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
-import com.rii.utilities.SystemTime;
-import com.rii.utilities.UniqueKeyServer;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.UniqueKeyServer;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -139,7 +139,7 @@ public class ExternalDeliveryRequestFileSourceConnector extends FileSourceConnec
           try
             {
               Class<DeliveryRequest> deliveryRequestClass = (Class<DeliveryRequest>) Class.forName(deliveryManager.getRequestClassName());
-              Constructor deliveryRequestConstructor = deliveryRequestClass.getDeclaredConstructor(JSONObject.class);
+              Constructor deliveryRequestConstructor = deliveryRequestClass.getDeclaredConstructor(JSONObject.class, DeliveryManagerDeclaration.class);
               Method serdeMethod = deliveryRequestClass.getMethod("serde");
               ConnectSerde<DeliveryRequest> deliveryRequestSerde = (ConnectSerde<DeliveryRequest>) serdeMethod.invoke(null);
               deliveryRequestConstructors.put(deliveryManager.getDeliveryType(), deliveryRequestConstructor);
@@ -209,7 +209,7 @@ public class ExternalDeliveryRequestFileSourceConnector extends FileSourceConnec
           DeliveryRequest deliveryRequest = null;
           try
             {
-              deliveryRequest = (DeliveryRequest) deliveryRequestConstructor.newInstance(jsonRoot);
+              deliveryRequest = (DeliveryRequest) deliveryRequestConstructor.newInstance(jsonRoot, deliveryManager);
             }
           catch (InvocationTargetException e)
             {
@@ -229,7 +229,7 @@ public class ExternalDeliveryRequestFileSourceConnector extends FileSourceConnec
               
           result = Collections.<KeyValue>singletonList(new KeyValue(deliveryRequest.getDeliveryType(), Schema.STRING_SCHEMA, deliveryRequest.getDeliveryRequestID(), deliveryRequestSerde.schema(), deliveryRequestSerde.pack(deliveryRequest)));;
         }
-      catch (org.json.simple.parser.ParseException|JSONUtilitiesException e)
+      catch (org.json.simple.parser.ParseException | RuntimeException e)
         {
           log.info("processRecord error parsing: {}", record);
           log.info("processRecord unknown unparsable json: {}", e.getMessage());

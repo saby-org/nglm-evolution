@@ -39,8 +39,8 @@ import org.apache.http.HttpHost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;

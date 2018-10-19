@@ -28,10 +28,10 @@ import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
-import com.rii.utilities.SystemTime;
-import com.rii.utilities.UniqueKeyServer;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.UniqueKeyServer;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;

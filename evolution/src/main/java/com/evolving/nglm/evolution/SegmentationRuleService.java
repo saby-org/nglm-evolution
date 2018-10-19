@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import com.rii.utilities.SystemTime;
+import com.evolving.nglm.core.SystemTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

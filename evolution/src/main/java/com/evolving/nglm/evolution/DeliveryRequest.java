@@ -20,7 +20,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
-import com.rii.utilities.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities;
 import org.json.simple.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
@@ -51,6 +51,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryPartition", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("retries", Schema.INT32_SCHEMA);
+    schemaBuilder.field("timeout", Timestamp.builder().optional().schema());
     schemaBuilder.field("correlator", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("control", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("deliveryType", Schema.STRING_SCHEMA);
@@ -100,6 +102,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private String deliveryRequestSource;
   private String subscriberID;
   private Integer deliveryPartition;
+  private int retries;
+  private Date timeout;
   private String correlator;
   private boolean control;
   private String deliveryType;
@@ -116,6 +120,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public String getDeliveryRequestSource() { return deliveryRequestSource; }
   public String getSubscriberID() { return subscriberID; }
   public Integer getDeliveryPartition() { return deliveryPartition; }
+  public int getRetries() { return retries; }
+  public Date getTimeout() { return timeout; }
   public String getCorrelator() { return correlator; }
   public boolean getControl() { return control; }
   public String getDeliveryType() { return deliveryType; }
@@ -128,9 +134,11 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //
 
   public void setDeliveryPartition(int deliveryPartition) { this.deliveryPartition = deliveryPartition; }
+  public void setRetries(int retries) { this.retries = retries; }
+  public void setTimeout(Date timeout) { this.timeout = timeout; }
+  public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
-  public void setCorrelator(String correlator) { this.correlator = correlator; }
 
   /*****************************************
   *
@@ -138,6 +146,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   *
   *****************************************/
 
+  public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
 
@@ -159,11 +168,34 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestSource = deliveryRequestSource;
     this.subscriberID = context.getSubscriberState().getSubscriberID();
     this.deliveryPartition = null;
+    this.retries = 0;
+    this.timeout = null;
     this.correlator = null;
     this.control = context.getSubscriberState().getSubscriberProfile().getUniversalControlGroup(context.getSubscriberGroupEpochReader());
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
+  }
+
+  /*****************************************
+  *
+  *  constructor -- copy
+  *
+  *****************************************/
+
+  protected DeliveryRequest(DeliveryRequest deliveryRequest)
+  {
+    this.deliveryRequestID = deliveryRequest.getDeliveryRequestID();
+    this.deliveryRequestSource = deliveryRequest.getDeliveryRequestSource();
+    this.subscriberID = deliveryRequest.getSubscriberID();
+    this.deliveryPartition = deliveryRequest.getDeliveryPartition();
+    this.retries = deliveryRequest.getRetries();
+    this.timeout = deliveryRequest.getTimeout();
+    this.correlator = deliveryRequest.getCorrelator();
+    this.control = deliveryRequest.getControl();
+    this.deliveryType = deliveryRequest.getDeliveryType();
+    this.deliveryStatus = deliveryRequest.getDeliveryStatus();
+    this.deliveryDate = deliveryRequest.getDeliveryDate();
   }
 
   /*****************************************
@@ -184,6 +216,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestSource = "external";
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.deliveryPartition = null;
+    this.retries = 0;
+    this.timeout = null;
     this.correlator = null;
     this.control = JSONUtilities.decodeBoolean(jsonRoot, "control", Boolean.FALSE);
     this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
@@ -203,6 +237,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("deliveryPartition", deliveryRequest.getDeliveryPartition()); 
+    struct.put("retries", deliveryRequest.getRetries()); 
+    struct.put("timeout", deliveryRequest.getTimeout()); 
     struct.put("correlator", deliveryRequest.getCorrelator()); 
     struct.put("control", deliveryRequest.getControl());
     struct.put("deliveryType", deliveryRequest.getDeliveryType());
@@ -235,6 +271,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
     String subscriberID = valueStruct.getString("subscriberID");
     Integer deliveryPartition = valueStruct.getInt32("deliveryPartition");
+    int retries = valueStruct.getInt32("retries");
+    Date timeout = (Date) valueStruct.get("timeout");
     String correlator = valueStruct.getString("correlator");
     boolean control = valueStruct.getBoolean("control");
     String deliveryType = valueStruct.getString("deliveryType");
@@ -249,6 +287,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestSource = deliveryRequestSource;
     this.subscriberID = subscriberID;
     this.deliveryPartition = deliveryPartition;
+    this.retries = retries;
+    this.timeout = timeout;
     this.correlator = correlator;
     this.control = control;
     this.deliveryType = deliveryType;
@@ -269,6 +309,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append("," + deliveryRequestSource);
     b.append("," + subscriberID);
     b.append("," + deliveryPartition);
+    b.append("," + retries);
+    b.append("," + timeout);
     b.append("," + correlator);
     b.append("," + control);
     b.append("," + deliveryType);

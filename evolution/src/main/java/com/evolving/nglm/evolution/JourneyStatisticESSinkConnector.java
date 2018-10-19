@@ -9,7 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 
-import com.rii.utilities.SystemTime;
+import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;

@@ -12,8 +12,8 @@ import com.evolving.nglm.evolution.Journey.JourneyLinkType;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

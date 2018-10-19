@@ -10,7 +10,7 @@ import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.ReferenceDataReader;
 
-import com.rii.utilities.SystemTime;
+import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;

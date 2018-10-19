@@ -47,7 +47,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
-import com.rii.utilities.SystemTime;
+import com.evolving.nglm.core.SystemTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

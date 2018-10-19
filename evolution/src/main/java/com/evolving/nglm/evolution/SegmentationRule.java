@@ -12,7 +12,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
-import com.rii.utilities.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

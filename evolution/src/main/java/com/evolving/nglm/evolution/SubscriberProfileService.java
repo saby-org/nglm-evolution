@@ -13,7 +13,7 @@ import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
-import com.rii.utilities.SystemTime;
+import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

@@ -11,8 +11,8 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryGuarantee;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.DeploymentManagedObject;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONObject;
 
@@ -37,6 +37,9 @@ public class DeliveryManagerDeclaration
   private String routingTopic;
   private int deliveryRatePerMinute;
   private DeliveryGuarantee deliveryGuarantee;
+  private int retries;
+  private int acknowledgementTimeoutSeconds;
+  private int correlatorUpdateTimeoutSeconds;
 
   /*****************************************
   *
@@ -53,6 +56,9 @@ public class DeliveryManagerDeclaration
   public String getRoutingTopic() { return routingTopic; }
   public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
   public DeliveryGuarantee getDeliveryGuarantee() { return deliveryGuarantee; }
+  public int getRetries() { return retries; }
+  public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
+  public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
 
   //
   //  getRequestSerde
@@ -94,5 +100,8 @@ public class DeliveryManagerDeclaration
     this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", true);
     this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", true);
     this.deliveryGuarantee = (JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", false) != null) ? DeliveryGuarantee.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", true)) : null;
+    this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
+    this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 60);
+    this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 600);
   }
 }

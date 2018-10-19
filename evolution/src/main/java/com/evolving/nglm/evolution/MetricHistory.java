@@ -14,9 +14,9 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberTrace;
 
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
-import com.rii.utilities.Pair;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.Pair;
 import org.json.simple.JSONObject;
 
 import org.apache.kafka.common.errors.SerializationException;

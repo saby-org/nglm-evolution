@@ -11,8 +11,6 @@ import com.evolving.nglm.core.SimpleRedisSinkConnector.SimpleRedisSinkTask;
 import com.evolving.nglm.core.SimpleRedisSinkConnector.SimpleRedisSinkTask.CacheEntry;
 import com.evolving.nglm.core.ServerRuntimeException;
 
-import com.rii.utilities.DatabaseUtilities;
-
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
