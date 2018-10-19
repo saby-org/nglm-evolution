@@ -4,7 +4,7 @@
 #
 #########################################
 
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui-mysql.yml --with-registry-auth ${DOCKER_STACK}-gui-mysql
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui-mysql.yml --with-registry-auth <_DOCKER_STACK_>-gui-mysql
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-application-monitoring.yml --with-registry-auth <_DOCKER_STACK_>-application-monitoring
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-guimanager.yml --with-registry-auth <_DOCKER_STACK_>-guimanager
 
@@ -23,5 +23,5 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml --with-regis
 #
 
 sleep 30
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml --with-registry-auth ${DOCKER_STACK}-gui
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml --with-registry-auth <_DOCKER_STACK_>-gui
 
