@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
-import com.rii.utilities.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities;
 
 public class ThirdPartyJSONGenerator 
 {
