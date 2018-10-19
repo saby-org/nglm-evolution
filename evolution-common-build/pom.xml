@@ -33,14 +33,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.1-build181011-SNAPSHOT</version>
+    <version>4.3.1-build181019-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.3.1-build181011-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.1-build181019-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- evolution-common-build -->
@@ -152,10 +152,6 @@
                   <fileset dir="${project.basedir}/src/assembly/resources/bin" includes="deployment-prometheus-application-run.sh"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="prometheus-application-run-postamble.sh"/>
                 </concat>
-                <concat destfile="${project.build.directory}/assembled-resources/config/prometheus-application-alert.rules" force="yes">
-                  <fileset dir="${project.build.directory}/nglm-evolution-resources/config" includes="evolution-prometheus-application-alert.rules"/>
-                  <fileset dir="${project.basedir}/src/assembly/resources/config" includes="deployment-prometheus-application-alert.rules"/>
-                </concat>
                 <concat destfile="${project.build.directory}/assembled-resources/config/prometheus-application.yml" force="yes">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/config" includes="evolution-prometheus-application.yml"/>
                   <fileset dir="${project.basedir}/src/assembly/resources/config" includes="deployment-prometheus-application.yml"/>
@@ -246,10 +242,16 @@
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/prometheus-application.yml</include>
-                    <include>config/prometheus-application-alert.rules</include>
                     <include>bin/prometheus-application-run.sh</include>
                   </includes>
                   <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>src/assembly/resources</directory>
+                  <includes>
+                    <include>config/prometheus-application-alert.rules</include>
+                  </includes>
+                  <filtering>false</filtering>
                 </resource>
               </resources>              
             </configuration>            
