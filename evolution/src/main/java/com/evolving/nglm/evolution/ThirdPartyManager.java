@@ -384,7 +384,13 @@ public class ThirdPartyManager
         //  send
         //
         
+        //
+        // headers
+        //
+        
         exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
         writer.write(jsonResponse.toString());
         writer.close();
@@ -415,7 +421,14 @@ public class ThirdPartyManager
 
         response.put("apiVersion", RESTAPIVersion);
         JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+        
+        //
+        // headers
+        //
+        
         exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
         writer.write(jsonResponse.toString());
         writer.close();
