@@ -101,6 +101,9 @@ public class GUIManager
     getOfferCategories,
     getOfferTypes,
     getOfferOptimizationAlgorithms,
+    getNodeTypes,
+    getJourneyToolbox,
+    getCampaignToolbox,
     getJourneyList,
     getJourneySummaryList,
     getJourney,
@@ -432,6 +435,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
+        restServer.createContext("/nglm-guimanager/getNodeTypes", new APIHandler(API.getNodeTypes));
+        restServer.createContext("/nglm-guimanager/getJourneyToolbox", new APIHandler(API.getJourneyToolbox));
+        restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APIHandler(API.getCampaignToolbox));
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
         restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APIHandler(API.getJourneySummaryList));
         restServer.createContext("/nglm-guimanager/getJourney", new APIHandler(API.getJourney));
@@ -758,6 +764,18 @@ public class GUIManager
                   jsonResponse = processGetOfferOptimizationAlgorithms(jsonRoot);
                   break;
 
+                case getNodeTypes:
+                  jsonResponse = processGetNodeTypes(jsonRoot);
+                  break;
+
+                case getJourneyToolbox:
+                  jsonResponse = processGetJourneyToolbox(jsonRoot);
+                  break;
+
+                case getCampaignToolbox:
+                  jsonResponse = processGetCampaignToolbox(jsonRoot);
+                  break;
+                  
                 case getJourneyList:
                   jsonResponse = processGetJourneyList(jsonRoot, true);
                   break;
@@ -1230,6 +1248,40 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve nodeTypes
+    *
+    *****************************************/
+
+    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes());
+
+    /*****************************************
+    *
+    *  retrieve journeyToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> journeyToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection journeyToolboxSection : Deployment.getJourneyToolbox().values())
+      {
+        JSONObject journeyToolboxSectionJSON = journeyToolboxSection.getJSONRepresentation();
+        journeyToolboxSections.add(journeyToolboxSectionJSON);
+      }
+    
+    /*****************************************
+    *
+    *  retrieve campaignToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
+      {
+        JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
+        campaignToolboxSections.add(campaignToolboxSectionJSON);
+      }
+    
+    /*****************************************
+    *
     *  response
     *
     *****************************************/
@@ -1247,6 +1299,9 @@ public class GUIManager
     response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
     response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
+    response.put("nodeTypes", JSONUtilities.encodeArray(nodeTypes));
+    response.put("journeyToolbox", JSONUtilities.encodeArray(journeyToolboxSections));
+    response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -1899,6 +1954,100 @@ public class GUIManager
 
   /*****************************************
   *
+  *  getNodeTypes
+  *
+  *****************************************/
+
+  private JSONObject processGetNodeTypes(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve nodeTypes
+    *
+    *****************************************/
+
+    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("nodeTypes", JSONUtilities.encodeArray(nodeTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getJourneyToolbox
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyToolbox(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve journeyToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> journeyToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection journeyToolboxSection : Deployment.getJourneyToolbox().values())
+      {
+        JSONObject journeyToolboxSectionJSON = journeyToolboxSection.getJSONRepresentation();
+        journeyToolboxSections.add(journeyToolboxSectionJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("journeyToolbox", JSONUtilities.encodeArray(journeyToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getCampaignToolbox
+  *
+  *****************************************/
+
+  private JSONObject processGetCampaignToolbox(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve campaignToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
+      {
+        JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
+        campaignToolboxSections.add(campaignToolboxSectionJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  processCriterionFields
   *
   *****************************************/
@@ -1915,7 +2064,8 @@ public class GUIManager
     Map<String, List<JSONObject>> resolvedAvailableValues = new LinkedHashMap<String, List<JSONObject>>();
     for (CriterionField criterionField : criterionFields.values())
       {
-        List<JSONObject> availableValues = evaluateAvailableValues(criterionField);
+        JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation();
+        List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(criterionFieldJSON, "availableValues", false));
         resolvedFieldTypes.put(criterionField.getID(), new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
         resolvedAvailableValues.put(criterionField.getID(), availableValues);
       }
@@ -2189,16 +2339,81 @@ public class GUIManager
     return result;
   }
 
+  /*****************************************
+  *
+  *  processNodeTypes
+  *
+  *****************************************/
+
+  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes)
+  {
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    for (NodeType nodeType : nodeTypes.values())
+      {
+        //
+        //  clone
+        //
+        
+        JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
+
+        //
+        //  parameters
+        //
+
+        List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
+        JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
+        for (int i=0; i<parameters.size(); i++)
+          {
+            JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+            List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false));
+            parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
+            resolvedParameters.add(parameterJSON);
+          }
+        resolvedNodeTypeJSON.put("parameters", JSONUtilities.encodeArray(resolvedParameters));
+
+        //
+        //  dynamic output connector
+        //
+
+        JSONObject dynamicOutputConnectorJSON = JSONUtilities.decodeJSONObject(resolvedNodeTypeJSON, "dynamicOutputConnector", false);
+        if (dynamicOutputConnectorJSON != null)
+          {
+            JSONObject resolvedDynamicOutputConnectorJSON = (JSONObject) dynamicOutputConnectorJSON.clone();
+            List<JSONObject>  resolvedDynamicOutputConnectorParameters = new ArrayList<JSONObject>();
+            JSONArray dynamicOutputConnectorParameters = JSONUtilities.decodeJSONArray(resolvedDynamicOutputConnectorJSON, "parameters", true);
+            for (int i=0; i<dynamicOutputConnectorParameters.size(); i++)
+              {
+                JSONObject parameterJSON = (JSONObject) ((JSONObject) dynamicOutputConnectorParameters.get(i)).clone();
+                List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false));
+                parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
+                resolvedDynamicOutputConnectorParameters.add(parameterJSON);
+              }
+            resolvedDynamicOutputConnectorJSON.put("parameters", JSONUtilities.encodeArray(resolvedDynamicOutputConnectorParameters));
+            resolvedNodeTypeJSON.put("dynamicOutputConnector", resolvedDynamicOutputConnectorJSON);
+          }
+
+        //
+        //  result
+        //
+        
+        result.add(resolvedNodeTypeJSON);
+      }
+
+    //
+    //  return
+    //
+    
+    return result;
+  }
+
   /****************************************
   *
   *  evaluateAvailableValues
   *
   ****************************************/
 
-  private List<JSONObject> evaluateAvailableValues(CriterionField criterionField)
+  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues)
   {
-    JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation();
-    JSONArray availableValues = JSONUtilities.decodeJSONArray(criterionFieldJSON, "availableValues", false);
     List<JSONObject> result = null;
     if (availableValues != null)
       {
@@ -2286,8 +2501,17 @@ public class GUIManager
                   availableValue.put("id", groupName);
                   availableValue.put("display", subscriberGroupEpoch.getDisplay());
                   result.add(JSONUtilities.encodeObject(availableValue));
-
                 }
+            }
+          break;
+
+        case "eventNames":
+          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", evolutionEngineEventDeclaration.getName());
+              availableValue.put("display", evolutionEngineEventDeclaration.getName());
+              result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
 

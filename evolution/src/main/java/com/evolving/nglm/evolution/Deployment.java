@@ -83,6 +83,9 @@ public class Deployment
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
+  private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
 
   /*****************************************
   *
@@ -162,6 +165,9 @@ public class Deployment
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
+  public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
+  public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
+  public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
 
   /*****************************************
   *
@@ -926,6 +932,63 @@ public class Deployment
             JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
             DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(deliveryManagerJSON);
             deliveryManagers.put(deliveryManagerDeclaration.getDeliveryType(), deliveryManagerDeclaration);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  nodeTypes
+    //
+
+    try
+      {
+        JSONArray nodeTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "nodeTypes", true);
+        for (int i=0; i<nodeTypeValues.size(); i++)
+          {
+            JSONObject nodeTypeJSON = (JSONObject) nodeTypeValues.get(i);
+            NodeType nodeType = new NodeType(nodeTypeJSON);
+            nodeTypes.put(nodeType.getID(), nodeType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  journeyToolboxSections
+    //
+
+    try
+      {
+        JSONArray journeyToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyToolbox", true);
+        for (int i=0; i<journeyToolboxSectionValues.size(); i++)
+          {
+            JSONObject journeyToolboxSectionValueJSON = (JSONObject) journeyToolboxSectionValues.get(i);
+            ToolboxSection journeyToolboxSection = new ToolboxSection(journeyToolboxSectionValueJSON);
+            journeyToolbox.put(journeyToolboxSection.getID(), journeyToolboxSection);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  campaignToolboxSections
+    //
+
+    try
+      {
+        JSONArray campaignToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "campaignToolbox", true);
+        for (int i=0; i<campaignToolboxSectionValues.size(); i++)
+          {
+            JSONObject campaignToolboxSectionValueJSON = (JSONObject) campaignToolboxSectionValues.get(i);
+            ToolboxSection campaignToolboxSection = new ToolboxSection(campaignToolboxSectionValueJSON);
+            campaignToolbox.put(campaignToolboxSection.getID(), campaignToolboxSection);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
