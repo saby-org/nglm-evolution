@@ -147,13 +147,13 @@ public abstract class GUIManagedObject
   //
   
   public String getGUIManagedObjectID() { return guiManagedObjectID; }
+  public JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public long getEpoch() { return epoch; }
 
   //
   //  package protected
   //
 
-  JSONObject getJSONRepresentation() { return jsonRepresentation; }
   Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
   boolean getValid() { return valid; }
