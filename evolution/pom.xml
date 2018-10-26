@@ -187,7 +187,7 @@
                 <resource>
                   <directory>src/main/resources</directory>
                   <includes>
-                    <include>bin/icdp-prepare-docker.sh</include>
+                    <include>bin/evolution-prepare-docker.sh</include>
                     <include>docker/*.yml</include>
                   </includes>
                   <excludes>
