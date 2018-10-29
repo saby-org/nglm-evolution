@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionContext;
 import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 

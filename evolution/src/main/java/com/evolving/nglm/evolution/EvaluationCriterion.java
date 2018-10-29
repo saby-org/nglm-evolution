@@ -82,21 +82,6 @@ public class EvaluationCriterion
   *****************************************/
 
   //
-  //  CriterionContext
-  //
-
-  public enum CriterionContext
-  {
-    Profile("profile"),
-    Presentation("presentation"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private CriterionContext(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static CriterionContext fromExternalRepresentation(String externalRepresentation) { for (CriterionContext enumeratedValue : CriterionContext.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
-  //
   //  CriterionDataType
   //
 
@@ -113,6 +98,12 @@ public class EvaluationCriterion
     DateCriterion("date"),
     StringSetCriterion("stringSet"),
     
+    //
+    //  only for parameters
+    //
+
+    EvaluationCriteriaParameter("evaluationCriteria"),
+
     //
     //  only for criterionArguments
     //
@@ -250,7 +241,7 @@ public class EvaluationCriterion
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("criterionContext", Schema.STRING_SCHEMA);
+    schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("criterionField", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionOperator", Schema.STRING_SCHEMA);
     schemaBuilder.field("argumentExpression", Schema.OPTIONAL_STRING_SCHEMA);
@@ -321,7 +312,7 @@ public class EvaluationCriterion
     //
 
     this.criterionContext = criterionContext;
-    this.criterionField = Deployment.getCriterionFields(criterionContext).get(JSONUtilities.decodeString(jsonRoot, "criterionField", true));
+    this.criterionField = criterionContext.getCriterionFields().get(JSONUtilities.decodeString(jsonRoot, "criterionField", true));
     this.criterionOperator = CriterionOperator.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
     this.storyReference = JSONUtilities.decodeString(jsonRoot, "storyReference", false);
     this.criterionDefault = JSONUtilities.decodeBoolean(jsonRoot, "criterionDefault", Boolean.FALSE);
@@ -330,7 +321,7 @@ public class EvaluationCriterion
     //  validate (all but argument)
     //
     
-    if (this.criterionField == null) throw new GUIManagerException("unsupported " + criterionContext.getExternalRepresentation() + " criterion field", JSONUtilities.decodeString(jsonRoot, "criterionField", true));
+    if (this.criterionField == null) throw new GUIManagerException("unsupported " + criterionContext.getCriterionContextType().getExternalRepresentation() + " criterion field", JSONUtilities.decodeString(jsonRoot, "criterionField", true));
     if (this.criterionOperator == CriterionOperator.Unknown) throw new GUIManagerException("unknown operator", JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
 
     //
@@ -624,7 +615,7 @@ public class EvaluationCriterion
   {
     EvaluationCriterion criterion = (EvaluationCriterion) value;
     Struct struct = new Struct(schema);
-    struct.put("criterionContext", criterion.getCriterionContext().getExternalRepresentation());
+    struct.put("criterionContext", CriterionContext.pack(criterion.getCriterionContext()));
     struct.put("criterionField", criterion.getCriterionField().getID());
     struct.put("criterionOperator", criterion.getCriterionOperator().getExternalRepresentation());
     struct.put("argumentExpression", criterion.getArgumentExpression());
@@ -655,8 +646,8 @@ public class EvaluationCriterion
     //
 
     Struct valueStruct = (Struct) value;
-    CriterionContext criterionContext = CriterionContext.fromExternalRepresentation(valueStruct.getString("criterionContext"));
-    CriterionField criterionField = Deployment.getCriterionFields(criterionContext).get(valueStruct.getString("criterionField"));
+    CriterionContext criterionContext = CriterionContext.unpack(new SchemaAndValue(schema.field("criterionContext").schema(), valueStruct.get("criterionContext")));
+    CriterionField criterionField = criterionContext.getCriterionFields().get(valueStruct.getString("criterionField"));
     CriterionOperator criterionOperator = CriterionOperator.fromExternalRepresentation(valueStruct.getString("criterionOperator"));
     String argumentExpression = valueStruct.getString("argumentExpression");
     TimeUnit argumentBaseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("argumentBaseTimeUnit"));
@@ -667,7 +658,7 @@ public class EvaluationCriterion
     //  validate
     //
 
-    if (criterionField == null) throw new SerializationException("unknown " + criterionContext.getExternalRepresentation() + " criterion field: " + valueStruct.getString("criterionField"));
+    if (criterionField == null) throw new SerializationException("unknown " + criterionContext.getCriterionContextType().getExternalRepresentation() + " criterion field: " + valueStruct.getString("criterionField"));
 
     //
     //  construct
@@ -2309,7 +2300,6 @@ public class EvaluationCriterion
       switch (arg3.getType())
         {
           case StringExpression:
-            if (! arg3.isConstant()) throw new ExpressionTypeCheckException("type exception");
             break;
 
           default:
@@ -2332,12 +2322,15 @@ public class EvaluationCriterion
       *
       ****************************************/
       
-      String arg3Value = (String) arg3.evaluate(null, TimeUnit.Unknown);
-      switch (TimeUnit.fromExternalRepresentation(arg3Value))
+      if (arg3.isConstant())
         {
-          case Instant:
-          case Unknown:
-            throw new ExpressionTypeCheckException("type exception");
+          String arg3Value = (String) arg3.evaluate(null, TimeUnit.Unknown);
+          switch (TimeUnit.fromExternalRepresentation(arg3Value))
+            {
+              case Instant:
+              case Unknown:
+                throw new ExpressionTypeCheckException("type exception");
+            }
         }
 
       /****************************************
@@ -2641,6 +2634,17 @@ public class EvaluationCriterion
 
     private void esQueryDateAddFunction(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException
     {
+      /*****************************************
+      *
+      *  validate
+      *
+      *****************************************/
+
+      if (! arguments.get(2).isConstant())
+        {
+          throw new CriterionException("invalid criterionField " + arguments.get(2));
+        }
+
       /****************************************
       *
       *  arguments
@@ -3365,7 +3369,7 @@ public class EvaluationCriterion
     switch (functionCall)
       {
         case UnknownFunction:
-          CriterionField criterionField = Deployment.getCriterionFields(criterionContext).get(identifier);
+          CriterionField criterionField = criterionContext.getCriterionFields().get(identifier);
           if (criterionField != null)
             {
               lookaheadTokenValue = criterionField;

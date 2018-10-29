@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionContext;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -37,7 +36,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,43 +53,19 @@ public class Journey extends GUIManagedObject
   *****************************************/
 
   //
-  //  JourneyNodeType
+  //  EvalutionPriority
   //
 
-  public enum JourneyNodeType
+  public enum EvaluationPriority
   {
-    Start("start"),
-    Wait("wait"),
-    Action("action"),
-    Fork("fork"),
-    Join("join"),
-    End("end"),
+    First("first"),
+    Normal("normal"),
+    Last("last"),
     Unknown("(unknown)");
     private String externalRepresentation;
-    private JourneyNodeType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private EvaluationPriority(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
-    public static JourneyNodeType fromExternalRepresentation(String externalRepresentation) { for (JourneyNodeType enumeratedValue : JourneyNodeType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
-  //
-  //  JourneyLinkType
-  //
-
-  public enum JourneyLinkType
-  {
-    Unconditional("unconditional"),
-    Timeout("timeout"),
-    VisitNumber("visitNumber"),
-    Trigger("trigger"),
-    ProfileCriterion("profileCriterion"),
-    ActionStatus("actionStatus"),
-    MessageStatus("messageStatus"),
-    ExitRequested("exitRequested"),  
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private JourneyLinkType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static JourneyLinkType fromExternalRepresentation(String externalRepresentation) { for (JourneyLinkType enumeratedValue : JourneyLinkType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static EvaluationPriority fromExternalRepresentation(String externalRepresentation) { for (EvaluationPriority enumeratedValue : EvaluationPriority.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   /*****************************************
@@ -111,8 +85,8 @@ public class Journey extends GUIManagedObject
     schemaBuilder.name("journey");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("journeyMetrics", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("journey_journey_metrics").schema());
-    schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("journey_journey_parameters").schema());
+    schemaBuilder.field("journeyMetrics", SchemaBuilder.map(CriterionField.schema(), Schema.STRING_SCHEMA).name("journey_journey_metrics").schema());
+    schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_journey_parameters").schema());
     schemaBuilder.field("autoTargeted", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("autoTargetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
@@ -141,7 +115,7 @@ public class Journey extends GUIManagedObject
   ****************************************/
 
   private Map<CriterionField,CriterionField> journeyMetrics;            // TBD:  the value is currently hacked to be CriterionField (i.e., history.totalCharge.yesterday) 
-  private Map<String,CriterionDataType> journeyParameters;
+  private Map<String,CriterionField> journeyParameters;
   private boolean autoTargeted;
   private List<EvaluationCriterion> autoTargetingCriteria;
   private String startNodeID;
@@ -160,7 +134,7 @@ public class Journey extends GUIManagedObject
 
   public String getJourneyID() { return getGUIManagedObjectID(); }
   public Map<CriterionField,CriterionField> getJourneyMetrics() { return journeyMetrics; }
-  public Map<String,CriterionDataType> getJourneyParameters() { return journeyParameters; }
+  public Map<String,CriterionField> getJourneyParameters() { return journeyParameters; }
   public boolean getAutoTargeted() { return autoTargeted; }
   public List<EvaluationCriterion> getAutoTargetingCriteria() { return autoTargetingCriteria; }
   public String getStartNodeID() { return startNodeID; }
@@ -173,7 +147,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionDataType> journeyParameters, boolean autoTargeted, List<EvaluationCriterion> autoTargetingCriteria, String startNodeID, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, List<EvaluationCriterion> autoTargetingCriteria, String startNodeID, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
   {
     super(schemaAndValue);
     this.journeyMetrics = journeyMetrics;
@@ -212,13 +186,13 @@ public class Journey extends GUIManagedObject
   *
   ****************************************/
 
-  private static Map<String,String> packJourneyMetrics(Map<CriterionField,CriterionField> journeyMetrics)
+  private static Map<Object,String> packJourneyMetrics(Map<CriterionField,CriterionField> journeyMetrics)
   {
-    Map<String,String> result = new LinkedHashMap<String,String>();
+    Map<Object,String> result = new LinkedHashMap<Object,String>();
     for (CriterionField criterionField : journeyMetrics.keySet())
       {
         CriterionField baseMetric = journeyMetrics.get(criterionField);
-        result.put(criterionField.getID(), baseMetric.getID());
+        result.put(CriterionField.pack(criterionField), baseMetric.getID());
       }
     return result;
   }
@@ -229,13 +203,13 @@ public class Journey extends GUIManagedObject
   *
   ****************************************/
 
-  private static Map<String,String> packJourneyParameters(Map<String,CriterionDataType> parameters)
+  private static Map<String,Object> packJourneyParameters(Map<String,CriterionField> parameters)
   {
-    Map<String,String> result = new LinkedHashMap<String,String>();
+    Map<String,Object> result = new LinkedHashMap<String,Object>();
     for (String parameterName : parameters.keySet())
       {
-        CriterionDataType parameterDataType = parameters.get(parameterName);
-        result.put(parameterName,parameterDataType.getExternalRepresentation());
+        CriterionField journeyParameter = parameters.get(parameterName);
+        result.put(parameterName,CriterionField.pack(journeyParameter));
       }
     return result;
   }
@@ -296,26 +270,47 @@ public class Journey extends GUIManagedObject
 
   public static Journey unpack(SchemaAndValue schemaAndValue)
   {
-    //
-    //  data
-    //
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
     Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
 
-    //
-    //  unpack
-    //
+    /*****************************************
+    *
+    *  unpack
+    *
+    *****************************************/
 
     Struct valueStruct = (Struct) value;
-    Map<CriterionField,CriterionField> journeyMetrics = unpackJourneyMetrics((Map<String,String>) valueStruct.get("journeyMetrics"));
-    Map<String,CriterionDataType> journeyParameters = unpackJourneyParameters((Map<String,String>) valueStruct.get("journeyParameters"));
+    Map<CriterionField,CriterionField> journeyMetrics = unpackJourneyMetrics(schema.field("journeyMetrics").schema(), (Map<Object,String>) valueStruct.get("journeyMetrics"));
+    Map<String,CriterionField> journeyParameters = unpackJourneyParameters(schema.field("journeyParameters").schema(), (Map<String,Object>) valueStruct.get("journeyParameters"));
     boolean autoTargeted = valueStruct.getBoolean("autoTargeted");
     List<EvaluationCriterion> autoTargetingCriteria = unpackAutoTargetingCriteria(schema.field("autoTargetingCriteria").schema(), valueStruct.get("autoTargetingCriteria"));
     String startNodeID = valueStruct.getString("startNodeID");
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
     Map<String,JourneyLink> journeyLinks = unpackJourneyLinks(schema.field("journeyLinks").schema(), valueStruct.get("journeyLinks"));
+
+    /*****************************************
+    *
+    *  validate
+    *
+    *****************************************/
+
+    for (JourneyNode journeyNode : journeyNodes.values())
+      {
+        if (journeyNode.getNodeType() == null) throw new SerializationException("unknown nodeType for node " + journeyNode.getNodeID());
+      }
+
+    /*****************************************
+    *
+    *  transform
+    *
+    *****************************************/
 
     //
     //  bind links to nodes
@@ -354,9 +349,11 @@ public class Journey extends GUIManagedObject
         journeyLink.setDestination(journeyNodes.get(journeyLink.getDestinationReference()));
       }
 
-    //
-    //  return
-    //
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
 
     return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, autoTargetingCriteria, startNodeID, journeyNodes, journeyLinks);
   }
@@ -367,15 +364,15 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private static Map<CriterionField,CriterionField> unpackJourneyMetrics(Map<String,String> journeyMetrics)
+  private static Map<CriterionField,CriterionField> unpackJourneyMetrics(Schema schema, Map<Object,String> journeyMetrics)
   {
     Map<CriterionField,CriterionField> result = new LinkedHashMap<CriterionField,CriterionField>();
-    for (String journeyMetricID : journeyMetrics.keySet())
+    for (Object packedJourneyMetric : journeyMetrics.keySet())
       {
-        String baseMetricID = journeyMetrics.get(journeyMetricID);
-        CriterionField baseMetric = Deployment.getProfileCriterionFields().get(baseMetricID);
+        CriterionField journeyMetric = CriterionField.unpack(new SchemaAndValue(schema.keySchema(), packedJourneyMetric));
+        String baseMetricID = journeyMetrics.get(packedJourneyMetric);
+        CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(baseMetricID);
         if (baseMetric == null) throw new SerializationException("unknown baseMetric: " + baseMetricID);
-        CriterionField journeyMetric = baseMetric;                                                              // TBD:  hack hack hack
         result.put(journeyMetric, baseMetric);
       }
     return result;
@@ -387,13 +384,13 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private static Map<String,CriterionDataType> unpackJourneyParameters(Map<String,String> parameters)
+  private static Map<String,CriterionField> unpackJourneyParameters(Schema schema, Map<String,Object> parameters)
   {
-    Map<String,CriterionDataType> result = new LinkedHashMap<String,CriterionDataType>();
+    Map<String,CriterionField> result = new LinkedHashMap<String,CriterionField>();
     for (String parameterName : parameters.keySet())
       {
-        CriterionDataType criterionDataType = CriterionDataType.fromExternalRepresentation(parameters.get(parameterName));
-        result.put(parameterName, criterionDataType);
+        CriterionField journeyParameter = CriterionField.unpack(new SchemaAndValue(schema.valueSchema(), parameters.get(parameterName)));
+        result.put(parameterName, journeyParameter);
       }
     return result;
   }
@@ -448,7 +445,7 @@ public class Journey extends GUIManagedObject
     //  unpack
     //
 
-    Map<String,JourneyNode> result = new HashMap<String,JourneyNode>();
+    Map<String,JourneyNode> result = new LinkedHashMap<String,JourneyNode>();
     List<Object> valueArray = (List<Object>) value;
     for (Object node : valueArray)
       {
@@ -481,7 +478,7 @@ public class Journey extends GUIManagedObject
     //  unpack
     //
 
-    Map<String,JourneyLink> result = new HashMap<String,JourneyLink>();
+    Map<String,JourneyLink> result = new LinkedHashMap<String,JourneyLink>();
     List<Object> valueArray = (List<Object>) value;
     for (Object link : valueArray)
       {
@@ -530,8 +527,29 @@ public class Journey extends GUIManagedObject
     this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", true));
     this.autoTargeted = JSONUtilities.decodeBoolean(jsonRoot, "autoTargeted", true);
     this.autoTargetingCriteria = decodeAutoTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", true));
-    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true));
+    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
+
+    /*****************************************
+    *
+    *  validate
+    *
+    *****************************************/
+
+    //
+    //  autoTargeting and parameters
+    //
+
+    if (this.autoTargeted && this.journeyParameters.size() > 0) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+
+    //
+    //  nodeTypes
+    //
+
+    for (GUINode jsonNode : jsonNodes.values())
+      {
+        if (jsonNode.getNodeType() == null) throw new GUIManagerException("unknown nodeType", jsonNode.getNodeID());
+      }
 
     /*****************************************
     *
@@ -543,10 +561,10 @@ public class Journey extends GUIManagedObject
     //  build journeyNodes
     //
 
-    this.journeyNodes = new HashMap<String,JourneyNode>();
+    this.journeyNodes = new LinkedHashMap<String,JourneyNode>();
     for (GUINode jsonNode : jsonNodes.values())
       {
-        journeyNodes.put(jsonNode.getNodeID(), new JourneyNode(jsonNode.getNodeID(), jsonNode.getNodeName(), jsonNode.getNodeType(), new ArrayList<String>(), new ArrayList<String>()));
+        journeyNodes.put(jsonNode.getNodeID(), new JourneyNode(jsonNode.getNodeID(), jsonNode.getNodeName(), jsonNode.getNodeType(), jsonNode.getNodeParameters(), new ArrayList<String>(), new ArrayList<String>()));
       }
 
     //
@@ -556,20 +574,19 @@ public class Journey extends GUIManagedObject
     this.startNodeID = null;
     for (JourneyNode journeyNode : this.journeyNodes.values())
       {
-        switch (journeyNode.getNodeType())
+        if (journeyNode.getNodeType().getStartNode())
           {
-            case Start:
-              if (this.startNodeID != null) throw new GUIManagerException("multiple start nodes", journeyNode.getNodeID());
-              this.startNodeID = journeyNode.getNodeID();
-              break;
+            if (this.startNodeID != null) throw new GUIManagerException("multiple start nodes", journeyNode.getNodeID());
+            this.startNodeID = journeyNode.getNodeID();
           }
       }
+    if (this.startNodeID == null) throw new GUIManagerException("no start node", null);
 
     //
     //  build journeyLinks
     //
 
-    this.journeyLinks = new HashMap<String,JourneyLink>();
+    this.journeyLinks = new LinkedHashMap<String,JourneyLink>();
     for (GUILink jsonLink : jsonLinks)
       {
         /*****************************************
@@ -608,8 +625,8 @@ public class Journey extends GUIManagedObject
         *
         *****************************************/
 
-        String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID() + "-" + Integer.toString(jsonLink.getDestinationConnectionPoint());
-        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getType(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getTransitionCriteria());
+        String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
+        JourneyLink journeyLink = new JourneyLink(linkID, sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getTransitionCriteria());
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
 
         /*****************************************
@@ -653,17 +670,44 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private Map<CriterionField,CriterionField> decodeJourneyMetrics(JSONArray jsonArray) throws GUIManagerException
+  public static Map<CriterionField,CriterionField> decodeJourneyMetrics(JSONArray jsonArray) throws GUIManagerException
   {
     Map<CriterionField,CriterionField> journeyMetrics = new LinkedHashMap<CriterionField,CriterionField>();
     for (int i=0; i<jsonArray.size(); i++)
       {
+        //
+        //  parse
+        //
+
         JSONObject journeyMetricJSON = (JSONObject) jsonArray.get(i);
         String journeyMetricName = JSONUtilities.decodeString(journeyMetricJSON, "criterionFieldID", true);
-        String baseMetricName = JSONUtilities.decodeString(journeyMetricJSON, "baseMetric", true);
-        CriterionField baseMetric = Deployment.getProfileCriterionFields().get(baseMetricName);
-        if (baseMetric == null) throw new GUIManagerException("unknown baseMetric", baseMetricName);
-        CriterionField journeyMetric = baseMetric;                                                              // TBD:  hack hack hack
+        String baseMetricID = JSONUtilities.decodeString(journeyMetricJSON, "baseMetric", true);
+        CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(baseMetricID);
+
+        //
+        //  validate
+        //
+
+        if (baseMetric == null) throw new GUIManagerException("unknown baseMetric", baseMetricID);
+        switch (baseMetric.getFieldDataType())
+          {
+            case IntegerCriterion:
+              break;
+
+            default:
+              throw new GUIManagerException("non-integer baseMetric", baseMetricID);
+          }
+
+        //
+        //  journeyMetric
+        //
+
+        CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric");
+
+        //
+        //  result
+        //
+        
         journeyMetrics.put(journeyMetric, baseMetric);
       }
     return journeyMetrics;
@@ -671,20 +715,19 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeJourneyMetrics
+  *  decodeJourneyParameters
   *
   *****************************************/
 
-  private Map<String,CriterionDataType> decodeJourneyParameters(JSONArray jsonArray) throws GUIManagerException
+  public static Map<String,CriterionField> decodeJourneyParameters(JSONArray jsonArray) throws GUIManagerException
   {
-    Map<String,CriterionDataType> journeyParameters = new LinkedHashMap<String,CriterionDataType>();
+    Map<String,CriterionField> journeyParameters = new LinkedHashMap<String,CriterionField>();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject journeyParameterJSON = (JSONObject) jsonArray.get(i);
-        String journeyParameterName = JSONUtilities.decodeString(journeyParameterJSON, "name", true);
-        CriterionDataType journeyParameterType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(journeyParameterJSON, "type", true));
-        if (journeyParameterType == CriterionDataType.Unknown) throw new GUIManagerException("unknown journeyParmeterType", JSONUtilities.decodeString(journeyParameterJSON, "type", true));
-        journeyParameters.put(journeyParameterName, journeyParameterType);
+        CriterionField originalJourneyParameter = new CriterionField(journeyParameterJSON);
+        CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter");
+        journeyParameters.put(enhancedJourneyParameter.getID(), enhancedJourneyParameter);
       }
     return journeyParameters;
   }
@@ -711,13 +754,13 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private Map<String,GUINode> decodeNodes(JSONArray jsonArray) throws GUIManagerException
+  private Map<String,GUINode> decodeNodes(JSONArray jsonArray, Journey journey) throws GUIManagerException
   {
-    Map<String,GUINode> nodes = new HashMap<String,GUINode>();
+    Map<String,GUINode> nodes = new LinkedHashMap<String,GUINode>();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
-        GUINode node = new GUINode(nodeJSON);
+        GUINode node = new GUINode(nodeJSON, journey);
         nodes.put(node.getNodeID(), node);
       }
     return nodes;
@@ -747,7 +790,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************************************************/
   
-  private static class GUINode
+  public static class GUINode
   {
     /*****************************************
     *
@@ -757,7 +800,8 @@ public class Journey extends GUIManagedObject
 
     private String nodeID;
     private String nodeName;
-    private JourneyNodeType nodeType;
+    private NodeType nodeType;
+    private ParameterMap nodeParameters;
     private List<OutgoingConnectionPoint> outgoingConnectionPoints;
 
     /*****************************************
@@ -768,7 +812,8 @@ public class Journey extends GUIManagedObject
 
     public String getNodeID() { return nodeID; }
     public String getNodeName() { return nodeName; }
-    public JourneyNodeType getNodeType() { return nodeType; }
+    public NodeType getNodeType() { return nodeType; }
+    public ParameterMap getNodeParameters() { return nodeParameters; }
     public List<OutgoingConnectionPoint> getOutgoingConnectionPoints() { return outgoingConnectionPoints; }
 
     /*****************************************
@@ -777,12 +822,135 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public GUINode(JSONObject jsonRoot) throws GUIManagerException
+    public GUINode(JSONObject jsonRoot, Journey journey) throws GUIManagerException
     {
-      this.nodeID = JSONUtilities.decodeString(jsonRoot, "nodeID", true);
-      this.nodeName = JSONUtilities.decodeString(jsonRoot, "nodeName", this.nodeID);
-      this.nodeType = JourneyNodeType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "nodeType", true));
-      this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outgoingConnectionPoints", true));
+      //
+      //  data
+      //
+
+      this.nodeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+      this.nodeName = JSONUtilities.decodeString(jsonRoot, "name", this.nodeID);
+      this.nodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+
+      //
+      //  validate nodeType
+      //
+
+      if (this.nodeType == null) throw new GUIManagerException("unknown nodeType", JSONUtilities.decodeString(jsonRoot, "nodeTypeID"));
+
+      //
+      //  nodeParameters (independent, i.e., not EvaluationCriteria or Messages)
+      //
+
+      this.nodeParameters = decodeIndependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType);
+
+      //
+      //  eventName
+      //
+
+      String eventName = this.nodeParameters.containsKey("node.parameter.eventname") ? (String) this.nodeParameters.get("node.parameter.eventname") : null;
+      EvolutionEngineEventDeclaration nodeEvent = (eventName != null) ? Deployment.getEvolutionEngineEvents().get(eventName) : null;
+      if (eventName != null && nodeEvent == null) throw new GUIManagerException("unknown event", eventName);
+
+      //
+      //  criterionContext
+      //
+
+      CriterionContext criterionContext = new CriterionContext(journey.getJourneyMetrics(), journey.getJourneyParameters(), this.nodeType, nodeEvent);
+
+      //
+      //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
+      //
+
+      this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, criterionContext));
+
+      //
+      //  outputConnectors
+      //
+
+      this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), criterionContext);
+    }
+
+    /*****************************************
+    *
+    *  decodeIndependentNodeParameters
+    *
+    *****************************************/
+
+    private ParameterMap decodeIndependentNodeParameters(JSONArray jsonArray, NodeType nodeType) throws GUIManagerException
+    {
+      ParameterMap nodeParameters = new ParameterMap();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          switch (parameter.getFieldDataType())
+            {
+              case IntegerCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
+                break;
+
+              case DoubleCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
+                break;
+                
+              case StringCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
+                
+              case BooleanCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
+                break;
+                
+              case DateCriterion:
+                nodeParameters.put(parameterName, JSONUtilities.decodeDate(parameterJSON, "value", false));  // TBD DEW:  use a string date format
+                break;
+                
+              case StringSetCriterion:
+                Set<String> stringSetValue = new HashSet<String>();
+                JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                for (int j=0; j<stringSetArray.size(); j++)
+                  {
+                    stringSetValue.add((String) stringSetArray.get(j));
+                  }
+                nodeParameters.put(parameterName, stringSetValue);
+                break;
+            }
+        }
+      return nodeParameters;
+    }
+
+    /*****************************************
+    *
+    *  decodeDependentNodeParameters
+    *
+    *****************************************/
+
+    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    {
+      ParameterMap nodeParameters = new ParameterMap();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          switch (parameter.getFieldDataType())
+            {
+              case EvaluationCriteriaParameter:
+                List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
+                JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                for (int j=0; j<evaluationCriteriaArray.size(); j++)
+                  {
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                  }
+                nodeParameters.put(parameterName, evaluationCriteriaValue);
+                break;
+            }
+        }
+      return nodeParameters;
     }
 
     /*****************************************
@@ -791,13 +959,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray) throws GUIManagerException
+    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, CriterionContext criterionContext) throws GUIManagerException
     {
       List<OutgoingConnectionPoint> outgoingConnectionPoints = new ArrayList<OutgoingConnectionPoint>();
       for (int i=0; i<jsonArray.size(); i++)
         {
           JSONObject connectionPointJSON = (JSONObject) jsonArray.get(i);
-          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON);
+          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, criterionContext);
           outgoingConnectionPoints.add(outgoingConnectionPoint);
         }
       return outgoingConnectionPoints;
@@ -810,7 +978,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************************************************/
 
-  private static class OutgoingConnectionPoint
+  public static class OutgoingConnectionPoint
   {
     /*****************************************
     *
@@ -818,8 +986,9 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private JourneyLinkType type;
+    private EvaluationPriority evaluationPriority;
     private List<EvaluationCriterion> transitionCriteria;
+    private String additionalCriteria;
     
     /*****************************************
     *
@@ -827,8 +996,9 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
     
-    public JourneyLinkType getType() { return type; }
+    public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
     public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
+    public String getAdditionalCriteria() { return additionalCriteria; }
 
     /*****************************************
     *
@@ -836,10 +1006,11 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public OutgoingConnectionPoint(JSONObject jsonRoot) throws GUIManagerException
+    public OutgoingConnectionPoint(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
     {
-      this.type = JourneyLinkType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "type", true));
-      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false));
+      this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
+      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
+      this.additionalCriteria = JSONUtilities.decodeString(jsonRoot, "additionalCriteria", false);
     }
 
     /*****************************************
@@ -848,14 +1019,14 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private List<EvaluationCriterion> decodeTransitionCriteria(JSONArray jsonArray) throws GUIManagerException
+    private List<EvaluationCriterion> decodeTransitionCriteria(JSONArray jsonArray, CriterionContext criterionContext) throws GUIManagerException
     {
       List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
       if (jsonArray != null)
         {
           for (int i=0; i<jsonArray.size(); i++)
             {
-              result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+              result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), criterionContext));
             }
         }
       return result;
@@ -879,7 +1050,6 @@ public class Journey extends GUIManagedObject
     private String sourceNodeID;
     private int sourceConnectionPoint;
     private String destinationNodeID;
-    private int destinationConnectionPoint;
 
     /*****************************************
     *
@@ -890,7 +1060,6 @@ public class Journey extends GUIManagedObject
     public String getSourceNodeID() { return sourceNodeID; }
     public int getSourceConnectionPoint() { return sourceConnectionPoint; }
     public String getDestinationNodeID() { return destinationNodeID; }
-    public int getDestinationConnectionPoint() { return destinationConnectionPoint; }
 
     /*****************************************
     *
@@ -903,7 +1072,6 @@ public class Journey extends GUIManagedObject
       this.sourceNodeID = JSONUtilities.decodeString(jsonRoot, "sourceNodeID", true);
       this.sourceConnectionPoint = JSONUtilities.decodeInteger(jsonRoot, "sourceConnectionPoint", true);
       this.destinationNodeID = JSONUtilities.decodeString(jsonRoot, "destinationNodeID", true);
-      this.destinationConnectionPoint = JSONUtilities.decodeInteger(jsonRoot, "destinationConnectionPoint", true);
     }
   }
 

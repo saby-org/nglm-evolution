@@ -6,9 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionContext;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.CompressionType;
 
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -168,29 +168,6 @@ public class Deployment
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
-
-  /*****************************************
-  *
-  *  getCriterionFields
-  *
-  *****************************************/
-  
-  public static Map<String,CriterionField> getCriterionFields(CriterionContext criterionContext)
-  {
-    Map<String,CriterionField> result;
-    switch (criterionContext)
-      {
-        case Profile:
-          result = profileCriterionFields;
-          break;
-        case Presentation:
-          result = presentationCriterionFields;
-          break;
-        default:
-          throw new ServerRuntimeException("unknown criterionContext: " + criterionContext);
-      }
-    return result;
-  }
 
   /*****************************************
   *
@@ -370,7 +347,7 @@ public class Deployment
             evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
           }
       }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+    catch (GUIManagerException | JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
@@ -837,7 +814,7 @@ public class Deployment
             profileCriterionFields.put(criterionField.getID(), criterionField);
           }
       }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+    catch (GUIManagerException | JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
@@ -857,7 +834,7 @@ public class Deployment
             presentationCriterionFields.put(criterionField.getID(), criterionField);
           }
       }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+    catch (GUIManagerException | JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
@@ -953,7 +930,7 @@ public class Deployment
             nodeTypes.put(nodeType.getID(), nodeType);
           }
       }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+    catch (GUIManagerException | JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

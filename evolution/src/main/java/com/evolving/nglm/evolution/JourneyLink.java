@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.JourneyLinkType;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -51,7 +50,6 @@ public class JourneyLink
     schemaBuilder.name("journey_link");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("linkID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("linkType", Schema.STRING_SCHEMA);
     schemaBuilder.field("sourceReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("destinationReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("transitionCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
@@ -83,7 +81,6 @@ public class JourneyLink
   //
 
   private String linkID;
-  private JourneyLinkType linkType;
   private String sourceReference;
   private String destinationReference;
   private List<EvaluationCriterion> transitionCriteria;
@@ -102,7 +99,6 @@ public class JourneyLink
   *****************************************/
 
   public String getLinkID() { return linkID; }
-  public JourneyLinkType getLinkType() { return linkType; }
   public String getSourceReference() { return sourceReference; }
   public String getDestinationReference() { return destinationReference; }
   public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
@@ -122,10 +118,9 @@ public class JourneyLink
   *
   *****************************************/
 
-  public JourneyLink(String linkID, JourneyLinkType linkType, String sourceReference, String destinationReference, List<EvaluationCriterion> transitionCriteria)
+  public JourneyLink(String linkID, String sourceReference, String destinationReference, List<EvaluationCriterion> transitionCriteria)
   {
     this.linkID = linkID;
-    this.linkType = linkType;
     this.sourceReference = sourceReference;
     this.destinationReference = destinationReference;
     this.transitionCriteria = transitionCriteria;
@@ -142,7 +137,6 @@ public class JourneyLink
     JourneyLink journeyLink = (JourneyLink) value;
     Struct struct = new Struct(schema);
     struct.put("linkID", journeyLink.getLinkID());
-    struct.put("linkType", journeyLink.getLinkType().getExternalRepresentation());
     struct.put("sourceReference", journeyLink.getSourceReference());
     struct.put("destinationReference", journeyLink.getDestinationReference());
     struct.put("transitionCriteria", packTransitionCriteria(journeyLink.getTransitionCriteria()));
@@ -187,7 +181,6 @@ public class JourneyLink
 
     Struct valueStruct = (Struct) value;
     String linkID = valueStruct.getString("linkID");
-    JourneyLinkType linkType = JourneyLinkType.fromExternalRepresentation(valueStruct.getString("linkType"));
     String sourceReference = valueStruct.getString("sourceReference");
     String destinationReference = valueStruct.getString("destinationReference");
     List<EvaluationCriterion> transitionCriteria = unpackTransitionCriteria(schema.field("transitionCriteria").schema(), valueStruct.get("transitionCriteria"));
@@ -196,7 +189,7 @@ public class JourneyLink
     //  return
     //
 
-    return new JourneyLink(linkID, linkType, sourceReference, destinationReference, transitionCriteria);
+    return new JourneyLink(linkID, sourceReference, destinationReference, transitionCriteria);
   }
 
   /*****************************************

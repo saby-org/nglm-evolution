@@ -98,6 +98,9 @@ public class GUIManager
     getPresentationCriterionFields,
     getPresentationCriterionFieldIDs,
     getPresentationCriterionField,
+    getJourneyCriterionFields,
+    getJourneyCriterionFieldIDs,
+    getJourneyCriterionField,
     getOfferCategories,
     getOfferTypes,
     getOfferOptimizationAlgorithms,
@@ -432,6 +435,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFields", new APIHandler(API.getPresentationCriterionFields));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APIHandler(API.getPresentationCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
+        restServer.createContext("/nglm-guimanager/getJourneyCriterionFields", new APIHandler(API.getJourneyCriterionFields));
+        restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APIHandler(API.getJourneyCriterionFieldIDs));
+        restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APIHandler(API.getJourneyCriterionField));
         restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
         restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
@@ -752,6 +758,18 @@ public class GUIManager
                   jsonResponse = processGetPresentationCriterionField(jsonRoot);
                   break;
 
+                case getJourneyCriterionFields:
+                  jsonResponse = processGetJourneyCriterionFields(jsonRoot);
+                  break;
+
+                case getJourneyCriterionFieldIDs:
+                  jsonResponse = processGetJourneyCriterionFieldIDs(jsonRoot);
+                  break;
+
+                case getJourneyCriterionField:
+                  jsonResponse = processGetJourneyCriterionField(jsonRoot);
+                  break;
+
                 case getOfferCategories:
                   jsonResponse = processGetOfferCategories(jsonRoot);
                   break;
@@ -1037,7 +1055,7 @@ public class GUIManager
         writer.close();
         exchange.close();
       }
-    catch (org.json.simple.parser.ParseException | IOException | ServerException | RuntimeException e )
+    catch (org.json.simple.parser.ParseException | GUIManagerException | IOException | ServerException | RuntimeException e )
       {
         //
         //  log
@@ -1197,7 +1215,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(Deployment.getProfileCriterionFields());
+    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields());
 
     /*****************************************
     *
@@ -1205,7 +1223,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields());
     
     /*****************************************
     *
@@ -1583,7 +1601,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(Deployment.getProfileCriterionFields());
+    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields());
 
     /*****************************************
     *
@@ -1611,7 +1629,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(Deployment.getProfileCriterionFields());
+    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields());
 
     /*****************************************
     *
@@ -1670,7 +1688,7 @@ public class GUIManager
         //  retrieve profile criterion fields
         //
 
-        List<JSONObject> profileCriterionFields = processCriterionFields(Deployment.getProfileCriterionFields());
+        List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields());
 
         //
         //  find requested field
@@ -1725,7 +1743,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields());
 
     /*****************************************
     *
@@ -1753,7 +1771,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields());
 
     /*****************************************
     *
@@ -1812,7 +1830,7 @@ public class GUIManager
         //  retrieve presentation criterion fields
         //
 
-        List<JSONObject> presentationCriterionFields = processCriterionFields(Deployment.getPresentationCriterionFields());
+        List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields());
 
         //
         //  find requested field
@@ -1849,6 +1867,213 @@ public class GUIManager
       {
         response.put("responseCode", "fieldNotFound");
         response.put("responseMessage", "could not find presentation criterion field with id " + id);
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getJourneyCriterionFields
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyCriterionFields(JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  arguments
+    *
+    *****************************************/
+
+    Map<CriterionField,CriterionField> journeyMetrics = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false) != null) ? Journey.decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false)) : Collections.<CriterionField,CriterionField>emptyMap();
+    Map<String,CriterionField> journeyParameters = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false) != null) ? Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false)) : Collections.<String,CriterionField>emptyMap();
+    NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+
+    /*****************************************
+    *
+    *  retrieve journey criterion fields
+    *
+    *****************************************/
+
+    List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
+    if (journeyNodeType != null)
+      {
+        CriterionContext criterionContext = new CriterionContext(journeyMetrics, journeyParameters, journeyNodeType, journeyNodeEvent);
+        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields());
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    if (journeyNodeType != null)
+      {
+        response.put("responseCode", "ok");
+        response.put("journeyCriterionFields", JSONUtilities.encodeArray(journeyCriterionFields));
+      }
+    else
+      {
+        response.put("responseCode", "invalidRequest");
+        response.put("responseMessage", "could not find nodeType with id " + JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getJourneyCriterionFieldIDs
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyCriterionFieldIDs(JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  arguments
+    *
+    *****************************************/
+
+    Map<CriterionField,CriterionField> journeyMetrics = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false) != null) ? Journey.decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false)) : Collections.<CriterionField,CriterionField>emptyMap();
+    Map<String,CriterionField> journeyParameters = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false) != null) ? Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false)) : Collections.<String,CriterionField>emptyMap();
+    NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+
+    /*****************************************
+    *
+    *  retrieve journey criterion fields
+    *
+    *****************************************/
+
+    List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
+    if (journeyNodeType != null)
+      {
+        CriterionContext criterionContext = new CriterionContext(journeyMetrics, journeyParameters, journeyNodeType, journeyNodeEvent);
+        journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields());
+      }
+    /*****************************************
+    *
+    *  strip out everything but id/display
+    *
+    *****************************************/
+
+    List<JSONObject> journeyCriterionFieldIDs = new ArrayList<JSONObject>();
+    for (JSONObject journeyCriterionField : journeyCriterionFields)
+      {
+        HashMap<String,Object> journeyCriterionFieldID = new HashMap<String,Object>();
+        journeyCriterionFieldID.put("id", journeyCriterionField.get("id"));
+        journeyCriterionFieldID.put("display", journeyCriterionField.get("display"));
+        journeyCriterionFieldIDs.add(JSONUtilities.encodeObject(journeyCriterionFieldID));
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    if (journeyNodeType != null)
+      {
+        response.put("responseCode", "ok");
+        response.put("journeyCriterionFieldIDs", JSONUtilities.encodeArray(journeyCriterionFieldIDs));
+      }
+    else
+      {
+        response.put("responseCode", "invalidRequest");
+        response.put("responseMessage", "could not find nodeType with id " + JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getJourneyCriterionField
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyCriterionField(JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  retrieve field id (setting it to null if blank)
+    *
+    *****************************************/
+
+    Map<CriterionField,CriterionField> journeyMetrics = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false) != null) ? Journey.decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false)) : Collections.<CriterionField,CriterionField>emptyMap();
+    Map<String,CriterionField> journeyParameters = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false) != null) ? Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false)) : Collections.<String,CriterionField>emptyMap();
+    NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    String id = JSONUtilities.decodeString(jsonRoot, "id", true);
+    id = (id != null && id.trim().length() == 0) ? null : id;
+
+    /*****************************************
+    *
+    *  retrieve field with id
+    *
+    *****************************************/
+
+    JSONObject requestedJourneyCriterionField = null;
+    if (id != null)
+      {
+        /*****************************************
+        *
+        *  retrieve journey criterion fields
+        *
+        *****************************************/
+
+        List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
+        if (journeyNodeType != null)
+          {
+            CriterionContext criterionContext = new CriterionContext(journeyMetrics, journeyParameters, journeyNodeType, journeyNodeEvent);
+            journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields());
+          }
+
+        /*****************************************
+        *
+        *  find requested field
+        *
+        *****************************************/
+
+        for (JSONObject journeyCriterionField : journeyCriterionFields)
+          {
+            if (Objects.equals(id, journeyCriterionField.get("id")))
+              {
+                requestedJourneyCriterionField = journeyCriterionField;
+                break;
+              }
+          }
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    if (requestedJourneyCriterionField != null)
+      {
+        response.put("responseCode", "ok");
+        response.put("journeyCriterionField", requestedJourneyCriterionField);
+      }
+    else if (journeyNodeType == null)
+      {
+        response.put("responseCode", "invalidRequest");
+        response.put("responseMessage", "could not find nodeType with id " + JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
+      }
+    else if (id == null)
+      {
+        response.put("responseCode", "invalidRequest");
+        response.put("responseMessage", "id argument not provided");
+      }
+    else
+      {
+        response.put("responseCode", "fieldNotFound");
+        response.put("responseMessage", "could not find journey criterion field with id " + id);
       }
     return JSONUtilities.encodeObject(response);
   }
@@ -2052,8 +2277,30 @@ public class GUIManager
   *
   *****************************************/
 
-  private List<JSONObject> processCriterionFields(Map<String,CriterionField> criterionFields)
+  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields)
   {
+    /*****************************************
+    *
+    *  filter out parameter-only data types
+    *
+    *****************************************/
+
+    Map<String,CriterionField> criterionFields = new LinkedHashMap<String,CriterionField>();
+    for (CriterionField criterionField : baseCriterionFields.values())
+      {
+        switch (criterionField.getFieldDataType())
+          {
+            case IntegerCriterion:
+            case DoubleCriterion:
+            case StringCriterion:
+            case BooleanCriterion:
+            case DateCriterion:
+            case StringSetCriterion:
+              criterionFields.put(criterionField.getID(), criterionField);
+              break;
+          }
+      }
+
     /****************************************
     *
     *  resolve field data types

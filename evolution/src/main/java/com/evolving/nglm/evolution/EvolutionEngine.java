@@ -953,7 +953,7 @@ public class EvolutionEngine
 
             if (enterJourney)
               {
-                JourneyState journeyState = new JourneyState(context, journey.getJourneyID(), journey.getStartNodeID(), evolutionEvent.getEventDate());
+                JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), evolutionEvent.getEventDate());
                 subscriberState.getJourneyStates().add(journeyState);
                 subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journey.getJourneyID(), subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), null, null, journey.getStartNodeID(), false));
                 subscriberStateUpdated = true;
@@ -970,7 +970,7 @@ public class EvolutionEngine
     for (JourneyState journeyState : subscriberState.getJourneyStates())
       {
         //
-        //  TBD
+        //  DEW TBD
         //
       }
 

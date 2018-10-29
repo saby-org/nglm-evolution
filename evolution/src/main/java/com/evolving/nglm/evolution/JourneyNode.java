@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.JourneyNodeType;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -29,7 +28,7 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +52,8 @@ public class JourneyNode
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("nodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("nodeName", Schema.STRING_SCHEMA);
-    schemaBuilder.field("nodeType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("nodeTypeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("nodeParameters", ParameterMap.schema());
     schemaBuilder.field("incomingLinkReferences", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("outgoingLinkReferences", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schema = schemaBuilder.build();
@@ -84,7 +84,8 @@ public class JourneyNode
 
   private String nodeID;
   private String nodeName;
-  private JourneyNodeType nodeType;
+  private NodeType nodeType;
+  private ParameterMap nodeParameters;
   private List<String> incomingLinkReferences;
   private List<String> outgoingLinkReferences;
 
@@ -92,8 +93,8 @@ public class JourneyNode
   //  derived
   //
 
-  private Map<String,JourneyLink> incomingLinks = new HashMap<String,JourneyLink>();
-  private Map<String,JourneyLink> outgoingLinks = new HashMap<String,JourneyLink>();
+  private Map<String,JourneyLink> incomingLinks = new LinkedHashMap<String,JourneyLink>();
+  private Map<String,JourneyLink> outgoingLinks = new LinkedHashMap<String,JourneyLink>();
 
   /*****************************************
   *
@@ -103,7 +104,8 @@ public class JourneyNode
 
   public String getNodeID() { return nodeID; }
   public String getNodeName() { return nodeName; }
-  public JourneyNodeType getNodeType() { return nodeType; }
+  public NodeType getNodeType() { return nodeType; }
+  public ParameterMap getNodeParameters() { return nodeParameters; }
   public List<String> getIncomingLinkReferences() { return incomingLinkReferences; }
   public List<String> getOutgoingLinkReferences() { return outgoingLinkReferences; }
   public Map<String,JourneyLink> getIncomingLinks() { return incomingLinks; }
@@ -115,11 +117,12 @@ public class JourneyNode
   *
   *****************************************/
 
-  public JourneyNode(String nodeID, String nodeName, JourneyNodeType nodeType, List<String> incomingLinkReferences, List<String> outgoingLinkReferences)
+  public JourneyNode(String nodeID, String nodeName, NodeType nodeType, ParameterMap nodeParameters, List<String> incomingLinkReferences, List<String> outgoingLinkReferences)
   {
     this.nodeID = nodeID;
     this.nodeName = nodeName;
     this.nodeType = nodeType;
+    this.nodeParameters = nodeParameters;
     this.incomingLinkReferences = incomingLinkReferences;
     this.outgoingLinkReferences = outgoingLinkReferences;
   }
@@ -136,7 +139,8 @@ public class JourneyNode
     Struct struct = new Struct(schema);
     struct.put("nodeID", journeyNode.getNodeID());
     struct.put("nodeName", journeyNode.getNodeName());
-    struct.put("nodeType", journeyNode.getNodeType().getExternalRepresentation());
+    struct.put("nodeTypeID", journeyNode.getNodeType().getID());
+    struct.put("nodeParameters", ParameterMap.pack(journeyNode.getNodeParameters()));
     struct.put("incomingLinkReferences", journeyNode.getIncomingLinkReferences());
     struct.put("outgoingLinkReferences", journeyNode.getOutgoingLinkReferences());
     return struct;
@@ -165,7 +169,8 @@ public class JourneyNode
     Struct valueStruct = (Struct) value;
     String nodeID = valueStruct.getString("nodeID");
     String nodeName = valueStruct.getString("nodeName");
-    JourneyNodeType nodeType = JourneyNodeType.fromExternalRepresentation(valueStruct.getString("nodeType"));
+    NodeType nodeType = Deployment.getNodeTypes().get(valueStruct.getString("nodeTypeID"));
+    ParameterMap nodeParameters = ParameterMap.unpack(new SchemaAndValue(schema.field("nodeParameters").schema(), valueStruct.get("nodeParameters")));
     List<String> incomingLinkReferences = (List<String>) valueStruct.get("incomingLinkReferences");
     List<String> outgoingLinkReferences = (List<String>) valueStruct.get("outgoingLinkReferences");
 
@@ -173,6 +178,6 @@ public class JourneyNode
     //  return
     //
 
-    return new JourneyNode(nodeID, nodeName, nodeType, incomingLinkReferences, outgoingLinkReferences);
+    return new JourneyNode(nodeID, nodeName, nodeType, nodeParameters, incomingLinkReferences, outgoingLinkReferences);
   }
 }
