@@ -12,6 +12,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.CompressionType;
 
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
@@ -113,6 +114,10 @@ public class Deployment
   public static String getSubscriberTraceControlTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlTopic(); }
   public static String getSubscriberTraceControlAssignSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAssignSubscriberIDTopic(); }
   public static String getSubscriberTraceTopic() { return com.evolving.nglm.core.Deployment.getSubscriberTraceTopic(); }
+  public static String getSuspenseCronEntry() { return com.evolving.nglm.core.Deployment.getSuspenseCronEntry(); }
+  public static String getSuspenseTopic() { return com.evolving.nglm.core.Deployment.getSuspenseTopic(); }
+  public static String getSuspenseAuditTopic() { return com.evolving.nglm.core.Deployment.getSuspenseAuditTopic(); }
+  public static Map<String,SuspenseProcessEventConfiguration> getSuspenseProcessEventConfiguration() { return com.evolving.nglm.core.Deployment.getSuspenseProcessEventConfiguration(); }
   
   //
   //  deployment accessors
