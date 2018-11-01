@@ -13,6 +13,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class SubscriberEvaluationRequest
 {
@@ -26,9 +28,9 @@ public class SubscriberEvaluationRequest
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private JourneyState journeyState;
   private JourneyNode journeyNode;
-  private JourneyLink journeyLink;
   private SubscriberStreamEvent subscriberStreamEvent;
   private Date evaluationDate;
+  private SortedSet<Date> nextEvaluationDates;
   private List<String> traceDetails;
 
   /*****************************************
@@ -41,15 +43,15 @@ public class SubscriberEvaluationRequest
   //  constructor -- complete
   //  
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
   {
     this.subscriberProfile = subscriberProfile;
     this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     this.journeyState = journeyState;
     this.journeyNode = journeyNode;
-    this.journeyLink = journeyLink;
     this.subscriberStreamEvent = subscriberStreamEvent;
     this.evaluationDate = evaluationDate;
+    this.nextEvaluationDates = new TreeSet<Date>();
     this.traceDetails = new ArrayList<String>();
   }
 
@@ -59,7 +61,7 @@ public class SubscriberEvaluationRequest
 
   public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate)
   {
-    this(subscriberProfile, subscriberGroupEpochReader, null, null, null, null, evaluationDate);
+    this(subscriberProfile, subscriberGroupEpochReader, null, null, null, evaluationDate);
   }
 
   /*****************************************
@@ -72,10 +74,10 @@ public class SubscriberEvaluationRequest
   public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
   public JourneyState getJourneyState() { return journeyState; }
   public JourneyNode getJourneyNode() { return journeyNode; }
-  public JourneyLink getJourneyLink() { return journeyLink; }
   public SubscriberStreamEvent getSubscriberStreamEvent() { return subscriberStreamEvent; }
   public Date getEvaluationDate() { return evaluationDate; }
   public List<String> getTraceDetails() { return traceDetails; }
+  public SortedSet<Date> getNextEvaluationDates() { return nextEvaluationDates; }
   public boolean getSubscriberTraceEnabled() { return subscriberProfile.getSubscriberTraceEnabled(); }
   
   /*****************************************

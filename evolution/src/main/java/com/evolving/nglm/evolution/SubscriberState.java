@@ -39,6 +39,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class SubscriberState implements SubscriberStreamOutput
 {
@@ -69,6 +71,8 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
     schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
+    schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
+    schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).schema());
     schemaBuilder.field("evolutionSubscriberStatusUpdated", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
@@ -98,6 +102,8 @@ public class SubscriberState implements SubscriberStreamOutput
   private String subscriberID;
   private SubscriberProfile subscriberProfile;
   private Set<JourneyState> journeyStates;
+  private Set<JourneyState> recentJourneyStates;
+  private SortedSet<TimedEvaluation> scheduledEvaluations;
   private boolean evolutionSubscriberStatusUpdated;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatistic> journeyStatistics;
@@ -112,6 +118,8 @@ public class SubscriberState implements SubscriberStreamOutput
   public String getSubscriberID() { return subscriberID; }
   public SubscriberProfile getSubscriberProfile() { return subscriberProfile; }
   public Set<JourneyState> getJourneyStates() { return journeyStates; }
+  public Set<JourneyState> getRecentJourneyStates() { return recentJourneyStates; }
+  public SortedSet<TimedEvaluation> getScheduledEvaluations() { return scheduledEvaluations; }
   public boolean getEvolutionSubscriberStatusUpdated() { return evolutionSubscriberStatusUpdated; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
@@ -139,6 +147,8 @@ public class SubscriberState implements SubscriberStreamOutput
         this.subscriberID = subscriberID;
         this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance(subscriberID);
         this.journeyStates = new HashSet<JourneyState>();
+        this.recentJourneyStates = new HashSet<JourneyState>();
+        this.scheduledEvaluations = new TreeSet<TimedEvaluation>();
         this.evolutionSubscriberStatusUpdated = true;
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatistics = new ArrayList<JourneyStatistic>();
@@ -160,11 +170,13 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, boolean evolutionSubscriberStatusUpdated, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, boolean evolutionSubscriberStatusUpdated, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
     this.journeyStates = journeyStates;
+    this.recentJourneyStates = recentJourneyStates;
+    this.scheduledEvaluations = scheduledEvaluations;
     this.evolutionSubscriberStatusUpdated = evolutionSubscriberStatusUpdated;
     this.deliveryRequests = deliveryRequests;
     this.journeyStatistics = journeyStatistics;
@@ -187,6 +199,8 @@ public class SubscriberState implements SubscriberStreamOutput
 
         this.subscriberID = subscriberState.getSubscriberID();
         this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileCopyConstructor().newInstance(subscriberState.getSubscriberProfile());
+        this.recentJourneyStates = new HashSet<JourneyState>(subscriberState.getRecentJourneyStates());
+        this.scheduledEvaluations = new TreeSet<TimedEvaluation>(subscriberState.getScheduledEvaluations());
         this.evolutionSubscriberStatusUpdated = subscriberState.getEvolutionSubscriberStatusUpdated();
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatistics());
@@ -225,6 +239,8 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("subscriberID", subscriberState.getSubscriberID());
     struct.put("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().pack(subscriberState.getSubscriberProfile()));
     struct.put("journeyStates", packJourneyStates(subscriberState.getJourneyStates()));
+    struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
+    struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
     struct.put("evolutionSubscriberStatusUpdated", subscriberState.getEvolutionSubscriberStatusUpdated());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatistics", packJourneyStatistics(subscriberState.getJourneyStatistics()));
@@ -248,6 +264,22 @@ public class SubscriberState implements SubscriberStreamOutput
     return result;
   }
   
+  /*****************************************
+  *
+  *  packScheduledEvaluations
+  *
+  *****************************************/
+
+  private static List<Object> packScheduledEvaluations(SortedSet<TimedEvaluation> scheduledEvaluations)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (TimedEvaluation scheduledEvaluation : scheduledEvaluations)
+      {
+        result.add(TimedEvaluation.pack(scheduledEvaluation));
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  packDeliveryRequests
@@ -304,6 +336,8 @@ public class SubscriberState implements SubscriberStreamOutput
     String subscriberID = valueStruct.getString("subscriberID");
     SubscriberProfile subscriberProfile = SubscriberProfile.getSubscriberProfileSerde().unpack(new SchemaAndValue(schema.field("subscriberProfile").schema(), valueStruct.get("subscriberProfile")));
     Set<JourneyState> journeyStates = unpackJourneyStates(schema.field("journeyStates").schema(), valueStruct.get("journeyStates"));
+    Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
+    SortedSet<TimedEvaluation> scheduledEvaluations = unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations"));
     boolean evolutionSubscriberStatusUpdated = valueStruct.getBoolean("evolutionSubscriberStatusUpdated");
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
@@ -313,7 +347,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, evolutionSubscriberStatusUpdated, deliveryRequests, journeyStatistics, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, evolutionSubscriberStatusUpdated, deliveryRequests, journeyStatistics, subscriberTrace);
   }
 
   /*****************************************
@@ -340,6 +374,38 @@ public class SubscriberState implements SubscriberStreamOutput
       {
         JourneyState journeyState = JourneyState.unpack(new SchemaAndValue(journeyStateSchema, state));
         result.add(journeyState);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackScheduledEvaluations
+  *
+  *****************************************/
+
+  private static SortedSet<TimedEvaluation> unpackScheduledEvaluations(Schema schema, Object value)
+  {
+    //
+    //  get schema for TimedEvaluation
+    //
+
+    Schema timedEvaluationSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    SortedSet<TimedEvaluation> result = new TreeSet<TimedEvaluation>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object scheduledEvaluation : valueArray)
+      {
+        result.add(TimedEvaluation.unpack(new SchemaAndValue(timedEvaluationSchema, scheduledEvaluation)));
       }
 
     //

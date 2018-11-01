@@ -102,6 +102,15 @@ public class CriterionField extends DeploymentManagedObject
 
   /*****************************************
   *
+  *  special fields
+  *
+  *****************************************/
+
+  public static final String EvaluationDateField = "evaluation.date";
+  public static final String EventNameField = "node.parameter.eventname";
+
+  /*****************************************
+  *
   *  constructor
   *
   *****************************************/

@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -88,6 +89,9 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("journeyMetrics", SchemaBuilder.map(CriterionField.schema(), Schema.STRING_SCHEMA).name("journey_journey_metrics").schema());
     schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_journey_parameters").schema());
     schemaBuilder.field("autoTargeted", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("autoTargetedWindowDuration", Schema.INT32_SCHEMA);
+    schemaBuilder.field("autoTargetedWindowUnit", Schema.STRING_SCHEMA);
+    schemaBuilder.field("autoTargetedWindowRoundUp", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("autoTargetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyNodes", SchemaBuilder.array(JourneyNode.schema()).schema());
@@ -117,6 +121,9 @@ public class Journey extends GUIManagedObject
   private Map<CriterionField,CriterionField> journeyMetrics;            // TBD:  the value is currently hacked to be CriterionField (i.e., history.totalCharge.yesterday) 
   private Map<String,CriterionField> journeyParameters;
   private boolean autoTargeted;
+  private int autoTargetedWindowDuration;
+  private TimeUnit autoTargetedWindowUnit;
+  private boolean autoTargetedWindowRoundUp;
   private List<EvaluationCriterion> autoTargetingCriteria;
   private String startNodeID;
   private Map<String,JourneyNode> journeyNodes;
@@ -136,6 +143,9 @@ public class Journey extends GUIManagedObject
   public Map<CriterionField,CriterionField> getJourneyMetrics() { return journeyMetrics; }
   public Map<String,CriterionField> getJourneyParameters() { return journeyParameters; }
   public boolean getAutoTargeted() { return autoTargeted; }
+  public int getAutoTargetedWindowDuration() { return autoTargetedWindowDuration; }
+  public TimeUnit getAutoTargetedWindowUnit() { return autoTargetedWindowUnit; }
+  public boolean getAutoTargetedWindowRoundUp() { return autoTargetedWindowRoundUp; }
   public List<EvaluationCriterion> getAutoTargetingCriteria() { return autoTargetingCriteria; }
   public String getStartNodeID() { return startNodeID; }
   public Map<String,JourneyNode> getJourneyNodes() { return journeyNodes; }
@@ -147,12 +157,15 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, List<EvaluationCriterion> autoTargetingCriteria, String startNodeID, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, int autoTargetedWindowDuration, TimeUnit autoTargetedWindowUnit, boolean autoTargetedWindowRoundUp, List<EvaluationCriterion> autoTargetingCriteria, String startNodeID, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
   {
     super(schemaAndValue);
     this.journeyMetrics = journeyMetrics;
     this.journeyParameters = journeyParameters;
     this.autoTargeted = autoTargeted;
+    this.autoTargetedWindowDuration = autoTargetedWindowDuration;
+    this.autoTargetedWindowUnit = autoTargetedWindowUnit;
+    this.autoTargetedWindowRoundUp = autoTargetedWindowRoundUp;
     this.autoTargetingCriteria = autoTargetingCriteria;
     this.startNodeID = startNodeID;
     this.journeyNodes = journeyNodes;
@@ -173,6 +186,9 @@ public class Journey extends GUIManagedObject
     struct.put("journeyMetrics", packJourneyMetrics(journey.getJourneyMetrics()));
     struct.put("journeyParameters", packJourneyParameters(journey.getJourneyParameters()));
     struct.put("autoTargeted", journey.getAutoTargeted());
+    struct.put("autoTargetedWindowDuration", journey.getAutoTargetedWindowDuration());
+    struct.put("autoTargetedWindowUnit", journey.getAutoTargetedWindowUnit().getExternalRepresentation());
+    struct.put("autoTargetedWindowRoundUp", journey.getAutoTargetedWindowRoundUp());
     struct.put("autoTargetingCriteria", packAutoTargetingCriteria(journey.getAutoTargetingCriteria()));
     struct.put("startNodeID", journey.getStartNodeID());
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
@@ -290,6 +306,9 @@ public class Journey extends GUIManagedObject
     Map<CriterionField,CriterionField> journeyMetrics = unpackJourneyMetrics(schema.field("journeyMetrics").schema(), (Map<Object,String>) valueStruct.get("journeyMetrics"));
     Map<String,CriterionField> journeyParameters = unpackJourneyParameters(schema.field("journeyParameters").schema(), (Map<String,Object>) valueStruct.get("journeyParameters"));
     boolean autoTargeted = valueStruct.getBoolean("autoTargeted");
+    int autoTargetedWindowDuration = valueStruct.getInt32("autoTargetedWindowDuration");
+    TimeUnit autoTargetedWindowUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("autoTargetedWindowUnit"));
+    boolean autoTargetedWindowRoundUp = valueStruct.getBoolean("autoTargetedWindowRoundUp");
     List<EvaluationCriterion> autoTargetingCriteria = unpackAutoTargetingCriteria(schema.field("autoTargetingCriteria").schema(), valueStruct.get("autoTargetingCriteria"));
     String startNodeID = valueStruct.getString("startNodeID");
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
@@ -355,7 +374,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, autoTargetingCriteria, startNodeID, journeyNodes, journeyLinks);
+    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, autoTargetedWindowDuration, autoTargetedWindowUnit, autoTargetedWindowRoundUp, autoTargetingCriteria, startNodeID, journeyNodes, journeyLinks);
   }
   
   /*****************************************
@@ -523,10 +542,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    this.journeyMetrics = decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", true));
-    this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", true));
-    this.autoTargeted = JSONUtilities.decodeBoolean(jsonRoot, "autoTargeted", true);
-    this.autoTargetingCriteria = decodeAutoTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", true));
+    this.journeyMetrics = decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", false));
+    this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", false));
+    this.autoTargeted = JSONUtilities.decodeBoolean(jsonRoot, "autoTargeted", Boolean.FALSE);
+    this.autoTargetedWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "autoTargetedWindowDuration", 3);
+    this.autoTargetedWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "autoTargetedWindowUnit", "month"));
+    this.autoTargetedWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "autoTargetedWindowRoundUp", Boolean.FALSE);
+    this.autoTargetingCriteria = decodeAutoTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", false));
     Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
@@ -626,7 +648,7 @@ public class Journey extends GUIManagedObject
         *****************************************/
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
-        JourneyLink journeyLink = new JourneyLink(linkID, sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getTransitionCriteria());
+        JourneyLink journeyLink = new JourneyLink(linkID, sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), outgoingConnectionPoint.getTransitionCriteria());
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
 
         /*****************************************
@@ -673,42 +695,45 @@ public class Journey extends GUIManagedObject
   public static Map<CriterionField,CriterionField> decodeJourneyMetrics(JSONArray jsonArray) throws GUIManagerException
   {
     Map<CriterionField,CriterionField> journeyMetrics = new LinkedHashMap<CriterionField,CriterionField>();
-    for (int i=0; i<jsonArray.size(); i++)
+    if (jsonArray != null)
       {
-        //
-        //  parse
-        //
-
-        JSONObject journeyMetricJSON = (JSONObject) jsonArray.get(i);
-        String journeyMetricName = JSONUtilities.decodeString(journeyMetricJSON, "criterionFieldID", true);
-        String baseMetricID = JSONUtilities.decodeString(journeyMetricJSON, "baseMetric", true);
-        CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(baseMetricID);
-
-        //
-        //  validate
-        //
-
-        if (baseMetric == null) throw new GUIManagerException("unknown baseMetric", baseMetricID);
-        switch (baseMetric.getFieldDataType())
+        for (int i=0; i<jsonArray.size(); i++)
           {
-            case IntegerCriterion:
-              break;
+            //
+            //  parse
+            //
 
-            default:
-              throw new GUIManagerException("non-integer baseMetric", baseMetricID);
+            JSONObject journeyMetricJSON = (JSONObject) jsonArray.get(i);
+            String journeyMetricName = JSONUtilities.decodeString(journeyMetricJSON, "criterionFieldID", true);
+            String baseMetricID = JSONUtilities.decodeString(journeyMetricJSON, "baseMetric", true);
+            CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(baseMetricID);
+
+            //
+            //  validate
+            //
+
+            if (baseMetric == null) throw new GUIManagerException("unknown baseMetric", baseMetricID);
+            switch (baseMetric.getFieldDataType())
+              {
+                case IntegerCriterion:
+                  break;
+
+                default:
+                  throw new GUIManagerException("non-integer baseMetric", baseMetricID);
+              }
+
+            //
+            //  journeyMetric
+            //
+
+            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric");
+
+            //
+            //  result
+            //
+
+            journeyMetrics.put(journeyMetric, baseMetric);
           }
-
-        //
-        //  journeyMetric
-        //
-
-        CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric");
-
-        //
-        //  result
-        //
-        
-        journeyMetrics.put(journeyMetric, baseMetric);
       }
     return journeyMetrics;
   }
@@ -722,12 +747,15 @@ public class Journey extends GUIManagedObject
   public static Map<String,CriterionField> decodeJourneyParameters(JSONArray jsonArray) throws GUIManagerException
   {
     Map<String,CriterionField> journeyParameters = new LinkedHashMap<String,CriterionField>();
-    for (int i=0; i<jsonArray.size(); i++)
+    if (jsonArray != null)
       {
-        JSONObject journeyParameterJSON = (JSONObject) jsonArray.get(i);
-        CriterionField originalJourneyParameter = new CriterionField(journeyParameterJSON);
-        CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter");
-        journeyParameters.put(enhancedJourneyParameter.getID(), enhancedJourneyParameter);
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            JSONObject journeyParameterJSON = (JSONObject) jsonArray.get(i);
+            CriterionField originalJourneyParameter = new CriterionField(journeyParameterJSON);
+            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter");
+            journeyParameters.put(enhancedJourneyParameter.getID(), enhancedJourneyParameter);
+          }
       }
     return journeyParameters;
   }
@@ -741,9 +769,12 @@ public class Journey extends GUIManagedObject
   private List<EvaluationCriterion> decodeAutoTargetingCriteria(JSONArray jsonArray) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
-    for (int i=0; i<jsonArray.size(); i++)
+    if (jsonArray != null)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+          }
       }
     return result;
   }
@@ -1090,6 +1121,9 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(journeyMetrics, existingJourney.getJourneyMetrics());
         epochChanged = epochChanged || ! Objects.equals(journeyParameters, existingJourney.getJourneyParameters());
         epochChanged = epochChanged || ! (autoTargeted == existingJourney.getAutoTargeted());
+        epochChanged = epochChanged || ! (autoTargetedWindowDuration == existingJourney.getAutoTargetedWindowDuration());
+        epochChanged = epochChanged || ! (autoTargetedWindowUnit == existingJourney.getAutoTargetedWindowUnit());
+        epochChanged = epochChanged || ! (autoTargetedWindowRoundUp == existingJourney.getAutoTargetedWindowRoundUp());
         epochChanged = epochChanged || ! Objects.equals(autoTargetingCriteria, existingJourney.getAutoTargetingCriteria());
         epochChanged = epochChanged || ! Objects.equals(startNodeID, existingJourney.getStartNodeID());
         epochChanged = epochChanged || ! Objects.equals(journeyNodes, existingJourney.getJourneyNodes());

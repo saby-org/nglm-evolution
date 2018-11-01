@@ -56,16 +56,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 public class EvolutionEngine
@@ -100,6 +104,7 @@ public class EvolutionEngine
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
+  private static TimerService timerService;
 
   /****************************************
   *
@@ -139,6 +144,7 @@ public class EvolutionEngine
     //  source topics 
     //
 
+    String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
@@ -338,6 +344,7 @@ public class EvolutionEngine
     *****************************************/
 
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+    final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
@@ -356,6 +363,7 @@ public class EvolutionEngine
     *****************************************/
 
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
+    evolutionEventSerdes.add(timedEvaluationSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
@@ -383,6 +391,7 @@ public class EvolutionEngine
     //  core streams
     //
 
+    KStream<StringKey, TimedEvaluation> timedEvaluationSourceStream = builder.stream(timedEvaluationTopic, Consumed.with(stringKeySerde, timedEvaluationSerde));
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
@@ -412,6 +421,7 @@ public class EvolutionEngine
     //
 
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) timedEvaluationSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
@@ -536,19 +546,35 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  timerService
+    *
+    *****************************************/
+
+    timerService = new TimerService(bootstrapServers, streams);
+
+    /*****************************************
+    *
     *  shutdown hook
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationRuleService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationRuleService, timerService));
 
     /*****************************************
     *
-    *  start
+    *  start streams
     *
     *****************************************/
 
     streams.start();
+
+    /*****************************************
+    *
+    *  start streams
+    *
+    *****************************************/
+
+    timerService.start();
   }
 
   /****************************************
@@ -600,17 +626,19 @@ public class EvolutionEngine
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private JourneyService journeyService;
     private SegmentationRuleService segmentationRuleService;
+    private TimerService timerService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationRuleService segmentationRuleService)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationRuleService segmentationRuleService, TimerService timerService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.journeyService = journeyService;
       this.segmentationRuleService = segmentationRuleService;
+      this.timerService = timerService;
     }
 
     //
@@ -637,6 +665,7 @@ public class EvolutionEngine
       
       journeyService.stop();
       segmentationRuleService.stop();
+      timerService.stop();
       
       //
       //  stop streams
@@ -679,14 +708,47 @@ public class EvolutionEngine
 
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, subscriberGroupEpochReader, uniqueKeyServer);
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, subscriberGroupEpochReader, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = context.now();
 
     /*****************************************
     *
     *  clear state
     *
     *****************************************/
+
+    //
+    //  recentJourneyStates
+    //
+
+    Date recentJourneyStateWindow = RLMDateUtils.addMonths(now, -3, Deployment.getBaseTimeZone());
+    Iterator<JourneyState> recentJourneyStates = subscriberState.getRecentJourneyStates().iterator();
+    while (recentJourneyStates.hasNext())
+      {
+        JourneyState recentJourneyState = recentJourneyStates.next();
+        if (recentJourneyState.getJourneyExitDate().before(recentJourneyStateWindow))
+          {
+            recentJourneyStates.remove();
+          }
+      }
+
+    //
+    //  scheduledEvaluations
+    //
+
+    if (subscriberState.getScheduledEvaluations().size() > 0)
+      {
+        subscriberState.getScheduledEvaluations().clear();
+        subscriberStateUpdated = true;
+      }
 
     //
     //  statusUpdated
@@ -743,6 +805,42 @@ public class EvolutionEngine
     *****************************************/
     
     subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  scheduledEvaluations
+    *
+    *****************************************/
+
+    //
+    //  previously scheduled
+    //
+
+    Set<TimedEvaluation> previouslyScheduledEvaluations = (currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet();
+
+    //
+    //  deschedule no longer required events
+    //
+
+    for (TimedEvaluation scheduledEvaluation : previouslyScheduledEvaluations)
+      {
+        if (! subscriberState.getScheduledEvaluations().contains(scheduledEvaluation))
+          {
+            timerService.deschedule(scheduledEvaluation);
+          }
+      }
+
+    //
+    //  schedule new events
+    //
+
+    for (TimedEvaluation scheduledEvaluation : subscriberState.getScheduledEvaluations())
+      {
+        if (! previouslyScheduledEvaluations.contains(scheduledEvaluation))
+          {
+            timerService.schedule(scheduledEvaluation);
+          }
+      }
 
     /*****************************************
     *
@@ -896,11 +994,19 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  now
+    *
+    *****************************************/
+
+    Date now = context.now();
+
+    /*****************************************
+    *
     *  update JourneyState(s) to enter new autoTargetedJourneys
     *
     *****************************************/
 
-    for (Journey journey : journeyService.getActiveJourneys(evolutionEvent.getEventDate()))
+    for (Journey journey : journeyService.getActiveJourneys(now))
       {
         if (journey.getAutoTargeted())
           {
@@ -931,13 +1037,70 @@ public class EvolutionEngine
 
             /*****************************************
             *
+            *  recently in journey?
+            *
+            *****************************************/
+
+            if (enterJourney)
+              {
+                for (JourneyState journeyState : subscriberState.getRecentJourneyStates())
+                  {
+                    if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
+                      {
+                        //
+                        //  journeyReentryWindow
+                        //
+
+                        Date journeyReentryWindow = journeyState.getJourneyExitDate();
+                        switch (journey.getAutoTargetedWindowUnit())
+                          {
+                            case Minute:
+                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                              journeyReentryWindow = RLMDateUtils.addMinutes(journeyReentryWindow, journey.getAutoTargetedWindowDuration());
+                              break;
+                            case Hour:
+                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                              journeyReentryWindow = RLMDateUtils.addHours(journeyReentryWindow, journey.getAutoTargetedWindowDuration());
+                              break;
+                            case Day:
+                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                              journeyReentryWindow = RLMDateUtils.addDays(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
+                              break;
+                            case Week:
+                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                              journeyReentryWindow = RLMDateUtils.addWeeks(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
+                              break;
+                            case Month:
+                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                              journeyReentryWindow = RLMDateUtils.addMonths(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
+                              break;
+                            case Year:
+                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+                              journeyReentryWindow = RLMDateUtils.addYears(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
+                              break;
+                          }
+
+                        //
+                        //  in journeyReentryWindow
+                        //
+
+                        if (journeyReentryWindow.after(now))
+                          {
+                            enterJourney = false;
+                          }
+                      }
+                  }
+              }
+
+            /*****************************************
+            *
             *  pass auto-targeting criteria
             *
             *****************************************/
 
             if (enterJourney)
               {
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, evolutionEvent.getEventDate());
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
                 if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAutoTargetingCriteria()))
                   {
                     enterJourney = false;
@@ -953,9 +1116,9 @@ public class EvolutionEngine
 
             if (enterJourney)
               {
-                JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), evolutionEvent.getEventDate());
+                JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), now);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journey.getJourneyID(), subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), null, null, journey.getStartNodeID(), false));
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journey.getJourneyID(), subscriberState.getSubscriberID(), now, null, null, journey.getStartNodeID(), false));
                 subscriberStateUpdated = true;
               }
           }
@@ -967,13 +1130,143 @@ public class EvolutionEngine
     *
     *****************************************/
 
+    //
+    //  update
+    //
+
+    List<JourneyState> inactiveJourneyStates = new ArrayList<JourneyState>();
     for (JourneyState journeyState : subscriberState.getJourneyStates())
       {
-        //
-        //  DEW TBD
-        //
+        /*****************************************
+        *
+        *  get journey and journeyNode
+        *
+        *****************************************/
+
+        Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+        JourneyNode journeyNode = (journey != null) ? journey.getJourneyNodes().get(journeyState.getJourneyNodeID()) : null;
+
+        /*****************************************
+        *
+        *  inactive journey  
+        *
+        *****************************************/
+
+        if (journey == null || journeyNode == null)
+          {
+            journeyState.setJourneyExitDate(now);
+            subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journeyState.getJourneyID(), subscriberState.getSubscriberID(), now, null, null, journeyState.getJourneyNodeID(), true));
+            inactiveJourneyStates.add(journeyState);
+            break;
+          }
+
+        /*****************************************
+        *
+        *  transition(s)
+        *
+        *****************************************/
+
+        JourneyLink firedLink = null;
+        do
+          {
+            /*****************************************
+            *
+            *  subscriberEvaluationRequest
+            *
+            *****************************************/
+
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, evolutionEvent, now);
+
+            /*****************************************
+            *
+            *  transition?
+            *
+            *****************************************/
+
+            firedLink = null;
+            for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values())
+              {
+                if (EvaluationCriterion.evaluateCriteria(evaluationRequest, journeyLink.getTransitionCriteria()))
+                  {
+                    firedLink = journeyLink;
+                    break;
+                  }
+              }
+            context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+
+            /*****************************************
+            *
+            *  stay in node (schedule evaluations as necessary)
+            *
+            *****************************************/
+
+            if (firedLink == null)
+              {
+                for (Date nextEvaluationDate : evaluationRequest.getNextEvaluationDates())
+                  {
+                    subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
+                    subscriberStateUpdated = true;
+                  }
+              }
+
+            /*****************************************
+            *
+            *  enter new node
+            *
+            *****************************************/
+
+            if (firedLink != null)
+              {
+                /*****************************************
+                *
+                *  enter node
+                *
+                *****************************************/
+
+                JourneyNode nextJourneyNode = firedLink.getDestination();
+                journeyState.setJourneyNodeID(nextJourneyNode.getNodeID(), now);
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journeyState.getJourneyID(), subscriberState.getSubscriberID(), now, firedLink.getLinkID(), journeyNode.getNodeID(), nextJourneyNode.getNodeID(), false));
+                journeyNode = nextJourneyNode;
+                subscriberStateUpdated = true;
+
+                /*****************************************
+                *
+                *  exit (if exit node)
+                *
+                *****************************************/
+
+                if (journeyNode.getExitNode())
+                  {
+                    journeyState.setJourneyExitDate(now);
+                    subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journeyState.getJourneyID(), subscriberState.getSubscriberID(), now, null, null, journeyState.getJourneyNodeID(), true));
+                    inactiveJourneyStates.add(journeyState);
+                  }
+
+                /*****************************************
+                *
+                *  initiate action (if necessary)
+                *
+                *****************************************/
+
+                //
+                // DEW TBD
+                //
+              }
+          }
+        while (firedLink != null && journeyState.getJourneyExitDate() == null);
       }
 
+    //
+    //  remove inactive journeyStates
+    //
+
+    for (JourneyState journeyState : inactiveJourneyStates)
+      {
+        subscriberState.getRecentJourneyStates().add(journeyState);
+        subscriberState.getJourneyStates().remove(journeyState);
+        subscriberStateUpdated = true;
+      }
+    
     /*****************************************
     *
     *  return
@@ -1155,6 +1448,7 @@ public class EvolutionEngine
     private SubscriberState subscriberState;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private KStreamsUniqueKeyServer uniqueKeyServer;
+    private Date now;
     private List<String> subscriberTraceDetails;
     
     /*****************************************
@@ -1163,11 +1457,12 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, KStreamsUniqueKeyServer uniqueKeyServer)
+    public EvolutionEventContext(SubscriberState subscriberState, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.uniqueKeyServer = uniqueKeyServer;
+      this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
     }
 
@@ -1181,6 +1476,7 @@ public class EvolutionEngine
     public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
     public KStreamsUniqueKeyServer getUniqueKeyServer() { return uniqueKeyServer; }
     public List<String> getSubscriberTraceDetails() { return subscriberTraceDetails; }
+    public Date now() { return now; }
     public boolean getSubscriberTraceEnabled() { return subscriberState.getSubscriberProfile().getSubscriberTraceEnabled(); }
 
     /*****************************************

@@ -23,6 +23,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.WakeupException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -551,7 +552,15 @@ public class GUIService
         // poll
         //
 
-        ConsumerRecords<byte[], byte[]> guiManagedObjectRecords = consumer.poll(5000);
+        ConsumerRecords<byte[], byte[]> guiManagedObjectRecords;
+        try
+          {
+            guiManagedObjectRecords = consumer.poll(5000);
+          }
+        catch (WakeupException e)
+          {
+            guiManagedObjectRecords = ConsumerRecords.<byte[], byte[]>empty();
+          }
 
         //
         //  processing?

@@ -74,6 +74,7 @@ public class CriterionContext
       {
         Map<String,Object> journeyEntryDateJSON = new LinkedHashMap<String,Object>();
         journeyEntryDateJSON.put("id", "journey.entryDate");
+        journeyEntryDateJSON.put("display", "journey.entryDate");
         journeyEntryDateJSON.put("dataType", "date");
         journeyEntryDateJSON.put("retriever", "getJourneyEntryDate");
         journeyEntryDate  = new CriterionField(JSONUtilities.encodeObject(journeyEntryDateJSON));
@@ -91,6 +92,7 @@ public class CriterionContext
       {
         Map<String,Object> nodeEntryDateJSON = new LinkedHashMap<String,Object>();
         nodeEntryDateJSON.put("id", "node.entryDate");
+        nodeEntryDateJSON.put("display", "node.entryDate");
         nodeEntryDateJSON.put("dataType", "date");
         nodeEntryDateJSON.put("retriever", "getJourneyNodeEntryDate");
         nodeEntryDate  = new CriterionField(JSONUtilities.encodeObject(nodeEntryDateJSON));
@@ -108,6 +110,7 @@ public class CriterionContext
       {
         Map<String,Object> internalRandom100JSON = new LinkedHashMap<String,Object>();
         internalRandom100JSON.put("id", "internal.random100");
+        internalRandom100JSON.put("display", "internal.random100");
         internalRandom100JSON.put("dataType", "integer");
         internalRandom100JSON.put("retriever", "getRandom100");
         internalRandom100  = new CriterionField(JSONUtilities.encodeObject(internalRandom100JSON));

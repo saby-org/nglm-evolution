@@ -280,6 +280,7 @@ public class EvaluationCriterion
   //
 
   private Expression argument;
+  private boolean referencesEvaluationDate;
 
   /*****************************************
   *
@@ -297,6 +298,7 @@ public class EvaluationCriterion
     this.storyReference = storyReference;
     this.criterionDefault = criterionDefault;
     this.argument = null;
+    this.referencesEvaluationDate = criterionField.getID().equals(CriterionField.EvaluationDateField);
   }
 
   /*****************************************
@@ -316,6 +318,7 @@ public class EvaluationCriterion
     this.criterionOperator = CriterionOperator.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
     this.storyReference = JSONUtilities.decodeString(jsonRoot, "storyReference", false);
     this.criterionDefault = JSONUtilities.decodeBoolean(jsonRoot, "criterionDefault", Boolean.FALSE);
+    this.referencesEvaluationDate = criterionField.getID().equals(CriterionField.EvaluationDateField);
 
     //
     //  validate (all but argument)
@@ -876,6 +879,19 @@ public class EvaluationCriterion
 
     /*****************************************
     *
+    *  normalize integer/longs
+    *
+    *****************************************/
+
+    switch (argument.getType())
+      {
+        case IntegerExpression:
+          if (evaluatedArgument instanceof Integer) evaluatedArgument = new Long(((Integer) evaluatedArgument).longValue());
+          break;
+      }
+
+    /*****************************************
+    *
     *  normalize
     *
     *****************************************/
@@ -889,7 +905,7 @@ public class EvaluationCriterion
               switch (argument.getType())
                 {
                   case DoubleExpression:
-                    criterionFieldValue = new Double(((Long) criterionFieldValue).doubleValue());
+                    criterionFieldValue = new Double(((Number) criterionFieldValue).doubleValue());
                     evaluationDataType = CriterionDataType.DoubleCriterion;
                     break;
                 }
@@ -899,7 +915,7 @@ public class EvaluationCriterion
               switch (argument.getType())
                 {
                   case IntegerExpression:
-                    evaluatedArgument = new Double(((Long) evaluatedArgument).doubleValue());
+                    evaluatedArgument = new Double(((Number) evaluatedArgument).doubleValue());
                     evaluationDataType = CriterionDataType.DoubleCriterion;
                     break;
                 }
@@ -994,6 +1010,7 @@ public class EvaluationCriterion
                 break;
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) > 0, criterionFieldValue, evaluatedArgument);
+                if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
                 break;
             }
           break;
@@ -1009,6 +1026,7 @@ public class EvaluationCriterion
                 break;
               case DateCriterion:
                 result = traceCondition(evaluationRequest, ((Date) criterionFieldValue).compareTo((Date) evaluatedArgument) >= 0, criterionFieldValue, evaluatedArgument);
+                if (referencesEvaluationDate) evaluationRequest.getNextEvaluationDates().add((Date) evaluatedArgument);
                 break;
             }
           break;
@@ -1392,7 +1410,7 @@ public class EvaluationCriterion
       switch (getType())
         {
           case IntegerExpression:
-            script.append("def right_" + getNodeID() + " = " + ((Long) constant).toString() + "; ");
+            script.append("def right_" + getNodeID() + " = " + ((Number) constant).toString() + "; ");
             break;
 
           case DoubleExpression:
@@ -1471,6 +1489,10 @@ public class EvaluationCriterion
 
     @Override public void typeCheck(TimeUnit baseTimeUnit)
     {
+      //
+      //  type
+      //
+
       switch (reference.getFieldDataType())
         {
           case IntegerCriterion:
@@ -1493,6 +1515,15 @@ public class EvaluationCriterion
             break;
           default:
             throw new ExpressionTypeCheckException("invariant violated");
+        }
+
+      //
+      //  evaluation.date -- illegal
+      //
+
+      if (reference.getID().equals(CriterionField.EvaluationDateField))
+        {
+          throw new ExpressionTypeCheckException("illegal reference to " + CriterionField.EvaluationDateField);
         }
     }
 
@@ -2005,7 +2036,7 @@ public class EvaluationCriterion
                   break;
 
                 case MinusOperator:
-                  result = new Long(-1L * ((Long) argumentValue).longValue());
+                  result = new Long(-1L * ((Number) argumentValue).longValue());
                   break;
               }
             break;
@@ -2390,7 +2421,7 @@ public class EvaluationCriterion
             break;
             
           case DateAddFunction:
-            result = evaluateDateAddFunction((Date) arg1Value, (Long) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit);
+            result = evaluateDateAddFunction((Date) arg1Value, (Number) arg2Value, TimeUnit.fromExternalRepresentation((String) arg3Value), baseTimeUnit);
             break;
             
           default:
@@ -2474,7 +2505,7 @@ public class EvaluationCriterion
     *
     *****************************************/
 
-    private Date evaluateDateAddFunction(Date date, Long number, TimeUnit timeUnit, TimeUnit baseTimeUnit)
+    private Date evaluateDateAddFunction(Date date, Number number, TimeUnit timeUnit, TimeUnit baseTimeUnit)
     {
       //
       //  truncate
@@ -3087,7 +3118,7 @@ public class EvaluationCriterion
 
         /*****************************************
         *
-        *  pass 3 --assignNodeID to argument
+        *  pass 3 -- assignNodeID to argument
         *
         *****************************************/
 

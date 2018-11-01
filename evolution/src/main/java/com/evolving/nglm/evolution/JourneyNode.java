@@ -110,6 +110,7 @@ public class JourneyNode
   public List<String> getOutgoingLinkReferences() { return outgoingLinkReferences; }
   public Map<String,JourneyLink> getIncomingLinks() { return incomingLinks; }
   public Map<String,JourneyLink> getOutgoingLinks() { return outgoingLinks; }
+  public boolean getExitNode() { return outgoingLinks.size() == 0; }
 
   /*****************************************
   *

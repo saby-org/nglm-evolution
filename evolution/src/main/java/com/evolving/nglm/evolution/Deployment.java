@@ -57,6 +57,7 @@ public class Deployment
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
   private static String subscriberGroupEpochTopic;
+  private static String timedEvaluationTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
   private static String journeyStatisticTopic;
@@ -143,6 +144,7 @@ public class Deployment
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
+  public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
@@ -533,6 +535,19 @@ public class Deployment
     try
       {
         subscriberGroupEpochTopic = JSONUtilities.decodeString(jsonRoot, "subscriberGroupEpochTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  timedEvaluationTopic
+    //
+
+    try
+      {
+        timedEvaluationTopic = JSONUtilities.decodeString(jsonRoot, "timedEvaluationTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
