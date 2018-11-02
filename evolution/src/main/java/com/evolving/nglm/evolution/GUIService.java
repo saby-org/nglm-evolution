@@ -83,6 +83,7 @@ public class GUIService
   Thread listenerThread = null;
   Thread guiManagedObjectReaderThread = null;
   private GUIManagedObjectListener guiManagedObjectListener = null;
+  private boolean notifyOnSignificantChange;
   private BlockingQueue<GUIManagedObject> listenerQueue = new LinkedBlockingQueue<GUIManagedObject>();
   private int lastGeneratedObjectID = 0;
 
@@ -108,7 +109,7 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener)
+  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, boolean notifyOnSignificantChange)
   {
     //
     //  configuration
@@ -117,6 +118,7 @@ public class GUIService
     this.guiManagedObjectTopic = guiManagedObjectTopic;
     this.guiManagedObjectListener = guiManagedObjectListener;
     this.masterService = masterService;
+    this.notifyOnSignificantChange = notifyOnSignificantChange;
 
     //
     //  statistics
@@ -490,7 +492,7 @@ public class GUIService
         if (active)
           {
             activeGUIManagedObjects.put(guiManagedObjectID, (GUIManagedObject) guiManagedObject);
-            if (existingActiveGUIManagedObject == null || existingActiveGUIManagedObject.getEpoch() != guiManagedObject.getEpoch()) notifyListener(guiManagedObject);
+            if (existingActiveGUIManagedObject == null || existingActiveGUIManagedObject.getEpoch() != guiManagedObject.getEpoch() || !notifyOnSignificantChange) notifyListener(guiManagedObject);
           }
 
         //

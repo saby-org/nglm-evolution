@@ -69,9 +69,18 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
+  public PresentationStrategyService(String bootstrapServers, String groupID, String presentationStrategyTopic, boolean masterService, PresentationStrategyListener presentationStrategyListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "PresentationStrategyService", groupID, presentationStrategyTopic, masterService, getSuperListener(presentationStrategyListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public PresentationStrategyService(String bootstrapServers, String groupID, String presentationStrategyTopic, boolean masterService, PresentationStrategyListener presentationStrategyListener)
   {
-    super(bootstrapServers, "PresentationStrategyService", groupID, presentationStrategyTopic, masterService, getSuperListener(presentationStrategyListener));
+    this(bootstrapServers, groupID, presentationStrategyTopic, masterService, presentationStrategyListener, true);
   }
 
   //
@@ -80,7 +89,7 @@ public class PresentationStrategyService extends GUIService
 
   public PresentationStrategyService(String bootstrapServers, String groupID, String presentationStrategyTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, presentationStrategyTopic, masterService, (PresentationStrategyListener) null);
+    this(bootstrapServers, groupID, presentationStrategyTopic, masterService, (PresentationStrategyListener) null, true);
   }
 
   //

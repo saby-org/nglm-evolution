@@ -64,9 +64,18 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
+  public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "JourneyService", groupID, journeyTopic, masterService, getSuperListener(journeyListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener)
   {
-    super(bootstrapServers, "JourneyService", groupID, journeyTopic, masterService, getSuperListener(journeyListener));
+    this(bootstrapServers, groupID, journeyTopic, masterService, journeyListener, true);
   }
 
   //
@@ -75,7 +84,7 @@ public class JourneyService extends GUIService
 
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, journeyTopic, masterService, (JourneyListener) null);
+    this(bootstrapServers, groupID, journeyTopic, masterService, (JourneyListener) null, true);
   }
 
   //

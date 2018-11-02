@@ -69,9 +69,18 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
+  public OfferService(String bootstrapServers, String groupID, String offerTopic, boolean masterService, OfferListener offerListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "OfferService", groupID, offerTopic, masterService, getSuperListener(offerListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+  
   public OfferService(String bootstrapServers, String groupID, String offerTopic, boolean masterService, OfferListener offerListener)
   {
-    super(bootstrapServers, "OfferService", groupID, offerTopic, masterService, getSuperListener(offerListener));
+    this(bootstrapServers, groupID, offerTopic, masterService, offerListener, true);
   }
 
   //
@@ -80,7 +89,7 @@ public class OfferService extends GUIService
 
   public OfferService(String bootstrapServers, String groupID, String offerTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, offerTopic, masterService, (OfferListener) null);
+    this(bootstrapServers, groupID, offerTopic, masterService, (OfferListener) null, true);
   }
 
   //

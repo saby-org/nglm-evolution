@@ -69,9 +69,18 @@ public class CatalogCharacteristicService extends GUIService
   *
   *****************************************/
 
+  public CatalogCharacteristicService(String bootstrapServers, String groupID, String catalogCharacteristicTopic, boolean masterService, CatalogCharacteristicListener catalogCharacteristicListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "CatalogCharacteristicService", groupID, catalogCharacteristicTopic, masterService, getSuperListener(catalogCharacteristicListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public CatalogCharacteristicService(String bootstrapServers, String groupID, String catalogCharacteristicTopic, boolean masterService, CatalogCharacteristicListener catalogCharacteristicListener)
   {
-    super(bootstrapServers, "CatalogCharacteristicService", groupID, catalogCharacteristicTopic, masterService, getSuperListener(catalogCharacteristicListener));
+    this(bootstrapServers, groupID, catalogCharacteristicTopic, masterService, catalogCharacteristicListener, true);
   }
 
   //
@@ -80,7 +89,7 @@ public class CatalogCharacteristicService extends GUIService
 
   public CatalogCharacteristicService(String bootstrapServers, String groupID, String catalogCharacteristicTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, catalogCharacteristicTopic, masterService, (CatalogCharacteristicListener) null);
+    this(bootstrapServers, groupID, catalogCharacteristicTopic, masterService, (CatalogCharacteristicListener) null, true);
   }
 
   //

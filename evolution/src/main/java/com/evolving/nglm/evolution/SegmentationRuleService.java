@@ -43,9 +43,18 @@ public class SegmentationRuleService extends GUIService
   *
   *****************************************/
 
+  public SegmentationRuleService(String bootstrapServers, String groupID, String segmentationRuleTopic, boolean masterService, SegmentationRuleListener segmentationRuleListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "segmentationRuleService", groupID, segmentationRuleTopic, masterService, getSuperListener(segmentationRuleListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public SegmentationRuleService(String bootstrapServers, String groupID, String segmentationRuleTopic, boolean masterService, SegmentationRuleListener segmentationRuleListener)
   {
-    super(bootstrapServers, "segmentationRuleService", groupID, segmentationRuleTopic, masterService, getSuperListener(segmentationRuleListener));
+    this(bootstrapServers, groupID, segmentationRuleTopic, masterService, segmentationRuleListener, true);
   }
 
   //
@@ -54,7 +63,7 @@ public class SegmentationRuleService extends GUIService
 
   public SegmentationRuleService(String bootstrapServers, String groupID, String segmentationRuleTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, segmentationRuleTopic, masterService, (SegmentationRuleListener) null);
+    this(bootstrapServers, groupID, segmentationRuleTopic, masterService, (SegmentationRuleListener) null, true);
   }
 
   //

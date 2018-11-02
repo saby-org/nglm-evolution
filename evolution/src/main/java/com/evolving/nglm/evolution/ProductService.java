@@ -69,9 +69,18 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
+  public ProductService(String bootstrapServers, String groupID, String productTopic, boolean masterService, ProductListener productListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "ProductService", groupID, productTopic, masterService, getSuperListener(productListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public ProductService(String bootstrapServers, String groupID, String productTopic, boolean masterService, ProductListener productListener)
   {
-    super(bootstrapServers, "ProductService", groupID, productTopic, masterService, getSuperListener(productListener));
+    this(bootstrapServers, groupID, productTopic, masterService, productListener, true);
   }
 
   //
@@ -80,7 +89,7 @@ public class ProductService extends GUIService
 
   public ProductService(String bootstrapServers, String groupID, String productTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, productTopic, masterService, (ProductListener) null);
+    this(bootstrapServers, groupID, productTopic, masterService, (ProductListener) null, true);
   }
 
   //

@@ -66,9 +66,18 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
+  public SupplierService(String bootstrapServers, String groupID, String supplierTopic, boolean masterService, SupplierListener supplierListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "SupplierService", groupID, supplierTopic, masterService, getSuperListener(supplierListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public SupplierService(String bootstrapServers, String groupID, String supplierTopic, boolean masterService, SupplierListener supplierListener)
   {
-    super(bootstrapServers, "SupplierService", groupID, supplierTopic, masterService, getSuperListener(supplierListener));
+    this(bootstrapServers, groupID, supplierTopic, masterService, supplierListener, true);
   }
 
   //
@@ -77,7 +86,7 @@ public class SupplierService extends GUIService
 
   public SupplierService(String bootstrapServers, String groupID, String supplierTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, supplierTopic, masterService, (SupplierListener) null);
+    this(bootstrapServers, groupID, supplierTopic, masterService, (SupplierListener) null, true);
   }
 
   //

@@ -66,9 +66,18 @@ public class CallingChannelService extends GUIService
   *
   *****************************************/
 
+  public CallingChannelService(String bootstrapServers, String groupID, String callingChannelTopic, boolean masterService, CallingChannelListener callingChannelListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "CallingChannelService", groupID, callingChannelTopic, masterService, getSuperListener(callingChannelListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+  
   public CallingChannelService(String bootstrapServers, String groupID, String callingChannelTopic, boolean masterService, CallingChannelListener callingChannelListener)
   {
-    super(bootstrapServers, "CallingChannelService", groupID, callingChannelTopic, masterService, getSuperListener(callingChannelListener));
+    this(bootstrapServers, groupID, callingChannelTopic, masterService, callingChannelListener, true);
   }
 
   //
@@ -77,7 +86,7 @@ public class CallingChannelService extends GUIService
 
   public CallingChannelService(String bootstrapServers, String groupID, String callingChannelTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, callingChannelTopic, masterService, (CallingChannelListener) null);
+    this(bootstrapServers, groupID, callingChannelTopic, masterService, (CallingChannelListener) null, true);
   }
 
   //

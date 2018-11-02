@@ -66,9 +66,18 @@ public class ScoringStrategyService extends GUIService
   *
   *****************************************/
 
+  public ScoringStrategyService(String bootstrapServers, String groupID, String scoringStrategyTopic, boolean masterService, ScoringStrategyListener scoringStrategyListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "ScoringStrategyService", groupID, scoringStrategyTopic, masterService, getSuperListener(scoringStrategyListener), notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
   public ScoringStrategyService(String bootstrapServers, String groupID, String scoringStrategyTopic, boolean masterService, ScoringStrategyListener scoringStrategyListener)
   {
-    super(bootstrapServers, "ScoringStrategyService", groupID, scoringStrategyTopic, masterService, getSuperListener(scoringStrategyListener));
+    this(bootstrapServers, groupID, scoringStrategyTopic, masterService, scoringStrategyListener, true);
   }
 
   //
@@ -77,7 +86,7 @@ public class ScoringStrategyService extends GUIService
 
   public ScoringStrategyService(String bootstrapServers, String groupID, String scoringStrategyTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, scoringStrategyTopic, masterService, (ScoringStrategyListener) null);
+    this(bootstrapServers, groupID, scoringStrategyTopic, masterService, (ScoringStrategyListener) null, true);
   }
 
   //
