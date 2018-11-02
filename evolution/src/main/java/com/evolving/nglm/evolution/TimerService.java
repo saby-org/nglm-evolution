@@ -48,8 +48,8 @@ public class TimerService
   //  limites
   //
 
-  private int entriesInMemoryLimit = 10000;
-  private int reloadThreshold = 5000;
+  private int entriesInMemoryLimit = 100000;
+  private int reloadThreshold = 20000;
 
   /*****************************************
   *
@@ -249,7 +249,10 @@ public class TimerService
         //  add to the schedule
         //
 
-        schedule.add(timedEvaluation);
+        if (timedEvaluation.getEvaluationDate().before(earliestOutOfMemoryDate))
+          {
+            schedule.add(timedEvaluation);
+          }
 
         //
         //  enforce limit
