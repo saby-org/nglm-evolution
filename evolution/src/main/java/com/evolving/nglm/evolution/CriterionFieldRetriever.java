@@ -23,6 +23,7 @@ public abstract class CriterionFieldRetriever
   //
 
   public static Object getEvaluationDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getEvaluationDate(); }
+  public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; } 
   public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return random.nextInt(100); }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return null; }
 

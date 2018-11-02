@@ -37,13 +37,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 public class Journey extends GUIManagedObject
 {
@@ -54,7 +57,7 @@ public class Journey extends GUIManagedObject
   *****************************************/
 
   //
-  //  EvalutionPriority
+  //  EvaluationPriority
   //
 
   public enum EvaluationPriority
@@ -575,13 +578,9 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
-    *  translate jsonNodes/jsonLinks to journeyNodes/journeyLinks
+    *  build journeyNodes
     *
     *****************************************/
-
-    //
-    //  build journeyNodes
-    //
 
     this.journeyNodes = new LinkedHashMap<String,JourneyNode>();
     for (GUINode jsonNode : jsonNodes.values())
@@ -589,9 +588,11 @@ public class Journey extends GUIManagedObject
         journeyNodes.put(jsonNode.getNodeID(), new JourneyNode(jsonNode.getNodeID(), jsonNode.getNodeName(), jsonNode.getNodeType(), jsonNode.getNodeParameters(), new ArrayList<String>(), new ArrayList<String>()));
       }
 
-    //
-    //  startNodeID
-    //
+    /*****************************************
+    *
+    *  startNodeID
+    *
+    *****************************************/
 
     this.startNodeID = null;
     for (JourneyNode journeyNode : this.journeyNodes.values())
@@ -604,11 +605,15 @@ public class Journey extends GUIManagedObject
       }
     if (this.startNodeID == null) throw new GUIManagerException("no start node", null);
 
-    //
-    //  build journeyLinks
-    //
+    /*****************************************
+    *
+    *  build journeyLinks, incomingLinkReferencesByJourneyNode, outgoingLinkReferencesByJourneyNode
+    *
+    *****************************************/
 
     this.journeyLinks = new LinkedHashMap<String,JourneyLink>();
+    Map<JourneyNode,SortedMap<Integer,String>> outgoingLinkReferencesByJourneyNode = new HashMap<JourneyNode,SortedMap<Integer,String>>();
+    Map<JourneyNode,List<String>> incomingLinkReferencesByJourneyNode = new HashMap<JourneyNode,List<String>>();
     for (GUILink jsonLink : jsonLinks)
       {
         /*****************************************
@@ -629,6 +634,15 @@ public class Journey extends GUIManagedObject
 
         /*****************************************
         *
+        *  source and destination node
+        *
+        *****************************************/
+
+        JourneyNode sourceJourneyNode = journeyNodes.get(sourceNode.getNodeID());
+        JourneyNode destinationJourneyNode = journeyNodes.get(destinationNode.getNodeID());
+
+        /*****************************************
+        *
         *  source connectionPoint
         *
         *****************************************/
@@ -643,37 +657,124 @@ public class Journey extends GUIManagedObject
 
         /*****************************************
         *
+        *  prepare final list of transition criteria
+        *
+        *****************************************/
+
+        List<EvaluationCriterion> transitionCriteria = new ArrayList<EvaluationCriterion>(outgoingConnectionPoint.getTransitionCriteria());
+        if (outgoingConnectionPoint.getAdditionalCriteria() != null && sourceJourneyNode.getNodeParameters().containsKey(outgoingConnectionPoint.getAdditionalCriteria()))
+          {
+            transitionCriteria.addAll((List<EvaluationCriterion>) sourceJourneyNode.getNodeParameters().get(outgoingConnectionPoint.getAdditionalCriteria()));
+          }
+
+        /*****************************************
+        *
         *  journeyLink
         *
         *****************************************/
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
-        JourneyLink journeyLink = new JourneyLink(linkID, sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), outgoingConnectionPoint.getTransitionCriteria());
+        JourneyLink journeyLink = new JourneyLink(linkID, sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
 
         /*****************************************
         *
-        *  fixup nodes
+        *  outgoingLinkReferencesByJourneyNode
         *
         *****************************************/
 
-        //
-        //  source node
-        //
+        SortedMap<Integer,String> outgoingLinkReferences = outgoingLinkReferencesByJourneyNode.get(sourceJourneyNode);
+        if (outgoingLinkReferences == null)
+          {
+            outgoingLinkReferences = new TreeMap<Integer,String>();
+            outgoingLinkReferencesByJourneyNode.put(sourceJourneyNode, outgoingLinkReferences);
+          }
+        outgoingLinkReferences.put(jsonLink.getSourceConnectionPoint(), journeyLink.getLinkID());
 
-        JourneyNode sourceJourneyNode = journeyNodes.get(jsonLink.getSourceNodeID());
-        sourceJourneyNode.getOutgoingLinkReferences().add(journeyLink.getLinkID());
-        sourceJourneyNode.getOutgoingLinks().put(journeyLink.getLinkID(), journeyLink);
+        /*****************************************
+        *
+        *  incomingLinkReferencesByJourneyNode
+        *
+        *****************************************/
 
-        //
-        //  destination node
-        //
-
-        JourneyNode destinationJourneyNode = journeyNodes.get(jsonLink.getDestinationNodeID());
-        destinationJourneyNode.getIncomingLinkReferences().add(journeyLink.getLinkID());
-        destinationJourneyNode.getIncomingLinks().put(journeyLink.getLinkID(), journeyLink);
+        List<String> incomingLinkReferences = incomingLinkReferencesByJourneyNode.get(destinationJourneyNode);
+        if (incomingLinkReferences == null)
+          {
+            incomingLinkReferences = new ArrayList<String>();
+            incomingLinkReferencesByJourneyNode.put(destinationJourneyNode, incomingLinkReferences);
+          }
+        incomingLinkReferences.add(journeyLink.getLinkID());
       }
+
+    /*****************************************
+    *
+    *  build outgoingLinkReferences and outgoingLinks
+    *
+    *****************************************/
+
+    for (JourneyNode journeyNode : outgoingLinkReferencesByJourneyNode.keySet())
+      {
+        //
+        //  initialize outgoingLinksByEvaluationPriority
+        //
+
+        Map<EvaluationPriority,List<JourneyLink>> outgoingLinksByEvaluationPriority = new HashMap<EvaluationPriority,List<JourneyLink>>();
+        outgoingLinksByEvaluationPriority.put(EvaluationPriority.First, new ArrayList<JourneyLink>());
+        outgoingLinksByEvaluationPriority.put(EvaluationPriority.Normal, new ArrayList<JourneyLink>());
+        outgoingLinksByEvaluationPriority.put(EvaluationPriority.Last, new ArrayList<JourneyLink>());
+
+        //
+        //  sort by EvaluationPriority
+        //
+
+        for (String outgoingLinkReference : outgoingLinkReferencesByJourneyNode.get(journeyNode).values())
+          {
+            JourneyLink outgoingLink = journeyLinks.get(outgoingLinkReference);
+            List<JourneyLink> outgoingLinks = outgoingLinksByEvaluationPriority.get(outgoingLink.getEvaluationPriority());
+            if (outgoingLinks == null)
+              {
+                outgoingLinks = new ArrayList<JourneyLink>();
+                outgoingLinksByEvaluationPriority.put(outgoingLink.getEvaluationPriority(), outgoingLinks);
+              }
+            outgoingLinks.add(outgoingLink);
+          }
+
+        //
+        //  concatenate outgoingLinks
+        //
+
+        List<JourneyLink> sortedOutgoingLinks = new ArrayList<JourneyLink>();
+        sortedOutgoingLinks.addAll(outgoingLinksByEvaluationPriority.get(EvaluationPriority.First));
+        sortedOutgoingLinks.addAll(outgoingLinksByEvaluationPriority.get(EvaluationPriority.Normal));
+        sortedOutgoingLinks.addAll(outgoingLinksByEvaluationPriority.get(EvaluationPriority.Last));
+
+        //
+        //  outgoingLinkReferences and outgoingLinks
+        //  
+
+        for (JourneyLink journeyLink : sortedOutgoingLinks)
+          {
+            journeyNode.getOutgoingLinkReferences().add(journeyLink.getLinkID());
+            journeyNode.getOutgoingLinks().put(journeyLink.getLinkID(), journeyLink);
+          }
+      }
+
+    /*****************************************
+    *
+    *  build incomingLinkReferences and incomingLinks
+    *
+    *****************************************/
     
+    for (JourneyNode journeyNode : incomingLinkReferencesByJourneyNode.keySet())
+      {
+        for (String incomingLinkReference : incomingLinkReferencesByJourneyNode.get(journeyNode))
+          {
+            JourneyLink incomingLink = journeyLinks.get(incomingLinkReference);
+            journeyNode.getIncomingLinkReferences().add(incomingLink.getLinkID());
+            journeyNode.getIncomingLinks().put(incomingLink.getLinkID(), incomingLink);
+          }
+      }
+
     /*****************************************
     *
     *  epoch

@@ -64,6 +64,7 @@ public class CriterionContext
   private static CriterionField journeyEntryDate;
   private static CriterionField nodeEntryDate;
   private static CriterionField internalRandom100;
+  private static CriterionField evaluationEventName;
   static
   {
     //
@@ -96,6 +97,24 @@ public class CriterionContext
         nodeEntryDateJSON.put("dataType", "date");
         nodeEntryDateJSON.put("retriever", "getJourneyNodeEntryDate");
         nodeEntryDate  = new CriterionField(JSONUtilities.encodeObject(nodeEntryDateJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
+    //
+    //  evaluationEventName
+    //
+
+    try
+      {
+        Map<String,Object> evaluationEventNameJSON = new LinkedHashMap<String,Object>();
+        evaluationEventNameJSON.put("id", "evaluation.eventname");
+        evaluationEventNameJSON.put("display", "evaluation.eventname");
+        evaluationEventNameJSON.put("dataType", "string");
+        evaluationEventNameJSON.put("retriever", "getJourneyEvaluationEventName");
+        evaluationEventName  = new CriterionField(JSONUtilities.encodeObject(evaluationEventNameJSON));
       }
     catch (GUIManagerException e)
       {
@@ -235,6 +254,7 @@ public class CriterionContext
     //
 
     this.journeyCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
+    this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
     this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
 
     //

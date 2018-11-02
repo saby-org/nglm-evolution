@@ -144,7 +144,7 @@ public class JourneyLink
     struct.put("linkID", journeyLink.getLinkID());
     struct.put("sourceReference", journeyLink.getSourceReference());
     struct.put("destinationReference", journeyLink.getDestinationReference());
-    struct.put("evaluationPriority", journeyLink.getEvaluationPriority());
+    struct.put("evaluationPriority", journeyLink.getEvaluationPriority().getExternalRepresentation());
     struct.put("transitionCriteria", packTransitionCriteria(journeyLink.getTransitionCriteria()));
     return struct;
   }

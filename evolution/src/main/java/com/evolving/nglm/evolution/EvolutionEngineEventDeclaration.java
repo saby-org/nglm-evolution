@@ -52,13 +52,13 @@ public class EvolutionEngineEventDeclaration
   //  getEventSerde
   //
 
-  public ConnectSerde<? extends SubscriberStreamEvent> getEventSerde()
+  public ConnectSerde<? extends EvolutionEngineEvent> getEventSerde()
   {
     try
       {
-        Class<? extends SubscriberStreamEvent> eventClass = (Class<? extends SubscriberStreamEvent>) Class.forName(eventClassName);
+        Class<? extends EvolutionEngineEvent> eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
         Method serdeMethod = eventClass.getMethod("serde");
-        ConnectSerde<? extends SubscriberStreamEvent> eventSerde = (ConnectSerde<? extends SubscriberStreamEvent>) serdeMethod.invoke(null);
+        ConnectSerde<? extends EvolutionEngineEvent> eventSerde = (ConnectSerde<? extends EvolutionEngineEvent>) serdeMethod.invoke(null);
         return eventSerde;
       }
     catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException e)

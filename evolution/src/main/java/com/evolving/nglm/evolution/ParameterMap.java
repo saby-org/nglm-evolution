@@ -44,12 +44,14 @@ public class ParameterMap extends HashMap<String,Object>
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("nullParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptySetParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("emptyListParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("integerParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.INT32_SCHEMA).schema());
     schemaBuilder.field("doubleParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.FLOAT64_SCHEMA).schema());
     schemaBuilder.field("stringParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("booleanParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.BOOLEAN_SCHEMA).schema());
     schemaBuilder.field("dateParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Timestamp.SCHEMA).schema());
     schemaBuilder.field("stringSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.STRING_SCHEMA)).schema());
+    schemaBuilder.field("evaluationCriteriaParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(EvaluationCriterion.schema())).schema());
     schema = schemaBuilder.build();
   };
   
@@ -124,12 +126,14 @@ public class ParameterMap extends HashMap<String,Object>
 
     List<String> nullParameters = new ArrayList<String>();
     List<String> emptySetParameters = new ArrayList<String>();
+    List<String> emptyListParameters = new ArrayList<String>();
     Map<String,Integer> integerParameters = new HashMap<String,Integer>();
     Map<String,Double> doubleParameters = new HashMap<String,Double>();
     Map<String,String> stringParameters = new HashMap<String,String>();
     Map<String,Boolean> booleanParameters = new HashMap<String,Boolean>();
     Map<String,Date> dateParameters = new HashMap<String,Date>();
     Map<String,List<String>> stringSetParameters = new HashMap<String,List<String>>();
+    Map<String,List<EvaluationCriterion>> evaluationCriteriaParameters = new HashMap<String,List<EvaluationCriterion>>();
 
     //
     //  partition
@@ -142,6 +146,8 @@ public class ParameterMap extends HashMap<String,Object>
           nullParameters.add(key);
         else if (parameterValue instanceof Set && ((Set) parameterValue).size() == 0)
           emptySetParameters.add(key);
+        else if (parameterValue instanceof List && ((List) parameterValue).size() == 0)
+          emptyListParameters.add(key);
         else if (parameterValue instanceof Integer)
           integerParameters.put(key, (Integer) parameterValue);
         else if (parameterValue instanceof Double)
@@ -153,7 +159,9 @@ public class ParameterMap extends HashMap<String,Object>
         else if (parameterValue instanceof Date)
           dateParameters.put(key, (Date) parameterValue);
         else if (parameterValue instanceof Set && ((Set) parameterValue).iterator().next() instanceof String)
-          stringSetParameters.put(key,new ArrayList<String>((Set<String>) parameterValue));
+          stringSetParameters.put(key, new ArrayList<String>((Set<String>) parameterValue));
+        else if (parameterValue instanceof List && ((List) parameterValue).iterator().next() instanceof EvaluationCriterion)
+          evaluationCriteriaParameters.put(key, new ArrayList<EvaluationCriterion>((List<EvaluationCriterion>) parameterValue));
         else
           throw new ServerRuntimeException("invalid parameterMap data type: " + parameterValue.getClass());
       }
@@ -166,12 +174,14 @@ public class ParameterMap extends HashMap<String,Object>
 
     struct.put("nullParameters", nullParameters);
     struct.put("emptySetParameters", emptySetParameters);
+    struct.put("emptyListParameters", emptyListParameters);
     struct.put("integerParameters", integerParameters);
     struct.put("doubleParameters", doubleParameters);
     struct.put("stringParameters", stringParameters);
     struct.put("booleanParameters", booleanParameters);
     struct.put("dateParameters", dateParameters);
     struct.put("stringSetParameters", stringSetParameters);
+    struct.put("evaluationCriteriaParameters", packEvaluationCriteriaParameters(evaluationCriteriaParameters));
 
     /*****************************************
     *
@@ -180,6 +190,28 @@ public class ParameterMap extends HashMap<String,Object>
     *****************************************/
 
     return struct;
+  }
+
+  /*****************************************
+  *
+  *  packEvaluationCriteriaParameters
+  *
+  *****************************************/
+
+  private static Map<String,List<Object>> packEvaluationCriteriaParameters(Map<String,List<EvaluationCriterion>> evaluationCriteriaParameters)
+  {
+    Map<String,List<Object>> result = new HashMap<String,List<Object>>();
+    for (String parameterName : evaluationCriteriaParameters.keySet())
+      {
+        List<Object> packedEvaluationCriteria = new ArrayList<Object>();
+        List<EvaluationCriterion> evaluationCriteria = evaluationCriteriaParameters.get(parameterName);
+        for (EvaluationCriterion evaluationCriterion : evaluationCriteria)
+          {
+            packedEvaluationCriteria.add(EvaluationCriterion.pack(evaluationCriterion));
+          }
+        result.put(parameterName, packedEvaluationCriteria);
+      }
+    return result;
   }
 
   /*****************************************
@@ -209,12 +241,14 @@ public class ParameterMap extends HashMap<String,Object>
     Struct valueStruct = (Struct) value;
     List<String> nullParameters = (List<String>) valueStruct.get("nullParameters");
     List<String> emptySetParameters = (List<String>) valueStruct.get("emptySetParameters");
+    List<String> emptyListParameters = (List<String>) valueStruct.get("emptyListParameters");
     Map<String,Integer> integerParameters = (Map<String,Integer>) valueStruct.get("integerParameters");
     Map<String,Double> doubleParameters = (Map<String,Double>) valueStruct.get("doubleParameters");
     Map<String,String> stringParameters = (Map<String,String>) valueStruct.get("stringParameters");
     Map<String,Boolean> booleanParameters = (Map<String,Boolean>) valueStruct.get("booleanParameters");
     Map<String,Date> dateParameters = (Map<String,Date>) valueStruct.get("dateParameters");
     Map<String,List<String>> stringSetParameters = (Map<String,List<String>>) valueStruct.get("stringSetParameters");
+    Map<String,List<EvaluationCriterion>> evaluationCriteriaParameters = unpackEvaluationCriteriaParameters(schema.field("evaluationCriteriaParameters").schema(), (Map<String,List<Object>>) valueStruct.get("evaluationCriteriaParameters"));
 
     /*****************************************
     *
@@ -225,18 +259,59 @@ public class ParameterMap extends HashMap<String,Object>
     ParameterMap result = new ParameterMap();
     for (String key : nullParameters) result.put(key,null);
     for (String key : emptySetParameters) result.put(key,new HashSet<Object>());
+    for (String key : emptyListParameters) result.put(key,new ArrayList<Object>());
     for (String key : integerParameters.keySet()) result.put(key,integerParameters.get(key));
     for (String key : doubleParameters.keySet()) result.put(key,doubleParameters.get(key));
     for (String key : stringParameters.keySet()) result.put(key,stringParameters.get(key));
     for (String key : booleanParameters.keySet()) result.put(key,booleanParameters.get(key));
     for (String key : dateParameters.keySet()) result.put(key,dateParameters.get(key));
     for (String key : stringSetParameters.keySet()) result.put(key,new HashSet<String>(stringSetParameters.get(key)));
+    for (String key : evaluationCriteriaParameters.keySet()) result.put(key,new ArrayList<EvaluationCriterion>(evaluationCriteriaParameters.get(key)));
 
     /*****************************************
     *
     *  return
     *
     *****************************************/
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackEvaluationCriteriaParameters
+  *
+  *****************************************/
+
+
+  public static Map<String,List<EvaluationCriterion>> unpackEvaluationCriteriaParameters(Schema schema, Map<String,List<Object>> value)
+  {
+    //
+    //  get schema
+    //
+
+    Schema evaluationCriterionSchema = schema.valueSchema().valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String,List<EvaluationCriterion>> result = new HashMap<String,List<EvaluationCriterion>>();
+    for (String key : value.keySet())
+      {
+        List<EvaluationCriterion> evaluationCriteria = new ArrayList<EvaluationCriterion>();
+        List<Object> packedEvaluationCriteria = value.get(key);
+        for (Object packedEvaluationCriterion : packedEvaluationCriteria)
+          {
+            EvaluationCriterion evaluationCriterion = EvaluationCriterion.unpack(new SchemaAndValue(evaluationCriterionSchema, packedEvaluationCriterion));
+            evaluationCriteria.add(evaluationCriterion);
+          }
+        result.put(key, evaluationCriteria);
+      }
+
+    //
+    //  return
+    //
 
     return result;
   }
