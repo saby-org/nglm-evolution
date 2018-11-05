@@ -3,6 +3,7 @@ fwk-api:
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     AppSettings__AuthorizationBaseUrl: "http://<_GUI_AUTH_HOST_IP_>:<_GUI_AUTH_PORT_>/api"
+    FwkSettings__AuthorizationBaseUrl: "http://<_GUI_AUTH_HOST_IP_>:<_GUI_AUTH_PORT_>/api"
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQLDB_HOST_IP_>;Port=<_GUI_MYSQLDB_PORT_>;Database=dbframework;UID=root;Password=<_GUI_MYSQLDB_PASSWORD_>'
   volumes:
     - type: bind
