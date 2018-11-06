@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  CatalogObjective.java
+*  ProductType.java
 *
 *****************************************************************************/
 
@@ -9,20 +9,15 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -31,29 +26,8 @@ import java.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CatalogObjective extends GUIManagedObject
+public class ProductType extends GUIManagedObject
 {
-  /*****************************************
-  *
-  *  enum
-  *
-  *****************************************/
-
-  //
-  //  Section
-  //
-
-  public enum Section
-  {
-    Product("1"),
-    Offer("2"),
-    Journey("3"),
-    Unknown("-1");
-    private String externalRepresentation;
-    private Section(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static Section fromExternalRepresentation(String externalRepresentation) { for (Section enumeratedValue : Section.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
 
   /*****************************************
   *
@@ -69,10 +43,9 @@ public class CatalogObjective extends GUIManagedObject
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("catalogobjective");
+    schemaBuilder.name("producttype");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("section", Schema.STRING_SCHEMA);
     schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
@@ -81,14 +54,14 @@ public class CatalogObjective extends GUIManagedObject
   //  serde
   //
 
-  private static ConnectSerde<CatalogObjective> serde = new ConnectSerde<CatalogObjective>(schema, false, CatalogObjective.class, CatalogObjective::pack, CatalogObjective::unpack);
+  private static ConnectSerde<ProductType> serde = new ConnectSerde<ProductType>(schema, false, ProductType.class, ProductType::pack, ProductType::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<CatalogObjective> serde() { return serde; }
+  public static ConnectSerde<ProductType> serde() { return serde; }
 
   /*****************************************
   *
@@ -96,7 +69,6 @@ public class CatalogObjective extends GUIManagedObject
   *
   *****************************************/
 
-  private Section section;
   private List<String> catalogCharacteristics;
 
   /*****************************************
@@ -105,8 +77,7 @@ public class CatalogObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public String getCatalogObjectiveID() { return getGUIManagedObjectID(); }
-  public Section getSection() { return section; }
+  public String getProductTypeID() { return getGUIManagedObjectID(); }
   public List<String> getCatalogCharacteristics() { return catalogCharacteristics; }
   
   /*****************************************
@@ -115,10 +86,9 @@ public class CatalogObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public CatalogObjective(SchemaAndValue schemaAndValue, Section section, List<String> catalogCharacteristics)
+  public ProductType(SchemaAndValue schemaAndValue, List<String> catalogCharacteristics)
   {
     super(schemaAndValue);
-    this.section = section;
     this.catalogCharacteristics = catalogCharacteristics;
   }
   
@@ -130,11 +100,10 @@ public class CatalogObjective extends GUIManagedObject
 
   public static Object pack(Object value)
   {
-    CatalogObjective catalogObjective = (CatalogObjective) value;
+    ProductType productType = (ProductType) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, catalogObjective);
-    struct.put("section", catalogObjective.getSection().getExternalRepresentation());
-    struct.put("catalogCharacteristics", catalogObjective.getCatalogCharacteristics());
+    packCommon(struct, productType);
+    struct.put("catalogCharacteristics", productType.getCatalogCharacteristics());
     return struct;
   }
 
@@ -144,7 +113,7 @@ public class CatalogObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public static CatalogObjective unpack(SchemaAndValue schemaAndValue)
+  public static ProductType unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -159,14 +128,13 @@ public class CatalogObjective extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    Section section = Section.fromExternalRepresentation((String) valueStruct.get("section"));
     List<String> catalogCharacteristics = (List<String>) valueStruct.get("catalogCharacteristics");
     
     //
     //  return
     //
 
-    return new CatalogObjective(schemaAndValue, section, catalogCharacteristics);
+    return new ProductType(schemaAndValue, catalogCharacteristics);
   }
 
   /*****************************************
@@ -175,7 +143,7 @@ public class CatalogObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public CatalogObjective(JSONObject jsonRoot, long epoch, GUIManagedObject existingCatalogObjectiveUnchecked) throws GUIManagerException
+  public ProductType(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductTypeUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -183,15 +151,15 @@ public class CatalogObjective extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingCatalogObjectiveUnchecked != null) ? existingCatalogObjectiveUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingProductTypeUnchecked != null) ? existingProductTypeUnchecked.getEpoch() : epoch);
 
     /*****************************************
     *
-    *  existingCatalogObjective
+    *  existingProductType
     *
     *****************************************/
 
-    CatalogObjective existingCatalogObjective = (existingCatalogObjectiveUnchecked != null && existingCatalogObjectiveUnchecked instanceof CatalogObjective) ? (CatalogObjective) existingCatalogObjectiveUnchecked : null;
+    ProductType existingProductType = (existingProductTypeUnchecked != null && existingProductTypeUnchecked instanceof ProductType) ? (ProductType) existingProductTypeUnchecked : null;
     
     /*****************************************
     *
@@ -199,7 +167,6 @@ public class CatalogObjective extends GUIManagedObject
     *
     *****************************************/
 
-    this.section = Section.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "catalogObjectiveSectionID", true));
     this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", true));
 
     /*****************************************
@@ -216,7 +183,7 @@ public class CatalogObjective extends GUIManagedObject
     *
     *****************************************/
 
-    if (epochChanged(existingCatalogObjective))
+    if (epochChanged(existingProductType))
       {
         this.setEpoch(epoch);
       }
@@ -245,14 +212,13 @@ public class CatalogObjective extends GUIManagedObject
   *
   *****************************************/
 
-  private boolean epochChanged(CatalogObjective existingCatalogObjective)
+  private boolean epochChanged(ProductType existingProductType)
   {
-    if (existingCatalogObjective != null && existingCatalogObjective.getAccepted())
+    if (existingProductType != null && existingProductType.getAccepted())
       {
         boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingCatalogObjective.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(section, existingCatalogObjective.getSection());
-        epochChanged = epochChanged || ! Objects.equals(catalogCharacteristics, existingCatalogObjective.getCatalogCharacteristics());
+        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingProductType.getGUIManagedObjectID());
+        epochChanged = epochChanged || ! Objects.equals(catalogCharacteristics, existingProductType.getCatalogCharacteristics());
         return epochChanged;
       }
     else

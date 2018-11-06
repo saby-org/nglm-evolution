@@ -52,7 +52,8 @@ public class Deployment
   private static String supplierTopic;
   private static String productTopic;
   private static String catalogCharacteristicTopic;
-  private static String catalogObjectiveTopic;
+  private static String offerObjectiveTopic;
+  private static String productTypeTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
@@ -72,12 +73,12 @@ public class Deployment
   private static JSONArray initialSuppliersJSONArray = null;
   private static JSONArray initialProductsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
-  private static JSONArray initialCatalogObjectivesJSONArray = null;
+  private static JSONArray initialOfferObjectivesJSONArray = null;
+  private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray fulfillmentProvidersJSONArray = null;
   private static JSONArray offerDeliverablesJSONArray = null;
   private static JSONArray paymentMeansJSONArray = null;
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
-  private static Map<String,CatalogObjectiveSection> catalogObjectiveSections = new LinkedHashMap<String,CatalogObjectiveSection>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -139,7 +140,8 @@ public class Deployment
   public static String getSupplierTopic() { return supplierTopic; }
   public static String getProductTopic() { return productTopic; }
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
-  public static String getCatalogObjectiveTopic() { return catalogObjectiveTopic; }
+  public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
+  public static String getProductTypeTopic() { return productTypeTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
@@ -159,12 +161,12 @@ public class Deployment
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
-  public static JSONArray getInitialCatalogObjectivesJSONArray() { return initialCatalogObjectivesJSONArray; }
+  public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
+  public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getFulfillmentProvidersJSONArray() { return fulfillmentProvidersJSONArray; }
   public static JSONArray getOfferDeliverablesJSONArray() { return offerDeliverablesJSONArray; }
   public static JSONArray getPaymentMeansJSONArray() { return paymentMeansJSONArray; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
-  public static Map<String,CatalogObjectiveSection> getCatalogObjectiveSections() { return catalogObjectiveSections; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
@@ -477,12 +479,25 @@ public class Deployment
       }
 
     //
-    //  catalogObjectiveTopic
+    //  offerObjectiveTopic
     //
 
     try
       {
-        catalogObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "catalogObjectiveTopic", true);
+        offerObjectiveTopic = JSONUtilities.decodeString(jsonRoot, "offerObjectiveTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  productTypeTopic
+    //
+
+    try
+      {
+        productTypeTopic = JSONUtilities.decodeString(jsonRoot, "productTypeTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -740,10 +755,16 @@ public class Deployment
     initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", true);
 
     //
-    //  initialCatalogObjectivesJSONArray
+    //  initialOfferObjectivesJSONArray
     //
 
-    initialCatalogObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogObjectives", true);
+    initialOfferObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialOfferObjectives", true);
+    
+    //
+    //  initialProductTypesJSONArray
+    //
+
+    initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", true);
     
     //
     //  fulfillmentProvidersJSONArray
@@ -775,25 +796,6 @@ public class Deployment
             JSONObject salesChannelJSON = (JSONObject) salesChannelValues.get(i);
             SalesChannel salesChannel = new SalesChannel(salesChannelJSON);
             salesChannels.put(salesChannel.getID(), salesChannel);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  catalogObjectiveSections
-    //
-
-    try
-      {
-        JSONArray catalogObjectiveSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectiveSections", true);
-        for (int i=0; i<catalogObjectiveSectionValues.size(); i++)
-          {
-            JSONObject catalogObjectiveSectionJSON = (JSONObject) catalogObjectiveSectionValues.get(i);
-            CatalogObjectiveSection catalogObjectiveSection = new CatalogObjectiveSection(catalogObjectiveSectionJSON);
-            catalogObjectiveSections.put(catalogObjectiveSection.getID(), catalogObjectiveSection);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

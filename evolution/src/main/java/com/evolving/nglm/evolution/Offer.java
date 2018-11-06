@@ -10,37 +10,25 @@ import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProper
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
 import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TimeZone;
 
 public class Offer extends GUIManagedObject
 {
@@ -65,7 +53,8 @@ public class Offer extends GUIManagedObject
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("offerCatalogObjectives", SchemaBuilder.array(OfferCatalogObjective.schema()).schema());
+    schemaBuilder.field("offerOfferObjectives", SchemaBuilder.array(OfferObjectiveInstance.schema()).schema());
+    schemaBuilder.field("offerSalesChannelsAndPrices", SchemaBuilder.array(OfferSalesChannelsAndPrice.schema()).schema());
     schemaBuilder.field("offerProducts", SchemaBuilder.array(OfferProduct.schema()).schema());
     schemaBuilder.field("offerCallingChannels", SchemaBuilder.array(OfferCallingChannel.schema()).schema());
     schema = schemaBuilder.build();
@@ -94,7 +83,8 @@ public class Offer extends GUIManagedObject
   private int unitaryCost;
   private List<EvaluationCriterion> profileCriteria;
   private OfferType offerType;
-  private Set<OfferCatalogObjective> offerCatalogObjectives; 
+  private Set<OfferObjectiveInstance> offerOfferObjectives; 
+  private Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices;
   private Set<OfferProduct> offerProducts;
   private Set<OfferCallingChannel> offerCallingChannels;
 
@@ -113,7 +103,8 @@ public class Offer extends GUIManagedObject
   public int getUnitaryCost() { return unitaryCost; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public OfferType getOfferType() { return offerType; }
-  public Set<OfferCatalogObjective> getOfferCatalogObjectives() { return offerCatalogObjectives;  }
+  public Set<OfferObjectiveInstance> getOfferObjectives() { return offerOfferObjectives;  }
+  public Set<OfferSalesChannelsAndPrice> getOfferSalesChannelsAndPrices() { return offerSalesChannelsAndPrices;  }
   public Set<OfferProduct> getOfferProducts() { return offerProducts; }
   public Set<OfferCallingChannel> getOfferCallingChannels() { return offerCallingChannels; }
 
@@ -134,14 +125,15 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, int initialPropensity, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferCatalogObjective> offerCatalogObjectives, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
+  public Offer(SchemaAndValue schemaAndValue, int initialPropensity, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
   {
     super(schemaAndValue);
     this.initialPropensity = initialPropensity;
     this.unitaryCost = unitaryCost;
     this.profileCriteria = profileCriteria;
     this.offerType = offerType;
-    this.offerCatalogObjectives = offerCatalogObjectives;
+    this.offerOfferObjectives = offerObjectives;
+    this.offerSalesChannelsAndPrices = offerSalesChannelsAndPrices;
     this.offerProducts = offerProducts;
     this.offerCallingChannels = offerCallingChannels;
   }
@@ -161,7 +153,8 @@ public class Offer extends GUIManagedObject
     struct.put("unitaryCost", offer.getUnitaryCost());
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
     struct.put("offerType", offer.getOfferType().getID());
-    struct.put("offerCatalogObjectives", packOfferCatalogObjectives(offer.getOfferCatalogObjectives()));
+    struct.put("offerOfferObjectives", packOfferObjectives(offer.getOfferObjectives()));
+    struct.put("offerSalesChannelsAndPrices", packOfferSalesChannelsAndPrices(offer.getOfferSalesChannelsAndPrices()));
     struct.put("offerProducts", packOfferProducts(offer.getOfferProducts()));
     struct.put("offerCallingChannels", packOfferCallingChannels(offer.getOfferCallingChannels()));
     return struct;
@@ -185,16 +178,32 @@ public class Offer extends GUIManagedObject
 
   /****************************************
   *
-  *  packOfferCatalogObjectives
+  *  packOfferObjectives
   *
   ****************************************/
 
-  private static List<Object> packOfferCatalogObjectives(Set<OfferCatalogObjective> offerCatalogObjectives)
+  private static List<Object> packOfferObjectives(Set<OfferObjectiveInstance> offerObjectives)
   {
     List<Object> result = new ArrayList<Object>();
-    for (OfferCatalogObjective offerCatalogObjective : offerCatalogObjectives)
+    for (OfferObjectiveInstance offerObjective : offerObjectives)
       {
-        result.add(OfferCatalogObjective.pack(offerCatalogObjective));
+        result.add(OfferObjectiveInstance.pack(offerObjective));
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  packOfferSalesChannelsAndPrices
+  *
+  ****************************************/
+
+  private static List<Object> packOfferSalesChannelsAndPrices(Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offerSalesChannelsAndPrices)
+      {
+        result.add(OfferSalesChannelsAndPrice.pack(offerSalesChannelsAndPrice));
       }
     return result;
   }
@@ -256,7 +265,8 @@ public class Offer extends GUIManagedObject
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
-    Set<OfferCatalogObjective> offerCatalogObjectives = unpackOfferCatalogObjectives(schema.field("offerCatalogObjectives").schema(), valueStruct.get("offerCatalogObjectives"));
+    Set<OfferObjectiveInstance> offerObjectives = unpackOfferObjectives(schema.field("offerOfferObjectives").schema(), valueStruct.get("offerOfferObjectives"));
+    Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices = unpackOfferSalesChannelsAndPrices(schema.field("offerSalesChannelsAndPrices").schema(), valueStruct.get("offerSalesChannelsAndPrices"));
     Set<OfferProduct> offerProducts = unpackOfferProducts(schema.field("offerProducts").schema(), valueStruct.get("offerProducts"));
     Set<OfferCallingChannel> offerCallingChannels = unpackOfferCallingChannels(schema.field("offerCallingChannels").schema(), valueStruct.get("offerCallingChannels"));
     
@@ -270,7 +280,7 @@ public class Offer extends GUIManagedObject
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, unitaryCost, profileCriteria, offerType, offerCatalogObjectives, offerProducts, offerCallingChannels);
+    return new Offer(schemaAndValue, initialPropensity, unitaryCost, profileCriteria, offerType, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerCallingChannels);
   }
   
   /*****************************************
@@ -307,27 +317,59 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  unpackOfferCatalogObjectives
+  *  unpackOfferObjectives
   *
   *****************************************/
 
-  private static Set<OfferCatalogObjective> unpackOfferCatalogObjectives(Schema schema, Object value)
+  private static Set<OfferObjectiveInstance> unpackOfferObjectives(Schema schema, Object value)
   {
     //
-    //  get schema for OfferCatalogObjective
+    //  get schema for OfferObjective
     //
 
-    Schema offerCatalogObjectiveSchema = schema.valueSchema();
+    Schema offerObjectiveSchema = schema.valueSchema();
 
     //
     //  unpack
     //
 
-    Set<OfferCatalogObjective> result = new HashSet<OfferCatalogObjective>();
+    Set<OfferObjectiveInstance> result = new HashSet<OfferObjectiveInstance>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object offerCatalogObjective : valueArray)
+    for (Object offerObjective : valueArray)
       {
-        result.add(OfferCatalogObjective.unpack(new SchemaAndValue(offerCatalogObjectiveSchema, offerCatalogObjective)));
+        result.add(OfferObjectiveInstance.unpack(new SchemaAndValue(offerObjectiveSchema, offerObjective)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  unpackOfferSalesChannelsAndPrices
+  *
+  *****************************************/
+
+  private static Set<OfferSalesChannelsAndPrice> unpackOfferSalesChannelsAndPrices(Schema schema, Object value)
+  {
+    //
+    //  get schema for OfferSalesChannelsAndPrice
+    //
+
+    Schema offerSalesChannelsAndPricesSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<OfferSalesChannelsAndPrice> result = new HashSet<OfferSalesChannelsAndPrice>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object offerSalesChannelsAndPrices : valueArray)
+      {
+        result.add(OfferSalesChannelsAndPrice.unpack(new SchemaAndValue(offerSalesChannelsAndPricesSchema, offerSalesChannelsAndPrices)));
       }
 
     //
@@ -435,7 +477,8 @@ public class Offer extends GUIManagedObject
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
     this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
-    this.offerCatalogObjectives = decodeOfferCatalogObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectives", true), catalogCharacteristicService);
+    this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService);
+    this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
     this.offerCallingChannels = decodeOfferCallingChannels(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", false));
 
@@ -477,23 +520,42 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeOfferCatalogObjectives
+  *  decodeOfferObjectives
   *
   *****************************************/
 
-  private Set<OfferCatalogObjective> decodeOfferCatalogObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  private Set<OfferObjectiveInstance> decodeOfferObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
-    Set<OfferCatalogObjective> result = new HashSet<OfferCatalogObjective>();
+    Set<OfferObjectiveInstance> result = new HashSet<OfferObjectiveInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferCatalogObjective((JSONObject) jsonArray.get(i)));
+            result.add(new OfferObjectiveInstance((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
   }
 
+  
+  /*****************************************
+  *
+  *  decodeOfferSalesChannelsAndPrices
+  *
+  *****************************************/
+
+  private Set<OfferSalesChannelsAndPrice> decodeOfferSalesChannelsAndPrices(JSONArray jsonArray) throws GUIManagerException
+  {
+    Set<OfferSalesChannelsAndPrice> result = new HashSet<OfferSalesChannelsAndPrice>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new OfferSalesChannelsAndPrice((JSONObject) jsonArray.get(i)));
+          }
+      }
+    return result;
+  }
   /*****************************************
   *
   *  decodeOfferProducts
@@ -548,7 +610,8 @@ public class Offer extends GUIManagedObject
         epochChanged = epochChanged || ! (unitaryCost == existingOffer.getUnitaryCost());
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingOffer.getProfileCriteria());
         epochChanged = epochChanged || ! Objects.equals(offerType, existingOffer.getOfferType());
-        epochChanged = epochChanged || ! Objects.equals(offerCatalogObjectives, existingOffer.getOfferCatalogObjectives());
+        epochChanged = epochChanged || ! Objects.equals(offerOfferObjectives, existingOffer.getOfferObjectives());
+        epochChanged = epochChanged || ! Objects.equals(offerSalesChannelsAndPrices, existingOffer.getOfferSalesChannelsAndPrices());
         epochChanged = epochChanged || ! Objects.equals(offerProducts, existingOffer.getOfferProducts());
         epochChanged = epochChanged || ! Objects.equals(offerCallingChannels, existingOffer.getOfferCallingChannels());
         return epochChanged;

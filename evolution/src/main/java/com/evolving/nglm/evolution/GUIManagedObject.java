@@ -108,7 +108,8 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Supplier.serde());
     guiManagedObjectSerdes.add(Product.serde());
     guiManagedObjectSerdes.add(CatalogCharacteristic.serde());
-    guiManagedObjectSerdes.add(CatalogObjective.serde());
+    guiManagedObjectSerdes.add(OfferObjective.serde());
+    guiManagedObjectSerdes.add(ProductType.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));

@@ -76,7 +76,8 @@
     <topic.supplier>supplier</topic.supplier>
     <topic.product>product</topic.product>
     <topic.catalogcharacteristic>catalogcharacteristic</topic.catalogcharacteristic>
-    <topic.catalogobjective>catalogobjective</topic.catalogobjective>
+    <topic.offerobjective>offerobjective</topic.offerobjective>
+    <topic.producttype>producttype</topic.producttype>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

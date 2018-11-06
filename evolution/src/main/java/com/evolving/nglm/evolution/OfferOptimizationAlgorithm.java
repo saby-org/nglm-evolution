@@ -6,16 +6,15 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.DeploymentManagedObject;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -29,6 +28,8 @@ public class OfferOptimizationAlgorithm extends DeploymentManagedObject
   *****************************************/
 
   private Set<OfferOptimizationAlgorithmParameter> parameters;
+  private String javaClass;
+  private HashMap<String, String> javaClassParameters;
 
   /*****************************************
   *
@@ -37,6 +38,8 @@ public class OfferOptimizationAlgorithm extends DeploymentManagedObject
   *****************************************/
 
   public Set<OfferOptimizationAlgorithmParameter> getParameters() { return parameters; }
+  public String getJavaClass() { return javaClass; }
+  public HashMap<String, String> getJavaClassParameters() { return javaClassParameters; }
 
   /*****************************************
   *
@@ -48,6 +51,8 @@ public class OfferOptimizationAlgorithm extends DeploymentManagedObject
   {
     super(jsonRoot);
     this.parameters = decodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true));
+    this.javaClass = JSONUtilities.decodeString(jsonRoot, "javaClass", true);
+    this.javaClassParameters = decodeJavaClassParameters(JSONUtilities.decodeJSONObject(jsonRoot, "javaClassParameters"));
   }
 
   /*****************************************
@@ -62,6 +67,24 @@ public class OfferOptimizationAlgorithm extends DeploymentManagedObject
     for (int i=0; i<jsonArray.size(); i++)
       {
         result.add(new OfferOptimizationAlgorithmParameter((JSONObject) jsonArray.get(i)));
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  decodeJavaClassParameters
+  *
+  *****************************************/
+
+  private HashMap<String, String> decodeJavaClassParameters(JSONObject jsonRoot)
+  {
+    HashMap<String, String> result = new HashMap<>();
+    for (Object keyObject : jsonRoot.keySet())
+      {
+        String key = (String)keyObject;
+        String value = (String)jsonRoot.get(key);
+        result.put(key, value);
       }
     return result;
   }

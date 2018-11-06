@@ -60,7 +60,7 @@ public class ScoringSplit
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("offerOptimizationAlgorithm", Schema.STRING_SCHEMA);
     schemaBuilder.field("parameters", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("scoring_split_parameters").schema());
-    schemaBuilder.field("catalogObjectiveIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("offerObjectiveIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -85,7 +85,7 @@ public class ScoringSplit
 
   private OfferOptimizationAlgorithm offerOptimizationAlgorithm;
   private Map<OfferOptimizationAlgorithmParameter,String> parameters;
-  private Set<String> catalogObjectiveIDs; 
+  private Set<String> offerObjectiveIDs; 
 
   /*****************************************
   *
@@ -95,7 +95,7 @@ public class ScoringSplit
 
   public OfferOptimizationAlgorithm getOfferOptimizationAlgorithm() { return offerOptimizationAlgorithm; }
   public Map<OfferOptimizationAlgorithmParameter,String> getParameters() { return parameters; }
-  public Set<String> getCatalogObjectiveIDs() { return catalogObjectiveIDs;  }
+  public Set<String> getOfferObjectiveIDs() { return offerObjectiveIDs;  }
 
   /*****************************************
   *
@@ -103,11 +103,11 @@ public class ScoringSplit
   *
   *****************************************/
 
-  public ScoringSplit(OfferOptimizationAlgorithm offerOptimizationAlgorithm, Map<OfferOptimizationAlgorithmParameter,String> parameters, Set<String> catalogObjectiveIDs)
+  public ScoringSplit(OfferOptimizationAlgorithm offerOptimizationAlgorithm, Map<OfferOptimizationAlgorithmParameter,String> parameters, Set<String> offerObjectiveIDs)
   {
     this.offerOptimizationAlgorithm = offerOptimizationAlgorithm;
     this.parameters = parameters;
-    this.catalogObjectiveIDs = catalogObjectiveIDs;
+    this.offerObjectiveIDs = offerObjectiveIDs;
   }
 
   /*****************************************
@@ -122,7 +122,7 @@ public class ScoringSplit
     Struct struct = new Struct(schema);
     struct.put("offerOptimizationAlgorithm", scoringSplit.getOfferOptimizationAlgorithm().getID());
     struct.put("parameters", packParameters(scoringSplit.getParameters()));
-    struct.put("catalogObjectiveIDs", packCatalogObjectiveIDs(scoringSplit.getCatalogObjectiveIDs()));
+    struct.put("offerObjectiveIDs", packOfferObjectiveIDs(scoringSplit.getOfferObjectiveIDs()));
     return struct;
   }
 
@@ -145,16 +145,16 @@ public class ScoringSplit
 
   /****************************************
   *
-  *  packCatalogObjectiveIDs
+  *  packOfferObjectiveIDs
   *
   ****************************************/
 
-  private static List<Object> packCatalogObjectiveIDs(Set<String> catalogObjectiveIDs)
+  private static List<Object> packOfferObjectiveIDs(Set<String> offerObjectiveIDs)
   {
     List<Object> result = new ArrayList<Object>();
-    for (String catalogObjectiveID : catalogObjectiveIDs)
+    for (String offerObjectiveID : offerObjectiveIDs)
       {
-        result.add(catalogObjectiveID);
+        result.add(offerObjectiveID);
       }
     return result;
   }
@@ -182,7 +182,7 @@ public class ScoringSplit
     Struct valueStruct = (Struct) value;
     OfferOptimizationAlgorithm offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(valueStruct.getString("offerOptimizationAlgorithm"));
     Map<OfferOptimizationAlgorithmParameter,String> parameters = unpackParameters((Map<String,String>) valueStruct.get("parameters"));
-    Set<String> catalogObjectiveIDs = unpackCatalogObjectiveIDs((List<String>) valueStruct.get("catalogObjectiveIDs"));
+    Set<String> offerObjectiveIDs = unpackOfferObjectiveIDs((List<String>) valueStruct.get("offerObjectiveIDs"));
 
     //
     //  validate
@@ -198,7 +198,7 @@ public class ScoringSplit
     //  return
     //
 
-    return new ScoringSplit(offerOptimizationAlgorithm, parameters, catalogObjectiveIDs);
+    return new ScoringSplit(offerOptimizationAlgorithm, parameters, offerObjectiveIDs);
   }
 
   /*****************************************
@@ -220,16 +220,16 @@ public class ScoringSplit
 
   /*****************************************
   *
-  *  unpackCatalogObjectiveIDs
+  *  unpackOfferObjectiveIDs
   *
   *****************************************/
 
-  private static Set<String> unpackCatalogObjectiveIDs(List<String> catalogObjectiveIDs)
+  private static Set<String> unpackOfferObjectiveIDs(List<String> offerObjectiveIDs)
   {
     Set<String> result = new LinkedHashSet<String>();
-    for (String catalogObjectiveID : catalogObjectiveIDs)
+    for (String offerObjectiveID : offerObjectiveIDs)
       {
-        result.add(catalogObjectiveID);
+        result.add(offerObjectiveID);
       }
     return result;
   }
@@ -248,7 +248,7 @@ public class ScoringSplit
     
     this.offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(JSONUtilities.decodeString(jsonRoot, "offerOptimizationAlgorithmID", true));
     this.parameters = decodeParameters(JSONUtilities.decodeJSONObject(jsonRoot, "parameters", false));
-    this.catalogObjectiveIDs = decodeCatalogObjectiveIDs(JSONUtilities.decodeJSONArray(jsonRoot, "catalogObjectiveIDs", true));
+    this.offerObjectiveIDs = decodeOfferObjectiveIDs(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectiveIDs", true));
     
     //
     //  validate 
@@ -284,19 +284,19 @@ public class ScoringSplit
 
   /*****************************************
   *
-  *  decodeCatalogObjectiveIDs
+  *  decodeOfferObjectiveIDs
   *
   *****************************************/
 
-  private Set<String> decodeCatalogObjectiveIDs(JSONArray jsonArray) throws GUIManagerException
+  private Set<String> decodeOfferObjectiveIDs(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<String> catalogObjectiveIDs = new LinkedHashSet<String>();
+    Set<String> offerObjectiveIDs = new LinkedHashSet<String>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        String catalogObjectiveID = (String) jsonArray.get(i);
-        catalogObjectiveIDs.add(catalogObjectiveID);
+        String offerObjectiveID = (String) jsonArray.get(i);
+        offerObjectiveIDs.add(offerObjectiveID);
       }
-    return catalogObjectiveIDs;
+    return offerObjectiveIDs;
   }
 
   /*****************************************
@@ -314,7 +314,7 @@ public class ScoringSplit
         result = true;
         result = result && Objects.equals(offerOptimizationAlgorithm, scoringSplit.getOfferOptimizationAlgorithm());
         result = result && Objects.equals(parameters, scoringSplit.getParameters());
-        result = result && Objects.equals(catalogObjectiveIDs, scoringSplit.getCatalogObjectiveIDs());
+        result = result && Objects.equals(offerObjectiveIDs, scoringSplit.getOfferObjectiveIDs());
       }
     return result;
   }
