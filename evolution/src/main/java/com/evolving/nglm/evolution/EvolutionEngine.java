@@ -1047,43 +1047,7 @@ public class EvolutionEngine
                   {
                     if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
                       {
-                        //
-                        //  journeyReentryWindow
-                        //
-
-                        Date journeyReentryWindow = journeyState.getJourneyExitDate();
-                        switch (journey.getAutoTargetedWindowUnit())
-                          {
-                            case Minute:
-                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.MINUTE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                              journeyReentryWindow = RLMDateUtils.addMinutes(journeyReentryWindow, journey.getAutoTargetedWindowDuration());
-                              break;
-                            case Hour:
-                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.HOUR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                              journeyReentryWindow = RLMDateUtils.addHours(journeyReentryWindow, journey.getAutoTargetedWindowDuration());
-                              break;
-                            case Day:
-                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                              journeyReentryWindow = RLMDateUtils.addDays(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
-                              break;
-                            case Week:
-                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                              journeyReentryWindow = RLMDateUtils.addWeeks(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
-                              break;
-                            case Month:
-                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                              journeyReentryWindow = RLMDateUtils.addMonths(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
-                              break;
-                            case Year:
-                              if (journey.getAutoTargetedWindowRoundUp()) journeyReentryWindow = RLMDateUtils.ceiling(journeyReentryWindow, Calendar.YEAR, Calendar.SUNDAY, Deployment.getBaseTimeZone());
-                              journeyReentryWindow = RLMDateUtils.addYears(journeyReentryWindow, journey.getAutoTargetedWindowDuration(), Deployment.getBaseTimeZone());
-                              break;
-                          }
-
-                        //
-                        //  in journeyReentryWindow
-                        //
-
+                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), journey.getAutoTargetedWindowDuration(), journey.getAutoTargetedWindowUnit(), Deployment.getBaseTimeZone(), journey.getAutoTargetedWindowRoundUp());
                         if (journeyReentryWindow.after(now))
                           {
                             enterJourney = false;
@@ -1118,7 +1082,7 @@ public class EvolutionEngine
               {
                 JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), now);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journey.getJourneyID(), subscriberState.getSubscriberID(), now, null, null, journey.getStartNodeID(), false));
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState));
                 subscriberStateUpdated = true;
               }
           }
@@ -1155,7 +1119,7 @@ public class EvolutionEngine
         if (journey == null || journeyNode == null)
           {
             journeyState.setJourneyExitDate(now);
-            subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journeyState.getJourneyID(), subscriberState.getSubscriberID(), now, null, null, journeyState.getJourneyNodeID(), true));
+            subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState, now));
             inactiveJourneyStates.add(journeyState);
             break;
           }
@@ -1219,15 +1183,55 @@ public class EvolutionEngine
               {
                 /*****************************************
                 *
+                *  exit node action
+                *
+                *****************************************/
+
+                if (journeyNode.getNodeType().getActionManager() != null)
+                  {
+                    SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, evolutionEvent, now);
+                    journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
+                    context.getSubscriberTraceDetails().addAll(exitActionEvaluationRequest.getTraceDetails());
+                  }
+
+                /*****************************************
+                *
                 *  enter node
                 *
                 *****************************************/
 
                 JourneyNode nextJourneyNode = firedLink.getDestination();
                 journeyState.setJourneyNodeID(nextJourneyNode.getNodeID(), now);
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journeyState.getJourneyID(), subscriberState.getSubscriberID(), now, firedLink.getLinkID(), journeyNode.getNodeID(), nextJourneyNode.getNodeID(), false));
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState, firedLink));
                 journeyNode = nextJourneyNode;
                 subscriberStateUpdated = true;
+
+                /*****************************************
+                *
+                *  enter node action
+                *
+                *****************************************/
+
+                if (journeyNode.getNodeType().getActionManager() != null)
+                  {
+                    //
+                    //  action
+                    //
+
+                    SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, evolutionEvent, now);
+                    DeliveryRequest deliveryRequest = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
+                    context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
+
+                    //
+                    //  forward deliveryRequest (if necessary)
+                    //
+
+                    if (deliveryRequest != null)
+                      {
+                        subscriberState.getDeliveryRequests().add(deliveryRequest);
+                        journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
+                      }
+                  }
 
                 /*****************************************
                 *
@@ -1238,20 +1242,17 @@ public class EvolutionEngine
                 if (journeyNode.getExitNode())
                   {
                     journeyState.setJourneyExitDate(now);
-                    subscriberState.getJourneyStatistics().add(new JourneyStatistic(journeyState.getJourneyInstanceID(), journeyState.getJourneyID(), subscriberState.getSubscriberID(), now, null, null, journeyState.getJourneyNodeID(), true));
                     inactiveJourneyStates.add(journeyState);
                   }
-
-                /*****************************************
-                *
-                *  initiate action (if necessary)
-                *
-                *****************************************/
-
-                //
-                // DEW TBD
-                //
               }
+            
+            /*****************************************
+            *
+            *  subscriberTrace
+            *
+            *****************************************/
+
+
           }
         while (firedLink != null && journeyState.getJourneyExitDate() == null);
       }

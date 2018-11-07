@@ -133,6 +133,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  setters
   //
 
+  public void setControl(boolean control) { this.control = control; }
   public void setDeliveryPartition(int deliveryPartition) { this.deliveryPartition = deliveryPartition; }
   public void setRetries(int retries) { this.retries = retries; }
   public void setTimeout(Date timeout) { this.timeout = timeout; }

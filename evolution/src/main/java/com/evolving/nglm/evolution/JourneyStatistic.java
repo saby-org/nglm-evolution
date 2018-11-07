@@ -9,9 +9,10 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.Journey.JourneyStatusField;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -57,7 +58,12 @@ public class JourneyStatistic implements SubscriberStreamOutput
     schemaBuilder.field("linkID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("fromNodeID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("toNodeID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("exited", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("statusNotified", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("statusConverted", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("statusControlGroup", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("statusUniversalControlGroup", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("journeyComplete", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -87,7 +93,12 @@ public class JourneyStatistic implements SubscriberStreamOutput
   private String linkID;
   private String fromNodeID;
   private String toNodeID;
-  private boolean exited;
+  private String deliveryRequestID;
+  private boolean statusNotified;
+  private boolean statusConverted;
+  private boolean statusControlGroup;
+  private boolean statusUniversalControlGroup;
+  private boolean journeyComplete;
 
   /*****************************************
   *
@@ -102,15 +113,89 @@ public class JourneyStatistic implements SubscriberStreamOutput
   public String getLinkID() { return linkID; }
   public String getFromNodeID() { return fromNodeID; }
   public String getToNodeID() { return toNodeID; }
-  public boolean getExited() { return exited; }
+  public String getDeliveryRequestID() { return deliveryRequestID; }
+  public boolean getStatusNotified() { return statusNotified; }
+  public boolean getStatusConverted() { return statusConverted; }
+  public boolean getStatusControlGroup() { return statusControlGroup; }
+  public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
+  public boolean getJourneyComplete() { return journeyComplete; }
 
   /*****************************************
   *
-  *  constructor -- standard/unpack
+  *  constructor -- enter
   *
   *****************************************/
 
-  public JourneyStatistic(String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, boolean exited)
+  public JourneyStatistic(String subscriberID, JourneyState journeyState)
+  {
+    this.journeyInstanceID = journeyState.getJourneyInstanceID();
+    this.journeyID = journeyState.getJourneyID();
+    this.subscriberID = subscriberID;
+    this.transitionDate = journeyState.getJourneyNodeEntryDate();
+    this.linkID = null;
+    this.fromNodeID = null;
+    this.toNodeID = journeyState.getJourneyNodeID();
+    this.deliveryRequestID = null;
+    this.statusNotified = false;
+    this.statusConverted = false;
+    this.statusControlGroup = false;
+    this.statusUniversalControlGroup = false;
+    this.journeyComplete = false;
+  }
+
+  /*****************************************
+  *
+  *  constructor -- transition
+  *
+  *****************************************/
+
+  public JourneyStatistic(String subscriberID, JourneyState journeyState, JourneyLink journeyLink)
+  {
+    this.journeyInstanceID = journeyState.getJourneyInstanceID();
+    this.journeyID = journeyState.getJourneyID();
+    this.subscriberID = subscriberID;
+    this.transitionDate = journeyState.getJourneyNodeEntryDate();
+    this.linkID = journeyLink.getLinkID();
+    this.fromNodeID = journeyLink.getSourceReference();
+    this.toNodeID = journeyLink.getDestinationReference();
+    this.deliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
+    this.statusNotified = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusConverted = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.journeyComplete = journeyLink.getDestination().getExitNode();
+  }
+
+  /*****************************************
+  *
+  *  constructor -- abnormal exit
+  *
+  *****************************************/
+
+  public JourneyStatistic(String subscriberID, JourneyState journeyState, Date exitDate)
+  {
+    this.journeyInstanceID = journeyState.getJourneyInstanceID();
+    this.journeyID = journeyState.getJourneyID();
+    this.subscriberID = subscriberID;
+    this.transitionDate = exitDate;
+    this.linkID = null;
+    this.fromNodeID = journeyState.getJourneyNodeID();
+    this.toNodeID = null;
+    this.deliveryRequestID = null;
+    this.statusNotified = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusConverted = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.journeyComplete = true;
+  }
+
+  /*****************************************
+  *
+  *  constructor -- unpack
+  *
+  *****************************************/
+
+  private JourneyStatistic(String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete)
   {
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
@@ -119,7 +204,12 @@ public class JourneyStatistic implements SubscriberStreamOutput
     this.linkID = linkID;
     this.fromNodeID = fromNodeID;
     this.toNodeID = toNodeID;
-    this.exited = exited;
+    this.deliveryRequestID = deliveryRequestID;
+    this.statusNotified = statusNotified;
+    this.statusConverted = statusConverted;
+    this.statusControlGroup = statusControlGroup;
+    this.statusUniversalControlGroup = statusUniversalControlGroup;
+    this.journeyComplete = journeyComplete;
   }
 
   /*****************************************
@@ -137,7 +227,12 @@ public class JourneyStatistic implements SubscriberStreamOutput
     this.linkID = journeyStatistic.getLinkID();
     this.fromNodeID = journeyStatistic.getFromNodeID();
     this.toNodeID = journeyStatistic.getToNodeID();
-    this.exited = journeyStatistic.getExited();
+    this.deliveryRequestID = journeyStatistic.getDeliveryRequestID();
+    this.statusNotified = journeyStatistic.getStatusNotified();
+    this.statusConverted = journeyStatistic.getStatusConverted();
+    this.statusControlGroup = journeyStatistic.getStatusControlGroup();
+    this.statusUniversalControlGroup = journeyStatistic.getStatusUniversalControlGroup();
+    this.journeyComplete = journeyStatistic.getJourneyComplete();
   }
 
   /*****************************************
@@ -157,7 +252,12 @@ public class JourneyStatistic implements SubscriberStreamOutput
     struct.put("linkID", journeyStatistic.getLinkID());
     struct.put("fromNodeID", journeyStatistic.getFromNodeID());
     struct.put("toNodeID", journeyStatistic.getToNodeID());
-    struct.put("exited", journeyStatistic.getExited());
+    struct.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+    struct.put("statusNotified", journeyStatistic.getStatusNotified());
+    struct.put("statusConverted", journeyStatistic.getStatusConverted());
+    struct.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
+    struct.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
+    struct.put("journeyComplete", journeyStatistic.getJourneyComplete());
     return struct;
   }
   
@@ -189,12 +289,17 @@ public class JourneyStatistic implements SubscriberStreamOutput
     String linkID = valueStruct.getString("linkID");
     String fromNodeID = valueStruct.getString("fromNodeID");
     String toNodeID = valueStruct.getString("toNodeID");
-    boolean exited = valueStruct.getBoolean("exited");
+    String deliveryRequestID = valueStruct.getString("deliveryRequestID");
+    boolean statusNotified = valueStruct.getBoolean("statusNotified");
+    boolean statusConverted = valueStruct.getBoolean("statusConverted");
+    boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
+    boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
+    boolean journeyComplete = valueStruct.getBoolean("journeyComplete");
     
     //
     //  return
     //
 
-    return new JourneyStatistic(journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, exited);
+    return new JourneyStatistic(journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete);
   }
 }

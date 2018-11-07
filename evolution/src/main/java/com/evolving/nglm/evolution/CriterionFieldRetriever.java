@@ -6,17 +6,26 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 
 import java.util.Random;
 
 public abstract class CriterionFieldRetriever
 {
-  //
-  //  support
-  //
+  /*****************************************
+  *
+  *  support
+  *
+  *****************************************/
 
   private static Random random = new Random();
+
+  /*****************************************
+  *
+  *  simle
+  *
+  *****************************************/
 
   //
   //  system
@@ -52,4 +61,48 @@ public abstract class CriterionFieldRetriever
   //
 
   public static Object getSubscriberGroups(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getSubscriberGroups(evaluationRequest.getSubscriberGroupEpochReader()); }
+
+  /*****************************************
+  *
+  *  complex
+  *
+  *****************************************/
+
+  //
+  //  getJourneyActionDeliveryStatus
+  //
+
+  public static Object getJourneyActionDeliveryStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    /*****************************************
+    *
+    *  awaited response?
+    *
+    *****************************************/
+
+    boolean awaitedResponse = true;
+    awaitedResponse = awaitedResponse && evaluationRequest.getJourneyState().getJourneyOutstandingDeliveryRequestID() != null;
+    awaitedResponse = awaitedResponse && evaluationRequest.getSubscriberStreamEvent() instanceof DeliveryRequest;
+    awaitedResponse = awaitedResponse && ((DeliveryRequest) evaluationRequest.getSubscriberStreamEvent()).getDeliveryRequestID().equals(evaluationRequest.getJourneyState().getJourneyOutstandingDeliveryRequestID());
+
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    Object result = DeliveryStatus.Pending.getExternalRepresentation();
+    if (awaitedResponse)
+      {
+        result = ((DeliveryRequest) evaluationRequest.getSubscriberStreamEvent()).getDeliveryStatus().getExternalRepresentation();
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return result;
+  }
 }

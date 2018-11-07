@@ -2350,45 +2350,48 @@ public class GUIManager
     List<JSONObject> result = new ArrayList<JSONObject>();
     for (CriterionField criterionField : criterionFields.values())
       {
-        //
-        //  remove server-side fields
-        //
-        
-        JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
-        criterionFieldJSON.remove("esField");
-        criterionFieldJSON.remove("retriever");
+        if (! criterionField.getInternalOnly())
+          {
+            //
+            //  remove server-side fields
+            //
 
-        //
-        //  evaluate operators
-        //
+            JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
+            criterionFieldJSON.remove("esField");
+            criterionFieldJSON.remove("retriever");
 
-        List<JSONObject> fieldAvailableValues = resolvedAvailableValues.get(criterionField.getID());
-        List<JSONObject> operators = evaluateOperators(criterionFieldJSON, fieldAvailableValues);
-        criterionFieldJSON.put("operators", operators);
-        criterionFieldJSON.remove("includedOperators");
-        criterionFieldJSON.remove("excludedOperators");
+            //
+            //  evaluate operators
+            //
 
-        //
-        //  evaluate comparable fields
-        //
+            List<JSONObject> fieldAvailableValues = resolvedAvailableValues.get(criterionField.getID());
+            List<JSONObject> operators = evaluateOperators(criterionFieldJSON, fieldAvailableValues);
+            criterionFieldJSON.put("operators", operators);
+            criterionFieldJSON.remove("includedOperators");
+            criterionFieldJSON.remove("excludedOperators");
 
-        List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-        criterionFieldJSON.put("singletonComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true));
-        criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
-        criterionFieldJSON.remove("includedComparableFields");
-        criterionFieldJSON.remove("excludedComparableFields");
+            //
+            //  evaluate comparable fields
+            //
 
-        //
-        //  evaluate available values for reference data
-        //
+            List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
+            criterionFieldJSON.put("singletonComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true));
+            criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
+            criterionFieldJSON.remove("includedComparableFields");
+            criterionFieldJSON.remove("excludedComparableFields");
 
-        criterionFieldJSON.put("availableValues", resolvedAvailableValues.get(criterionField.getID()));
-        
-        //
-        //  add
-        //
-        
-        result.add(criterionFieldJSON);
+            //
+            //  evaluate available values for reference data
+            //
+
+            criterionFieldJSON.put("availableValues", resolvedAvailableValues.get(criterionField.getID()));
+
+            //
+            //  add
+            //
+
+            result.add(criterionFieldJSON);
+          }
       }
 
     //

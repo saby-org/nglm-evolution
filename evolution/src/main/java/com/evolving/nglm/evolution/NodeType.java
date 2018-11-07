@@ -16,6 +16,8 @@ import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,6 +56,7 @@ public class NodeType extends DeploymentManagedObject
   private boolean startNode;
   private OutputType outputType;
   private LinkedHashMap<String,CriterionField> parameters = new LinkedHashMap<String,CriterionField>();
+  private ActionManager actionManager = null;
 
   /*****************************************
   *
@@ -64,6 +67,7 @@ public class NodeType extends DeploymentManagedObject
   public boolean getStartNode() { return startNode; }
   public OutputType getOutputType() { return  outputType; }
   public Map<String,CriterionField> getParameters() { return parameters; }
+  public ActionManager getActionManager() { return actionManager; }
 
   /*****************************************
   *
@@ -73,16 +77,50 @@ public class NodeType extends DeploymentManagedObject
 
   public NodeType(JSONObject jsonRoot) throws GUIManagerException
   {
+    //
+    //  super
+    //
+
     super(jsonRoot);
+
+    //
+    //  simple
+    //
+
     this.startNode = JSONUtilities.decodeBoolean(jsonRoot, "startNode", Boolean.FALSE);
     this.outputType = OutputType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "outputType", true));
+
+    //
+    //  parameters
+    //
+
     JSONArray parametersJSON = JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true);
     for (int i=0; i<parametersJSON.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
         CriterionField originalParameter = new CriterionField(parameterJSON);
-        CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyNodeParameter");
+        CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyNodeParameter", originalParameter.getInternalOnly());
         parameters.put(enhancedParameter.getID(), enhancedParameter);
+      }
+
+    //
+    //  actionManager
+    //
+        
+    JSONObject action = JSONUtilities.decodeJSONObject(jsonRoot, "action", false);
+    if (action != null)
+      {
+        try
+          {
+            String actionManagerClassName = JSONUtilities.decodeString(action, "actionManagerClass", true);
+            Class<ActionManager> actionManagerClass = (Class<ActionManager>) Class.forName(actionManagerClassName);
+            Constructor actionManagerConstructor = actionManagerClass.getDeclaredConstructor(JSONObject.class);
+            this.actionManager = (ActionManager) actionManagerConstructor.newInstance(action);
+          }
+        catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
+          {
+            throw new GUIManagerException(e);
+          }
       }
   }
 }

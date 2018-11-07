@@ -6,16 +6,17 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
-
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -70,6 +71,25 @@ public class Journey extends GUIManagedObject
     private EvaluationPriority(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public static EvaluationPriority fromExternalRepresentation(String externalRepresentation) { for (EvaluationPriority enumeratedValue : EvaluationPriority.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  //
+  //  JourneyStatusField
+  //
+
+  public enum JourneyStatusField
+  {
+    StatusNotified("statusNotified", "journey.status.notified"),
+    StatusConverted("statusConverted", "journey.status.converted"),
+    StatusControlGroup("statusControlGroup", "journey.status.controlgroup"),
+    StatusUniversalControlGroup("statusUniversalControlGroup", "journey.status.universalcontrolgroup"),
+    Unknown("(unknown)", "(unknown)");
+    private String externalRepresentation;
+    private String journeyParameterName;
+    private JourneyStatusField(String externalRepresentation, String journeyParameterName) { this.externalRepresentation = externalRepresentation; this.journeyParameterName = journeyParameterName; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public String getJourneyParameterName() { return journeyParameterName; }
+    public static JourneyStatusField fromExternalRepresentation(String externalRepresentation) { for (JourneyStatusField enumeratedValue : JourneyStatusField.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   /*****************************************
@@ -604,6 +624,7 @@ public class Journey extends GUIManagedObject
           }
       }
     if (this.startNodeID == null) throw new GUIManagerException("no start node", null);
+    if (this.journeyNodes.get(this.startNodeID).getNodeType().getActionManager() != null) throw new GUIManagerException("illegal start node", this.startNodeID);
 
     /*****************************************
     *
@@ -674,7 +695,7 @@ public class Journey extends GUIManagedObject
         *****************************************/
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
-        JourneyLink journeyLink = new JourneyLink(linkID, sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
+        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
 
         /*****************************************
@@ -827,7 +848,7 @@ public class Journey extends GUIManagedObject
             //  journeyMetric
             //
 
-            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric");
+            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric", false);
 
             //
             //  result
@@ -854,7 +875,7 @@ public class Journey extends GUIManagedObject
           {
             JSONObject journeyParameterJSON = (JSONObject) jsonArray.get(i);
             CriterionField originalJourneyParameter = new CriterionField(journeyParameterJSON);
-            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter");
+            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter", originalJourneyParameter.getInternalOnly());
             journeyParameters.put(enhancedJourneyParameter.getID(), enhancedJourneyParameter);
           }
       }
@@ -1118,6 +1139,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
+    private String name;
     private EvaluationPriority evaluationPriority;
     private List<EvaluationCriterion> transitionCriteria;
     private String additionalCriteria;
@@ -1128,6 +1150,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
     
+    public String getName() { return name; }
     public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
     public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
     public String getAdditionalCriteria() { return additionalCriteria; }
@@ -1140,6 +1163,7 @@ public class Journey extends GUIManagedObject
 
     public OutgoingConnectionPoint(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
     {
+      this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
       this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
       this.additionalCriteria = JSONUtilities.decodeString(jsonRoot, "additionalCriteria", false);
@@ -1235,5 +1259,78 @@ public class Journey extends GUIManagedObject
       {
         return true;
       }
+  }
+
+  /*****************************************
+  *
+  *  class SetStatusAction
+  *
+  *****************************************/
+
+  public static class SetStatusAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public SetStatusAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+    }
+        
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      JourneyStatusField statusField = JourneyStatusField.fromExternalRepresentation(subscriberEvaluationRequest.getJourneyNode().getNodeParameters().containsKey("node.parameter.journeystatus") ? (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.journeystatus") : "(unknown)");
+      if (statusField == null) throw new ServerRuntimeException("unknown status field: " + subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.journeystatus"));
+      subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(statusField.getJourneyParameterName(), Boolean.TRUE);
+      return null;
+    }
+  }
+
+  /*****************************************
+  *
+  *  class ControlGroupAction
+  *
+  *****************************************/
+
+  public static class ControlGroupAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public ControlGroupAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+    }
+        
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public void executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
+    {
+      switch (journeyLink.getLinkName())
+        {
+          case "controlGroup":
+            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(JourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            break;
+          case "universalControlGroup":
+            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            break;
+        }
+    }
   }
 }

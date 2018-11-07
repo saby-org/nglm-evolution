@@ -80,13 +80,32 @@ public abstract class DeliveryManager
 
   public enum DeliveryStatus
   {
+    /*****************************************
+    *
+    *  non-final states
+    *
+    *****************************************/
+
     Pending("pending"),
+    FailedRetry("failedretry"),
+
+    /*****************************************
+    *
+    *  final states
+    *
+    *****************************************/
+
     Delivered("delivered"),
     Indeterminate("indeterminate"),
     Failed("failed"),
-    FailedRetry("failedretry"),
     FailedTimeout("failedtimeout"),
-    Control("control"),
+
+    /*****************************************
+    *
+    *  structure
+    *
+    *****************************************/
+
     Unknown("(unknown)");
     private String externalRepresentation;
     private DeliveryStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -1104,26 +1123,23 @@ public abstract class DeliveryManager
     //  wait
     //
         
-    if (! deliveryRequest.getControl())
+    Date now = SystemTime.getCurrentTime();
+    Date nextSubmitDate = RLMDateUtils.addMilliseconds(lastSubmitDate, millisecondsPerDelivery);
+    while (managerStatus.isDeliveringRequests() && now.before(nextSubmitDate))
       {
-        Date now = SystemTime.getCurrentTime();
-        Date nextSubmitDate = RLMDateUtils.addMilliseconds(lastSubmitDate, millisecondsPerDelivery);
-        while (managerStatus.isDeliveringRequests() && now.before(nextSubmitDate))
+        synchronized (this)
           {
-            synchronized (this)
+            try
               {
-                try
-                  {
-                    this.wait(nextSubmitDate.getTime() - now.getTime());
-                  }
-                catch (InterruptedException e)
-                  {
-                  }
+                this.wait(nextSubmitDate.getTime() - now.getTime());
               }
-            now = SystemTime.getCurrentTime();
+            catch (InterruptedException e)
+              {
+              }
           }
-        lastSubmitDate = now;
+        now = SystemTime.getCurrentTime();
       }
+    lastSubmitDate = now;
 
     //
     //  abort if no longer delivering
@@ -1218,23 +1234,7 @@ public abstract class DeliveryManager
     *
     ****************************************/
 
-    if (! deliveryRequest.getControl())
-      {
-        submitRequestQueue.add(deliveryRequest);
-      }
-
-    /*****************************************
-    *
-    *  simulate response -- control
-    *
-    *****************************************/
-
-    if (deliveryRequest.getControl())
-      {
-        deliveryRequest.setDeliveryStatus(DeliveryStatus.Control);
-        deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
-        completeRequest(deliveryRequest);
-      }
+    submitRequestQueue.add(deliveryRequest);
   }
   
   /*****************************************

@@ -51,6 +51,7 @@ public class JourneyLink
     schemaBuilder.name("journey_link");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("linkID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("linkName", Schema.STRING_SCHEMA);
     schemaBuilder.field("sourceReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("destinationReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("evaluationPriority", Schema.STRING_SCHEMA);
@@ -83,6 +84,7 @@ public class JourneyLink
   //
 
   private String linkID;
+  private String linkName;
   private String sourceReference;
   private String destinationReference;
   private EvaluationPriority evaluationPriority;
@@ -102,6 +104,7 @@ public class JourneyLink
   *****************************************/
 
   public String getLinkID() { return linkID; }
+  public String getLinkName() { return linkName; }
   public String getSourceReference() { return sourceReference; }
   public String getDestinationReference() { return destinationReference; }
   public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
@@ -122,9 +125,10 @@ public class JourneyLink
   *
   *****************************************/
 
-  public JourneyLink(String linkID, String sourceReference, String destinationReference, EvaluationPriority evaluationPriority, List<EvaluationCriterion> transitionCriteria)
+  public JourneyLink(String linkID, String linkName, String sourceReference, String destinationReference, EvaluationPriority evaluationPriority, List<EvaluationCriterion> transitionCriteria)
   {
     this.linkID = linkID;
+    this.linkName = linkName;
     this.sourceReference = sourceReference;
     this.destinationReference = destinationReference;
     this.evaluationPriority = evaluationPriority;
@@ -142,6 +146,7 @@ public class JourneyLink
     JourneyLink journeyLink = (JourneyLink) value;
     Struct struct = new Struct(schema);
     struct.put("linkID", journeyLink.getLinkID());
+    struct.put("linkName", journeyLink.getLinkName());
     struct.put("sourceReference", journeyLink.getSourceReference());
     struct.put("destinationReference", journeyLink.getDestinationReference());
     struct.put("evaluationPriority", journeyLink.getEvaluationPriority().getExternalRepresentation());
@@ -187,6 +192,7 @@ public class JourneyLink
 
     Struct valueStruct = (Struct) value;
     String linkID = valueStruct.getString("linkID");
+    String linkName = valueStruct.getString("linkName");
     String sourceReference = valueStruct.getString("sourceReference");
     String destinationReference = valueStruct.getString("destinationReference");
     EvaluationPriority evaluationPriority = EvaluationPriority.fromExternalRepresentation(valueStruct.getString("evaluationPriority"));
@@ -196,7 +202,7 @@ public class JourneyLink
     //  return
     //
 
-    return new JourneyLink(linkID, sourceReference, destinationReference, evaluationPriority, transitionCriteria);
+    return new JourneyLink(linkID, linkName, sourceReference, destinationReference, evaluationPriority, transitionCriteria);
   }
 
   /*****************************************

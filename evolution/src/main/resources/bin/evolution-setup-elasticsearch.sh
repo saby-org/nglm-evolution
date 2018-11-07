@@ -95,7 +95,12 @@
                   "linkID" : { "type" : "keyword" },
                   "fromNodeID" : { "type" : "keyword" },
                   "toNodeID" : { "type" : "keyword" },
-                  "exited" : { "type" : "boolean" }
+                  "deliveryRequestID" : { "type" : "keyword" },
+                  "statusNotified" : { "type" : "boolean" },
+                  "statusConverted" : { "type" : "boolean" },
+                  "statusControlGroup" : { "type" : "boolean" },
+                  "statusUniversalControlGroup" : { "type" : "boolean" },
+                  "journeyComplete" : { "type" : "boolean" }
                 }
             }
         }
