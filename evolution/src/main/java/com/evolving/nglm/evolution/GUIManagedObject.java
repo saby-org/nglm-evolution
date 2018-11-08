@@ -41,6 +41,29 @@ public abstract class GUIManagedObject
 {
   /*****************************************
   *
+  *  enum
+  *
+  *****************************************/
+
+  //
+  //  GUIManagedObjectType
+  //
+
+  public enum GUIManagedObjectType
+  {
+    Journey("journey"),
+    Campaign("campaign"),
+    Other("other"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private GUIManagedObjectType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static GUIManagedObjectType fromExternalRepresentation(String externalRepresentation) { for (GUIManagedObjectType enumeratedValue : GUIManagedObjectType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+
+  /*****************************************
+  *
   *  configuration
   *
   *****************************************/
@@ -82,6 +105,7 @@ public abstract class GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("guiManagedObjectType", Schema.STRING_SCHEMA);
     schemaBuilder.field("epoch", Schema.INT64_SCHEMA);
     schemaBuilder.field("effectiveStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("effectiveEndDate", Timestamp.builder().optional().schema());
@@ -131,6 +155,7 @@ public abstract class GUIManagedObject
 
   private JSONObject jsonRepresentation;
   private String guiManagedObjectID;
+  private GUIManagedObjectType guiManagedObjectType;
   private long epoch;
   private Date effectiveStartDate;
   private Date effectiveEndDate;
@@ -148,6 +173,7 @@ public abstract class GUIManagedObject
   //
   
   public String getGUIManagedObjectID() { return guiManagedObjectID; }
+  public GUIManagedObjectType getGUIManagedObjectType() { return guiManagedObjectType; }
   public JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public long getEpoch() { return epoch; }
 
@@ -194,6 +220,7 @@ public abstract class GUIManagedObject
   {
     struct.put("jsonRepresentation", guiManagedObject.getJSONRepresentation().toString());
     struct.put("guiManagedObjectID", guiManagedObject.getGUIManagedObjectID());
+    struct.put("guiManagedObjectType", guiManagedObject.getGUIManagedObjectType().getExternalRepresentation());
     struct.put("epoch", guiManagedObject.getEpoch());
     struct.put("effectiveStartDate", guiManagedObject.getRawEffectiveStartDate());
     struct.put("effectiveEndDate", guiManagedObject.getRawEffectiveEndDate());
@@ -224,6 +251,7 @@ public abstract class GUIManagedObject
     Struct valueStruct = (Struct) value;
     JSONObject jsonRepresentation = parseRepresentation(valueStruct.getString("jsonRepresentation"));
     String guiManagedObjectID = valueStruct.getString("guiManagedObjectID");
+    GUIManagedObjectType guiManagedObjectType = GUIManagedObjectType.fromExternalRepresentation(valueStruct.getString("guiManagedObjectType"));
     long epoch = valueStruct.getInt64("epoch");
     Date effectiveStartDate = (Date) valueStruct.get("effectiveStartDate");
     Date effectiveEndDate = (Date) valueStruct.get("effectiveEndDate");
@@ -236,6 +264,7 @@ public abstract class GUIManagedObject
 
     this.jsonRepresentation = jsonRepresentation;
     this.guiManagedObjectID = guiManagedObjectID;
+    this.guiManagedObjectType = guiManagedObjectType;
     this.epoch = epoch;
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
@@ -249,15 +278,25 @@ public abstract class GUIManagedObject
   *
   *****************************************/
 
-  public GUIManagedObject(JSONObject jsonRoot, long epoch)
+  public GUIManagedObject(JSONObject jsonRoot, GUIManagedObjectType guiManagedObjectType, long epoch)
   {
     this.jsonRepresentation = jsonRoot;
     this.guiManagedObjectID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    this.guiManagedObjectType = guiManagedObjectType;
     this.epoch = epoch;
     this.effectiveStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     this.effectiveEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
     this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", Boolean.FALSE);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
+  }
+
+  //
+  //  constructor
+  //
+
+  public GUIManagedObject(JSONObject jsonRoot, long epoch)
+  {
+    this(jsonRoot, GUIManagedObjectType.Other, epoch);
   }
 
   /*****************************************

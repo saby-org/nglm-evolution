@@ -6,8 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Alarm;
@@ -105,12 +106,17 @@ public class GUIManager
     getOfferOptimizationAlgorithms,
     getNodeTypes,
     getJourneyToolbox,
-    getCampaignToolbox,
     getJourneyList,
     getJourneySummaryList,
     getJourney,
     putJourney,
     removeJourney,
+    getCampaignToolbox,
+    getCampaignList,
+    getCampaignSummaryList,
+    getCampaign,
+    putCampaign,
+    removeCampaign,
     getSegmentationRuleList,
     getSegmentationRuleSummaryList,
     getSegmentationRule,
@@ -471,12 +477,17 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
         restServer.createContext("/nglm-guimanager/getNodeTypes", new APIHandler(API.getNodeTypes));
         restServer.createContext("/nglm-guimanager/getJourneyToolbox", new APIHandler(API.getJourneyToolbox));
-        restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APIHandler(API.getCampaignToolbox));
         restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
         restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APIHandler(API.getJourneySummaryList));
         restServer.createContext("/nglm-guimanager/getJourney", new APIHandler(API.getJourney));
         restServer.createContext("/nglm-guimanager/putJourney", new APIHandler(API.putJourney));
         restServer.createContext("/nglm-guimanager/removeJourney", new APIHandler(API.removeJourney));
+        restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APIHandler(API.getCampaignToolbox));
+        restServer.createContext("/nglm-guimanager/getCampaignList", new APIHandler(API.getCampaignList));
+        restServer.createContext("/nglm-guimanager/getCampaignSummaryList", new APIHandler(API.getCampaignSummaryList));
+        restServer.createContext("/nglm-guimanager/getCampaign", new APIHandler(API.getCampaign));
+        restServer.createContext("/nglm-guimanager/putCampaign", new APIHandler(API.putCampaign));
+        restServer.createContext("/nglm-guimanager/removeCampaign", new APIHandler(API.removeCampaign));
         restServer.createContext("/nglm-guimanager/getSegmentationRuleList", new APIHandler(API.getSegmentationRuleList));
         restServer.createContext("/nglm-guimanager/getSegmentationRuleSummaryList", new APIHandler(API.getSegmentationRuleSummaryList));
         restServer.createContext("/nglm-guimanager/getSegmentationRule", new APIHandler(API.getSegmentationRule));
@@ -822,10 +833,6 @@ public class GUIManager
                   jsonResponse = processGetJourneyToolbox(jsonRoot);
                   break;
 
-                case getCampaignToolbox:
-                  jsonResponse = processGetCampaignToolbox(jsonRoot);
-                  break;
-                  
                 case getJourneyList:
                   jsonResponse = processGetJourneyList(jsonRoot, true);
                   break;
@@ -844,6 +851,30 @@ public class GUIManager
 
                 case removeJourney:
                   jsonResponse = processRemoveJourney(jsonRoot);
+                  break;
+
+                case getCampaignToolbox:
+                  jsonResponse = processGetCampaignToolbox(jsonRoot);
+                  break;
+                  
+                case getCampaignList:
+                  jsonResponse = processGetCampaignList(jsonRoot, true);
+                  break;
+
+                case getCampaignSummaryList:
+                  jsonResponse = processGetCampaignList(jsonRoot, false);
+                  break;
+
+                case getCampaign:
+                  jsonResponse = processGetCampaign(jsonRoot);
+                  break;
+
+                case putCampaign:
+                  jsonResponse = processPutCampaign(jsonRoot);
+                  break;
+
+                case removeCampaign:
+                  jsonResponse = processRemoveCampaign(jsonRoot);
                   break;
 
                 case getSegmentationRuleList:
@@ -2794,7 +2825,12 @@ public class GUIManager
     List<JSONObject> journeys = new ArrayList<JSONObject>();
     for (GUIManagedObject journey : journeyService.getStoredJourneys())
       {
-        journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
+        switch (journey.getGUIManagedObjectType())
+          {
+            case Journey:
+              journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
+              break;
+          }
       }
 
     /*****************************************
@@ -2840,6 +2876,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -2899,6 +2936,7 @@ public class GUIManager
         *****************************************/
 
         GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+        existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourney : null;
 
         /****************************************
         *
@@ -2906,7 +2944,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, epoch, existingJourney);
+        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney);
 
         /*****************************************
         *
@@ -3001,6 +3039,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
     if (journey != null) journeyService.removeJourney(journeyID);
 
     /*****************************************
@@ -3010,6 +3049,251 @@ public class GUIManager
     *****************************************/
 
     response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCampaignList
+  *
+  *****************************************/
+
+  private JSONObject processGetCampaignList(JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert campaigns
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> campaigns = new ArrayList<JSONObject>();
+    for (GUIManagedObject campaign : journeyService.getStoredJourneys())
+      {
+        switch (campaign.getGUIManagedObjectType())
+          {
+            case Campaign:
+              campaigns.add(journeyService.generateResponseJSON(campaign, fullDetails, now));
+              break;
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("campaigns", JSONUtilities.encodeArray(campaigns));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetCampaign
+  *
+  *****************************************/
+
+  private JSONObject processGetCampaign(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate campaign
+    *
+    *****************************************/
+
+    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
+    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
+    JSONObject campaignJSON = journeyService.generateResponseJSON(campaign, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (campaign != null) ? "ok" : "campaignNotFound");
+    if (campaign != null) response.put("campaign", campaignJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutCampaign
+  *
+  *****************************************/
+
+  private JSONObject processPutCampaign(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  campaignID
+    *
+    *****************************************/
+    
+    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (campaignID == null)
+      {
+        campaignID = journeyService.generateJourneyID();
+        jsonRoot.put("id", campaignID);
+      }
+    
+    /*****************************************
+    *
+    *  process campaign
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  existing campaign
+        *
+        *****************************************/
+
+        GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
+        existingCampaign = (existingCampaign != null && existingCampaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? existingCampaign : null;
+
+        /****************************************
+        *
+        *  instantiate campaign
+        *
+        ****************************************/
+
+        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyService.putJourney(campaign);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", campaign.getJourneyID());
+        response.put("accepted", campaign.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(campaign, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        journeyService.putJourney(incompleteObject);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("campaignID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "campaignNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveCampaign
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCampaign(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
+    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
+    if (campaign != null) journeyService.removeJourney(campaignID);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (campaign != null) ? "ok" : "campaignNotFound");
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5811,7 +6095,8 @@ public class GUIManager
   {
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
-    response.put("journeyCount", journeyService.getStoredJourneys().size());
+    response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
+    response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
     response.put("segmentationRuleCount", segmentationRuleService.getStoredSegmentationRules().size());
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
@@ -5823,6 +6108,25 @@ public class GUIManager
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
     return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  journeyCount
+  *
+  *****************************************/
+
+  private int journeyCount(GUIManagedObjectType journeyType)
+  {
+    int result = 0;
+    for (GUIManagedObject journey : journeyService.getStoredJourneys())
+      {
+        if (journey.getGUIManagedObjectType() == journeyType)
+          {
+            result += 1;
+          }
+      }
+    return result;
   }
 
   /*****************************************

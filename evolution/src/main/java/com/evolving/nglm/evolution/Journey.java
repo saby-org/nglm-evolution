@@ -541,7 +541,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(JSONObject jsonRoot, long epoch, GUIManagedObject existingJourneyUnchecked) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -549,7 +549,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingJourneyUnchecked != null) ? existingJourneyUnchecked.getEpoch() : epoch);
+    super(jsonRoot, journeyType, (existingJourneyUnchecked != null) ? existingJourneyUnchecked.getEpoch() : epoch);
 
     /*****************************************
     *
