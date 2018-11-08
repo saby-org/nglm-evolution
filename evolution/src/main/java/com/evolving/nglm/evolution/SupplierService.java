@@ -68,7 +68,7 @@ public class SupplierService extends GUIService
 
   public SupplierService(String bootstrapServers, String groupID, String supplierTopic, boolean masterService, SupplierListener supplierListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "SupplierService", groupID, supplierTopic, masterService, getSuperListener(supplierListener), notifyOnSignificantChange);
+    super(bootstrapServers, "SupplierService", groupID, supplierTopic, masterService, getSuperListener(supplierListener), "putSupplier", "removeSupplier", notifyOnSignificantChange);
   }
 
   //
@@ -139,7 +139,7 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
-  public void putSupplier(GUIManagedObject supplier) { putGUIManagedObject(supplier, SystemTime.getCurrentTime()); }
+  public void putSupplier(GUIManagedObject supplier, boolean newObject, String userID) { putGUIManagedObject(supplier, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -147,7 +147,7 @@ public class SupplierService extends GUIService
   *
   *****************************************/
 
-  public void removeSupplier(String supplierID) { removeGUIManagedObject(supplierID, SystemTime.getCurrentTime()); }
+  public void removeSupplier(String supplierID, String userID) { removeGUIManagedObject(supplierID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

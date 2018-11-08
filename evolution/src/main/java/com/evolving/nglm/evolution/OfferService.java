@@ -71,7 +71,7 @@ public class OfferService extends GUIService
 
   public OfferService(String bootstrapServers, String groupID, String offerTopic, boolean masterService, OfferListener offerListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "OfferService", groupID, offerTopic, masterService, getSuperListener(offerListener), notifyOnSignificantChange);
+    super(bootstrapServers, "OfferService", groupID, offerTopic, masterService, getSuperListener(offerListener), "putOffer", "removeOffer", notifyOnSignificantChange);
   }
 
   //
@@ -145,7 +145,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putOffer(Offer offer, CallingChannelService callingChannelService, ProductService productService) throws GUIManagerException
+  public void putOffer(Offer offer, CallingChannelService callingChannelService, ProductService productService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -164,7 +164,7 @@ public class OfferService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(offer, now);
+    putGUIManagedObject(offer, now, newObject, userID);
   }
 
   /*****************************************
@@ -173,9 +173,9 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteOffer(IncompleteObject offer)
+  public void putIncompleteOffer(IncompleteObject offer, boolean newObject, String userID)
   {
-    putGUIManagedObject(offer, SystemTime.getCurrentTime());
+    putGUIManagedObject(offer, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -184,7 +184,7 @@ public class OfferService extends GUIService
   *
   *****************************************/
 
-  public void removeOffer(String offerID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime()); }
+  public void removeOffer(String offerID, String userID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

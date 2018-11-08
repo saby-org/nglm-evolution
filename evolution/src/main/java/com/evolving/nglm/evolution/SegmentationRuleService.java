@@ -45,7 +45,7 @@ public class SegmentationRuleService extends GUIService
 
   public SegmentationRuleService(String bootstrapServers, String groupID, String segmentationRuleTopic, boolean masterService, SegmentationRuleListener segmentationRuleListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "segmentationRuleService", groupID, segmentationRuleTopic, masterService, getSuperListener(segmentationRuleListener), notifyOnSignificantChange);
+    super(bootstrapServers, "segmentationRuleService", groupID, segmentationRuleTopic, masterService, getSuperListener(segmentationRuleListener), "putSegmentationRule", "removeSegmentationRule", notifyOnSignificantChange);
   }
 
   //
@@ -103,7 +103,7 @@ public class SegmentationRuleService extends GUIService
   *
   *****************************************/
 
-  public void putSegmentationRule(GUIManagedObject segmentationRule) { putGUIManagedObject(segmentationRule, SystemTime.getCurrentTime()); }
+  public void putSegmentationRule(GUIManagedObject segmentationRule, boolean newObject, String userID) { putGUIManagedObject(segmentationRule, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -111,7 +111,7 @@ public class SegmentationRuleService extends GUIService
   *
   *****************************************/
 
-  public void removeSegmentationRule(String segmentationRuleID) { removeGUIManagedObject(segmentationRuleID, SystemTime.getCurrentTime()); }
+  public void removeSegmentationRule(String segmentationRuleID, String userID) { removeGUIManagedObject(segmentationRuleID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

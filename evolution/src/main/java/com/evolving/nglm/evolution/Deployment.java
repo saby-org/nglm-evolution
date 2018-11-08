@@ -54,6 +54,7 @@ public class Deployment
   private static String catalogCharacteristicTopic;
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
+  private static String guiAuditTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
@@ -142,6 +143,7 @@ public class Deployment
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
+  public static String getGUIAuditTopic() { return guiAuditTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
@@ -498,6 +500,19 @@ public class Deployment
     try
       {
         productTypeTopic = JSONUtilities.decodeString(jsonRoot, "productTypeTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  guiAuditTopic
+    //
+
+    try
+      {
+        guiAuditTopic = JSONUtilities.decodeString(jsonRoot, "guiAuditTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

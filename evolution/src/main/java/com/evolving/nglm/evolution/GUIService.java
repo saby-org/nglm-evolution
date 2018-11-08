@@ -76,6 +76,7 @@ public class GUIService
   private Date lastUpdate = SystemTime.getCurrentTime();
   private TreeSet<ScheduleEntry> schedule = new TreeSet<ScheduleEntry>();
   private String guiManagedObjectTopic;
+  private String guiAuditTopic = Deployment.getGUIAuditTopic();
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private KafkaConsumer<byte[], byte[]> guiManagedObjectsConsumer;
   private boolean masterService;
@@ -86,6 +87,8 @@ public class GUIService
   private boolean notifyOnSignificantChange;
   private BlockingQueue<GUIManagedObject> listenerQueue = new LinkedBlockingQueue<GUIManagedObject>();
   private int lastGeneratedObjectID = 0;
+  private String putAPIString;
+  private String removeAPIString;
 
   //
   //  serdes
@@ -94,6 +97,7 @@ public class GUIService
   private ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
   private ConnectSerde<GUIManagedObject> guiManagedObjectSerde = GUIManagedObject.commonSerde();
   private ConnectSerde<GUIManagedObject> incompleteObjectSerde = GUIManagedObject.incompleteObjectSerde();
+  private ConnectSerde<GUIObjectAudit> guiObjectAuditSerde = GUIObjectAudit.serde();
 
   /*****************************************
   *
@@ -109,7 +113,7 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, boolean notifyOnSignificantChange)
+  protected GUIService(String bootstrapServers, String serviceName, String groupID, String guiManagedObjectTopic, boolean masterService, GUIManagedObjectListener guiManagedObjectListener, String putAPIString, String removeAPIString, boolean notifyOnSignificantChange)
   {
     //
     //  configuration
@@ -118,6 +122,8 @@ public class GUIService
     this.guiManagedObjectTopic = guiManagedObjectTopic;
     this.guiManagedObjectListener = guiManagedObjectListener;
     this.masterService = masterService;
+    this.putAPIString = putAPIString;
+    this.removeAPIString = removeAPIString;
     this.notifyOnSignificantChange = notifyOnSignificantChange;
 
     //
@@ -371,13 +377,19 @@ public class GUIService
   *
   *****************************************/
 
-  public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date)
+  public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID)
   {
     //
     //  submit to kafka
     //
 
     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObject.getGUIManagedObjectID())), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject)));
+
+    //
+    //  audit
+    //
+
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiAuditTopic, guiObjectAuditSerde.serializer().serialize(guiAuditTopic, new GUIObjectAudit(userID, putAPIString, newObject, guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date))));
 
     //
     //  process
@@ -392,13 +404,19 @@ public class GUIService
   *
   *****************************************/
 
-  protected void removeGUIManagedObject(String guiManagedObjectID, Date date)
+  protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID)
   {
     //
     //  submit to kafka
     //
 
     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObjectID)), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, null)));
+
+    //
+    //  audit
+    //
+
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiAuditTopic, guiObjectAuditSerde.serializer().serialize(guiAuditTopic, new GUIObjectAudit(userID, removeAPIString, false, guiManagedObjectID, null, date))));
 
     //
     //  process

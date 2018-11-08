@@ -78,6 +78,8 @@
     <topic.catalogcharacteristic>catalogcharacteristic</topic.catalogcharacteristic>
     <topic.offerobjective>offerobjective</topic.offerobjective>
     <topic.producttype>producttype</topic.producttype>
+    <topic.catalogobjective>catalogobjective</topic.catalogobjective>
+    <topic.guiaudit>guiaudit</topic.guiaudit>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

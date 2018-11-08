@@ -71,7 +71,7 @@ public class PresentationStrategyService extends GUIService
 
   public PresentationStrategyService(String bootstrapServers, String groupID, String presentationStrategyTopic, boolean masterService, PresentationStrategyListener presentationStrategyListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "PresentationStrategyService", groupID, presentationStrategyTopic, masterService, getSuperListener(presentationStrategyListener), notifyOnSignificantChange);
+    super(bootstrapServers, "PresentationStrategyService", groupID, presentationStrategyTopic, masterService, getSuperListener(presentationStrategyListener), "putPresentationStrategy", "removePresentationStrategy", notifyOnSignificantChange);
   }
 
   //
@@ -144,7 +144,7 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putPresentationStrategy(PresentationStrategy presentationStrategy, ScoringStrategyService scoringStrategyService) throws GUIManagerException
+  public void putPresentationStrategy(PresentationStrategy presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -162,7 +162,7 @@ public class PresentationStrategyService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(presentationStrategy, now);
+    putGUIManagedObject(presentationStrategy, now, newObject, userID);
   }
 
   /*****************************************
@@ -171,9 +171,9 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putIncompletePresentationStrategy(IncompleteObject presentationStrategy)
+  public void putIncompletePresentationStrategy(IncompleteObject presentationStrategy, boolean newObject, String userID)
   {
-    putGUIManagedObject(presentationStrategy, SystemTime.getCurrentTime());
+    putGUIManagedObject(presentationStrategy, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -182,7 +182,7 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void removePresentationStrategy(String presentationStrategyID) { removeGUIManagedObject(presentationStrategyID, SystemTime.getCurrentTime()); }
+  public void removePresentationStrategy(String presentationStrategyID, String userID) { removeGUIManagedObject(presentationStrategyID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

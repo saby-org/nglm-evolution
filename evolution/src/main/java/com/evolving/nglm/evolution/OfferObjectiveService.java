@@ -71,7 +71,7 @@ public class OfferObjectiveService extends GUIService
   
   public OfferObjectiveService(String bootstrapServers, String groupID, String catalogObjectiveTopic, boolean masterService, OfferObjectiveListener offerObjectiveListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "OfferObjectiveService", groupID, catalogObjectiveTopic, masterService, getSuperListener(offerObjectiveListener), notifyOnSignificantChange);
+    super(bootstrapServers, "OfferObjectiveService", groupID, catalogObjectiveTopic, masterService, getSuperListener(offerObjectiveListener), "putOfferObjective", "removeOfferObjective", notifyOnSignificantChange);
   }
   //
   //  constructor
@@ -142,7 +142,7 @@ public class OfferObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putOfferObjective(GUIManagedObject offerObjective) { putGUIManagedObject(offerObjective, SystemTime.getCurrentTime()); }
+  public void putOfferObjective(GUIManagedObject offerObjective, boolean newObject, String userID) { putGUIManagedObject(offerObjective, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -150,9 +150,9 @@ public class OfferObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteOfferObjective(IncompleteObject offerObjective)
+  public void putIncompleteOfferObjective(IncompleteObject offerObjective, boolean newObject, String userID)
   {
-    putGUIManagedObject(offerObjective, SystemTime.getCurrentTime());
+    putGUIManagedObject(offerObjective, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -161,7 +161,7 @@ public class OfferObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void removeOfferObjective(String offerObjectiveID) { removeGUIManagedObject(offerObjectiveID, SystemTime.getCurrentTime()); }
+  public void removeOfferObjective(String offerObjectiveID, String userID) { removeGUIManagedObject(offerObjectiveID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

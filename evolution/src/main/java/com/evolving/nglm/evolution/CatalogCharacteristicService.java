@@ -71,7 +71,7 @@ public class CatalogCharacteristicService extends GUIService
 
   public CatalogCharacteristicService(String bootstrapServers, String groupID, String catalogCharacteristicTopic, boolean masterService, CatalogCharacteristicListener catalogCharacteristicListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "CatalogCharacteristicService", groupID, catalogCharacteristicTopic, masterService, getSuperListener(catalogCharacteristicListener), notifyOnSignificantChange);
+    super(bootstrapServers, "CatalogCharacteristicService", groupID, catalogCharacteristicTopic, masterService, getSuperListener(catalogCharacteristicListener), "putCatalogCharacteristic", "removeCatalogCharacteristic", notifyOnSignificantChange);
   }
 
   //
@@ -144,7 +144,7 @@ public class CatalogCharacteristicService extends GUIService
   *
   *****************************************/
 
-  public void putCatalogCharacteristic(GUIManagedObject catalogCharacteristic) { putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime()); }
+  public void putCatalogCharacteristic(GUIManagedObject catalogCharacteristic, boolean newObject, String userID) { putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -152,9 +152,9 @@ public class CatalogCharacteristicService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteCatalogCharacteristic(IncompleteObject catalogCharacteristic)
+  public void putIncompleteCatalogCharacteristic(IncompleteObject catalogCharacteristic, boolean newObject, String userID)
   {
-    putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime());
+    putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -163,7 +163,7 @@ public class CatalogCharacteristicService extends GUIService
   *
   *****************************************/
 
-  public void removeCatalogCharacteristic(String catalogCharacteristicID) { removeGUIManagedObject(catalogCharacteristicID, SystemTime.getCurrentTime()); }
+  public void removeCatalogCharacteristic(String catalogCharacteristicID, String userID) { removeGUIManagedObject(catalogCharacteristicID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

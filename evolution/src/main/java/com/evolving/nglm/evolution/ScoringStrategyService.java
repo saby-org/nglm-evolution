@@ -68,7 +68,7 @@ public class ScoringStrategyService extends GUIService
 
   public ScoringStrategyService(String bootstrapServers, String groupID, String scoringStrategyTopic, boolean masterService, ScoringStrategyListener scoringStrategyListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "ScoringStrategyService", groupID, scoringStrategyTopic, masterService, getSuperListener(scoringStrategyListener), notifyOnSignificantChange);
+    super(bootstrapServers, "ScoringStrategyService", groupID, scoringStrategyTopic, masterService, getSuperListener(scoringStrategyListener), "putScoringStrategy", "removeScoringStrategy", notifyOnSignificantChange);
   }
 
   //
@@ -139,7 +139,7 @@ public class ScoringStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putScoringStrategy(GUIManagedObject scoringStrategy) { putGUIManagedObject(scoringStrategy, SystemTime.getCurrentTime()); }
+  public void putScoringStrategy(GUIManagedObject scoringStrategy, boolean newObject, String userID) { putGUIManagedObject(scoringStrategy, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -147,7 +147,7 @@ public class ScoringStrategyService extends GUIService
   *
   *****************************************/
 
-  public void removeScoringStrategy(String scoringStrategyID) { removeGUIManagedObject(scoringStrategyID, SystemTime.getCurrentTime()); }
+  public void removeScoringStrategy(String scoringStrategyID, String userID) { removeGUIManagedObject(scoringStrategyID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

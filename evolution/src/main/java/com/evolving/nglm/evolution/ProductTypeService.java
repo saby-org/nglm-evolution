@@ -71,7 +71,7 @@ public class ProductTypeService extends GUIService
   
   public ProductTypeService(String bootstrapServers, String groupID, String productTypeTopic, boolean masterService, ProductTypeListener productTypeListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "OfferObjectiveService", groupID, productTypeTopic, masterService, getSuperListener(productTypeListener), notifyOnSignificantChange);
+    super(bootstrapServers, "OfferObjectiveService", groupID, productTypeTopic, masterService, getSuperListener(productTypeListener), "putProductType", "removeProductType", notifyOnSignificantChange);
   }
   //
   //  constructor
@@ -142,7 +142,7 @@ public class ProductTypeService extends GUIService
   *
   *****************************************/
 
-  public void putProductType(GUIManagedObject productType) { putGUIManagedObject(productType, SystemTime.getCurrentTime()); }
+  public void putProductType(GUIManagedObject productType, boolean newObject, String userID) { putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -150,9 +150,9 @@ public class ProductTypeService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteProductType(IncompleteObject productType)
+  public void putIncompleteProductType(IncompleteObject productType, boolean newObject, String userID)
   {
-    putGUIManagedObject(productType, SystemTime.getCurrentTime());
+    putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -161,7 +161,7 @@ public class ProductTypeService extends GUIService
   *
   *****************************************/
 
-  public void removeProductType(String productTypeID) { removeGUIManagedObject(productTypeID, SystemTime.getCurrentTime()); }
+  public void removeProductType(String productTypeID, String userID) { removeGUIManagedObject(productTypeID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

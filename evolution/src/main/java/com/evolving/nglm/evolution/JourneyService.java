@@ -66,7 +66,7 @@ public class JourneyService extends GUIService
 
   public JourneyService(String bootstrapServers, String groupID, String journeyTopic, boolean masterService, JourneyListener journeyListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "JourneyService", groupID, journeyTopic, masterService, getSuperListener(journeyListener), notifyOnSignificantChange);
+    super(bootstrapServers, "JourneyService", groupID, journeyTopic, masterService, getSuperListener(journeyListener), "putJourney", "removeJourney", notifyOnSignificantChange);
   }
 
   //
@@ -124,7 +124,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void putJourney(GUIManagedObject journey) { putGUIManagedObject(journey, SystemTime.getCurrentTime()); }
+  public void putJourney(GUIManagedObject journey, boolean newObject, String userID) { putGUIManagedObject(journey, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -132,7 +132,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void removeJourney(String journeyID) { removeGUIManagedObject(journeyID, SystemTime.getCurrentTime()); }
+  public void removeJourney(String journeyID, String userID) { removeGUIManagedObject(journeyID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

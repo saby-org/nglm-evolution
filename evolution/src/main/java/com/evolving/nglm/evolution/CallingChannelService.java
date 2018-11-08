@@ -68,7 +68,7 @@ public class CallingChannelService extends GUIService
 
   public CallingChannelService(String bootstrapServers, String groupID, String callingChannelTopic, boolean masterService, CallingChannelListener callingChannelListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "CallingChannelService", groupID, callingChannelTopic, masterService, getSuperListener(callingChannelListener), notifyOnSignificantChange);
+    super(bootstrapServers, "CallingChannelService", groupID, callingChannelTopic, masterService, getSuperListener(callingChannelListener), "putCallingChannel", "removeCallingChannel", notifyOnSignificantChange);
   }
 
   //
@@ -139,7 +139,7 @@ public class CallingChannelService extends GUIService
   *
   *****************************************/
 
-  public void putCallingChannel(GUIManagedObject callingChannel) { putGUIManagedObject(callingChannel, SystemTime.getCurrentTime()); }
+  public void putCallingChannel(GUIManagedObject callingChannel, boolean newObject, String userID) { putGUIManagedObject(callingChannel, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *
@@ -147,7 +147,7 @@ public class CallingChannelService extends GUIService
   *
   *****************************************/
 
-  public void removeCallingChannel(String callingChannelID) { removeGUIManagedObject(callingChannelID, SystemTime.getCurrentTime()); }
+  public void removeCallingChannel(String callingChannelID, String userID) { removeGUIManagedObject(callingChannelID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

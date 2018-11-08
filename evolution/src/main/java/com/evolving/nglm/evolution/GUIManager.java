@@ -82,95 +82,100 @@ public class GUIManager
   *
   *****************************************/
 
-  private enum API
+  public enum API
   {
-    getStaticConfiguration,
-    getSupportedLanguages,
-    getSupportedCurrencies,
-    getSupportedTimeUnits,
-    getServiceTypes,
-    getCallingChannelProperties,
-    getSalesChannels,
-    getSupportedDataTypes,
-    getProfileCriterionFields,
-    getProfileCriterionFieldIDs,
-    getProfileCriterionField,
-    getPresentationCriterionFields,
-    getPresentationCriterionFieldIDs,
-    getPresentationCriterionField,
-    getJourneyCriterionFields,
-    getJourneyCriterionFieldIDs,
-    getJourneyCriterionField,
-    getOfferCategories,
-    getOfferTypes,
-    getOfferOptimizationAlgorithms,
-    getNodeTypes,
-    getJourneyToolbox,
-    getJourneyList,
-    getJourneySummaryList,
-    getJourney,
-    putJourney,
-    removeJourney,
-    getCampaignToolbox,
-    getCampaignList,
-    getCampaignSummaryList,
-    getCampaign,
-    putCampaign,
-    removeCampaign,
-    getSegmentationRuleList,
-    getSegmentationRuleSummaryList,
-    getSegmentationRule,
-    putSegmentationRule,
-    removeSegmentationRule,
-    getOfferList,
-    getOfferSummaryList,
-    getOffer,
-    putOffer,
-    removeOffer,
-    getPresentationStrategyList,
-    getPresentationStrategySummaryList,
-    getPresentationStrategy,
-    putPresentationStrategy,
-    removePresentationStrategy,
-    getScoringStrategyList,
-    getScoringStrategySummaryList,
-    getScoringStrategy,
-    putScoringStrategy,
-    removeScoringStrategy,
-    getCallingChannelList,
-    getCallingChannelSummaryList,
-    getCallingChannel,
-    putCallingChannel,
-    removeCallingChannel,
-    getSupplierList,
-    getSupplierSummaryList,
-    getSupplier,
-    putSupplier,
-    removeSupplier,
-    getProductList,
-    getProductSummaryList,
-    getProduct,
-    putProduct,
-    removeProduct,
-    getCatalogCharacteristicList,
-    getCatalogCharacteristicSummaryList,
-    getCatalogCharacteristic,
-    putCatalogCharacteristic,
-    removeCatalogCharacteristic,
-    getOfferObjectiveList,
-    getProductTypeList,
-    getOfferObjectiveSummaryList,
-    getProductTypeSummaryList,
-    getOfferObjective,
-    getProductType,
-    putOfferObjective,
-    putProductType,
-    removeOfferObjective,
-    removeProductType,
-    getFulfillmentProviders,
-    getOfferDeliverables,
-    getPaymentMeans,
-    getDashboardCounts;
+    getStaticConfiguration("getStaticConfiguration"),
+    getSupportedLanguages("getSupportedLanguages"),
+    getSupportedCurrencies("getSupportedCurrencies"),
+    getSupportedTimeUnits("getSupportedTimeUnits"),
+    getServiceTypes("getServiceTypes"),
+    getCallingChannelProperties("getCallingChannelProperties"),
+    getSalesChannels("getSalesChannels"),
+    getSupportedDataTypes("getSupportedDataTypes"),
+    getProfileCriterionFields("getProfileCriterionFields"),
+    getProfileCriterionFieldIDs("getProfileCriterionFieldIDs"),
+    getProfileCriterionField("getProfileCriterionField"),
+    getPresentationCriterionFields("getPresentationCriterionFields"),
+    getPresentationCriterionFieldIDs("getPresentationCriterionFieldIDs"),
+    getPresentationCriterionField("getPresentationCriterionField"),
+    getJourneyCriterionFields("getJourneyCriterionFields"),
+    getJourneyCriterionFieldIDs("getJourneyCriterionFieldIDs"),
+    getJourneyCriterionField("getJourneyCriterionField"),
+    getOfferCategories("getOfferCategories"),
+    getOfferTypes("getOfferTypes"),
+    getOfferOptimizationAlgorithms("getOfferOptimizationAlgorithms"),
+    getNodeTypes("getNodeTypes"),
+    getJourneyToolbox("getJourneyToolbox"),
+    getJourneyList("getJourneyList"),
+    getJourneySummaryList("getJourneySummaryList"),
+    getJourney("getJourney"),
+    putJourney("putJourney"),
+    removeJourney("removeJourney"),
+    getCampaignToolbox("getCampaignToolbox"),
+    getCampaignList("getCampaignList"),
+    getCampaignSummaryList("getCampaignSummaryList"),
+    getCampaign("getCampaign"),
+    putCampaign("putCampaign"),
+    removeCampaign("removeCampaign"),
+    getSegmentationRuleList("getSegmentationRuleList"),
+    getSegmentationRuleSummaryList("getSegmentationRuleSummaryList"),
+    getSegmentationRule("getSegmentationRule"),
+    putSegmentationRule("putSegmentationRule"),
+    removeSegmentationRule("removeSegmentationRule"),
+    getOfferList("getOfferList"),
+    getOfferSummaryList("getOfferSummaryList"),
+    getOffer("getOffer"),
+    putOffer("putOffer"),
+    removeOffer("removeOffer"),
+    getPresentationStrategyList("getPresentationStrategyList"),
+    getPresentationStrategySummaryList("getPresentationStrategySummaryList"),
+    getPresentationStrategy("getPresentationStrategy"),
+    putPresentationStrategy("putPresentationStrategy"),
+    removePresentationStrategy("removePresentationStrategy"),
+    getScoringStrategyList("getScoringStrategyList"),
+    getScoringStrategySummaryList("getScoringStrategySummaryList"),
+    getScoringStrategy("getScoringStrategy"),
+    putScoringStrategy("putScoringStrategy"),
+    removeScoringStrategy("removeScoringStrategy"),
+    getCallingChannelList("getCallingChannelList"),
+    getCallingChannelSummaryList("getCallingChannelSummaryList"),
+    getCallingChannel("getCallingChannel"),
+    putCallingChannel("putCallingChannel"),
+    removeCallingChannel("removeCallingChannel"),
+    getSupplierList("getSupplierList"),
+    getSupplierSummaryList("getSupplierSummaryList"),
+    getSupplier("getSupplier"),
+    putSupplier("putSupplier"),
+    removeSupplier("removeSupplier"),
+    getProductList("getProductList"),
+    getProductSummaryList("getProductSummaryList"),
+    getProduct("getProduct"),
+    putProduct("putProduct"),
+    removeProduct("removeProduct"),
+    getCatalogCharacteristicList("getCatalogCharacteristicList"),
+    getCatalogCharacteristicSummaryList("getCatalogCharacteristicSummaryList"),
+    getCatalogCharacteristic("getCatalogCharacteristic"),
+    putCatalogCharacteristic("putCatalogCharacteristic"),
+    removeCatalogCharacteristic("removeCatalogCharacteristic"),
+    getOfferObjectiveList("getOfferObjectiveList"),
+    getOfferObjectiveSummaryList("getOfferObjectiveSummaryList"),
+    getOfferObjective("getOfferObjective"),
+    putOfferObjective("putOfferObjective"),
+    removeOfferObjective("removeOfferObjective"),
+    getProductTypeList("getProductTypeList"),
+    getProductTypeSummaryList("getProductTypeSummaryList"),
+    getProductType("getProductType"),
+    putProductType("putProductType"),
+    removeProductType("removeProductType"),
+    getFulfillmentProviders("getFulfillmentProviders"),
+    getOfferDeliverables("getOfferDeliverables"),
+    getPaymentMeans("getPaymentMeans"),
+    getDashboardCounts("getDashboardCounts"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static API fromExternalRepresentation(String externalRepresentation) { for (API enumeratedValue : API.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   /*****************************************
@@ -313,7 +318,7 @@ public class GUIManager
             for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
               {
                 JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                processPutCallingChannel(callingChannelJSON);
+                processPutCallingChannel("(system)", callingChannelJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -334,7 +339,7 @@ public class GUIManager
             for (int i=0; i<initialSuppliersJSONArray.size(); i++)
               {
                 JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
-                processPutSupplier(supplierJSON);
+                processPutSupplier("(system)", supplierJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -355,7 +360,7 @@ public class GUIManager
             for (int i=0; i<initialProductsJSONArray.size(); i++)
               {
                 JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
-                processPutProduct(productJSON);
+                processPutProduct("(system)", productJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -376,7 +381,7 @@ public class GUIManager
             for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
               {
                 JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
-                processPutCatalogCharacteristic(catalogCharacteristicJSON);
+                processPutCatalogCharacteristic("(system)", catalogCharacteristicJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -397,7 +402,7 @@ public class GUIManager
             for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
               {
                 JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
-                processPutOfferObjective(offerObjectiveJSON);
+                processPutOfferObjective("(system)", offerObjectiveJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -418,7 +423,7 @@ public class GUIManager
             for (int i=0; i<initialProductTypesJSONArray.size(); i++)
               {
                 JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
-                processPutProductType(productTypeJSON);
+                processPutProductType("(system)", productTypeJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -682,6 +687,23 @@ public class GUIManager
       {
         /*****************************************
         *
+        *  get the user
+        *
+        *****************************************/
+
+        String userID = null;
+        if (exchange.getRequestURI().getQuery() != null)
+          {
+            Pattern pattern = Pattern.compile("^(.*\\&user_id|user_id)=(.*?)(\\&.*$|$)");
+            Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+            if (matcher.matches())
+              {
+                userID = matcher.group(2);
+              }
+          }
+        
+        /*****************************************
+        *
         *  get the body
         *
         *****************************************/
@@ -746,351 +768,351 @@ public class GUIManager
             switch (api)
               {
                 case getStaticConfiguration:
-                  jsonResponse = processGetStaticConfiguration(jsonRoot);
+                  jsonResponse = processGetStaticConfiguration(userID, jsonRoot);
                   break;
 
                 case getSupportedLanguages:
-                  jsonResponse = processGetSupportedLanguages(jsonRoot);
+                  jsonResponse = processGetSupportedLanguages(userID, jsonRoot);
                   break;
 
                 case getSupportedCurrencies:
-                  jsonResponse = processGetSupportedCurrencies(jsonRoot);
+                  jsonResponse = processGetSupportedCurrencies(userID, jsonRoot);
                   break;
 
                 case getSupportedTimeUnits:
-                  jsonResponse = processGetSupportedTimeUnits(jsonRoot);
+                  jsonResponse = processGetSupportedTimeUnits(userID, jsonRoot);
                   break;
 
                 case getServiceTypes:
-                  jsonResponse = processGetServiceTypes(jsonRoot);
+                  jsonResponse = processGetServiceTypes(userID, jsonRoot);
                   break;
                   
                 case getCallingChannelProperties:
-                  jsonResponse = processGetCallingChannelProperties(jsonRoot);
+                  jsonResponse = processGetCallingChannelProperties(userID, jsonRoot);
                   break;
 
                 case getSalesChannels:
-                  jsonResponse = processGetSalesChannels(jsonRoot);
+                  jsonResponse = processGetSalesChannels(userID, jsonRoot);
                   break;
 
                 case getSupportedDataTypes:
-                  jsonResponse = processGetSupportedDataTypes(jsonRoot);
+                  jsonResponse = processGetSupportedDataTypes(userID, jsonRoot);
                   break;
 
                 case getProfileCriterionFields:
-                  jsonResponse = processGetProfileCriterionFields(jsonRoot);
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot);
                   break;
 
                 case getProfileCriterionFieldIDs:
-                  jsonResponse = processGetProfileCriterionFieldIDs(jsonRoot);
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot);
                   break;
 
                 case getProfileCriterionField:
-                  jsonResponse = processGetProfileCriterionField(jsonRoot);
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot);
                   break;
 
                 case getPresentationCriterionFields:
-                  jsonResponse = processGetPresentationCriterionFields(jsonRoot);
+                  jsonResponse = processGetPresentationCriterionFields(userID, jsonRoot);
                   break;
 
                 case getPresentationCriterionFieldIDs:
-                  jsonResponse = processGetPresentationCriterionFieldIDs(jsonRoot);
+                  jsonResponse = processGetPresentationCriterionFieldIDs(userID, jsonRoot);
                   break;
 
                 case getPresentationCriterionField:
-                  jsonResponse = processGetPresentationCriterionField(jsonRoot);
+                  jsonResponse = processGetPresentationCriterionField(userID, jsonRoot);
                   break;
 
                 case getJourneyCriterionFields:
-                  jsonResponse = processGetJourneyCriterionFields(jsonRoot);
+                  jsonResponse = processGetJourneyCriterionFields(userID, jsonRoot);
                   break;
 
                 case getJourneyCriterionFieldIDs:
-                  jsonResponse = processGetJourneyCriterionFieldIDs(jsonRoot);
+                  jsonResponse = processGetJourneyCriterionFieldIDs(userID, jsonRoot);
                   break;
 
                 case getJourneyCriterionField:
-                  jsonResponse = processGetJourneyCriterionField(jsonRoot);
+                  jsonResponse = processGetJourneyCriterionField(userID, jsonRoot);
                   break;
 
                 case getOfferCategories:
-                  jsonResponse = processGetOfferCategories(jsonRoot);
+                  jsonResponse = processGetOfferCategories(userID, jsonRoot);
                   break;
 
                 case getOfferTypes:
-                  jsonResponse = processGetOfferTypes(jsonRoot);
+                  jsonResponse = processGetOfferTypes(userID, jsonRoot);
                   break;
 
                 case getOfferOptimizationAlgorithms:
-                  jsonResponse = processGetOfferOptimizationAlgorithms(jsonRoot);
+                  jsonResponse = processGetOfferOptimizationAlgorithms(userID, jsonRoot);
                   break;
 
                 case getNodeTypes:
-                  jsonResponse = processGetNodeTypes(jsonRoot);
+                  jsonResponse = processGetNodeTypes(userID, jsonRoot);
                   break;
 
                 case getJourneyToolbox:
-                  jsonResponse = processGetJourneyToolbox(jsonRoot);
+                  jsonResponse = processGetJourneyToolbox(userID, jsonRoot);
                   break;
 
                 case getJourneyList:
-                  jsonResponse = processGetJourneyList(jsonRoot, true);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, true);
                   break;
 
                 case getJourneySummaryList:
-                  jsonResponse = processGetJourneyList(jsonRoot, false);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, false);
                   break;
 
                 case getJourney:
-                  jsonResponse = processGetJourney(jsonRoot);
+                  jsonResponse = processGetJourney(userID, jsonRoot);
                   break;
 
                 case putJourney:
-                  jsonResponse = processPutJourney(jsonRoot);
+                  jsonResponse = processPutJourney(userID, jsonRoot);
                   break;
 
                 case removeJourney:
-                  jsonResponse = processRemoveJourney(jsonRoot);
+                  jsonResponse = processRemoveJourney(userID, jsonRoot);
                   break;
 
                 case getCampaignToolbox:
-                  jsonResponse = processGetCampaignToolbox(jsonRoot);
+                  jsonResponse = processGetCampaignToolbox(userID, jsonRoot);
                   break;
                   
                 case getCampaignList:
-                  jsonResponse = processGetCampaignList(jsonRoot, true);
+                  jsonResponse = processGetCampaignList(userID, jsonRoot, true);
                   break;
 
                 case getCampaignSummaryList:
-                  jsonResponse = processGetCampaignList(jsonRoot, false);
+                  jsonResponse = processGetCampaignList(userID, jsonRoot, false);
                   break;
 
                 case getCampaign:
-                  jsonResponse = processGetCampaign(jsonRoot);
+                  jsonResponse = processGetCampaign(userID, jsonRoot);
                   break;
 
                 case putCampaign:
-                  jsonResponse = processPutCampaign(jsonRoot);
+                  jsonResponse = processPutCampaign(userID, jsonRoot);
                   break;
 
                 case removeCampaign:
-                  jsonResponse = processRemoveCampaign(jsonRoot);
+                  jsonResponse = processRemoveCampaign(userID, jsonRoot);
                   break;
 
                 case getSegmentationRuleList:
-                  jsonResponse = processGetSegmentationRuleList(jsonRoot, true);
+                  jsonResponse = processGetSegmentationRuleList(userID, jsonRoot, true);
                   break;
 
                 case getSegmentationRuleSummaryList:
-                  jsonResponse = processGetSegmentationRuleList(jsonRoot, false);
+                  jsonResponse = processGetSegmentationRuleList(userID, jsonRoot, false);
                   break;
 
                 case getSegmentationRule:
-                    jsonResponse = processGetSegmentationRule(jsonRoot);
+                    jsonResponse = processGetSegmentationRule(userID, jsonRoot);
                     break;
 
                 case putSegmentationRule:
-                    jsonResponse = processPutSegmentationRule(jsonRoot);
+                    jsonResponse = processPutSegmentationRule(userID, jsonRoot);
                     break;
 
                 case removeSegmentationRule:
-                    jsonResponse = processRemoveSegmentationRule(jsonRoot);
+                    jsonResponse = processRemoveSegmentationRule(userID, jsonRoot);
                     break;
                 
                 case getOfferList:
-                  jsonResponse = processGetOfferList(jsonRoot, true);
+                  jsonResponse = processGetOfferList(userID, jsonRoot, true);
                   break;
 
                 case getOfferSummaryList:
-                  jsonResponse = processGetOfferList(jsonRoot, false);
+                  jsonResponse = processGetOfferList(userID, jsonRoot, false);
                   break;
 
                 case getOffer:
-                  jsonResponse = processGetOffer(jsonRoot);
+                  jsonResponse = processGetOffer(userID, jsonRoot);
                   break;
 
                 case putOffer:
-                  jsonResponse = processPutOffer(jsonRoot);
+                  jsonResponse = processPutOffer(userID, jsonRoot);
                   break;
 
                 case removeOffer:
-                  jsonResponse = processRemoveOffer(jsonRoot);
+                  jsonResponse = processRemoveOffer(userID, jsonRoot);
                   break;
 
                 case getPresentationStrategyList:
-                  jsonResponse = processGetPresentationStrategyList(jsonRoot, true);
+                  jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, true);
                   break;
 
                 case getPresentationStrategySummaryList:
-                  jsonResponse = processGetPresentationStrategyList(jsonRoot, false);
+                  jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, false);
                   break;
 
                 case getPresentationStrategy:
-                  jsonResponse = processGetPresentationStrategy(jsonRoot);
+                  jsonResponse = processGetPresentationStrategy(userID, jsonRoot);
                   break;
 
                 case putPresentationStrategy:
-                  jsonResponse = processPutPresentationStrategy(jsonRoot);
+                  jsonResponse = processPutPresentationStrategy(userID, jsonRoot);
                   break;
 
                 case removePresentationStrategy:
-                  jsonResponse = processRemovePresentationStrategy(jsonRoot);
+                  jsonResponse = processRemovePresentationStrategy(userID, jsonRoot);
                   break;
 
                 case getScoringStrategyList:
-                  jsonResponse = processGetScoringStrategyList(jsonRoot, true);
+                  jsonResponse = processGetScoringStrategyList(userID, jsonRoot, true);
                   break;
 
                 case getScoringStrategySummaryList:
-                  jsonResponse = processGetScoringStrategyList(jsonRoot, false);
+                  jsonResponse = processGetScoringStrategyList(userID, jsonRoot, false);
                   break;
 
                 case getScoringStrategy:
-                  jsonResponse = processGetScoringStrategy(jsonRoot);
+                  jsonResponse = processGetScoringStrategy(userID, jsonRoot);
                   break;
 
                 case putScoringStrategy:
-                  jsonResponse = processPutScoringStrategy(jsonRoot);
+                  jsonResponse = processPutScoringStrategy(userID, jsonRoot);
                   break;
 
                 case removeScoringStrategy:
-                  jsonResponse = processRemoveScoringStrategy(jsonRoot);
+                  jsonResponse = processRemoveScoringStrategy(userID, jsonRoot);
                   break;
 
                 case getCallingChannelList:
-                  jsonResponse = processGetCallingChannelList(jsonRoot, true);
+                  jsonResponse = processGetCallingChannelList(userID, jsonRoot, true);
                   break;
 
                 case getCallingChannelSummaryList:
-                  jsonResponse = processGetCallingChannelList(jsonRoot, false);
+                  jsonResponse = processGetCallingChannelList(userID, jsonRoot, false);
                   break;
 
                 case getCallingChannel:
-                  jsonResponse = processGetCallingChannel(jsonRoot);
+                  jsonResponse = processGetCallingChannel(userID, jsonRoot);
                   break;
 
                 case putCallingChannel:
-                  jsonResponse = processPutCallingChannel(jsonRoot);
+                  jsonResponse = processPutCallingChannel(userID, jsonRoot);
                   break;
 
                 case removeCallingChannel:
-                  jsonResponse = processRemoveCallingChannel(jsonRoot);
+                  jsonResponse = processRemoveCallingChannel(userID, jsonRoot);
                   break;
 
                 case getSupplierList:
-                  jsonResponse = processGetSupplierList(jsonRoot, true);
+                  jsonResponse = processGetSupplierList(userID, jsonRoot, true);
                   break;
 
                 case getSupplierSummaryList:
-                  jsonResponse = processGetSupplierList(jsonRoot, false);
+                  jsonResponse = processGetSupplierList(userID, jsonRoot, false);
                   break;
 
                 case getSupplier:
-                  jsonResponse = processGetSupplier(jsonRoot);
+                  jsonResponse = processGetSupplier(userID, jsonRoot);
                   break;
 
                 case putSupplier:
-                  jsonResponse = processPutSupplier(jsonRoot);
+                  jsonResponse = processPutSupplier(userID, jsonRoot);
                   break;
 
                 case removeSupplier:
-                  jsonResponse = processRemoveSupplier(jsonRoot);
+                  jsonResponse = processRemoveSupplier(userID, jsonRoot);
                   break;
                   
                 case getProductList:
-                  jsonResponse = processGetProductList(jsonRoot, true);
+                  jsonResponse = processGetProductList(userID, jsonRoot, true);
                   break;
 
                 case getProductSummaryList:
-                  jsonResponse = processGetProductList(jsonRoot, false);
+                  jsonResponse = processGetProductList(userID, jsonRoot, false);
                   break;
 
                 case getProduct:
-                  jsonResponse = processGetProduct(jsonRoot);
+                  jsonResponse = processGetProduct(userID, jsonRoot);
                   break;
 
                 case putProduct:
-                  jsonResponse = processPutProduct(jsonRoot);
+                  jsonResponse = processPutProduct(userID, jsonRoot);
                   break;
 
                 case removeProduct:
-                  jsonResponse = processRemoveProduct(jsonRoot);
+                  jsonResponse = processRemoveProduct(userID, jsonRoot);
                   break;
                   
                 case getCatalogCharacteristicList:
-                  jsonResponse = processGetCatalogCharacteristicList(jsonRoot, true);
+                  jsonResponse = processGetCatalogCharacteristicList(userID, jsonRoot, true);
                   break;
 
                 case getCatalogCharacteristicSummaryList:
-                  jsonResponse = processGetCatalogCharacteristicList(jsonRoot, false);
+                  jsonResponse = processGetCatalogCharacteristicList(userID, jsonRoot, false);
                   break;
 
                 case getCatalogCharacteristic:
-                  jsonResponse = processGetCatalogCharacteristic(jsonRoot);
+                  jsonResponse = processGetCatalogCharacteristic(userID, jsonRoot);
                   break;
 
                 case putCatalogCharacteristic:
-                  jsonResponse = processPutCatalogCharacteristic(jsonRoot);
+                  jsonResponse = processPutCatalogCharacteristic(userID, jsonRoot);
                   break;
 
                 case removeCatalogCharacteristic:
-                  jsonResponse = processRemoveCatalogCharacteristic(jsonRoot);
+                  jsonResponse = processRemoveCatalogCharacteristic(userID, jsonRoot);
                   break;
                   
                 case getOfferObjectiveList:
-                  jsonResponse = processGetOfferObjectiveList(jsonRoot, true);
+                  jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, true);
+                  break;
+                  
+                case getOfferObjectiveSummaryList:
+                  jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, false);
+                  break;
+                  
+                case getOfferObjective:
+                  jsonResponse = processGetOfferObjective(userID, jsonRoot);
+                  break;
+                  
+                case putOfferObjective:
+                  jsonResponse = processPutOfferObjective(userID, jsonRoot);
+                  break;
+                  
+                case removeOfferObjective:
+                  jsonResponse = processRemoveOfferObjective(userID, jsonRoot);
                   break;
                   
                 case getProductTypeList:
-                  jsonResponse = processGetProductTypeList(jsonRoot, true);
+                  jsonResponse = processGetProductTypeList(userID, jsonRoot, true);
                   break;
 
-                case getOfferObjectiveSummaryList:
-                  jsonResponse = processGetOfferObjectiveList(jsonRoot, false);
-                  break;
-                  
                 case getProductTypeSummaryList:
-                  jsonResponse = processGetProductTypeList(jsonRoot, false);
+                  jsonResponse = processGetProductTypeList(userID, jsonRoot, false);
                   break;
 
-                case getOfferObjective:
-                  jsonResponse = processGetOfferObjective(jsonRoot);
-                  break;
-                  
                 case getProductType:
-                  jsonResponse = processGetProductType(jsonRoot);
+                  jsonResponse = processGetProductType(userID, jsonRoot);
                   break;
 
-                case putOfferObjective:
-                  jsonResponse = processPutOfferObjective(jsonRoot);
-                  break;
-                  
                 case putProductType:
-                  jsonResponse = processPutProductType(jsonRoot);
+                  jsonResponse = processPutProductType(userID, jsonRoot);
                   break;
 
-                case removeOfferObjective:
-                  jsonResponse = processRemoveOfferObjective(jsonRoot);
-                  break;
-                  
                 case removeProductType:
-                  jsonResponse = processRemoveProductType(jsonRoot);
+                  jsonResponse = processRemoveProductType(userID, jsonRoot);
                   break;
 
                 case getFulfillmentProviders:
-                  jsonResponse = processGetFulfillmentProviders(jsonRoot);
+                  jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
                   break;
 
                 case getOfferDeliverables:
-                  jsonResponse = processGetOfferDeliverables(jsonRoot);
+                  jsonResponse = processGetOfferDeliverables(userID, jsonRoot);
                   break;
 
                 case getPaymentMeans:
-                  jsonResponse = processGetPaymentMeans(jsonRoot);
+                  jsonResponse = processGetPaymentMeans(userID, jsonRoot);
                   break;
                   
                 case getDashboardCounts:
-                  jsonResponse = processGetDashboardCounts(jsonRoot);
+                  jsonResponse = processGetDashboardCounts(userID, jsonRoot);
                   break;
               }
           }
@@ -1186,7 +1208,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetStaticConfiguration(JSONObject jsonRoot)
+  private JSONObject processGetStaticConfiguration(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1398,7 +1420,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupportedLanguages(JSONObject jsonRoot)
+  private JSONObject processGetSupportedLanguages(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1431,7 +1453,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupportedCurrencies(JSONObject jsonRoot)
+  private JSONObject processGetSupportedCurrencies(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1464,7 +1486,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupportedTimeUnits(JSONObject jsonRoot)
+  private JSONObject processGetSupportedTimeUnits(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1497,7 +1519,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetServiceTypes(JSONObject jsonRoot)
+  private JSONObject processGetServiceTypes(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1530,7 +1552,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCallingChannelProperties(JSONObject jsonRoot)
+  private JSONObject processGetCallingChannelProperties(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1563,7 +1585,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSalesChannels(JSONObject jsonRoot)
+  private JSONObject processGetSalesChannels(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1596,7 +1618,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupportedDataTypes(JSONObject jsonRoot)
+  private JSONObject processGetSupportedDataTypes(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1629,7 +1651,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProfileCriterionFields(JSONObject jsonRoot)
+  private JSONObject processGetProfileCriterionFields(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1657,7 +1679,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProfileCriterionFieldIDs(JSONObject jsonRoot)
+  private JSONObject processGetProfileCriterionFieldIDs(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1700,7 +1722,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProfileCriterionField(JSONObject jsonRoot)
+  private JSONObject processGetProfileCriterionField(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1771,7 +1793,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationCriterionFields(JSONObject jsonRoot)
+  private JSONObject processGetPresentationCriterionFields(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1799,7 +1821,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationCriterionFieldIDs(JSONObject jsonRoot)
+  private JSONObject processGetPresentationCriterionFieldIDs(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1842,7 +1864,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationCriterionField(JSONObject jsonRoot)
+  private JSONObject processGetPresentationCriterionField(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -1913,7 +1935,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyCriterionFields(JSONObject jsonRoot) throws GUIManagerException
+  private JSONObject processGetJourneyCriterionFields(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
     /*****************************************
     *
@@ -1965,7 +1987,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyCriterionFieldIDs(JSONObject jsonRoot) throws GUIManagerException
+  private JSONObject processGetJourneyCriterionFieldIDs(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
     /*****************************************
     *
@@ -2031,7 +2053,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyCriterionField(JSONObject jsonRoot) throws GUIManagerException
+  private JSONObject processGetJourneyCriterionField(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
     /*****************************************
     *
@@ -2120,7 +2142,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferCategories(JSONObject jsonRoot)
+  private JSONObject processGetOfferCategories(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -2153,7 +2175,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferTypes(JSONObject jsonRoot)
+  private JSONObject processGetOfferTypes(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -2186,7 +2208,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferOptimizationAlgorithms(JSONObject jsonRoot)
+  private JSONObject processGetOfferOptimizationAlgorithms(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -2219,7 +2241,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetNodeTypes(JSONObject jsonRoot)
+  private JSONObject processGetNodeTypes(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -2247,7 +2269,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyToolbox(JSONObject jsonRoot)
+  private JSONObject processGetJourneyToolbox(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -2280,7 +2302,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCampaignToolbox(JSONObject jsonRoot)
+  private JSONObject processGetCampaignToolbox(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -2813,7 +2835,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -2851,7 +2873,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourney(JSONObject jsonRoot)
+  private JSONObject processGetJourney(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -2896,7 +2918,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutJourney(JSONObject jsonRoot)
+  private JSONObject processPutJourney(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -2921,6 +2943,15 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing journey
+    *
+    *****************************************/
+
+    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourney : null;
+
+    /*****************************************
+    *
     *  process journey
     *
     *****************************************/
@@ -2929,15 +2960,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing journey
-        *
-        *****************************************/
-
-        GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
-        existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourney : null;
-
         /****************************************
         *
         *  instantiate journey
@@ -2952,7 +2974,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(journey);
+        journeyService.putJourney(journey, (existingJourney == null), userID);
 
         /*****************************************
         *
@@ -2978,7 +3000,7 @@ public class GUIManager
         //  store
         //
 
-        journeyService.putJourney(incompleteObject);
+        journeyService.putJourney(incompleteObject, (existingJourney == null), userID);
 
         //
         //  log
@@ -3006,7 +3028,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveJourney(JSONObject jsonRoot)
+  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3040,7 +3062,7 @@ public class GUIManager
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
     journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-    if (journey != null) journeyService.removeJourney(journeyID);
+    if (journey != null) journeyService.removeJourney(journeyID, userID);
 
     /*****************************************
     *
@@ -3058,7 +3080,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCampaignList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCampaignList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -3096,7 +3118,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCampaign(JSONObject jsonRoot)
+  private JSONObject processGetCampaign(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3141,7 +3163,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutCampaign(JSONObject jsonRoot)
+  private JSONObject processPutCampaign(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3166,6 +3188,15 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing campaign
+    *
+    *****************************************/
+
+    GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
+    existingCampaign = (existingCampaign != null && existingCampaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? existingCampaign : null;
+
+    /*****************************************
+    *
     *  process campaign
     *
     *****************************************/
@@ -3174,15 +3205,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing campaign
-        *
-        *****************************************/
-
-        GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
-        existingCampaign = (existingCampaign != null && existingCampaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? existingCampaign : null;
-
         /****************************************
         *
         *  instantiate campaign
@@ -3197,7 +3219,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(campaign);
+        journeyService.putJourney(campaign, (existingCampaign == null), userID);
 
         /*****************************************
         *
@@ -3223,7 +3245,7 @@ public class GUIManager
         //  store
         //
 
-        journeyService.putJourney(incompleteObject);
+        journeyService.putJourney(incompleteObject, (existingCampaign == null), userID);
 
         //
         //  log
@@ -3251,7 +3273,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveCampaign(JSONObject jsonRoot)
+  private JSONObject processRemoveCampaign(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3285,7 +3307,7 @@ public class GUIManager
 
     GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
     campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-    if (campaign != null) journeyService.removeJourney(campaignID);
+    if (campaign != null) journeyService.removeJourney(campaignID, userID);
 
     /*****************************************
     *
@@ -3303,7 +3325,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationRuleList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSegmentationRuleList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -3336,7 +3358,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationRule(JSONObject jsonRoot)
+  private JSONObject processGetSegmentationRule(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3380,7 +3402,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutSegmentationRule(JSONObject jsonRoot)
+  private JSONObject processPutSegmentationRule(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3405,6 +3427,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing segmentationRule
+    *
+    *****************************************/
+
+    GUIManagedObject existingSegmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
+
+    /*****************************************
+    *
     *  process segmentationRule
     *
     *****************************************/
@@ -3413,14 +3443,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing segmentationRule
-        *
-        *****************************************/
-
-        GUIManagedObject existingSegmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
-
         /****************************************
         *
         *  instantiate segmentationRule
@@ -3435,7 +3457,7 @@ public class GUIManager
         *
         *****************************************/
 
-        segmentationRuleService.putSegmentationRule(segmentationRule);
+        segmentationRuleService.putSegmentationRule(segmentationRule, (existingSegmentationRule == null), userID);
 
         /*****************************************
         *
@@ -3461,7 +3483,7 @@ public class GUIManager
         //  store
         //
 
-        segmentationRuleService.putSegmentationRule(incompleteObject);
+        segmentationRuleService.putSegmentationRule(incompleteObject, (existingSegmentationRule == null), userID);
 
         //
         //  log
@@ -3489,7 +3511,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveSegmentationRule(JSONObject jsonRoot)
+  private JSONObject processRemoveSegmentationRule(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3522,7 +3544,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject segmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
-    if (segmentationRule != null) segmentationRuleService.removeSegmentationRule(segmentationRuleID);
+    if (segmentationRule != null) segmentationRuleService.removeSegmentationRule(segmentationRuleID, userID);
 
     /*****************************************
     *
@@ -3540,7 +3562,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetOfferList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -3573,7 +3595,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOffer(JSONObject jsonRoot)
+  private JSONObject processGetOffer(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3617,7 +3639,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutOffer(JSONObject jsonRoot)
+  private JSONObject processPutOffer(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3642,6 +3664,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing offer
+    *
+    *****************************************/
+
+    GUIManagedObject existingOffer = offerService.getStoredOffer(offerID);
+
+    /*****************************************
+    *
     *  process offer
     *
     *****************************************/
@@ -3650,14 +3680,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing offer
-        *
-        *****************************************/
-
-        GUIManagedObject existingOffer = offerService.getStoredOffer(offerID);
-
         /****************************************
         *
         *  instantiate offer
@@ -3672,7 +3694,7 @@ public class GUIManager
         *
         *****************************************/
 
-        offerService.putOffer(offer, callingChannelService, productService);
+        offerService.putOffer(offer, callingChannelService, productService, (existingOffer == null), userID);
 
         /*****************************************
         *
@@ -3698,7 +3720,7 @@ public class GUIManager
         //  store
         //
 
-        offerService.putIncompleteOffer(incompleteObject);
+        offerService.putIncompleteOffer(incompleteObject, (existingOffer == null), userID);
 
         //
         //  log
@@ -3726,7 +3748,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveOffer(JSONObject jsonRoot)
+  private JSONObject processRemoveOffer(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3751,7 +3773,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject offer = offerService.getStoredOffer(offerID);
-    if (offer != null) offerService.removeOffer(offerID);
+    if (offer != null) offerService.removeOffer(offerID, userID);
 
     /*****************************************
     *
@@ -3769,7 +3791,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationStrategyList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPresentationStrategyList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -3802,7 +3824,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationStrategy(JSONObject jsonRoot)
+  private JSONObject processGetPresentationStrategy(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3846,7 +3868,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutPresentationStrategy(JSONObject jsonRoot)
+  private JSONObject processPutPresentationStrategy(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3871,6 +3893,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing presentationStrategy
+    *
+    *****************************************/
+
+    GUIManagedObject existingPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+
+    /*****************************************
+    *
     *  process presentationStrategy
     *
     *****************************************/
@@ -3879,14 +3909,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing presentationStrategy
-        *
-        *****************************************/
-
-        GUIManagedObject existingPresentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
-
         /****************************************
         *
         *  instantiate presentationStrategy
@@ -3901,7 +3923,7 @@ public class GUIManager
         *
         *****************************************/
 
-        presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService);
+        presentationStrategyService.putPresentationStrategy(presentationStrategy, scoringStrategyService, (existingPresentationStrategy == null), userID);
 
         /*****************************************
         *
@@ -3927,7 +3949,7 @@ public class GUIManager
         //  store
         //
 
-        presentationStrategyService.putIncompletePresentationStrategy(incompleteObject);
+        presentationStrategyService.putIncompletePresentationStrategy(incompleteObject, (existingPresentationStrategy == null), userID);
 
         //
         //  log
@@ -3955,7 +3977,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemovePresentationStrategy(JSONObject jsonRoot)
+  private JSONObject processRemovePresentationStrategy(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -3980,7 +4002,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
-    if (presentationStrategy != null) presentationStrategyService.removePresentationStrategy(presentationStrategyID);
+    if (presentationStrategy != null) presentationStrategyService.removePresentationStrategy(presentationStrategyID, userID);
 
     /*****************************************
     *
@@ -3998,7 +4020,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetScoringStrategyList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetScoringStrategyList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -4031,7 +4053,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetScoringStrategy(JSONObject jsonRoot)
+  private JSONObject processGetScoringStrategy(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4075,7 +4097,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutScoringStrategy(JSONObject jsonRoot)
+  private JSONObject processPutScoringStrategy(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4100,6 +4122,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing scoringStrategy
+    *
+    *****************************************/
+
+    GUIManagedObject existingScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+
+    /*****************************************
+    *
     *  process scoringStrategy
     *
     *****************************************/
@@ -4108,14 +4138,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing scoringStrategy
-        *
-        *****************************************/
-
-        GUIManagedObject existingScoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
-
         /****************************************
         *
         *  instantiate scoringStrategy
@@ -4130,7 +4152,7 @@ public class GUIManager
         *
         *****************************************/
 
-        scoringStrategyService.putScoringStrategy(scoringStrategy);
+        scoringStrategyService.putScoringStrategy(scoringStrategy, (existingScoringStrategy == null), userID);
 
         /*****************************************
         *
@@ -4164,7 +4186,7 @@ public class GUIManager
         //  store
         //
 
-        scoringStrategyService.putScoringStrategy(incompleteObject);
+        scoringStrategyService.putScoringStrategy(incompleteObject, (existingScoringStrategy == null), userID);
 
         //
         //  revalidatePresentationStrategies
@@ -4198,7 +4220,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveScoringStrategy(JSONObject jsonRoot)
+  private JSONObject processRemoveScoringStrategy(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4231,7 +4253,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
-    if (scoringStrategy != null) scoringStrategyService.removeScoringStrategy(scoringStrategyID);
+    if (scoringStrategy != null) scoringStrategyService.removeScoringStrategy(scoringStrategyID, userID);
 
     /*****************************************
     *
@@ -4303,7 +4325,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
       {
-        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date);
+        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, "(system)");
       }
   }
 
@@ -4313,7 +4335,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCallingChannelList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCallingChannelList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -4346,7 +4368,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCallingChannel(JSONObject jsonRoot)
+  private JSONObject processGetCallingChannel(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4390,7 +4412,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutCallingChannel(JSONObject jsonRoot)
+  private JSONObject processPutCallingChannel(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4415,6 +4437,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing callingChannel
+    *
+    *****************************************/
+
+    GUIManagedObject existingCallingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+
+    /*****************************************
+    *
     *  process callingChannel
     *
     *****************************************/
@@ -4423,14 +4453,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing callingChannel
-        *
-        *****************************************/
-
-        GUIManagedObject existingCallingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
-
         /****************************************
         *
         *  instantiate callingChannel
@@ -4445,7 +4467,7 @@ public class GUIManager
         *
         *****************************************/
 
-        callingChannelService.putCallingChannel(callingChannel);
+        callingChannelService.putCallingChannel(callingChannel, (existingCallingChannel == null), userID);
 
         /*****************************************
         *
@@ -4479,7 +4501,7 @@ public class GUIManager
         //  store
         //
 
-        callingChannelService.putCallingChannel(incompleteObject);
+        callingChannelService.putCallingChannel(incompleteObject, (existingCallingChannel == null), userID);
 
         //
         //  revalidateOffers
@@ -4513,7 +4535,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveCallingChannel(JSONObject jsonRoot)
+  private JSONObject processRemoveCallingChannel(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4546,7 +4568,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
-    if (callingChannel != null) callingChannelService.removeCallingChannel(callingChannelID);
+    if (callingChannel != null) callingChannelService.removeCallingChannel(callingChannelID, userID);
 
     /*****************************************
     *
@@ -4572,7 +4594,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupplierList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSupplierList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -4605,7 +4627,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupplier(JSONObject jsonRoot)
+  private JSONObject processGetSupplier(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4649,7 +4671,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutSupplier(JSONObject jsonRoot)
+  private JSONObject processPutSupplier(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4674,6 +4696,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing supplier
+    *
+    *****************************************/
+
+    GUIManagedObject existingSupplier = supplierService.getStoredSupplier(supplierID);
+
+    /*****************************************
+    *
     *  process supplier
     *
     *****************************************/
@@ -4682,14 +4712,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing supplier
-        *
-        *****************************************/
-
-        GUIManagedObject existingSupplier = supplierService.getStoredSupplier(supplierID);
-
         /****************************************
         *
         *  instantiate supplier
@@ -4704,7 +4726,7 @@ public class GUIManager
         *
         *****************************************/
 
-        supplierService.putSupplier(supplier);
+        supplierService.putSupplier(supplier, (existingSupplier == null), userID);
 
         /*****************************************
         *
@@ -4738,7 +4760,7 @@ public class GUIManager
         //  store
         //
 
-        supplierService.putSupplier(incompleteObject);
+        supplierService.putSupplier(incompleteObject, (existingSupplier == null), userID);
 
         //
         //  revalidateProducts
@@ -4772,7 +4794,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveSupplier(JSONObject jsonRoot)
+  private JSONObject processRemoveSupplier(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4805,7 +4827,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
-    if (supplier != null) supplierService.removeSupplier(supplierID);
+    if (supplier != null) supplierService.removeSupplier(supplierID, userID);
 
     /*****************************************
     *
@@ -4831,7 +4853,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProductList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetProductList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -4864,7 +4886,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProduct(JSONObject jsonRoot)
+  private JSONObject processGetProduct(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4908,7 +4930,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutProduct(JSONObject jsonRoot)
+  private JSONObject processPutProduct(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4933,6 +4955,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing product
+    *
+    *****************************************/
+
+    GUIManagedObject existingProduct = productService.getStoredProduct(productID);
+
+    /*****************************************
+    *
     *  process product
     *
     *****************************************/
@@ -4941,14 +4971,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing product
-        *
-        *****************************************/
-
-        GUIManagedObject existingProduct = productService.getStoredProduct(productID);
-
         /****************************************
         *
         *  instantiate product
@@ -4963,7 +4985,7 @@ public class GUIManager
         *
         *****************************************/
 
-        productService.putProduct(product, supplierService);
+        productService.putProduct(product, supplierService, (existingProduct == null), userID);
 
         /*****************************************
         *
@@ -4997,7 +5019,7 @@ public class GUIManager
         //  store
         //
 
-        productService.putIncompleteProduct(incompleteObject);
+        productService.putIncompleteProduct(incompleteObject, (existingProduct == null), userID);
 
         //
         //  revalidateOffers
@@ -5031,7 +5053,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveProduct(JSONObject jsonRoot)
+  private JSONObject processRemoveProduct(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5064,7 +5086,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject product = productService.getStoredProduct(productID);
-    if (product != null) productService.removeProduct(productID);
+    if (product != null) productService.removeProduct(productID, userID);
 
     /*****************************************
     *
@@ -5090,7 +5112,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCatalogCharacteristicList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCatalogCharacteristicList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -5123,7 +5145,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCatalogCharacteristic(JSONObject jsonRoot)
+  private JSONObject processGetCatalogCharacteristic(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5167,7 +5189,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processPutCatalogCharacteristic(JSONObject jsonRoot)
+  private JSONObject processPutCatalogCharacteristic(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5192,6 +5214,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing catalogCharacteristic
+    *
+    *****************************************/
+
+    GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+
+    /*****************************************
+    *
     *  process catalogCharacteristic
     *
     *****************************************/
@@ -5200,14 +5230,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing catalogCharacteristic
-        *
-        *****************************************/
-
-        GUIManagedObject existingCatalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
-
         /****************************************
         *
         *  instantiate catalogCharacteristic
@@ -5222,7 +5244,7 @@ public class GUIManager
         *
         *****************************************/
 
-        catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic);
+        catalogCharacteristicService.putCatalogCharacteristic(catalogCharacteristic, (existingCatalogCharacteristic == null), userID);
 
         /*****************************************
         *
@@ -5256,7 +5278,7 @@ public class GUIManager
         //  store
         //
 
-        catalogCharacteristicService.putIncompleteCatalogCharacteristic(incompleteObject);
+        catalogCharacteristicService.putIncompleteCatalogCharacteristic(incompleteObject, (existingCatalogCharacteristic == null), userID);
 
         //
         //  revalidateOffers
@@ -5290,7 +5312,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processRemoveCatalogCharacteristic(JSONObject jsonRoot)
+  private JSONObject processRemoveCatalogCharacteristic(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5323,7 +5345,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
-    if (catalogCharacteristic != null) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID);
+    if (catalogCharacteristic != null) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID, userID);
 
     /*****************************************
     *
@@ -5349,7 +5371,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferObjectiveList(JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetOfferObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -5378,45 +5400,11 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processGetProductTypeList
-  *
-  *****************************************/
-
-  private JSONObject processGetProductTypeList(JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert productTypes
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> productTypes = new ArrayList<JSONObject>();
-    for (GUIManagedObject productType : productTypeService.getStoredProductTypes())
-      {
-        productTypes.add(productTypeService.generateResponseJSON(productType, fullDetails, now));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("productTypes", JSONUtilities.encodeArray(productTypes));
-    return JSONUtilities.encodeObject(response);
-  }
-
-                 
-  /*****************************************
-  *
   *  processGetOfferObjective
   *
   *****************************************/
 
-  private JSONObject processGetOfferObjective(JSONObject jsonRoot)
+  private JSONObject processGetOfferObjective(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5453,14 +5441,229 @@ public class GUIManager
     if (offerObjective != null) response.put("offerObjective", offerObjectiveJSON);
     return JSONUtilities.encodeObject(response);
   }
+
+  /*****************************************
+  *
+  *  processRemoveOfferObjective
+  *
+  *****************************************/
+
+  private JSONObject processRemoveOfferObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+    if (offerObjective != null) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
+
+    /*****************************************
+    *
+    *  revalidateOffers
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
+    return JSONUtilities.encodeObject(response);
+  }
   
+  /*****************************************
+  *
+  *  processPutOfferObjective
+  *
+  *****************************************/
+
+  private JSONObject processPutOfferObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  offerObjectiveID
+    *
+    *****************************************/
+    
+    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (offerObjectiveID == null)
+      {
+        offerObjectiveID = offerObjectiveService.generateOfferObjectiveID();
+        jsonRoot.put("id", offerObjectiveID);
+      }
+    
+    /*****************************************
+    *
+    *  existing offerObjective
+    *
+    *****************************************/
+
+    GUIManagedObject existingOfferObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+
+    /*****************************************
+    *
+    *  process offerObjective
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate offerObjective
+        *
+        ****************************************/
+
+        OfferObjective offerObjective = new OfferObjective(jsonRoot, epoch, existingOfferObjective);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        offerObjectiveService.putOfferObjective(offerObjective, (existingOfferObjective == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateOffers
+        *
+        *****************************************/
+
+        // DEW TBD - revalidateOffers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", offerObjective.getOfferObjectiveID());
+        response.put("accepted", offerObjective.getAccepted());
+        response.put("processing", offerObjectiveService.isActiveOfferObjective(offerObjective, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        offerObjectiveService.putIncompleteOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
+
+        //
+        //  revalidateOffers
+        //
+
+        // DEW TBD - revalidateOffers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "offerObjectiveNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processGetProductTypeList
+  *
+  *****************************************/
+
+  private JSONObject processGetProductTypeList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert productTypes
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> productTypes = new ArrayList<JSONObject>();
+    for (GUIManagedObject productType : productTypeService.getStoredProductTypes())
+      {
+        productTypes.add(productTypeService.generateResponseJSON(productType, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("productTypes", JSONUtilities.encodeArray(productTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
   /*****************************************
   *
   *  processGetProductType
   *
   *****************************************/
 
-  private JSONObject processGetProductType(JSONObject jsonRoot)
+  private JSONObject processGetProductType(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5498,137 +5701,13 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-
-  /*****************************************
-  *
-  *  processPutOfferObjective
-  *
-  *****************************************/
-
-  private JSONObject processPutOfferObjective(JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-    
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    
-    /*****************************************
-    *
-    *  offerObjectiveID
-    *
-    *****************************************/
-    
-    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (offerObjectiveID == null)
-      {
-        offerObjectiveID = offerObjectiveService.generateOfferObjectiveID();
-        jsonRoot.put("id", offerObjectiveID);
-      }
-    
-    /*****************************************
-    *
-    *  process offerObjective
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    long epoch = epochServer.getKey();
-    try
-      {
-        /*****************************************
-        *
-        *  existing offerObjective
-        *
-        *****************************************/
-
-        GUIManagedObject existingOfferObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
-
-        /****************************************
-        *
-        *  instantiate offerObjective
-        *
-        ****************************************/
-
-        OfferObjective offerObjective = new OfferObjective(jsonRoot, epoch, existingOfferObjective);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        offerObjectiveService.putOfferObjective(offerObjective);
-
-        /*****************************************
-        *
-        *  revalidateOffers
-        *
-        *****************************************/
-
-        // DEW TBD - revalidateOffers(now);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", offerObjective.getOfferObjectiveID());
-        response.put("accepted", offerObjective.getAccepted());
-        response.put("processing", offerObjectiveService.isActiveOfferObjective(offerObjective, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        offerObjectiveService.putIncompleteOfferObjective(incompleteObject);
-
-        //
-        //  revalidateOffers
-        //
-
-        // DEW TBD - revalidateOffers(now);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        
-        //
-        //  response
-        //
-
-        response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "offerObjectiveNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-  
   /*****************************************
   *
   *  processPutProductType
   *
   *****************************************/
 
-  private JSONObject processPutProductType(JSONObject jsonRoot)
+  private JSONObject processPutProductType(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5653,6 +5732,14 @@ public class GUIManager
     
     /*****************************************
     *
+    *  existing productType
+    *
+    *****************************************/
+
+    GUIManagedObject existingProductType = productTypeService.getStoredProductType(productTypeID);
+
+    /*****************************************
+    *
     *  process productType
     *
     *****************************************/
@@ -5661,14 +5748,6 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  existing productType
-        *
-        *****************************************/
-
-        GUIManagedObject existingProductType = productTypeService.getStoredProductType(productTypeID);
-
         /****************************************
         *
         *  instantiate productType
@@ -5683,7 +5762,7 @@ public class GUIManager
         *
         *****************************************/
 
-        productTypeService.putProductType(productType);
+        productTypeService.putProductType(productType, (existingProductType == null), userID);
 
         /*****************************************
         *
@@ -5717,7 +5796,7 @@ public class GUIManager
         //  store
         //
 
-        productTypeService.putIncompleteProductType(incompleteObject);
+        productTypeService.putIncompleteProductType(incompleteObject, (existingProductType == null), userID);
 
         //
         //  revalidateProductType
@@ -5745,73 +5824,13 @@ public class GUIManager
       }
   }
 
-  
-  /*****************************************
-  *
-  *  processRemoveOfferObjective
-  *
-  *****************************************/
-
-  private JSONObject processRemoveOfferObjective(JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-    
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-    
-    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
-    if (offerObjective != null) offerObjectiveService.removeOfferObjective(offerObjectiveID);
-
-    /*****************************************
-    *
-    *  revalidateOffers
-    *
-    *****************************************/
-
-    revalidateOffers(now);
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
-    return JSONUtilities.encodeObject(response);
-  }
-  
   /*****************************************
   *
   *  processRemoveProductType
   *
   *****************************************/
 
-  private JSONObject processRemoveProductType(JSONObject jsonRoot)
+  private JSONObject processRemoveProductType(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5844,7 +5863,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
-    if (productType != null) productTypeService.removeProductType(productTypeID);
+    if (productType != null) productTypeService.removeProductType(productTypeID, userID);
 
     /*****************************************
     *
@@ -5864,7 +5883,6 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-  
   /*****************************************
   *
   *  revalidateOffers
@@ -5918,7 +5936,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedOffer : modifiedOffers)
       {
-        offerService.putGUIManagedObject(modifiedOffer, date);
+        offerService.putGUIManagedObject(modifiedOffer, date, false, "(system)");
       }
   }
 
@@ -5974,7 +5992,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedProduct : modifiedProducts)
       {
-        productService.putGUIManagedObject(modifiedProduct, date);
+        productService.putGUIManagedObject(modifiedProduct, date, false, "(system)");
       }
     
     /****************************************
@@ -5992,7 +6010,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetFulfillmentProviders(JSONObject jsonRoot)
+  private JSONObject processGetFulfillmentProviders(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -6025,7 +6043,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferDeliverables(JSONObject jsonRoot)
+  private JSONObject processGetOfferDeliverables(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -6058,7 +6076,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPaymentMeans(JSONObject jsonRoot)
+  private JSONObject processGetPaymentMeans(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -6091,7 +6109,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDashboardCounts(JSONObject jsonRoot)
+  private JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");

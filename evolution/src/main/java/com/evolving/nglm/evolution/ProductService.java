@@ -71,7 +71,7 @@ public class ProductService extends GUIService
 
   public ProductService(String bootstrapServers, String groupID, String productTopic, boolean masterService, ProductListener productListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "ProductService", groupID, productTopic, masterService, getSuperListener(productListener), notifyOnSignificantChange);
+    super(bootstrapServers, "ProductService", groupID, productTopic, masterService, getSuperListener(productListener), "putProduct", "removeProduct", notifyOnSignificantChange);
   }
 
   //
@@ -145,7 +145,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putProduct(Product product, SupplierService supplierService) throws GUIManagerException
+  public void putProduct(Product product, SupplierService supplierService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -163,7 +163,7 @@ public class ProductService extends GUIService
     //  put
     //
 
-    putGUIManagedObject(product, now);
+    putGUIManagedObject(product, now, newObject, userID);
   }
 
   /*****************************************
@@ -172,9 +172,9 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteProduct(IncompleteObject product)
+  public void putIncompleteProduct(IncompleteObject product, boolean newObject, String userID)
   {
-    putGUIManagedObject(product, SystemTime.getCurrentTime());
+    putGUIManagedObject(product, SystemTime.getCurrentTime(), newObject, userID);
   }
   
   /*****************************************
@@ -183,7 +183,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void removeProduct(String productID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime()); }
+  public void removeProduct(String productID, String userID) { removeGUIManagedObject(productID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *
