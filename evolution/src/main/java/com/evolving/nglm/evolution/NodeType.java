@@ -56,6 +56,7 @@ public class NodeType extends DeploymentManagedObject
   private boolean startNode;
   private OutputType outputType;
   private LinkedHashMap<String,CriterionField> parameters = new LinkedHashMap<String,CriterionField>();
+  private LinkedHashMap<String,CriterionField> outputConnectorParameters = new LinkedHashMap<String,CriterionField>();
   private ActionManager actionManager = null;
 
   /*****************************************
@@ -67,6 +68,7 @@ public class NodeType extends DeploymentManagedObject
   public boolean getStartNode() { return startNode; }
   public OutputType getOutputType() { return  outputType; }
   public Map<String,CriterionField> getParameters() { return parameters; }
+  public Map<String,CriterionField> getOutputConnectorParameters() { return outputConnectorParameters; }
   public ActionManager getActionManager() { return actionManager; }
 
   /*****************************************
@@ -101,6 +103,23 @@ public class NodeType extends DeploymentManagedObject
         CriterionField originalParameter = new CriterionField(parameterJSON);
         CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyNodeParameter", originalParameter.getInternalOnly());
         parameters.put(enhancedParameter.getID(), enhancedParameter);
+      }
+
+    //
+    //  outputConnectorParameters
+    //
+
+    JSONObject dynamicOutputConnector = JSONUtilities.decodeJSONObject(jsonRoot, "dynamicOutputConnector", false);
+    if (dynamicOutputConnector != null)
+      {
+        JSONArray outputConnectorParametersJSON = JSONUtilities.decodeJSONArray(dynamicOutputConnector, "parameters", true);
+        for (int i=0; i<outputConnectorParametersJSON.size(); i++)
+          {
+            JSONObject outputConnectorParameterJSON = (JSONObject) outputConnectorParametersJSON.get(i);
+            CriterionField originalParameter = new CriterionField(outputConnectorParameterJSON);
+            CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyLinkParameter", originalParameter.getInternalOnly());
+            outputConnectorParameters.put(enhancedParameter.getID(), enhancedParameter);
+          }
       }
 
     //

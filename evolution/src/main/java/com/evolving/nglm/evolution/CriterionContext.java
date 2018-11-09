@@ -234,7 +234,7 @@ public class CriterionContext
   *
   *****************************************/
 
-  public CriterionContext(Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent)
+  public CriterionContext(Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, boolean includeLinkParameters)
   {
     /*****************************************
     *
@@ -287,6 +287,15 @@ public class CriterionContext
     //
 
     this.journeyCriterionFields.putAll(journeyNodeType.getParameters());
+
+    //
+    //  link-level  parameters
+    //
+
+    if (includeLinkParameters)
+      {
+        this.journeyCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
+      }
 
     //
     //  trigger-level fields

@@ -683,11 +683,25 @@ public class Journey extends GUIManagedObject
         *****************************************/
 
         List<EvaluationCriterion> transitionCriteria = new ArrayList<EvaluationCriterion>(outgoingConnectionPoint.getTransitionCriteria());
+
+        //
+        //  additionalCriteria -- node
+        //
+
         if (outgoingConnectionPoint.getAdditionalCriteria() != null && sourceJourneyNode.getNodeParameters().containsKey(outgoingConnectionPoint.getAdditionalCriteria()))
           {
             transitionCriteria.addAll((List<EvaluationCriterion>) sourceJourneyNode.getNodeParameters().get(outgoingConnectionPoint.getAdditionalCriteria()));
           }
 
+        //
+        //  additionalCriteria -- link
+        //
+
+        if (outgoingConnectionPoint.getAdditionalCriteria() != null && outgoingConnectionPoint.getOutputConnectorParameters().containsKey(outgoingConnectionPoint.getAdditionalCriteria()))
+          {
+            transitionCriteria.addAll((List<EvaluationCriterion>) outgoingConnectionPoint.getOutputConnectorParameters().get(outgoingConnectionPoint.getAdditionalCriteria()));
+          }
+        
         /*****************************************
         *
         *  journeyLink
@@ -695,7 +709,7 @@ public class Journey extends GUIManagedObject
         *****************************************/
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
-        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
+        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), outgoingConnectionPoint.getOutputConnectorParameters(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
 
         /*****************************************
@@ -1009,19 +1023,20 @@ public class Journey extends GUIManagedObject
       //  criterionContext
       //
 
-      CriterionContext criterionContext = new CriterionContext(journey.getJourneyMetrics(), journey.getJourneyParameters(), this.nodeType, nodeEvent);
+      CriterionContext nodeCriterionContext = new CriterionContext(journey.getJourneyMetrics(), journey.getJourneyParameters(), this.nodeType, nodeEvent, false);
+      CriterionContext linkCriterionContext = new CriterionContext(journey.getJourneyMetrics(), journey.getJourneyParameters(), this.nodeType, nodeEvent, true);
 
       //
       //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
       //
 
-      this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, criterionContext));
+      this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
 
       //
       //  outputConnectors
       //
 
-      this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), criterionContext);
+      this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext);
     }
 
     /*****************************************
@@ -1112,13 +1127,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, CriterionContext criterionContext) throws GUIManagerException
+    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
     {
       List<OutgoingConnectionPoint> outgoingConnectionPoints = new ArrayList<OutgoingConnectionPoint>();
       for (int i=0; i<jsonArray.size(); i++)
         {
           JSONObject connectionPointJSON = (JSONObject) jsonArray.get(i);
-          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, criterionContext);
+          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext);
           outgoingConnectionPoints.add(outgoingConnectionPoint);
         }
       return outgoingConnectionPoints;
@@ -1140,6 +1155,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
 
     private String name;
+    private ParameterMap outputConnectorParameters;
     private EvaluationPriority evaluationPriority;
     private List<EvaluationCriterion> transitionCriteria;
     private String additionalCriteria;
@@ -1151,6 +1167,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
     
     public String getName() { return name; }
+    public ParameterMap getOutputConnectorParameters() { return outputConnectorParameters; }
     public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
     public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
     public String getAdditionalCriteria() { return additionalCriteria; }
@@ -1161,12 +1178,77 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public OutgoingConnectionPoint(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
+    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
     {
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
+      this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
       this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
       this.additionalCriteria = JSONUtilities.decodeString(jsonRoot, "additionalCriteria", false);
+    }
+
+    /*****************************************
+    *
+    *  decodeOutputConnectorParameters
+    *
+    *****************************************/
+
+    private ParameterMap decodeOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    {
+      ParameterMap outputConnectorParameters = new ParameterMap();
+      if (jsonArray != null)
+        {
+          for (int i=0; i<jsonArray.size(); i++)
+            {
+              JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+              String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+              CriterionField parameter = nodeType.getOutputConnectorParameters().get(parameterName);
+              if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+              switch (parameter.getFieldDataType())
+                {
+                  case IntegerCriterion:
+                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
+                    break;
+
+                  case DoubleCriterion:
+                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
+                    break;
+
+                  case StringCriterion:
+                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                    break;
+
+                  case BooleanCriterion:
+                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
+                    break;
+
+                  case DateCriterion:
+                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeDate(parameterJSON, "value", false));  // TBD DEW:  use a string date format
+                    break;
+
+                  case StringSetCriterion:
+                    Set<String> stringSetValue = new HashSet<String>();
+                    JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                    for (int j=0; j<stringSetArray.size(); j++)
+                      {
+                        stringSetValue.add((String) stringSetArray.get(j));
+                      }
+                    outputConnectorParameters.put(parameterName, stringSetValue);
+                    break;
+
+                  case EvaluationCriteriaParameter:
+                    List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
+                    JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                    for (int j=0; j<evaluationCriteriaArray.size(); j++)
+                      {
+                        evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                      }
+                    outputConnectorParameters.put(parameterName, evaluationCriteriaValue);
+                    break;
+                }
+            }
+        }
+      return outputConnectorParameters;
     }
 
     /*****************************************

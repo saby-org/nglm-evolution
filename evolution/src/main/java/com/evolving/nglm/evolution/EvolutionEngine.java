@@ -1135,28 +1135,45 @@ public class EvolutionEngine
           {
             /*****************************************
             *
-            *  subscriberEvaluationRequest
-            *
-            *****************************************/
-
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, evolutionEvent, now);
-
-            /*****************************************
-            *
             *  transition?
             *
             *****************************************/
 
+            SortedSet<Date> nextEvaluationDates = new TreeSet<Date>();
             firedLink = null;
             for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values())
               {
+                //
+                //  evaluationRequest (including link)
+                //
+
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now);
+
+                //
+                //  evaluate
+                //
+
                 if (EvaluationCriterion.evaluateCriteria(evaluationRequest, journeyLink.getTransitionCriteria()))
                   {
                     firedLink = journeyLink;
+                  }
+
+                //
+                //  store data on evaluationRequest
+                //
+
+                nextEvaluationDates.addAll(evaluationRequest.getNextEvaluationDates());
+                context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                
+                //
+                //  break if this link has fired
+                //
+
+                if (firedLink != null)
+                  {
                     break;
                   }
               }
-            context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
 
             /*****************************************
             *
@@ -1166,7 +1183,7 @@ public class EvolutionEngine
 
             if (firedLink == null)
               {
-                for (Date nextEvaluationDate : evaluationRequest.getNextEvaluationDates())
+                for (Date nextEvaluationDate : nextEvaluationDates)
                   {
                     subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
                     subscriberStateUpdated = true;
@@ -1189,7 +1206,7 @@ public class EvolutionEngine
 
                 if (journeyNode.getNodeType().getActionManager() != null)
                   {
-                    SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, evolutionEvent, now);
+                    SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
                     journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
                     context.getSubscriberTraceDetails().addAll(exitActionEvaluationRequest.getTraceDetails());
                   }
@@ -1218,7 +1235,7 @@ public class EvolutionEngine
                     //  action
                     //
 
-                    SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, evolutionEvent, now);
+                    SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
                     DeliveryRequest deliveryRequest = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
                     context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
 

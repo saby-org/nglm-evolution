@@ -45,6 +45,7 @@ public abstract class CriterionFieldRetriever
   public static Object getJourneyParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyState().getJourneyParameters().get(fieldName); }
   public static Object getJourneyNodeEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyState().getJourneyNodeEntryDate(); }
   public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyNode().getNodeParameters().get(fieldName); }
+  public static Object getJourneyLinkParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyLink().getLinkParameters().get(fieldName); }
 
   //
   //  simple
