@@ -93,7 +93,7 @@ public class CatalogCharacteristicInstance
     //
 
     this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true);
-    Object valueJSON = JSONUtilities.decodeString(jsonRoot, "value", false);
+    Object valueJSON = jsonRoot.get("value");
     if (valueJSON instanceof JSONArray)
       {
         this.singletonValue = null;
@@ -101,7 +101,7 @@ public class CatalogCharacteristicInstance
       }
     else
       {
-        this.singletonValue = (String) valueJSON;
+        this.singletonValue = JSONUtilities.decodeString(jsonRoot, "value", false);
         this.listValues = null;
       }
   }
