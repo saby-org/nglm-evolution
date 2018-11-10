@@ -101,7 +101,7 @@ public class NodeType extends DeploymentManagedObject
       {
         JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
         CriterionField originalParameter = new CriterionField(parameterJSON);
-        CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyNodeParameter", originalParameter.getInternalOnly());
+        CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyNodeParameter", originalParameter.getInternalOnly(), originalParameter.getTagFormat());
         parameters.put(enhancedParameter.getID(), enhancedParameter);
       }
 
@@ -117,7 +117,7 @@ public class NodeType extends DeploymentManagedObject
           {
             JSONObject outputConnectorParameterJSON = (JSONObject) outputConnectorParametersJSON.get(i);
             CriterionField originalParameter = new CriterionField(outputConnectorParameterJSON);
-            CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyLinkParameter", originalParameter.getInternalOnly());
+            CriterionField enhancedParameter = new CriterionField(originalParameter, originalParameter.getID(), "getJourneyLinkParameter", originalParameter.getInternalOnly(), originalParameter.getTagFormat());
             outputConnectorParameters.put(enhancedParameter.getID(), enhancedParameter);
           }
       }

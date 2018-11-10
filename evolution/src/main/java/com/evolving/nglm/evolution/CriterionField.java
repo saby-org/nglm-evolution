@@ -59,6 +59,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("esField", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("criterionFieldRetriever", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("internalOnly", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("tagFormat", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -85,6 +86,7 @@ public class CriterionField extends DeploymentManagedObject
   private String esField;
   private String criterionFieldRetriever;
   private boolean internalOnly;
+  private String tagFormat;
 
   //
   //  calculated
@@ -102,6 +104,7 @@ public class CriterionField extends DeploymentManagedObject
   public String getESField() { return esField; }
   public String getCriterionFieldRetriever() { return criterionFieldRetriever; }
   public boolean getInternalOnly() { return internalOnly; }
+  public String getTagFormat() { return tagFormat; }
 
   /*****************************************
   *
@@ -134,6 +137,7 @@ public class CriterionField extends DeploymentManagedObject
     this.esField = JSONUtilities.decodeString(jsonRoot, "esField", false);
     this.criterionFieldRetriever = JSONUtilities.decodeString(jsonRoot, "retriever", false);
     this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
+    this.tagFormat = JSONUtilities.decodeString(jsonRoot, "tagFormat", false);
 
     //
     //  retriever
@@ -160,22 +164,23 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  public CriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly) throws GUIManagerException
+  public CriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly, String tagFormat) throws GUIManagerException
   {
-    this(generateCriterionField(criterionField, id, criterionFieldRetriever, internalOnly));
+    this(generateCriterionField(criterionField, id, criterionFieldRetriever, internalOnly, tagFormat));
   }
 
   //
   //  constructor -- constructed with default display
   //
 
-  private static JSONObject generateCriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly)
+  private static JSONObject generateCriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly, String tagFormat)
   {
     JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
     criterionFieldJSON.put("id", id);
     criterionFieldJSON.put("retriever", criterionFieldRetriever);
     criterionFieldJSON.put("esField", null);
     criterionFieldJSON.put("internalOnly", internalOnly);
+    criterionFieldJSON.put("tagFormat", tagFormat);
     return criterionFieldJSON;
   }
 
@@ -185,7 +190,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, String esField, String criterionFieldRetriever, boolean internalOnly)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, String esField, String criterionFieldRetriever, boolean internalOnly, String tagFormat)
   {
     //
     //  super
@@ -202,6 +207,7 @@ public class CriterionField extends DeploymentManagedObject
     this.esField = esField;
     this.criterionFieldRetriever = criterionFieldRetriever;
     this.internalOnly = internalOnly;
+    this.tagFormat = tagFormat;
 
     //
     //  retriever
@@ -237,6 +243,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("esField", criterionField.getESField());
     struct.put("criterionFieldRetriever", criterionField.getCriterionFieldRetriever());
     struct.put("internalOnly", criterionField.getInternalOnly());
+    struct.put("tagFormat", criterionField.getTagFormat());
     return struct;
   }
 
@@ -266,12 +273,13 @@ public class CriterionField extends DeploymentManagedObject
     String esField = valueStruct.getString("esField");
     String criterionFieldRetriever = valueStruct.getString("criterionFieldRetriever");
     boolean internalOnly = valueStruct.getBoolean("internalOnly");
+    String tagFormat = valueStruct.getString("tagFormat");
 
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, esField, criterionFieldRetriever, internalOnly);
+    return new CriterionField(jsonRepresentation, fieldDataType, esField, criterionFieldRetriever, internalOnly, tagFormat);
   }
 
   /*****************************************
@@ -340,6 +348,8 @@ public class CriterionField extends DeploymentManagedObject
         result = result && Objects.equals(esField, criterionField.getESField());
         result = result && Objects.equals(criterionFieldRetriever, criterionField.getCriterionFieldRetriever());
         result = result && internalOnly == criterionField.getInternalOnly();
+        result = result && Objects.equals(tagFormat, criterionField.getTagFormat());
+        
       }
     return result;
   }

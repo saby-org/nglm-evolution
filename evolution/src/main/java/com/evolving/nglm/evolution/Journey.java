@@ -862,7 +862,7 @@ public class Journey extends GUIManagedObject
             //  journeyMetric
             //
 
-            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric", false);
+            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric", false, baseMetric.getTagFormat());
 
             //
             //  result
@@ -889,7 +889,7 @@ public class Journey extends GUIManagedObject
           {
             JSONObject journeyParameterJSON = (JSONObject) jsonArray.get(i);
             CriterionField originalJourneyParameter = new CriterionField(journeyParameterJSON);
-            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter", originalJourneyParameter.getInternalOnly());
+            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter", originalJourneyParameter.getInternalOnly(), originalJourneyParameter.getTagFormat());
             journeyParameters.put(enhancedJourneyParameter.getID(), enhancedJourneyParameter);
           }
       }
@@ -1116,6 +1116,11 @@ public class Journey extends GUIManagedObject
                   }
                 nodeParameters.put(parameterName, evaluationCriteriaValue);
                 break;
+
+              case SMSMessageParameter:
+                SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", true), criterionContext);
+                nodeParameters.put(parameterName, smsMessageValue);
+                break;
             }
         }
       return nodeParameters;
@@ -1244,6 +1249,11 @@ public class Journey extends GUIManagedObject
                         evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
                       }
                     outputConnectorParameters.put(parameterName, evaluationCriteriaValue);
+                    break;
+
+                  case SMSMessageParameter:
+                    SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", true), criterionContext);
+                    outputConnectorParameters.put(parameterName, smsMessageValue);
                     break;
                 }
             }

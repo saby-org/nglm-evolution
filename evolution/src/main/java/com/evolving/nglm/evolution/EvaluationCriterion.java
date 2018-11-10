@@ -103,6 +103,7 @@ public class EvaluationCriterion
     //
 
     EvaluationCriteriaParameter("evaluationCriteria"),
+    SMSMessageParameter("smsMessage"),
 
     //
     //  only for criterionArguments
