@@ -90,6 +90,7 @@ public class Deployment
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
 
   /*****************************************
   *
@@ -179,6 +180,7 @@ public class Deployment
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
+  public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
 
   /*****************************************
   *
@@ -1006,6 +1008,27 @@ public class Deployment
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  thirdPartyMethodPermissions
+    //
+
+    try
+      {
+        JSONArray thirdPartyMethodPermissions = JSONUtilities.decodeJSONArray(jsonRoot, "thirdPartyMethodPermissions", false);
+        if (thirdPartyMethodPermissions == null) thirdPartyMethodPermissions = new JSONArray();
+        for (int i=0; i<thirdPartyMethodPermissions.size(); i++)
+          {
+            JSONObject thirdPartyMethodPermissionsJSON = (JSONObject) thirdPartyMethodPermissions.get(i);
+            String methodName = JSONUtilities.decodeString(thirdPartyMethodPermissionsJSON, "methodName", Boolean.TRUE);
+            ThirdPartyMethodAccessLevel thirdPartyMethodAccessLevel = new ThirdPartyMethodAccessLevel(thirdPartyMethodPermissionsJSON);
+            thirdPartyMethodPermissionsMap.put(methodName, thirdPartyMethodAccessLevel);
+          }
+      }
+    catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

@@ -13,6 +13,7 @@ thirdpartymanager:
     CUB_SCHEMA_REGISTRY_TIMEOUT: 120
     ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
     THIRDPARTYMANAGER_PORT: <_THIRDPARTYMANAGER_PORT_>
+    FWK_SERVER_URL: <_FWK_SERVER_URL_>
     TRACE_LEVEL: <_TRACE_LEVEL_>
     KAFKA_HEAP_OPTS: <_THIRDPARTYMANAGER_HEAP_OPTS_>
     KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_THIRDPARTYMANAGER_MONITORING_PORT_>:/app/config/thirdpartymanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dnglm.license.nodeid=<_THIRDPARTYMANAGER_HOST_>

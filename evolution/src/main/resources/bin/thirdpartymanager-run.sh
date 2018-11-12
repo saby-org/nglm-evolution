@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager 001 $BROKER_SERVERS $THIRDPARTYMANAGER_PORT
+exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager 001 $BROKER_SERVERS $THIRDPARTYMANAGER_PORT $FWK_SERVER_URL

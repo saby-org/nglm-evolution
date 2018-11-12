@@ -15,14 +15,28 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +62,35 @@ public class ThirdPartyManager
   
   public static String ProductID = "Evolution-ThirdPartyManager";
   
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(ThirdPartyManager.class);
+  
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private OfferService offerService;
+  private static final int RESTAPIVersion = 1;
+  private HttpServer restServer;
+  private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private static final String GENERIC_RESPONSE_CODE = "responseCode";
+  private static final String GENERIC_RESPONSE_MSG = "responseMessage";
+  
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  private int httpTimeout = 5000;
+  private String fwkServerURL = null;
+  RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
+  
   /*****************************************
   *
   *  enum
@@ -61,34 +104,11 @@ public class ThirdPartyManager
     getActiveOffers;
   }
   
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-  
-  //
-  //  logger
-  //
-
-  private static final Logger log = LoggerFactory.getLogger(ThirdPartyManager.class);
-  
   //
   //  license
   //
 
   private LicenseChecker licenseChecker = null;
-  
-  /*****************************************
-  *
-  *  data
-  *
-  *****************************************/
-  
-  private OfferService offerService;
-
-  private static final int RESTAPIVersion = 1;
-  private HttpServer restServer;
   
   /*****************************************
   *
@@ -120,14 +140,24 @@ public class ThirdPartyManager
     String apiProcessKey = args[0];
     String bootstrapServers = args[1];
     int apiRestPort = parseInteger("apiRestPort", args[2]);
+    String fwkServerURL = args[3];
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
+    methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     
     //
     //  log
     //
 
-    log.info("main START: {} {} {}", apiProcessKey, bootstrapServers, apiRestPort);
+    log.info("main START: {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServerURL);
+    
+    /*****************************************
+    *
+    *  FWK Server
+    *
+    *****************************************/
+
+    this.fwkServerURL = fwkServerURL;
     
     //
     //  license
@@ -145,7 +175,7 @@ public class ThirdPartyManager
     //  construct
     //
     
-    offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false); //thirdpartymanager-offerservice? Yes, I believe its correct as its the consumer grouId
+    offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false);
     
     //
     //  start
@@ -190,6 +220,7 @@ public class ThirdPartyManager
     *****************************************/
 
     log.info("main restServerStarted");
+    log.info("methodPermissionsMapper : {} ", methodPermissionsMapper);
   }
   
   /*****************************************
@@ -304,6 +335,15 @@ public class ThirdPartyManager
         
         /*****************************************
         *
+        *  accessCheck
+        *
+        *****************************************/
+        
+        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+        String token = validateCredentialAndGetToken(thirdPartyCredential, api.name());
+        
+        /*****************************************
+        *
         *  license state
         *
         *****************************************/
@@ -373,6 +413,7 @@ public class ThirdPartyManager
         //
 
         jsonResponse.put("apiVersion", RESTAPIVersion);
+        jsonResponse.put("token", token);
         
         //
         //  log
@@ -389,13 +430,50 @@ public class ThirdPartyManager
         //
         
         exchange.sendResponseHeaders(200, 0);
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
         writer.write(jsonResponse.toString());
         writer.close();
         exchange.close();
         
+      }
+    catch (ThirdPartyManagerException ex )
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  send error response
+        //
+
+        HashMap<String,Object> response = new HashMap<String,Object>();
+        response.put(GENERIC_RESPONSE_CODE, ex.getResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, ex.getMessage());
+        
+        //
+        //  standard response fields
+        //
+
+        response.put("apiVersion", RESTAPIVersion);
+        JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+        
+        //
+        // headers
+        //
+        
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
       }
     catch (org.json.simple.parser.ParseException | IOException | ServerException | RuntimeException e )
       {
@@ -412,8 +490,8 @@ public class ThirdPartyManager
         //
 
         HashMap<String,Object> response = new HashMap<String,Object>();
-        response.put("responseCode", "systemError");
-        response.put("responseMessage", e.getMessage());
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
         
         //
         //  standard response fields
@@ -427,7 +505,7 @@ public class ThirdPartyManager
         //
         
         exchange.sendResponseHeaders(200, 0);
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
         writer.write(jsonResponse.toString());
@@ -446,16 +524,14 @@ public class ThirdPartyManager
   private JSONObject processFailedLicenseCheck(LicenseState licenseState)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();
-    
-    response.put("responseCode", "failedLicenseCheck");
-    response.put("responseMessage", licenseState.getOutcome().name());
-
+    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.LICENSE_RESTRICTION.getGenericResponseCode());
+    response.put(GENERIC_RESPONSE_MSG, licenseState.getOutcome().name());
     return JSONUtilities.encodeObject(response);
   }
   
   /*****************************************
   *
-  *  ping
+  *  processPing
   *
   *****************************************/
 
@@ -476,8 +552,9 @@ public class ThirdPartyManager
     *****************************************/
 
     HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
     response.put("ping", responseStr);
+    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     return JSONUtilities.encodeObject(response);
   }
   
@@ -521,13 +598,15 @@ public class ThirdPartyManager
     
     if ( null == offer )
       {
-        response.put("responseCode", "offerNotFound");
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
     else 
       {
-        response.put("responseCode", "ok");
         response.put("offer", ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer));
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
   }
@@ -564,7 +643,8 @@ public class ThirdPartyManager
     
     List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer)).collect(Collectors.toList());
     response.put("offers", JSONUtilities.encodeArray(offersJson));
-    response.put("responseCode", "ok");
+    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     return JSONUtilities.encodeObject(response);
   }
 
@@ -609,11 +689,187 @@ public class ThirdPartyManager
   
   /*****************************************
   *
+  *  validateCredential
+   * @throws ThirdPartyManagerException 
+   * @throws ParseException 
+   * @throws IOException 
+  *
+  *****************************************/
+  
+  private String validateCredentialAndGetToken(ThirdPartyCredential thirdPartyCredential, String api) throws ThirdPartyManagerException, ParseException, IOException
+  {
+    String token = null;
+    try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
+      {
+        //
+        // create request
+        //
+
+        HttpResponse httpResponse = null;
+
+        if ((null == thirdPartyCredential.getLoginName() || null == thirdPartyCredential.getPassword() || thirdPartyCredential.getLoginName().isEmpty() || thirdPartyCredential.getPassword().isEmpty()) && (null == thirdPartyCredential.getToken() || thirdPartyCredential.getToken().isEmpty()))
+          {
+            log.error("invalid request {}", "credential is missing");
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{credential is missing}", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+          }
+        else if (null == thirdPartyCredential.getToken() || thirdPartyCredential.getToken().isEmpty())
+          {
+            //
+            // call FWK api/account/login
+            //
+            
+            log.debug("request data for login {} ", thirdPartyCredential.getJSONString());
+            StringEntity stringEntity = new StringEntity(thirdPartyCredential.getJSONString(), ContentType.create("application/json"));
+            HttpPost httpPost = new HttpPost("http://" + fwkServerURL + "/api/account/login");
+            httpPost.setEntity(stringEntity);
+            
+            //
+            // submit request
+            //
+            
+            httpResponse = httpClient.execute(httpPost);
+          } 
+        else
+          {
+            //
+            // call FWK api/account/checktoken
+            //
+            
+            log.debug("request checktoken : {}", "http://" + fwkServerURL + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
+            HttpGet httpGet = new HttpGet("http://" + fwkServerURL + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
+            
+            
+            //
+            // submit request
+            //
+            
+            httpResponse = httpClient.execute(httpGet);
+          }
+
+        //
+        // process response
+        //
+        
+        if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
+          {
+            String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+            log.debug("FWK raw response : {}", jsonResponse);
+            
+            //
+            //  parse JSON response from FWK
+            //
+            
+            JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
+            
+            //
+            // check privileges
+            //
+            
+            boolean hasAccess = hasAccess(jsonRoot, api);
+            if (hasAccess)
+              {
+                token = JSONUtilities.decodeString(jsonRoot, "Token", true);
+                
+                //
+                //  return correct token
+                //
+                
+                return token;
+              }
+            else 
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS.getGenericResponseMessage(), RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS.getGenericResponseCode());
+              }
+          }
+        else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
+          {
+            log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE.getGenericResponseMessage(), RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE.getGenericResponseCode());
+          }
+        else if(httpResponse != null && httpResponse.getStatusLine() != null)
+          {
+            log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+        else
+          {
+            log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+      }
+    catch(ParseException pe) 
+      {
+        log.error("failed to Parse ParseException {} ", pe.getMessage());
+        throw pe;
+      }
+    catch (IOException e)
+      {
+        log.error("failed to FWK server with data {} ", thirdPartyCredential.getJSONString());
+        log.error("IOException: {}", e.getMessage());
+        throw e;
+      }
+  }
+  
+  /*****************************************
+  *
+  *  hasAccess
+  *
+  *****************************************/
+  
+  private boolean hasAccess(JSONObject jsonRoot, String api)
+  {
+    boolean result = true;
+    List<String> userPermissions = new ArrayList<String>();
+    JSONArray userPermissionArray = JSONUtilities.decodeJSONArray(jsonRoot, "Permissions", true);
+    JSONObject userWorkgroupHierarchyJSON = JSONUtilities.decodeJSONObject(jsonRoot, "WorkgroupHierarchy", true);
+    JSONObject userWorkgroupJSON = JSONUtilities.decodeJSONObject(userWorkgroupHierarchyJSON, "Workgroup", true);
+    String userWorkgroup = JSONUtilities.decodeString(userWorkgroupJSON, "Name", true);
+    for (int i=0; i<userPermissionArray.size(); i++)
+      {
+        userPermissions.add((String) userPermissionArray.get(i));
+      }
+    ThirdPartyMethodAccessLevel methodAccessLevel = methodPermissionsMapper.get(api);
+    if (null == methodAccessLevel || (methodAccessLevel.getPermissions().isEmpty() && methodAccessLevel.getWorkgroups().isEmpty()))
+      {
+        result  = false;
+        log.warn("No permission/workgroup is configured for method {} ", api);
+      }
+    else
+      {
+        //
+        // check workgroup
+        //
+        
+        result = methodAccessLevel.getWorkgroups().contains(userWorkgroup);
+        
+        //
+        //  check permissions
+        //
+        
+        if (result)
+          {
+            for (String userPermission : userPermissions)
+              {
+                result = methodAccessLevel.getPermissions().contains(userPermission);
+                if (result) break;
+              }
+          }
+      }
+    
+    //
+    //  result
+    //
+    
+    return result;
+  }
+
+  /*****************************************
+  *
   *  class ThirdPartyManagerException
   *
   *****************************************/
   
-  public static class ThirdPartyManagerException extends Exception
+  private static class ThirdPartyManagerException extends Exception
   {
     /*****************************************
     *
@@ -621,7 +877,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
-    private String responseParameter;
+    private int responseCode;
 
     /*****************************************
     *
@@ -629,7 +885,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
-    public String getResponseParameter() { return responseParameter; }
+    public int getResponseCode() { return responseCode; }
 
     /*****************************************
     *
@@ -637,10 +893,10 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    public ThirdPartyManagerException(String responseMessage, String responseParameter)
+    public ThirdPartyManagerException(String responseMessage, int responseCode)
     {
       super(responseMessage);
-      this.responseParameter = responseParameter;
+      this.responseCode = responseCode;
     }
 
     /*****************************************
@@ -652,7 +908,60 @@ public class ThirdPartyManager
     public ThirdPartyManagerException(Throwable e)
     {
       super(e.getMessage(), e);
-      this.responseParameter = null;
+      this.responseCode = -1;
     }
   }
+  
+  /*****************************************
+  *
+  *  class ThirdPartyCredential
+  *
+  *****************************************/
+  
+  private class ThirdPartyCredential
+  {
+    
+    //
+    // data
+    //
+    
+    private String loginName;
+    private String password;
+    private String token;
+    private JSONObject jsonRepresentation;
+    
+    //
+    //  accessors
+    //
+    
+    public String getLoginName() { return loginName; }
+    public String getPassword() { return password; }
+    public String getToken() { return token; }
+    public String getJSONString() { return jsonRepresentation.toString(); }
+    
+    /****************************
+    *
+    *  constructor
+    *
+    *****************************/
+    
+    public ThirdPartyCredential(JSONObject jsonRoot)
+    {
+      this.loginName = JSONUtilities.decodeString(jsonRoot, "loginName", false);
+      this.password = JSONUtilities.decodeString(jsonRoot, "password", false);
+      this.token = JSONUtilities.decodeString(jsonRoot, "token", false);
+      
+      //
+      //  jsonRepresentation
+      //
+          
+      jsonRepresentation = new JSONObject();
+      if (token == null || token.isEmpty()) 
+        {
+          jsonRepresentation.put("LoginName", loginName);
+          jsonRepresentation.put("Password", password);
+        }
+    }
+  }
+  
 }
