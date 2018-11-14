@@ -122,6 +122,7 @@ public class CatalogCharacteristicService extends GUIService
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
     result.put("type", guiManagedObject.getJSONRepresentation().get("type"));
     result.put("unit", guiManagedObject.getJSONRepresentation().get("unit"));
+    result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
     return result;
   }
   

@@ -122,7 +122,7 @@ public class JourneyLink
   public void setSource(JourneyNode source) { this.source = source; }
   public void setDestination(JourneyNode destination) { this.destination = destination; }
 
-   /*****************************************
+  /*****************************************
   *
   *  constructor -- standard/unpack
   *

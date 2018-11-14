@@ -22,8 +22,9 @@ import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.Objects;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Objects;
 import java.util.List;
 
 public class OfferObjective extends GUIManagedObject
@@ -224,6 +225,27 @@ public class OfferObjective extends GUIManagedObject
     else
       {
         return true;
+      }
+  }
+  
+  /*****************************************
+  *
+  *  validate
+  *
+  *****************************************/
+
+  public void validate(CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  validate catalog characteristics exist and are active
+    *
+    *****************************************/
+
+    for (String catalogCharacteristicID : catalogCharacteristics)
+      {
+        CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
+        if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
   }
 }

@@ -117,6 +117,7 @@ public class SupplierService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
+    result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
     return result;
   }
   

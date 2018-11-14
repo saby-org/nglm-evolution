@@ -123,6 +123,7 @@ public class ProductService extends GUIService
     result.put("offerTypeID", guiManagedObject.getJSONRepresentation().get("offerTypeID"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
+    result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
     return result;
   }
   
@@ -145,7 +146,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putProduct(Product product, SupplierService supplierService, boolean newObject, String userID) throws GUIManagerException
+  public void putProduct(Product product, SupplierService supplierService, ProductTypeService productTypeService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -154,10 +155,10 @@ public class ProductService extends GUIService
     Date now = SystemTime.getCurrentTime();
 
     //
-    //  validate supplier
+    //  validate
     //
 
-    product.validateSupplier(supplierService, now);
+    product.validate(supplierService, productTypeService, now);
 
     //
     //  put

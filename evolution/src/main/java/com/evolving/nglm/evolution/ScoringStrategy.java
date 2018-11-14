@@ -340,4 +340,24 @@ public class ScoringStrategy extends GUIManagedObject
         return true;
       }
   }
+
+  /*****************************************
+  *
+  *  validate
+  *
+  *****************************************/
+
+  public void validate(OfferObjectiveService offerObjectiveService, Date date) throws GUIManagerException
+  {
+    for (ScoringGroup scoringGroup : scoringGroups)
+      {
+        for (ScoringSplit scoringSplit : scoringGroup.getScoringSplits())
+          {
+            for (String offerObjectiveID : scoringSplit.getOfferObjectiveIDs())
+              {
+                if (offerObjectiveService.getActiveOfferObjective(offerObjectiveID, date) == null) throw new GUIManagerException("unknown offer objective", offerObjectiveID);
+              }
+          }
+      }
+  }
 }

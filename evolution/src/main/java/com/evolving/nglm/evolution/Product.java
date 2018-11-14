@@ -49,6 +49,7 @@ public class Product extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("deliverableID", Schema.STRING_SCHEMA);
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -73,6 +74,7 @@ public class Product extends GUIManagedObject
   ****************************************/
 
   private String supplierID;
+  private String deliverableID;
   private Set<ProductTypeInstance> productTypes; 
 
   /****************************************
@@ -83,6 +85,7 @@ public class Product extends GUIManagedObject
 
   public String getProductID() { return getGUIManagedObjectID(); }
   public String getSupplierID() { return supplierID; }
+  public String getDeliverableID() { return deliverableID; }
   public Set<ProductTypeInstance> getProductTypes() { return productTypes;  }
 
   /*****************************************
@@ -91,10 +94,11 @@ public class Product extends GUIManagedObject
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, Set<ProductTypeInstance> productTypes)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Set<ProductTypeInstance> productTypes)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
+    this.deliverableID = deliverableID;
     this.productTypes = productTypes;
   }
 
@@ -110,6 +114,7 @@ public class Product extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, product);
     struct.put("supplierID", product.getSupplierID());
+    struct.put("deliverableID", product.getDeliverableID());
     struct.put("productTypes", packProductTypes(product.getProductTypes()));
     return struct;
   }
@@ -152,13 +157,14 @@ public class Product extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String supplierID = (String) valueStruct.get("supplierID");
+    String deliverableID = (String) valueStruct.get("deliverableID");
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
     
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, productTypes);
+    return new Product(schemaAndValue, supplierID, deliverableID, productTypes);
   }
   
   /*****************************************
@@ -193,7 +199,6 @@ public class Product extends GUIManagedObject
     return result;
   }
 
-
   /*****************************************
   *
   *  constructor -- JSON
@@ -225,15 +230,8 @@ public class Product extends GUIManagedObject
     *****************************************/
 
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
+    this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
     this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
-
-    /*****************************************
-    *
-    *  validate
-    *
-    *****************************************/
-
-    // none yet
 
     /*****************************************
     *
@@ -260,6 +258,7 @@ public class Product extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingProduct.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(supplierID, existingProduct.getSupplierID());
+        epochChanged = epochChanged || ! Objects.equals(deliverableID, existingProduct.getDeliverableID());
         epochChanged = epochChanged || ! Objects.equals(productTypes, existingProduct.getProductTypes());
         return epochChanged;
       }
@@ -290,26 +289,29 @@ public class Product extends GUIManagedObject
   
   /*****************************************
   *
-  *  validateSuppliers
+  *  validate
   *
   *****************************************/
 
-  public void validateSupplier(SupplierService supplierService, Date date) throws GUIManagerException
+  public void validate(SupplierService supplierService, ProductTypeService productTypeService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
-    *  retrieve supplier
+    *  validate supplier exists and is active
     *
     *****************************************/
 
-    Supplier supplier = supplierService.getActiveSupplier(supplierID, date);
-
+    if (supplierService.getActiveSupplier(supplierID, date) == null) throw new GUIManagerException("unknown supplier", supplierID);
+    
     /*****************************************
     *
-    *  validate the supplier exists and is active
+    *  validate all product types exists and are active
     *
     *****************************************/
 
-    if (supplier == null) throw new GUIManagerException("unknown supplier", supplierID);
+    for (ProductTypeInstance productTypeInstance : productTypes)
+      {
+        if (productTypeService.getActiveProductType(productTypeInstance.getProductTypeID(), date) == null) throw new GUIManagerException("unknown product type", productTypeInstance.getProductTypeID());
+      }
   }
 }

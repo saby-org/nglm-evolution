@@ -435,11 +435,11 @@ public class PresentationStrategy extends GUIManagedObject
 
   /*****************************************
   *
-  *  validateScoringStrategies
+  *  validate
   *
   *****************************************/
 
-  public void validateScoringStrategies(ScoringStrategyService scoringStrategyService, Date date) throws GUIManagerException
+  public void validate(ScoringStrategyService scoringStrategyService, Date date) throws GUIManagerException
   {
     for (String scoringStrategyID : scoringStrategies.values())
       {

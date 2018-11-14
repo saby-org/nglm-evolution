@@ -624,12 +624,18 @@ public class Offer extends GUIManagedObject
 
   /*****************************************
   *
-  *  validateCallingChannels
+  *  validate
   *
   *****************************************/
 
-  public void validateCallingChannels(CallingChannelService callingChannelService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, ProductService productService, Date date) throws GUIManagerException
   {
+    /****************************************
+    *
+    *  ensure valid/active calling channels
+    *
+    ****************************************/
+    
     for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
       {
         /*****************************************
@@ -678,16 +684,13 @@ public class Offer extends GUIManagedObject
         offerProperties.removeAll(callingChannel.getOptionalCallingChannelProperties());
         if (offerProperties.size() > 0) throw new GUIManagerException("unknown calling channel properties", callingChannel.getGUIManagedObjectID());
       }
-  }
-  
-  /*****************************************
-  *
-  *  validateProducts
-  *
-  *****************************************/
 
-  public void validateProducts(ProductService productService, Date date) throws GUIManagerException
-  {
+    /****************************************
+    *
+    *  ensure valid/active products
+    *
+    ****************************************/
+    
     for (OfferProduct offerProduct : offerProducts)
       {
         /*****************************************

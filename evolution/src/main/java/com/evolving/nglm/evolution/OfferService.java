@@ -123,6 +123,7 @@ public class OfferService extends GUIService
     result.put("serviceTypeID", guiManagedObject.getJSONRepresentation().get("serviceTypeID"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
+    result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
     return result;
   }
   
@@ -157,8 +158,7 @@ public class OfferService extends GUIService
     //  validate
     //
 
-    offer.validateCallingChannels(callingChannelService, now);
-    offer.validateProducts(productService, now);
+    offer.validate(callingChannelService, productService, now);
 
     //
     //  put

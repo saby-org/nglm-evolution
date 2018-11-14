@@ -156,7 +156,7 @@ public class PresentationStrategyService extends GUIService
     //  validate scoring strategies
     //
 
-    presentationStrategy.validateScoringStrategies(scoringStrategyService, now);
+    presentationStrategy.validate(scoringStrategyService, now);
 
     //
     //  put

@@ -4275,62 +4275,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  revalidatePresentationStrategies
-  *
-  *****************************************/
-
-  private void revalidatePresentationStrategies(Date date)
-  {
-    /****************************************
-    *
-    *  identify
-    *
-    ****************************************/
-    
-    Set<GUIManagedObject> modifiedPresentationStrategies = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingPresentationStrategy : presentationStrategyService.getStoredPresentationStrategies())
-      {
-        //
-        //  modifiedPresentationStrategy
-        //
-        
-        long epoch = epochServer.getKey();
-        GUIManagedObject modifiedPresentationStrategy;
-        try
-          {
-            PresentationStrategy presentationStrategy = new PresentationStrategy(existingPresentationStrategy.getJSONRepresentation(), epoch, existingPresentationStrategy);
-            presentationStrategy.validateScoringStrategies(scoringStrategyService, date);
-            modifiedPresentationStrategy = presentationStrategy;
-          }
-        catch (JSONUtilitiesException|GUIManagerException e)
-          {
-            modifiedPresentationStrategy = new IncompleteObject(existingPresentationStrategy.getJSONRepresentation(), epoch);
-          }
-
-        //
-        //  changed?
-        //
-        
-        if (existingPresentationStrategy.getAccepted() != modifiedPresentationStrategy.getAccepted())
-          {
-            modifiedPresentationStrategies.add(modifiedPresentationStrategy);
-          }
-      }
-    
-    /****************************************
-    *
-    *  update
-    *
-    ****************************************/
-    
-    for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
-      {
-        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, "(system)");
-      }
-  }
-
-  /*****************************************
-  *
   *  processGetCallingChannelList
   *
   *****************************************/
@@ -4985,7 +4929,7 @@ public class GUIManager
         *
         *****************************************/
 
-        productService.putProduct(product, supplierService, (existingProduct == null), userID);
+        productService.putProduct(product, supplierService, productTypeService, (existingProduct == null), userID);
 
         /*****************************************
         *
@@ -5248,11 +5192,14 @@ public class GUIManager
 
         /*****************************************
         *
-        *  revalidateOffers
+        *  revalidate dependent objects
         *
         *****************************************/
 
-        // DEW TBD - revalidateOffers(now);
+        revalidateOffers(now);
+        revalidateOfferObjectives(now);
+        revalidateProductTypes(now);
+        revalidateProducts(now);
 
         /*****************************************
         *
@@ -5281,10 +5228,13 @@ public class GUIManager
         catalogCharacteristicService.putIncompleteCatalogCharacteristic(incompleteObject, (existingCatalogCharacteristic == null), userID);
 
         //
-        //  revalidateOffers
+        //  revalidate dependent objects
         //
 
-        // DEW TBD - revalidateOffers(now);
+        revalidateOffers(now);
+        revalidateOfferObjectives(now);
+        revalidateProductTypes(now);
+        revalidateProducts(now);
 
         //
         //  log
@@ -5349,11 +5299,14 @@ public class GUIManager
 
     /*****************************************
     *
-    *  revalidateOffers
+    *  revalidate dependent objects
     *
     *****************************************/
 
     revalidateOffers(now);
+    revalidateOfferObjectives(now);
+    revalidateProductTypes(now);
+    revalidateProducts(now);
 
     /*****************************************
     *
@@ -5444,65 +5397,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processRemoveOfferObjective
-  *
-  *****************************************/
-
-  private JSONObject processRemoveOfferObjective(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-    
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-    
-    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
-    if (offerObjective != null) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
-
-    /*****************************************
-    *
-    *  revalidateOffers
-    *
-    *****************************************/
-
-    revalidateOffers(now);
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
   *  processPutOfferObjective
   *
   *****************************************/
@@ -5566,11 +5460,12 @@ public class GUIManager
 
         /*****************************************
         *
-        *  revalidateOffers
+        *  revalidate dependent objects
         *
         *****************************************/
 
-        // DEW TBD - revalidateOffers(now);
+        revalidateOffers(now);
+        revalidateScoringStrategies(now);
 
         /*****************************************
         *
@@ -5599,10 +5494,11 @@ public class GUIManager
         offerObjectiveService.putIncompleteOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
 
         //
-        //  revalidateOffers
+        //  revalidate dependent objects
         //
 
-        // DEW TBD - revalidateOffers(now);
+        revalidateOffers(now);
+        revalidateScoringStrategies(now);
 
         //
         //  log
@@ -5622,6 +5518,66 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveOfferObjective
+  *
+  *****************************************/
+
+  private JSONObject processRemoveOfferObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+    if (offerObjective != null) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
+
+    /*****************************************
+    *
+    *  revalidate dependent objects
+    *
+    *****************************************/
+    
+    revalidateOffers(now);
+    revalidateScoringStrategies(now);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
+    return JSONUtilities.encodeObject(response);
   }
   
   /*****************************************
@@ -5766,12 +5722,12 @@ public class GUIManager
 
         /*****************************************
         *
-        *  revalidateProductType
+        *  revalidateProducts
         *
         *****************************************/
 
-        // DEW TBD - revalidateProductType(now);
-
+        revalidateProducts(now);
+        
         /*****************************************
         *
         *  response
@@ -5799,10 +5755,10 @@ public class GUIManager
         productTypeService.putIncompleteProductType(incompleteObject, (existingProductType == null), userID);
 
         //
-        //  revalidateProductType
+        //  revalidateProducts
         //
 
-        // DEW TBD - revalidateProductType (now)
+        revalidateProducts(now);
 
         //
         //  log
@@ -5885,6 +5841,126 @@ public class GUIManager
 
   /*****************************************
   *
+  *  revalidateScoringStrategies
+  *
+  *****************************************/
+
+  private void revalidateScoringStrategies(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedScoringStrategies = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingScoringStrategy : scoringStrategyService.getStoredScoringStrategies())
+      {
+        //
+        //  modifiedScoringStrategy
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedScoringStrategy;
+        try
+          {
+            ScoringStrategy scoringStrategy = new ScoringStrategy(existingScoringStrategy.getJSONRepresentation(), epoch, existingScoringStrategy);
+            scoringStrategy.validate(offerObjectiveService, date);
+            modifiedScoringStrategy = scoringStrategy;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedScoringStrategy = new IncompleteObject(existingScoringStrategy.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingScoringStrategy.getAccepted() != modifiedScoringStrategy.getAccepted())
+          {
+            modifiedScoringStrategies.add(modifiedScoringStrategy);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedScoringStrategy : modifiedScoringStrategies)
+      {
+        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, "(system)");
+      }
+    
+    /****************************************
+    *
+    *  revalidate offers
+    *
+    ****************************************/
+
+    revalidatePresentationStrategies(date);
+  }
+
+  /*****************************************
+  *
+  *  revalidatePresentationStrategies
+  *
+  *****************************************/
+
+  private void revalidatePresentationStrategies(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedPresentationStrategies = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingPresentationStrategy : presentationStrategyService.getStoredPresentationStrategies())
+      {
+        //
+        //  modifiedPresentationStrategy
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedPresentationStrategy;
+        try
+          {
+            PresentationStrategy presentationStrategy = new PresentationStrategy(existingPresentationStrategy.getJSONRepresentation(), epoch, existingPresentationStrategy);
+            presentationStrategy.validate(scoringStrategyService, date);
+            modifiedPresentationStrategy = presentationStrategy;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedPresentationStrategy = new IncompleteObject(existingPresentationStrategy.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingPresentationStrategy.getAccepted() != modifiedPresentationStrategy.getAccepted())
+          {
+            modifiedPresentationStrategies.add(modifiedPresentationStrategy);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
+      {
+        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, "(system)");
+      }
+  }
+
+  /*****************************************
+  *
   *  revalidateOffers
   *
   *****************************************/
@@ -5909,8 +5985,7 @@ public class GUIManager
         try
           {
             Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer, catalogCharacteristicService);
-            offer.validateCallingChannels(callingChannelService, date);
-            offer.validateProducts(productService, date);
+            offer.validate(callingChannelService, productService, date);
             modifiedOffer = offer;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -5966,7 +6041,7 @@ public class GUIManager
         try
           {
             Product product = new Product(existingProduct.getJSONRepresentation(), epoch, existingProduct, catalogCharacteristicService);
-            product.validateSupplier(supplierService, date);
+            product.validate(supplierService, productTypeService, date);
             modifiedProduct = product;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -6004,6 +6079,201 @@ public class GUIManager
     revalidateOffers(date);
   }
   
+  /*****************************************
+  *
+  *  revalidateCatalogCharacteristics
+  *
+  *****************************************/
+
+  private void revalidateCatalogCharacteristics(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedCatalogCharacteristics = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingCatalogCharacteristic : catalogCharacteristicService.getStoredCatalogCharacteristics())
+      {
+        //
+        //  modifiedCatalogCharacteristic
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedCatalogCharacteristic;
+        try
+          {
+            CatalogCharacteristic catalogCharacteristic = new CatalogCharacteristic(existingCatalogCharacteristic.getJSONRepresentation(), epoch, existingCatalogCharacteristic);
+            modifiedCatalogCharacteristic = catalogCharacteristic;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedCatalogCharacteristic = new IncompleteObject(existingCatalogCharacteristic.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingCatalogCharacteristic.getAccepted() != modifiedCatalogCharacteristic.getAccepted())
+          {
+            modifiedCatalogCharacteristics.add(modifiedCatalogCharacteristic);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedCatalogCharacteristic : modifiedCatalogCharacteristics)
+      {
+        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, "(system)");
+      }
+    
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+
+    revalidateOffers(date);
+    revalidateOfferObjectives(date);
+    revalidateProductTypes(date);
+    revalidateProducts(date);
+  }
+
+  /*****************************************
+  *
+  *  revalidateOfferObjectives
+  *
+  *****************************************/
+
+  private void revalidateOfferObjectives(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedOfferObjectives = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingOfferObjective : offerObjectiveService.getStoredOfferObjectives())
+      {
+        //
+        //  modifiedOfferObjective
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedOfferObjective;
+        try
+          {
+            OfferObjective offerObjective = new OfferObjective(existingOfferObjective.getJSONRepresentation(), epoch, existingOfferObjective);
+            offerObjective.validate(catalogCharacteristicService, date);
+            modifiedOfferObjective = offerObjective;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedOfferObjective = new IncompleteObject(existingOfferObjective.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingOfferObjective.getAccepted() != modifiedOfferObjective.getAccepted())
+          {
+            modifiedOfferObjectives.add(modifiedOfferObjective);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedOfferObjective : modifiedOfferObjectives)
+      {
+        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, "(system)");
+      }
+    
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+
+    revalidateOffers(date);
+    revalidateScoringStrategies(date);
+  }
+
+  /*****************************************
+  *
+  *  revalidateProductTypes
+  *
+  *****************************************/
+
+  private void revalidateProductTypes(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedProductTypes = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingProductType : productTypeService.getStoredProductTypes())
+      {
+        //
+        //  modifiedProductType
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedProductType;
+        try
+          {
+            ProductType productType = new ProductType(existingProductType.getJSONRepresentation(), epoch, existingProductType);
+            productType.validate(catalogCharacteristicService, date);
+            modifiedProductType = productType;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedProductType = new IncompleteObject(existingProductType.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingProductType.getAccepted() != modifiedProductType.getAccepted())
+          {
+            modifiedProductTypes.add(modifiedProductType);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedProductType : modifiedProductTypes)
+      {
+        productTypeService.putGUIManagedObject(modifiedProductType, date, false, "(system)");
+      }
+    
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+
+    revalidateProducts(date);
+  }
+
   /*****************************************
   *
   *  getFulfillmentProviders

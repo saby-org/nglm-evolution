@@ -269,5 +269,4 @@ public class ProductTypeInstance
   {
     return productTypeID.hashCode();
   }
-
 }
