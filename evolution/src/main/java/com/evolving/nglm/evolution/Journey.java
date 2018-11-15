@@ -852,10 +852,11 @@ public class Journey extends GUIManagedObject
             switch (baseMetric.getFieldDataType())
               {
                 case IntegerCriterion:
+                case DoubleCriterion:
                   break;
 
                 default:
-                  throw new GUIManagerException("non-integer baseMetric", baseMetricID);
+                  throw new GUIManagerException("non-numeric baseMetric", baseMetricID);
               }
 
             //
