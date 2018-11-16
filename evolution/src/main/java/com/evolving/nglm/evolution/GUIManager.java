@@ -307,6 +307,27 @@ public class GUIManager
     *****************************************/
 
     //
+    //  productTypes
+    //
+
+    if (productTypeService.getStoredProductTypes().size() == 0)
+      {
+        try
+          {
+            JSONArray initialProductTypesJSONArray = Deployment.getInitialProductTypesJSONArray();
+            for (int i=0; i<initialProductTypesJSONArray.size(); i++)
+              {
+                JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
+                processPutProductType("0", productTypeJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+    
+    //
     //  calling channels
     //
 
@@ -318,7 +339,7 @@ public class GUIManager
             for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
               {
                 JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                processPutCallingChannel("(system)", callingChannelJSON);
+                processPutCallingChannel("0", callingChannelJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -339,7 +360,7 @@ public class GUIManager
             for (int i=0; i<initialSuppliersJSONArray.size(); i++)
               {
                 JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
-                processPutSupplier("(system)", supplierJSON);
+                processPutSupplier("0", supplierJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -360,7 +381,7 @@ public class GUIManager
             for (int i=0; i<initialProductsJSONArray.size(); i++)
               {
                 JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
-                processPutProduct("(system)", productJSON);
+                processPutProduct("0", productJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -381,7 +402,7 @@ public class GUIManager
             for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
               {
                 JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
-                processPutCatalogCharacteristic("(system)", catalogCharacteristicJSON);
+                processPutCatalogCharacteristic("0", catalogCharacteristicJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -402,28 +423,7 @@ public class GUIManager
             for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
               {
                 JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
-                processPutOfferObjective("(system)", offerObjectiveJSON);
-              }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-      }
-    
-    //
-    //  productTypes
-    //
-
-    if (productTypeService.getStoredProductTypes().size() == 0)
-      {
-        try
-          {
-            JSONArray initialProductTypesJSONArray = Deployment.getInitialProductTypesJSONArray();
-            for (int i=0; i<initialProductTypesJSONArray.size(); i++)
-              {
-                JSONObject productTypeJSON = (JSONObject) initialProductTypesJSONArray.get(i);
-                processPutProductType("(system)", productTypeJSON);
+                processPutOfferObjective("0", offerObjectiveJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -4160,7 +4160,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidatePresentationStrategies(now);
+        revalidatePresentationStrategies(now, userID);
 
         /*****************************************
         *
@@ -4192,7 +4192,7 @@ public class GUIManager
         //  revalidatePresentationStrategies
         //
 
-        revalidatePresentationStrategies(now);
+        revalidatePresentationStrategies(now, userID);
 
         //
         //  log
@@ -4261,7 +4261,7 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidatePresentationStrategies(now);
+    revalidatePresentationStrategies(now, userID);
 
     /*****************************************
     *
@@ -4419,7 +4419,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now);
+        revalidateOffers(now, userID);
 
         /*****************************************
         *
@@ -4451,7 +4451,7 @@ public class GUIManager
         //  revalidateOffers
         //
 
-        revalidateOffers(now);
+        revalidateOffers(now, userID);
 
         //
         //  log
@@ -4520,7 +4520,7 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateOffers(now);
+    revalidateOffers(now, userID);
 
     /*****************************************
     *
@@ -4678,7 +4678,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateProducts(now);
+        revalidateProducts(now, userID);
 
         /*****************************************
         *
@@ -4710,7 +4710,7 @@ public class GUIManager
         //  revalidateProducts
         //
 
-        revalidateProducts(now);
+        revalidateProducts(now, userID);
 
         //
         //  log
@@ -4779,7 +4779,7 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateProducts(now);
+    revalidateProducts(now, userID);
 
     /*****************************************
     *
@@ -4937,7 +4937,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now);
+        revalidateOffers(now, userID);
 
         /*****************************************
         *
@@ -4969,7 +4969,7 @@ public class GUIManager
         //  revalidateOffers
         //
 
-        revalidateOffers(now);
+        revalidateOffers(now, userID);
 
         //
         //  log
@@ -5038,7 +5038,7 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateOffers(now);
+    revalidateOffers(now, userID);
 
     /*****************************************
     *
@@ -5196,10 +5196,10 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now);
-        revalidateOfferObjectives(now);
-        revalidateProductTypes(now);
-        revalidateProducts(now);
+        revalidateOffers(now, userID);
+        revalidateOfferObjectives(now, userID);
+        revalidateProductTypes(now, userID);
+        revalidateProducts(now, userID);
 
         /*****************************************
         *
@@ -5231,10 +5231,10 @@ public class GUIManager
         //  revalidate dependent objects
         //
 
-        revalidateOffers(now);
-        revalidateOfferObjectives(now);
-        revalidateProductTypes(now);
-        revalidateProducts(now);
+        revalidateOffers(now, userID);
+        revalidateOfferObjectives(now, userID);
+        revalidateProductTypes(now, userID);
+        revalidateProducts(now, userID);
 
         //
         //  log
@@ -5303,10 +5303,10 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateOffers(now);
-    revalidateOfferObjectives(now);
-    revalidateProductTypes(now);
-    revalidateProducts(now);
+    revalidateOffers(now, userID);
+    revalidateOfferObjectives(now, userID);
+    revalidateProductTypes(now, userID);
+    revalidateProducts(now, userID);
 
     /*****************************************
     *
@@ -5464,8 +5464,8 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now);
-        revalidateScoringStrategies(now);
+        revalidateOffers(now, userID);
+        revalidateScoringStrategies(now, userID);
 
         /*****************************************
         *
@@ -5497,8 +5497,8 @@ public class GUIManager
         //  revalidate dependent objects
         //
 
-        revalidateOffers(now);
-        revalidateScoringStrategies(now);
+        revalidateOffers(now, userID);
+        revalidateScoringStrategies(now, userID);
 
         //
         //  log
@@ -5567,8 +5567,8 @@ public class GUIManager
     *
     *****************************************/
     
-    revalidateOffers(now);
-    revalidateScoringStrategies(now);
+    revalidateOffers(now, userID);
+    revalidateScoringStrategies(now, userID);
 
     /*****************************************
     *
@@ -5726,7 +5726,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateProducts(now);
+        revalidateProducts(now, userID);
         
         /*****************************************
         *
@@ -5758,7 +5758,7 @@ public class GUIManager
         //  revalidateProducts
         //
 
-        revalidateProducts(now);
+        revalidateProducts(now, userID);
 
         //
         //  log
@@ -5827,7 +5827,7 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateProducts(now);
+    revalidateProducts(now, userID);
 
     /*****************************************
     *
@@ -5845,7 +5845,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateScoringStrategies(Date date)
+  private void revalidateScoringStrategies(Date date, String userID)
   {
     /****************************************
     *
@@ -5891,7 +5891,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedScoringStrategy : modifiedScoringStrategies)
       {
-        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, "(system)");
+        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, userID);
       }
     
     /****************************************
@@ -5900,7 +5900,7 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidatePresentationStrategies(date);
+    revalidatePresentationStrategies(date, userID);
   }
 
   /*****************************************
@@ -5909,7 +5909,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidatePresentationStrategies(Date date)
+  private void revalidatePresentationStrategies(Date date, String userID)
   {
     /****************************************
     *
@@ -5955,7 +5955,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
       {
-        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, "(system)");
+        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, userID);
       }
   }
 
@@ -5965,7 +5965,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateOffers(Date date)
+  private void revalidateOffers(Date date, String userID)
   {
     /****************************************
     *
@@ -6011,7 +6011,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedOffer : modifiedOffers)
       {
-        offerService.putGUIManagedObject(modifiedOffer, date, false, "(system)");
+        offerService.putGUIManagedObject(modifiedOffer, date, false, userID);
       }
   }
 
@@ -6021,7 +6021,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateProducts(Date date)
+  private void revalidateProducts(Date date, String userID)
   {
     /****************************************
     *
@@ -6067,7 +6067,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedProduct : modifiedProducts)
       {
-        productService.putGUIManagedObject(modifiedProduct, date, false, "(system)");
+        productService.putGUIManagedObject(modifiedProduct, date, false, userID);
       }
     
     /****************************************
@@ -6076,7 +6076,7 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateOffers(date);
+    revalidateOffers(date, userID);
   }
   
   /*****************************************
@@ -6085,7 +6085,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateCatalogCharacteristics(Date date)
+  private void revalidateCatalogCharacteristics(Date date, String userID)
   {
     /****************************************
     *
@@ -6130,7 +6130,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedCatalogCharacteristic : modifiedCatalogCharacteristics)
       {
-        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, "(system)");
+        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, userID);
       }
     
     /****************************************
@@ -6139,10 +6139,10 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateOffers(date);
-    revalidateOfferObjectives(date);
-    revalidateProductTypes(date);
-    revalidateProducts(date);
+    revalidateOffers(date, userID);
+    revalidateOfferObjectives(date, userID);
+    revalidateProductTypes(date, userID);
+    revalidateProducts(date, userID);
   }
 
   /*****************************************
@@ -6151,7 +6151,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateOfferObjectives(Date date)
+  private void revalidateOfferObjectives(Date date, String userID)
   {
     /****************************************
     *
@@ -6197,7 +6197,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedOfferObjective : modifiedOfferObjectives)
       {
-        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, "(system)");
+        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, userID);
       }
     
     /****************************************
@@ -6206,8 +6206,8 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateOffers(date);
-    revalidateScoringStrategies(date);
+    revalidateOffers(date, userID);
+    revalidateScoringStrategies(date, userID);
   }
 
   /*****************************************
@@ -6216,7 +6216,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateProductTypes(Date date)
+  private void revalidateProductTypes(Date date, String userID)
   {
     /****************************************
     *
@@ -6262,7 +6262,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedProductType : modifiedProductTypes)
       {
-        productTypeService.putGUIManagedObject(modifiedProductType, date, false, "(system)");
+        productTypeService.putGUIManagedObject(modifiedProductType, date, false, userID);
       }
     
     /****************************************
@@ -6271,7 +6271,7 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateProducts(date);
+    revalidateProducts(date, userID);
   }
 
   /*****************************************

@@ -485,7 +485,7 @@ public class GUIService
           {
             availableGUIManagedObjects.remove(guiManagedObjectID);
             activeGUIManagedObjects.remove(guiManagedObjectID);
-            if (existingActiveGUIManagedObject != null) notifyListener(existingActiveGUIManagedObject);
+            if (existingActiveGUIManagedObject != null || !notifyOnSignificantChange) notifyListener(existingActiveGUIManagedObject);
           }
 
         //
