@@ -54,6 +54,7 @@ public class Deployment
   private static String catalogCharacteristicTopic;
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
+  private static String deliverableTopic;
   private static String guiAuditTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
@@ -63,6 +64,7 @@ public class Deployment
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
   private static String journeyStatisticTopic;
+  private static String deliverableSourceTopic;
   private static String subscriberProfileRegistrySubject;
   private static CompressionType subscriberProfileCompressionType;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
@@ -76,8 +78,8 @@ public class Deployment
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
+  private static JSONArray initialDeliverablesJSONArray = null;
   private static JSONArray fulfillmentProvidersJSONArray = null;
-  private static JSONArray offerDeliverablesJSONArray = null;
   private static JSONArray paymentMeansJSONArray = null;
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
@@ -144,6 +146,7 @@ public class Deployment
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
+  public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
@@ -153,6 +156,7 @@ public class Deployment
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
+  public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
@@ -166,8 +170,8 @@ public class Deployment
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
+  public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
   public static JSONArray getFulfillmentProvidersJSONArray() { return fulfillmentProvidersJSONArray; }
-  public static JSONArray getOfferDeliverablesJSONArray() { return offerDeliverablesJSONArray; }
   public static JSONArray getPaymentMeansJSONArray() { return paymentMeansJSONArray; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
@@ -509,6 +513,19 @@ public class Deployment
       }
 
     //
+    //  deliverable
+    //
+
+    try
+      {
+        deliverableTopic = JSONUtilities.decodeString(jsonRoot, "deliverableTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
     //  guiAuditTopic
     //
 
@@ -619,6 +636,19 @@ public class Deployment
     try
       {
         journeyStatisticTopic = JSONUtilities.decodeString(jsonRoot, "journeyStatisticTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  deliverableSourceTopic
+    //
+
+    try
+      {
+        deliverableSourceTopic = JSONUtilities.decodeString(jsonRoot, "deliverableSourceTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -784,16 +814,16 @@ public class Deployment
     initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", true);
     
     //
+    //  initialDeliverablesJSONArray
+    //
+
+    initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", true);
+    
+    //
     //  fulfillmentProvidersJSONArray
     //
 
     fulfillmentProvidersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", true);
-    
-    //
-    //  offerDeliverablesJSONArray
-    //
-
-    offerDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "offerDeliverables", true);
     
     //
     //  paymentMeansJSONArray

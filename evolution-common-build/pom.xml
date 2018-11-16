@@ -80,12 +80,14 @@
     <topic.producttype>producttype</topic.producttype>
     <topic.catalogobjective>catalogobjective</topic.catalogobjective>
     <topic.guiaudit>guiaudit</topic.guiaudit>
+    <topic.deliverable>deliverable</topic.deliverable>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
+    <topic.deliverable.source>deliverable-source</topic.deliverable.source>
     <topic.externaldeliveryrequest_fileconnector>externaldeliveryrequest-fileconnector</topic.externaldeliveryrequest_fileconnector>
 
     <!-- registry subjects -->

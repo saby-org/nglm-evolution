@@ -167,8 +167,10 @@ public class GUIManager
     getProductType("getProductType"),
     putProductType("putProductType"),
     removeProductType("removeProductType"),
+    getDeliverableList("getDeliverableList"),
+    getDeliverableSummaryList("getDeliverableSummaryList"),
+    getDeliverable("getDeliverable"),
     getFulfillmentProviders("getFulfillmentProviders"),
-    getOfferDeliverables("getOfferDeliverables"),
     getPaymentMeans("getPaymentMeans"),
     getDashboardCounts("getDashboardCounts"),
     Unknown("(unknown)");
@@ -215,6 +217,7 @@ public class GUIManager
   private CatalogCharacteristicService catalogCharacteristicService;
   private OfferObjectiveService offerObjectiveService;
   private ProductTypeService productTypeService;
+  private DeliverableService deliverableService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
   /*****************************************
@@ -267,6 +270,7 @@ public class GUIManager
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
+    String deliverableTopic = Deployment.getDeliverableTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     
     //
@@ -297,7 +301,8 @@ public class GUIManager
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
-    productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, offerObjectiveTopic, true);
+    productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
+    deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
     /*****************************************
@@ -306,6 +311,27 @@ public class GUIManager
     *
     *****************************************/
 
+    //
+    //  deliverables
+    //
+
+    if (deliverableService.getStoredDeliverables().size() == 0)
+      {
+        try
+          {
+            JSONArray initialDeliverablesJSONArray = Deployment.getInitialDeliverablesJSONArray();
+            for (int i=0; i<initialDeliverablesJSONArray.size(); i++)
+              {
+                JSONObject deliverableJSON = (JSONObject) initialDeliverablesJSONArray.get(i);
+                processPutDeliverable("0", deliverableJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+    
     //
     //  productTypes
     //
@@ -449,6 +475,7 @@ public class GUIManager
     catalogCharacteristicService.start();
     offerObjectiveService.start();
     productTypeService.start();
+    deliverableService.start();
 
     /*****************************************
     *
@@ -534,17 +561,19 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APIHandler(API.putCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APIHandler(API.removeCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/getOfferObjectiveList", new APIHandler(API.getOfferObjectiveList));
-        restServer.createContext("/nglm-guimanager/getProductTypeList", new APIHandler(API.getProductTypeList));
         restServer.createContext("/nglm-guimanager/getOfferObjectiveSummaryList", new APIHandler(API.getOfferObjectiveSummaryList));
-        restServer.createContext("/nglm-guimanager/getProductTypeSummaryList", new APIHandler(API.getProductTypeSummaryList));
         restServer.createContext("/nglm-guimanager/getOfferObjective", new APIHandler(API.getOfferObjective));
-        restServer.createContext("/nglm-guimanager/getProductType", new APIHandler(API.getProductType));
         restServer.createContext("/nglm-guimanager/putOfferObjective", new APIHandler(API.putOfferObjective));
-        restServer.createContext("/nglm-guimanager/putProductType", new APIHandler(API.putProductType));
         restServer.createContext("/nglm-guimanager/removeOfferObjective", new APIHandler(API.removeOfferObjective));
+        restServer.createContext("/nglm-guimanager/getProductTypeList", new APIHandler(API.getProductTypeList));
+        restServer.createContext("/nglm-guimanager/getProductTypeSummaryList", new APIHandler(API.getProductTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/getProductType", new APIHandler(API.getProductType));
+        restServer.createContext("/nglm-guimanager/putProductType", new APIHandler(API.putProductType));
         restServer.createContext("/nglm-guimanager/removeProductType", new APIHandler(API.removeProductType));
+        restServer.createContext("/nglm-guimanager/getDeliverableList", new APIHandler(API.getDeliverableList));
+        restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APIHandler(API.getDeliverableSummaryList));
+        restServer.createContext("/nglm-guimanager/getDeliverable", new APIHandler(API.getDeliverable));
         restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APIHandler(API.getFulfillmentProviders));
-        restServer.createContext("/nglm-guimanager/getOfferDeliverables", new APIHandler(API.getOfferDeliverables));
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -561,7 +590,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -596,13 +625,14 @@ public class GUIManager
     private CatalogCharacteristicService catalogCharacteristicService;
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
+    private DeliverableService deliverableService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -616,6 +646,7 @@ public class GUIManager
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
+      this.deliverableService = deliverableService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
 
@@ -646,6 +677,7 @@ public class GUIManager
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
+      if (deliverableService != null) deliverableService.stop();
 
       //
       //  rest server
@@ -1099,12 +1131,20 @@ public class GUIManager
                   jsonResponse = processRemoveProductType(userID, jsonRoot);
                   break;
 
-                case getFulfillmentProviders:
-                  jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
+                case getDeliverableList:
+                  jsonResponse = processGetDeliverableList(userID, jsonRoot, true);
                   break;
 
-                case getOfferDeliverables:
-                  jsonResponse = processGetOfferDeliverables(userID, jsonRoot);
+                case getDeliverableSummaryList:
+                  jsonResponse = processGetDeliverableList(userID, jsonRoot, false);
+                  break;
+
+                case getDeliverable:
+                  jsonResponse = processGetDeliverable(userID, jsonRoot);
+                  break;
+
+                case getFulfillmentProviders:
+                  jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
                   break;
 
                 case getPaymentMeans:
@@ -5838,7 +5878,266 @@ public class GUIManager
     response.put("responseCode", (productType != null) ? "ok" : "productTypeNotFound");
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetDeliverableList
+  *
+  *****************************************/
 
+  private JSONObject processGetDeliverableList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert deliverables
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> deliverables = new ArrayList<JSONObject>();
+    for (GUIManagedObject deliverable : deliverableService.getStoredDeliverables())
+      {
+        deliverables.add(deliverableService.generateResponseJSON(deliverable, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("deliverables", JSONUtilities.encodeArray(deliverables));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetDeliverable
+  *
+  *****************************************/
+
+  private JSONObject processGetDeliverable(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    if (deliverable != null) response.put("deliverable", deliverableJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutDeliverable
+  *
+  *****************************************/
+
+  private JSONObject processPutDeliverable(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  deliverableID
+    *
+    *****************************************/
+    
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (deliverableID == null)
+      {
+        deliverableID = deliverableService.generateDeliverableID();
+        jsonRoot.put("id", deliverableID);
+      }
+    
+    /*****************************************
+    *
+    *  existing deliverable
+    *
+    *****************************************/
+
+    GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverable(deliverableID);
+
+    /*****************************************
+    *
+    *  process deliverable
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate deliverable
+        *
+        ****************************************/
+
+        Deliverable deliverable = new Deliverable(jsonRoot, epoch, existingDeliverable);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        deliverableService.putDeliverable(deliverable, (existingDeliverable == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now, userID);
+        
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", deliverable.getDeliverableID());
+        response.put("accepted", deliverable.getAccepted());
+        response.put("processing", deliverableService.isActiveDeliverable(deliverable, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        deliverableService.putIncompleteDeliverable(incompleteObject, (existingDeliverable == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now, userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "deliverableNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveDeliverable
+  *
+  *****************************************/
+
+  private JSONObject processRemoveDeliverable(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    if (deliverable != null) deliverableService.removeDeliverable(deliverableID, userID);
+
+    /*****************************************
+    *
+    *  revalidateProducts
+    *
+    *****************************************/
+
+    revalidateProducts(now, userID);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  revalidateScoringStrategies
@@ -6287,6 +6586,7 @@ public class GUIManager
     *  retrieve fulfillment providers
     *
     *****************************************/
+    
     JSONArray fulfillmentProviders = Deployment.getFulfillmentProvidersJSONArray();
     ArrayList<JSONObject> fulfillmentProvidersList = new ArrayList<>();
     for (int i=0; i<fulfillmentProviders.size(); i++)
@@ -6309,39 +6609,6 @@ public class GUIManager
   
   /*****************************************
   *
-  *  getOfferDeliverables
-  *
-  *****************************************/
-
-  private JSONObject processGetOfferDeliverables(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve offerDeliverables 
-    *
-    *****************************************/
-    JSONArray offerDeliverables = Deployment.getOfferDeliverablesJSONArray();
-    ArrayList<JSONObject> offerDeliverableList = new ArrayList<>();
-    for (int i=0; i<offerDeliverables.size(); i++)
-      {
-        JSONObject deliverable = (JSONObject) offerDeliverables.get(i);
-        offerDeliverableList.add(deliverable);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("offerDeliverables", JSONUtilities.encodeArray(offerDeliverableList));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
   *  getPaymentMeans
   *
   *****************************************/
@@ -6353,6 +6620,7 @@ public class GUIManager
     *  retrieve payment means
     *
     *****************************************/
+    
     JSONArray paymentMeans = Deployment.getPaymentMeansJSONArray();
     ArrayList<JSONObject> paymentMeanList = new ArrayList<>();
     for (int i=0; i<paymentMeans.size(); i++)
@@ -6395,6 +6663,7 @@ public class GUIManager
     response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
+    response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
     return JSONUtilities.encodeObject(response);
   }
 
