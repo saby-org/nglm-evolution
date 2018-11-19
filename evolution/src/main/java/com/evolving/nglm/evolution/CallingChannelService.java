@@ -101,7 +101,7 @@ public class CallingChannelService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { callingChannelListener.callingChannelActivated((CallingChannel) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { callingChannelListener.callingChannelDeactivated((CallingChannel) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { callingChannelListener.callingChannelDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -159,7 +159,7 @@ public class CallingChannelService extends GUIService
   public interface CallingChannelListener
   {
     public void callingChannelActivated(CallingChannel callingChannel);
-    public void callingChannelDeactivated(CallingChannel callingChannel);
+    public void callingChannelDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -177,7 +177,7 @@ public class CallingChannelService extends GUIService
     CallingChannelListener callingChannelListener = new CallingChannelListener()
     {
       @Override public void callingChannelActivated(CallingChannel callingChannel) { System.out.println("callingChannel activated: " + callingChannel.getCallingChannelID()); }
-      @Override public void callingChannelDeactivated(CallingChannel callingChannel) { System.out.println("callingChannel deactivated: " + callingChannel.getCallingChannelID()); }
+      @Override public void callingChannelDeactivated(String guiManagedObjectID) { System.out.println("callingChannel deactivated: " + guiManagedObjectID); }
     };
 
     //

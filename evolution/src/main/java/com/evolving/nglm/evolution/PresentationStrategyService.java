@@ -104,7 +104,7 @@ public class PresentationStrategyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { presentationStrategyListener.presentationStrategyActivated((PresentationStrategy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { presentationStrategyListener.presentationStrategyDeactivated((PresentationStrategy) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { presentationStrategyListener.presentationStrategyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -193,7 +193,7 @@ public class PresentationStrategyService extends GUIService
   public interface PresentationStrategyListener
   {
     public void presentationStrategyActivated(PresentationStrategy presentationStrategy);
-    public void presentationStrategyDeactivated(PresentationStrategy presentationStrategy);
+    public void presentationStrategyDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -211,7 +211,7 @@ public class PresentationStrategyService extends GUIService
     PresentationStrategyListener presentationStrategyListener = new PresentationStrategyListener()
     {
       @Override public void presentationStrategyActivated(PresentationStrategy presentationStrategy) { System.out.println("presentationStrategy activated: " + presentationStrategy.getPresentationStrategyID()); }
-      @Override public void presentationStrategyDeactivated(PresentationStrategy presentationStrategy) { System.out.println("presentationStrategy deactivated: " + presentationStrategy.getPresentationStrategyID()); }
+      @Override public void presentationStrategyDeactivated(String guiManagedObjectID) { System.out.println("presentationStrategy deactivated: " + guiManagedObjectID); }
     };
 
     //

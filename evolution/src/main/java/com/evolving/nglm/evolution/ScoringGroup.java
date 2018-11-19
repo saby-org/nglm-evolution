@@ -50,6 +50,7 @@ public class ScoringGroup
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("scoring_group");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("scoringSplits", SchemaBuilder.array(ScoringSplit.schema()).schema());
     schema = schemaBuilder.build();
@@ -74,6 +75,7 @@ public class ScoringGroup
   *
   *****************************************/
 
+  private String name;
   private List<EvaluationCriterion> profileCriteria;
   private List<ScoringSplit> scoringSplits;
 
@@ -83,6 +85,7 @@ public class ScoringGroup
   *
   *****************************************/
 
+  public String getName() { return name; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public List<ScoringSplit> getScoringSplits() { return scoringSplits; }
 
@@ -103,8 +106,9 @@ public class ScoringGroup
   *
   *****************************************/
 
-  public ScoringGroup(List<EvaluationCriterion> profileCriteria, List<ScoringSplit> scoringSplits)
+  public ScoringGroup(String name, List<EvaluationCriterion> profileCriteria, List<ScoringSplit> scoringSplits)
   {
+    this.name = name;
     this.profileCriteria = profileCriteria;
     this.scoringSplits = scoringSplits;
   }
@@ -119,6 +123,7 @@ public class ScoringGroup
   {
     ScoringGroup scoringGroup = (ScoringGroup) value;
     Struct struct = new Struct(schema);
+    struct.put("name", scoringGroup.getName());
     struct.put("profileCriteria", packProfileCriteria(scoringGroup.getProfileCriteria()));
     struct.put("scoringSplits", packScoringSplits(scoringGroup.getScoringSplits()));
     return struct;
@@ -177,6 +182,7 @@ public class ScoringGroup
     //
 
     Struct valueStruct = (Struct) value;
+    String name = valueStruct.getString("name");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     List<ScoringSplit> scoringSplits = unpackScoringSplits(schema.field("scoringSplits").schema(), valueStruct.get("scoringSplits"));
     
@@ -184,7 +190,7 @@ public class ScoringGroup
     //  return
     //
 
-    return new ScoringGroup(profileCriteria, scoringSplits);
+    return new ScoringGroup(name, profileCriteria, scoringSplits);
   }
 
   /*****************************************
@@ -257,10 +263,11 @@ public class ScoringGroup
   *
   *****************************************/
 
-  public ScoringGroup(JSONObject jsonRoot) throws GUIManagerException
+  public ScoringGroup(JSONObject jsonRoot, String name) throws GUIManagerException
   {
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
-    this.scoringSplits = decodeScoringSplits(JSONUtilities.decodeJSONArray(jsonRoot, "scoringSplits", true));
+    this.name = name;
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false));
+    this.scoringSplits = decodeScoringSplits(JSONUtilities.decodeJSONArray(jsonRoot, "scoringSplits", false));
   }
 
   /*****************************************
@@ -272,9 +279,12 @@ public class ScoringGroup
   private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray)  throws GUIManagerException, JSONUtilitiesException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
-    for (int i=0; i<jsonArray.size(); i++)
+    if (jsonArray != null)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+          }
       }
     return result;
   }
@@ -288,9 +298,12 @@ public class ScoringGroup
   private List<ScoringSplit> decodeScoringSplits(JSONArray jsonArray) throws GUIManagerException, JSONUtilitiesException
   {
     List<ScoringSplit> result = new ArrayList<ScoringSplit>();
-    for (int i=0; i<jsonArray.size(); i++)
+    if (jsonArray != null)
       {
-        result.add(new ScoringSplit((JSONObject) jsonArray.get(i)));
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new ScoringSplit((JSONObject) jsonArray.get(i)));
+          }
       }
     return result;
   }
@@ -308,6 +321,7 @@ public class ScoringGroup
       {
         ScoringGroup scoringGroup = (ScoringGroup) obj;
         result = true;
+        result = result && Objects.equals(name, scoringGroup.getName());
         result = result && Objects.equals(profileCriteria, scoringGroup.getProfileCriteria());
         result = result && Objects.equals(scoringSplits, scoringGroup.getScoringSplits());
       }

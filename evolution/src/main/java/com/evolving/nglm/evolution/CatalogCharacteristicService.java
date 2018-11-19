@@ -104,7 +104,7 @@ public class CatalogCharacteristicService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { catalogCharacteristicListener.catalogCharacteristicActivated((CatalogCharacteristic) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { catalogCharacteristicListener.catalogCharacteristicDeactivated((CatalogCharacteristic) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { catalogCharacteristicListener.catalogCharacteristicDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -175,7 +175,7 @@ public class CatalogCharacteristicService extends GUIService
   public interface CatalogCharacteristicListener
   {
     public void catalogCharacteristicActivated(CatalogCharacteristic catalogCharacteristic);
-    public void catalogCharacteristicDeactivated(CatalogCharacteristic catalogCharacteristic);
+    public void catalogCharacteristicDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -193,7 +193,7 @@ public class CatalogCharacteristicService extends GUIService
     CatalogCharacteristicListener catalogCharacteristicListener = new CatalogCharacteristicListener()
     {
       @Override public void catalogCharacteristicActivated(CatalogCharacteristic catalogCharacteristic) { System.out.println("catalogCharacteristic activated: " + catalogCharacteristic.getCatalogCharacteristicID()); }
-      @Override public void catalogCharacteristicDeactivated(CatalogCharacteristic catalogCharacteristic) { System.out.println("catalogCharacteristic deactivated: " + catalogCharacteristic.getCatalogCharacteristicID()); }
+      @Override public void catalogCharacteristicDeactivated(String guiManagedObjectID) { System.out.println("catalogCharacteristic deactivated: " + guiManagedObjectID); }
     };
 
     //

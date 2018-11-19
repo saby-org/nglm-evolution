@@ -272,14 +272,27 @@ public class ScoringStrategy extends GUIManagedObject
     this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
 
     //
+    //  standard scoring groups
+    //
+
+    ScoringGroup universalControlGroup = new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "universalControlGroup", true), "universalControlGroup");
+    ScoringGroup controlGroup = new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "controlGroup", true), "controlGroup");
+    ScoringGroup defaultGroup = new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "defaultGroup", true), "defaultGroup");
+    if (universalControlGroup.getProfileCriteria().size() > 0) throw new GUIManagerException("invalid standard scoring group (profileCriteria)", universalControlGroup.getName());
+    if (controlGroup.getProfileCriteria().size() > 0) throw new GUIManagerException("invalid standard scoring group (profileCriteria)", controlGroup.getName());
+    if (defaultGroup.getProfileCriteria().size() > 0) throw new GUIManagerException("invalid standard scoring group (profileCriteria)", defaultGroup.getName());
+    universalControlGroup.getProfileCriteria().addAll(Deployment.getUniversalControlGroupCriteria());
+    controlGroup.getProfileCriteria().addAll(Deployment.getControlGroupCriteria());
+    
+    //
     //  scoringGroups
     //
 
     this.scoringGroups = new ArrayList<ScoringGroup>();
-    this.scoringGroups.add(new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "universalControlGroup", true)));
-    this.scoringGroups.add(new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "controlGroup", true)));
-    this.scoringGroups.addAll(decodeScoringGroups(JSONUtilities.decodeJSONArray(jsonRoot, "targetGroups", true)));
-    this.scoringGroups.add(new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "defaultGroup", true)));
+    this.scoringGroups.add(universalControlGroup);
+    this.scoringGroups.add(controlGroup);
+    this.scoringGroups.addAll(decodeScoringGroups(JSONUtilities.decodeJSONArray(jsonRoot, "targetGroups", true), "targetGroup"));
+    this.scoringGroups.add(defaultGroup);
 
     /*****************************************
     *
@@ -290,7 +303,11 @@ public class ScoringStrategy extends GUIManagedObject
     if (this.offerType == null) throw new GUIManagerException("unsupported offerType", JSONUtilities.decodeString(jsonRoot, "offerType", true));
     if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
-    
+    for (ScoringGroup scoringGroup : this.scoringGroups)
+      {
+        if (scoringGroup.getScoringSplits().size() < 1) throw new GUIManagerException("invalid scoringGroup (no scoringSplits)", scoringGroup.getName());
+      }
+
     /*****************************************
     *
     *  epoch
@@ -309,12 +326,12 @@ public class ScoringStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  private List<ScoringGroup> decodeScoringGroups(JSONArray jsonArray)  throws GUIManagerException, JSONUtilitiesException
+  private List<ScoringGroup> decodeScoringGroups(JSONArray jsonArray, String baseName)  throws GUIManagerException, JSONUtilitiesException
   {
     List<ScoringGroup> result = new ArrayList<ScoringGroup>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new ScoringGroup((JSONObject) jsonArray.get(i)));
+        result.add(new ScoringGroup((JSONObject) jsonArray.get(i), baseName + "-" + i));
       }
     return result;
   }

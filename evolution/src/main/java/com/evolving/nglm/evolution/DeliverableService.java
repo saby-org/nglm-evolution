@@ -103,7 +103,7 @@ public class DeliverableService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { deliverableListener.deliverableActivated((Deliverable) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { deliverableListener.deliverableDeactivated((Deliverable) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { deliverableListener.deliverableDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -172,7 +172,7 @@ public class DeliverableService extends GUIService
   public interface DeliverableListener
   {
     public void deliverableActivated(Deliverable deliverable);
-    public void deliverableDeactivated(Deliverable deliverable);
+    public void deliverableDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -190,7 +190,7 @@ public class DeliverableService extends GUIService
     DeliverableListener deliverableListener = new DeliverableListener()
     {
       @Override public void deliverableActivated(Deliverable deliverable) { System.out.println("deliverable activated: " + deliverable.getDeliverableID()); }
-      @Override public void deliverableDeactivated(Deliverable deliverable) { System.out.println("deliverable deactivated: " + deliverable.getDeliverableID()); }
+      @Override public void deliverableDeactivated(String guiManagedObjectID) { System.out.println("deliverable deactivated: " + guiManagedObjectID); }
     };
 
     //

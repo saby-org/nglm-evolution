@@ -231,7 +231,25 @@ public abstract class GUIManagedObject
 
   /*****************************************
   *
-  *  construct -- unpack
+  *  constructor -- incomplete
+  *
+  *****************************************/
+
+  protected GUIManagedObject(String guiManagedObjectID)
+  {
+    this.jsonRepresentation = new JSONObject();
+    this.guiManagedObjectID = guiManagedObjectID;
+    this.guiManagedObjectType = GUIManagedObjectType.Other;
+    this.epoch = -1;
+    this.effectiveStartDate = null;
+    this.effectiveEndDate = null;
+    this.valid = false;
+    this.active = false;
+  }
+                             
+  /*****************************************
+  *
+  *  constructor -- unpack
   *
   *****************************************/
 
@@ -416,6 +434,17 @@ public abstract class GUIManagedObject
     public static Schema schema() { return schema; }
     public static ConnectSerde<IncompleteObject> serde() { return serde; }
 
+    /*****************************************
+    *
+    *  constructor -- standard
+    *
+    *****************************************/
+
+    public IncompleteObject(String guiManagedObjectID)
+    {
+      super(guiManagedObjectID);
+    }
+    
     /*****************************************
     *
     *  constructor -- unpack

@@ -6,13 +6,15 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-
 import com.evolving.nglm.core.SystemTime;
+
 import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -485,7 +487,7 @@ public class GUIService
           {
             availableGUIManagedObjects.remove(guiManagedObjectID);
             activeGUIManagedObjects.remove(guiManagedObjectID);
-            if (existingActiveGUIManagedObject != null || !notifyOnSignificantChange) notifyListener(existingActiveGUIManagedObject);
+            if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObjectID));
           }
 
         //
@@ -729,7 +731,7 @@ public class GUIService
                   {
                     availableGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
                     activeGUIManagedObjects.remove(guiManagedObject.getGUIManagedObjectID());
-                    if (existingActiveGUIManagedObject != null) notifyListener(existingActiveGUIManagedObject);
+                    if (existingActiveGUIManagedObject != null) notifyListener(new IncompleteObject(guiManagedObject.getGUIManagedObjectID()));
                   }
 
                 //
@@ -829,7 +831,7 @@ public class GUIService
   protected interface GUIManagedObjectListener
   {
     public void guiManagedObjectActivated(GUIManagedObject guiManagedObject);
-    public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject);
+    public void guiManagedObjectDeactivated(String objectID);
   }
 
   /*****************************************
@@ -863,7 +865,7 @@ public class GUIService
             if (isActiveGUIManagedObject(guiManagedObject, now))
               guiManagedObjectListener.guiManagedObjectActivated(guiManagedObject);
             else
-              guiManagedObjectListener.guiManagedObjectDeactivated(guiManagedObject);
+              guiManagedObjectListener.guiManagedObjectDeactivated(guiManagedObject.getGUIManagedObjectID());
           }
         catch (InterruptedException e)
           {

@@ -247,7 +247,7 @@ public class EvolutionEngine
       //  segmentationRuleDeactivated
       //
 
-      @Override public void segmentationRuleDeactivated(SegmentationRule segmentationRule)
+      @Override public void segmentationRuleDeactivated(String guiManagedObjectID)
       {
         throw new UnsupportedOperationException();
       }

@@ -101,7 +101,7 @@ public class ScoringStrategyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { scoringStrategyListener.scoringStrategyActivated((ScoringStrategy) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { scoringStrategyListener.scoringStrategyDeactivated((ScoringStrategy) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { scoringStrategyListener.scoringStrategyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -158,7 +158,7 @@ public class ScoringStrategyService extends GUIService
   public interface ScoringStrategyListener
   {
     public void scoringStrategyActivated(ScoringStrategy scoringStrategy);
-    public void scoringStrategyDeactivated(ScoringStrategy scoringStrategy);
+    public void scoringStrategyDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -176,7 +176,7 @@ public class ScoringStrategyService extends GUIService
     ScoringStrategyListener scoringStrategyListener = new ScoringStrategyListener()
     {
       @Override public void scoringStrategyActivated(ScoringStrategy scoringStrategy) { System.out.println("scoringStrategy activated: " + scoringStrategy.getScoringStrategyID()); }
-      @Override public void scoringStrategyDeactivated(ScoringStrategy scoringStrategy) { System.out.println("scoringStrategy deactivated: " + scoringStrategy.getScoringStrategyID()); }
+      @Override public void scoringStrategyDeactivated(String guiManagedObjectID) { System.out.println("scoringStrategy deactivated: " + guiManagedObjectID); }
     };
 
     //

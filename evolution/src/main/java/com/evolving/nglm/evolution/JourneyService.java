@@ -99,7 +99,7 @@ public class JourneyService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { journeyListener.journeyActivated((Journey) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { journeyListener.journeyDeactivated((Journey) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { journeyListener.journeyDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -143,7 +143,7 @@ public class JourneyService extends GUIService
   public interface JourneyListener
   {
     public void journeyActivated(Journey journey);
-    public void journeyDeactivated(Journey journey);
+    public void journeyDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -161,7 +161,7 @@ public class JourneyService extends GUIService
     JourneyListener journeyListener = new JourneyListener()
     {
       @Override public void journeyActivated(Journey journey) { System.out.println("journey activated: " + journey.getJourneyID()); }
-      @Override public void journeyDeactivated(Journey journey) { System.out.println("journey deactivated: " + journey.getJourneyID()); }
+      @Override public void journeyDeactivated(String guiManagedObjectID) { System.out.println("journey deactivated: " + guiManagedObjectID); }
     };
 
     //

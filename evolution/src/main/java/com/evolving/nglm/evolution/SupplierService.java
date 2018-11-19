@@ -101,7 +101,7 @@ public class SupplierService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { supplierListener.supplierActivated((Supplier) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { supplierListener.supplierDeactivated((Supplier) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { supplierListener.supplierDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -159,7 +159,7 @@ public class SupplierService extends GUIService
   public interface SupplierListener
   {
     public void supplierActivated(Supplier supplier);
-    public void supplierDeactivated(Supplier supplier);
+    public void supplierDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -177,7 +177,7 @@ public class SupplierService extends GUIService
     SupplierListener supplierListener = new SupplierListener()
     {
       @Override public void supplierActivated(Supplier supplier) { System.out.println("supplier activated: " + supplier.getSupplierID()); }
-      @Override public void supplierDeactivated(Supplier supplier) { System.out.println("supplier deactivated: " + supplier.getSupplierID()); }
+      @Override public void supplierDeactivated(String guiManagedObjectID) { System.out.println("supplier deactivated: " + guiManagedObjectID); }
     };
 
     //

@@ -104,7 +104,7 @@ public class ProductService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { productListener.productActivated((Product) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { productListener.productDeactivated((Product) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { productListener.productDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -195,7 +195,7 @@ public class ProductService extends GUIService
   public interface ProductListener
   {
     public void productActivated(Product product);
-    public void productDeactivated(Product product);
+    public void productDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -213,7 +213,7 @@ public class ProductService extends GUIService
     ProductListener productListener = new ProductListener()
     {
       @Override public void productActivated(Product product) { System.out.println("product activated: " + product.getProductID()); }
-      @Override public void productDeactivated(Product product) { System.out.println("product deactivated: " + product.getProductID()); }
+      @Override public void productDeactivated(String guiManagedObjectID) { System.out.println("product deactivated: " + guiManagedObjectID); }
     };
 
     //

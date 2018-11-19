@@ -104,7 +104,7 @@ public class OfferService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { offerListener.offerActivated((Offer) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { offerListener.offerDeactivated((Offer) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { offerListener.offerDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -195,7 +195,7 @@ public class OfferService extends GUIService
   public interface OfferListener
   {
     public void offerActivated(Offer offer);
-    public void offerDeactivated(Offer offer);
+    public void offerDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -213,7 +213,7 @@ public class OfferService extends GUIService
     OfferListener offerListener = new OfferListener()
     {
       @Override public void offerActivated(Offer offer) { System.out.println("offer activated: " + offer.getOfferID()); }
-      @Override public void offerDeactivated(Offer offer) { System.out.println("offer deactivated: " + offer.getOfferID()); }
+      @Override public void offerDeactivated(String guiManagedObjectID) { System.out.println("offer deactivated: " + guiManagedObjectID); }
     };
 
     //

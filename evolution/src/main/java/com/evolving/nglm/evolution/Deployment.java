@@ -85,6 +85,8 @@ public class Deployment
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
+  private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
@@ -177,6 +179,8 @@ public class Deployment
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
+  public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
+  public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
   public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
@@ -901,6 +905,46 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             presentationCriterionFields.put(criterionField.getID(), criterionField);
+          }
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  universalControlGroupCriteria
+    //
+
+    try
+      {
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", false);
+        if (evaluationCriterionValues == null) evaluationCriterionValues = new JSONArray();
+        for (int i=0; i<evaluationCriterionValues.size(); i++)
+          {
+            JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+            universalControlGroupCriteria.add(evaluationCriterion);
+          }
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  controlGroupCriteria
+    //
+
+    try
+      {
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", false);
+        if (evaluationCriterionValues == null) evaluationCriterionValues = new JSONArray();
+        for (int i=0; i<evaluationCriterionValues.size(); i++)
+          {
+            JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+            controlGroupCriteria.add(evaluationCriterion);
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)

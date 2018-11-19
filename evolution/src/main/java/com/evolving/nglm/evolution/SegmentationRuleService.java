@@ -78,7 +78,7 @@ public class SegmentationRuleService extends GUIService
         superListener = new GUIManagedObjectListener()
         {
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { segmentationRuleListener.segmentationRuleActivated((SegmentationRule) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(GUIManagedObject guiManagedObject) { segmentationRuleListener.segmentationRuleDeactivated((SegmentationRule) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { segmentationRuleListener.segmentationRuleDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -122,7 +122,7 @@ public class SegmentationRuleService extends GUIService
   public interface SegmentationRuleListener
   {
     public void segmentationRuleActivated(SegmentationRule segmentationRule);
-    public void segmentationRuleDeactivated(SegmentationRule segmentationRule);
+    public void segmentationRuleDeactivated(String guiManagedObjectID);
   }
 
   /*****************************************
@@ -140,7 +140,7 @@ public class SegmentationRuleService extends GUIService
 	  SegmentationRuleListener segmentationRuleListener = new SegmentationRuleListener()
     {
       @Override public void segmentationRuleActivated(SegmentationRule segmentationRule) { System.out.println("segmentation rule activated: " + segmentationRule.getSegmentationRuleID()); }
-      @Override public void segmentationRuleDeactivated(SegmentationRule segmentationRule) { System.out.println("segmentation rule deactivated: " + segmentationRule.getSegmentationRuleID()); }
+      @Override public void segmentationRuleDeactivated(String guiManagedObjectID) { System.out.println("segmentation rule deactivated: " + guiManagedObjectID); }
     };
 
     //
