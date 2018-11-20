@@ -4969,7 +4969,7 @@ public class GUIManager
         *
         *****************************************/
 
-        productService.putProduct(product, supplierService, productTypeService, (existingProduct == null), userID);
+        productService.putProduct(product, supplierService, productTypeService, deliverableService, (existingProduct == null), userID);
 
         /*****************************************
         *
@@ -6340,7 +6340,7 @@ public class GUIManager
         try
           {
             Product product = new Product(existingProduct.getJSONRepresentation(), epoch, existingProduct, catalogCharacteristicService);
-            product.validate(supplierService, productTypeService, date);
+            product.validate(supplierService, productTypeService, deliverableService, date);
             modifiedProduct = product;
           }
         catch (JSONUtilitiesException|GUIManagerException e)

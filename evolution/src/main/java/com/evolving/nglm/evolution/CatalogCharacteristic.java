@@ -199,7 +199,8 @@ public class CatalogCharacteristic extends GUIManagedObject
     *
     *****************************************/
 
-    // none yet
+    if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
+    if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
 
     /*****************************************
     *

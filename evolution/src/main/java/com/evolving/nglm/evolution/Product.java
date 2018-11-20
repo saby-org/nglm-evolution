@@ -293,7 +293,7 @@ public class Product extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(SupplierService supplierService, ProductTypeService productTypeService, Date date) throws GUIManagerException
+  public void validate(SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -313,5 +313,29 @@ public class Product extends GUIManagedObject
       {
         if (productTypeService.getActiveProductType(productTypeInstance.getProductTypeID(), date) == null) throw new GUIManagerException("unknown product type", productTypeInstance.getProductTypeID());
       }
+
+    /****************************************
+    *
+    *  ensure valid/active deliverable
+    *
+    ****************************************/
+
+    //
+    //  retrieve deliverable
+    //
+    
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+
+    //
+    //  validate the deliverable exists
+    //
+
+    if (deliverable == null) throw new GUIManagerException("unknown deliverable", deliverableID);
+    
+    //
+    //  validate the deliverable start/end dates include the entire product active period
+    //
+
+    if (! deliverableService.isActiveDeliverableThroughInterval(deliverable, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid deliverable (start/end dates)", deliverableID);
   }
 }

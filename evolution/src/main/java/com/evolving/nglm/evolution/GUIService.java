@@ -313,6 +313,19 @@ public class GUIService
 
   /*****************************************
   *
+  *  isActiveThroughInterval
+  *
+  *****************************************/
+
+  protected boolean isActiveThroughInterval(GUIManagedObject guiManagedObject, Date startDate, Date endDate)
+  {
+    boolean active = (guiManagedObject != null) && guiManagedObject.getAccepted() && guiManagedObject.getValid() && guiManagedObject.getActive();
+    boolean activeThroughInterval = active && (guiManagedObject.getEffectiveStartDate().compareTo(startDate) <= 0) && (guiManagedObject.getEffectiveEndDate().compareTo(endDate) >= 0);
+    return activeThroughInterval;
+  }
+
+  /*****************************************
+  *
   *  isActiveGUIManagedObject
   *
   *****************************************/

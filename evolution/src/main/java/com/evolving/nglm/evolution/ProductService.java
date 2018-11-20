@@ -136,6 +136,7 @@ public class ProductService extends GUIService
   public String generateProductID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
   public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveProductThroughInterval(GUIManagedObject productUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(productUnchecked, startDate, endDate); }
   public boolean isActiveProduct(GUIManagedObject productUnchecked, Date date) { return isActiveGUIManagedObject(productUnchecked, date); }
   public Product getActiveProduct(String productID, Date date) { return (Product) getActiveGUIManagedObject(productID, date); }
   public Collection<Product> getActiveProducts(Date date) { return (Collection<Product>) getActiveGUIManagedObjects(date); }
@@ -146,7 +147,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putProduct(Product product, SupplierService supplierService, ProductTypeService productTypeService, boolean newObject, String userID) throws GUIManagerException
+  public void putProduct(Product product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -158,7 +159,7 @@ public class ProductService extends GUIService
     //  validate
     //
 
-    product.validate(supplierService, productTypeService, now);
+    product.validate(supplierService, productTypeService, deliverableService, now);
 
     //
     //  put

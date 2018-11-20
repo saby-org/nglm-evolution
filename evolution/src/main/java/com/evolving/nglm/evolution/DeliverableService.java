@@ -132,6 +132,7 @@ public class DeliverableService extends GUIService
   public String generateDeliverableID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredDeliverable(String deliverableID) { return getStoredGUIManagedObject(deliverableID); }
   public Collection<GUIManagedObject> getStoredDeliverables() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveDeliverableThroughInterval(GUIManagedObject deliverableUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(deliverableUnchecked, startDate, endDate); }
   public boolean isActiveDeliverable(GUIManagedObject deliverableUnchecked, Date date) { return isActiveGUIManagedObject(deliverableUnchecked, date); }
   public Deliverable getActiveDeliverable(String deliverableID, Date date) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date); }
   public Collection<Deliverable> getActiveDeliverables(Date date) { return (Collection<Deliverable>) getActiveGUIManagedObjects(date); }

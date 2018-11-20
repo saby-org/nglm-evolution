@@ -693,21 +693,23 @@ public class Offer extends GUIManagedObject
     
     for (OfferProduct offerProduct : offerProducts)
       {
-        /*****************************************
-        *
-        *  retrieve product
-        *
-        *****************************************/
+        //
+        //  retrieve product
+        //
 
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), date);
+        GUIManagedObject product = productService.getStoredProduct(offerProduct.getProductID());
 
-        /*****************************************
-        *
-        *  validate the product exists and is active
-        *
-        *****************************************/
+        //
+        //  validate the product exists
+        //
 
         if (product == null) throw new GUIManagerException("unknown product", offerProduct.getProductID());
+
+        //
+        //  validate the product start/end dates include the entire offer active period
+        //
+
+        if (! productService.isActiveProductThroughInterval(product, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid product (start/end dates)", offerProduct.getProductID());
       }
   }
 }
