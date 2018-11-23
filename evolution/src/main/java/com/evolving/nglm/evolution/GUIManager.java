@@ -9,19 +9,20 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.Alarm.AlarmLevel;
 import com.evolving.nglm.core.Alarm.AlarmType;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-
+import com.evolving.nglm.core.SubscriberIDService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -173,6 +174,7 @@ public class GUIManager
     getFulfillmentProviders("getFulfillmentProviders"),
     getPaymentMeans("getPaymentMeans"),
     getDashboardCounts("getDashboardCounts"),
+    getCustomer("getCustomer"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -218,7 +220,10 @@ public class GUIManager
   private OfferObjectiveService offerObjectiveService;
   private ProductTypeService productTypeService;
   private DeliverableService deliverableService;
+  private SubscriberProfileService subscriberProfileService;
+  private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+  private String subscriberTraceControlAlternateID;
 
   /*****************************************
   *
@@ -270,8 +275,11 @@ public class GUIManager
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
-    String deliverableTopic = Deployment.getDeliverableTopic();
+	String deliverableTopic = Deployment.getDeliverableTopic();
+    String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
+    String redisServer = Deployment.getRedisSentinels();
+    subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
     
     //
     //  log
@@ -301,8 +309,10 @@ public class GUIManager
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
-    productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
-    deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
+	productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
+	deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
+    subscriberProfileService = new SubscriberProfileService(bootstrapServers, "guimanager-subscriberprofileservice-" + apiProcessKey, subscriberUpdateTopic, redisServer);
+    subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
     /*****************************************
@@ -475,7 +485,8 @@ public class GUIManager
     catalogCharacteristicService.start();
     offerObjectiveService.start();
     productTypeService.start();
-    deliverableService.start();
+	deliverableService.start();
+    subscriberProfileService.start();
 
     /*****************************************
     *
@@ -576,6 +587,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APIHandler(API.getFulfillmentProviders));
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
+        restServer.createContext("/nglm-guimanager/getCustomer", new APIHandler(API.getCustomer));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -590,7 +602,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -625,14 +637,16 @@ public class GUIManager
     private CatalogCharacteristicService catalogCharacteristicService;
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
-    private DeliverableService deliverableService;
+	private DeliverableService deliverableService;
+    private SubscriberProfileService subscriberProfileService;
+    private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -646,7 +660,9 @@ public class GUIManager
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
-      this.deliverableService = deliverableService;
+	  this.deliverableService = deliverableService;
+      this.subscriberProfileService = subscriberProfileService;
+      this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
 
@@ -677,7 +693,9 @@ public class GUIManager
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
-      if (deliverableService != null) deliverableService.stop();
+	  if (deliverableService != null) deliverableService.stop();
+      if (subscriberProfileService != null) subscriberProfileService.stop(); 
+      if (subscriberIDService != null) subscriberIDService.stop(); 
 
       //
       //  rest server
@@ -1154,6 +1172,10 @@ public class GUIManager
                 case getDashboardCounts:
                   jsonResponse = processGetDashboardCounts(userID, jsonRoot);
                   break;
+                
+               case getCustomer:
+                 jsonResponse = processGetCustomer(userID, jsonRoot);
+                 break;
               }
           }
         else
@@ -3461,7 +3483,7 @@ public class GUIManager
     String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (segmentationRuleID == null)
       {
-    	segmentationRuleID = segmentationRuleService.generateSegmentationRuleID();
+        segmentationRuleID = segmentationRuleService.generateSegmentationRuleID();
         jsonRoot.put("id", segmentationRuleID);
       }
     
@@ -6663,10 +6685,79 @@ public class GUIManager
     response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
-    response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
+	response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetCustomer
+   * @throws GUIManagerException 
+  *
+  *****************************************/
 
+  private JSONObject processGetCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    
+    if (null == subscriberID)
+      {
+        response.put("responseCode", "CustomerNotFound");
+        log.warn("unable to resolve SubscriberID for subscriberTraceControlAlternateID {} and customerID ", subscriberTraceControlAlternateID, customerID);
+      }
+    else
+      {
+        try
+        {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+          if (null == baseSubscriberProfile)
+            {
+              response.put("responseCode", "CustomerNotFound");
+            }
+          else
+            {
+              response = baseSubscriberProfile.getProfileMapForGUIPresentaiton(subscriberGroupEpochReader);
+              response.put("responseCode", "ok");
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          throw new GUIManagerException(e);
+        }
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /****************************************
+  *
+  *  resolveSubscriberID
+  *
+  ****************************************/
+  
+  private String resolveSubscriberID(String customerID)
+  {
+    String result = null;
+    try
+      {
+        result = subscriberIDService.getSubscriberID(subscriberTraceControlAlternateID, customerID);
+      } catch (SubscriberIDServiceException e)
+      {
+        log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  journeyCount

@@ -43,9 +43,13 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.sun.net.httpserver.HttpExchange;
@@ -75,11 +79,15 @@ public class ThirdPartyManager
   *****************************************/
   
   private OfferService offerService;
+  private SubscriberProfileService subscriberProfileService;
+  private SubscriberIDService subscriberIDService;
+  private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
+  private String subscriberTraceControlAlternateID;
   
   /*****************************************
   *
@@ -100,6 +108,7 @@ public class ThirdPartyManager
   private enum API
   {
     ping,
+    getCustomer,
     getActiveOffer,
     getActiveOffers;
   }
@@ -143,7 +152,11 @@ public class ThirdPartyManager
     String fwkServerURL = args[3];
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
+    String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
+    String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
+    String redisServer = Deployment.getRedisSentinels();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
+    subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
     
     //
     //  log
@@ -176,12 +189,16 @@ public class ThirdPartyManager
     //
     
     offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false);
+    subscriberProfileService = new SubscriberProfileService(bootstrapServers, "thirdpartymanager-subscriberprofileservice-" + apiProcessKey, subscriberUpdateTopic, redisServer);
+    subscriberIDService = new SubscriberIDService(redisServer);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     
     //
     //  start
     //
     
     offerService.start();
+    subscriberProfileService.start();
     
     /*****************************************
     *
@@ -194,6 +211,7 @@ public class ThirdPartyManager
         InetSocketAddress addr = new InetSocketAddress(apiRestPort);
         restServer = HttpServer.create(addr, 0);
         restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
+        restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -211,7 +229,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -237,15 +255,21 @@ public class ThirdPartyManager
 
     private HttpServer restServer;
     private OfferService offerService;
+    private SubscriberProfileService subscriberProfileService;
+    private SubscriberIDService subscriberIDService;
+    private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
     
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService)
+    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.offerService = offerService;
+      this.subscriberProfileService = subscriberProfileService;
+      this.subscriberIDService = subscriberIDService;
+      this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
     
     //
@@ -258,11 +282,15 @@ public class ThirdPartyManager
       //  reference data reader
       //
 
+      if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
+
       //
       //  services
       //
       
       if (offerService != null) offerService.stop();
+      if (subscriberProfileService != null) subscriberProfileService.stop();
+      if (subscriberIDService != null) subscriberIDService.stop();
       
       //
       //  rest server
@@ -378,6 +406,9 @@ public class ThirdPartyManager
               {
                 case ping:
                   jsonResponse = processPing(jsonRoot);
+                  break;
+                case getCustomer:
+                  jsonResponse = processGetCustomer(jsonRoot);
                   break;
                 case getActiveOffer:
                   jsonResponse = processGetActiveOffer(jsonRoot);
@@ -555,6 +586,77 @@ public class ThirdPartyManager
     response.put("ping", responseStr);
     response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
     response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetCustomer
+   * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomer(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String,Object> response = new HashMap<String,Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    
+    if (null == customerID || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    
+    //
+    // process
+    //
+    
+    if (null == subscriberID)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        log.warn("unable to resolve SubscriberID for subscriberTraceControlAlternateID {} and customerID ",subscriberTraceControlAlternateID, customerID);
+      }
+    else
+      {
+        try
+        {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            }
+          else
+            {
+              response = baseSubscriberProfile.getProfileMapForGUIPresentaiton(subscriberGroupEpochReader);
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
+      }
     return JSONUtilities.encodeObject(response);
   }
   
@@ -860,6 +962,25 @@ public class ThirdPartyManager
     //  result
     //
     
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  resolveSubscriberID
+  *
+  ****************************************/
+  
+  private String resolveSubscriberID(String customerID)
+  {
+    String result = null;
+    try
+      {
+        result = subscriberIDService.getSubscriberID(subscriberTraceControlAlternateID, customerID);
+      } catch (SubscriberIDServiceException e)
+      {
+        log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
+      }
     return result;
   }
 

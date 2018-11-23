@@ -6,24 +6,14 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
-
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SubscriberTrace;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SystemTime;
-import org.json.simple.JSONObject;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -33,10 +23,7 @@ import org.apache.kafka.connect.data.Timestamp;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -176,6 +163,15 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Map<String, Integer> getSubscriberGroups() { return subscriberGroups; }
   public boolean getUniversalControlGroup(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) { return getInSubscriberGroup(UniversalControlGroup, subscriberGroupEpochReader); }
   public String getLanguage() { return language; }
+  
+  /*****************************************
+  *
+  *  abstract
+  *
+  *****************************************/
+  
+  protected abstract void addProfileFieldsForGUIPresentaiton(Map<String, Object> baseProfilePresentation);
+  protected abstract void addProfileFieldsForThirdPartyPresentaiton(Map<String, Object> baseProfilePresentation);
 
   /****************************************
   *
@@ -207,6 +203,50 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
           }
       }
     return result;
+  }
+  
+  /****************************************
+  *
+  *  presentation utilities
+  *
+  ****************************************/
+  
+  //
+  //  getProfileMapForGUIPresentaiton
+  //
+  
+  public Map<String, Object> getProfileMapForGUIPresentaiton(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  {
+    HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
+    baseProfilePresentation.put("evolutionSubscriberStatus", getEvolutionSubscriberStatus().getExternalRepresentation());
+    baseProfilePresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    baseProfilePresentation.put("previousEvolutionSubscriberStatus", getPreviousEvolutionSubscriberStatus().getExternalRepresentation());
+    Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
+    List<String> subscriberGroupList = new ArrayList<String>();
+    subscriberGroupList.addAll(subscriberGroups);
+    baseProfilePresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
+    baseProfilePresentation.put("language", getLanguage());
+    addProfileFieldsForGUIPresentaiton(baseProfilePresentation);
+    return baseProfilePresentation;
+  }
+  
+  //
+  //  getProfileMapForThirdPartyPresentaiton
+  //
+  
+  public Map<String,Object> getProfileMapForThirdPartyPresentaiton(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  {
+    HashMap<String,Object> baseProfilePresentation = new HashMap<String,Object>();
+    baseProfilePresentation.put("evolutionSubscriberStatus", getEvolutionSubscriberStatus().getExternalRepresentation());
+    baseProfilePresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    baseProfilePresentation.put("previousEvolutionSubscriberStatus", getPreviousEvolutionSubscriberStatus().getExternalRepresentation());
+    Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
+    List<String> subscriberGroupList = new ArrayList<String>();
+    subscriberGroupList.addAll(subscriberGroups);
+    baseProfilePresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
+    baseProfilePresentation.put("language", getLanguage());
+    addProfileFieldsForThirdPartyPresentaiton(baseProfilePresentation);
+    return baseProfilePresentation;
   }
   
   //

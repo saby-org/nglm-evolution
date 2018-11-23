@@ -118,6 +118,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDashboardCounts; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomer; echo
+
 --
 --  thirdpartymanager
 --
@@ -126,6 +128,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "token":"4D-40-25-E3-F0-09-F0-BD-88-93-89-78-FD-1A-3D-94-EC-7C-A0-A3" }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/ping; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName":"Administrator","password":"password", "id" : "001" }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/getActiveOffer; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName":"Administrator","password":"password" }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/getActiveOffers; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName":"Administrator","password":"password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_PORT_>/nglm-thirdpartymanager/getCustomer; echo
 
 --
 --  examples of mananging subscriber groups / segments  - new, add, remove, delete
