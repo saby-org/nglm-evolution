@@ -1,15 +1,19 @@
-fwk-api:
+fwk-api-<_KEY_>:
   image: evolving/fwk.api:${gui-fwk.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
-    AppSettings__AuthorizationBaseUrl: "http://<_GUI_AUTH_HOST_IP_>:<_GUI_AUTH_PORT_>/api"
-    FwkSettings__AuthorizationBaseUrl: "http://<_GUI_AUTH_HOST_IP_>:<_GUI_AUTH_PORT_>/api"
-    ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQLDB_HOST_IP_>;Port=<_GUI_MYSQLDB_PORT_>;Database=dbframework;UID=root;Password=<_GUI_MYSQLDB_PASSWORD_>'
+    AppSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
+    FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
+    ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
   volumes:
     - type: bind
-      source: <_NGLM_GUI_RUNTIME_>/fwk-api/mnt
+      source: <_NGLM_GUI_RUNTIME_>/fwk-api-<_KEY_>/mnt
       target: /mnt
-  deploy: 
+  ports:
+    - target: 8080
+      published: <_PORT_>
+      mode: host
+  deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
       delay: 5s
@@ -19,10 +23,4 @@ fwk-api:
     replicas: 1
     placement:
       constraints:
-        - engine.labels.hostname == <_GUI_API_HOST_>
-  ports:
-    - "<_GUI_API_PORT_>:8084"
-  networks:
-    - ev-gui-mysql_standard
-  depends_on:
-    - fwkauth-api
+        - engine.labels.hostname == <_GUI_FWK_API_SERVER_HOST_>

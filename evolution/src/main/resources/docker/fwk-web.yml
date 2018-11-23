@@ -1,9 +1,13 @@
-fwk-web:
+fwk-web-<_KEY_>:
   image: evolving/fwk.web:${gui-fwk.version}
   environment:
-    fwk_api_server_path: "http://<_GUI_API_HOST_IP_>:<_GUI_API_PORT_>/api/"
-    fwk_api_server_path_for_upload_files: "http://<_GUI_API_HOST_IP_>:<_GUI_API_PORT_>/api/file/flowupload"
-  deploy: 
+    fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
+    fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
+  ports:
+    - target: 80
+      published: <_PORT_>
+      mode: host
+  deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
       delay: 5s
@@ -13,10 +17,4 @@ fwk-web:
     replicas: 1
     placement:
       constraints:
-        - engine.labels.hostname == <_GUI_WEB_HOST_>
-  ports:
-    - "<_GUI_WEB_PORT_>:80"
-  networks:
-    - ev-gui-mysql_standard
-  depends_on:
-    - fwk-api
+        - engine.labels.hostname == <_GUI_FWK_WEB_SERVER_HOST_>

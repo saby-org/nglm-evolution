@@ -8,7 +8,7 @@
   <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
   <description>NGLM EVOLUTION</description>
 
-  <repositories> 
+  <repositories>
 
     <repository>
       <id>evolving-internal</id>
@@ -30,7 +30,7 @@
       <url>http://packages.confluent.io/maven/</url>
     </repository>
 
-  </repositories>  
+  </repositories>
 
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
@@ -40,13 +40,17 @@
   </parent>
 
   <properties>
-    
+
     <!-- core version -->
     <nglm.core.version>4.3.1</nglm.core.version>
 
     <!-- dependencies -->
-    <gui-fwk.version>1.0.2</gui-fwk.version>
-    
+    <gui-fwk.version>1.0.4</gui-fwk.version>
+    <gui-csr.version>1.0.4</gui-csr.version>
+    <gui-itm.version>1.0.4</gui-itm.version>
+    <gui-jmr.version>1.0.4</gui-jmr.version>
+    <gui-opc.version>1.0.5</gui-opc.version>
+
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
     <common.build.phase.generate-setup-stack>none</common.build.phase.generate-setup-stack>
@@ -79,7 +83,7 @@
           <target>1.8</target>
         </configuration>
       </plugin>
-      
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <version>3.0.2</version>
@@ -109,7 +113,7 @@
               <target>
                 <copy todir="${project.build.directory}/assembled-resources/support">
                   <fileset dir="${project.basedir}/src/main/resources/support" includes="*.json"/>
-                </copy>                
+                </copy>
                 <replaceregexp match="(--.*$)|${line.separator}" replace="" flags="gm">
                   <fileset dir="${project.build.directory}/assembled-resources/support" includes="*.json"/>
                 </replaceregexp>
@@ -148,7 +152,7 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/assembled-resources</outputDirectory>
-              <resources>          
+              <resources>
                 <resource>
                   <directory>src/main/resources</directory>
                   <includes>
@@ -200,8 +204,8 @@
                   </excludes>
                   <filtering>true</filtering>
                 </resource>
-              </resources>              
-            </configuration>            
+              </resources>
+            </configuration>
           </execution>
 
         </executions>
@@ -215,7 +219,7 @@
         <filtering>false</filtering>
       </resource>
     </resources>
-    
+
   </build>
 
   <distributionManagement>
@@ -225,13 +229,13 @@
       <name>Evolving Internal Repository</name>
       <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
     </repository>
-    
+
     <snapshotRepository>
       <id>evolving-snapshots</id>
       <name>Evolving Snapshots Repository</name>
       <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
     </snapshotRepository>
- 
+
   </distributionManagement>
-  
+
 </project>

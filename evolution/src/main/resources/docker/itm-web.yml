@@ -1,0 +1,21 @@
+itm-web-<_KEY_>:
+  image: evolving/itm.web:${gui-itm.version}
+  environment:
+    itm_api_server_path: "http://<_GUI_ITM_API_SERVER_HOST_IP_>:<_GUI_ITM_API_SERVER_PORT_>/api/"
+    itm_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
+    itm_api_server_path_for_upload_files: "http://<_GUI_ITM_API_SERVER_HOST_IP_>:<_GUI_ITM_API_SERVER_PORT_>/api/file/flowupload"
+  ports:
+    - target: 80
+      published: <_PORT_>
+      mode: host
+  deploy:
+    restart_policy:
+      condition: <_DOCKER_RESTART_POLICY_>
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_GUI_ITM_WEB_SERVER_HOST_>

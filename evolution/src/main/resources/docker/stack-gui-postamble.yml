@@ -1,3 +1,0 @@
-networks:
-  ev-gui-mysql_standard:
-    external: true
