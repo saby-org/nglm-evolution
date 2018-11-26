@@ -21,7 +21,6 @@ if [ "${thirdpartymanager.enabled}" = "true" ]; then
 fi
 
 docker stack rm <_DOCKER_STACK_>-evolutionengine
-docker stack rm <_DOCKER_STACK_>-gui-mysql
 
 #
 #  hack -- remove gui containers
@@ -44,4 +43,3 @@ if [ "$(docker ps -aq -f name=ev-gui-mysql_fwk-mysqldb)" ]; then
   docker kill $(docker ps -aq -f name=ev-gui-mysql_fwk-mysqldb) > /dev/null 2>&1
   docker rm $(docker ps -aq -f name=ev-gui-mysql_fwk-mysqldb) > /dev/null 2>&1
 fi
-
