@@ -2,7 +2,7 @@ csr-web-<_KEY_>:
   image: evolving/csr.web:${gui-csr.version}
   environment:
     csr_api_server_path: "http://<_GUI_CSR_WEB_SERVER_HOST_IP_>:<_GUI_CSR_WEB_SERVER_PORT_>/api/"
-    csr_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
+    csr_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     csr_api_server_path_for_upload_files: "http://<_GUI_CSR_WEB_SERVER_HOST_IP_>:<_GUI_CSR_WEB_SERVER_PORT_>/api/file/flowupload"
   ports:
     - target: 80
