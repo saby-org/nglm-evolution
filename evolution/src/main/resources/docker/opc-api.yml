@@ -6,16 +6,13 @@ opc-api-<_KEY_>:
     GuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
     DNBOEngineSettings__ApiBaseUrl: 'http://<_IOM_SERVER_>/Evolving/'
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
-    ConnectionStrings__OPCConnection: 'Data Source=<_IOM_DB_HOST_>;Initial Catalog=<_IOM_DB_DATABASE_>;User ID=<_IOM_DB_USER_>;Password=<_IOM_DB_PASSWORD_>'
+    ConnectionStrings__OPCConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
     Redis__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_SERVER_>,allowAdmin=true,syncTimeout=5000'
+    OPCAPIPORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/opc-api-<_KEY_>/mnt
       target: /mnt
-  ports:
-    - target: 8080
-      published: <_PORT_>
-      mode: host
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -27,3 +24,5 @@ opc-api-<_KEY_>:
     placement:
       constraints:
         - engine.labels.hostname == <_GUI_OPC_API_SERVER_HOST_>
+  networks:
+    - outside
