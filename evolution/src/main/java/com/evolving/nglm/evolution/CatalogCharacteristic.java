@@ -102,6 +102,7 @@ public class CatalogCharacteristic extends GUIManagedObject
   *****************************************/
 
   public String getCatalogCharacteristicID() { return getGUIManagedObjectID(); }
+  public String getCatalogCharacteristicName() { return getGUIManagedObjectName(); }
   public CatalogCharacteristicType getType() { return type; }
   
   /*****************************************

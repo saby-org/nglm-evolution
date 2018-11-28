@@ -105,10 +105,12 @@ public abstract class GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("guiManagedObjectName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectType", Schema.STRING_SCHEMA);
     schemaBuilder.field("epoch", Schema.INT64_SCHEMA);
     schemaBuilder.field("effectiveStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("effectiveEndDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("readOnly", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("valid", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
     commonSchema = schemaBuilder.build();
@@ -156,10 +158,12 @@ public abstract class GUIManagedObject
 
   private JSONObject jsonRepresentation;
   private String guiManagedObjectID;
+  private String guiManagedObjectName;
   private GUIManagedObjectType guiManagedObjectType;
   private long epoch;
   private Date effectiveStartDate;
   private Date effectiveEndDate;
+  private boolean readOnly;
   private boolean valid;
   private boolean active;
 
@@ -174,6 +178,7 @@ public abstract class GUIManagedObject
   //
   
   public String getGUIManagedObjectID() { return guiManagedObjectID; }
+  public String getGUIManagedObjectName() { return guiManagedObjectName; }
   public GUIManagedObjectType getGUIManagedObjectType() { return guiManagedObjectType; }
   public JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public long getEpoch() { return epoch; }
@@ -184,6 +189,7 @@ public abstract class GUIManagedObject
 
   Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
+  boolean getReadOnly() { return readOnly; }
   boolean getValid() { return valid; }
   boolean getActive() { return active; }
 
@@ -221,10 +227,12 @@ public abstract class GUIManagedObject
   {
     struct.put("jsonRepresentation", guiManagedObject.getJSONRepresentation().toString());
     struct.put("guiManagedObjectID", guiManagedObject.getGUIManagedObjectID());
+    struct.put("guiManagedObjectName", guiManagedObject.getGUIManagedObjectName());
     struct.put("guiManagedObjectType", guiManagedObject.getGUIManagedObjectType().getExternalRepresentation());
     struct.put("epoch", guiManagedObject.getEpoch());
     struct.put("effectiveStartDate", guiManagedObject.getRawEffectiveStartDate());
     struct.put("effectiveEndDate", guiManagedObject.getRawEffectiveEndDate());
+    struct.put("readOnly", guiManagedObject.getReadOnly());
     struct.put("valid", guiManagedObject.getValid());
     struct.put("active", guiManagedObject.getActive());
   }
@@ -239,10 +247,12 @@ public abstract class GUIManagedObject
   {
     this.jsonRepresentation = new JSONObject();
     this.guiManagedObjectID = guiManagedObjectID;
+    this.guiManagedObjectName = null;
     this.guiManagedObjectType = GUIManagedObjectType.Other;
     this.epoch = -1;
     this.effectiveStartDate = null;
     this.effectiveEndDate = null;
+    this.readOnly = false;
     this.valid = false;
     this.active = false;
   }
@@ -270,10 +280,12 @@ public abstract class GUIManagedObject
     Struct valueStruct = (Struct) value;
     JSONObject jsonRepresentation = parseRepresentation(valueStruct.getString("jsonRepresentation"));
     String guiManagedObjectID = valueStruct.getString("guiManagedObjectID");
+    String guiManagedObjectName = valueStruct.getString("guiManagedObjectName");
     GUIManagedObjectType guiManagedObjectType = GUIManagedObjectType.fromExternalRepresentation(valueStruct.getString("guiManagedObjectType"));
     long epoch = valueStruct.getInt64("epoch");
     Date effectiveStartDate = (Date) valueStruct.get("effectiveStartDate");
     Date effectiveEndDate = (Date) valueStruct.get("effectiveEndDate");
+    boolean readOnly = valueStruct.getBoolean("readOnly");
     boolean valid = valueStruct.getBoolean("valid");
     boolean active = valueStruct.getBoolean("active");
 
@@ -283,10 +295,12 @@ public abstract class GUIManagedObject
 
     this.jsonRepresentation = jsonRepresentation;
     this.guiManagedObjectID = guiManagedObjectID;
+    this.guiManagedObjectName = guiManagedObjectName;
     this.guiManagedObjectType = guiManagedObjectType;
     this.epoch = epoch;
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
+    this.readOnly = readOnly;
     this.valid = valid;
     this.active = active;
   }
@@ -301,10 +315,12 @@ public abstract class GUIManagedObject
   {
     this.jsonRepresentation = jsonRoot;
     this.guiManagedObjectID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    this.guiManagedObjectName = JSONUtilities.decodeString(jsonRoot, "name", false);
     this.guiManagedObjectType = guiManagedObjectType;
     this.epoch = epoch;
     this.effectiveStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     this.effectiveEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
+    this.readOnly = JSONUtilities.decodeBoolean(jsonRoot, "readOnly", Boolean.FALSE);
     this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", Boolean.FALSE);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
   }

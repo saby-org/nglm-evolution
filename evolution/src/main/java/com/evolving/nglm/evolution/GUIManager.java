@@ -275,7 +275,7 @@ public class GUIManager
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
-	String deliverableTopic = Deployment.getDeliverableTopic();
+    String deliverableTopic = Deployment.getDeliverableTopic();
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String redisServer = Deployment.getRedisSentinels();
@@ -309,8 +309,8 @@ public class GUIManager
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
-	productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
-	deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
+    productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
+    deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     subscriberProfileService = new SubscriberProfileService(bootstrapServers, "guimanager-subscriberprofileservice-" + apiProcessKey, subscriberUpdateTopic, redisServer);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
@@ -485,7 +485,7 @@ public class GUIManager
     catalogCharacteristicService.start();
     offerObjectiveService.start();
     productTypeService.start();
-	deliverableService.start();
+    deliverableService.start();
     subscriberProfileService.start();
 
     /*****************************************
@@ -637,7 +637,7 @@ public class GUIManager
     private CatalogCharacteristicService catalogCharacteristicService;
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
-	private DeliverableService deliverableService;
+    private DeliverableService deliverableService;
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -660,7 +660,7 @@ public class GUIManager
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
-	  this.deliverableService = deliverableService;
+      this.deliverableService = deliverableService;
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -693,7 +693,7 @@ public class GUIManager
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
-	  if (deliverableService != null) deliverableService.stop();
+      if (deliverableService != null) deliverableService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop(); 
       if (subscriberIDService != null) subscriberIDService.stop(); 
 
@@ -2988,6 +2988,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -3014,11 +3015,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingJourney != null && existingJourney.getReadOnly())
+      {
+        response.put("id", existingJourney.getGUIManagedObjectID());
+        response.put("accepted", existingJourney.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process journey
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -3124,7 +3139,21 @@ public class GUIManager
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
     journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-    if (journey != null) journeyService.removeJourney(journeyID, userID);
+    if (journey != null && ! journey.getReadOnly()) journeyService.removeJourney(journeyID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (journey != null && ! journey.getReadOnly())
+      responseCode = "ok";
+    else if (journey != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "journeyNotFound";
 
     /*****************************************
     *
@@ -3132,7 +3161,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3233,6 +3262,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -3259,11 +3289,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCampaign != null && existingCampaign.getReadOnly())
+      {
+        response.put("id", existingCampaign.getGUIManagedObjectID());
+        response.put("accepted", existingCampaign.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process campaign
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -3369,7 +3413,21 @@ public class GUIManager
 
     GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
     campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-    if (campaign != null) journeyService.removeJourney(campaignID, userID);
+    if (campaign != null && ! campaign.getReadOnly()) journeyService.removeJourney(campaignID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (campaign != null && ! campaign.getReadOnly())
+      responseCode = "ok";
+    else if (campaign != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "campaignNotFound";
 
     /*****************************************
     *
@@ -3377,7 +3435,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (campaign != null) ? "ok" : "campaignNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3472,6 +3530,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -3497,11 +3556,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingSegmentationRule != null && existingSegmentationRule.getReadOnly())
+      {
+        response.put("id", existingSegmentationRule.getGUIManagedObjectID());
+        response.put("accepted", existingSegmentationRule.getAccepted());
+        response.put("processing", segmentationRuleService.isActiveSegmentationRule(existingSegmentationRule, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process segmentationRule
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -3606,7 +3679,21 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject segmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
-    if (segmentationRule != null) segmentationRuleService.removeSegmentationRule(segmentationRuleID, userID);
+    if (segmentationRule != null && ! segmentationRule.getReadOnly()) segmentationRuleService.removeSegmentationRule(segmentationRuleID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (segmentationRule != null && ! segmentationRule.getReadOnly())
+      responseCode = "ok";
+    else if (segmentationRule != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "segmentationRuleNotFound";
 
     /*****************************************
     *
@@ -3614,7 +3701,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (segmentationRule != null) ? "ok" : "segmentationRuleNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3709,6 +3796,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -3734,11 +3822,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingOffer != null && existingOffer.getReadOnly())
+      {
+        response.put("id", existingOffer.getGUIManagedObjectID());
+        response.put("accepted", existingOffer.getAccepted());
+        response.put("processing", offerService.isActiveOffer(existingOffer, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process offer
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -3835,7 +3937,21 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject offer = offerService.getStoredOffer(offerID);
-    if (offer != null) offerService.removeOffer(offerID, userID);
+    if (offer != null && ! offer.getReadOnly()) offerService.removeOffer(offerID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (offer != null && ! offer.getReadOnly())
+      responseCode = "ok";
+    else if (offer != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "offerNotFound";
 
     /*****************************************
     *
@@ -3843,7 +3959,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (offer != null) ? "ok" : "offerNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3938,6 +4054,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -3963,11 +4080,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingPresentationStrategy != null && existingPresentationStrategy.getReadOnly())
+      {
+        response.put("id", existingPresentationStrategy.getGUIManagedObjectID());
+        response.put("accepted", existingPresentationStrategy.getAccepted());
+        response.put("processing", presentationStrategyService.isActivePresentationStrategy(existingPresentationStrategy, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process presentationStrategy
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -4064,7 +4195,21 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
-    if (presentationStrategy != null) presentationStrategyService.removePresentationStrategy(presentationStrategyID, userID);
+    if (presentationStrategy != null && ! presentationStrategy.getReadOnly()) presentationStrategyService.removePresentationStrategy(presentationStrategyID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (presentationStrategy != null && ! presentationStrategy.getReadOnly())
+      responseCode = "ok";
+    else if (presentationStrategy != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "presentationStrategyNotFound";
 
     /*****************************************
     *
@@ -4072,7 +4217,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (presentationStrategy != null) ? "ok" : "presentationStrategyNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4167,6 +4312,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -4192,11 +4338,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingScoringStrategy != null && existingScoringStrategy.getReadOnly())
+      {
+        response.put("id", existingScoringStrategy.getGUIManagedObjectID());
+        response.put("accepted", existingScoringStrategy.getAccepted());
+        response.put("processing", scoringStrategyService.isActiveScoringStrategy(existingScoringStrategy, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process scoringStrategy
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -4222,7 +4382,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidatePresentationStrategies(now, userID);
+        revalidatePresentationStrategies(now);
 
         /*****************************************
         *
@@ -4254,7 +4414,7 @@ public class GUIManager
         //  revalidatePresentationStrategies
         //
 
-        revalidatePresentationStrategies(now, userID);
+        revalidatePresentationStrategies(now);
 
         //
         //  log
@@ -4315,7 +4475,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
-    if (scoringStrategy != null) scoringStrategyService.removeScoringStrategy(scoringStrategyID, userID);
+    if (scoringStrategy != null && ! scoringStrategy.getReadOnly()) scoringStrategyService.removeScoringStrategy(scoringStrategyID, userID);
 
     /*****************************************
     *
@@ -4323,7 +4483,21 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidatePresentationStrategies(now, userID);
+    revalidatePresentationStrategies(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (scoringStrategy != null && ! scoringStrategy.getReadOnly())
+      responseCode = "ok";
+    else if (scoringStrategy != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "scoringStrategyNotFound";
 
     /*****************************************
     *
@@ -4331,7 +4505,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (scoringStrategy != null) ? "ok" : "scoringStrategyNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4426,6 +4600,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -4451,11 +4626,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCallingChannel != null && existingCallingChannel.getReadOnly())
+      {
+        response.put("id", existingCallingChannel.getGUIManagedObjectID());
+        response.put("accepted", existingCallingChannel.getAccepted());
+        response.put("processing", callingChannelService.isActiveCallingChannel(existingCallingChannel, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process callingChannel
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -4481,7 +4670,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now, userID);
+        revalidateOffers(now);
 
         /*****************************************
         *
@@ -4513,7 +4702,7 @@ public class GUIManager
         //  revalidateOffers
         //
 
-        revalidateOffers(now, userID);
+        revalidateOffers(now);
 
         //
         //  log
@@ -4574,7 +4763,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
-    if (callingChannel != null) callingChannelService.removeCallingChannel(callingChannelID, userID);
+    if (callingChannel != null && ! callingChannel.getReadOnly()) callingChannelService.removeCallingChannel(callingChannelID, userID);
 
     /*****************************************
     *
@@ -4582,7 +4771,21 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateOffers(now, userID);
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (callingChannel != null && ! callingChannel.getReadOnly())
+      responseCode = "ok";
+    else if (callingChannel != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "callingChannelNotFound";
 
     /*****************************************
     *
@@ -4590,7 +4793,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (callingChannel != null) ? "ok" : "callingChannelNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4685,6 +4888,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -4710,11 +4914,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingSupplier != null && existingSupplier.getReadOnly())
+      {
+        response.put("id", existingSupplier.getGUIManagedObjectID());
+        response.put("accepted", existingSupplier.getAccepted());
+        response.put("processing", supplierService.isActiveSupplier(existingSupplier, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process supplier
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -4740,7 +4958,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateProducts(now, userID);
+        revalidateProducts(now);
 
         /*****************************************
         *
@@ -4772,7 +4990,7 @@ public class GUIManager
         //  revalidateProducts
         //
 
-        revalidateProducts(now, userID);
+        revalidateProducts(now);
 
         //
         //  log
@@ -4833,7 +5051,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
-    if (supplier != null) supplierService.removeSupplier(supplierID, userID);
+    if (supplier != null && ! supplier.getReadOnly()) supplierService.removeSupplier(supplierID, userID);
 
     /*****************************************
     *
@@ -4841,7 +5059,21 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateProducts(now, userID);
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (supplier != null && ! supplier.getReadOnly())
+      responseCode = "ok";
+    else if (supplier != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "supplierNotFound";
 
     /*****************************************
     *
@@ -4849,7 +5081,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (supplier != null) ? "ok" : "supplierNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -4944,6 +5176,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -4969,11 +5202,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingProduct != null && existingProduct.getReadOnly())
+      {
+        response.put("id", existingProduct.getGUIManagedObjectID());
+        response.put("accepted", existingProduct.getAccepted());
+        response.put("processing", productService.isActiveProduct(existingProduct, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process product
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -4999,7 +5246,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now, userID);
+        revalidateOffers(now);
 
         /*****************************************
         *
@@ -5031,7 +5278,7 @@ public class GUIManager
         //  revalidateOffers
         //
 
-        revalidateOffers(now, userID);
+        revalidateOffers(now);
 
         //
         //  log
@@ -5092,7 +5339,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject product = productService.getStoredProduct(productID);
-    if (product != null) productService.removeProduct(productID, userID);
+    if (product != null && ! product.getReadOnly()) productService.removeProduct(productID, userID);
 
     /*****************************************
     *
@@ -5100,7 +5347,21 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateOffers(now, userID);
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (product != null && ! product.getReadOnly())
+      responseCode = "ok";
+    else if (product != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "productNotFound";
 
     /*****************************************
     *
@@ -5108,7 +5369,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (product != null) ? "ok" : "productNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -5203,6 +5464,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -5228,11 +5490,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCatalogCharacteristic != null && existingCatalogCharacteristic.getReadOnly())
+      {
+        response.put("id", existingCatalogCharacteristic.getGUIManagedObjectID());
+        response.put("accepted", existingCatalogCharacteristic.getAccepted());
+        response.put("processing", catalogCharacteristicService.isActiveCatalogCharacteristic(existingCatalogCharacteristic, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process catalogCharacteristic
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -5258,10 +5534,10 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now, userID);
-        revalidateOfferObjectives(now, userID);
-        revalidateProductTypes(now, userID);
-        revalidateProducts(now, userID);
+        revalidateOffers(now);
+        revalidateOfferObjectives(now);
+        revalidateProductTypes(now);
+        revalidateProducts(now);
 
         /*****************************************
         *
@@ -5293,10 +5569,10 @@ public class GUIManager
         //  revalidate dependent objects
         //
 
-        revalidateOffers(now, userID);
-        revalidateOfferObjectives(now, userID);
-        revalidateProductTypes(now, userID);
-        revalidateProducts(now, userID);
+        revalidateOffers(now);
+        revalidateOfferObjectives(now);
+        revalidateProductTypes(now);
+        revalidateProducts(now);
 
         //
         //  log
@@ -5357,7 +5633,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
-    if (catalogCharacteristic != null) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID, userID);
+    if (catalogCharacteristic != null && ! catalogCharacteristic.getReadOnly()) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID, userID);
 
     /*****************************************
     *
@@ -5365,10 +5641,24 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateOffers(now, userID);
-    revalidateOfferObjectives(now, userID);
-    revalidateProductTypes(now, userID);
-    revalidateProducts(now, userID);
+    revalidateOffers(now);
+    revalidateOfferObjectives(now);
+    revalidateProductTypes(now);
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (catalogCharacteristic != null && ! catalogCharacteristic.getReadOnly())
+      responseCode = "ok";
+    else if (catalogCharacteristic != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "catalogCharacteristicNotFound";
 
     /*****************************************
     *
@@ -5376,7 +5666,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (catalogCharacteristic != null) ? "ok" : "catalogCharacterisicNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -5471,6 +5761,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -5496,11 +5787,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingOfferObjective != null && existingOfferObjective.getReadOnly())
+      {
+        response.put("id", existingOfferObjective.getGUIManagedObjectID());
+        response.put("accepted", existingOfferObjective.getAccepted());
+        response.put("processing", offerObjectiveService.isActiveOfferObjective(existingOfferObjective, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process offerObjective
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -5526,8 +5831,8 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateOffers(now, userID);
-        revalidateScoringStrategies(now, userID);
+        revalidateOffers(now);
+        revalidateScoringStrategies(now);
 
         /*****************************************
         *
@@ -5559,8 +5864,8 @@ public class GUIManager
         //  revalidate dependent objects
         //
 
-        revalidateOffers(now, userID);
-        revalidateScoringStrategies(now, userID);
+        revalidateOffers(now);
+        revalidateScoringStrategies(now);
 
         //
         //  log
@@ -5621,7 +5926,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
-    if (offerObjective != null) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
+    if (offerObjective != null && ! offerObjective.getReadOnly()) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
 
     /*****************************************
     *
@@ -5629,8 +5934,22 @@ public class GUIManager
     *
     *****************************************/
     
-    revalidateOffers(now, userID);
-    revalidateScoringStrategies(now, userID);
+    revalidateOffers(now);
+    revalidateScoringStrategies(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (offerObjective != null && ! offerObjective.getReadOnly())
+      responseCode = "ok";
+    else if (offerObjective != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "offerObjectiveNotFound";
 
     /*****************************************
     *
@@ -5638,7 +5957,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -5733,6 +6052,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -5758,11 +6078,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingProductType != null && existingProductType.getReadOnly())
+      {
+        response.put("id", existingProductType.getGUIManagedObjectID());
+        response.put("accepted", existingProductType.getAccepted());
+        response.put("processing", productTypeService.isActiveProductType(existingProductType, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process productType
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -5788,7 +6122,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateProducts(now, userID);
+        revalidateProducts(now);
         
         /*****************************************
         *
@@ -5820,7 +6154,7 @@ public class GUIManager
         //  revalidateProducts
         //
 
-        revalidateProducts(now, userID);
+        revalidateProducts(now);
 
         //
         //  log
@@ -5881,7 +6215,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
-    if (productType != null) productTypeService.removeProductType(productTypeID, userID);
+    if (productType != null && ! productType.getReadOnly()) productTypeService.removeProductType(productTypeID, userID);
 
     /*****************************************
     *
@@ -5889,7 +6223,21 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateProducts(now, userID);
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (productType != null && ! productType.getReadOnly())
+      responseCode = "ok";
+    else if (productType != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "productTypeNotFound";
 
     /*****************************************
     *
@@ -5897,7 +6245,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (productType != null) ? "ok" : "productTypeNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -5992,6 +6340,7 @@ public class GUIManager
     *
     ****************************************/
     
+    Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     
     /*****************************************
@@ -6017,11 +6366,25 @@ public class GUIManager
 
     /*****************************************
     *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingDeliverable != null && existingDeliverable.getReadOnly())
+      {
+        response.put("id", existingDeliverable.getGUIManagedObjectID());
+        response.put("accepted", existingDeliverable.getAccepted());
+        response.put("processing", deliverableService.isActiveDeliverable(existingDeliverable, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
     *  process deliverable
     *
     *****************************************/
 
-    Date now = SystemTime.getCurrentTime();
     long epoch = epochServer.getKey();
     try
       {
@@ -6047,7 +6410,7 @@ public class GUIManager
         *
         *****************************************/
 
-        revalidateProducts(now, userID);
+        revalidateProducts(now);
         
         /*****************************************
         *
@@ -6079,7 +6442,7 @@ public class GUIManager
         //  revalidateProducts
         //
 
-        revalidateProducts(now, userID);
+        revalidateProducts(now);
 
         //
         //  log
@@ -6140,7 +6503,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
-    if (deliverable != null) deliverableService.removeDeliverable(deliverableID, userID);
+    if (deliverable != null && ! deliverable.getReadOnly()) deliverableService.removeDeliverable(deliverableID, userID);
 
     /*****************************************
     *
@@ -6148,7 +6511,21 @@ public class GUIManager
     *
     *****************************************/
 
-    revalidateProducts(now, userID);
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (deliverable != null && ! deliverable.getReadOnly())
+      responseCode = "ok";
+    else if (deliverable != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "deliverableNotFound";
 
     /*****************************************
     *
@@ -6156,7 +6533,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   
@@ -6166,7 +6543,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateScoringStrategies(Date date, String userID)
+  private void revalidateScoringStrategies(Date date)
   {
     /****************************************
     *
@@ -6212,7 +6589,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedScoringStrategy : modifiedScoringStrategies)
       {
-        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, userID);
+        scoringStrategyService.putGUIManagedObject(modifiedScoringStrategy, date, false, null);
       }
     
     /****************************************
@@ -6221,7 +6598,7 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidatePresentationStrategies(date, userID);
+    revalidatePresentationStrategies(date);
   }
 
   /*****************************************
@@ -6230,7 +6607,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidatePresentationStrategies(Date date, String userID)
+  private void revalidatePresentationStrategies(Date date)
   {
     /****************************************
     *
@@ -6276,7 +6653,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedPresentationStrategy : modifiedPresentationStrategies)
       {
-        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, userID);
+        presentationStrategyService.putGUIManagedObject(modifiedPresentationStrategy, date, false, null);
       }
   }
 
@@ -6286,7 +6663,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateOffers(Date date, String userID)
+  private void revalidateOffers(Date date)
   {
     /****************************************
     *
@@ -6332,7 +6709,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedOffer : modifiedOffers)
       {
-        offerService.putGUIManagedObject(modifiedOffer, date, false, userID);
+        offerService.putGUIManagedObject(modifiedOffer, date, false, null);
       }
   }
 
@@ -6342,7 +6719,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateProducts(Date date, String userID)
+  private void revalidateProducts(Date date)
   {
     /****************************************
     *
@@ -6388,7 +6765,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedProduct : modifiedProducts)
       {
-        productService.putGUIManagedObject(modifiedProduct, date, false, userID);
+        productService.putGUIManagedObject(modifiedProduct, date, false, null);
       }
     
     /****************************************
@@ -6397,7 +6774,7 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateOffers(date, userID);
+    revalidateOffers(date);
   }
   
   /*****************************************
@@ -6406,7 +6783,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateCatalogCharacteristics(Date date, String userID)
+  private void revalidateCatalogCharacteristics(Date date)
   {
     /****************************************
     *
@@ -6451,7 +6828,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedCatalogCharacteristic : modifiedCatalogCharacteristics)
       {
-        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, userID);
+        catalogCharacteristicService.putGUIManagedObject(modifiedCatalogCharacteristic, date, false, null);
       }
     
     /****************************************
@@ -6460,10 +6837,10 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateOffers(date, userID);
-    revalidateOfferObjectives(date, userID);
-    revalidateProductTypes(date, userID);
-    revalidateProducts(date, userID);
+    revalidateOffers(date);
+    revalidateOfferObjectives(date);
+    revalidateProductTypes(date);
+    revalidateProducts(date);
   }
 
   /*****************************************
@@ -6472,7 +6849,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateOfferObjectives(Date date, String userID)
+  private void revalidateOfferObjectives(Date date)
   {
     /****************************************
     *
@@ -6518,7 +6895,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedOfferObjective : modifiedOfferObjectives)
       {
-        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, userID);
+        offerObjectiveService.putGUIManagedObject(modifiedOfferObjective, date, false, null);
       }
     
     /****************************************
@@ -6527,8 +6904,8 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateOffers(date, userID);
-    revalidateScoringStrategies(date, userID);
+    revalidateOffers(date);
+    revalidateScoringStrategies(date);
   }
 
   /*****************************************
@@ -6537,7 +6914,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void revalidateProductTypes(Date date, String userID)
+  private void revalidateProductTypes(Date date)
   {
     /****************************************
     *
@@ -6583,7 +6960,7 @@ public class GUIManager
     
     for (GUIManagedObject modifiedProductType : modifiedProductTypes)
       {
-        productTypeService.putGUIManagedObject(modifiedProductType, date, false, userID);
+        productTypeService.putGUIManagedObject(modifiedProductType, date, false, null);
       }
     
     /****************************************
@@ -6592,7 +6969,7 @@ public class GUIManager
     *
     ****************************************/
 
-    revalidateProducts(date, userID);
+    revalidateProducts(date);
   }
 
   /*****************************************
@@ -6685,7 +7062,7 @@ public class GUIManager
     response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
-	response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
+    response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
     return JSONUtilities.encodeObject(response);
   }
   

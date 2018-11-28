@@ -404,7 +404,10 @@ public class GUIService
     //  audit
     //
 
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiAuditTopic, guiObjectAuditSerde.serializer().serialize(guiAuditTopic, new GUIObjectAudit(userID, putAPIString, newObject, guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date))));
+    if (userID != null)
+      {
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiAuditTopic, guiObjectAuditSerde.serializer().serialize(guiAuditTopic, new GUIObjectAudit(userID, putAPIString, newObject, guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date))));
+      }
 
     //
     //  process
@@ -771,6 +774,7 @@ public class GUIService
         responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : getSummaryJSONRepresentation(guiManagedObject));
         responseJSON.put("accepted", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
+        responseJSON.put("readOnly", guiManagedObject.getReadOnly());
       }
     return responseJSON;
   }
