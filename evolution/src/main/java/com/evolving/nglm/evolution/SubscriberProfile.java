@@ -170,8 +170,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
   
-  protected abstract void addProfileFieldsForGUIPresentaiton(Map<String, Object> baseProfilePresentation);
-  protected abstract void addProfileFieldsForThirdPartyPresentaiton(Map<String, Object> baseProfilePresentation);
+  protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation);
+  protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation);
 
   /****************************************
   *
@@ -212,10 +212,10 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   ****************************************/
   
   //
-  //  getProfileMapForGUIPresentaiton
+  //  getProfileMapForGUIPresentation
   //
   
-  public Map<String, Object> getProfileMapForGUIPresentaiton(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     baseProfilePresentation.put("evolutionSubscriberStatus", getEvolutionSubscriberStatus().getExternalRepresentation());
@@ -226,15 +226,15 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     subscriberGroupList.addAll(subscriberGroups);
     baseProfilePresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
     baseProfilePresentation.put("language", getLanguage());
-    addProfileFieldsForGUIPresentaiton(baseProfilePresentation);
+    addProfileFieldsForGUIPresentation(baseProfilePresentation);
     return baseProfilePresentation;
   }
   
   //
-  //  getProfileMapForThirdPartyPresentaiton
+  //  getProfileMapForThirdPartyPresentation
   //
   
-  public Map<String,Object> getProfileMapForThirdPartyPresentaiton(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String,Object> baseProfilePresentation = new HashMap<String,Object>();
     baseProfilePresentation.put("evolutionSubscriberStatus", getEvolutionSubscriberStatus().getExternalRepresentation());
@@ -245,7 +245,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     subscriberGroupList.addAll(subscriberGroups);
     baseProfilePresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
     baseProfilePresentation.put("language", getLanguage());
-    addProfileFieldsForThirdPartyPresentaiton(baseProfilePresentation);
+    addProfileFieldsForThirdPartyPresentation(baseProfilePresentation);
     return baseProfilePresentation;
   }
   

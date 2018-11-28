@@ -646,7 +646,7 @@ public class ThirdPartyManager
             }
           else
             {
-              response = baseSubscriberProfile.getProfileMapForGUIPresentaiton(subscriberGroupEpochReader);
+              response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
               response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
             }

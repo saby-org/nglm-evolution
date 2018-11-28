@@ -6727,7 +6727,7 @@ public class GUIManager
             }
           else
             {
-              response = baseSubscriberProfile.getProfileMapForGUIPresentaiton(subscriberGroupEpochReader);
+              response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
               response.put("responseCode", "ok");
             }
         } 
