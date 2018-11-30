@@ -218,9 +218,9 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Map<String, Object> getProfileMapForGUIPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
-    baseProfilePresentation.put("evolutionSubscriberStatus", getEvolutionSubscriberStatus().getExternalRepresentation());
+    baseProfilePresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     baseProfilePresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
-    baseProfilePresentation.put("previousEvolutionSubscriberStatus", getPreviousEvolutionSubscriberStatus().getExternalRepresentation());
+    baseProfilePresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
     List<String> subscriberGroupList = new ArrayList<String>();
     subscriberGroupList.addAll(subscriberGroups);
@@ -237,9 +237,9 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Map<String,Object> getProfileMapForThirdPartyPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String,Object> baseProfilePresentation = new HashMap<String,Object>();
-    baseProfilePresentation.put("evolutionSubscriberStatus", getEvolutionSubscriberStatus().getExternalRepresentation());
+    baseProfilePresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     baseProfilePresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
-    baseProfilePresentation.put("previousEvolutionSubscriberStatus", getPreviousEvolutionSubscriberStatus().getExternalRepresentation());
+    baseProfilePresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
     List<String> subscriberGroupList = new ArrayList<String>();
     subscriberGroupList.addAll(subscriberGroups);

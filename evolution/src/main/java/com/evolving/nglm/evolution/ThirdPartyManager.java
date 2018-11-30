@@ -96,7 +96,7 @@ public class ThirdPartyManager
   *****************************************/
 
   private int httpTimeout = 5000;
-  private String fwkServerURL = null;
+  private String fwkServer = null;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   
   /*****************************************
@@ -155,7 +155,7 @@ public class ThirdPartyManager
     String apiProcessKey = args[0];
     String bootstrapServers = args[1];
     int apiRestPort = parseInteger("apiRestPort", args[2]);
-    String fwkServerURL = args[3];
+    String fwkServer = args[3];
     int threadPoolSize = parseInteger("apiRestPort", args[4]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
@@ -169,7 +169,7 @@ public class ThirdPartyManager
     //  log
     //
 
-    log.info("main START: {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServerURL);
+    log.info("main START: {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer);
     
     /*****************************************
     *
@@ -177,7 +177,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
-    this.fwkServerURL = fwkServerURL;
+    this.fwkServer = fwkServer;
     
     //
     //  license
@@ -908,7 +908,7 @@ public class ThirdPartyManager
             
             log.debug("request data for login {} ", thirdPartyCredential.getJSONString());
             StringEntity stringEntity = new StringEntity(thirdPartyCredential.getJSONString(), ContentType.create("application/json"));
-            HttpPost httpPost = new HttpPost("http://" + fwkServerURL + "/api/account/login");
+            HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/account/login");
             httpPost.setEntity(stringEntity);
             
             //
@@ -923,8 +923,8 @@ public class ThirdPartyManager
             // call FWK api/account/checktoken
             //
             
-            log.debug("request checktoken : {}", "http://" + fwkServerURL + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
-            HttpGet httpGet = new HttpGet("http://" + fwkServerURL + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
+            log.debug("request checktoken : {}", "http://" + fwkServer + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
+            HttpGet httpGet = new HttpGet("http://" + fwkServer + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
             
             
             //
