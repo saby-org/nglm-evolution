@@ -1,4 +1,4 @@
-thirdpartymanager:
+thirdpartymanager-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-thirdpartymanager:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
@@ -12,11 +12,13 @@ thirdpartymanager:
     MASTER_REGISTRY_PORT: <_MASTER_REGISTRY_PORT_>
     CUB_SCHEMA_REGISTRY_TIMEOUT: 120
     ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
-    THIRDPARTYMANAGER_PORT: <_THIRDPARTYMANAGER_PORT_>
-    FWK_SERVER_URL: <_FWK_SERVER_URL_>
+    KEY: "<_KEY_>"
+    API_PORT: <_API_PORT_>
+    GUI_FWK_API_SERVER: <_GUI_FWK_API_SERVER_>
+    THREADPOOL_SIZE: <_THREADPOOL_SIZE_>
     TRACE_LEVEL: <_TRACE_LEVEL_>
     KAFKA_HEAP_OPTS: <_THIRDPARTYMANAGER_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_THIRDPARTYMANAGER_MONITORING_PORT_>:/app/config/thirdpartymanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dnglm.license.nodeid=<_THIRDPARTYMANAGER_HOST_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/thirdpartymanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dnglm.license.nodeid=<_HOST_>
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -27,6 +29,6 @@ thirdpartymanager:
     replicas: 1
     placement:
       constraints:
-        - engine.labels.hostname == <_THIRDPARTYMANAGER_HOST_>
+        - engine.labels.hostname == <_HOST_>
   networks:
     - outside

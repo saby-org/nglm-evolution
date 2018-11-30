@@ -52,7 +52,7 @@ scrape_configs:
 
     # main config
     static_configs:
-      - targets: ['<_THIRDPARTYMANAGER_HOST_>:<_THIRDPARTYMANAGER_MONITORING_PORT_>']
+      - targets: [<_THIRDPARTYMANAGER_PROMETHEUS_>]
 
   # criteriaapi job
   - job_name: 'criteriaapi'

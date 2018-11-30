@@ -395,7 +395,7 @@ public class SubscriberProfileService
   *
   *****************************************/
 
-  public Map<String,SubscriberProfile> getSubscriberProfiles(Set<String> subscriberIDs) throws SubscriberProfileServiceException
+  public synchronized Map<String,SubscriberProfile> getSubscriberProfiles(Set<String> subscriberIDs) throws SubscriberProfileServiceException
   {
     /****************************************
     *

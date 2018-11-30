@@ -94,9 +94,16 @@ if [ "${thirdpartymanager.enabled}" = "true" ]; then
   #
   #  thirdpartymanager
   #
-
-  cat $DEPLOY_ROOT/docker/thirdpartymanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
-  echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  for TUPLE in $THIRDPARTYMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export API_PORT=`echo $TUPLE | cut -d: -f3`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
+     export THREADPOOL_SIZE=`echo $TUPLE | cut -d: -f5`
+     cat $DEPLOY_ROOT/docker/thirdpartymanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+     echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  done
 
   #
   #  postamble

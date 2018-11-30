@@ -14,7 +14,7 @@
       "config" :
         {
         "connector.class" : "com.evolving.nglm.evolution.SubscriberProfileRedisSinkConnector",
-        "tasks.max" : 1,
+        "tasks.max" : '$CONNECT_REDIS_SUBSCRIBERPROFILE_SINK_TASKS',
         "topics" : "${changelog.evolutionengine.subscriberstate.topic}",
         "redisSentinels" : "'$REDIS_SENTINELS'",
         "redisInstance" : "subscriberprofile",

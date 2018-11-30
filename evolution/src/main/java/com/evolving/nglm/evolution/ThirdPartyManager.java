@@ -118,6 +118,12 @@ public class ThirdPartyManager
   //
 
   private LicenseChecker licenseChecker = null;
+
+  //
+  //  statistics
+  //
+
+  ThirdPartyAccessStatistics accessStatistics = null;
   
   /*****************************************
   *
@@ -150,6 +156,7 @@ public class ThirdPartyManager
     String bootstrapServers = args[1];
     int apiRestPort = parseInteger("apiRestPort", args[2]);
     String fwkServerURL = args[3];
+    int threadPoolSize = parseInteger("apiRestPort", args[4]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
@@ -177,6 +184,19 @@ public class ThirdPartyManager
     //
 
     licenseChecker = new LicenseChecker(ProductID, nodeID, Deployment.getZookeeperRoot(), Deployment.getZookeeperConnect());
+
+    //
+    //  statistics
+    //
+
+    try
+      {
+        accessStatistics = new ThirdPartyAccessStatistics("thirdpartymanager-" + apiProcessKey);
+      }
+    catch (ServerException e)
+      {
+        throw new ServerRuntimeException("could not initialize access statistics", e);
+      }
     
     /*****************************************
     *
@@ -214,7 +234,7 @@ public class ThirdPartyManager
         restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
-        restServer.setExecutor(Executors.newFixedThreadPool(10));
+        restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
         restServer.start();
       
       }
@@ -363,12 +383,20 @@ public class ThirdPartyManager
         
         /*****************************************
         *
-        *  accessCheck
+        *  accessCheck - HACK - trusting the token if provided
         *
         *****************************************/
         
         ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-        String token = validateCredentialAndGetToken(thirdPartyCredential, api.name());
+        String token = null;
+        if (thirdPartyCredential.getToken() == null)
+          {
+            token = validateCredentialAndGetToken(thirdPartyCredential, api.name());
+          }
+        else
+          {
+            token = thirdPartyCredential.getToken();
+          }
         
         /*****************************************
         *
@@ -451,6 +479,7 @@ public class ThirdPartyManager
         //
 
         log.debug("API (raw response): {}", jsonResponse.toString());
+        updateStatistics(api);
 
         //
         //  send
@@ -478,6 +507,12 @@ public class ThirdPartyManager
         StringWriter stackTraceWriter = new StringWriter();
         ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  statistics
+        //
+
+        updateStatistics(api, ex);
 
         //
         //  send error response
@@ -515,6 +550,12 @@ public class ThirdPartyManager
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  statistics
+        //
+
+        updateStatistics(api, e);
 
         //
         //  send error response
@@ -752,6 +793,51 @@ public class ThirdPartyManager
 
   /*****************************************
   *
+  *  updateStatistics
+  *
+  *****************************************/
+
+  private void updateStatistics(API api)
+  {
+    updateStatistics(api, null);
+  }
+
+  private void updateStatistics(API api, Exception exception)
+  {
+    synchronized (accessStatistics)
+      {
+        accessStatistics.updateTotalAPIRequestCount(1);
+        if (exception == null)
+          {
+            accessStatistics.updateSuccessfulAPIRequestCount(1);
+            switch (api)
+              {
+                case ping:
+                  accessStatistics.updatePingCount(1);
+                  break;
+
+                case getCustomer:
+                  accessStatistics.updateGetCustomerCount(1);
+                  break;
+
+                case getActiveOffer:
+                  accessStatistics.updateGetActiveOfferCount(1);
+                  break;
+
+                case getActiveOffers:
+                  accessStatistics.updateGetActiveOffersCount(1);
+                  break;
+              }
+          }
+        else
+          {
+            accessStatistics.updateFailedAPIRequestCount(1);
+          }
+      }
+  }
+
+  /*****************************************
+  *
   *  class APIHandler
   *
   *****************************************/
@@ -855,7 +941,7 @@ public class ThirdPartyManager
         if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
           {
             String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-            log.debug("FWK raw response : {}", jsonResponse);
+            log.info("FWK raw response : {}", jsonResponse);
             
             //
             //  parse JSON response from FWK
@@ -921,28 +1007,41 @@ public class ThirdPartyManager
   private boolean hasAccess(JSONObject jsonRoot, String api)
   {
     boolean result = true;
+
+    //
+    //  build user permissions
+    //
+
     List<String> userPermissions = new ArrayList<String>();
     JSONArray userPermissionArray = JSONUtilities.decodeJSONArray(jsonRoot, "Permissions", true);
-    JSONObject userWorkgroupHierarchyJSON = JSONUtilities.decodeJSONObject(jsonRoot, "WorkgroupHierarchy", true);
-    JSONObject userWorkgroupJSON = JSONUtilities.decodeJSONObject(userWorkgroupHierarchyJSON, "Workgroup", true);
-    String userWorkgroup = JSONUtilities.decodeString(userWorkgroupJSON, "Name", true);
     for (int i=0; i<userPermissionArray.size(); i++)
       {
         userPermissions.add((String) userPermissionArray.get(i));
       }
+
+    //
+    //  check method access
+    //
+    
     ThirdPartyMethodAccessLevel methodAccessLevel = methodPermissionsMapper.get(api);
     if (null == methodAccessLevel || (methodAccessLevel.getPermissions().isEmpty() && methodAccessLevel.getWorkgroups().isEmpty()))
       {
-        result  = false;
+        result = false;
         log.warn("No permission/workgroup is configured for method {} ", api);
       }
     else
       {
         //
-        // check workgroup
+        //  check workgroup (if specified)
         //
         
-        result = methodAccessLevel.getWorkgroups().contains(userWorkgroup);
+        JSONObject userWorkgroupHierarchyJSON = JSONUtilities.decodeJSONObject(jsonRoot, "WorkgroupHierarchy", false);
+        if (null != userWorkgroupHierarchyJSON)
+          {
+            JSONObject userWorkgroupJSON = JSONUtilities.decodeJSONObject(userWorkgroupHierarchyJSON, "Workgroup", true);
+            String userWorkgroup = JSONUtilities.decodeString(userWorkgroupJSON, "Name", true);
+            result = methodAccessLevel.getWorkgroups().contains(userWorkgroup);
+          }
         
         //
         //  check permissions

@@ -55,6 +55,23 @@ do
 done
 
 #
+#  thirdpartymanager
+#
+
+THIRDPARTYMANAGER_CONFIGURATION=`echo $THIRDPARTYMANAGER_CONFIGURATION | sed 's/ /\n/g' | uniq`
+for TUPLE in $THIRDPARTYMANAGER_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export API_PORT=`echo $TUPLE | cut -d: -f3`
+   export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
+   export THREADPOOL_SIZE=`echo $TUPLE | cut -d: -f5`
+   #
+   # nothing to prepare
+   #
+done
+
+#
 #  subscriber group
 #
 

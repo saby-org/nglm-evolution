@@ -199,10 +199,11 @@ public class MetricHistory
     this.monthlyBuckets = new long[Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS)];
     this.allTimeBucket = 0L;
     this.baseDay = EPOCH;
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
-    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
-    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
-    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, calendar);
+    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), calendar);
+    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
+    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, calendar);
   }
   
   /*****************************************
@@ -217,10 +218,11 @@ public class MetricHistory
     this.monthlyBuckets = monthlyBuckets;
     this.allTimeBucket = allTimeBucket;
     this.baseDay = baseDay;
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
-    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
-    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
-    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, calendar);
+    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), calendar);
+    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
+    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, calendar);
   }
 
   /*****************************************
@@ -570,10 +572,11 @@ public class MetricHistory
         dailyBuckets = newDailyBuckets;
         monthlyBuckets = newMonthlyBuckets;
         baseDay = day;
-        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
-        beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
-        beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
-        endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, calendar);
+        beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), calendar);
+        beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
+        endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, calendar);
       }
     
     /****************************************
@@ -760,6 +763,7 @@ public class MetricHistory
     //  calculate result
     //
 
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     long result = 0;
     switch (startDayCase)
       {
@@ -767,10 +771,10 @@ public class MetricHistory
           switch (endDayCase)
             {
               case A:
-                result = allTimeBucket - sumMonthlyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getBaseTimeZone()), endOfMonthlyValues) - sumDailyValues(beginningOfBaseMonth,baseDay);
+                result = allTimeBucket - sumMonthlyValues(RLMDateUtils.addDays(endDay, 1, calendar), endOfMonthlyValues) - sumDailyValues(beginningOfBaseMonth,baseDay);
                 break;
               case B:
-                result = allTimeBucket - sumDailyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getBaseTimeZone()), baseDay);
+                result = allTimeBucket - sumDailyValues(RLMDateUtils.addDays(endDay, 1, calendar), baseDay);
                 break;
               case C:
                 result = allTimeBucket;
@@ -900,6 +904,7 @@ public class MetricHistory
     long result = 0L;
     int bucketIndex = 0;
     Date bucketDay = beginningOfDailyValues;
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     while (bucketDay.compareTo(endDay) <= 0)
       {
         if (bucketDay.compareTo(startDay) >= 0)
@@ -907,7 +912,7 @@ public class MetricHistory
             result += dailyBuckets[bucketIndex];
           }
         bucketIndex += 1;
-        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getBaseTimeZone());
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, calendar);
       }
     return result;
   }
@@ -923,6 +928,7 @@ public class MetricHistory
     long result = 0L;
     int bucketIndex = 0;
     Date bucketMonth = beginningOfMonthlyValues;
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     while (bucketMonth.before(endDay))
       {
         if (bucketMonth.compareTo(startDay) >= 0)
@@ -930,7 +936,7 @@ public class MetricHistory
             result += monthlyBuckets[bucketIndex];
           }
         bucketIndex += 1;
-        bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, Deployment.getBaseTimeZone());
+        bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, calendar);
       }
     return result;
   }

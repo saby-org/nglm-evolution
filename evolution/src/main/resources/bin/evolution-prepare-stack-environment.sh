@@ -362,6 +362,26 @@ export GUI_OPC_API_SERVER_HOST
 export GUI_OPC_API_SERVER_HOST_IP
 export GUI_OPC_API_SERVER_PORT
 
+#
+#  thirdpartymanager -- configuration
+#
+
+THIRDPARTYMANAGER_CONFIGURATION=`echo $THIRDPARTYMANAGER_CONFIGURATION | sed 's/ /\n/g' | uniq`
+THIRDPARTYMANAGER_PROMETHEUS=
+for TUPLE in $THIRDPARTYMANAGER_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export API_PORT=`echo $TUPLE | cut -d: -f3`
+   export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
+   export THREADPOOL_SIZE=`echo $TUPLE | cut -d: -f5`
+   if [ -n "$THIRDPARTYMANAGER_PROMETHEUS" ]; then
+     THIRDPARTYMANAGER_PROMETHEUS="$THIRDPARTYMANAGER_PROMETHEUS,'$HOST:$MONITORING_PORT'"
+   else
+     THIRDPARTYMANAGER_PROMETHEUS="'$HOST:$MONITORING_PORT'"
+   fi
+done
+export THIRDPARTYMANAGER_PROMETHEUS
 
 #########################################
 #
