@@ -25,6 +25,7 @@ public class ThirdPartyMethodAccessLevel
   
   private List<String> permissions;
   private List<String> workgroups;
+  private boolean byPassAuth;
   
   //
   // accessors
@@ -32,6 +33,7 @@ public class ThirdPartyMethodAccessLevel
   
   public List<String> getPermissions() { return permissions; }
   public List<String> getWorkgroups() { return workgroups; }
+  public boolean isByPassAuth() { return byPassAuth; } 
   
   /*****************************************
   *
@@ -69,6 +71,7 @@ public class ThirdPartyMethodAccessLevel
     
     this.permissions = configuredPermissions;
     this.workgroups = configuredGroups;
+    this.byPassAuth = JSONUtilities.decodeBoolean(jsonRoot, "byPassAuth", Boolean.FALSE);
   }
   
   /*****************************************

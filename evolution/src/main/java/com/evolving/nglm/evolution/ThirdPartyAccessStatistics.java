@@ -39,6 +39,7 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
   String objectNameForManagement;
   int pingCount;
   int getCustomerCount;
+  int getOffersListCount;
   int getActiveOfferCount;
   int getActiveOffersCount;
   int successfulAPIRequestCount;
@@ -51,6 +52,7 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
 
   public int getPingCount() { return pingCount; }
   public int getGetCustomerCount() { return getCustomerCount; }
+  public int getGetOffersListCount() { return getOffersListCount; }
   public int getGetActiveOfferCount() { return getActiveOfferCount; }
   public int getGetActiveOffersCount() { return getActiveOffersCount; }
   public int getSuccessfulAPIRequestCount() { return successfulAPIRequestCount; }
@@ -77,6 +79,7 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
     
     this.pingCount = 0;
     this.getCustomerCount = 0;
+    this.getOffersListCount = 0;
     this.getActiveOfferCount = 0;
     this.getActiveOffersCount = 0;
     this.successfulAPIRequestCount = 0;
@@ -104,6 +107,7 @@ public class ThirdPartyAccessStatistics implements ThirdPartyAccessStatisticsMBe
   
   public void updatePingCount(int count) { pingCount = pingCount + count; }
   public void updateGetCustomerCount(int count) { getCustomerCount = getCustomerCount + count; }
+  public void updateGetOffersListCount(int count) { getOffersListCount = getOffersListCount + count; }
   public void updateGetActiveOfferCount(int count) { getActiveOfferCount = getActiveOfferCount + count; }
   public void updateGetActiveOffersCount(int count) { getActiveOffersCount = getActiveOffersCount + count; }
   public void updateSuccessfulAPIRequestCount(int count) { successfulAPIRequestCount = successfulAPIRequestCount + count; }

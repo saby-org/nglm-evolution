@@ -109,6 +109,7 @@ public class ThirdPartyManager
   {
     ping,
     getCustomer,
+    getOffersList,
     getActiveOffer,
     getActiveOffers;
   }
@@ -232,6 +233,7 @@ public class ThirdPartyManager
         restServer = HttpServer.create(addr, 0);
         restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
         restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
+        restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
         restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
@@ -437,6 +439,9 @@ public class ThirdPartyManager
                   break;
                 case getCustomer:
                   jsonResponse = processGetCustomer(jsonRoot);
+                  break;
+                case getOffersList:
+                  jsonResponse = processGetOffersList(jsonRoot);
                   break;
                 case getActiveOffer:
                   jsonResponse = processGetActiveOffer(jsonRoot);
@@ -703,6 +708,84 @@ public class ThirdPartyManager
   
   /*****************************************
   *
+  *  processGetOffersList
+  *
+  *****************************************/
+
+  private JSONObject processGetOffersList(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String,Object> response = new HashMap<String,Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    
+    try
+      {
+        //
+        // resolveSubscriberID when customerID is not null
+        //
+        
+        String subscriberID = null;
+        SubscriberProfile subscriberProfile = null;
+        if (null != customerID && ((subscriberID = resolveSubscriberID(customerID)) == null || (subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID)) == null))
+          {
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+          }
+        else
+          {
+            //
+            // retrieve offers
+            //
+            
+            Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
+            
+            //
+            // filter using customerID
+            //
+            
+            if (null != customerID)
+              {
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+                offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              }
+            
+            /*****************************************
+            *
+            *  decorate offers response
+            *
+            *****************************************/
+            
+            List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer)).collect(Collectors.toList());
+            response.put("offers", JSONUtilities.encodeArray(offersJson));
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+          }
+      }
+    catch(SubscriberProfileServiceException spe)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        log.error("SubscriberProfileServiceException {}", spe);
+      }
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
   *  processGetActiveOffer
   *
   *****************************************/
@@ -819,6 +902,10 @@ public class ThirdPartyManager
                 case getCustomer:
                   accessStatistics.updateGetCustomerCount(1);
                   break;
+                  
+                case getOffersList:
+                  accessStatistics.updateGetOffersListCount(1);
+                  break;
 
                 case getActiveOffer:
                   accessStatistics.updateGetActiveOfferCount(1);
@@ -887,6 +974,19 @@ public class ThirdPartyManager
   private String validateCredentialAndGetToken(ThirdPartyCredential thirdPartyCredential, String api) throws ThirdPartyManagerException, ParseException, IOException
   {
     String token = null;
+    
+    ThirdPartyMethodAccessLevel methodAccessLevel = methodPermissionsMapper.get(api);
+    
+    //
+    // access hack(dev purpose)
+    //
+    
+    if (null != methodAccessLevel && methodAccessLevel.isByPassAuth())
+      {
+        token = "hacked token";
+        return token;
+      }
+    
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
       {
         //
@@ -953,7 +1053,7 @@ public class ThirdPartyManager
             // check privileges
             //
             
-            boolean hasAccess = hasAccess(jsonRoot, api);
+            boolean hasAccess = hasAccess(jsonRoot, methodAccessLevel, api);
             if (hasAccess)
               {
                 token = JSONUtilities.decodeString(jsonRoot, "Token", true);
@@ -1004,7 +1104,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private boolean hasAccess(JSONObject jsonRoot, String api)
+  private boolean hasAccess(JSONObject jsonRoot, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
   {
     boolean result = true;
 
@@ -1023,7 +1123,6 @@ public class ThirdPartyManager
     //  check method access
     //
     
-    ThirdPartyMethodAccessLevel methodAccessLevel = methodPermissionsMapper.get(api);
     if (null == methodAccessLevel || (methodAccessLevel.getPermissions().isEmpty() && methodAccessLevel.getWorkgroups().isEmpty()))
       {
         result = false;

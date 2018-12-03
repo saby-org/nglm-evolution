@@ -129,6 +129,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "token"
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName":"Administrator","password":"password", "id" : "001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getActiveOffer; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName":"Administrator","password":"password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getActiveOffers; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName":"Administrator","password":"password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomer; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
 
 --
 --  examples of mananging subscriber groups / segments  - new, add, remove, delete
