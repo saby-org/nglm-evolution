@@ -319,7 +319,7 @@ public class EvaluationCriterion
     this.criterionOperator = CriterionOperator.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
     this.storyReference = JSONUtilities.decodeString(jsonRoot, "storyReference", false);
     this.criterionDefault = JSONUtilities.decodeBoolean(jsonRoot, "criterionDefault", Boolean.FALSE);
-    this.referencesEvaluationDate = criterionField.getID().equals(CriterionField.EvaluationDateField);
+    this.referencesEvaluationDate = (this.criterionField != null) && this.criterionField.getID().equals(CriterionField.EvaluationDateField);
 
     //
     //  validate (all but argument)
