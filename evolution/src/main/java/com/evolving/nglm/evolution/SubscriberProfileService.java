@@ -7,14 +7,23 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -23,6 +32,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
+
+import org.json.simple.JSONObject;
 
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
@@ -34,11 +45,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -47,43 +58,20 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.PatternSyntaxException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
-public class SubscriberProfileService
+public abstract class SubscriberProfileService
 {
-  /*****************************************
-  *
-  *  enum
-  *
-  *****************************************/
-
-  //
-  //  CompressionType
-  //
-
-  public enum CompressionType
-  {
-    None("none", 0),
-    GZip("gzip", 1),
-    Unknown("(unknown)", 99);
-    private String stringRepresentation;
-    private int externalRepresentation;
-    private CompressionType(String stringRepresentation, int externalRepresentation) { this.stringRepresentation = stringRepresentation; this.externalRepresentation = externalRepresentation; }
-    public String getStringRepresentation() { return stringRepresentation; }
-    public int getExternalRepresentation() { return externalRepresentation; }
-    public static CompressionType fromStringRepresentation(String stringRepresentation) { for (CompressionType enumeratedValue : CompressionType.values()) { if (enumeratedValue.getStringRepresentation().equalsIgnoreCase(stringRepresentation)) return enumeratedValue; } return Unknown; }
-    public static CompressionType fromExternalRepresentation(int externalRepresentation) { for (CompressionType enumeratedValue : CompressionType.values()) { if (enumeratedValue.getExternalRepresentation() ==externalRepresentation) return enumeratedValue; } return Unknown; }
-  }
-
   /*****************************************
   *
   *  configuration
@@ -96,48 +84,26 @@ public class SubscriberProfileService
 
   private static final Logger log = LoggerFactory.getLogger(SubscriberProfileService.class);
 
-  
-  /*****************************************
-  *
-  *  constants
-  *
-  *****************************************/
-
-  public static final byte SubscriberProfileCompressionEpoch = 0;
-
   /*****************************************
   *
   *  data
   *
   *****************************************/
 
-  //
-  //  redis instance
-  //
-
-  private static final String redisInstance = "subscriberprofile";
-  private static final int redisIndex = 0;
-
-  //
-  //  data
-  //
-
-  private volatile boolean stopRequested = false;
+  protected volatile boolean stopRequested = false;
   private String bootstrapServers;
   private Thread listenerThread = null;
   private Thread subscriberUpdateReaderThread;
   private SubscriberUpdateListener subscriberUpdateListener;
   private BlockingQueue<SubscriberProfile> listenerQueue = new LinkedBlockingQueue<SubscriberProfile>();
-  private JedisSentinelPool jedisSentinelPool = null;
-  private BinaryJedis jedis = null;
   private KafkaConsumer<byte[], byte[]> consumer = null;
 
   //
   //  serdes
   //
   
-  private ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
-  private ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
+  protected ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+  protected ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
 
   /*****************************************
   *
@@ -145,7 +111,7 @@ public class SubscriberProfileService
   *
   *****************************************/
 
-  public SubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisSentinels, SubscriberUpdateListener subscriberUpdateListener)
+  protected SubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, SubscriberUpdateListener subscriberUpdateListener)
   {
     /*****************************************
     *
@@ -156,20 +122,6 @@ public class SubscriberProfileService
     this.bootstrapServers = bootstrapServers;
     this.subscriberUpdateListener = subscriberUpdateListener;
 
-    /*****************************************
-    *
-    *  redis
-    *
-    *****************************************/
-
-    //
-    //  instantiate
-    //  
-
-    Set<String> sentinels = new HashSet<String>(Arrays.asList(redisSentinels.split("\\s*,\\s*")));
-    this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels);
-    this.jedis = null;
-    
     /*****************************************
     *
     *  kafka
@@ -194,15 +146,6 @@ public class SubscriberProfileService
     //
 
     this.consumer.subscribe(Arrays.asList(subscriberUpdateTopic));
-  }
-
-  //
-  //  constructor
-  //
-
-  public SubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisServer)
-  {
-    this(bootstrapServers, groupID, subscriberUpdateTopic, redisServer, (SubscriberUpdateListener) null);
   }
 
   /*****************************************
@@ -278,12 +221,10 @@ public class SubscriberProfileService
       }
 
     //
-    //  close
+    //  consumer
     //
 
     if (consumer != null) consumer.close();
-    if (jedis != null) try { jedis.close(); } catch (JedisException e) { }
-    if (jedisSentinelPool != null) try { jedisSentinelPool.close(); } catch (JedisException e) { }
   }
 
   /*****************************************
@@ -391,155 +332,21 @@ public class SubscriberProfileService
 
   /*****************************************
   *
-  *  getSubscriberProfiles
-  *
-  *****************************************/
-
-  public synchronized Map<String,SubscriberProfile> getSubscriberProfiles(Set<String> subscriberIDs) throws SubscriberProfileServiceException
-  {
-    /****************************************
-    *
-    *  processing?
-    *
-    ****************************************/
-
-    if (stopRequested) throw new SubscriberProfileServiceException("service closed");
-    
-    /****************************************
-    *
-    *  binary keys
-    *
-    ****************************************/
-
-    List<byte[]> binarySubscriberIDs = new ArrayList<byte[]>();
-    for (String subscriberID : subscriberIDs)
-      {
-        binarySubscriberIDs.add(subscriberID.getBytes(StandardCharsets.UTF_8));
-      }
-
-    /****************************************
-    *
-    *  retrieve from redis
-    *
-    ****************************************/
-    
-    List<byte[]> rawSubscriberProfiles = null;
-    try
-      {
-        //
-        //  ensure jedis connection
-        //
-
-        if (jedis == null)
-          {
-            jedis = jedisSentinelPool.getResource();
-            jedis.select(redisIndex);
-          }
-
-        //
-        //  read
-        //
-
-        rawSubscriberProfiles = jedis.mget(binarySubscriberIDs.toArray(new byte[0][0]));
-      }
-    catch (JedisException e)
-      {
-        //
-        //  log
-        //
-
-        log.error("JEDIS error");
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error(stackTraceWriter.toString());
-
-        //
-        //  close
-        //
-
-        if (jedis != null)
-          {
-            try { jedis.close(); } catch (JedisException e1) { }
-            jedis = null;
-          }
-
-        //
-        //  abort
-        //
-
-        throw new SubscriberProfileServiceException(e);
-      }
-
-    //
-    //  uncompress
-    //
-
-    List<byte[]> encodedSubscriberProfiles = new ArrayList<byte[]>();
-    for (byte [] rawProfile : rawSubscriberProfiles)
-      {
-        if (rawProfile != null)
-          {
-            byte [] profile = uncompressSubscriberProfile(rawProfile, Deployment.getSubscriberProfileCompressionType());
-            encodedSubscriberProfiles.add(profile);
-          }
-        else
-          {
-            encodedSubscriberProfiles.add(null);
-          }
-      }
-          
-    /****************************************
-    *
-    *  instantiate result map with subscriber profiles
-    *
-    ****************************************/
-
-    Map<String,SubscriberProfile> result = new HashMap<String,SubscriberProfile>();
-    for (int i = 0; i < binarySubscriberIDs.size(); i++)
-      {
-        //
-        //  subscriber information
-        //
-        
-        String subscriberID = new String(binarySubscriberIDs.get(i), StandardCharsets.UTF_8);
-        byte[] encodedSubscriberProfile = encodedSubscriberProfiles.get(i);
-
-        //
-        //  decode subscriber profile
-        //
-        
-        SubscriberProfile subscriberProfile;
-        if (encodedSubscriberProfile != null && encodedSubscriberProfile.length > 0)
-          subscriberProfile = subscriberProfileSerde.deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), encodedSubscriberProfile);
-        else
-          subscriberProfile = null;
-
-        //
-        //  add
-        //
-        
-        result.put(subscriberID, subscriberProfile);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-  *
   *  getSubscriberProfile
   *
   *****************************************/
 
-  public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException
-  {
-    if (stopRequested) throw new SubscriberProfileServiceException("service closed");
-    Map<String,SubscriberProfile> result = getSubscriberProfiles(Collections.<String>singleton(subscriberID));
-    return result.get(subscriberID);
-  }
+  //
+  //  getSubscriberProfile (optionally w/ history)
+  //
+
+  public abstract SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeHistory) throws SubscriberProfileServiceException;
+
+  //
+  //  getSubscriberProfile (no history)
+  //
+
+  public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException { return getSubscriberProfile(subscriberID, false); }
   
   /*****************************************
   *
@@ -562,6 +369,480 @@ public class SubscriberProfileService
   {
     public SubscriberProfileServiceException(String message) { super(message); }
     public SubscriberProfileServiceException(Throwable t) { super(t); }
+  }
+
+  /*****************************************
+  *
+  *  class RedisSubscriberProfileService
+  *
+  *****************************************/
+
+  public static class RedisSubscriberProfileService extends SubscriberProfileService
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    //
+    //  redis instance
+    //
+
+    private static final String redisInstance = "subscriberprofile";
+    private static final int redisIndex = 0;
+
+    //
+    //  data
+    //
+
+    private JedisSentinelPool jedisSentinelPool = null;
+    private BinaryJedis jedis = null;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisSentinels, SubscriberUpdateListener subscriberUpdateListener)
+    {
+      super(bootstrapServers, groupID, subscriberUpdateTopic, subscriberUpdateListener);
+
+      /*****************************************
+      *
+      *  redis
+      *
+      *****************************************/
+
+      //
+      //  instantiate
+      //  
+
+      Set<String> sentinels = new HashSet<String>(Arrays.asList(redisSentinels.split("\\s*,\\s*")));
+      this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels);
+      this.jedis = null;
+    }
+
+    //
+    //  constructor
+    //
+
+    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisServer)
+    {
+      this(bootstrapServers, groupID, subscriberUpdateTopic, redisServer, (SubscriberUpdateListener) null);
+    }
+
+    /*****************************************
+    *
+    *  stop
+    *
+    *****************************************/
+
+    @Override public void stop()
+    {
+      //
+      //  super
+      //
+
+      super.stop();
+
+      //
+      //  close
+      //
+
+      if (jedis != null) try { jedis.close(); } catch (JedisException e) { }
+      if (jedisSentinelPool != null) try { jedisSentinelPool.close(); } catch (JedisException e) { }
+    }
+
+    /*****************************************
+    *
+    *  getSubscriberProfile
+    *
+    *****************************************/
+
+    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeHistory) throws SubscriberProfileServiceException
+    {
+      synchronized (this)
+        {
+          /*****************************************
+          *
+          *  validate
+          *
+          *****************************************/
+
+          if (includeHistory) throw new SubscriberProfileServiceException("history not supported");
+
+          /****************************************
+          *
+          *  processing?
+          *
+          ****************************************/
+
+          if (stopRequested) throw new SubscriberProfileServiceException("service closed");
+
+          /****************************************
+          *
+          *  binary keys
+          *
+          ****************************************/
+
+          byte[] binarySubscriberID = subscriberID.getBytes(StandardCharsets.UTF_8);
+
+          /****************************************
+          *
+          *  retrieve from redis
+          *
+          ****************************************/
+
+          byte[] rawSubscriberProfile = null;
+          try
+            {
+              //
+              //  ensure jedis connection
+              //
+
+              if (jedis == null)
+                {
+                  jedis = jedisSentinelPool.getResource();
+                  jedis.select(redisIndex);
+                }
+
+              //
+              //  read
+              //
+
+              rawSubscriberProfile = jedis.get(binarySubscriberID);
+            }
+          catch (JedisException e)
+            {
+              //
+              //  log
+              //
+
+              log.error("JEDIS error");
+              StringWriter stackTraceWriter = new StringWriter();
+              e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+              log.error(stackTraceWriter.toString());
+
+              //
+              //  close
+              //
+
+              if (jedis != null)
+                {
+                  try { jedis.close(); } catch (JedisException e1) { }
+                  jedis = null;
+                }
+
+              //
+              //  abort
+              //
+
+              throw new SubscriberProfileServiceException(e);
+            }
+
+          //
+          //  uncompress/deserialize
+          //
+
+          SubscriberProfile result = null;
+          if (rawSubscriberProfile != null)
+            {
+              result = subscriberProfileSerde.deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), SubscriberProfile.uncompressSubscriberProfile(rawSubscriberProfile, Deployment.getSubscriberProfileCompressionType()));
+            }
+
+          //
+          //  return
+          //
+
+          return result;
+        }
+    }
+  }
+
+  /*****************************************
+  *
+  *  class EngineSubscriberProfileService
+  *
+  *****************************************/
+
+  public static class EngineSubscriberProfileService extends SubscriberProfileService
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private HttpClient httpClient;
+    private List<String> subscriberProfileEndpoints;
+    private Random random = new Random();
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints, SubscriberUpdateListener subscriberUpdateListener)
+    {
+      super(bootstrapServers, groupID, subscriberUpdateTopic, subscriberUpdateListener);
+
+      /*****************************************
+      *
+      *  subscriberProfileEndpoints
+      *
+      *****************************************/
+
+      this.subscriberProfileEndpoints = new LinkedList<String>(Arrays.asList(subscriberProfileEndpoints.split("\\s*,\\s*")));
+
+      /*****************************************
+      *
+      *  http
+      *
+      *****************************************/
+
+      //
+      //  default connections
+      //
+
+      PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
+      httpClientConnectionManager.setDefaultMaxPerRoute(10);
+
+      //
+      //  httpClient
+      //
+
+      HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+      httpClientBuilder.setConnectionManager(new PoolingHttpClientConnectionManager());
+      this.httpClient = httpClientBuilder.build();
+    }
+
+    //
+    //  constructor
+    //
+
+    public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints)
+    {
+      this(bootstrapServers, groupID, subscriberUpdateTopic, subscriberProfileEndpoints, (SubscriberUpdateListener) null);
+    }
+
+    /*****************************************
+    *
+    *  getSubscriberProfile
+    *
+    *****************************************/
+
+    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeHistory) throws SubscriberProfileServiceException
+    {
+      /****************************************
+      *
+      *  processing?
+      *
+      ****************************************/
+
+      if (stopRequested) throw new SubscriberProfileServiceException("service closed");
+
+      /*****************************************
+      *
+      *  timeout
+      *
+      *****************************************/
+
+      Date now = SystemTime.getCurrentTime();
+      Date timeout = RLMDateUtils.addSeconds(now, 10);
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      HashMap<String,Object> request = new HashMap<String,Object>();
+      request.put("apiVersion", 1);
+      request.put("subscriberID", subscriberID);
+      request.put("includeHistory", includeHistory);
+      JSONObject requestJSON = JSONUtilities.encodeObject(request);
+
+      /*****************************************
+      *
+      *  shuffle endpoints
+      *
+      *****************************************/
+
+      List<String> allEndpoints = new LinkedList<String>(subscriberProfileEndpoints);
+      Collections.shuffle(allEndpoints, random);
+      Iterator<String> endpoints = allEndpoints.iterator();
+
+      /*****************************************
+      *
+      *  attempt call to endpoint
+      *
+      *****************************************/
+
+      HttpResponse httpResponse = null;
+      while (httpResponse == null && endpoints.hasNext())
+        {
+          /*****************************************
+          *
+          *   httpPost
+          *
+          *****************************************/
+
+          String endpoint = endpoints.next();
+          long waitTime = timeout.getTime() - now.getTime();
+          HttpPost httpPost = new HttpPost("http://" + endpoint + "/nglm-evolutionengine/getSubscriberProfile");
+          httpPost.setEntity(new StringEntity(requestJSON.toString(), ContentType.create("application/json")));
+          httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
+
+          /*****************************************
+          *
+          *  submit
+          *
+          *****************************************/
+
+          httpResponse = null;
+          try
+            {
+              if (waitTime > 0) httpResponse = httpClient.execute(httpPost);
+            }
+          catch (IOException e)
+            {
+              //
+              //  log
+              //
+
+              StringWriter stackTraceWriter = new StringWriter();
+              e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+              log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+            }
+
+          //
+          //  success?
+          //
+
+          if (httpResponse == null || httpResponse.getStatusLine() == null || httpResponse.getStatusLine().getStatusCode() != 200 || httpResponse.getEntity() == null)
+            {
+              log.info("retrieveSubscriberProfile failed: {}", httpResponse);
+              httpResponse = null;
+            }
+        }
+
+      //
+      //  success?
+      //
+
+      if (httpResponse == null) throw new SubscriberProfileServiceException("getSubscriberProfile failed");
+      
+      /*****************************************
+      *
+      *  read response
+      *
+      *****************************************/
+
+      int responseCode;
+      byte[] responseBody;
+      InputStream responseStream = null;
+      try
+        {
+          //
+          //  stream
+          //
+
+          responseStream = httpResponse.getEntity().getContent();
+
+          //
+          //  header
+          //
+
+          byte[] rawResponseHeader = new byte[6];
+          int totalBytesRead = 0;
+          while (totalBytesRead < 6)
+            {
+              int bytesRead = responseStream.read(rawResponseHeader, totalBytesRead, 6-totalBytesRead);
+              if (bytesRead == -1) break;
+              totalBytesRead += bytesRead;
+            }
+          if (totalBytesRead < 6) throw new SubscriberProfileServiceException("getSubscriberProfile failed (bad header)");
+
+          //
+          //  parse response header
+          //
+
+          ByteBuffer apiResponseHeader = ByteBuffer.allocate(6);
+          apiResponseHeader.put(rawResponseHeader);
+          int version = apiResponseHeader.get(0);
+          responseCode = apiResponseHeader.get(1);
+          int responseBodyLength = (responseCode == 0) ? apiResponseHeader.getInt(2) : 0;
+
+          //
+          //  body
+          //
+
+          responseBody = new byte[responseBodyLength];
+          totalBytesRead = 0;
+          while (totalBytesRead < responseBodyLength)
+            {
+              int bytesRead = responseStream.read(responseBody, totalBytesRead, responseBodyLength-totalBytesRead);
+              if (bytesRead == -1) break;
+              totalBytesRead += bytesRead;
+            }
+          if (totalBytesRead < responseBodyLength) throw new SubscriberProfileServiceException("getSubscriberProfile failed (bad body)");
+        }
+      catch (IOException e)
+        {
+          //
+          //  log
+          //
+
+          StringWriter stackTraceWriter = new StringWriter();
+          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+          log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+          //
+          //  error
+          //
+
+          responseCode = 2;
+          responseBody = null;
+        }
+      finally
+        {
+          if (responseStream != null) try { responseStream.close(); } catch (IOException e) { }
+        }
+      
+      /*****************************************
+      *
+      *  result
+      *
+      *****************************************/
+
+      //
+      //  cases
+      //
+
+      SubscriberProfile result = null;
+      switch (responseCode)
+        {
+          case 0:
+            result = SubscriberProfile.getSubscriberProfileSerde().deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), responseBody);
+            break;
+
+          case 1:
+            result = null;
+            break;
+
+          default:
+            throw new SubscriberProfileServiceException("retrieveSubscriberProfile response code: " + responseCode);
+        }
+
+      //
+      //  return
+      //
+
+      return result;
+    }
   }
 
   /*****************************************
@@ -608,14 +889,28 @@ public class SubscriberProfileService
     ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", "example-subscriberGroupReader-001", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
-    //  instantiate subscriber profile service
+    //  instantiate listener
     //
 
     SubscriberUpdateListener subscriberUpdateListener = new SubscriberUpdateListener()
     {
       @Override public void evolutionSubscriberStatusUpdated(SubscriberProfile subscriberUpdate) { System.out.println("subscriberUpdate: " + subscriberUpdate.getSubscriberID() + ", " + subscriberUpdate.getEvolutionSubscriberStatus()); }
     };
-    SubscriberProfileService subscriberProfileService = new SubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-001", Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), subscriberUpdateListener);
+
+    //
+    //  instantiate service
+    //
+    
+    SubscriberProfileService subscriberProfileService;
+    if (true)
+      subscriberProfileService = new EngineSubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-001", Deployment.getSubscriberUpdateTopic(), Deployment.getSubscriberProfileEndpoints(), subscriberUpdateListener);
+    else
+      subscriberProfileService = new RedisSubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-001", Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), subscriberUpdateListener);
+
+    //
+    //  start
+    //
+
     subscriberProfileService.start();
     
     /*****************************************
@@ -641,21 +936,10 @@ public class SubscriberProfileService
       {
         try
           {
-            //
-            //  retrieve subscribers
-            //
-            
-            Map<String,SubscriberProfile> subscriberProfiles = subscriberProfileService.getSubscriberProfiles(subscriberIDs);
-
-            //
-            //  evaluate
-            //
-
-
             Date now = SystemTime.getCurrentTime();
-            for (String subscriberID : subscriberProfiles.keySet())
+            for (String subscriberID : subscriberIDs)
               {
-                SubscriberProfile subscriberProfile = subscriberProfiles.get(subscriberID);
+                SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
                 if (subscriberProfile != null)
                   {
                     //
@@ -711,251 +995,5 @@ public class SubscriberProfileService
             Thread.sleep(1*1000L);
           }
       }
-  }
-
-  /***********************************************************************
-  *
-  *  compression support for profile
-  *
-  ***********************************************************************/
-
-  /*****************************************
-  *
-  *  compressSubscriberProfile
-  *
-  *****************************************/
-
-  public static byte [] compressSubscriberProfile(byte [] data, CompressionType compressionType)
-  {
-    //
-    //  sanity
-    //
-
-    if (SubscriberProfileService.SubscriberProfileCompressionEpoch != 0) throw new ServerRuntimeException("unsupported compression epoch");
-
-    //
-    //  compress (if indicated)
-    //
-    
-    byte[] payload;
-    switch (compressionType)
-      {
-        case None:
-          payload = data;
-          break;
-        case GZip:
-          payload = compress_gzip(data);
-          break;
-        default:
-          throw new RuntimeException("unsupported compression type");
-      }
-
-    //
-    //  prepare result
-    //
-
-    byte[] result = new byte[payload.length+1];
-
-    //
-    //  compression epoch
-    //
-
-    result[0] = SubscriberProfileCompressionEpoch;
-
-    //
-    //  payload
-    //
-
-    System.arraycopy(payload, 0, result, 1, payload.length);
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  uncompressSubscriberProfile
-  *
-  *****************************************/
-
-  public static byte [] uncompressSubscriberProfile(byte [] compressedData, CompressionType compressionType)
-  {
-    /****************************************
-    *
-    *  check epoch
-    *
-    ****************************************/
-    
-    int epoch = compressedData[0];
-    if (epoch != 0) throw new ServerRuntimeException("unsupported compression epoch");
-
-    /****************************************
-    *
-    *  uncompress according to provided algorithm
-    *
-    ****************************************/
-
-    //
-    // extract payload
-    // 
-
-    byte [] rawPayload = new byte[compressedData.length-1];
-    System.arraycopy(compressedData, 1, rawPayload, 0, compressedData.length-1);
-
-    //
-    //  uncompress
-    //
-    
-    byte [] payload;
-    switch (compressionType)
-      {
-        case None:
-          payload = rawPayload;
-          break;
-        case GZip:
-          payload = uncompress_gzip(rawPayload);
-          break;
-        default:
-          throw new RuntimeException("unsupported compression type");
-      }
-
-    //
-    //  return
-    //
-
-    return payload;
-  }
-
-  /*****************************************
-  *
-  *  compress_gzip
-  *
-  *****************************************/
-
-  public static byte[] compress_gzip(byte [] data)
-  {
-    int len = data.length;
-    byte [] compressedData;
-    try
-      {
-        //
-        //  length (to make the uncompress easier)
-        //
-
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(4 + len);
-        byte[] lengthBytes = integerToBytes(len);
-        bos.write(lengthBytes);
-
-        //
-        //  payload
-        //
-
-        GZIPOutputStream gzip = new GZIPOutputStream(bos);
-        gzip.write(data);
-
-        //
-        // result
-        //
-
-        gzip.close();
-        compressedData = bos.toByteArray();
-        bos.close();
-      }
-    catch (IOException ioe)
-      {
-        throw new ServerRuntimeException("compress", ioe);
-      }
-
-    return compressedData;
-  }
-
-  /*****************************************
-  *
-  *  uncompress_gzip
-  *
-  *****************************************/
-
-  public static byte[] uncompress_gzip(byte [] compressedData)
-  {
-    //
-    // sanity
-    //
-    
-    if (compressedData == null) return null;
-
-    //
-    //  uncompress
-    //
-    
-    byte [] uncompressedData;
-    try
-      {
-        ByteArrayInputStream bis = new ByteArrayInputStream(compressedData);
-
-        //
-        //  extract length
-        //
-
-        byte [] lengthBytes = new byte[4];
-        bis.read(lengthBytes, 0, 4);
-        int dataLength = bytesToInteger(lengthBytes);
-
-        //
-        //  extract payload
-        //
-
-        uncompressedData = new byte[dataLength];
-        GZIPInputStream gis = new GZIPInputStream(bis);
-        int bytesRead = 0;
-        int pos = 0;
-        while (pos < dataLength)
-          {
-            bytesRead = gis.read(uncompressedData, pos, dataLength-pos);
-            pos = pos + bytesRead;                
-          }
-
-        //
-        //  close
-        //
-        
-        gis.close();
-        bis.close();
-      }
-    catch (IOException ioe)
-      {
-        throw new ServerRuntimeException("uncompress", ioe);
-      }
-
-    return uncompressedData;
-  }
-
-  /*****************************************
-  *
-  *  integerToBytes
-  *
-  *****************************************/
-
-  static byte[] integerToBytes(int value)
-  {
-    byte [] result = new byte[4];
-    result[0] = (byte) (value >> 24);
-    result[1] = (byte) (value >> 16);
-    result[2] = (byte) (value >> 8);
-    result[3] = (byte) (value);
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  bytesToInteger
-  *
-  *****************************************/
-
-  static int bytesToInteger(byte[] data)
-  {
-    return ((0x000000FF & data[0]) << 24) + ((0x000000FF & data[0]) << 16) + ((0x000000FF & data[2]) << 8) + ((0x000000FF) & data[3]);
   }
 }

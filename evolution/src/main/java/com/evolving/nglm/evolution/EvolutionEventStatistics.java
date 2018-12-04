@@ -43,7 +43,7 @@ public class EvolutionEventStatistics implements EvolutionEventStatisticsMBean, 
   *
   *****************************************/
   
-  public EvolutionEventStatistics(String namePrefix, String evolutionEventName) throws ServerException
+  public EvolutionEventStatistics(String namePrefix, String evolutionEventName)
   {
     //
     // initialize

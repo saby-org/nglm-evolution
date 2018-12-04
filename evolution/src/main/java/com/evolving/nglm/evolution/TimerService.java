@@ -58,9 +58,9 @@ public class TimerService
   *****************************************/
 
   private volatile boolean stopRequested = false;
+  private EvolutionEngine evolutionEngine = null;
   private KafkaStreams streams = null;
-  private KafkaStreams.State streamsState = KafkaStreams.State.CREATED;
-  private ReadOnlyKeyValueStore<String, SubscriberState> subscriberStateStore = null;
+  private ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
   private SortedSet<TimedEvaluation> schedule = new TreeSet<TimedEvaluation>();
@@ -74,40 +74,17 @@ public class TimerService
   *
   *****************************************/
 
-  public TimerService(String bootstrapServers, KafkaStreams streams)
+  public TimerService(EvolutionEngine evolutionEngine, String bootstrapServers, KafkaStreams streams, ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore)
   {
     /*****************************************
     *
-    *  streams
+    *  data
     *
     *****************************************/
 
+    this.evolutionEngine = evolutionEngine;
     this.streams = streams;
-
-    /*****************************************
-    *
-    *  state change listener
-    *
-    *****************************************/
-
-    KafkaStreams.StateListener stateListener = new KafkaStreams.StateListener()
-    {
-      @Override public void onChange(KafkaStreams.State newState, KafkaStreams.State oldState)
-      {
-        synchronized (TimerService.this)
-          {
-            streamsState = newState;
-            switch (streamsState)
-              {
-                case REBALANCING:
-                  forceLoadSchedule = true;
-                  break;
-              }
-            TimerService.this.notifyAll();
-          }
-      }
-    };
-    streams.setStateListener(stateListener);
+    this.subscriberStateStore = subscriberStateStore;
 
     /*****************************************
     *
@@ -137,76 +114,7 @@ public class TimerService
     *
     *****************************************/
 
-    boolean streamsInitialized = false;
-    while (! stopRequested && ! streamsInitialized)
-      {
-        synchronized (this)
-          {
-            switch (streamsState)
-              {
-                case CREATED:
-                case REBALANCING:
-                  try
-                    {
-                      this.wait();
-                    }
-                  catch (InterruptedException e)
-                    {
-                    }
-                  break;
-
-                case RUNNING:
-                  streamsInitialized = true;
-                  break;
-
-                case NOT_RUNNING:
-                case ERROR:
-                case PENDING_SHUTDOWN:
-                  break;
-              }
-          }
-      }
-
-    /*****************************************
-    *
-    *  state store
-    *
-    *****************************************/
-
-    log.info("retrieving state store (starting)");
-    while (! stopRequested && subscriberStateStore == null)
-      {
-        try
-          {
-            subscriberStateStore = streams.store(Deployment.getSubscriberStateChangeLog(), QueryableStoreTypes.keyValueStore());
-          }
-        catch (InvalidStateStoreException e)
-          {
-            //
-            //  log
-            //
-
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.debug(stackTraceWriter.toString());
-
-            //
-            //  sleep
-            //
-
-            try
-              {
-                Thread.sleep(2000);
-              }
-            catch (InterruptedException e1)
-              {
-                //
-                //  ignore
-                //
-              }
-          }
-      }
-    log.info("retrieving state store (finished)");
+    evolutionEngine.waitForStreams();
 
     /*****************************************
     *
@@ -311,6 +219,21 @@ public class TimerService
     synchronized (this)
       {
         stopRequested = true;
+        this.notifyAll();
+      }
+  }
+
+  /*****************************************
+  *
+  *  forceLoadSchedule
+  *
+  *****************************************/
+
+  public void forceLoadSchedule()
+  {
+    synchronized (this)
+      {
+        forceLoadSchedule = true;
         this.notifyAll();
       }
   }
@@ -433,6 +356,14 @@ public class TimerService
           
         /*****************************************
         *
+        *  waitForStreams
+        *
+        *****************************************/
+
+        evolutionEngine.waitForStreams();
+
+        /*****************************************
+        *
         *  log start
         *
         *****************************************/
@@ -460,7 +391,7 @@ public class TimerService
         *
         *****************************************/
 
-        KeyValueIterator<String,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+        KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
         while (! stopRequested && subscriberStateStoreIterator.hasNext())
           {
             SubscriberState subscriberState = subscriberStateStoreIterator.next().value;

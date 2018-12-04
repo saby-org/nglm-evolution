@@ -30,7 +30,7 @@ export ARGUMENT_1=$9
 export ARGUMENT_2=${10}
 export ARGUMENT_3=${11}
 export ARGUMENT_4=${12}
-export KAFKA_OPTS="-Dbroker.servers=$BROKER_SERVERS -Dnglm.schemaRegistryURL=$REGISTRY_URL -Dredis.sentinels=$REDIS_SENTINELS -Dnglm.converter=Avro -Dzookeeper.connect=$ZOOKEEPER_SERVERS -Dnglm.zookeeper.root=${zookeeper.root}"
+export KAFKA_OPTS="-Dbroker.servers=$BROKER_SERVERS -Dnglm.schemaRegistryURL=$REGISTRY_URL -Dredis.sentinels=$REDIS_SENTINELS -Dsubscriberprofile.endpoints=$EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS -Dnglm.converter=Avro -Dzookeeper.connect=$ZOOKEEPER_SERVERS -Dnglm.zookeeper.root=${zookeeper.root}"
 
 #
 #  log4j-evol.properties

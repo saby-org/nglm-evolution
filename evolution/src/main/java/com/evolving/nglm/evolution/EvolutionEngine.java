@@ -6,6 +6,14 @@
 
 package com.evolving.nglm.evolution;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.metrics.Sensor;
@@ -17,6 +25,8 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.state.StreamsMetadata;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
@@ -26,8 +36,14 @@ import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.processor.StateStoreSupplier;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
+import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.zookeeper.ZooKeeper;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -35,25 +51,43 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.RecordSubscriberID;
+import com.evolving.nglm.core.ServerException;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
-import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -70,10 +104,28 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class EvolutionEngine
 {
+  /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+
+  public enum API
+  {
+    getSubscriberProfile("getSubscriberProfile"),
+    retrieveSubscriberProfile("retrieveSubscriberProfile"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static API fromExternalRepresentation(String externalRepresentation) { for (API enumeratedValue : API.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
   /*****************************************
   *
   *  configuration
@@ -98,6 +150,10 @@ public class EvolutionEngine
   *
   *****************************************/
 
+  //
+  //  static data (for the singleton instance)
+  //
+
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static JourneyService journeyService;
   private static SegmentationRuleService segmentationRuleService;
@@ -105,6 +161,13 @@ public class EvolutionEngine
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
   private static TimerService timerService;
+  private static KafkaStreams streams = null;
+  private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
+  private static ReadOnlyKeyValueStore<StringKey, SubscriberHistory> subscriberHistoryStore = null;
+  private static final int RESTAPIVersion = 1;
+  private static HttpServer subscriberProfileServer;
+  private static HttpServer internalServer;
+  private static HttpClient httpClient;
 
   /****************************************
   *
@@ -112,7 +175,20 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static void main(String[] args) throws Exception
+  public static void main(String[] args)
+  {
+    NGLMRuntime.initialize();
+    EvolutionEngine evolutionEngine = new EvolutionEngine();
+    evolutionEngine.start(args);
+  }
+
+  /****************************************
+  *
+  *  start
+  *
+  *****************************************/
+
+  private void start(String[] args)
   {
     /*****************************************
     *
@@ -136,9 +212,12 @@ public class EvolutionEngine
     String stateDirectory = args[0];
     String bootstrapServers = args[1];
     String evolutionEngineKey = args[2];
-    Integer kafkaReplicationFactor = Integer.parseInt(args[3]);
-    Integer kafkaStreamsStandbyReplicas = Integer.parseInt(args[4]);
-    Integer numberOfStreamThreads = Integer.parseInt(args[5]);
+    String subscriberProfileHost = args[3];
+    Integer subscriberProfilePort = Integer.parseInt(args[4]);
+    Integer internalPort = Integer.parseInt(args[5]);
+    Integer kafkaReplicationFactor = Integer.parseInt(args[6]);
+    Integer kafkaStreamsStandbyReplicas = Integer.parseInt(args[7]);
+    Integer numberOfStreamThreads = Integer.parseInt(args[8]);
 
     //
     //  source topics 
@@ -163,6 +242,8 @@ public class EvolutionEngine
 
     String subscriberStateChangeLog = Deployment.getSubscriberStateChangeLog();
     String subscriberStateChangeLogTopic = Deployment.getSubscriberStateChangeLogTopic();
+    String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
+    String subscriberHistoryChangeLogTopic = Deployment.getSubscriberHistoryChangeLogTopic();
 
     //
     //  log
@@ -296,6 +377,7 @@ public class EvolutionEngine
     streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, Integer.toString(kafkaReplicationFactor));
     streamsProperties.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, Integer.toString(kafkaStreamsStandbyReplicas));
     streamsProperties.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, Sensor.RecordingLevel.DEBUG.toString());
+    streamsProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, subscriberProfileHost + ":" + Integer.toString(internalPort));
     streamsProperties.put("producer.batch.size", Integer.toString(100000));
     StreamsConfig streamsConfig = new StreamsConfig(streamsProperties);
 
@@ -349,6 +431,7 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberState> subscriberStateSerde = SubscriberState.serde();
+    final ConnectSerde<SubscriberHistory> subscriberHistorySerde = SubscriberHistory.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
     final Serde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
@@ -417,7 +500,7 @@ public class EvolutionEngine
       }
 
     //
-    //  merge source streams
+    //  merge source streams -- evolutionEventStream
     //
 
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
@@ -427,22 +510,33 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
-    KStream compositeStream = null;
+    KStream evolutionEventCompositeStream = null;
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : evolutionEventStreams)
       {
-        compositeStream = (compositeStream == null) ? eventStream : compositeStream.merge(eventStream);
+        evolutionEventCompositeStream = (evolutionEventCompositeStream == null) ? eventStream : evolutionEventCompositeStream.merge(eventStream);
       }
-    KStream<StringKey, SubscriberStreamEvent> evolutionEventStream = (KStream<StringKey, SubscriberStreamEvent>) compositeStream;
+    KStream<StringKey, SubscriberStreamEvent> evolutionEventStream = (KStream<StringKey, SubscriberStreamEvent>) evolutionEventCompositeStream;
     
+    //
+    //  merge source streams -- deliveryResponseStream
+    //
+
+    KStream deliveryResponseCompositeStream = null;
+    for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : deliveryManagerResponseStreams)
+      {
+        deliveryResponseCompositeStream = (deliveryResponseCompositeStream == null) ? eventStream : deliveryResponseCompositeStream.merge(eventStream);
+      }
+    KStream<StringKey, SubscriberStreamEvent> deliveryResponseStream = (KStream<StringKey, SubscriberStreamEvent>) deliveryResponseCompositeStream;
+
     /*****************************************
     *
     *  subscriberState -- update
     *
     *****************************************/
 
-    KeyValueBytesStoreSupplier supplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
-    Materialized subscriberStateStore = Materialized.<StringKey, SubscriberState>as(supplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde.optionalSerde());
-    KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStore);
+    KeyValueBytesStoreSupplier subscriberStateSupplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
+    Materialized subscriberStateStoreSchema = Materialized.<StringKey, SubscriberState>as(subscriberStateSupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde.optionalSerde());
+    KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
 
     /*****************************************
     *
@@ -538,27 +632,57 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  subscriberHistory -- update
+    *
+    *****************************************/
+
+    KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
+    Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde.optionalSerde());
+    KTable<StringKey, SubscriberHistory> subscriberHistory = deliveryResponseStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
+
+    /*****************************************
+    *
     *  runtime
     *
     *****************************************/
 
-    KafkaStreams streams = new KafkaStreams(builder.build(), streamsConfig, new NGLMKafkaClientSupplier());
+    streams = new KafkaStreams(builder.build(), streamsConfig, new NGLMKafkaClientSupplier());
 
     /*****************************************
     *
-    *  timerService
+    *  state change listener
     *
     *****************************************/
 
-    timerService = new TimerService(bootstrapServers, streams);
+    KafkaStreams.StateListener stateListener = new KafkaStreams.StateListener()
+    {
+      @Override public void onChange(KafkaStreams.State newState, KafkaStreams.State oldState)
+      {
+        //
+        //  streams state
+        //
+
+        synchronized (this)
+          {
+            this.notifyAll();
+          }
+
+        //
+        //  timerService
+        //
+
+        if (timerService != null) timerService.forceLoadSchedule();
+      }
+    };
+    streams.setStateListener(stateListener);
 
     /*****************************************
     *
-    *  shutdown hook
+    *  log
     *
     *****************************************/
-    
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationRuleService, timerService));
+
+    log.info("streams starting");
 
     /*****************************************
     *
@@ -570,11 +694,206 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  waiting for streams initialization
+    *
+    *****************************************/
+
+    waitForStreams();
+
+    /*****************************************
+    *
+    *  log
+    *
+    *****************************************/
+
+    log.info("streams started");
+
+    /*****************************************
+    *
+    *  state stores
+    *
+    *****************************************/
+
+    boolean stateStoresInitialized = false;
+    while (! stateStoresInitialized)
+      {
+        //
+        //  initialize
+        //
+
+        try
+          {
+            subscriberStateStore = streams.store(Deployment.getSubscriberStateChangeLog(), QueryableStoreTypes.keyValueStore());
+            subscriberHistoryStore = streams.store(Deployment.getSubscriberHistoryChangeLog(), QueryableStoreTypes.keyValueStore());
+            stateStoresInitialized = true;
+          }
+        catch (InvalidStateStoreException e)
+          {
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.debug(stackTraceWriter.toString());
+          }
+
+        //
+        //  sleep (if necessary)
+        //
+
+        try
+          {
+            Thread.sleep(1000);
+          }
+        catch (InterruptedException e)
+          {
+          }
+      }
+
+    /*****************************************
+    *
+    *  timerService
+    *
+    *****************************************/
+
+    timerService = new TimerService(this, bootstrapServers, streams, subscriberStateStore);
+
+    /*****************************************
+    *
+    *  REST interface -- http client
+    *
+    *****************************************/
+
+    //
+    //  default connections
+    //
+
+    PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
+    httpClientConnectionManager.setDefaultMaxPerRoute(10);
+
+    //
+    //  httpClient
+    //
+
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+    httpClientBuilder.setConnectionManager(new PoolingHttpClientConnectionManager());
+    httpClient = httpClientBuilder.build();
+
+    /*****************************************
+    *
+    *  REST interface -- subscriber profile server
+    *
+    *****************************************/
+
+    try
+      {
+        InetSocketAddress addr = new InetSocketAddress(subscriberProfilePort);
+        subscriberProfileServer = HttpServer.create(addr, 0);
+        subscriberProfileServer.createContext("/nglm-evolutionengine/getSubscriberProfile", new APIHandler(API.getSubscriberProfile));
+        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(10));
+      }
+    catch (IOException e)
+      {
+        throw new ServerRuntimeException("could not initialize REST server", e);
+      }
+
+    /*****************************************
+    *
+    *  REST interface -- internal server
+    *
+    *****************************************/
+
+    try
+      {
+        InetSocketAddress addr = new InetSocketAddress(internalPort);
+        internalServer = HttpServer.create(addr, 0);
+        internalServer.createContext("/nglm-evolutionengine/retrieveSubscriberProfile", new APIHandler(API.retrieveSubscriberProfile));
+        internalServer.setExecutor(Executors.newFixedThreadPool(10));
+      }
+    catch (IOException e)
+      {
+        throw new ServerRuntimeException("could not initialize REST server", e);
+      }
+
+    /*****************************************
+    *
+    *  shutdown hook
+    *
+    *****************************************/
+    
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationRuleService, timerService, subscriberProfileServer, internalServer));
+
+    /*****************************************
+    *
     *  start streams
     *
     *****************************************/
 
     timerService.start();
+
+    /*****************************************
+    *
+    *  start restServers
+    *
+    *****************************************/
+
+    internalServer.start();
+    subscriberProfileServer.start();
+
+    /*****************************************
+    *
+    *  log
+    *
+    *****************************************/
+
+    log.info("evolution engine started");
+  }
+
+  /*****************************************
+  *
+  *  waitForStreams
+  *
+  *****************************************/
+  
+  public void waitForStreams(Date timeout)
+  {
+    boolean streamsInitialized = false;
+    while (! streamsInitialized)
+      {
+        synchronized (this)
+          {
+            switch (streams.state())
+              {
+                case CREATED:
+                case REBALANCING:
+                  try
+                    {
+                      Date now = SystemTime.getCurrentTime();
+                      long waitTime = timeout.getTime() - now.getTime();
+                      if (waitTime > 0) this.wait(waitTime);
+                    }
+                  catch (InterruptedException e)
+                    {
+                    }
+                  break;
+
+                case RUNNING:
+                  streamsInitialized = true;
+                  break;
+
+                case NOT_RUNNING:
+                case ERROR:
+                case PENDING_SHUTDOWN:
+                  break;
+              }
+          }
+      }
+  }
+
+  //
+  //  waitForStreams
+  //
+
+  public void waitForStreams()
+  {
+    waitForStreams(NGLMRuntime.END_OF_TIME);
   }
 
   /****************************************
@@ -627,18 +946,22 @@ public class EvolutionEngine
     private JourneyService journeyService;
     private SegmentationRuleService segmentationRuleService;
     private TimerService timerService;
+    private HttpServer subscriberProfileServer;
+    private HttpServer internalServer;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationRuleService segmentationRuleService, TimerService timerService)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationRuleService segmentationRuleService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.journeyService = journeyService;
       this.segmentationRuleService = segmentationRuleService;
       this.timerService = timerService;
+      this.subscriberProfileServer = subscriberProfileServer;
+      this.internalServer = internalServer;
     }
 
     //
@@ -667,6 +990,13 @@ public class EvolutionEngine
       segmentationRuleService.stop();
       timerService.stop();
       
+      //
+      //  rest server
+      //
+
+      subscriberProfileServer.stop(1);
+      internalServer.stop(1);
+
       //
       //  stop streams
       //
@@ -1296,6 +1626,81 @@ public class EvolutionEngine
 
   /*****************************************
   *
+  *  nullSubscriberHistory
+  *
+  ****************************************/
+
+  public static SubscriberHistory nullSubscriberHistory() { return (SubscriberHistory) null; }
+
+  /*****************************************
+  *
+  *  updateSubscriberHistory
+  *
+  *****************************************/
+
+  public static SubscriberHistory updateSubscriberHistory(StringKey aggKey, SubscriberStreamEvent evolutionEvent, SubscriberHistory currentSubscriberHistory)
+  {
+    /****************************************
+    *
+    *  get (or create) entry
+    *
+    ****************************************/
+
+    SubscriberHistory subscriberHistory = (currentSubscriberHistory != null) ? new SubscriberHistory(currentSubscriberHistory) : new SubscriberHistory(evolutionEvent.getSubscriberID());
+    boolean subscriberHistoryUpdated = (currentSubscriberHistory != null) ? false : true;
+
+    /*****************************************
+    *
+    *  deliveryRequest
+    *
+    *****************************************/
+
+    DeliveryRequest deliveryRequest = (DeliveryRequest) evolutionEvent;
+
+    /*****************************************
+    *
+    *  clear older history
+    *
+    *****************************************/
+
+    //
+    //  TBD DEW
+    //
+
+    /*****************************************
+    *
+    *  add to history
+    *
+    *****************************************/
+
+    //
+    //  find sorted location to insert
+    //
+
+    int i = 0;
+    while (i < subscriberHistory.getDeliveryRequests().size() && subscriberHistory.getDeliveryRequests().get(i).getDeliveryDate().compareTo(deliveryRequest.getDeliveryDate()) <= 0)
+      {
+        i += 1;
+      }
+
+    //
+    //  insert
+    //
+
+    subscriberHistory.getDeliveryRequests().add(i, deliveryRequest);
+    subscriberHistoryUpdated = true;
+
+    /****************************************
+    *
+    *  return
+    *
+    ****************************************/
+
+    return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
+  }
+
+  /*****************************************
+  *
   *  updateEvolutionEngineStatistics
   *
   *****************************************/
@@ -1553,5 +1958,527 @@ public class EvolutionEngine
 
       return (result > 0L) ? result : record.timestamp();
     }
+  }
+
+  /*****************************************
+  *
+  *  class APIHandler
+  *
+  *****************************************/
+
+  private class APIHandler implements HttpHandler
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private API api;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    private APIHandler(API api)
+    {
+      this.api = api;
+    }
+
+    /*****************************************
+    *
+    *  handle -- HttpHandler
+    *
+    *****************************************/
+
+    public void handle(HttpExchange exchange) throws IOException
+    {
+      handleAPI(api, exchange);
+    }
+  }
+
+  /*****************************************
+  *
+  *  handleAPI
+  *
+  *****************************************/
+
+  private void handleAPI(API api, HttpExchange exchange) throws IOException
+  {
+    try
+      {
+        /*****************************************
+        *
+        *  get the body
+        *
+        *****************************************/
+
+        StringBuilder requestBodyStringBuilder = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+        while (true)
+          {
+            String line = reader.readLine();
+            if (line == null) break;
+            requestBodyStringBuilder.append(line);
+          }
+        reader.close();
+        log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
+        JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(requestBodyStringBuilder.toString());
+
+        /*****************************************
+        *
+        *  validate
+        *
+        *****************************************/
+
+        int apiVersion = JSONUtilities.decodeInteger(jsonRoot, "apiVersion", true);
+        if (apiVersion > RESTAPIVersion)
+          {
+            throw new ServerRuntimeException("unknown api version " + apiVersion);
+          }
+
+        /*****************************************
+        *
+        *  arguments
+        *
+        *****************************************/
+
+        String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+        boolean includeHistory = JSONUtilities.decodeBoolean(jsonRoot, "includeHistory", Boolean.FALSE);
+
+        /*****************************************
+        *
+        *  process
+        *
+        *****************************************/
+
+        byte[] apiResponse = null;
+        switch (api)
+          {
+            case getSubscriberProfile:
+              apiResponse = processGetSubscriberProfile(subscriberID, includeHistory);
+              break;
+
+            case retrieveSubscriberProfile:
+              apiResponse = processRetrieveSubscriberProfile(subscriberID, includeHistory);
+              break;
+          }
+
+        //
+        //  validate
+        //
+
+        if (apiResponse == null)
+          {
+            throw new ServerException("no handler for " + api);
+          }
+
+        /*****************************************
+        *
+        *  send response
+        *
+        *****************************************/
+
+        //
+        //  log
+        //
+
+        if (log.isDebugEnabled())
+          {
+            if (apiResponse.length > 0)
+              {
+                byte[] encodedSubscriberProfile = apiResponse;
+                SubscriberProfile result = SubscriberProfile.getSubscriberProfileSerde().deserializer().deserialize(Deployment.getSubscriberProfileRegistrySubject(), encodedSubscriberProfile);
+                log.debug("API (response): {}", result.toString(subscriberGroupEpochReader));
+              }
+            else
+              {
+                log.debug("API (response): {} not found", subscriberID);
+              }
+          }
+
+        //
+        //  responseCode
+        //
+
+        byte responseCode = (apiResponse.length > 0) ? (byte) 0x00 : (byte) 0x01;
+
+        //
+        //  apiResponseHeader
+        //
+
+        ByteBuffer apiResponseHeader = ByteBuffer.allocate(6);
+        apiResponseHeader.put((byte) 0x01);             // version:  1
+        apiResponseHeader.put(responseCode);            // return code: found (0) or notFound (1)
+        apiResponseHeader.putInt(apiResponse.length);
+
+        //
+        //  response 
+        //
+
+        ByteBuffer response = ByteBuffer.allocate(apiResponseHeader.array().length + apiResponse.length);
+        response.put(apiResponseHeader.array());
+        response.put(apiResponse);
+
+        //
+        //  send
+        //
+
+        exchange.sendResponseHeaders(200, response.array().length);
+        exchange.getResponseBody().write(response.array());
+        exchange.close();
+      }
+    catch (org.json.simple.parser.ParseException | IOException | ServerException | RuntimeException e )
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  apiResponseHeader
+        //
+
+        ByteBuffer apiResponseHeader = ByteBuffer.allocate(6);
+        apiResponseHeader.put((byte) 0x01);     // version:  1
+        apiResponseHeader.put((byte) 0x02);     // return code: system error (2)
+        apiResponseHeader.putInt(0);     
+
+        //
+        //  send
+        //
+
+        exchange.sendResponseHeaders(200, apiResponseHeader.array().length);
+        exchange.getResponseBody().write(apiResponseHeader.array());
+        exchange.close();
+      }
+  }
+
+  /*****************************************
+  *
+  *  processGetSubscriberProfile
+  *
+  *****************************************/
+
+  private byte[] processGetSubscriberProfile(String subscriberID, boolean includeHistory) throws ServerException
+  {
+    //
+    //  timeout
+    //
+
+    Date now = SystemTime.getCurrentTime();
+    Date timeout = RLMDateUtils.addSeconds(now, 10);
+
+    //
+    //  wait for streams
+    //
+
+    waitForStreams(timeout);
+
+    //
+    //  handler for subscriberID
+    //
+
+    StreamsMetadata metadata = streams.metadataForKey(Deployment.getSubscriberStateChangeLog(), new StringKey(subscriberID), StringKey.serde().serializer());
+
+    //
+    //  request
+    //
+
+    HashMap<String,Object> request = new HashMap<String,Object>();
+    request.put("apiVersion", 1);
+    request.put("subscriberID", subscriberID);
+    request.put("includeHistory", includeHistory);
+    JSONObject requestJSON = JSONUtilities.encodeObject(request);
+
+    //
+    //  httpPost
+    //
+
+    now = SystemTime.getCurrentTime();
+    long waitTime = timeout.getTime() - now.getTime();
+    HttpPost httpPost = new HttpPost("http://" + metadata.host() + ":" + metadata.port() + "/nglm-evolutionengine/retrieveSubscriberProfile");
+    httpPost.setEntity(new StringEntity(requestJSON.toString(), ContentType.create("application/json")));
+    httpPost.setConfig(RequestConfig.custom().setConnectTimeout((int) (waitTime > 0 ? waitTime : 1)).build());
+
+    //
+    //  submit
+    //
+
+
+    HttpResponse httpResponse = null;
+    try
+      {
+        if (waitTime > 0) httpResponse = httpClient.execute(httpPost);
+      }
+    catch (IOException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+      }
+
+    //
+    //  success?
+    //
+
+    if (httpResponse == null || httpResponse.getStatusLine() == null || httpResponse.getStatusLine().getStatusCode() != 200 || httpResponse.getEntity() == null)
+      {
+        log.info("retrieveSubscriberProfile failed: {}", httpResponse);
+        throw new ServerException("retrieveSubscriberProfile failed");
+      }
+
+    //
+    //  read response
+    //
+
+    int responseCode;
+    byte[] responseBody;
+    InputStream responseStream = null;
+    try
+      {
+        //
+        //  stream
+        //
+
+        responseStream = httpResponse.getEntity().getContent();
+
+        //
+        //  header
+        //
+
+        byte[] rawResponseHeader = new byte[6];
+        int totalBytesRead = 0;
+        while (totalBytesRead < 6)
+          {
+            int bytesRead = responseStream.read(rawResponseHeader, totalBytesRead, 6-totalBytesRead);
+            if (bytesRead == -1) break;
+            totalBytesRead += bytesRead;
+          }
+        if (totalBytesRead < 6) throw new ServerException("retrieveSubscriberProfile failed (bad header)");
+      
+        //
+        //  parse response header
+        //
+
+        ByteBuffer apiResponseHeader = ByteBuffer.allocate(6);
+        apiResponseHeader.put(rawResponseHeader);
+        int version = apiResponseHeader.get(0);
+        responseCode = apiResponseHeader.get(1);
+        int responseBodyLength = (responseCode == 0) ? apiResponseHeader.getInt(2) : 0;
+
+        //
+        //  body
+        //
+
+        responseBody = new byte[responseBodyLength];
+        totalBytesRead = 0;
+        while (totalBytesRead < responseBodyLength)
+          {
+            int bytesRead = responseStream.read(responseBody, totalBytesRead, responseBodyLength-totalBytesRead);
+            if (bytesRead == -1) break;
+            totalBytesRead += bytesRead;
+          }
+        if (totalBytesRead < responseBodyLength) throw new ServerException("retrieveSubscriberProfile failed (bad body)");
+      }
+    catch (IOException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  error
+        //
+
+        responseCode = 2;
+        responseBody = null;
+      }
+    finally
+      {
+        if (responseStream != null) try { responseStream.close(); } catch (IOException e) { }
+      }
+    
+    //
+    //  result
+    //
+
+    byte[] result = null;
+    switch (responseCode)
+      {
+        case 0:
+        case 1:
+          result = responseBody;
+          break;
+
+        default:
+          throw new ServerException("retrieveSubscriberProfile response code: " + responseCode);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  processRetrieveSubscriberProfile
+  *
+  *****************************************/
+
+  private byte[] processRetrieveSubscriberProfile(String subscriberID, boolean includeHistory) throws ServerException
+  {
+    /*****************************************
+    *
+    *  subscriberProfile
+    *
+    *****************************************/
+
+    SubscriberProfile subscriberProfile = null;
+
+    /*****************************************
+    *
+    *  retrieve subscriberProfile from local store
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    Date timeout = RLMDateUtils.addSeconds(now, 10);
+    ServerException retainedException = null;
+    boolean stateStoreCallCompleted = false;
+    while (! stateStoreCallCompleted && now.before(timeout))
+      {
+        //
+        //  wait for streams
+        //
+
+        waitForStreams(timeout);
+
+        //
+        //  query
+        //
+
+        try
+          {
+            SubscriberState subscriberState = subscriberStateStore.get(new StringKey(subscriberID));
+            if (subscriberState != null) subscriberProfile = subscriberState.getSubscriberProfile();
+            stateStoreCallCompleted = true;
+          }
+        catch (InvalidStateStoreException e)
+          {
+            retainedException = new ServerException(e);
+          }
+
+        //
+        //  now
+        //
+
+        now = SystemTime.getCurrentTime();
+      }
+
+    //
+    //  timeout
+    //
+
+    if (! stateStoreCallCompleted)
+      {
+        throw retainedException;
+      }
+
+    /*****************************************
+    *
+    *  retrieve subscriberHistory from local store (if necessary)
+    *
+    *****************************************/
+
+    if (subscriberProfile != null && includeHistory)
+      {
+        SubscriberHistory subscriberHistory = null;
+        now = SystemTime.getCurrentTime();
+        retainedException = null;
+        stateStoreCallCompleted = false;
+        while (! stateStoreCallCompleted && now.before(timeout))
+          {
+            //
+            //  wait for streams
+            //
+
+            waitForStreams(timeout);
+
+            //
+            //  query
+            //
+
+            try
+              {
+                subscriberHistory = subscriberHistoryStore.get(new StringKey(subscriberID));
+                stateStoreCallCompleted = true;
+              }
+            catch (InvalidStateStoreException e)
+              {
+                retainedException = new ServerException(e);
+              }
+
+            //
+            //  now
+            //
+
+            now = SystemTime.getCurrentTime();
+          }
+
+        //
+        //  timeout
+        //
+
+        if (! stateStoreCallCompleted)
+          {
+            throw retainedException;
+          }
+
+        //
+        //  add subscriberHistory
+        //
+
+        if (subscriberHistory != null)
+          {
+            subscriberProfile = subscriberProfile.copy();
+            subscriberProfile.setSubscriberHistory(subscriberHistory);
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    byte[] result;
+    if (subscriberProfile != null)
+      result = SubscriberProfile.getSubscriberProfileSerde().serializer().serialize(Deployment.getSubscriberProfileRegistrySubject(), subscriberProfile);
+    else
+      result = new byte[0];
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return result;
   }
 }

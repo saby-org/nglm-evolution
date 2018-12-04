@@ -133,8 +133,10 @@ for TUPLE in $EVOLUTIONENGINE_CONFIGURATION
 do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
-   export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
-   export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+   export SUBSCRIBERPROFILE_PORT=`echo $TUPLE | cut -d: -f3`
+   export INTERNAL_PORT=`echo $TUPLE | cut -d: -f4`
+   export MONITORING_PORT=`echo $TUPLE | cut -d: -f5`
+   export DEBUG_PORT=`echo $TUPLE | cut -d: -f6`
    cat $DEPLOY_ROOT/docker/evolutionengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
    echo >> $DEPLOY_ROOT/stack/stack-evolutionengine.yml
 done

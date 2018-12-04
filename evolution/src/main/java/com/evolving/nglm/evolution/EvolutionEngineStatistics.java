@@ -56,7 +56,7 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   *
   *****************************************/
   
-  public EvolutionEngineStatistics(String name) throws ServerException
+  public EvolutionEngineStatistics(String name)
   {
     //
     //  initialize
@@ -93,21 +93,14 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
 
   synchronized void updateEventCount(SubscriberStreamEvent event, int amount)
   {
-    try
+    String simpleName = event.getClass().getSimpleName();
+    EvolutionEventStatistics stats = evolutionEventCounts.get(simpleName);
+    if (stats == null)
       {
-        String simpleName = event.getClass().getSimpleName();
-        EvolutionEventStatistics stats = evolutionEventCounts.get(simpleName);
-        if (stats == null)
-          {
-            stats = new EvolutionEventStatistics(this.name, simpleName);
-            evolutionEventCounts.put(simpleName, stats);
-          }
-        stats.updateEvolutionEventCount(1);
+        stats = new EvolutionEventStatistics(this.name, simpleName);
+        evolutionEventCounts.put(simpleName, stats);
       }
-    catch (ServerException se)
-      {
-        throw new ServerRuntimeException("Could not register profile event MBean");
-      }
+    stats.updateEvolutionEventCount(1);
   }
 
   /*****************************************

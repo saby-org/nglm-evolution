@@ -96,6 +96,8 @@
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
     <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>
+    <changelog.evolutionengine.subscriberhistory>subscriberhistory</changelog.evolutionengine.subscriberhistory>
+    <changelog.evolutionengine.subscriberhistory.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberhistory}-changelog</changelog.evolutionengine.subscriberhistory.topic>
 
   </properties>
 

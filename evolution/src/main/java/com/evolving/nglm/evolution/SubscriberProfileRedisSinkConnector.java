@@ -95,7 +95,7 @@ public class SubscriberProfileRedisSinkConnector extends SimpleRedisSinkConnecto
       //
 
       byte[] key = rawKey;
-      byte[] value = SubscriberProfileService.compressSubscriberProfile(rawValue, Deployment.getSubscriberProfileCompressionType());
+      byte[] value = SubscriberProfile.compressSubscriberProfile(rawValue, Deployment.getSubscriberProfileCompressionType());
 
       /****************************************
       *

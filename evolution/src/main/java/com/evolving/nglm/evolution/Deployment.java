@@ -9,7 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SubscriberProfileService.CompressionType;
+import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
@@ -63,6 +63,8 @@ public class Deployment
   private static String timedEvaluationTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
+  private static String subscriberHistoryChangeLog;
+  private static String subscriberHistoryChangeLogTopic;
   private static String journeyStatisticTopic;
   private static String deliverableSourceTopic;
   private static String subscriberProfileRegistrySubject;
@@ -131,6 +133,7 @@ public class Deployment
   //  deployment accessors
   //
 
+  public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
   public static String getCriterionFieldRetrieverClassName() { return criterionFieldRetrieverClassName; }
@@ -157,6 +160,8 @@ public class Deployment
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
+  public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
+  public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
@@ -633,6 +638,32 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  subscriberHistoryChangeLog
+    //
+
+    try
+      {
+        subscriberHistoryChangeLog = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLog", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  subscriberHistoryChangeLogTopic
+    //
+
+    try
+      {
+        subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  journeyStatisticTopic
     //

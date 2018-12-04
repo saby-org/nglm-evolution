@@ -11,6 +11,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
 
@@ -23,6 +25,13 @@ import org.apache.kafka.connect.data.Timestamp;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -31,6 +40,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
 {
@@ -55,6 +67,24 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     public static EvolutionSubscriberStatus fromExternalRepresentation(String externalRepresentation) { for (EvolutionSubscriberStatus enumeratedValue : EvolutionSubscriberStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
+  //
+  //  CompressionType
+  //
+
+  public enum CompressionType
+  {
+    None("none", 0),
+    GZip("gzip", 1),
+    Unknown("(unknown)", 99);
+    private String stringRepresentation;
+    private int externalRepresentation;
+    private CompressionType(String stringRepresentation, int externalRepresentation) { this.stringRepresentation = stringRepresentation; this.externalRepresentation = externalRepresentation; }
+    public String getStringRepresentation() { return stringRepresentation; }
+    public int getExternalRepresentation() { return externalRepresentation; }
+    public static CompressionType fromStringRepresentation(String stringRepresentation) { for (CompressionType enumeratedValue : CompressionType.values()) { if (enumeratedValue.getStringRepresentation().equalsIgnoreCase(stringRepresentation)) return enumeratedValue; } return Unknown; }
+    public static CompressionType fromExternalRepresentation(int externalRepresentation) { for (CompressionType enumeratedValue : CompressionType.values()) { if (enumeratedValue.getExternalRepresentation() ==externalRepresentation) return enumeratedValue; } return Unknown; }
+  }
+
   /*****************************************
   *
   *  static
@@ -62,6 +92,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *****************************************/
 
   public final static String UniversalControlGroup = "universalcontrolgroup";
+  public static final byte SubscriberProfileCompressionEpoch = 0;
   
   /*****************************************
   *
@@ -85,6 +116,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("previousEvolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("subscriberGroups", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("subscriber_profile_subscribergroups").schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -148,6 +180,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private EvolutionSubscriberStatus previousEvolutionSubscriberStatus;
   private Map<String, Integer> subscriberGroups;
   private String language;
+  private SubscriberHistory subscriberHistory;
 
   /****************************************
   *
@@ -163,6 +196,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Map<String, Integer> getSubscriberGroups() { return subscriberGroups; }
   public boolean getUniversalControlGroup(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) { return getInSubscriberGroup(UniversalControlGroup, subscriberGroupEpochReader); }
   public String getLanguage() { return language; }
+  public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   
   /*****************************************
   *
@@ -339,6 +373,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public void setEvolutionSubscriberStatusChangeDate(Date evolutionSubscriberStatusChangeDate) { this.evolutionSubscriberStatusChangeDate = evolutionSubscriberStatusChangeDate; }
   public void setPreviousEvolutionSubscriberStatus(EvolutionSubscriberStatus previousEvolutionSubscriberStatus) { this.previousEvolutionSubscriberStatus = previousEvolutionSubscriberStatus; }
   public void setLanguage(String language) { this.language = language; }
+  public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
 
   //
   //  setSubscriberGroup
@@ -372,6 +407,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.previousEvolutionSubscriberStatus = null;
     this.subscriberGroups = new HashMap<String,Integer>();
     this.language = null;
+    this.subscriberHistory = null;
   }
   
   /*****************************************
@@ -402,6 +438,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     EvolutionSubscriberStatus previousEvolutionSubscriberStatus = (valueStruct.getString("previousEvolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("previousEvolutionSubscriberStatus")) : null;
     Map<String,Integer> subscriberGroups = (Map<String,Integer>) valueStruct.get("subscriberGroups");
     String language = valueStruct.getString("language");
+    SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
 
     //
     //  return
@@ -414,6 +451,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.previousEvolutionSubscriberStatus = previousEvolutionSubscriberStatus;
     this.subscriberGroups = subscriberGroups;
     this.language = language;
+    this.subscriberHistory = subscriberHistory;
   }
 
   /*****************************************
@@ -431,6 +469,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.previousEvolutionSubscriberStatus = subscriberProfile.getPreviousEvolutionSubscriberStatus();
     this.subscriberGroups = new HashMap<String,Integer>(subscriberProfile.getSubscriberGroups());
     this.language = subscriberProfile.getLanguage();
+    this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
   }
 
   /*****************************************
@@ -448,8 +487,31 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     struct.put("subscriberGroups", subscriberProfile.getSubscriberGroups());
     struct.put("language", subscriberProfile.getLanguage());
+    struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
   }
   
+  /*****************************************
+  *
+  *  copy
+  *
+  *****************************************/
+
+  public SubscriberProfile copy()
+  {
+    try
+      {
+        return (SubscriberProfile) subscriberProfileCopyConstructor.newInstance(this);
+      }
+    catch (InvocationTargetException e)
+      {
+        throw new RuntimeException(e.getCause());
+      }
+    catch (InstantiationException|IllegalAccessException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
+
   /*****************************************
   *
   *  toString
@@ -484,6 +546,247 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     b.append("," + previousEvolutionSubscriberStatus);
     b.append("," + language);
     b.append("," + getUniversalControlGroup(subscriberGroupEpochReader));
+    b.append("," + (subscriberHistory != null ? subscriberHistory.getDeliveryRequests().size() : null));
     return b.toString();
+  }
+
+  /*****************************************
+  *
+  *  compressSubscriberProfile
+  *
+  *****************************************/
+
+  public static byte [] compressSubscriberProfile(byte [] data, CompressionType compressionType)
+  {
+    //
+    //  sanity
+    //
+
+    if (SubscriberProfileCompressionEpoch != 0) throw new ServerRuntimeException("unsupported compression epoch");
+
+    //
+    //  compress (if indicated)
+    //
+    
+    byte[] payload;
+    switch (compressionType)
+      {
+        case None:
+          payload = data;
+          break;
+        case GZip:
+          payload = compress_gzip(data);
+          break;
+        default:
+          throw new RuntimeException("unsupported compression type");
+      }
+
+    //
+    //  prepare result
+    //
+
+    byte[] result = new byte[payload.length+1];
+
+    //
+    //  compression epoch
+    //
+
+    result[0] = SubscriberProfileCompressionEpoch;
+
+    //
+    //  payload
+    //
+
+    System.arraycopy(payload, 0, result, 1, payload.length);
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  uncompressSubscriberProfile
+  *
+  *****************************************/
+
+  public static byte [] uncompressSubscriberProfile(byte [] compressedData, CompressionType compressionType)
+  {
+    /****************************************
+    *
+    *  check epoch
+    *
+    ****************************************/
+    
+    int epoch = compressedData[0];
+    if (epoch != 0) throw new ServerRuntimeException("unsupported compression epoch");
+
+    /****************************************
+    *
+    *  uncompress according to provided algorithm
+    *
+    ****************************************/
+
+    //
+    // extract payload
+    // 
+
+    byte [] rawPayload = new byte[compressedData.length-1];
+    System.arraycopy(compressedData, 1, rawPayload, 0, compressedData.length-1);
+
+    //
+    //  uncompress
+    //
+    
+    byte [] payload;
+    switch (compressionType)
+      {
+        case None:
+          payload = rawPayload;
+          break;
+        case GZip:
+          payload = uncompress_gzip(rawPayload);
+          break;
+        default:
+          throw new RuntimeException("unsupported compression type");
+      }
+
+    //
+    //  return
+    //
+
+    return payload;
+  }
+
+  /*****************************************
+  *
+  *  compress_gzip
+  *
+  *****************************************/
+
+  private static byte[] compress_gzip(byte [] data)
+  {
+    int len = data.length;
+    byte [] compressedData;
+    try
+      {
+        //
+        //  length (to make the uncompress easier)
+        //
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(4 + len);
+        byte[] lengthBytes = integerToBytes(len);
+        bos.write(lengthBytes);
+
+        //
+        //  payload
+        //
+
+        GZIPOutputStream gzip = new GZIPOutputStream(bos);
+        gzip.write(data);
+
+        //
+        // result
+        //
+
+        gzip.close();
+        compressedData = bos.toByteArray();
+        bos.close();
+      }
+    catch (IOException ioe)
+      {
+        throw new ServerRuntimeException("compress", ioe);
+      }
+
+    return compressedData;
+  }
+
+  /*****************************************
+  *
+  *  uncompress_gzip
+  *
+  *****************************************/
+
+  private static byte[] uncompress_gzip(byte [] compressedData)
+  {
+    //
+    // sanity
+    //
+    
+    if (compressedData == null) return null;
+
+    //
+    //  uncompress
+    //
+    
+    byte [] uncompressedData;
+    try
+      {
+        ByteArrayInputStream bis = new ByteArrayInputStream(compressedData);
+
+        //
+        //  extract length
+        //
+
+        byte [] lengthBytes = new byte[4];
+        bis.read(lengthBytes, 0, 4);
+        int dataLength = bytesToInteger(lengthBytes);
+
+        //
+        //  extract payload
+        //
+
+        uncompressedData = new byte[dataLength];
+        GZIPInputStream gis = new GZIPInputStream(bis);
+        int bytesRead = 0;
+        int pos = 0;
+        while (pos < dataLength)
+          {
+            bytesRead = gis.read(uncompressedData, pos, dataLength-pos);
+            pos = pos + bytesRead;                
+          }
+
+        //
+        //  close
+        //
+        
+        gis.close();
+        bis.close();
+      }
+    catch (IOException ioe)
+      {
+        throw new ServerRuntimeException("uncompress", ioe);
+      }
+
+    return uncompressedData;
+  }
+
+  /*****************************************
+  *
+  *  integerToBytes
+  *
+  *****************************************/
+
+  private static byte[] integerToBytes(int value)
+  {
+    byte [] result = new byte[4];
+    result[0] = (byte) (value >> 24);
+    result[1] = (byte) (value >> 16);
+    result[2] = (byte) (value >> 8);
+    result[3] = (byte) (value);
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  bytesToInteger
+  *
+  *****************************************/
+
+  private static int bytesToInteger(byte[] data)
+  {
+    return ((0x000000FF & data[0]) << 24) + ((0x000000FF & data[0]) << 16) + ((0x000000FF & data[2]) << 8) + ((0x000000FF) & data[3]);
   }
 }

@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Alarm;
@@ -279,6 +280,7 @@ public class GUIManager
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String redisServer = Deployment.getRedisSentinels();
+    String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
     
     //
@@ -311,7 +313,7 @@ public class GUIManager
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
-    subscriberProfileService = new SubscriberProfileService(bootstrapServers, "guimanager-subscriberprofileservice-" + apiProcessKey, subscriberUpdateTopic, redisServer);
+    subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "guimanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
@@ -7085,34 +7087,53 @@ public class GUIManager
     ****************************************/
     
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
     String subscriberID = resolveSubscriberID(customerID);
-    
-    if (null == subscriberID)
+    if (subscriberID == null)
       {
+        log.info("unable to resolve SubscriberID for subscriberTraceControlAlternateID {} and customerID ", subscriberTraceControlAlternateID, customerID);
         response.put("responseCode", "CustomerNotFound");
-        log.warn("unable to resolve SubscriberID for subscriberTraceControlAlternateID {} and customerID ", subscriberTraceControlAlternateID, customerID);
       }
-    else
+
+    /*****************************************
+    *
+    *  getSubscriberProfile
+    *
+    *****************************************/
+
+    if (subscriberID != null)
       {
         try
-        {
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-          if (null == baseSubscriberProfile)
-            {
-              response.put("responseCode", "CustomerNotFound");
-            }
-          else
-            {
-              response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
-              response.put("responseCode", "ok");
-            }
-        } 
-      catch (SubscriberProfileServiceException e)
-        {
-          throw new GUIManagerException(e);
-        }
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (null == baseSubscriberProfile)
+              {
+                response.put("responseCode", "CustomerNotFound");
+              }
+            else
+              {
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
+                response.put("responseCode", "ok");
+              }
+          } 
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
       }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
     return JSONUtilities.encodeObject(response);
   }
   
@@ -7128,7 +7149,8 @@ public class GUIManager
     try
       {
         result = subscriberIDService.getSubscriberID(subscriberTraceControlAlternateID, customerID);
-      } catch (SubscriberIDServiceException e)
+      }
+    catch (SubscriberIDServiceException e)
       {
         log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
       }
