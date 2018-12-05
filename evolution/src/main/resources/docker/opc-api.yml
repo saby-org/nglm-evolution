@@ -5,10 +5,12 @@ opc-api-<_KEY_>:
     FwkSettings__AuthorizationBaseUrl: 'http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api'
     GuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
     DNBOEngineSettings__ApiBaseUrl: 'http://<_IOM_SERVER_>/Evolving/'
+    DNBOEngineSettings__UseSubscriberId: 'true'
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     ConnectionStrings__OPCConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
     Redis__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_SERVER_>,allowAdmin=true,syncTimeout=5000'
-    OPCAPIPORT: <_PORT_>
+    MatrixBusSettings_RetriveCustomerDetailsDataFromDB: '<_GET_CUSTOMER_DATA_FROM_DB_>'
+    OPC_API_PORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/opc-api-<_KEY_>/mnt

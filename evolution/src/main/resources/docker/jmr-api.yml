@@ -3,18 +3,15 @@ jmr-api-<_KEY_>:
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
-    JmrSettings__JMRApiBaseUrl: "<_JOURNEY_MANAGER_API_URL_>"
+    JmrSettings__JMRApiBaseUrl: "http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/"
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     JmrSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
+    JMR_API_PORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/jmr-api-<_KEY_>/mnt
       target: /mnt
-  ports:
-    - target: 8080
-      published: <_PORT_>
-      mode: host
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -26,3 +23,5 @@ jmr-api-<_KEY_>:
     placement:
       constraints:
         - engine.labels.hostname == <_GUI_JMR_API_SERVER_HOST_>
+  networks:
+    - outside

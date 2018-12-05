@@ -1,14 +1,12 @@
 fwkauth-api-<_KEY_>:
   image: evolving/fwkauth.api:${gui-fwk.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
+  environment:
+    FWK_AUTH_API_PORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwkauth-api-<_KEY_>/mnt
       target: /mnt
-  ports:
-    - target: 8045
-      published: <_PORT_>
-      mode: host
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -20,3 +18,5 @@ fwkauth-api-<_KEY_>:
     placement:
       constraints:
         - engine.labels.hostname == <_GUI_FWK_AUTH_SERVER_HOST_>
+  networks:
+    - outside

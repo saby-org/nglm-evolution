@@ -2,17 +2,14 @@ csr-api-<_KEY_>:
   image: evolving/csr.api:${gui-csr.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
-    AppSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api"
+    FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
     FwkSettings__UploadFolder: '/mnt/upload'
-    ConnectionStrings__CsrConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
+    ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
+    CSR_API_PORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/csr-api-<_KEY_>/mnt
       target: /mnt
-  ports:
-    - target: 8080
-      published: <_PORT_>
-      mode: host
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -24,3 +21,5 @@ csr-api-<_KEY_>:
     placement:
       constraints:
         - engine.labels.hostname == <_GUI_CSR_API_SERVER_HOST_>
+  networks:
+    - outside

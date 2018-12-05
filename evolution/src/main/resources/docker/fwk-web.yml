@@ -3,10 +3,7 @@ fwk-web-<_KEY_>:
   environment:
     fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
-  ports:
-    - target: 80
-      published: <_PORT_>
-      mode: host
+    FWK_WEB_PORT: <_PORT_>
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -18,3 +15,6 @@ fwk-web-<_KEY_>:
     placement:
       constraints:
         - engine.labels.hostname == <_GUI_FWK_WEB_SERVER_HOST_>
+  networks:
+    - outside
+

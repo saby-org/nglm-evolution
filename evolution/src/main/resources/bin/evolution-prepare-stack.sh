@@ -321,6 +321,7 @@ do
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
    export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
    export PORT=`echo $TUPLE | cut -d: -f5`
+   export GET_CUSTOMER_DATA_FROM_DB=`echo $TUPLE | cut -d: -f6`
    cat $DEPLOY_ROOT/docker/opc-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done

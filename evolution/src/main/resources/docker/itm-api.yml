@@ -5,18 +5,15 @@ itm-api-<_KEY_>:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
-    ItmSettings__ITMApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-triggerrule/'
+    ItmSettings__ITMApiBaseUrl: 'http://<_TRIGGERRULEAPI_HOST_>:<_TRIGGERRULEAPI_PORT_>/nglm-triggerrule/'
     ItmSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
     ItmSettings__DefaultApplicationUsingTriggers: 'ICDP'
     ItmSettings__TriggerNameStartWith : ''
+    ITM_API_PORT: <_PORT_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/itm-api-<_KEY_>/mnt
       target: /mnt
-  ports:
-    - target: 8080
-      published: <_PORT_>
-      mode: host
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -28,3 +25,5 @@ itm-api-<_KEY_>:
     placement:
       constraints:
         - engine.labels.hostname == <_GUI_ITM_API_SERVER_HOST_>
+  networks:
+    - outside
