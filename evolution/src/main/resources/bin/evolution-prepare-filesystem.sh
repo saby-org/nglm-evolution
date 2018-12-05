@@ -91,7 +91,8 @@ do
   export KEY=`echo $TUPLE | cut -d: -f1`
   export HOST=`echo $TUPLE | cut -d: -f2`
   export HOST_IP=`echo $TUPLE | cut -d: -f3`
-  export PORT=`echo $TUPLE | cut -d: -f4`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/fwk-api-$KEY/mnt
    "
@@ -103,7 +104,8 @@ do
   export KEY=`echo $TUPLE | cut -d: -f1`
   export HOST=`echo $TUPLE | cut -d: -f2`
   export HOST_IP=`echo $TUPLE | cut -d: -f3`
-  export PORT=`echo $TUPLE | cut -d: -f4`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/fwkauth-api-$KEY/mnt
    "
@@ -115,7 +117,8 @@ do
   export KEY=`echo $TUPLE | cut -d: -f1`
   export HOST=`echo $TUPLE | cut -d: -f2`
   export HOST_IP=`echo $TUPLE | cut -d: -f3`
-  export PORT=`echo $TUPLE | cut -d: -f4`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/itm-api-$KEY/mnt
    "
@@ -127,7 +130,8 @@ do
   export KEY=`echo $TUPLE | cut -d: -f1`
   export HOST=`echo $TUPLE | cut -d: -f2`
   export HOST_IP=`echo $TUPLE | cut -d: -f3`
-  export PORT=`echo $TUPLE | cut -d: -f4`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/jmr-api-$KEY/mnt
    "
@@ -139,7 +143,8 @@ do
   export KEY=`echo $TUPLE | cut -d: -f1`
   export HOST=`echo $TUPLE | cut -d: -f2`
   export HOST_IP=`echo $TUPLE | cut -d: -f3`
-  export PORT=`echo $TUPLE | cut -d: -f4`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/opc-api-$KEY/mnt
    "
@@ -151,7 +156,8 @@ do
   export KEY=`echo $TUPLE | cut -d: -f1`
   export HOST=`echo $TUPLE | cut -d: -f2`
   export HOST_IP=`echo $TUPLE | cut -d: -f3`
-  export PORT=`echo $TUPLE | cut -d: -f4`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/csr-api-$KEY/mnt
    "

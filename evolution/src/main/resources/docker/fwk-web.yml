@@ -1,8 +1,8 @@
 fwk-web-<_KEY_>:
   image: evolving/fwk.web:${gui-fwk.version}
   environment:
-    fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
-    fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
+    fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
+    fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
   ports:
     - target: 80
       published: <_PORT_>

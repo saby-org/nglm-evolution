@@ -169,7 +169,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/fwk-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -183,7 +184,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/fwk-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -197,7 +199,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/fwkauth-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -211,7 +214,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/csr-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -225,7 +229,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/csr-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -239,7 +244,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/itm-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -253,7 +259,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/itm-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -267,7 +274,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/jmr-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -281,7 +289,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/jmr-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -295,7 +304,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/opc-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -309,7 +319,8 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
-   export PORT=`echo $TUPLE | cut -d: -f4`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/opc-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
