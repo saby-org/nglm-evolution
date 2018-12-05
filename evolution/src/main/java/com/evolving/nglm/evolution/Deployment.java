@@ -43,6 +43,7 @@ public class Deployment
   private static String evolutionEngineExtensionClassName;
   private static String subscriberProfileClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
+  private static String emptyTopic;
   private static String journeyTopic;
   private static String segmentationRuleTopic;
   private static String offerTopic;
@@ -140,6 +141,7 @@ public class Deployment
   public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
   public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
+  public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationRuleTopic() { return segmentationRuleTopic; }
   public static String getOfferTopic() { return offerTopic; }
@@ -374,6 +376,19 @@ public class Deployment
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  emptyTopic
+    //
+
+    try
+      {
+        emptyTopic = JSONUtilities.decodeString(jsonRoot, "emptyTopic", true);
+      }
+    catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

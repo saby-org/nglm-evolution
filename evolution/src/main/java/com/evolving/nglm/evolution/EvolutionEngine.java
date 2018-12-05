@@ -18,6 +18,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.Consumed;
@@ -223,6 +224,7 @@ public class EvolutionEngine
     //  source topics 
     //
 
+    String emptyTopic = Deployment.getEmptyTopic();
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
@@ -425,6 +427,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
+    final Serde<byte[]> byteArraySerde = new Serdes.ByteArraySerde();
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
@@ -469,6 +472,12 @@ public class EvolutionEngine
     *  source streams
     *
     *****************************************/
+
+    //
+    //  empty
+    //
+
+    KStream emptySourceStream = builder.stream(emptyTopic, Consumed.with(byteArraySerde, byteArraySerde)).filter((key,value) -> false);
 
     //
     //  core streams
@@ -521,7 +530,7 @@ public class EvolutionEngine
     //  merge source streams -- deliveryResponseStream
     //
 
-    KStream deliveryResponseCompositeStream = null;
+    KStream deliveryResponseCompositeStream = emptySourceStream;
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : deliveryManagerResponseStreams)
       {
         deliveryResponseCompositeStream = (deliveryResponseCompositeStream == null) ? eventStream : deliveryResponseCompositeStream.merge(eventStream);
