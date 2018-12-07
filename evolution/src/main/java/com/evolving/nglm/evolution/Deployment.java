@@ -98,6 +98,7 @@ public class Deployment
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private static Integer authResponseCacheLifetimeInMinutes = null;
 
   /*****************************************
   *
@@ -196,6 +197,7 @@ public class Deployment
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
+  public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
 
   /*****************************************
   *
@@ -1147,6 +1149,19 @@ public class Deployment
             ThirdPartyMethodAccessLevel thirdPartyMethodAccessLevel = new ThirdPartyMethodAccessLevel(thirdPartyMethodPermissionsJSON);
             thirdPartyMethodPermissionsMap.put(methodName, thirdPartyMethodAccessLevel);
           }
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  authResponseCacheLifetimeInMinutes
+    //
+
+    try
+      {
+        authResponseCacheLifetimeInMinutes = JSONUtilities.decodeInteger(jsonRoot, "authResponseCacheLifetimeInMinutes", false);
       }
     catch (JSONUtilitiesException e)
       {

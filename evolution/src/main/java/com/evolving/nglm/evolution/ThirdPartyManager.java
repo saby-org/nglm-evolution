@@ -86,6 +86,7 @@ public class ThirdPartyManager
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private static Integer authResponseCacheLifetimeInMinutes = null;
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
   private String subscriberTraceControlAlternateID;
@@ -127,6 +128,12 @@ public class ThirdPartyManager
 
   ThirdPartyAccessStatistics accessStatistics = null;
   
+  //
+  //  authCache
+  //
+  
+  TimebasedCache<ThirdPartyCredential, AuthenticatedResponse> authCache = null;
+  
   /*****************************************
   *
   *  main
@@ -166,13 +173,14 @@ public class ThirdPartyManager
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
+    authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
     subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
     
     //
     //  log
     //
 
-    log.info("main START: {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer);
+    log.info("main START: {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer, authResponseCacheLifetimeInMinutes);
     
     /*****************************************
     *
@@ -200,6 +208,12 @@ public class ThirdPartyManager
       {
         throw new ServerRuntimeException("could not initialize access statistics", e);
       }
+    
+    //
+    // authCache
+    //
+    
+    authCache = TimebasedCache.getInstance(60000*authResponseCacheLifetimeInMinutes);
     
     /*****************************************
     *
@@ -387,20 +401,11 @@ public class ThirdPartyManager
         
         /*****************************************
         *
-        *  accessCheck - HACK - trusting the token if provided
+        *  authenticate and accessCheck
         *
         *****************************************/
         
-        ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
-        String token = null;
-        if (thirdPartyCredential.getToken() == null)
-          {
-            token = validateCredentialAndGetToken(thirdPartyCredential, api.name());
-          }
-        else
-          {
-            token = thirdPartyCredential.getToken();
-          }
+        authenticateAndCheckAccess(jsonRoot, api.name());
         
         /*****************************************
         *
@@ -479,7 +484,6 @@ public class ThirdPartyManager
         //
 
         jsonResponse.put("apiVersion", RESTAPIVersion);
-        jsonResponse.put("token", token);
         
         //
         //  log
@@ -966,16 +970,28 @@ public class ThirdPartyManager
   
   /*****************************************
   *
-  *  validateCredential
-   * @throws ThirdPartyManagerException 
-   * @throws ParseException 
-   * @throws IOException 
+  *  authenticateAndCheckAccess
   *
   *****************************************/
   
-  private String validateCredentialAndGetToken(ThirdPartyCredential thirdPartyCredential, String api) throws ThirdPartyManagerException, ParseException, IOException
+  private void authenticateAndCheckAccess(JSONObject jsonRoot, String api) throws ThirdPartyManagerException, ParseException, IOException
   {
-    String token = null;
+    
+    ThirdPartyCredential thirdPartyCredential = new ThirdPartyCredential(jsonRoot);
+    
+    //
+    // confirm thirdPartyCredential format is ok
+    //
+    
+    if (null == thirdPartyCredential.getLoginName() || null == thirdPartyCredential.getPassword() || thirdPartyCredential.getLoginName().isEmpty() || thirdPartyCredential.getPassword().isEmpty())
+      {
+        log.error("invalid request {}", "credential is missing");
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{credential is missing}", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+      }
+    
+    //
+    // look up methodAccess configuration from deployment
+    //
     
     ThirdPartyMethodAccessLevel methodAccessLevel = methodPermissionsMapper.get(api);
     
@@ -983,58 +999,61 @@ public class ThirdPartyManager
     // access hack(dev purpose)
     //
     
-    if (null != methodAccessLevel && methodAccessLevel.isByPassAuth())
+    if (null != methodAccessLevel && methodAccessLevel.isByPassAuth()) return ;
+    
+    //
+    // lookup from authCache
+    //
+    
+    AuthenticatedResponse authResponse = null;
+    synchronized (authCache)
       {
-        token = "hacked token";
-        return token;
+        authResponse = authCache.get(thirdPartyCredential);
       }
     
+    //
+    //  cache miss - reauthenticate
+    //
+    
+    if (null == authResponse)
+      {
+        authResponse = authenticate(thirdPartyCredential);
+      }
+    
+    //
+    //  hasAccess
+    //
+
+    if (! hasAccess(authResponse, methodAccessLevel, api))
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS.getGenericResponseMessage(), RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS.getGenericResponseCode());
+      }
+    
+  }
+  
+  /*****************************************
+  *
+  *  authenticate
+  *
+  *****************************************/
+  
+  private AuthenticatedResponse authenticate(ThirdPartyCredential thirdPartyCredential) throws IOException, ParseException, ThirdPartyManagerException
+  {
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
       {
         //
         // create request
         //
 
-        HttpResponse httpResponse = null;
+        StringEntity stringEntity = new StringEntity(thirdPartyCredential.getJSONString(), ContentType.create("application/json"));
+        HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/account/login");
+        httpPost.setEntity(stringEntity);
 
-        if ((null == thirdPartyCredential.getLoginName() || null == thirdPartyCredential.getPassword() || thirdPartyCredential.getLoginName().isEmpty() || thirdPartyCredential.getPassword().isEmpty()) && (null == thirdPartyCredential.getToken() || thirdPartyCredential.getToken().isEmpty()))
-          {
-            log.error("invalid request {}", "credential is missing");
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{credential is missing}", RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
-          }
-        else if (null == thirdPartyCredential.getToken() || thirdPartyCredential.getToken().isEmpty())
-          {
-            //
-            // call FWK api/account/login
-            //
-            
-            log.debug("request data for login {} ", thirdPartyCredential.getJSONString());
-            StringEntity stringEntity = new StringEntity(thirdPartyCredential.getJSONString(), ContentType.create("application/json"));
-            HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/account/login");
-            httpPost.setEntity(stringEntity);
-            
-            //
-            // submit request
-            //
-            
-            httpResponse = httpClient.execute(httpPost);
-          } 
-        else
-          {
-            //
-            // call FWK api/account/checktoken
-            //
-            
-            log.debug("request checktoken : {}", "http://" + fwkServer + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
-            HttpGet httpGet = new HttpGet("http://" + fwkServer + "/api/account/checktoken?token=" + thirdPartyCredential.getToken());
-            
-            
-            //
-            // submit request
-            //
-            
-            httpResponse = httpClient.execute(httpGet);
-          }
+        //
+        // submit request
+        //
+
+        HttpResponse httpResponse = httpClient.execute(httpPost);
 
         //
         // process response
@@ -1044,39 +1063,41 @@ public class ThirdPartyManager
           {
             String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
             log.info("FWK raw response : {}", jsonResponse);
-            
+
             //
-            //  parse JSON response from FWK
+            // parse JSON response from FWK
             //
-            
+
             JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
+
+            //
+            // prepare response
+            //
+
+            AuthenticatedResponse authResponse = new AuthenticatedResponse(jsonRoot);
+            
             
             //
-            // check privileges
+            // update cache
             //
             
-            boolean hasAccess = hasAccess(jsonRoot, methodAccessLevel, api);
-            if (hasAccess)
+            synchronized (authCache)
               {
-                token = JSONUtilities.decodeString(jsonRoot, "Token", true);
-                
-                //
-                //  return correct token
-                //
-                
-                return token;
+                authCache.put(thirdPartyCredential, authResponse);
               }
-            else 
-              {
-                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS.getGenericResponseMessage(), RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS.getGenericResponseCode());
-              }
+
+            //
+            // return
+            //
+
+            return authResponse;
           }
         else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
           {
             log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
             throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE.getGenericResponseMessage(), RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE.getGenericResponseCode());
           }
-        else if(httpResponse != null && httpResponse.getStatusLine() != null)
+        else if (httpResponse != null && httpResponse.getStatusLine() != null)
           {
             log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
             throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
@@ -1092,7 +1113,7 @@ public class ThirdPartyManager
         log.error("failed to Parse ParseException {} ", pe.getMessage());
         throw pe;
       }
-    catch (IOException e)
+    catch(IOException e) 
       {
         log.error("failed to FWK server with data {} ", thirdPartyCredential.getJSONString());
         log.error("IOException: {}", e.getMessage());
@@ -1106,20 +1127,9 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private boolean hasAccess(JSONObject jsonRoot, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
+  private boolean hasAccess(AuthenticatedResponse authResponse, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
   {
     boolean result = true;
-
-    //
-    //  build user permissions
-    //
-
-    List<String> userPermissions = new ArrayList<String>();
-    JSONArray userPermissionArray = JSONUtilities.decodeJSONArray(jsonRoot, "Permissions", true);
-    for (int i=0; i<userPermissionArray.size(); i++)
-      {
-        userPermissions.add((String) userPermissionArray.get(i));
-      }
 
     //
     //  check method access
@@ -1133,16 +1143,10 @@ public class ThirdPartyManager
     else
       {
         //
-        //  check workgroup (if specified)
+        //  check workgroup
         //
         
-        JSONObject userWorkgroupHierarchyJSON = JSONUtilities.decodeJSONObject(jsonRoot, "WorkgroupHierarchy", false);
-        if (null != userWorkgroupHierarchyJSON)
-          {
-            JSONObject userWorkgroupJSON = JSONUtilities.decodeJSONObject(userWorkgroupHierarchyJSON, "Workgroup", true);
-            String userWorkgroup = JSONUtilities.decodeString(userWorkgroupJSON, "Name", true);
-            result = methodAccessLevel.getWorkgroups().contains(userWorkgroup);
-          }
+        result = methodAccessLevel.getWorkgroups().contains(authResponse.getWorkgroupHierarchy().getWorkgroup().getName());
         
         //
         //  check permissions
@@ -1150,7 +1154,7 @@ public class ThirdPartyManager
         
         if (result)
           {
-            for (String userPermission : userPermissions)
+            for (String userPermission : authResponse.getPermissions())
               {
                 result = methodAccessLevel.getPermissions().contains(userPermission);
                 if (result) break;
@@ -1248,7 +1252,6 @@ public class ThirdPartyManager
     
     private String loginName;
     private String password;
-    private String token;
     private JSONObject jsonRepresentation;
     
     //
@@ -1257,7 +1260,6 @@ public class ThirdPartyManager
     
     public String getLoginName() { return loginName; }
     public String getPassword() { return password; }
-    public String getToken() { return token; }
     public String getJSONString() { return jsonRepresentation.toString(); }
     
     /****************************
@@ -1270,18 +1272,173 @@ public class ThirdPartyManager
     {
       this.loginName = JSONUtilities.decodeString(jsonRoot, "loginName", false);
       this.password = JSONUtilities.decodeString(jsonRoot, "password", false);
-      this.token = JSONUtilities.decodeString(jsonRoot, "token", false);
       
       //
       //  jsonRepresentation
       //
           
       jsonRepresentation = new JSONObject();
-      if (token == null || token.isEmpty()) 
+      jsonRepresentation.put("LoginName", loginName);
+      jsonRepresentation.put("Password", password);
+    }
+    
+    /*****************************************
+    *
+    *  equals/hashCode
+    *
+    *****************************************/
+    
+    @Override public boolean equals(Object obj)
+    {
+      boolean result = false;
+      if (obj instanceof ThirdPartyCredential)
         {
-          jsonRepresentation.put("LoginName", loginName);
-          jsonRepresentation.put("Password", password);
+          ThirdPartyCredential credential = (ThirdPartyCredential) obj;
+          result = loginName.equals(credential.getLoginName()) && password.equals(credential.getPassword());
         }
+      return result;
+    }
+    
+    @Override public int hashCode()
+    {
+      return loginName.hashCode() + password.hashCode();
+    }
+  }
+  
+  /*****************************************
+  *
+  *  class AuthenticatedResponse
+  *
+  *****************************************/
+  
+  private class AuthenticatedResponse
+  {
+    //
+    // data
+    //
+    
+    private int userId;
+    private String loginName;
+    private String token;
+    private String languageIso;
+    private List<String> permissions;
+    private String clientIP;
+    private WorkgroupHierarchy workgroupHierarchy;
+    private String tokenCreationDate;
+    private String additionalInfo;
+    
+    //
+    // accessors
+    //
+    
+    public int getUserId() { return userId; }
+    public String getLoginName() { return loginName; }  
+    public String getToken() { return token; }  
+    public String getLanguageIso() { return languageIso; }  
+    public List<String> getPermissions() { return permissions; }  
+    public String getClientIP() { return clientIP; }  
+    public WorkgroupHierarchy getWorkgroupHierarchy() { return workgroupHierarchy; }  
+    public String getTokenCreationDate() { return tokenCreationDate; }  
+    public String getAdditionalInfo() { return additionalInfo; }
+    
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+    
+    private AuthenticatedResponse(JSONObject jsonRoot)
+    {
+      this.userId = JSONUtilities.decodeInteger(jsonRoot, "UserId", true);
+      this.loginName = JSONUtilities.decodeString(jsonRoot, "LoginName", true);
+      this.token = JSONUtilities.decodeString(jsonRoot, "Token", true);
+      this.languageIso = JSONUtilities.decodeString(jsonRoot, "LanguageIso", false);
+      JSONArray userPermissionArray = JSONUtilities.decodeJSONArray(jsonRoot, "Permissions", true);
+      permissions = new ArrayList<String>();
+      for (int i=0; i<userPermissionArray.size(); i++)
+        {
+          permissions.add((String) userPermissionArray.get(i));
+        }
+      this.clientIP = JSONUtilities.decodeString(jsonRoot, "ClientIP", true);
+      this.workgroupHierarchy = new WorkgroupHierarchy(JSONUtilities.decodeJSONObject(jsonRoot, "WorkgroupHierarchy", true));
+      this.tokenCreationDate = JSONUtilities.decodeString(jsonRoot, "TokenCreationDate", true);
+      this.additionalInfo = JSONUtilities.decodeString(jsonRoot, "AdditionalInfo", false);
+    }
+
+    /*****************************************
+    *
+    *  class WorkgroupHierarchy
+    *
+    *****************************************/
+    
+    private class WorkgroupHierarchy
+    {
+      //
+      // data
+      //
+      
+      private Workgroup workgroup;
+      private String parents;
+      private String children;
+      
+      //
+      // accessors
+      //
+      
+      public Workgroup getWorkgroup() { return workgroup; }
+      public String getParents() { return parents; }
+      public String getChildren() { return children; }
+
+      /*****************************************
+      *
+      *  constructor
+      *
+      *****************************************/
+      
+      public WorkgroupHierarchy(JSONObject workgroupHierarchyJSONObject)
+      {
+        this.workgroup = new Workgroup(JSONUtilities.decodeJSONObject(workgroupHierarchyJSONObject, "Workgroup", true));
+        this.parents = JSONUtilities.decodeString(workgroupHierarchyJSONObject, "Parents", false);
+        this.children = JSONUtilities.decodeString(workgroupHierarchyJSONObject, "Children", false);
+      }
+      
+      /*****************************************
+      *
+      *  class Workgroup
+      *
+      *****************************************/
+      private class Workgroup
+      {
+        //
+        // data
+        //
+        
+        private int id;
+        private String key;
+        private String name;
+        
+        //
+        // accessors
+        //
+        
+        public int getId() { return id; }
+        public String getKey() { return key; }
+        public String getName() { return name; }
+
+        /*****************************************
+        *
+        *  constructor
+        *
+        *****************************************/
+        
+        public Workgroup(JSONObject workgroupJSONObject)
+        {
+          this.id = JSONUtilities.decodeInteger(workgroupJSONObject, "Id", true);
+          this.key = JSONUtilities.decodeString(workgroupJSONObject, "Key", true);
+          this.name = JSONUtilities.decodeString(workgroupJSONObject, "Name", true);
+        }
+        
+      }
     }
   }
   
