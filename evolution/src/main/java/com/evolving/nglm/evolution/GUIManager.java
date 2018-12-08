@@ -39,6 +39,12 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.WakeupException;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.io.BufferedReader;
@@ -224,6 +230,7 @@ public class GUIManager
   private SubscriberProfileService subscriberProfileService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+  private DeliverableSourceService deliverableSourceService;
   private String subscriberTraceControlAlternateID;
 
   /*****************************************
@@ -279,6 +286,7 @@ public class GUIManager
     String deliverableTopic = Deployment.getDeliverableTopic();
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
+    String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
@@ -316,6 +324,7 @@ public class GUIManager
     subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "guimanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
+    deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
 
     /*****************************************
     *
@@ -489,6 +498,7 @@ public class GUIManager
     productTypeService.start();
     deliverableService.start();
     subscriberProfileService.start();
+    deliverableSourceService.start();
 
     /*****************************************
     *
@@ -604,7 +614,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService));
     
     /*****************************************
     *
@@ -643,12 +653,13 @@ public class GUIManager
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private DeliverableSourceService deliverableSourceService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -666,6 +677,7 @@ public class GUIManager
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+      this.deliverableSourceService = deliverableSourceService;
     }
 
     //
@@ -697,7 +709,8 @@ public class GUIManager
       if (productTypeService != null) productTypeService.stop();
       if (deliverableService != null) deliverableService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop(); 
-      if (subscriberIDService != null) subscriberIDService.stop(); 
+      if (subscriberIDService != null) subscriberIDService.stop();
+      if (deliverableSourceService != null) deliverableSourceService.stop();
 
       //
       //  rest server
@@ -7278,6 +7291,185 @@ public class GUIManager
     }
   }
 
+  /*****************************************
+  *
+  *  class GUIManagerException
+  *
+  *****************************************/
+
+  private class DeliverableSourceService
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private volatile boolean stopRequested = false;
+    private String deliverableSourceTopic;
+    private KafkaConsumer<byte[], byte[]> deliverableSourceConsumer;
+    Thread deliverableSourceReaderThread = null;
+
+    //
+    //  serdes
+    //
+  
+    private ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+    private ConnectSerde<DeliverableSource> deliverableSourceSerde = DeliverableSource.serde();
+    
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public DeliverableSourceService(String bootstrapServers, String groupID, String deliverableSourceTopic)
+    {
+      //
+      // set up consumer
+      //
+
+      Properties consumerProperties = new Properties();
+      consumerProperties.put("bootstrap.servers", bootstrapServers);
+      consumerProperties.put("group.id", groupID);
+      consumerProperties.put("auto.offset.reset", "earliest");
+      consumerProperties.put("enable.auto.commit", "false");
+      consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      deliverableSourceConsumer = new KafkaConsumer<>(consumerProperties);
+
+      //
+      //  subscribe to topic
+      //
+
+      deliverableSourceConsumer.subscribe(Arrays.asList(deliverableSourceTopic));
+    }
+
+    /*****************************************
+    *
+    *  start
+    *
+    *****************************************/
+
+    public void start()
+    {
+      Runnable deliverableSourceReader = new Runnable() { @Override public void run() { readDeliverableSource(deliverableSourceConsumer); } };
+      deliverableSourceReaderThread = new Thread(deliverableSourceReader, "DeliverableSourceReader");
+      deliverableSourceReaderThread.start();
+    }
+
+    /*****************************************
+    *
+    *  stop
+    *
+    *****************************************/
+
+    public synchronized void stop()
+    {
+      //
+      //  mark stopRequested
+      //
+
+      stopRequested = true;
+
+      //
+      //  wake sleeping polls (if necessary)
+      //
+
+      if (deliverableSourceConsumer != null) deliverableSourceConsumer.wakeup();
+
+      //
+      //  wait for threads to finish
+      //
+
+      try
+        {
+          if (deliverableSourceReaderThread != null) deliverableSourceReaderThread.join();
+        }
+      catch (InterruptedException e)
+        {
+          // nothing
+        }
+
+      //
+      //  close
+      //
+
+      if (deliverableSourceConsumer != null) deliverableSourceConsumer.close();
+    }
+    
+    /****************************************
+    *
+    *  readDeliverableSource
+    *
+    ****************************************/
+
+    private void readDeliverableSource(KafkaConsumer<byte[], byte[]> consumer)
+    {
+      do
+        {
+          //
+          // poll
+          //
+
+          ConsumerRecords<byte[], byte[]> deliverableSourceRecords;
+          try
+            {
+              deliverableSourceRecords = consumer.poll(5000);
+            }
+          catch (WakeupException e)
+            {
+              deliverableSourceRecords = ConsumerRecords.<byte[], byte[]>empty();
+            }
+
+          //
+          //  processing?
+          //
+
+          if (stopRequested) continue;
+
+          //
+          //  process
+          //
+
+          Date now = SystemTime.getCurrentTime();
+          for (ConsumerRecord<byte[], byte[]> deliverableSourceRecord : deliverableSourceRecords)
+            {
+              //
+              //  parse
+              //
+
+              String deliverableName =  stringKeySerde.deserializer().deserialize(deliverableSourceRecord.topic(), deliverableSourceRecord.key()).getKey();
+              DeliverableSource deliverableSource = null;
+              try
+                {
+                  deliverableSource = deliverableSourceSerde.deserializer().deserialize(deliverableSourceRecord.topic(), deliverableSourceRecord.value());
+                }
+              catch (SerializationException e)
+                {
+                  log.info("error reading deliverableSource: {}", e.getMessage());
+                }
+              if (deliverableSource != null) log.info("read deliverableSource {}", deliverableSource);
+
+              //
+              //  process
+              //
+
+              if (deliverableSource != null)
+                {
+                  GUIManagedObject existingGUIManagedObject = deliverableService.getStoredDeliverableByName(deliverableSource.getName());
+                  if (existingGUIManagedObject != null)
+                    {
+                      deliverableSource.setID(existingGUIManagedObject.getGUIManagedObjectID());
+                    }
+                  processPutDeliverable("0", deliverableSource.getDeliverableJSON());
+                }
+            }
+        }
+      while (!stopRequested);
+    }
+  }
+  
   /*****************************************
   *
   *  class GUIManagerException

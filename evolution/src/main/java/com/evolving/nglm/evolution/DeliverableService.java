@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -73,6 +74,7 @@ public class DeliverableService extends GUIService
   {
     super(bootstrapServers, "OfferObjectiveService", groupID, deliverableTopic, masterService, getSuperListener(deliverableListener), "putDeliverable", "removeDeliverable", notifyOnSignificantChange);
   }
+  
   //
   //  constructor
   //
@@ -137,6 +139,24 @@ public class DeliverableService extends GUIService
   public Deliverable getActiveDeliverable(String deliverableID, Date date) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date); }
   public Collection<Deliverable> getActiveDeliverables(Date date) { return (Collection<Deliverable>) getActiveGUIManagedObjects(date); }
 
+  //
+  //  getStoredDeliverableByName
+  //
+  
+  public GUIManagedObject getStoredDeliverableByName(String deliverableName)
+  {
+    GUIManagedObject result = null;
+    for (GUIManagedObject guiManagedObject : getStoredDeliverables())
+      {
+        if (Objects.equals(deliverableName, guiManagedObject.getGUIManagedObjectName()))
+          {
+            result = guiManagedObject;
+            break;
+          }
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  putDeliverable
