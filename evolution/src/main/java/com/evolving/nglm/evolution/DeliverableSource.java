@@ -66,9 +66,11 @@ public class DeliverableSource
     schemaBuilder.name("deliverablesource");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
-    schemaBuilder.field("display", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("valid", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("infoStartDate", Schema.STRING_SCHEMA);
+    schemaBuilder.field("infoEndDate", Schema.STRING_SCHEMA);
     schemaBuilder.field("effectiveStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("effectiveEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
@@ -100,6 +102,8 @@ public class DeliverableSource
   private String display;
   private boolean valid;
   private boolean active;
+  private String infoStartDate;
+  private String infoEndDate;
   private Date effectiveStartDate;
   private Date effectiveEndDate;
   private String fulfillmentProviderID;
@@ -116,6 +120,8 @@ public class DeliverableSource
   public String getDisplay() { return display; }
   public boolean getValid() { return valid; }
   public boolean getActive() { return active; }
+  String getInfoStartDate() { return infoStartDate; }
+  String getInfoEndDate() { return infoEndDate; }
   Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
@@ -135,8 +141,8 @@ public class DeliverableSource
     deliverableJSON.put("display", display);
     deliverableJSON.put("valid", valid);
     deliverableJSON.put("active", active);
-    deliverableJSON.put("effectiveStartDate", formatDateField(effectiveStartDate));
-    deliverableJSON.put("effectiveEndDate", formatDateField(effectiveEndDate));
+    deliverableJSON.put("effectiveStartDate", infoStartDate);
+    deliverableJSON.put("effectiveEndDate", infoEndDate);
     deliverableJSON.put("fulfillmentProviderID", fulfillmentProviderID);
     deliverableJSON.put("unitaryCost", new Integer(unitaryCost));
     return JSONUtilities.encodeObject(deliverableJSON);
@@ -160,11 +166,13 @@ public class DeliverableSource
   {
     this.id = null;
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
-    this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", Boolean.FALSE);
-    this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
-    this.effectiveStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
-    this.effectiveEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
+    this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
+    this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", true);
+    this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", true);
+    this.infoStartDate = JSONUtilities.decodeString(jsonRoot, "infoStartDate", true);
+    this.infoEndDate = JSONUtilities.decodeString(jsonRoot, "infoEndDate", true);
+    this.effectiveStartDate = parseDateField(this.infoStartDate);
+    this.effectiveEndDate = parseDateField(this.infoEndDate);
     this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, "fulfillmentProviderID", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
   }
@@ -175,13 +183,15 @@ public class DeliverableSource
   *
   *****************************************/
 
-  public DeliverableSource(String name, String display, boolean valid, boolean active, Date effectiveStartDate, Date effectiveEndDate, String fulfillmentProviderID, int unitaryCost)
+  public DeliverableSource(String name, String display, boolean valid, boolean active, String infoStartDate, String infoEndDate, Date effectiveStartDate, Date effectiveEndDate, String fulfillmentProviderID, int unitaryCost)
   {
     this.id = null;
     this.name = name;
     this.display = display;
     this.valid = valid;
     this.active = active;
+    this.infoStartDate = infoStartDate;
+    this.infoEndDate = infoEndDate;
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
     this.fulfillmentProviderID = fulfillmentProviderID;
@@ -202,6 +212,8 @@ public class DeliverableSource
     struct.put("display", deliverableSource.getDisplay());
     struct.put("valid", deliverableSource.getValid());
     struct.put("active", deliverableSource.getActive());
+    struct.put("infoStartDate", deliverableSource.getInfoStartDate());
+    struct.put("infoEndDate", deliverableSource.getInfoEndDate());
     struct.put("effectiveStartDate", deliverableSource.getEffectiveStartDate());
     struct.put("effectiveEndDate", deliverableSource.getEffectiveEndDate());
     struct.put("fulfillmentProviderID", deliverableSource.getFulfillmentProviderID());
@@ -234,6 +246,8 @@ public class DeliverableSource
     String display = valueStruct.getString("display");
     boolean valid = valueStruct.getBoolean("valid");
     boolean active = valueStruct.getBoolean("active");
+    String infoStartDate = valueStruct.getString("infoStartDate");
+    String infoEndDate = valueStruct.getString("infoEndDate");
     Date effectiveStartDate = (Date) valueStruct.get("effectiveStartDate");
     Date effectiveEndDate = (Date) valueStruct.get("effectiveEndDate");
     String fulfillmentProviderID = valueStruct.getString("fulfillmentProviderID");
@@ -243,7 +257,7 @@ public class DeliverableSource
     //  return
     //
 
-    return new DeliverableSource(name, display, valid, active, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, unitaryCost);
+    return new DeliverableSource(name, display, valid, active, infoStartDate, infoEndDate, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, unitaryCost);
   }
   
   /*****************************************
