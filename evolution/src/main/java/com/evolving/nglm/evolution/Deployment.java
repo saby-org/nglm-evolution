@@ -99,6 +99,7 @@ public class Deployment
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
+  private static int stockRefreshPeriod;
 
   /*****************************************
   *
@@ -132,7 +133,7 @@ public class Deployment
   public static Map<String,SuspenseProcessEventConfiguration> getSuspenseProcessEventConfiguration() { return com.evolving.nglm.core.Deployment.getSuspenseProcessEventConfiguration(); }
   
   //
-  //  deployment accessors
+  //  evolution accessors
   //
 
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
@@ -198,6 +199,7 @@ public class Deployment
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
+  public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
 
   /*****************************************
   *
@@ -1167,6 +1169,12 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+
+    //
+    //  stockRefreshPeriod
+    //
+
+    stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
   }
 
   /*****************************************

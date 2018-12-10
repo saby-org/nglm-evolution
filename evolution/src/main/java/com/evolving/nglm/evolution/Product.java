@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -29,7 +30,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-public class Product extends GUIManagedObject
+public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
   *
@@ -50,6 +51,7 @@ public class Product extends GUIManagedObject
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliverableID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("productTypes", SchemaBuilder.array(ProductTypeInstance.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -75,7 +77,14 @@ public class Product extends GUIManagedObject
 
   private String supplierID;
   private String deliverableID;
-  private Set<ProductTypeInstance> productTypes; 
+  private Integer stock;
+  private Set<ProductTypeInstance> productTypes;
+
+  //
+  //  derived
+  //
+
+  private String stockableItemID;
 
   /****************************************
   *
@@ -86,7 +95,9 @@ public class Product extends GUIManagedObject
   public String getProductID() { return getGUIManagedObjectID(); }
   public String getSupplierID() { return supplierID; }
   public String getDeliverableID() { return deliverableID; }
+  public Integer getStock() { return stock; }
   public Set<ProductTypeInstance> getProductTypes() { return productTypes;  }
+  public String getStockableItemID() { return stockableItemID; }
 
   /*****************************************
   *
@@ -94,12 +105,14 @@ public class Product extends GUIManagedObject
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Set<ProductTypeInstance> productTypes)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
     this.deliverableID = deliverableID;
+    this.stock = stock;
     this.productTypes = productTypes;
+    this.stockableItemID = "product-" + getProductID();
   }
 
   /*****************************************
@@ -115,6 +128,7 @@ public class Product extends GUIManagedObject
     packCommon(struct, product);
     struct.put("supplierID", product.getSupplierID());
     struct.put("deliverableID", product.getDeliverableID());
+    struct.put("stock", product.getStock());
     struct.put("productTypes", packProductTypes(product.getProductTypes()));
     return struct;
   }
@@ -156,15 +170,16 @@ public class Product extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    String supplierID = (String) valueStruct.get("supplierID");
-    String deliverableID = (String) valueStruct.get("deliverableID");
+    String supplierID = valueStruct.getString("supplierID");
+    String deliverableID = valueStruct.getString("deliverableID");
+    Integer stock = valueStruct.getInt32("stock");
     Set<ProductTypeInstance> productTypes = unpackProductTypes(schema.field("productTypes").schema(), valueStruct.get("productTypes"));
     
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, productTypes);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes);
   }
   
   /*****************************************
@@ -231,7 +246,9 @@ public class Product extends GUIManagedObject
 
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
+    this.stock = JSONUtilities.decodeInteger(jsonRoot, "stock", false);
     this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
+    this.stockableItemID = "product-" + getProductID();
 
     /*****************************************
     *
@@ -259,6 +276,7 @@ public class Product extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingProduct.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(supplierID, existingProduct.getSupplierID());
         epochChanged = epochChanged || ! Objects.equals(deliverableID, existingProduct.getDeliverableID());
+        epochChanged = epochChanged || ! Objects.equals(stock, existingProduct.getStock());
         epochChanged = epochChanged || ! Objects.equals(productTypes, existingProduct.getProductTypes());
         return epochChanged;
       }

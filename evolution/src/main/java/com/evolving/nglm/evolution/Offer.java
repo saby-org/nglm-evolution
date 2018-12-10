@@ -6,8 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
+import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class Offer extends GUIManagedObject
+public class Offer extends GUIManagedObject implements StockableItem
 {
   /*****************************************
   *
@@ -50,6 +51,7 @@ public class Offer extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("initialPropensity", Schema.INT32_SCHEMA);
+    schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
@@ -80,6 +82,7 @@ public class Offer extends GUIManagedObject
   ****************************************/
 
   private int initialPropensity;
+  private Integer stock;
   private int unitaryCost;
   private List<EvaluationCriterion> profileCriteria;
   private OfferType offerType;
@@ -87,6 +90,12 @@ public class Offer extends GUIManagedObject
   private Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices;
   private Set<OfferProduct> offerProducts;
   private Set<OfferCallingChannel> offerCallingChannels;
+
+  //
+  //  derived
+  //
+
+  private String stockableItemID;
 
   /****************************************
   *
@@ -100,6 +109,7 @@ public class Offer extends GUIManagedObject
 
   public String getOfferID() { return getGUIManagedObjectID(); }
   public int getInitialPropensity() { return initialPropensity; }
+  public Integer getStock() { return stock; } 
   public int getUnitaryCost() { return unitaryCost; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public OfferType getOfferType() { return offerType; }
@@ -107,6 +117,7 @@ public class Offer extends GUIManagedObject
   public Set<OfferSalesChannelsAndPrice> getOfferSalesChannelsAndPrices() { return offerSalesChannelsAndPrices;  }
   public Set<OfferProduct> getOfferProducts() { return offerProducts; }
   public Set<OfferCallingChannel> getOfferCallingChannels() { return offerCallingChannels; }
+  public String getStockableItemID() { return stockableItemID; }
 
   /*****************************************
   *
@@ -125,10 +136,11 @@ public class Offer extends GUIManagedObject
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, int initialPropensity, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
+  public Offer(SchemaAndValue schemaAndValue, int initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
   {
     super(schemaAndValue);
     this.initialPropensity = initialPropensity;
+    this.stock = stock;
     this.unitaryCost = unitaryCost;
     this.profileCriteria = profileCriteria;
     this.offerType = offerType;
@@ -136,6 +148,7 @@ public class Offer extends GUIManagedObject
     this.offerSalesChannelsAndPrices = offerSalesChannelsAndPrices;
     this.offerProducts = offerProducts;
     this.offerCallingChannels = offerCallingChannels;
+    this.stockableItemID = "offer-" + getOfferID();
   }
 
   /*****************************************
@@ -150,6 +163,7 @@ public class Offer extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, offer);
     struct.put("initialPropensity", offer.getInitialPropensity());
+    struct.put("stock", offer.getStock());
     struct.put("unitaryCost", offer.getUnitaryCost());
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
     struct.put("offerType", offer.getOfferType().getID());
@@ -262,6 +276,7 @@ public class Offer extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     int initialPropensity = valueStruct.getInt32("initialPropensity");
+    Integer stock = valueStruct.getInt32("stock");
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
@@ -280,7 +295,7 @@ public class Offer extends GUIManagedObject
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, unitaryCost, profileCriteria, offerType, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerCallingChannels);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerType, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerCallingChannels);
   }
   
   /*****************************************
@@ -474,6 +489,7 @@ public class Offer extends GUIManagedObject
     *****************************************/
     
     this.initialPropensity = JSONUtilities.decodeInteger(jsonRoot, "initialPropensity", true);
+    this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
     this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
@@ -481,6 +497,7 @@ public class Offer extends GUIManagedObject
     this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
     this.offerCallingChannels = decodeOfferCallingChannels(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", false));
+    this.stockableItemID = "offer-" + getOfferID();
 
     /*****************************************
     *
@@ -607,6 +624,7 @@ public class Offer extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingOffer.getGUIManagedObjectID());
         epochChanged = epochChanged || ! (initialPropensity == existingOffer.getInitialPropensity());
+        epochChanged = epochChanged || ! Objects.equals(stock, existingOffer.getStock());
         epochChanged = epochChanged || ! (unitaryCost == existingOffer.getUnitaryCost());
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingOffer.getProfileCriteria());
         epochChanged = epochChanged || ! Objects.equals(offerType, existingOffer.getOfferType());

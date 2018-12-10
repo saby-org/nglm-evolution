@@ -90,7 +90,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProductSummaryList; echo
-curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/product.101.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putProduct; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/product.1001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putProduct; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProduct; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "101" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeProduct; echo
 
@@ -132,6 +132,15 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
 
 --
+-- zookeeper
+--
+
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/stock/stockmonitors
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> get /evolving/nglm/stock/stockmonitors/001
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/stock/stocks
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> get /evolving/nglm/stock/stocks/product-1001
+
+--
 --  examples of mananging subscriber groups / segments  - new, add, remove, delete
 --
 
@@ -171,3 +180,5 @@ java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.a
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.OfferObjectiveService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.ProductTypeService
 java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.SubscriberProfileService 001
+java -cp ${project.build.directory}/lib/*:${project.build.directory}/${project.artifactId}-${project.version}.jar:$CONFLUENT_HOME/share/java/kafka/* -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dlog4j.configuration=file:$DEPLOY_ROOT/config/log4j-evol.properties -Dredis.sentinels=<_REDIS_SENTINELS_> -Dsubscriberprofile.endpoints=<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS_> com.evolving.nglm.evolution.StockMonitor 001 1001
+

@@ -32,12 +32,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -85,7 +87,7 @@ public class GUIService
   Thread schedulerThread = null;
   Thread listenerThread = null;
   Thread guiManagedObjectReaderThread = null;
-  private GUIManagedObjectListener guiManagedObjectListener = null;
+  private List<GUIManagedObjectListener> guiManagedObjectListeners = new ArrayList<GUIManagedObjectListener>();
   private boolean notifyOnSignificantChange;
   private BlockingQueue<GUIManagedObject> listenerQueue = new LinkedBlockingQueue<GUIManagedObject>();
   private int lastGeneratedObjectID = 0;
@@ -122,11 +124,19 @@ public class GUIService
     //
 
     this.guiManagedObjectTopic = guiManagedObjectTopic;
-    this.guiManagedObjectListener = guiManagedObjectListener;
     this.masterService = masterService;
     this.putAPIString = putAPIString;
     this.removeAPIString = removeAPIString;
     this.notifyOnSignificantChange = notifyOnSignificantChange;
+
+    //
+    //  listener
+    //
+
+    if (guiManagedObjectListener != null)
+      {
+        guiManagedObjectListeners.add(guiManagedObjectListener);
+      }
 
     //
     //  statistics
@@ -204,12 +214,9 @@ public class GUIService
     //  listener
     //
 
-    if (guiManagedObjectListener != null)
-      {
-        Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
-        listenerThread = new Thread(listener, "GUIManagedObjectListener");
-        listenerThread.start();
-      }
+    Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
+    listenerThread = new Thread(listener, "GUIManagedObjectListener");
+    listenerThread.start();
 
     //
     //  read guiManagedObject updates
@@ -266,6 +273,20 @@ public class GUIService
 
     if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.close();
     if (kafkaProducer != null) kafkaProducer.close();
+  }
+
+  /*****************************************
+  *
+  *  registerListener
+  *
+  *****************************************/
+
+  public void registerListener(GUIManagedObjectListener guiManagedObjectListener)
+  {
+    synchronized (this)
+      {
+        guiManagedObjectListeners.add(guiManagedObjectListener);
+      }
   }
 
   /*****************************************
@@ -380,7 +401,7 @@ public class GUIService
             if (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0)
               {
                 result.add(guiManagedObject);
-               }
+              }
           }
       }
     return result;
@@ -859,10 +880,7 @@ public class GUIService
 
   private void notifyListener(GUIManagedObject guiManagedObject)
   {
-    if (guiManagedObjectListener != null)
-      {
-        listenerQueue.add(guiManagedObject);
-      }
+    listenerQueue.add(guiManagedObject);
   }
 
   /*****************************************
@@ -877,12 +895,34 @@ public class GUIService
       {
         try
           {
-            Date now = SystemTime.getCurrentTime();
+            //
+            //  get next 
+            //
+
             GUIManagedObject guiManagedObject = listenerQueue.take();
-            if (isActiveGUIManagedObject(guiManagedObject, now))
-              guiManagedObjectListener.guiManagedObjectActivated(guiManagedObject);
-            else
-              guiManagedObjectListener.guiManagedObjectDeactivated(guiManagedObject.getGUIManagedObjectID());
+
+            //
+            //  listeners
+            //
+
+            List<GUIManagedObjectListener> guiManagedObjectListeners = new ArrayList<GUIManagedObjectListener>();
+            synchronized (this)
+              {
+                guiManagedObjectListeners.addAll(this.guiManagedObjectListeners);
+              }
+
+            //
+            //  notify
+            //
+
+            Date now = SystemTime.getCurrentTime();
+            for (GUIManagedObjectListener guiManagedObjectListener : guiManagedObjectListeners)
+              {
+                if (isActiveGUIManagedObject(guiManagedObject, now))
+                  guiManagedObjectListener.guiManagedObjectActivated(guiManagedObject);
+                else
+                  guiManagedObjectListener.guiManagedObjectDeactivated(guiManagedObject.getGUIManagedObjectID());
+              }
           }
         catch (InterruptedException e)
           {

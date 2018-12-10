@@ -1,3 +1,9 @@
+/*****************************************************************************
+*
+*  TimebasedCache.java
+*
+*****************************************************************************/
+
 package com.evolving.nglm.evolution;
 
 import java.util.Collection;
@@ -11,24 +17,31 @@ import java.util.concurrent.TimeUnit;
 
 public class TimebasedCache<K, V> implements Map<K, V>
 {
-  
-  //
-  // data
-  //
-  
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+
   private final Map<K, V> internalMap;
   private final Map<K, ExpiringKey<K>> expiringKeys;
   private final DelayQueue<ExpiringKey> delayQueue = new DelayQueue<ExpiringKey>();
   private final long maxLifeTimeMillis;
-  
+
+  /*****************************************
+  *
+  *  getInstance
+  *
+  *****************************************/
+
   //
-  // singleton instance
+  //  instance
   //
-  
+
   private static volatile TimebasedCache instance;
-  
+
   //
-  // getInstance
+  //  getInstance
   //
 
   public static TimebasedCache getInstance()
@@ -45,7 +58,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
       }
     return instance;
   }
-  
+
   //
   // getInstance
   //
@@ -64,7 +77,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
       }
     return instance;
   }
-  
+
   //
   // getInstance
   //
@@ -83,7 +96,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
       }
     return instance;
   }
-  
+
   //
   // getInstance
   //
@@ -102,12 +115,17 @@ public class TimebasedCache<K, V> implements Map<K, V>
       }
     return instance;
   }
-  
+
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
 
   //
   // default constructor
   //
-  
+
   private TimebasedCache()
   {
     internalMap = new ConcurrentHashMap<K, V>();
@@ -118,7 +136,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
   //
   // constructor time
   //
-  
+
   private TimebasedCache(long defaultMaxLifeTimeMillis)
   {
     internalMap = new ConcurrentHashMap<K, V>();
@@ -129,7 +147,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
   //
   // constructor time and capacity
   //
-  
+
   private TimebasedCache(long defaultMaxLifeTimeMillis, int initialCapacity)
   {
     internalMap = new ConcurrentHashMap<K, V>(initialCapacity);
@@ -140,7 +158,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
   //
   // constructor time, capacity and loadFactor
   //
-  
+
   private TimebasedCache(long defaultMaxLifeTimeMillis, int initialCapacity, float loadFactor)
   {
     internalMap = new ConcurrentHashMap<K, V>(initialCapacity, loadFactor);
@@ -148,86 +166,152 @@ public class TimebasedCache<K, V> implements Map<K, V>
     this.maxLifeTimeMillis = defaultMaxLifeTimeMillis;
   }
 
-  @Override
-  public int size()
+  /*****************************************
+  *
+  *  size
+  *
+  *****************************************/
+
+  @Override public int size()
   {
     cleanup();
     return internalMap.size();
   }
 
-  @Override
-  public boolean isEmpty()
+  /*****************************************
+  *
+  *  isEmpty
+  *
+  *****************************************/
+
+  @Override public boolean isEmpty()
   {
     cleanup();
     return internalMap.isEmpty();
   }
 
-  @Override
-  public boolean containsKey(Object key)
+  /*****************************************
+  *
+  *  containsKey
+  *
+  *****************************************/
+
+  @Override public boolean containsKey(Object key)
   {
     cleanup();
     return internalMap.containsKey((K) key);
   }
 
-  @Override
-  public boolean containsValue(Object value)
+  /*****************************************
+  *
+  *  containsValue
+  *
+  *****************************************/
+
+  @Override public boolean containsValue(Object value)
   {
     cleanup();
     return internalMap.containsValue((V) value);
   }
 
-  @Override
-  public V get(Object key)
+  /*****************************************
+  *
+  *  get
+  *
+  *****************************************/
+
+  @Override public V get(Object key)
   {
     cleanup();
     return internalMap.get((K) key);
   }
 
-  @Override
-  public V put(K key, V value)
+  /*****************************************
+  *
+  *  put
+  *
+  *****************************************/
+
+  @Override public V put(K key, V value)
   {
     return this.put(key, value, maxLifeTimeMillis);
   }
 
-  @Override
-  public V remove(Object key)
+  /*****************************************
+  *
+  *  remove
+  *
+  *****************************************/
+
+  @Override public V remove(Object key)
   {
     V removedValue = internalMap.remove((K) key);
     expireKey(expiringKeys.remove((K) key));
     return removedValue;
   }
 
-  @Override
-  public void putAll(Map<? extends K, ? extends V> m)
+  /*****************************************
+  *
+  *  putAll
+  *
+  *****************************************/
+
+  @Override  public void putAll(Map<? extends K, ? extends V> m)
   {
     throw new UnsupportedOperationException();
   }
 
-  @Override
-  public void clear()
+  /*****************************************
+  *
+  *  clear
+  *
+  *****************************************/
+
+  @Override public void clear()
   {
     delayQueue.clear();
     expiringKeys.clear();
     internalMap.clear();
   }
 
-  @Override
-  public Set<K> keySet()
+  /*****************************************
+  *
+  *  keySet
+  *
+  *****************************************/
+
+  @Override public Set<K> keySet()
   {
     throw new UnsupportedOperationException();
   }
 
-  @Override
-  public Collection<V> values()
+  /*****************************************
+  *
+  *  values
+  *
+  *****************************************/
+
+  @Override public Collection<V> values()
   {
     throw new UnsupportedOperationException();
   }
 
-  @Override
-  public Set<Entry<K, V>> entrySet()
+  /*****************************************
+  *
+  *  entrySet
+  *
+  *****************************************/
+
+  @Override public Set<Entry<K, V>> entrySet()
   {
     throw new UnsupportedOperationException();
   }
+
+  /*****************************************
+  *
+  *  cleanup
+  *
+  *****************************************/
 
   private void cleanup()
   {
@@ -239,6 +323,12 @@ public class TimebasedCache<K, V> implements Map<K, V>
         delayedKey = delayQueue.poll();
       }
   }
+
+  /*****************************************
+  *
+  *  put
+  *
+  *****************************************/
 
   private V put(K key, V value, long lifeTimeMillis)
   {
@@ -254,6 +344,12 @@ public class TimebasedCache<K, V> implements Map<K, V>
     return internalMap.put(key, value);
   }
 
+  /*****************************************
+  *
+  *  expireKey
+  *
+  *****************************************/
+
   private void expireKey(ExpiringKey<K> delayedKey)
   {
     if (delayedKey != null)
@@ -264,17 +360,28 @@ public class TimebasedCache<K, V> implements Map<K, V>
   }
 
   /*********************************
-   * 
-   * class ExpiringKey
-   *
-   **********************************/
-  
+  * 
+  * class ExpiringKey
+  *
+  **********************************/
+
   private class ExpiringKey<K> implements Delayed
   {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
 
     private long startTime = System.currentTimeMillis();
     private final long maxLifeTimeMillis;
     private final K key;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
 
     public ExpiringKey(K key, long maxLifeTimeMillis)
     {
@@ -282,13 +389,24 @@ public class TimebasedCache<K, V> implements Map<K, V>
       this.key = key;
     }
 
+    /*****************************************
+    *
+    *  getKey
+    *
+    *****************************************/
+
     public K getKey()
     {
       return key;
     }
 
-    @Override
-    public boolean equals(Object obj)
+    /*****************************************
+    *
+    *  equals
+    *
+    *****************************************/
+
+    @Override public boolean equals(Object obj)
     {
       if (obj == null)
         {
@@ -306,35 +424,61 @@ public class TimebasedCache<K, V> implements Map<K, V>
       return true;
     }
 
-    @Override
-    public int hashCode()
+    /*****************************************
+    *
+    *  hashCodee
+    *
+    *****************************************/
+
+    @Override public int hashCode()
     {
       int hash = 7;
       hash = 31 * hash + (this.key != null ? this.key.hashCode() : 0);
       return hash;
     }
 
-    @Override
-    public long getDelay(TimeUnit unit)
+    /*****************************************
+    *
+    *  getDelay
+    *
+    *****************************************/
+
+    @Override public long getDelay(TimeUnit unit)
     {
       return unit.convert(getDelayMillis(), TimeUnit.MILLISECONDS);
     }
+
+    /*****************************************
+    *
+    *  getDelayMillis
+    *
+    *****************************************/
 
     private long getDelayMillis()
     {
       return (startTime + maxLifeTimeMillis) - System.currentTimeMillis();
     }
 
+    /*****************************************
+    *
+    *  expire
+    *
+    *****************************************/
+
     public void expire()
     {
       startTime = Long.MIN_VALUE;
     }
 
-    @Override
-    public int compareTo(Delayed that)
+    /*****************************************
+    *
+    *  compareTo
+    *
+    *****************************************/
+
+    @Override public int compareTo(Delayed that)
     {
       return Long.compare(this.getDelayMillis(), ((ExpiringKey) that).getDelayMillis());
     }
   }
-
 }
