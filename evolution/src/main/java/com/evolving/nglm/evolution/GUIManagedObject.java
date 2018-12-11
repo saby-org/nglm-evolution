@@ -530,6 +530,17 @@ public abstract class GUIManagedObject
     *
     *****************************************/
 
+    public IncompleteObject(JSONObject jsonRoot, GUIManagedObjectType guiManagedObjectType, long epoch)
+    {
+      super(jsonRoot, guiManagedObjectType, epoch);
+    }
+
+    /*****************************************
+    *
+    *  constructor -- external JSON
+    *
+    *****************************************/
+
     public IncompleteObject(JSONObject jsonRoot, long epoch)
     {
       super(jsonRoot, epoch);
