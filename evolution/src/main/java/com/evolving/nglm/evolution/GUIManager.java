@@ -7508,7 +7508,7 @@ public class GUIManager
 
     /*****************************************
     *
-    *  constructor - excpetion
+    *  constructor - exception
     *
     *****************************************/
 
@@ -7516,6 +7516,17 @@ public class GUIManager
     {
       super(e.getMessage(), e);
       this.responseParameter = null;
+    }
+
+    /*****************************************
+    *
+    *  toString
+    *
+    *****************************************/
+
+    public String toString()
+    {
+      return super.toString() + "(" + responseParameter + ")";
     }
   }
 }

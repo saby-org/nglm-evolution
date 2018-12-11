@@ -654,6 +654,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     ****************************************/
     
+    Set<CallingChannel> validCallingChannels = new HashSet<CallingChannel>();
     for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
       {
         /*****************************************
@@ -670,7 +671,11 @@ public class Offer extends GUIManagedObject implements StockableItem
         *
         *****************************************/
 
-        if (callingChannel == null) throw new GUIManagerException("unknown calling channel", offerCallingChannel.getCallingChannelID());
+        if (callingChannel == null)
+          {
+            log.info("offer {} uses unknown calling channel: {}", getOfferID(), offerCallingChannel.getCallingChannelID());
+            continue;
+          }
 
         /*****************************************
         *
@@ -701,6 +706,25 @@ public class Offer extends GUIManagedObject implements StockableItem
         offerProperties.removeAll(callingChannel.getMandatoryCallingChannelProperties());
         offerProperties.removeAll(callingChannel.getOptionalCallingChannelProperties());
         if (offerProperties.size() > 0) throw new GUIManagerException("unknown calling channel properties", callingChannel.getGUIManagedObjectID());
+
+        /*****************************************
+        *
+        *  valid calling channel
+        *
+        *****************************************/
+
+        validCallingChannels.add(callingChannel);
+      }
+
+    /*****************************************
+    *
+    *  ensure at least one valid calling channel
+    *
+    *****************************************/
+
+    if (validCallingChannels.size() == 0)
+      {
+        throw new GUIManagerException("no valid calling channels", getOfferID());
       }
 
     /****************************************
