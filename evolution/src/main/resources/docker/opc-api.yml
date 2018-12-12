@@ -4,7 +4,7 @@ opc-api-<_KEY_>:
   environment:
     FwkSettings__AuthorizationBaseUrl: 'http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api'
     GuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
-    DNBOEngineSettings__ApiBaseUrl: 'http://<_IOM_SERVER_>/Evolving/'
+    DNBOEngineSettings__ApiBaseUrl: '<_IOM_SERVER_URL_>'
     DNBOEngineSettings__UseSubscriberId: 'true'
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     ConnectionStrings__OPCConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
