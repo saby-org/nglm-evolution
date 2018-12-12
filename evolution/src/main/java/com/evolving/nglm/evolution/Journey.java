@@ -567,11 +567,11 @@ public class Journey extends GUIManagedObject
 
     this.journeyMetrics = decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", false));
     this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", false));
-    this.autoTargeted = JSONUtilities.decodeBoolean(jsonRoot, "autoTargeted", Boolean.FALSE);
-    this.autoTargetedWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "autoTargetedWindowDuration", 3);
-    this.autoTargetedWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "autoTargetedWindowUnit", "month"));
-    this.autoTargetedWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "autoTargetedWindowRoundUp", Boolean.FALSE);
-    this.autoTargetingCriteria = decodeAutoTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", false));
+    this.autoTargeted = JSONUtilities.decodeBoolean(jsonRoot, "autoTargeted", new Boolean(Deployment.getJourneyDefaultAutoTarget()));
+    this.autoTargetedWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "autoTargetedWindowDuration", Deployment.getJourneyDefaultAutoTargetWindowDuration());
+    this.autoTargetedWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "autoTargetedWindowUnit", Deployment.getJourneyDefaultAutoTargetWindowUnit()));
+    this.autoTargetedWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "autoTargetedWindowRoundUp", new Boolean(Deployment.getJourneyDefaultAutoTargetWindowRoundUp()));
+    this.autoTargetingCriteria = decodeAutoTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", false), Deployment.getJourneyDefaultAutoTargetCriteria());
     Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
@@ -903,7 +903,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeAutoTargetingCriteria(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeAutoTargetingCriteria(JSONArray jsonArray, List<EvaluationCriterion> defaultAutoTargetingCriteria) throws GUIManagerException
   {
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     if (jsonArray != null)
@@ -912,6 +912,10 @@ public class Journey extends GUIManagedObject
           {
             result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
           }
+      }
+    else
+      {
+        result.addAll(defaultAutoTargetingCriteria);
       }
     return result;
   }

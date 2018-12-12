@@ -94,6 +94,11 @@ public class Deployment
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static boolean journeyDefaultAutoTarget;
+  private static int journeyDefaultAutoTargetWindowDuration;
+  private static String journeyDefaultAutoTargetWindowUnit;
+  private static boolean journeyDefaultAutoTargetWindowRoundUp;
+  private static List<EvaluationCriterion> journeyDefaultAutoTargetCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
@@ -194,6 +199,11 @@ public class Deployment
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
+  public static boolean getJourneyDefaultAutoTarget() { return journeyDefaultAutoTarget; }
+  public static int getJourneyDefaultAutoTargetWindowDuration() { return journeyDefaultAutoTargetWindowDuration; }
+  public static String getJourneyDefaultAutoTargetWindowUnit() { return journeyDefaultAutoTargetWindowUnit; }
+  public static boolean getJourneyDefaultAutoTargetWindowRoundUp() { return journeyDefaultAutoTargetWindowRoundUp; }
+  public static List<EvaluationCriterion> getJourneyDefaultAutoTargetCriteria() { return journeyDefaultAutoTargetCriteria; }
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
@@ -1079,6 +1089,50 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  journeyDefaultAutoTarget
+    //
+
+    journeyDefaultAutoTarget = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultAutoTarget", Boolean.FALSE);
+
+    //
+    //  journeyDefaultAutoTargetWindowDuration
+    //
+
+    journeyDefaultAutoTargetWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "journeyDefaultAutoTargetWindowDuration", 3);
+
+    //
+    //  journeyDefaultAutoTargetWindowUnit
+    //
+
+    journeyDefaultAutoTargetWindowUnit = JSONUtilities.decodeString(jsonRoot, "journeyDefaultAutoTargetWindowUnit", "month");
+
+    //
+    //  journeyDefaultAutoTargetWindowRoundUp
+    //
+
+    journeyDefaultAutoTargetWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultAutoTargetWindowRoundUp", Boolean.FALSE);
+    
+    //
+    //  journeyDefaultAutoTargetCriteria
+    //
+
+    try
+      {
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyDefaultAutoTargetCriteria", false);
+        if (evaluationCriterionValues == null) evaluationCriterionValues = new JSONArray();
+        for (int i=0; i<evaluationCriterionValues.size(); i++)
+          {
+            JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
+            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
+            journeyDefaultAutoTargetCriteria.add(evaluationCriterion);
+          }
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  nodeTypes
     //
