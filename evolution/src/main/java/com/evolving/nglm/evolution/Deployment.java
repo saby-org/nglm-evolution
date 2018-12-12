@@ -82,8 +82,8 @@ public class Deployment
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialDeliverablesJSONArray = null;
-  private static JSONArray fulfillmentProvidersJSONArray = null;
-  private static JSONArray paymentMeansJSONArray = null;
+  private static Map<String,FulfillmentProvider> fulfillmentProviders = new LinkedHashMap<String,FulfillmentProvider>();
+  private static Map<String,PaymentInstrument> paymentMeans = new LinkedHashMap<String,PaymentInstrument>();
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -187,8 +187,8 @@ public class Deployment
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
-  public static JSONArray getFulfillmentProvidersJSONArray() { return fulfillmentProvidersJSONArray; }
-  public static JSONArray getPaymentMeansJSONArray() { return paymentMeansJSONArray; }
+  public static Map<String,FulfillmentProvider> getFulfillmentProviders() { return fulfillmentProviders; }
+  public static Map<String,PaymentInstrument> getPaymentMeans() { return paymentMeans; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
@@ -884,17 +884,43 @@ public class Deployment
     initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", true);
     
     //
-    //  fulfillmentProvidersJSONArray
+    //  fulfillmentProviders
     //
 
-    fulfillmentProvidersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", true);
+    try
+      {
+        JSONArray fulfillmentProviderValues = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", true);
+        for (int i=0; i<fulfillmentProviderValues.size(); i++)
+          {
+            JSONObject fulfillmentProviderJSON = (JSONObject) fulfillmentProviderValues.get(i);
+            FulfillmentProvider fulfillmentProvider = new FulfillmentProvider(fulfillmentProviderJSON);
+            fulfillmentProviders.put(fulfillmentProvider.getID(), fulfillmentProvider);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
     
     //
-    //  paymentMeansJSONArray
+    //  paymentMeans
     //
 
-    paymentMeansJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "paymentMeans", true);
-    
+    try
+      {
+        JSONArray paymentInstrumentValues = JSONUtilities.decodeJSONArray(jsonRoot, "paymentMeans", true);
+        for (int i=0; i<paymentInstrumentValues.size(); i++)
+          {
+            JSONObject paymentInstrumentJSON = (JSONObject) paymentInstrumentValues.get(i);
+            PaymentInstrument paymentInstrument = new PaymentInstrument(paymentInstrumentJSON);
+            paymentMeans.put(paymentInstrument.getID(), paymentInstrument);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  salesChannels
     //

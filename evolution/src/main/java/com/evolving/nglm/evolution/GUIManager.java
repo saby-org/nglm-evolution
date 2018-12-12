@@ -2851,20 +2851,6 @@ public class GUIManager
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
-        case "ratePlans":
-          List<String> ratePlans = new ArrayList<String>();
-          ratePlans.add("tariff001");
-          ratePlans.add("tariff002");
-          ratePlans.add("tariff003");
-          for (String ratePlan : ratePlans)
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", ratePlan);
-              availableValue.put("display", ratePlan + " (display)");
-              result.add(JSONUtilities.encodeObject(availableValue));              
-            }
-          break;
-
         case "supportedLanguages":
           for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
             {
@@ -2896,6 +2882,16 @@ public class GUIManager
               HashMap<String,Object> availableValue = new HashMap<String,Object>();
               availableValue.put("id", evolutionEngineEventDeclaration.getName());
               availableValue.put("display", evolutionEngineEventDeclaration.getName());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "paymentMeans":
+          for (PaymentInstrument paymentInstrument : Deployment.getPaymentMeans().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", paymentInstrument.getID());
+              availableValue.put("display", paymentInstrument.getDisplay());
               result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
@@ -7001,12 +6997,11 @@ public class GUIManager
     *
     *****************************************/
     
-    JSONArray fulfillmentProviders = Deployment.getFulfillmentProvidersJSONArray();
-    ArrayList<JSONObject> fulfillmentProvidersList = new ArrayList<>();
-    for (int i=0; i<fulfillmentProviders.size(); i++)
+    List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
+    for (FulfillmentProvider fulfillmentProvider : Deployment.getFulfillmentProviders().values())
       {
-        JSONObject fulfillmentProvider = (JSONObject) fulfillmentProviders.get(i);
-        fulfillmentProvidersList.add(fulfillmentProvider);
+        JSONObject fulfillmentProviderJSON = fulfillmentProvider.getJSONRepresentation();
+        fulfillmentProviders.add(fulfillmentProviderJSON);
       }
 
     /*****************************************
@@ -7017,7 +7012,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProvidersList));
+    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProviders));
     return JSONUtilities.encodeObject(response);
   }  
   
@@ -7035,12 +7030,11 @@ public class GUIManager
     *
     *****************************************/
     
-    JSONArray paymentMeans = Deployment.getPaymentMeansJSONArray();
-    ArrayList<JSONObject> paymentMeanList = new ArrayList<>();
-    for (int i=0; i<paymentMeans.size(); i++)
+    List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
+    for (PaymentInstrument paymentInstrument : Deployment.getPaymentMeans().values())
       {
-        JSONObject paymentMean = (JSONObject) paymentMeans.get(i);
-        paymentMeanList.add(paymentMean);
+        JSONObject paymentInstrumentJSON = paymentInstrument.getJSONRepresentation();
+        paymentMeans.add(paymentInstrumentJSON);
       }
 
     /*****************************************
@@ -7051,7 +7045,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeanList));
+    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeans));
     return JSONUtilities.encodeObject(response);
   }
 
