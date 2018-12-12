@@ -6,28 +6,26 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-
-import com.evolving.nglm.core.JSONUtilities;
 import org.json.simple.JSONObject;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
 public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput
 {
@@ -58,6 +56,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("deliveryType", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -109,6 +108,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private String deliveryType;
   private DeliveryStatus deliveryStatus;
   private Date deliveryDate;
+  private Map<String, String> diplomaticBriefcase;
 
   /*****************************************
   *
@@ -128,6 +128,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public DeliveryStatus getDeliveryStatus() { return deliveryStatus; }
   public Date getDeliveryDate() { return deliveryDate; }
   public Date getEventDate() { return deliveryDate; }
+  public Map<String, String> getDiplomaticBriefcase() {return diplomaticBriefcase;}
 
   //
   //  setters
@@ -140,6 +141,13 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
+  public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) {
+    if(diplomaticBriefcase == null){
+      this.diplomaticBriefcase = new HashMap<String, String>();
+    }else{
+      this.diplomaticBriefcase = diplomaticBriefcase; 
+    }
+  }
 
   /*****************************************
   *
@@ -176,6 +184,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
+    this.diplomaticBriefcase = new HashMap<String, String>();
   }
 
   /*****************************************
@@ -197,6 +206,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryType = deliveryRequest.getDeliveryType();
     this.deliveryStatus = deliveryRequest.getDeliveryStatus();
     this.deliveryDate = deliveryRequest.getDeliveryDate();
+    this.diplomaticBriefcase = deliveryRequest.getDiplomaticBriefcase();
   }
 
   /*****************************************
@@ -224,7 +234,19 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
+    this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
   }
+
+//private HashMap<String, Object> decodeDiplomaticBriefcase(JSONObject jsonRoot){
+//HashMap<String, Object> result = new HashMap<String, Object>();
+//for (Object keyObject : jsonRoot.keySet())
+//  {
+//    String key = (String)keyObject;
+//    Object value = (String)jsonRoot.get(key);
+//    result.put(key, value);
+//  }
+//return result;
+//}
 
   /*****************************************
   *
@@ -245,6 +267,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryType", deliveryRequest.getDeliveryType());
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate());
+    struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
   }
 
   /*****************************************
@@ -279,6 +302,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     String deliveryType = valueStruct.getString("deliveryType");
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
     Date deliveryDate = (Date) valueStruct.get("deliveryDate");
+    Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");;
 
     //
     //  return
@@ -295,7 +319,34 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryType = deliveryType;
     this.deliveryStatus = deliveryStatus;
     this.deliveryDate = deliveryDate;
+    this.diplomaticBriefcase = diplomaticBriefcase;
   }
+
+//  /*****************************************
+//  *
+//  *  toJSONObject
+//  *
+//  *****************************************/
+//  
+//  public JSONObject getJSONRepresentation(){
+//    Map<String, Object> data = new HashMap<String, Object>();
+//    
+//    //DeliveryRequest fields
+//    data.put("deliveryRequestID", this.getDeliveryRequestID());
+//    data.put("deliveryRequestSource", this.getDeliveryRequestSource());
+//    data.put("subscriberID", this.getSubscriberID());
+//    data.put("deliveryPartition", this.getDeliveryPartition());
+//    data.put("retries", this.getRetries());
+//    data.put("timeout", this.getTimeout());
+//    data.put("correlator", this.getCorrelator());
+//    data.put("control", this.getControl());
+//    data.put("deliveryType", this.getDeliveryType());
+//    data.put("deliveryStatus", this.getDeliveryStatus().toString());
+//    data.put("deliveryDate", this.getDeliveryDate());
+//    data.put("diplomaticBriefcase", this.getDiplomaticBriefcase());
+//    
+//    return JSONUtilities.encodeObject(data);
+//  }
 
   /*****************************************
   *
@@ -317,6 +368,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append("," + deliveryType);
     b.append("," + deliveryStatus);
     b.append("," + deliveryDate);
+    b.append("," + diplomaticBriefcase);
     return b.toString();
   }
 

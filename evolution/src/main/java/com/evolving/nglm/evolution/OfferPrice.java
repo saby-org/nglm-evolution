@@ -82,6 +82,19 @@ public class OfferPrice
     
   /*****************************************
   *
+  *  constructor -- ObjectMapper
+  *
+  *****************************************/
+
+  public OfferPrice()
+  {
+    //
+    //  empty constructor for ObjectMapper
+    //
+  }
+  
+  /*****************************************
+  *
   *  constructor -- unpack
   *
   *****************************************/
