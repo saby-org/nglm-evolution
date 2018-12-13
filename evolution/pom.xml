@@ -49,7 +49,7 @@
     <gui-csr.version>1.0.7</gui-csr.version>
     <gui-itm.version>1.0.7</gui-itm.version>
     <gui-jmr.version>1.0.7</gui-jmr.version>
-    <gui-opc.version>1.0.7</gui-opc.version>
+    <gui-opc.version>1.0.8</gui-opc.version>
 
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>

@@ -9,6 +9,7 @@ itm-api-<_KEY_>:
     ItmSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
     ItmSettings__DefaultApplicationUsingTriggers: 'ICDP'
     ItmSettings__TriggerNameStartWith : ''
+    TZ: <_DEPLOYMENT_TIMEZONE_>
     ITM_API_PORT: <_PORT_>
   volumes:
     - type: bind
