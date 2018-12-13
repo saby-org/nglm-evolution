@@ -66,11 +66,11 @@ public class DeliverableSource
     schemaBuilder.name("deliverablesource");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
-    schemaBuilder.field("display", Schema.STRING_SCHEMA);
+    schemaBuilder.field("display", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("valid", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("effectiveStartDate", Schema.STRING_SCHEMA);
-    schemaBuilder.field("effectiveEndDate", Schema.STRING_SCHEMA);
+    schemaBuilder.field("effectiveStartDate", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("effectiveEndDate", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schema = schemaBuilder.build();
@@ -160,11 +160,11 @@ public class DeliverableSource
   {
     this.id = null;
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
+    this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
     this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", true);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", true);
-    this.effectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
-    this.effectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
+    this.effectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false);
+    this.effectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false);
     this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, "fulfillmentProviderID", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
   }
@@ -244,50 +244,5 @@ public class DeliverableSource
     //
 
     return new DeliverableSource(name, display, valid, active, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, unitaryCost);
-  }
-  
-  /*****************************************
-  *
-  *  parseDateField
-  *
-  *****************************************/
-
-  protected Date parseDateField(String stringDate) throws JSONUtilitiesException
-  {
-    Date result = null;
-    try
-      {
-        if (stringDate != null && stringDate.trim().length() > 0)
-          {
-            synchronized (standardDateFormat)
-              {
-                result = standardDateFormat.parse(stringDate.trim());
-              }
-          }
-      }
-    catch (ParseException e)
-      {
-        throw new JSONUtilitiesException("parseDateField", e);
-      }
-    return result;
-  }
-  
-  /*****************************************
-  *
-  *  formatDateField
-  *
-  *****************************************/
-
-  protected static String formatDateField(Date date)
-  {
-    String result = null;
-    if (date != null)
-      {
-        synchronized (standardDateFormat)
-          {
-            result = standardDateFormat.format(date);
-          }
-      }
-    return result;
   }
 }
