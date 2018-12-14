@@ -71,8 +71,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("moduleID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("featureID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("deliveryPartition", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("retries", Schema.INT32_SCHEMA);
     schemaBuilder.field("timeout", Timestamp.builder().optional().schema());
@@ -204,7 +204,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = context.getUniqueKey();
     this.deliveryRequestSource = deliveryRequestSource;
     this.subscriberID = context.getSubscriberState().getSubscriberID();
-    this.eventID = context.getUniqueKey();
+    this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
     this.deliveryPartition = null;
