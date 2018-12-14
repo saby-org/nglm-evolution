@@ -136,7 +136,7 @@ public class DeliverableSource
     deliverableJSON.put("valid", valid);
     deliverableJSON.put("active", active);
     deliverableJSON.put("effectiveStartDate", effectiveStartDate);
-    deliverableJSON.put("effectiveEndDate", effectiveStartDate);
+    deliverableJSON.put("effectiveEndDate", effectiveEndDate);
     deliverableJSON.put("fulfillmentProviderID", fulfillmentProviderID);
     deliverableJSON.put("unitaryCost", new Integer(unitaryCost));
     return JSONUtilities.encodeObject(deliverableJSON);
