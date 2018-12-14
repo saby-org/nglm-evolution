@@ -29,6 +29,28 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
 public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput
 {
+  
+  /*****************************************
+  *
+  *  enum - module
+  *
+  *****************************************/
+  
+  public enum Module{
+    Campaign_Manager(1),
+    Journey_Manager(2),
+    Offer_Catalog(3),
+    Delivery_Manager(4),
+    Customer_Care(5),
+    REST_API(6),
+    Unknown(999);
+    private Integer externalRepresentation;
+    private Module(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public Integer getExternalRepresentation() { return externalRepresentation; }
+    public static Module fromModuleId(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    
+  }
+  
   /*****************************************
   *
   *  schema/serde
@@ -48,6 +70,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("moduleID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("featureID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryPartition", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("retries", Schema.INT32_SCHEMA);
     schemaBuilder.field("timeout", Timestamp.builder().optional().schema());
@@ -100,6 +125,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private String deliveryRequestID;
   private String deliveryRequestSource;
   private String subscriberID;
+  private String eventID;
+  private String moduleID;
+  private String featureID;
   private Integer deliveryPartition;
   private int retries;
   private Date timeout;
@@ -119,6 +147,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public String getDeliveryRequestID() { return deliveryRequestID; }
   public String getDeliveryRequestSource() { return deliveryRequestSource; }
   public String getSubscriberID() { return subscriberID; }
+  public String getEventID() { return eventID; }
+  public String getModuleID() { return moduleID; }
+  public String getFeatureID() { return featureID; }
   public Integer getDeliveryPartition() { return deliveryPartition; }
   public int getRetries() { return retries; }
   public Date getTimeout() { return timeout; }
@@ -141,14 +172,11 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
-  public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) {
-    if(diplomaticBriefcase == null){
-      this.diplomaticBriefcase = new HashMap<String, String>();
-    }else{
-      this.diplomaticBriefcase = diplomaticBriefcase; 
-    }
-  }
-
+  public void setEventID(String eventID) { this.eventID = eventID; }
+  public void setFeatureID(String featureID) { this.featureID = featureID; }
+  public void setModuleID(String moduleID) { this.moduleID = moduleID; }
+  public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) { this.diplomaticBriefcase = (diplomaticBriefcase != null) ? diplomaticBriefcase : new HashMap<String,String>(); }
+  
   /*****************************************
   *
   *  abstract
@@ -176,6 +204,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = context.getUniqueKey();
     this.deliveryRequestSource = deliveryRequestSource;
     this.subscriberID = context.getSubscriberState().getSubscriberID();
+    this.eventID = context.getUniqueKey();
+    this.moduleID = null;
+    this.featureID = null;
     this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
@@ -198,6 +229,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = deliveryRequest.getDeliveryRequestID();
     this.deliveryRequestSource = deliveryRequest.getDeliveryRequestSource();
     this.subscriberID = deliveryRequest.getSubscriberID();
+    this.eventID = deliveryRequest.getEventID();
+    this.moduleID = deliveryRequest.getModuleID();
+    this.featureID = deliveryRequest.getFeatureID();
     this.deliveryPartition = deliveryRequest.getDeliveryPartition();
     this.retries = deliveryRequest.getRetries();
     this.timeout = deliveryRequest.getTimeout();
@@ -226,6 +260,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+    this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
+    this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
+    this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
     this.deliveryPartition = null;
     this.retries = 0;
     this.timeout = null;
@@ -259,6 +296,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryRequestID", deliveryRequest.getDeliveryRequestID());
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
+    struct.put("eventID", deliveryRequest.getEventID());
+    struct.put("moduleID", deliveryRequest.getModuleID());
+    struct.put("featureID", deliveryRequest.getFeatureID());
     struct.put("deliveryPartition", deliveryRequest.getDeliveryPartition()); 
     struct.put("retries", deliveryRequest.getRetries()); 
     struct.put("timeout", deliveryRequest.getTimeout()); 
@@ -294,6 +334,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
     String subscriberID = valueStruct.getString("subscriberID");
+    String eventID = valueStruct.getString("eventID");
+    String moduleID = valueStruct.getString("moduleID");
+    String featureID = valueStruct.getString("featureID");
     Integer deliveryPartition = valueStruct.getInt32("deliveryPartition");
     int retries = valueStruct.getInt32("retries");
     Date timeout = (Date) valueStruct.get("timeout");
@@ -311,6 +354,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = deliveryRequestID;
     this.deliveryRequestSource = deliveryRequestSource;
     this.subscriberID = subscriberID;
+    this.eventID = eventID;
+    this.moduleID = moduleID;
+    this.featureID = featureID;
     this.deliveryPartition = deliveryPartition;
     this.retries = retries;
     this.timeout = timeout;
@@ -360,6 +406,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append(deliveryRequestID);
     b.append("," + deliveryRequestSource);
     b.append("," + subscriberID);
+    b.append("," + eventID);
+    b.append("," + moduleID);
+    b.append("," + featureID);
     b.append("," + deliveryPartition);
     b.append("," + retries);
     b.append("," + timeout);
