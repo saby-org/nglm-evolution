@@ -4,6 +4,10 @@
   #
   #################################################################################
 
+  #
+  #  create topics -- evolution
+  #
+  
   echo "Creating topics (evolution)"
   create_topic ${topic.empty}                                                    $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   
   create_topic ${topic.journey}                                                  $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   
@@ -31,3 +35,12 @@
   wait
   echo "Created topics (evolution)"
 
+  #
+  #  register schemas - evolution
+  #
+  
+  echo "Registering schemas (evolution)"
+  curl -X POST -H "Content-Type: application/json" -d '{"schema":"{\"type\":\"record\",\"name\":\"deliverablesource\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"display\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"valid\",\"type\":\"boolean\"},{\"name\":\"active\",\"type\":\"boolean\"},{\"name\":\"effectiveStartDate\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"effectiveEndDate\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"fulfillmentProviderID\",\"type\":\"string\"},{\"name\":\"unitaryCost\",\"type\":\"int\"}],\"connect.version\":1,\"connect.name\":\"deliverablesource\"}"}' $MASTER_REGISTRY_URL/subjects/${topic.deliverable.source}-value/versions; echo
+  echo "Registered schemas (evolution)"
+
+  
