@@ -19,6 +19,7 @@ import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -73,6 +74,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
    
 public class GUIManager
 {
@@ -182,6 +184,7 @@ public class GUIManager
     getPaymentMeans("getPaymentMeans"),
     getDashboardCounts("getDashboardCounts"),
     getCustomer("getCustomer"),
+    getCustomerActivityByDateRange("getCustomerActivityByDateRange"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -231,7 +234,7 @@ public class GUIManager
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private DeliverableSourceService deliverableSourceService;
-  private String subscriberTraceControlAlternateID;
+  private String getCustomerAlternateID;
 
   /*****************************************
   *
@@ -289,7 +292,7 @@ public class GUIManager
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
-    subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
+    getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
     
     //
     //  log
@@ -600,6 +603,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.createContext("/nglm-guimanager/getCustomer", new APIHandler(API.getCustomer));
+        restServer.createContext("/nglm-guimanager/getCustomerActivityByDateRange", new APIHandler(API.getCustomerActivityByDateRange));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1190,6 +1194,10 @@ public class GUIManager
                 
                case getCustomer:
                  jsonResponse = processGetCustomer(userID, jsonRoot);
+                 break;
+                 
+               case getCustomerActivityByDateRange:
+                 jsonResponse = processGetCustomerActivityByDateRange(userID, jsonRoot);
                  break;
               }
           }
@@ -7104,7 +7112,7 @@ public class GUIManager
     String subscriberID = resolveSubscriberID(customerID);
     if (subscriberID == null)
       {
-        log.info("unable to resolve SubscriberID for subscriberTraceControlAlternateID {} and customerID ", subscriberTraceControlAlternateID, customerID);
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
         response.put("responseCode", "CustomerNotFound");
       }
 
@@ -7144,6 +7152,136 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+  *
+  *  processGetCustomerActivityByDateRange
+   * @throws GUIManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerActivityByDateRange(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String fromDateReq = JSONUtilities.decodeString(jsonRoot, "fromDate", false);
+    String toDateReq = JSONUtilities.decodeString(jsonRoot, "toDate", false);
+    
+    //
+    // yyyy-MM-dd -- date format
+    //
+    
+    String dateFormat = "yyyy-MM-dd";
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+        {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          if (null == baseSubscriberProfile)
+            {
+              response.put("responseCode", "CustomerNotFound");
+              log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+            }
+          else
+            {
+              List<JSONObject> deliveryRequestsJson = new ArrayList<JSONObject>();
+              SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+              if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                {
+                  List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+                  
+                  //
+                  // prepare dates
+                  //
+                  
+                  Date fromDate = null;
+                  Date toDate = null;
+                  Date now = SystemTime.getCurrentTime();
+                  
+                  if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty()) 
+                    {
+                      toDate = now;
+                      fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
+                    }
+                  else if (toDateReq == null || toDateReq.isEmpty())
+                    {
+                      toDate = now;
+                      fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getBaseTimeZone());
+                    }
+                  else 
+                    {
+                      toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
+                    }
+                  
+                  //
+                  // filter
+                  //
+                  
+                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                  for (DeliveryRequest activity : activities) 
+                    {
+                      if ( (activity.getEventDate().before(toDate) && activity.getEventDate().after(fromDate)) || (activity.getEventDate().equals(toDate) || activity.getEventDate().equals(fromDate)) ) 
+                        {
+                          result.add(activity);
+                        }
+                    }
+                  
+                  //
+                  // prepare json
+                  //
+                  
+                  deliveryRequestsJson = result.stream().map(deliveryRequest -> deliveryRequest.getJSONForGUIPresentation()).collect(Collectors.toList());
+                }
+              
+              //
+              // prepare response
+              //
+              
+              response.put("activities", JSONUtilities.encodeArray(deliveryRequestsJson));
+              response.put("responseCode", "ok");
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          throw new GUIManagerException(e);
+        }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /****************************************
   *
   *  resolveSubscriberID
@@ -7155,7 +7293,7 @@ public class GUIManager
     String result = null;
     try
       {
-        result = subscriberIDService.getSubscriberID(subscriberTraceControlAlternateID, customerID);
+        result = subscriberIDService.getSubscriberID(getCustomerAlternateID, customerID);
       }
     catch (SubscriberIDServiceException e)
       {

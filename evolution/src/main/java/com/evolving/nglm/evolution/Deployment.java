@@ -38,6 +38,7 @@ public class Deployment
   *****************************************/
 
   private static String subscriberGroupLoaderAlternateID;
+  private static String getCustomerAlternateID;
   private static boolean subscriberGroupLoaderAutoProvision;
   private static String criterionFieldRetrieverClassName;
   private static String evolutionEngineExtensionClassName;
@@ -143,6 +144,7 @@ public class Deployment
 
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
+  public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
   public static String getCriterionFieldRetrieverClassName() { return criterionFieldRetrieverClassName; }
   public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
@@ -322,7 +324,21 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+    
+    //
+    //  getCustomerAlternateID
+    //
 
+    try
+      {
+        getCustomerAlternateID = JSONUtilities.decodeString(jsonRoot, "getCustomerAlternateID", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    
     //
     //  subscriberGroupLoaderAutoProvision
     //

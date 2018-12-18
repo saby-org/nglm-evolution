@@ -89,7 +89,7 @@ public class ThirdPartyManager
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
-  private String subscriberTraceControlAlternateID;
+  private String getCustomerAlternateID;
   
   /*****************************************
   *
@@ -174,7 +174,7 @@ public class ThirdPartyManager
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
-    subscriberTraceControlAlternateID = Deployment.getSubscriberTraceControlAlternateID();
+    getCustomerAlternateID = Deployment.getSubscriberTraceControlAlternateID();
     
     //
     //  log
@@ -684,7 +684,7 @@ public class ThirdPartyManager
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
-        log.warn("unable to resolve SubscriberID for subscriberTraceControlAlternateID {} and customerID ",subscriberTraceControlAlternateID, customerID);
+        log.warn("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ",getCustomerAlternateID, customerID);
       }
     else
       {
@@ -1180,7 +1180,7 @@ public class ThirdPartyManager
     String result = null;
     try
       {
-        result = subscriberIDService.getSubscriberID(subscriberTraceControlAlternateID, customerID);
+        result = subscriberIDService.getSubscriberID(getCustomerAlternateID, customerID);
       } catch (SubscriberIDServiceException e)
       {
         log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());

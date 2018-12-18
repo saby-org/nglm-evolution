@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -21,6 +22,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
@@ -186,6 +188,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap);
 
   /*****************************************
   *
@@ -393,6 +396,22 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 //    
 //    return JSONUtilities.encodeObject(data);
 //  }
+  
+  /****************************************
+  *
+  *  presentation utilities
+  *
+  ****************************************/
+  
+  public JSONObject getJSONForGUIPresentation()
+  {
+    HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
+    guiPresentationMap.put("deliveryRequestID", getDeliveryRequestID());
+    guiPresentationMap.put("eventDate", getEventDate());
+    guiPresentationMap.put("action", getDeliveryStatus());
+    addFieldsForGUIPresentation(guiPresentationMap);
+    return JSONUtilities.encodeObject(guiPresentationMap);
+  }
 
   /*****************************************
   *
