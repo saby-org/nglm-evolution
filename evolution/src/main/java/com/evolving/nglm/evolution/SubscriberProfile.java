@@ -21,6 +21,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONObject;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -204,8 +205,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
   
-  protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation);
-  protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation);
+  protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation, List<JSONObject> kpiPresentation);
+  protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation, List<JSONObject> kpiPresentation);
 
   /****************************************
   *
@@ -252,15 +253,46 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Map<String, Object> getProfileMapForGUIPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
-    baseProfilePresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    baseProfilePresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
-    baseProfilePresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
+    List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
+    
+    //
+    // prepare basic generalDetails
+    //
+    
+    generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
     List<String> subscriberGroupList = new ArrayList<String>();
     subscriberGroupList.addAll(subscriberGroups);
-    baseProfilePresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
-    baseProfilePresentation.put("language", getLanguage());
-    addProfileFieldsForGUIPresentation(baseProfilePresentation);
+    generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
+    generalDetailsPresentation.put("language", getLanguage());
+    
+    //
+    // prepare basic kpiPresentation (if any)
+    //
+    
+    //
+    // prepare subscriber communicationChannels : TODO
+    //
+    
+    List<Object> communicationChannels = new ArrayList<Object>();
+    
+    //
+    // prepare custom generalDetails and kpiPresentation
+    //
+    
+    addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
+    
+    //
+    // prepare ProfilePresentation
+    //
+    
+    baseProfilePresentation.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
+    baseProfilePresentation.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
+    baseProfilePresentation.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
+    
     return baseProfilePresentation;
   }
   
@@ -270,16 +302,47 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   
   public Map<String,Object> getProfileMapForThirdPartyPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    HashMap<String,Object> baseProfilePresentation = new HashMap<String,Object>();
-    baseProfilePresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    baseProfilePresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
-    baseProfilePresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
+    HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
+    List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
+    
+    //
+    // prepare basic generalDetails
+    //
+    
+    generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
     List<String> subscriberGroupList = new ArrayList<String>();
     subscriberGroupList.addAll(subscriberGroups);
-    baseProfilePresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
-    baseProfilePresentation.put("language", getLanguage());
-    addProfileFieldsForThirdPartyPresentation(baseProfilePresentation);
+    generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
+    generalDetailsPresentation.put("language", getLanguage());
+    
+    //
+    // prepare basic kpiPresentation (if any)
+    //
+    
+    //
+    // prepare subscriber communicationChannels : TODO
+    //
+    
+    List<Object> communicationChannels = new ArrayList<Object>();
+    
+    //
+    // prepare custom generalDetails and kpiPresentation
+    //
+    
+    addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
+    
+    //
+    // prepare ProfilePresentation
+    //
+    
+    baseProfilePresentation.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
+    baseProfilePresentation.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
+    baseProfilePresentation.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
+    
     return baseProfilePresentation;
   }
   

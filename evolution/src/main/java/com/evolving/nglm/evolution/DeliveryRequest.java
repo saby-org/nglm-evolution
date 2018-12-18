@@ -408,7 +408,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
     guiPresentationMap.put("deliveryRequestID", getDeliveryRequestID());
     guiPresentationMap.put("eventDate", getEventDate());
-    guiPresentationMap.put("action", getDeliveryStatus());
+    guiPresentationMap.put("action", getDeliveryStatus().getExternalRepresentation());
     addFieldsForGUIPresentation(guiPresentationMap);
     return JSONUtilities.encodeObject(guiPresentationMap);
   }
