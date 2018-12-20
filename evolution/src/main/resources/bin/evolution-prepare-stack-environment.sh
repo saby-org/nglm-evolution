@@ -421,6 +421,127 @@ export GUI_OPC_API_SERVER_HOST_EXTERNAL_IP
 export GUI_OPC_API_SERVER_PORT
 
 #
+#  GUI IAR WEB -- configuration
+#
+
+GUI_IAR_WEB_SERVER=
+GUI_IAR_WEB_SERVER_HOST=
+GUI_IAR_WEB_SERVER_HOST_IP=
+GUI_IAR_WEB_SERVER_HOST_EXTERNAL_IP=
+GUI_IAR_WEB_SERVER_PORT=
+for TUPLE in $GUI_IAR_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$GUI_IAR_WEB_SERVER" ]; then
+     GUI_IAR_WEB_SERVER="$HOST:$PORT"
+     GUI_IAR_WEB_SERVER_HOST="$HOST"
+     GUI_IAR_WEB_SERVER_HOST_IP="$HOST_IP"
+     GUI_IAR_WEB_SERVER_HOST_EXTERNAL_IP="$HOST_EXTERNAL_IP"
+     GUI_IAR_WEB_SERVER_PORT="$PORT"
+   fi
+done
+export GUI_IAR_WEB_SERVER
+export GUI_IAR_WEB_SERVER_HOST
+export GUI_IAR_WEB_SERVER_HOST_IP
+export GUI_IAR_WEB_SERVER_HOST_EXTERNAL_IP
+export GUI_IAR_WEB_SERVER_PORT
+
+#
+#  GUI IAR API -- configuration
+#
+
+GUI_IAR_API_SERVER=
+GUI_IAR_API_SERVER_HOST=
+GUI_IAR_API_SERVER_HOST_IP=
+GUI_IAR_API_SERVER_HOST_EXTERNAL_IP=
+GUI_IAR_API_SERVER_PORT=
+for TUPLE in $GUI_IAR_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$GUI_IAR_API_SERVER" ]; then
+     GUI_IAR_API_SERVER="$HOST:$PORT"
+     GUI_IAR_API_SERVER_HOST="$HOST"
+     GUI_IAR_API_SERVER_HOST_IP="$HOST_IP"
+     GUI_IAR_API_SERVER_HOST_EXTERNAL_IP="$HOST_EXTERNAL_IP"
+     GUI_IAR_API_SERVER_PORT="$PORT"
+   fi
+done
+export GUI_IAR_API_SERVER
+export GUI_IAR_API_SERVER_HOST
+export GUI_IAR_API_SERVER_HOST_IP
+export GUI_IAR_API_SERVER_HOST_EXTERNAL_IP
+export GUI_IAR_API_SERVER_PORT
+
+
+#
+#  GUI OPR WEB -- configuration
+#
+
+GUI_OPR_WEB_SERVER=
+GUI_OPR_WEB_SERVER_HOST=
+GUI_OPR_WEB_SERVER_HOST_IP=
+GUI_OPR_WEB_SERVER_HOST_EXTERNAL_IP=
+GUI_OPR_WEB_SERVER_PORT=
+for TUPLE in $GUI_OPR_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$GUI_OPR_WEB_SERVER" ]; then
+     GUI_OPR_WEB_SERVER="$HOST:$PORT"
+     GUI_OPR_WEB_SERVER_HOST="$HOST"
+     GUI_OPR_WEB_SERVER_HOST_IP="$HOST_IP"
+     GUI_OPR_WEB_SERVER_HOST_EXTERNAL_IP="$HOST_EXTERNAL_IP"
+     GUI_OPR_WEB_SERVER_PORT="$PORT"
+   fi
+done
+export GUI_OPR_WEB_SERVER
+export GUI_OPR_WEB_SERVER_HOST
+export GUI_OPR_WEB_SERVER_HOST_IP
+export GUI_OPR_WEB_SERVER_HOST_EXTERNAL_IP
+export GUI_OPR_WEB_SERVER_PORT
+
+#
+#  GUI OPR API -- configuration
+#
+
+GUI_OPR_API_SERVER=
+GUI_OPR_API_SERVER_HOST=
+GUI_OPR_API_SERVER_HOST_IP=
+GUI_OPR_API_SERVER_HOST_EXTERNAL_IP=
+GUI_OPR_API_SERVER_PORT=
+for TUPLE in $GUI_OPR_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$GUI_OPR_API_SERVER" ]; then
+     GUI_OPR_API_SERVER="$HOST:$PORT"
+     GUI_OPR_API_SERVER_HOST="$HOST"
+     GUI_OPR_API_SERVER_HOST_IP="$HOST_IP"
+     GUI_OPR_API_SERVER_HOST_EXTERNAL_IP="$HOST_EXTERNAL_IP"
+     GUI_OPR_API_SERVER_PORT="$PORT"
+   fi
+done
+export GUI_OPR_API_SERVER
+export GUI_OPR_API_SERVER_HOST
+export GUI_OPR_API_SERVER_HOST_IP
+export GUI_OPR_API_SERVER_HOST_EXTERNAL_IP
+export GUI_OPR_API_SERVER_PORT
+
+#
 #  thirdpartymanager -- configuration
 #
 

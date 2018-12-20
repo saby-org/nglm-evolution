@@ -325,6 +325,65 @@ do
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
 
+#
+#  iar-web
+#
+
+for TUPLE in $GUI_IAR_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/iar-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  iar-api
+#
+
+for TUPLE in $GUI_IAR_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/iar-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  opr-web
+#
+
+for TUPLE in $GUI_OPR_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/opr-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  opr-api
+#
+
+for TUPLE in $GUI_OPR_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/opr-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
 
 #
 #  postamble

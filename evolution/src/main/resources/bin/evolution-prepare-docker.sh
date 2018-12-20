@@ -25,6 +25,10 @@ do
       docker pull evolving/jmr.web:${gui-jmr.version}
       docker pull evolving/opc.api:${gui-opc.version}
       docker pull evolving/opc.web:${gui-opc.version}
+      docker pull evolving/iar.api:${gui-iar.version}
+      docker pull evolving/iar.web:${gui-iar.version}
+      docker pull evolving/opr.api:${gui-opr.version}
+      docker pull evolving/opr.web:${gui-opr.version}
    " &
 done
 

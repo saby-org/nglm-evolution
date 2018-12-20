@@ -162,3 +162,29 @@ do
       mkdir -p $NGLM_GUI_RUNTIME/csr-api-$KEY/mnt
    "
 done
+
+GUI_IAR_API_CONFIGURATION=`echo $GUI_IAR_API_CONFIGURATION | sed 's/ /\n/g' | uniq`
+for TUPLE in $GUI_IAR_API_CONFIGURATION
+do
+  export KEY=`echo $TUPLE | cut -d: -f1`
+  export HOST=`echo $TUPLE | cut -d: -f2`
+  export HOST_IP=`echo $TUPLE | cut -d: -f3`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
+  ssh $HOST "
+      mkdir -p $NGLM_GUI_RUNTIME/iar-api-$KEY/mnt
+   "
+done
+
+GUI_OPR_API_CONFIGURATION=`echo $GUI_OPR_API_CONFIGURATION | sed 's/ /\n/g' | uniq`
+for TUPLE in $GUI_OPR_API_CONFIGURATION
+do
+  export KEY=`echo $TUPLE | cut -d: -f1`
+  export HOST=`echo $TUPLE | cut -d: -f2`
+  export HOST_IP=`echo $TUPLE | cut -d: -f3`
+  export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+  export PORT=`echo $TUPLE | cut -d: -f5`
+  ssh $HOST "
+      mkdir -p $NGLM_GUI_RUNTIME/opr-api-$KEY/mnt
+   "
+done

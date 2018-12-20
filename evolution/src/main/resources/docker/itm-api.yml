@@ -6,7 +6,6 @@ itm-api-<_KEY_>:
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     ItmSettings__ITMApiBaseUrl: 'http://<_TRIGGERRULEAPI_HOST_>:<_TRIGGERRULEAPI_PORT_>/nglm-triggerrule/'
-    ItmSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
     ItmSettings__DefaultApplicationUsingTriggers: 'ICDP'
     ItmSettings__TriggerNameStartWith : ''
     TZ: <_DEPLOYMENT_TIMEZONE_>
