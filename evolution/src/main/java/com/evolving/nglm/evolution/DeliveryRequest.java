@@ -34,6 +34,70 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   
   /*****************************************
   *
+  *  presentation-keys
+  *
+  *****************************************/
+  
+  //
+  // this
+  //
+  
+  public static final String DELIVERYREQUESTID = "deliveryRequestID";
+  public static final String EVENTDATETIME = "eventDatetime";
+  public static final String DELIVERYSTATUS = "deliveryStatus";
+  public static final String EVENTID = "eventID";
+  public static final String ACTIVITYTYPE = "activityType";
+  
+  //
+  // child generic
+  //
+  
+  public static final String CUSTOMERID = "customerId";
+  public static final String RETURNCODE = "returnCode";
+  public static final String RETURNCODEDETAILS = "returnCodeDetails";
+  
+  //
+  // BDRs
+  //
+  
+  public static final String PROVIDERID = "providerId";
+  public static final String DELIVERABLEID = "deliverableId";
+  public static final String DELIVERABLEQTY = "deliverableQty";
+  public static final String OPERATION = "operation";
+  public static final String MODULEID = "moduleId";
+  public static final String MODULENAME = "moduleName";
+  public static final String FEATUREID = "featureId";
+  public static final String ORIGIN = "origin";
+  
+  //
+  // ODRs
+  //
+  
+  public static final String PURCHASEID = "purchaseId";
+  public static final String OFFERID = "offerId";
+  public static final String OFFERNAME = "offerName";
+  public static final String OFFERQTY = "offerQty";
+  public static final String SALESCHANNELID = "salesChannelId";
+  public static final String SALESCHANNEL = "salesChannel";
+  public static final String SALESCHANNELS = "salesChannels";
+  public static final String OFFERPRICE = "offerPrice";
+  public static final String OFFERSTOCK = "offerStock";
+  public static final String OFFERCONTENT = "offerContent";
+  public static final String VOUCHERCODE = "voucherCode";
+  public static final String VOUCHERPARTNERID = "voucherPartnerId";
+  
+  //
+  // Messages
+  //
+  
+  public static final String NOTIFICATION_CHANNEL = "notificationChannel";
+  public static final String NOTIFICATION_SUBJECT = "subject";
+  public static final String NOTIFICATION_TEXT_BODY = "textBody";
+  public static final String NOTIFICATION_HTML_BODY = "htmlBody";
+  public static final String NOTIFICATION_RECIPIENT = "recipient";
+  
+  /*****************************************
+  *
   *  enum - module
   *
   *****************************************/
@@ -51,6 +115,23 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     public Integer getExternalRepresentation() { return externalRepresentation; }
     public static Module fromModuleId(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
     
+  }
+  
+  /*****************************************
+  *
+  *  enum - ActivityType
+  *
+  *****************************************/
+  
+  public enum ActivityType {
+    BDR(1),
+    ODR(2),
+    Messages(3),
+    Unknown(-1);
+    private Integer externalRepresentation;
+    private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public Integer getExternalRepresentation() { return externalRepresentation; }
+    public static ActivityType fromActivityTypeExternalRepresentation(Integer externalRepresentation) { for (ActivityType enumeratedValue : ActivityType.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   
   /*****************************************
@@ -189,6 +270,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
   public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap);
+  public abstract Integer getActivityType();
 
   /*****************************************
   *
@@ -403,14 +486,28 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   *
   ****************************************/
   
-  public JSONObject getJSONForGUIPresentation()
+  public Map<String, Object> getGUIPresentationMap()
   {
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
-    guiPresentationMap.put("deliveryRequestID", getDeliveryRequestID());
-    guiPresentationMap.put("eventDate", getEventDate());
-    guiPresentationMap.put("action", getDeliveryStatus().getExternalRepresentation());
+    guiPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
+    guiPresentationMap.put(EVENTID, getEventID());
+    guiPresentationMap.put(EVENTDATETIME, getEventDate());
+    guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
+    guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
     addFieldsForGUIPresentation(guiPresentationMap);
-    return JSONUtilities.encodeObject(guiPresentationMap);
+    return guiPresentationMap;
+  }
+  
+  public Map<String, Object> getThirdPartyPresentationMap()
+  {
+    HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
+    thirdPartyPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
+    thirdPartyPresentationMap.put(EVENTID, getEventID());
+    thirdPartyPresentationMap.put(EVENTDATETIME, getEventDate());
+    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
+    thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
+    addFieldsForGUIPresentation(thirdPartyPresentationMap);
+    return thirdPartyPresentationMap;
   }
 
   /*****************************************

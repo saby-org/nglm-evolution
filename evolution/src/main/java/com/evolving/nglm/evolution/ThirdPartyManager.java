@@ -17,6 +17,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -51,6 +53,7 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.sun.net.httpserver.HttpExchange;
@@ -111,6 +114,9 @@ public class ThirdPartyManager
   {
     ping,
     getCustomer,
+    getCustomerBDRs,
+    getCustomerODRs,
+    getCustomerMessages,
     getOffersList,
     getActiveOffer,
     getActiveOffers;
@@ -249,6 +255,9 @@ public class ThirdPartyManager
         restServer = HttpServer.create(addr, 0);
         restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
         restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
+        restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
+        restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
+        restServer.createContext("/nglm-thirdpartymanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
@@ -446,6 +455,15 @@ public class ThirdPartyManager
                   break;
                 case getCustomer:
                   jsonResponse = processGetCustomer(jsonRoot);
+                  break;
+                case getCustomerBDRs:
+                  jsonResponse = processGetCustomerBDRs(jsonRoot);
+                  break;
+                case getCustomerODRs:
+                  jsonResponse = processGetCustomerODRs(jsonRoot);
+                  break;
+                case getCustomerMessages:
+                  jsonResponse = processGetCustomerMessages(jsonRoot);
                   break;
                 case getOffersList:
                   jsonResponse = processGetOffersList(jsonRoot);
@@ -699,6 +717,410 @@ public class ThirdPartyManager
           else
             {
               response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetCustomerBDRs
+  * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerBDRs(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String,Object> response = new HashMap<String,Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    
+    //
+    // yyyy-MM-dd -- date format
+    //
+    
+    String dateFormat = "yyyy-MM-dd";
+    
+    if (null == customerID || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    
+    //
+    // process
+    //
+    
+    if (null == subscriberID)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        log.warn("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      }
+    else
+      {
+        try
+        {
+          
+          //
+          // include history
+          //
+          
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            }
+          else
+            {
+              
+              //
+              // read history
+              //
+              
+              SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+              List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+              if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                {
+                  List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+                  
+                  //
+                  // filter BDRs
+                  //
+                  
+                  List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList()); 
+                  
+                  //
+                  // prepare dates
+                  //
+                  
+                  Date startDate = null;
+                  Date now = SystemTime.getCurrentTime();
+                  
+                  if (startDateReq == null || startDateReq.isEmpty()) 
+                    {
+                      startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                    }
+                  else
+                    {
+                      startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                    }
+                  
+                  //
+                  // filter and prepare JSON
+                  //
+                  
+                  for (DeliveryRequest bdr : BDRs) 
+                    {
+                      if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
+                        {
+                          BDRsJson.add(JSONUtilities.encodeObject(bdr.getThirdPartyPresentationMap()));
+                        }
+                    }
+                }
+              response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetCustomerODRs
+  * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerODRs(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String,Object> response = new HashMap<String,Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    
+    //
+    // yyyy-MM-dd -- date format
+    //
+    
+    String dateFormat = "yyyy-MM-dd";
+    
+    if (null == customerID || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    
+    //
+    // process
+    //
+    
+    if (null == subscriberID)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        log.warn("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      }
+    else
+      {
+        try
+        {
+          
+          //
+          // include history
+          //
+          
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            }
+          else
+            {
+              
+              //
+              // read history
+              //
+              
+              SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+              List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
+              if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                {
+                  List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+                  
+                  //
+                  // filter ODRs
+                  //
+                  
+                  List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList()); 
+                  
+                  //
+                  // prepare dates
+                  //
+                  
+                  Date startDate = null;
+                  Date now = SystemTime.getCurrentTime();
+                  
+                  if (startDateReq == null || startDateReq.isEmpty()) 
+                    {
+                      startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                    }
+                  else
+                    {
+                      startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                    }
+                  
+                  //
+                  // filter
+                  //
+                  
+                  for (DeliveryRequest odr : ODRs) 
+                    {
+                      if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
+                        {
+                          Map<String, Object> presentationMap =  odr.getGUIPresentationMap();
+                          String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
+                          if (null != offerID)
+                            {
+                              Offer offer = (Offer) offerService.getStoredOffer(offerID);
+                              if (null != offer)
+                                {
+                                  if (offer.getOfferSalesChannelsAndPrices() != null)
+                                    {
+                                      for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                                         {
+                                           presentationMap.put(DeliveryRequest.SALESCHANNELID, channel.getSalesChannelIDs());
+                                           presentationMap.put(DeliveryRequest.OFFERPRICE, channel.getPrice().getAmount());
+                                         }
+                                    }
+                                  presentationMap.put(DeliveryRequest.OFFERNAME, offer.getGUIManagedObjectName());
+                                  presentationMap.put(DeliveryRequest.OFFERSTOCK, "");
+                                  presentationMap.put(DeliveryRequest.OFFERCONTENT, offer.getOfferProducts().toString());
+                                }
+                            }
+                          ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
+                        }
+                    }
+                }
+              response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetCustomerMessages
+  * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerMessages(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String,Object> response = new HashMap<String,Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    
+    //
+    // yyyy-MM-dd -- date format
+    //
+    
+    String dateFormat = "yyyy-MM-dd";
+    
+    if (null == customerID || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    
+    //
+    // process
+    //
+    
+    if (null == subscriberID)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        log.warn("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+      }
+    else
+      {
+        try
+        {
+          
+          //
+          // include history
+          //
+          
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            }
+          else
+            {
+              
+              //
+              // read history
+              //
+              
+              SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+              List<JSONObject> messagesJson = new ArrayList<JSONObject>();
+              if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                {
+                  List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+                  
+                  //
+                  // filter messages
+                  //
+                  
+                  List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList()); 
+                  
+                  //
+                  // prepare dates
+                  //
+                  
+                  Date startDate = null;
+                  Date now = SystemTime.getCurrentTime();
+                  
+                  if (startDateReq == null || startDateReq.isEmpty()) 
+                    {
+                      startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                    }
+                  else
+                    {
+                      startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                    }
+                  
+                  //
+                  // filter and prepare json
+                  //
+                  
+                  for (DeliveryRequest message : messages) 
+                    {
+                      if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
+                        {
+                          messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap()));
+                        }
+                    }
+                }
+              response.put("messages", JSONUtilities.encodeArray(messagesJson));
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
               response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
             }
