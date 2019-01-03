@@ -52,7 +52,53 @@
         }
     }'
   echo
-  
+
+  #
+  #  manually create propensity index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/propensity -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "6",
+              "number_of_replicas" : "1",
+              "refresh_interval" : "30s",
+              "translog" :
+                {
+                  "durability" : "async",
+                  "sync_interval" : "10s"
+                },
+              "routing" :
+                {
+                  "allocation" : { "total_shards_per_node" : 4 }
+                },
+              "merge" :
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+          "doc" :
+            {
+              "properties" :
+                {
+                  "offerID" : { "type" : "keyword" },
+                  "segment" : { "type" : "keyword" },
+                  "propensity" : { "type" : "double" },
+                  "evaluationDate" : { "type" : "date" }
+                }
+            }
+        }
+    }'
+  echo
+  curl -XPOST http://$MASTER_ESROUTER_SERVER/propensity/_open
+
   #
   #  manually create journeystatistic index
   #   - these settings are for index heavy load

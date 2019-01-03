@@ -127,6 +127,13 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "custo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 
 --
+--  elasticsearch - propensity
+--
+
+curl -XGET http://<_MASTER_ELASTICSEARCH_SERVER_>/propensity/_search?pretty
+curl -XGET "http://<_MASTER_ELASTICSEARCH_SERVER_>/propensity/_search?q=173&pretty"
+
+--
 --  thirdpartymanager
 --
 
@@ -140,7 +147,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
 
 --
--- zookeeper
+--  zookeeper - stock
 --
 
 docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> ls /evolving/nglm/stock/stockmonitors

@@ -16,6 +16,7 @@ if [ "${thirdpartymanager.enabled}" = "true" ]; then
 fi
 
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml <_DOCKER_STACK_>-evolutionengine
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml <_DOCKER_STACK_>-propensityengine
 
 #
 #  gui -- temporary - wait an additional 30 seconds for mysql database to initialize

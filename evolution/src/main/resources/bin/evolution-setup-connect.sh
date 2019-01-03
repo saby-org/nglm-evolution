@@ -67,4 +67,74 @@
         }
       }'
     echo
-  
+
+  #
+  #  source connector -- presentationLog
+  #
+
+  create_topic ${topic.presentationlog_fileconnector} $KAFKA_REPLICATION_FACTOR $FILECONNECTOR_PARTITIONS_LARGE "$TOPIC_DATA_TWO_DAYS"
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "presentationlog_file_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.PresentationLogFileSourceConnector",
+        "tasks.max" : 1,
+        "directory" : "/app/data/presentationlog",
+        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+        "pollMaxRecords" : 5,
+        "pollingInterval" : 10,
+        "verifySizeInterval" : 0,
+        "topic" : "${topic.presentationlog}",
+        "bootstrapServers" : "'$BROKER_SERVERS'",
+        "internalTopic" : "${topic.presentationlog_fileconnector}",
+        "archiveDirectory" : "/app/data/presentationlogarchive"
+        }
+    }'
+  echo
+
+  #
+  #  source connector -- acceptanceLog
+  #
+
+  create_topic ${topic.acceptancelog_fileconnector} $KAFKA_REPLICATION_FACTOR $FILECONNECTOR_PARTITIONS_LARGE "$TOPIC_DATA_TWO_DAYS"
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "acceptancelog_file_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.AcceptanceLogFileSourceConnector",
+        "tasks.max" : 1,
+        "directory" : "/app/data/acceptancelog",
+        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+        "pollMaxRecords" : 5,
+        "pollingInterval" : 10,
+        "verifySizeInterval" : 0,
+        "topic" : "${topic.acceptancelog}",
+        "bootstrapServers" : "'$BROKER_SERVERS'",
+        "internalTopic" : "${topic.acceptancelog_fileconnector}",
+        "archiveDirectory" : "/app/data/acceptancelogarchive"
+        }
+    }'
+  echo
+
+  #
+  #  sink connector -- propensity (elasticsearch)
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "propensity_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.PropensityESSinkConnector",
+        "tasks.max" : 1,
+        "topics" : "${topic.propensitylog}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "indexName" : "propensity"
+        }
+    }'
+  echo
+
+    

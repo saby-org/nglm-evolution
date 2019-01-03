@@ -21,6 +21,7 @@ if [ "${thirdpartymanager.enabled}" = "true" ]; then
 fi
 
 docker stack rm <_DOCKER_STACK_>-evolutionengine
+docker stack rm <_DOCKER_STACK_>-propensityengine
 
 #
 #  hack -- remove gui containers
