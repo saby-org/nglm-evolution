@@ -1,0 +1,19 @@
+--
+--  purchasefulfillment.001.json
+--    
+
+--    private String offerID;
+--    private int quantity;
+--    private String salesChannelID;
+
+
+{
+  "deliveryType"                   : "purchaseFulfillment",
+  "subscriberID"                   : "001",
+  "offerID"                        : "2",
+  "quantity"                       : 1,
+  "salesChannelID"                 : "1",
+  "eventID"                        : "12345",
+  "moduleID"                       : "1",
+  "featureID"                      : "1"
+}

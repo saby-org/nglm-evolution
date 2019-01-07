@@ -1,0 +1,26 @@
+--
+--  mailnotification.001.json
+--
+--  private String destination;
+--  private String source;
+--  private String subject;
+--  private String htmlBody;
+--  private String textBody;
+--  private String moduleID;
+--  private MessageStatus status;
+--  private Integer returnCode;  
+
+
+{
+  "deliveryType"    : "notificationmanagermail",
+  "eventID"         : "12345",
+  "subscriberID"    : "001",
+  "control"         : false,
+  "destination"     : "aaronboyd1992@hotmail.com",
+  "source"          : "aaronboyd1992@hotmail.com",
+  "subject"         : "Im the first mail",
+  "htmlBody"        : "im a html body",
+  "textBody"        : "im a text body",
+  "moduleID"        : "1",
+  "featureID"       : "1"
+}

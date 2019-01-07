@@ -1,0 +1,21 @@
+--
+--  smsnotification.001.json
+--
+--  private String destination;
+--  private String source;
+--  private String text;
+--  private String moduleID;
+--  private MessageStatus status;
+--  private Integer returnCode;  
+
+
+{
+  "deliveryType"    : "notificationmanagersms",
+  "eventID"         : "12345",
+  "subscriberID"    : "001",
+  "destination"     : "0123456789",
+  "source"          : "001",
+  "text"            : "Im the first sms",
+  "moduleID"        : "1",
+  "featureID"       : "1"
+}

@@ -11,17 +11,32 @@
 docker stack rm <_DOCKER_STACK_>-application-monitoring
 docker stack rm <_DOCKER_STACK_>-guimanager
 docker stack rm <_DOCKER_STACK_>-gui
+docker stack rm <_DOCKER_STACK_>-evolutionengine
+docker stack rm <_DOCKER_STACK_>-propensityengine
 
 #
-#  thirdpartymanager(if necessary)
+#  optional stacks (from configuration)
 #
 
-if [ "${thirdpartymanager.enabled}" = "true" ]; then
+if [ "<_THIRDPARTYMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-thirdpartymanager
 fi
 
-docker stack rm <_DOCKER_STACK_>-evolutionengine
-docker stack rm <_DOCKER_STACK_>-propensityengine
+if [ "<_INFULFILLMENTMANAGER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-infulfillmentmanager
+fi
+
+if [ "<_PURCHASEFULFILLMENTMANAGER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-purchasefulfillmentmanager
+fi
+
+if [ "<_NOTIFICATIONMANAGER_SMS_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-notificationmanagersms
+fi
+
+if [ "<_NOTIFICATIONMANAGER_MAIL_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-notificationmanagermail
+fi  
 
 #
 #  hack -- remove gui containers

@@ -47,6 +47,34 @@ scrape_configs:
     static_configs:
       - targets: [<_PROPENSITYENGINE_PROMETHEUS_>]
 
+  # infulfillmentmanager job
+  - job_name: 'infulfillmentmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_INFULFILLMENTMANAGER_PROMETHEUS_>]
+      
+  # purchasefulfillmentmanager job
+  - job_name: 'purchasefulfillmentmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_PURCHASEFULFILLMENTMANAGER_PROMETHEUS_>]
+      
+  # notificationmanager job
+  - job_name: 'notificationmanagersms'
+
+    # main config
+    static_configs:
+      - targets: [<_NOTIFICATIONMANAGER_SMS_PROMETHEUS_>]
+
+  # notificationmanager job
+  - job_name: 'notificationmanagermail'
+
+    # main config
+    static_configs:
+      - targets: [<_NOTIFICATIONMANAGER_MAIL_PROMETHEUS_>]
+
   # guimanager job
   - job_name: 'guimanager'
 

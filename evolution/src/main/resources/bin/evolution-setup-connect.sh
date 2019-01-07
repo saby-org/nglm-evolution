@@ -137,4 +137,42 @@
     }'
   echo
 
+  #
+  #  sink connector -- ODR (elasticsearch)
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+     {
+       "name" : "odr_es_sink_connector",
+       "config" :
+         {
+         "connector.class" : "com.evolving.nglm.evolution.ODRSinkConnector",
+         "tasks.max" : 1,
+         "topics" : "${topic.fulfillment.purchasefulfillment.response}",
+         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+         "indexName" : "odr"
+         }
+     }'
+   echo
+  
+  #
+  #  sink connector -- Notification (elasticsearch)
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "notification_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.NotificationSinkConnector",
+        "tasks.max" : 1,
+        "topics" : "${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "indexName" : "notification"
+        }
+    }'
+  echo
+
     

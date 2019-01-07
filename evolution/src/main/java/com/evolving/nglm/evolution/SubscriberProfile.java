@@ -216,7 +216,15 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   public abstract MetricHistory getDataRevenueAmountMetricHistory();
   public abstract MetricHistory getVoiceRevenueAmountMetricHistory();
-  
+
+  /****************************************
+  *
+  *  abstract -- identifiers (with default "null" implementations)a
+  *
+  ****************************************/
+
+  public String getMSISDN() { return null; }
+
   /****************************************
   *
   *  accessors - subscriberGroups

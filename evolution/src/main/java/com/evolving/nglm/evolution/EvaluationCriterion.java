@@ -833,6 +833,7 @@ public class EvaluationCriterion
     *
     ****************************************/
 
+    ExpressionDataType argumentType = (argument != null) ? argument.getType() : ExpressionDataType.NoArgument;
     Object evaluatedArgument = null;
     try
       {
@@ -884,7 +885,7 @@ public class EvaluationCriterion
     *
     *****************************************/
 
-    switch (argument.getType())
+    switch (argumentType)
       {
         case IntegerExpression:
           if (evaluatedArgument instanceof Integer) evaluatedArgument = new Long(((Integer) evaluatedArgument).longValue());
@@ -903,7 +904,7 @@ public class EvaluationCriterion
         switch (criterionField.getFieldDataType())
           {
             case IntegerCriterion:
-              switch (argument.getType())
+              switch (argumentType)
                 {
                   case DoubleExpression:
                     criterionFieldValue = new Double(((Number) criterionFieldValue).doubleValue());
@@ -913,7 +914,7 @@ public class EvaluationCriterion
               break;
 
             case DoubleCriterion:
-              switch (argument.getType())
+              switch (argumentType)
                 {
                   case IntegerExpression:
                     evaluatedArgument = new Double(((Number) evaluatedArgument).doubleValue());
@@ -924,7 +925,7 @@ public class EvaluationCriterion
 
             case StringCriterion:
             case StringSetCriterion:
-              switch (argument.getType())
+              switch (argumentType)
                 {
                   case StringExpression:
                     String stringArgument = (String) evaluatedArgument;

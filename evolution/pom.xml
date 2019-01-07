@@ -30,19 +30,25 @@
       <url>http://packages.confluent.io/maven/</url>
     </repository>
 
+    <repository>
+      <id>artifactory</id>
+      <name>artifactory</name>
+      <url>http://artifactory.lumata.int/artifactory/repo</url>
+    </repository>
+
   </repositories>
 
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.2-build181217-SNAPSHOT</version>
+    <version>4.3.2-build190107-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.3.2-build181217-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.2-build190107-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies -->
     <gui-fwk.version>1.0.7</gui-fwk.version>
@@ -71,6 +77,49 @@
     <common.build.skip.docker-subscribermanager>true</common.build.skip.docker-subscribermanager>
 
   </properties>
+
+  <dependencies>
+
+    <!-- SMPP -->
+    <dependency>
+      <groupId>ie.omk</groupId>
+      <artifactId>smppapi</artifactId>
+      <version>0.3.9</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- SMTP -->
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+      <version>1.4.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.activation</groupId>
+      <artifactId>activation</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+
+    <!-- Gson -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.2.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+      <version>1.1</version>
+    </dependency>
+
+  </dependencies>
 
   <build>
 
@@ -163,6 +212,10 @@
                     <include>bin/prometheus-application-run-postamble.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>bin/propensityengine-run.sh</include>
+                    <include>bin/infulfillmentmanager-run.sh</include>
+                    <include>bin/purchasefulfillmentmanager-run.sh</include>
+                    <include>bin/notificationmanagersms-run.sh</include>
+                    <include>bin/notificationmanagermail-run.sh</include>
                     <include>bin/criteriaapi-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
@@ -171,6 +224,10 @@
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/propensityengine_jmx.yml</include>
+                    <include>config/infulfillmentmanager_jmx.yml</include>
+                    <include>config/purchasefulfillmentmanager_jmx.yml</include>
+                    <include>config/notificationmanagersms_jmx.yml</include>
+                    <include>config/notificationmanagermail_jmx.yml</include>
                     <include>config/guimanager_jmx.yml</include>
                     <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/criteriaapi_jmx.yml</include>
@@ -186,6 +243,14 @@
                     <include>docker/evolutionengine.yml</include>
                     <include>docker/propensityengine/*</include>
                     <include>docker/propensityengine.yml</include>
+                    <include>docker/infulfillmentmanager/*</include>
+                    <include>docker/infulfillmentmanager.yml</include>
+                    <include>docker/purchasefulfillmentmanager/*</include>
+                    <include>docker/purchasefulfillmentmanager.yml</include>
+                    <include>docker/notificationmanagersms/*</include>
+                    <include>docker/notificationmanagersms.yml</include>
+                    <include>docker/notificationmanagermail/*</include>
+                    <include>docker/notificationmanagermail.yml</include>
                     <include>docker/criteriaapi/*</include>
                     <include>docker/criteriaapi.yml</include>
                     <include>docker/subscribergroup/*</include>
@@ -207,6 +272,10 @@
                     <exclude>docker/thirdpartymanager.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
                     <exclude>docker/propensityengine.yml</exclude>
+                    <exclude>docker/infulfillmentmanager.yml</exclude>
+                    <exclude>docker/purchasefulfillmentmanager.yml</exclude>
+                    <exclude>docker/notificationmanagersms.yml</exclude>
+                    <exclude>docker/notificationmanagermail.yml</exclude>
                     <exclude>docker/criteriaapi.yml</exclude>
                   </excludes>
                   <filtering>true</filtering>

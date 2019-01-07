@@ -29,6 +29,10 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-grafana:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-licensemanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-propensityengine:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-infulfillmentmanager:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-purchasefulfillmentmanager:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-notificationmanagersms:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-notificationmanagermail:${project.name}-${project.version}
    " &
 done
 

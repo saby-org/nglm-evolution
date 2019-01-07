@@ -6,17 +6,32 @@
 
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-application-monitoring.yml ${DOCKER_STACK}-application-monitoring
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-guimanager.yml ${DOCKER_STACK}-guimanager
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml ${DOCKER_STACK}-evolutionengine
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml ${DOCKER_STACK}-propensityengine
 
 #
-#  thirdpartymanager(if necessary)
+#  optional stacks (from configuration)
 #
 
-if [ "${thirdpartymanager.enabled}" = "true" ]; then
+if [ "${THIRDPARTYMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml ${DOCKER_STACK}-thirdpartymanager
 fi
 
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml ${DOCKER_STACK}-evolutionengine
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml ${DOCKER_STACK}-propensityengine
+if [ "${INFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml ${DOCKER_STACK}-infulfillmentmanager
+fi
+
+if [ "${PURCHASEFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml ${DOCKER_STACK}-purchasefulfillmentmanager
+fi
+
+if [ "${NOTIFICATIONMANAGER_SMS_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml ${DOCKER_STACK}-notificationmanagersms
+fi
+
+if [ "${NOTIFICATIONMANAGER_MAIL_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml ${DOCKER_STACK}-notificationmanagermail
+fi  
 
 #
 #  gui -- temporary - wait an additional 90 seconds for mysql database to initialize

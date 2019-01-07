@@ -82,7 +82,7 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-guimanag
 #
 #########################################
 
-if [ "${thirdpartymanager.enabled}" = "true" ]; then
+if [ "$THIRDPARTYMANAGER_ENABLED" = "true" ]; then
 
   #
   #  preamble
@@ -110,6 +110,7 @@ if [ "${thirdpartymanager.enabled}" = "true" ]; then
   #
 
   cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  
 fi
 
 #########################################
@@ -179,6 +180,160 @@ done
 #
 
 cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
+
+#########################################
+#
+#  construct stack -- infulfillmentmanager
+#
+#########################################
+
+if [ "$INFULFILLMENTMANAGER_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml
+
+  #
+  #  infulfillmentmanager
+  #
+
+  for TUPLE in $INFULFILLMENTMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     export PLUGIN_NAME=`echo $TUPLE | cut -d: -f5`
+     export PLUGIN_CONFIGURATION=`echo $TUPLE | cut -d: -f6-`
+     cat $DEPLOY_ROOT/docker/infulfillmentmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml
+     echo >> $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml
+
+fi  
+
+#########################################
+#
+#  construct stack -- purchasefulfillmentmanager
+#
+#########################################
+
+if [ "$PURCHASEFULFILLMENTMANAGER_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml
+
+  #
+  #  purchasefulfillmentmanager
+  #
+
+  for TUPLE in $PURCHASEFULFILLMENTMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     export PLUGIN_NAME=`echo $TUPLE | cut -d: -f5`
+     export PLUGIN_CONFIGURATION=`echo $TUPLE | cut -d: -f6-`
+     cat $DEPLOY_ROOT/docker/purchasefulfillmentmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml
+     echo >> $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml
+
+fi  
+
+#########################################
+#
+#  construct stack -- notificationmanager
+#
+#########################################
+
+if [ "$NOTIFICATIONMANAGER_SMS_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml
+
+  #
+  #  notificationmanagersms
+  #
+
+  for TUPLE in $NOTIFICATIONMANAGER_SMS_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     export PLUGIN_NAME=`echo $TUPLE | cut -d: -f5`
+     export PLUGIN_CONFIGURATION=`echo $TUPLE | cut -d: -f6-`
+     cat $DEPLOY_ROOT/docker/notificationmanagersms.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml
+     echo >> $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-notificationmanagersms.yml
+  
+fi
+
+#
+#  notificationmanagermail
+#
+
+if [ "$NOTIFICATIONMANAGER_MAIL_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+
+  #
+  #  notificationmanagermail
+  #
+
+  for TUPLE in $NOTIFICATIONMANAGER_MAIL_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     export PLUGIN_NAME=`echo $TUPLE | cut -d: -f5`
+     export PLUGIN_CONFIGURATION=`echo $TUPLE | cut -d: -f6-`
+     cat $DEPLOY_ROOT/docker/notificationmanagermail.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+     echo >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+
+fi  
 
 #########################################
 #
