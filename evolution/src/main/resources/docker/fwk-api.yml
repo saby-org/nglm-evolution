@@ -1,5 +1,5 @@
 fwk-api-<_KEY_>:
-  image: evolving/fwk.api:${gui-fwk.version}
+  image: ${env.DOCKER_REGISTRY}fwk.api:${gui-fwk.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     AppSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"

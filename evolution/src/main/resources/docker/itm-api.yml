@@ -1,5 +1,5 @@
 itm-api-<_KEY_>:
-  image: evolving/itm.api:${gui-itm.version}
+  image: ${env.DOCKER_REGISTRY}itm.api:${gui-itm.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"

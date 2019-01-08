@@ -171,7 +171,7 @@ public class ThirdPartyManager
     String bootstrapServers = args[1];
     int apiRestPort = parseInteger("apiRestPort", args[2]);
     String fwkServer = args[3];
-    int threadPoolSize = parseInteger("apiRestPort", args[4]);
+    int threadPoolSize = parseInteger("threadPoolSize", args[4]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
@@ -186,7 +186,7 @@ public class ThirdPartyManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer, authResponseCacheLifetimeInMinutes);
+    log.info("main START: {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer, threadPoolSize, authResponseCacheLifetimeInMinutes);
     
     /*****************************************
     *
@@ -372,7 +372,7 @@ public class ThirdPartyManager
   *  handleAPI
   *
   *****************************************/
-  
+
   private void handleAPI(API api, HttpExchange exchange) throws IOException
   {
     try
@@ -415,6 +415,7 @@ public class ThirdPartyManager
         *****************************************/
         
         authenticateAndCheckAccess(jsonRoot, api.name());
+
         
         /*****************************************
         *
@@ -525,7 +526,7 @@ public class ThirdPartyManager
         writer.write(jsonResponse.toString());
         writer.close();
         exchange.close();
-        
+
       }
     catch (ThirdPartyManagerException ex )
       {
@@ -691,13 +692,13 @@ public class ThirdPartyManager
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
-    
+
     String subscriberID = resolveSubscriberID(customerID);
     
     //
     // process
     //
-    
+
     if (null == subscriberID)
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -1426,7 +1427,7 @@ public class ThirdPartyManager
     //
     // lookup from authCache
     //
-    
+
     AuthenticatedResponse authResponse = null;
     synchronized (authCache)
       {
@@ -1440,6 +1441,7 @@ public class ThirdPartyManager
     if (null == authResponse)
       {
         authResponse = authenticate(thirdPartyCredential);
+        log.info("(Re)Authenticated: credential {} response {}", thirdPartyCredential, authResponse);
       }
     
     //
@@ -1452,7 +1454,7 @@ public class ThirdPartyManager
       }
     
   }
-  
+
   /*****************************************
   *
   *  authenticate

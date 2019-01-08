@@ -608,14 +608,15 @@ public abstract class SubscriberProfileService
       //
 
       PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-      httpClientConnectionManager.setDefaultMaxPerRoute(10);
+      httpClientConnectionManager.setDefaultMaxPerRoute(50);
+      httpClientConnectionManager.setMaxTotal(150);
 
       //
       //  httpClient
       //
 
       HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-      httpClientBuilder.setConnectionManager(new PoolingHttpClientConnectionManager());
+      httpClientBuilder.setConnectionManager(httpClientConnectionManager);
       this.httpClient = httpClientBuilder.build();
     }
 

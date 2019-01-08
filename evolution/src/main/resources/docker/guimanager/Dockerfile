@@ -4,7 +4,9 @@ FROM confluentinc/cp-kafka:${confluent.version}
 #  permissions
 #
 
-RUN chmod 0777 /var/log/kafka
+# confluent 5.0.x: 
+RUN chmod 0777 /var/log/kafka /var/log/confluent
+RUN chmod 0777 /var/lib/kafka /var/lib/zookeeper
 
 #
 #  core

@@ -1,5 +1,5 @@
 opc-web-<_KEY_>:
-  image: evolving/opc.web:${gui-opc.version}
+  image: ${env.DOCKER_REGISTRY}opc.web:${gui-opc.version}
   environment:
     opc_api_server_path: "http://<_GUI_OPC_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPC_API_SERVER_PORT_>/api/"
     opc_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"

@@ -1,5 +1,5 @@
 iar-web-<_KEY_>:
-  image: evolving/iar.web:${gui-iar.version}
+  image: ${env.DOCKER_REGISTRY}iar.web:${gui-iar.version}
   environment:
     iar_api_server_path: "http://<_GUI_IAR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_IAR_API_SERVER_PORT_>/api/"
     iar_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"

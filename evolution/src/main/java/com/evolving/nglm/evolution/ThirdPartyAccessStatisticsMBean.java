@@ -12,6 +12,7 @@ public interface ThirdPartyAccessStatisticsMBean
 {
   public int getPingCount();
   public int getGetCustomerCount();
+  public int getGetOffersListCount();
   public int getGetActiveOfferCount();
   public int getGetActiveOffersCount();
   public int getSuccessfulAPIRequestCount();

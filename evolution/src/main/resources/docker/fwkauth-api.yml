@@ -1,5 +1,5 @@
 fwkauth-api-<_KEY_>:
-  image: evolving/fwkauth.api:${gui-fwk.version}
+  image: ${env.DOCKER_REGISTRY}fwkauth.api:${gui-fwk.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     TZ: <_DEPLOYMENT_TIMEZONE_>

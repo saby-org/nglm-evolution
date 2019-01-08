@@ -1,5 +1,5 @@
 iar-api-<_KEY_>:
-  image: evolving/iar.api:${gui-iar.version}
+  image: ${env.DOCKER_REGISTRY}iar.api:${gui-iar.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"

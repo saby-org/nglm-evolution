@@ -1,5 +1,5 @@
 itm-web-<_KEY_>:
-  image: evolving/itm.web:${gui-itm.version}
+  image: ${env.DOCKER_REGISTRY}itm.web:${gui-itm.version}
   environment:
     itm_api_server_path: "http://<_GUI_ITM_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_ITM_API_SERVER_PORT_>/api/"
     itm_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"

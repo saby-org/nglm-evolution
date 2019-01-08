@@ -94,6 +94,7 @@ if [ "$THIRDPARTYMANAGER_ENABLED" = "true" ]; then
   #
   #  thirdpartymanager
   #
+
   for TUPLE in $THIRDPARTYMANAGER_CONFIGURATION
   do
      export KEY=`echo $TUPLE | cut -d: -f1`

@@ -1,5 +1,5 @@
 csr-api-<_KEY_>:
-  image: evolving/csr.api:${gui-csr.version}
+  image: ${env.DOCKER_REGISTRY}csr.api:${gui-csr.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
