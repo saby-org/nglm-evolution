@@ -7,11 +7,14 @@
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-application-monitoring.yml <_DOCKER_STACK_>-application-monitoring
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-guimanager.yml <_DOCKER_STACK_>-guimanager
 docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml <_DOCKER_STACK_>-evolutionengine
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml <_DOCKER_STACK_>-propensityengine
 
 #
 #  optional stacks (from configuration)
 #
+
+if [ "<_PROPENSITYENGINE_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml <_DOCKER_STACK_>-propensityengine
+fi
 
 if [ "<_THIRDPARTYMANAGER_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml <_DOCKER_STACK_>-thirdpartymanager
@@ -32,6 +35,15 @@ fi
 if [ "<_NOTIFICATIONMANAGER_MAIL_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml <_DOCKER_STACK_>-notificationmanagermail
 fi  
+
+if [ "<_REPORTMANAGER_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-reportmanager.yml <_DOCKER_STACK_>-reportmanager
+fi
+
+if [ "<_REPORTSCHEDULER_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-reportscheduler.yml <_DOCKER_STACK_>-reportscheduler
+fi
+
 
 #
 #  gui -- temporary - wait an additional 30 seconds for mysql database to initialize

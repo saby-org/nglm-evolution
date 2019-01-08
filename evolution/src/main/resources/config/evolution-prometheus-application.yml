@@ -75,6 +75,20 @@ scrape_configs:
     static_configs:
       - targets: [<_NOTIFICATIONMANAGER_MAIL_PROMETHEUS_>]
 
+  # reportmanager job
+  - job_name: 'reportmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_REPORTMANAGER_PROMETHEUS_>]
+
+  # reportscheduler job
+  - job_name: 'reportscheduler'
+
+    # main config
+    static_configs:
+      - targets: [<_REPORTSCHEDULER_PROMETHEUS_>]
+
   # guimanager job
   - job_name: 'guimanager'
 

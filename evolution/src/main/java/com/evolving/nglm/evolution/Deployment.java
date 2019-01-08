@@ -6,28 +6,22 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
-
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import java.lang.reflect.InvocationTargetException;
+import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 
 public class Deployment
 {
@@ -48,6 +42,7 @@ public class Deployment
   private static String journeyTopic;
   private static String segmentationRuleTopic;
   private static String offerTopic;
+  private static String reportTopic;
   private static String presentationStrategyTopic;
   private static String scoringStrategyTopic;
   private static String callingChannelTopic;
@@ -111,6 +106,14 @@ public class Deployment
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static int stockRefreshPeriod;
+  private static Map<String,ReportConfiguration> reportsConfiguration = new LinkedHashMap<String,ReportConfiguration>();
+  private static String reportManagerZookeeperDir;
+  private static String reportManagerOutputPath;
+  private static String reportManagerDateFormat;
+  private static String reportManagerFileExtension;
+  private static String reportManagerStreamsTempDir;
+  private static String reportManagerCsvSeparator;
+  private static JSONArray reportsConfigValues;
 
   /*****************************************
   *
@@ -159,6 +162,7 @@ public class Deployment
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationRuleTopic() { return segmentationRuleTopic; }
   public static String getOfferTopic() { return offerTopic; }
+  public static String getReportTopic() { return reportTopic; }
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
   public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
   public static String getCallingChannelTopic() { return callingChannelTopic; }
@@ -222,6 +226,15 @@ public class Deployment
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
+  public static Map<String,ReportConfiguration> getReportsConfiguration() { return reportsConfiguration; }
+  public static JSONArray getReportsConfigJSon() { return reportsConfigValues; }
+  public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
+  public static String getReportManagerOutputPath() { return reportManagerOutputPath; }
+  public static String getReportManagerDateFormat() { return reportManagerDateFormat; }
+  public static String getReportManagerFileExtension() { return reportManagerFileExtension; }
+  public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
+  public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
+
 
   /*****************************************
   *
@@ -471,7 +484,20 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-    
+
+    //
+    //  reportTopic
+    //
+
+    try
+      {
+        reportTopic = JSONUtilities.decodeString(jsonRoot, "reportTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  presentationStrategyTopic
     //
@@ -1346,6 +1372,50 @@ public class Deployment
     //
 
     stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
+    
+
+    //
+    //  Reports
+    //
+
+    try
+      {
+        JSONObject reportManager = JSONUtilities.decodeJSONObject(jsonRoot, "reportManager", false);
+        if (reportManager != null)
+          {
+            JSONObject globalConfig = JSONUtilities.decodeJSONObject(reportManager, "globalConfiguration", true);
+            reportManagerZookeeperDir = JSONUtilities.decodeString(globalConfig, "reportManagerZookeeperDir", true);
+            reportManagerOutputPath = JSONUtilities.decodeString(globalConfig, "reportManagerOutputPath", false);
+            reportManagerDateFormat = JSONUtilities.decodeString(globalConfig, "reportManagerDateFormat", false);
+            reportManagerFileExtension = JSONUtilities.decodeString(globalConfig, "reportManagerFileExtension", false);
+            reportManagerCsvSeparator = JSONUtilities.decodeString(globalConfig, "reportManagerCsvSeparator", false);
+            reportManagerStreamsTempDir = JSONUtilities.decodeString(globalConfig, "reportManagerStreamsTempDir", false);
+            reportsConfigValues = JSONUtilities.decodeJSONArray(reportManager, "reportsConfiguration", true);
+            for (int i=0; i<reportsConfigValues.size(); i++)
+              {
+                ReportConfiguration reportConfig = new ReportConfiguration((JSONObject) reportsConfigValues.get(i));
+                String reportName = reportConfig.getReportName();
+                if (reportsConfiguration.containsKey(reportName)) throw new ServerRuntimeException("reportsConfiguration entry already exists for "+reportName);
+                reportsConfiguration.put(reportName, reportConfig);
+              }
+          }
+        else
+          {
+            reportsConfiguration = null;
+            reportManagerZookeeperDir = Deployment.getZookeeperRoot() + File.separator + "reports";
+            reportManagerOutputPath = "/app/reports";
+            reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
+            reportManagerFileExtension = "csv";
+            reportManagerCsvSeparator = ";";
+            reportManagerStreamsTempDir = System.getProperty("java.io.tmpdir");
+          }
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment : reportManager", e);
+      }
+
+    
   }
 
   /*****************************************
@@ -1358,4 +1428,5 @@ public class Deployment
   {
     System.out.println("zookeeper root: " + getZookeeperRoot());
   }
+
 }

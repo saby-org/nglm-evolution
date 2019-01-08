@@ -12,11 +12,14 @@ docker stack rm <_DOCKER_STACK_>-application-monitoring
 docker stack rm <_DOCKER_STACK_>-guimanager
 docker stack rm <_DOCKER_STACK_>-gui
 docker stack rm <_DOCKER_STACK_>-evolutionengine
-docker stack rm <_DOCKER_STACK_>-propensityengine
 
 #
 #  optional stacks (from configuration)
 #
+
+if [ "<_PROPENSITYENGINE_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-propensityengine
+fi
 
 if [ "<_THIRDPARTYMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-thirdpartymanager
@@ -36,6 +39,14 @@ fi
 
 if [ "<_NOTIFICATIONMANAGER_MAIL_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-notificationmanagermail
+fi  
+
+if [ "<_REPORTMANAGER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-reportmanager
+fi
+
+if [ "<_REPORTSCHEDULER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-reportscheduler
 fi  
 
 #

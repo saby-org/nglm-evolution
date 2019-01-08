@@ -138,6 +138,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(ProductType.serde());
     guiManagedObjectSerdes.add(Deliverable.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
+    guiManagedObjectSerdes.add(Report.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

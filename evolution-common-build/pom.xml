@@ -58,6 +58,8 @@
     <common.build.phase.generate-purchasefulfillmentmanager-image>none</common.build.phase.generate-purchasefulfillmentmanager-image>
     <common.build.phase.generate-notificationmanagersms-image>none</common.build.phase.generate-notificationmanagersms-image>
     <common.build.phase.generate-notificationmanagermail-image>none</common.build.phase.generate-notificationmanagermail-image>
+    <common.build.phase.generate-reportmanager-image>none</common.build.phase.generate-reportmanager-image>
+    <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
     <common.build.skip.docker-prometheus-application-image>true</common.build.skip.docker-prometheus-application-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
@@ -69,19 +71,19 @@
     <common.build.skip.docker-purchasefulfillmentmanager-image>true</common.build.skip.docker-purchasefulfillmentmanager-image>
     <common.build.skip.docker-notificationmanagersms-image>true</common.build.skip.docker-notificationmanagersms-image>
     <common.build.skip.docker-notificationmanagermail-image>true</common.build.skip.docker-notificationmanagermail-image>
+    <common.build.skip.docker-reportmanager-image>true</common.build.skip.docker-reportmanager-image>
+    <common.build.skip.docker-reportscheduler-image>true</common.build.skip.docker-reportscheduler-image>
     
     <!-- configuration -->
     <evolutionengine.streamthreads>2</evolutionengine.streamthreads>
     <propensityengine.streamthreads>2</propensityengine.streamthreads>
-
-    <!-- thirdpartymanager -->
-    <thirdpartymanager.enabled>false</thirdpartymanager.enabled>
 
     <!-- topics -->
     <topic.empty>empty</topic.empty>
     <topic.journey>journey</topic.journey>
     <topic.segmentationrule>segmentation-rule</topic.segmentationrule>
     <topic.offer>offer</topic.offer>
+    <topic.report>report</topic.report>
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
     <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
     <topic.callingchannel>callingchannel</topic.callingchannel>
@@ -739,6 +741,92 @@
             </configuration>
           </execution>
 
+          <execution>
+            <id>generate-reportmanager-docker-stack</id>
+            <phase>${common.build.phase.generate-reportmanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/reportmanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/reportmanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/reportmanager-run.sh</include>
+                    <include>config/reportmanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-reportscheduler-docker-stack</id>
+            <phase>${common.build.phase.generate-reportscheduler-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/reportscheduler</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/reportscheduler</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/reportscheduler-run.sh</include>
+                    <include>config/reportscheduler_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
 
@@ -913,6 +1001,36 @@
             </configuration>
           </execution>
 
+          <execution>
+            <id>docker-reportmanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-reportmanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/reportmanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-reportmanager</repository>
+              <classifier>docker-info-reportmanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-reportscheduler</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-reportscheduler-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/reportscheduler</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-reportscheduler</repository>
+              <classifier>docker-info-reportscheduler</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          
         </executions>
       </plugin>
       

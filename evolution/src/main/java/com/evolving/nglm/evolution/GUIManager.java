@@ -6,40 +6,31 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Alarm.AlarmLevel;
+import com.evolving.nglm.core.Alarm.AlarmType;
+import com.evolving.nglm.core.Alarm;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.core.LicenseChecker;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ServerException;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.UniqueKeyServer;
+
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.Alarm;
-import com.evolving.nglm.core.Alarm.AlarmLevel;
-import com.evolving.nglm.core.Alarm.AlarmType;
-import com.evolving.nglm.core.LicenseChecker;
-import com.evolving.nglm.core.LicenseChecker.LicenseState;
-import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.core.UniqueKeyServer;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -47,8 +38,17 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
@@ -56,12 +56,13 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.Executors;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,10 +72,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Set;
 import java.util.stream.Collectors;
    
 public class GUIManager
@@ -138,6 +138,10 @@ public class GUIManager
     getOffer("getOffer"),
     putOffer("putOffer"),
     removeOffer("removeOffer"),
+    getReportGlobalConfiguration("getReportGlobalConfiguration"),
+    getReportList("getReportList"),
+    putReport("putReport"),
+    launchReport("launchReport"),
     getPresentationStrategyList("getPresentationStrategyList"),
     getPresentationStrategySummaryList("getPresentationStrategySummaryList"),
     getPresentationStrategy("getPresentationStrategy"),
@@ -225,6 +229,7 @@ public class GUIManager
   private JourneyService journeyService;
   private SegmentationRuleService segmentationRuleService;
   private OfferService offerService;
+  private ReportService reportService;
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
   private CallingChannelService callingChannelService;
@@ -282,6 +287,7 @@ public class GUIManager
     String journeyTopic = Deployment.getJourneyTopic();
     String segmentationRuleTopic = Deployment.getSegmentationRuleTopic();
     String offerTopic = Deployment.getOfferTopic();
+    String reportTopic = Deployment.getReportTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String callingChannelTopic = Deployment.getCallingChannelTopic();
@@ -319,6 +325,7 @@ public class GUIManager
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
     segmentationRuleService = new SegmentationRuleService(bootstrapServers, "guimanager-segmentationruleservice-" + apiProcessKey, segmentationRuleTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
+    reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
     callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
@@ -495,6 +502,7 @@ public class GUIManager
     journeyService.start();
     segmentationRuleService.start();
     offerService.start();
+    reportService.start();
     scoringStrategyService.start();
     presentationStrategyService.start();
     callingChannelService.start();
@@ -561,6 +569,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putOffer", new APIHandler(API.putOffer));
         restServer.createContext("/nglm-guimanager/removeOffer", new APIHandler(API.removeOffer));
         restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APIHandler(API.getPresentationStrategyList));
+        restServer.createContext("/nglm-guimanager/getReportGlobalConfiguration", new APIHandler(API.getReportGlobalConfiguration));
+        restServer.createContext("/nglm-guimanager/getReportList", new APIHandler(API.getReportList));
+        restServer.createContext("/nglm-guimanager/putReport", new APIHandler(API.putReport));
+        restServer.createContext("/nglm-guimanager/launchReport", new APIHandler(API.launchReport));
         restServer.createContext("/nglm-guimanager/getPresentationStrategySummaryList", new APIHandler(API.getPresentationStrategySummaryList));
         restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APIHandler(API.getPresentationStrategy));
         restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APIHandler(API.putPresentationStrategy));
@@ -625,7 +637,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService));
     
     /*****************************************
     *
@@ -652,6 +664,7 @@ public class GUIManager
     private JourneyService journeyService;
     private SegmentationRuleService segmentationRuleService;
     private OfferService offerService;
+    private ReportService reportService;
     private ScoringStrategyService scoringStrategyService;
     private PresentationStrategyService presentationStrategyService;
     private CallingChannelService callingChannelService;
@@ -670,12 +683,13 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
       this.segmentationRuleService = segmentationRuleService;
       this.offerService = offerService;
+      this.reportService = reportService;
       this.scoringStrategyService = scoringStrategyService;
       this.presentationStrategyService = presentationStrategyService;
       this.callingChannelService = callingChannelService;
@@ -710,6 +724,7 @@ public class GUIManager
       if (journeyService != null) journeyService.stop();
       if (segmentationRuleService != null) segmentationRuleService.stop();
       if (offerService != null) offerService.stop();
+      if (reportService != null) reportService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (presentationStrategyService != null) presentationStrategyService.stop();
       if (callingChannelService != null) callingChannelService.stop();
@@ -1014,6 +1029,22 @@ public class GUIManager
                 case removeOffer:
                   jsonResponse = processRemoveOffer(userID, jsonRoot);
                   break;
+
+                case getReportGlobalConfiguration:
+                	jsonResponse = processGetReportGlobalConfiguration(userID, jsonRoot);
+                	break;
+                	
+                case getReportList:
+                    jsonResponse = processGetReportList(userID, jsonRoot);
+                    break;
+                	
+                case putReport:
+                	jsonResponse = processPutReport(userID, jsonRoot);
+                	break;
+                
+                case launchReport:
+                	jsonResponse = processLaunchReport(userID, jsonRoot);
+                	break;
 
                 case getPresentationStrategyList:
                   jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, true);
@@ -3999,6 +4030,147 @@ public class GUIManager
 
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetReportConfig
+  *
+  *****************************************/
+
+  private JSONObject processGetReportGlobalConfiguration(String userID, JSONObject jsonRoot)
+  {
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    HashMap<String,Object> globalConfig = new HashMap<String,Object>();
+    globalConfig.put("reportManagerZookeeperDir",   Deployment.getReportManagerZookeeperDir());
+    globalConfig.put("reportManagerOutputPath",     Deployment.getReportManagerOutputPath());
+    globalConfig.put("reportManagerDateFormat",     Deployment.getReportManagerDateFormat());
+    globalConfig.put("reportManagerFileExtension",  Deployment.getReportManagerFileExtension());
+    globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
+    globalConfig.put("reportManagerStreamsTempDir", Deployment.getReportManagerStreamsTempDir());
+    JSONArray reportsConfiguration = Deployment.getReportsConfigJSon();
+    Map<String,JSONObject> reportsConfig = new HashMap<String,JSONObject>();
+    if (reportsConfiguration != null) {
+    	for (int i=0; i<reportsConfiguration.size(); i++)
+    	{
+    		JSONObject configJSon = (JSONObject) reportsConfiguration.get(i);
+    		ReportConfiguration reportConfig = new ReportConfiguration(configJSon);
+    		String reportName = reportConfig.getReportName();
+    		if (reportsConfig.containsKey(reportName)) {
+    			log.debug("GetReportConfig entry already exists for : {}, ignoring",reportName);
+    		} else {
+    			reportsConfig.put(reportName, configJSon);
+    		}
+    	}
+    	globalConfig.put("reportsConfiguration", reportsConfig);
+    }
+    response.put("reportGlobalConfiguration", JSONUtilities.encodeObject(globalConfig));
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetReportList
+  *
+  *****************************************/
+
+  private JSONObject processGetReportList(String userID, JSONObject jsonRoot)
+  {
+	log.trace("In processGetReportList : "+jsonRoot);
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> reports = new ArrayList<JSONObject>();
+    for (GUIManagedObject report : reportService.getStoredReports())
+      {
+    	log.trace("In processGetReportList, adding : "+report);
+    	reports.add(reportService.generateResponseJSON(report, true, now));
+      }
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("reports", JSONUtilities.encodeArray(reports));
+    log.trace("res : "+response.get("reports"));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processLaunchReport
+  *
+  *****************************************/
+  
+  private JSONObject processLaunchReport(String userID, JSONObject jsonRoot)
+  {
+	log.trace("In processLaunchReport : "+jsonRoot);
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    GUIManagedObject report = reportService.getStoredReport(reportID);
+	log.trace("Looking for "+reportID+" and got "+report);
+    String responseCode = "reportNotFound";
+    if (report != null) {
+        responseCode = "ok";
+		try {
+			reportService.launchReport(report, userID);
+		} catch (GUIManagerException e) {
+			log.debug("Exception launching report : "+e.getLocalizedMessage());
+		}
+    }
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutReport
+  *
+  *****************************************/
+  
+  private JSONObject processPutReport(String userID, JSONObject jsonRoot)
+  {
+	log.trace("In processPutReport : "+jsonRoot);
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (reportID == null)
+      {
+    	reportID = reportService.generateReportID();
+        jsonRoot.put("id", reportID);
+      }
+	log.trace("ID : "+reportID);
+    GUIManagedObject existingReport = reportService.getStoredReport(reportID);
+    if (existingReport != null)
+      {
+    	log.trace("existingReport : "+existingReport);
+        response.put("id", existingReport.getGUIManagedObjectID());
+        response.put("accepted", existingReport.getAccepted());
+        response.put("processing", reportService.isActiveReport(existingReport, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    long epoch = epochServer.getKey();
+    try
+      {
+    	Report report = new Report(jsonRoot, epoch, null);
+    	log.trace("new report : "+report);
+    	reportService.putReport(report, true, userID);
+        response.put("id", report.getReportID());
+        response.put("accepted", report.getAccepted());
+        response.put("processing", reportService.isActiveReport(report, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        response.put("id", jsonRoot.get("id"));
+        response.put("responseCode", "reportNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
   }
 
   /*****************************************

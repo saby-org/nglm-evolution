@@ -33,6 +33,9 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-purchasefulfillmentmanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-notificationmanagersms:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-notificationmanagermail:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-reportmanager:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-reportscheduler:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-suspenseprocessor:${project.name}-${project.version}
    " &
 done
 

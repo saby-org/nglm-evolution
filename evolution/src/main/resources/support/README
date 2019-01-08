@@ -156,6 +156,12 @@ docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-
 docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> get /evolving/nglm/stock/stocks/product-1001
 
 --
+--  zookeeper - reports
+--
+
+docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> create /evolving/nglm/reports/control/report-001 journeyReport
+
+--
 --  examples of mananging subscriber groups / segments  - new, add, remove, delete
 --
 

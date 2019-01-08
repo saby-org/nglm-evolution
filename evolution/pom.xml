@@ -106,6 +106,14 @@
       <version>1.1.1</version>
     </dependency>
 
+    <!-- Reports -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-streams-examples</artifactId>
+      <version>1.0.1-cp1</version>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- Gson -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -216,6 +224,8 @@
                     <include>bin/purchasefulfillmentmanager-run.sh</include>
                     <include>bin/notificationmanagersms-run.sh</include>
                     <include>bin/notificationmanagermail-run.sh</include>
+                    <include>bin/reportmanager-run.sh</include>
+                    <include>bin/reportscheduler-run.sh</include>
                     <include>bin/criteriaapi-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
@@ -228,6 +238,8 @@
                     <include>config/purchasefulfillmentmanager_jmx.yml</include>
                     <include>config/notificationmanagersms_jmx.yml</include>
                     <include>config/notificationmanagermail_jmx.yml</include>
+                    <include>config/reportmanager_jmx.yml</include>
+                    <include>config/reportscheduler_jmx.yml</include>
                     <include>config/guimanager_jmx.yml</include>
                     <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/criteriaapi_jmx.yml</include>
@@ -251,6 +263,10 @@
                     <include>docker/notificationmanagersms.yml</include>
                     <include>docker/notificationmanagermail/*</include>
                     <include>docker/notificationmanagermail.yml</include>
+                    <include>docker/reportmanager/*</include>
+                    <include>docker/reportmanager.yml</include>
+                    <include>docker/reportscheduler/*</include>
+                    <include>docker/reportscheduler.yml</include>
                     <include>docker/criteriaapi/*</include>
                     <include>docker/criteriaapi.yml</include>
                     <include>docker/subscribergroup/*</include>
@@ -276,6 +292,8 @@
                     <exclude>docker/purchasefulfillmentmanager.yml</exclude>
                     <exclude>docker/notificationmanagersms.yml</exclude>
                     <exclude>docker/notificationmanagermail.yml</exclude>
+                    <exclude>docker/reportmanager.yml</exclude>
+                    <exclude>docker/reportscheduler.yml</exclude>
                     <exclude>docker/criteriaapi.yml</exclude>
                   </excludes>
                   <filtering>true</filtering>

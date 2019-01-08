@@ -155,32 +155,36 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-evolutio
 #
 #########################################
 
-#
-#  preamble
-#
+if [ "$PROPENSITYENGINE_ENABLED" = "true" ]; then
 
-mkdir -p $DEPLOY_ROOT/stack
-cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-propensityengine.yml
+  #
+  #  preamble
+  #
 
-#
-#  propensityengine
-#
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-propensityengine.yml
 
-for TUPLE in $PROPENSITYENGINE_CONFIGURATION
-do
-   export KEY=`echo $TUPLE | cut -d: -f1`
-   export HOST=`echo $TUPLE | cut -d: -f2`
-   export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
-   export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
-   cat $DEPLOY_ROOT/docker/propensityengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
-   echo >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
-done
+  #
+  #  propensityengine
+  #
 
-#
-#  postamble
-#
+  for TUPLE in $PROPENSITYENGINE_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     cat $DEPLOY_ROOT/docker/propensityengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
+     echo >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
+  done
 
-cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
+
+fi
 
 #########################################
 #
@@ -333,6 +337,80 @@ if [ "$NOTIFICATIONMANAGER_MAIL_ENABLED" = "true" ]; then
   #
 
   cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-notificationmanagermail.yml
+
+fi  
+
+#########################################
+#
+#  construct stack -- reportmanager
+#
+#########################################
+
+if [ "$REPORTMANAGER_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-reportmanager.yml
+
+  #
+  #  reportmanager
+  #
+
+  for TUPLE in $REPORTMANAGER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     cat $DEPLOY_ROOT/docker/reportmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-reportmanager.yml
+     echo >> $DEPLOY_ROOT/stack/stack-reportmanager.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-reportmanager.yml
+
+fi  
+
+#########################################
+#
+#  construct stack -- reportscheduler
+#
+#########################################
+
+if [ "$REPORTSCHEDULER_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-reportscheduler.yml
+
+  #
+  #  reportscheduler
+  #
+
+  for TUPLE in $REPORTSCHEDULER_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
+     cat $DEPLOY_ROOT/docker/reportscheduler.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-reportscheduler.yml
+     echo >> $DEPLOY_ROOT/stack/stack-reportscheduler.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-reportscheduler.yml
 
 fi  
 
