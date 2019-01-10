@@ -13,6 +13,7 @@ do
    ssh $SWARM_HOST "
       rm -rf ${NGLM_STREAMS_RUNTIME}
       rm -rf ${NGLM_GUI_RUNTIME}
+      rm -rf ${NGLM_REPORTS}
    "
 done
 
@@ -22,6 +23,7 @@ done
 
 ssh $MASTER_SWARM_HOST "
    rm -rf ${NGLM_DATA}
+   rm -rf ${NGLM_SUBSCRIBERGROUP_DATA}
 "
 
 #########################################

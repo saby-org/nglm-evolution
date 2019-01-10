@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  EvolutionEngine.java 
+*  TimerService.java 
 *
 ****************************************************************************/
 
@@ -59,7 +59,6 @@ public class TimerService
 
   private volatile boolean stopRequested = false;
   private EvolutionEngine evolutionEngine = null;
-  private KafkaStreams streams = null;
   private ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
@@ -74,7 +73,7 @@ public class TimerService
   *
   *****************************************/
 
-  public TimerService(EvolutionEngine evolutionEngine, String bootstrapServers, KafkaStreams streams, ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore)
+  public TimerService(EvolutionEngine evolutionEngine, String bootstrapServers)
   {
     /*****************************************
     *
@@ -83,8 +82,6 @@ public class TimerService
     *****************************************/
 
     this.evolutionEngine = evolutionEngine;
-    this.streams = streams;
-    this.subscriberStateStore = subscriberStateStore;
 
     /*****************************************
     *
@@ -106,7 +103,7 @@ public class TimerService
   *
   *****************************************/
 
-  public void start()
+  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore)
   {
     /*****************************************
     *
@@ -115,6 +112,14 @@ public class TimerService
     *****************************************/
 
     evolutionEngine.waitForStreams();
+
+    /*****************************************
+    *
+    *  subscriberStateStore
+    *
+    *****************************************/
+
+    this.subscriberStateStore = subscriberStateStore;
 
     /*****************************************
     *

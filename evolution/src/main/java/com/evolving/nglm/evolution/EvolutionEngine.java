@@ -259,7 +259,13 @@ public class EvolutionEngine
 
     journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), false);
     journeyService.start();
-    
+
+    //
+    //  timerService (DO NOT START until streams is started)
+    //
+
+    timerService = new TimerService(this, bootstrapServers);
+
     /*****************************************
     *
     *  kafka producer for the segmentationRuleListener
@@ -758,14 +764,6 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  timerService
-    *
-    *****************************************/
-
-    timerService = new TimerService(this, bootstrapServers, streams, subscriberStateStore);
-
-    /*****************************************
-    *
     *  REST interface -- http client
     *
     *****************************************/
@@ -836,7 +834,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    timerService.start();
+    timerService.start(subscriberStateStore);
 
     /*****************************************
     *

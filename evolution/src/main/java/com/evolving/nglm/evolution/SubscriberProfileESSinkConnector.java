@@ -144,6 +144,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       ****************************************/
 
       Map<String,Object> documentMap = new HashMap<String,Object>();
+      documentMap.put("subscriberID", subscriberProfile.getSubscriberID());
       documentMap.put("evaluationDate", now);
       documentMap.put("evolutionSubscriberStatus", (subscriberProfile.getEvolutionSubscriberStatus() != null) ? subscriberProfile.getEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
