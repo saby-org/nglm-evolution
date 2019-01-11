@@ -6,23 +6,24 @@
 
 package com.evolving.nglm.evolution.purchase;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -31,6 +32,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferPrice;
@@ -40,11 +42,11 @@ import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.Product;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.SalesChannel;
+import com.evolving.nglm.evolution.StockMonitor;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;
 import com.evolving.nglm.evolution.SubscriberProfileService;
-import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.SubscriberProfileService.RedisSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
@@ -148,6 +150,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private SubscriberProfileService subscriberProfileService;
   private OfferService offerService;
   private ProductService productService;
+  private StockMonitor stockService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private CommodityActionManager commodityActionManager;
   
@@ -169,16 +172,19 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  plugin instanciation
     //
     
-    subscriberProfileService = new RedisSubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-245", Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), null);
+    subscriberProfileService = new RedisSubscriberProfileService(Deployment.getBrokerServers(), "PurchaseMgr-redissubscriberprofileservice-"+deliveryManagerKey, Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), null);
     subscriberProfileService.start();
     
-    offerService = new OfferService(Deployment.getBrokerServers(), "example-offerservice-673", Deployment.getOfferTopic(), false);
+    offerService = new OfferService(Deployment.getBrokerServers(), "PurchaseMgr-offerservice-"+deliveryManagerKey, Deployment.getOfferTopic(), false);
     offerService.start();
 
-    productService = new ProductService(Deployment.getBrokerServers(), "example-productservice-001", Deployment.getProductTopic(), false);
+    productService = new ProductService(Deployment.getBrokerServers(), "PurchaseMgr-productservice-"+deliveryManagerKey, Deployment.getProductTopic(), false);
     productService.start();
     
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", "example-subscriberGroupReader-001", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService);
+    stockService.start();
+
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", "PurchaseMgr-subscriberGroupReader-"+deliveryManagerKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     commodityActionManager = new CommodityActionManager(this);
 
@@ -418,38 +424,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       return new PurchaseFulfillmentRequest(schemaAndValue, offerID, quantity, salesChannelID, status);
     }
 
-//    /*****************************************
-//    *  
-//    *  to/from JSONObject
-//    *
-//    *****************************************/
-//
-//    @Override
-//    public JSONObject getJSONRepresentation(){
-//      Map<String, Object> data = new HashMap<String, Object>();
-//      
-//      //DeliveryRequest fields
-//      data.put("deliveryRequestID", this.getDeliveryRequestID());
-//      data.put("deliveryRequestSource", this.getDeliveryRequestSource());
-//      data.put("subscriberID", this.getSubscriberID());
-//      data.put("deliveryPartition", this.getDeliveryPartition());
-//      data.put("retries", this.getRetries());
-//      data.put("timeout", this.getTimeout());
-//      data.put("correlator", this.getCorrelator());
-//      data.put("control", this.getControl());
-//      data.put("deliveryType", this.getDeliveryType());
-//      data.put("deliveryStatus", this.getDeliveryStatus().toString());
-//      data.put("deliveryDate", this.getDeliveryDate());
-//      data.put("diplomaticBriefcase", this.getDiplomaticBriefcase());
-//      
-//      //PurchaseFulfillmentRequest fields
-//      data.put("offerID", this.getOfferID());
-//      data.put("quantity",  this.getQuantity());
-//      data.put("salesChannelID", this.getSalesChannelID());
-//      
-//      return JSONUtilities.encodeObject(data);
-//    }
-    
     /*****************************************
     *  
     *  toString
@@ -603,7 +577,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "bad field value for offerID"/* TODO : use right message here */);
           return;
         }
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offerID valid => get offer ...");
         Offer offer = offerService.getActiveOffer(offerID, now);
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offerID valid => retrieved offer "+(offer == null ? "NULL !!!!!!" : offer));
         if(offer == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
           submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "offer " + offerID + " not found"/* TODO : use right message here */);
@@ -674,7 +650,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")"/* TODO : use right message here */);
             return;
           }else{
-            purchaseStatus.addProductStockToBeDebited(offerProduct.getProductID());
+            purchaseStatus.addProductStockToBeDebited(offerProduct);
           }
         }
         
@@ -718,27 +694,19 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   }
   
   private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus){
-    HashMap<String,Object> correlatorUpdateRecord = new HashMap<String,Object>();
-    correlatorUpdateRecord.put(purchase_status, PurchaseRequestStatus.toJSON(purchaseStatus));
-    JSONObject correlatorUpdate = JSONUtilities.encodeObject(correlatorUpdateRecord);
-    submitCorrelatorUpdate(purchaseStatus.getCorrelator(), correlatorUpdate);
+    submitCorrelatorUpdate(purchaseStatus.getCorrelator(), purchaseStatus.getJSONRepresentation());
   }
 
   @Override protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
   {
     log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
-    
-    String purchaseStatusAsString = JSONUtilities.decodeString(correlatorUpdate, purchase_status);
-    if(purchaseStatusAsString != null){
-      PurchaseRequestStatus purchaseStatus = PurchaseRequestStatus.fromJSON(purchaseStatusAsString);
-      deliveryRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
-      //purchaseStatus.getDeliveryStatusCode();
-      //purchaseStatus.getDeliveryStatusMessage();
-      deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
-      completeRequest(deliveryRequest);
-    }else{
-      log.warn("PurchaseFulfillmentManager.processCorrelatorUpdate() : ERROR : missing purchase status data");
-    }
+
+    PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlatorUpdate);
+    deliveryRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
+    //purchaseStatus.getDeliveryStatusCode();
+    //purchaseStatus.getDeliveryStatusMessage();
+    deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+    completeRequest(deliveryRequest);
 
     log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
 
@@ -752,7 +720,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   @Override protected void shutdown()
   {
-    log.info("PurchaseFulfillmentManager: shutdown");
+    log.info("PurchaseFulfillmentManager: shutdown called");
+    stockService.close();
+    log.info("PurchaseFulfillmentManager: shutdown DONE");
   }
   
   /*****************************************
@@ -798,15 +768,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   private void proceedPurchase(PurchaseRequestStatus purchaseStatus){
     //Change to return PurchaseManagerStatus? 
+    
     //
     // debit all product stocks
     //
     
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
-      String productID = purchaseStatus.getProductStockToBeDebited().remove(0);
-      purchaseStatus.setProductStockBeingDebited(productID);
-      debitProductStock(purchaseStatus);
-      return;
+      boolean debitOK = debitProductStock(purchaseStatus);
+      if(!debitOK){
+        proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "proceedPurchase : could not debit stock of product "+purchaseStatus.getProductStockDebitFailed().getProductID()/* TODO : use right message here */);
+        return;
+      }
     }
 
     //
@@ -814,10 +786,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
-      String offerID = purchaseStatus.getOfferStockToBeDebited().remove(0);
-      purchaseStatus.setOfferStockBeingDebited(offerID);
-      debitOfferStock(purchaseStatus);
-      return;
+      boolean debitOK = debitOfferStock(purchaseStatus);
+      if(!debitOK){
+        proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "proceedPurchase : could not debit stock of offer "+purchaseStatus.getOfferStockDebitFailed()/* TODO : use right message here */);
+        return;
+      }
     }
 
     //
@@ -856,7 +829,37 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  return;
     //}
 
-    // update and return response (succeed)
+    //
+    // everything is OK => confirm products and offers reservations
+    //
+    
+    if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
+      for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        if(product == null){
+          //TODO SCH : log warn
+        }else{
+          int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
+          stockService.confirmReservation(product, quantity);
+        }
+      }
+    }
+    if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
+      for(String offerID : purchaseStatus.getOfferStockDebited()){
+        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        if(offer == null){
+          //TODO SCH : log warn
+        }else{
+          int quantity = purchaseStatus.getQuantity();
+          stockService.confirmReservation(offer, quantity);
+        }
+      }
+    }
+    
+    //
+    // everything is OK => update and return response (succeed)
+    //
+    
     submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Delivered, 0/* TODO : use right code here */, "Success"/* TODO : use right message here */);
     
   }
@@ -867,40 +870,72 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private void debitProductStock(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    //==================================================================
-    //TODO SCH : make real call to debit product stock
-    //    / \     
-    //   / | \     ATTENTION : purchaseRequest.getProductID() x purchaseRequest.getQuantity()
-    //  /_____\
-    //==================================================================
-    purchaseStatus.addProductStockDebited(purchaseStatus.getProductStockBeingDebited());
-    purchaseStatus.setProductStockBeingDebited(null);
-    proceedPurchase(purchaseStatus);
-    //==================================================================
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+  private boolean debitProductStock(PurchaseRequestStatus purchaseStatus){
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+purchaseStatus.getProductStockBeingDebited()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+    boolean allGood = true;
+    if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
+      while(!purchaseStatus.getProductStockToBeDebited().isEmpty() && allGood){
+        OfferProduct offerProduct = purchaseStatus.getProductStockToBeDebited().remove(0);
+        purchaseStatus.setProductStockBeingDebited(offerProduct);
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        if(product == null){
+          purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
+          purchaseStatus.setProductStockBeingDebited(null);
+          allGood = false;
+        }else{
+          int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
+          boolean approved = stockService.reserve(product, quantity);
+          if(approved){
+            purchaseStatus.addProductStockDebited(purchaseStatus.getProductStockBeingDebited());
+            purchaseStatus.setProductStockBeingDebited(null);
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : " + product.getProductID() + " reserved");
+          }else{
+            purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
+            purchaseStatus.setProductStockBeingDebited(null);
+            allGood = false;
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : " + product.getProductID() + " reservation FAILED");
+          }
+        }
+      }
+    }
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+purchaseStatus.getProductStockBeingDebited()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    return allGood;
   }
 
-  private void debitOfferStock(PurchaseRequestStatus purchaseStatus){
+  private boolean debitOfferStock(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    //==================================================================
-    // TODO SCH : make real call to debit offer stock
-    //    / \     
-    //   / | \     ATTENTION : purchaseRequest.getOfferID() x purchaseRequest.getQuantity()
-    //  /_____\
-    //==================================================================
-    purchaseStatus.addOfferStockDebited(purchaseStatus.getOfferStockBeingDebited());
-    purchaseStatus.setOfferStockBeingDebited(null);
-    proceedPurchase(purchaseStatus);
-    //==================================================================
+    boolean allGood = true;
+    if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
+      while(!purchaseStatus.getOfferStockToBeDebited().isEmpty() && allGood){
+        String offerID = purchaseStatus.getOfferStockToBeDebited().remove(0);
+        purchaseStatus.setOfferStockBeingDebited(offerID);
+        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        if(offer == null){
+          purchaseStatus.setOfferStockDebitFailed(purchaseStatus.getOfferStockBeingDebited());
+          purchaseStatus.setOfferStockBeingDebited(null);
+          allGood = false;
+        }else{
+          int quantity = purchaseStatus.getQuantity();
+          boolean approved = stockService.reserve(offer, quantity);
+          if(approved){
+            purchaseStatus.addOfferStockDebited(purchaseStatus.getOfferStockBeingDebited());
+            purchaseStatus.setOfferStockBeingDebited(null);
+          }else{
+            purchaseStatus.setOfferStockDebitFailed(purchaseStatus.getOfferStockBeingDebited());
+            purchaseStatus.setOfferStockBeingDebited(null);
+            allGood = false;
+          }
+        }
+      }
+    }
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    return allGood;
   }
 
   private boolean makePayment(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
-    boolean paymentDone =  commodityActionManager.makePayment(PurchaseRequestStatus.toJSON(purchaseStatus), purchaseStatus.getCorrelator(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
+    boolean paymentDone =  commodityActionManager.makePayment(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return paymentDone;
   }
@@ -968,29 +1003,39 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(statusMessage != null){purchaseStatus.setDeliveryStatusMessage(statusMessage);}
 
     //
-    // debit all product stocks
+    // cancel all product stocks
     //
     
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
-      String productID = purchaseStatus.getProductStockDebited().remove(0);
-      purchaseStatus.setProductStockBeingRollbacked(productID);
-      creditProductStock(purchaseStatus);
-      return;
+      for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        if(product == null){
+          //TODO SCH : log warn
+        }else{
+          int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
+          stockService.voidReservation(product, quantity);
+        }
+      }
     }
 
     //
-    // debit all offer stocks
+    // cancel all offer stocks
     //
     
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
-      String offerID = purchaseStatus.getOfferStockDebited().remove(0);
-      purchaseStatus.setOfferStockBeingRollbacked(offerID);
-      creditOfferStock(purchaseStatus);
-      return;
+      for(String offerID : purchaseStatus.getOfferStockDebited()){
+        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        if(offer == null){
+          //TODO SCH : log warn
+        }else{
+          int quantity = purchaseStatus.getQuantity();
+          stockService.voidReservation(offer, quantity);
+        }
+      }
     }
 
     //
-    // make all payments
+    // cancel all payments
     //
     
     if(purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty()){
@@ -1027,8 +1072,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  return;
     //}
 
-    // update and return response (succeed)
+    //
+    // rollback completed => update and return response (failed)
+    //
+    
     submitCorrelatorUpdate(purchaseStatus);
+    
   }
 
   /*****************************************
@@ -1045,7 +1094,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //   / | \     ATTENTION : purchaseRequest.getProductID() x purchaseRequest.getQuantity()
     //  /_____\
     //==================================================================
-    purchaseStatus.addProductStockRollbacked(purchaseStatus.getProductStockBeingDebited());
+    purchaseStatus.addProductStockRollbacked(purchaseStatus.getProductStockBeingRollbacked());
     purchaseStatus.setProductStockBeingRollbacked(null);
     proceedRollback(purchaseStatus, null, null, null);
     //==================================================================
@@ -1070,7 +1119,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private boolean rollbackPayment(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingRollbacked();
-    boolean paymentDone =  commodityActionManager.creditCommodity(PurchaseRequestStatus.toJSON(purchaseStatus), purchaseStatus.getCorrelator(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
+    boolean paymentDone =  commodityActionManager.creditCommodity(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return paymentDone;
   }
@@ -1101,7 +1150,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(response) : can not get purchase status => ignore this response");
       return;
     }
-    PurchaseRequestStatus purchaseStatus = PurchaseRequestStatus.fromJSON(response.getDiplomaticBriefcase().get(originalRequest));
+    JSONParser parser = new JSONParser();
+    PurchaseRequestStatus purchaseStatus = null;
+    try
+      {
+        JSONObject requestStatusJSON = (JSONObject) parser.parse(response.getDiplomaticBriefcase().get(originalRequest));
+        purchaseStatus = new PurchaseRequestStatus(requestStatusJSON);
+      } catch (ParseException e)
+      {
+        log.error(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : ERROR whilme getting request status from '"+response.getDiplomaticBriefcase().get(originalRequest)+"' => IGNORED");
+        return;
+      }
     log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : getting purchase status DONE : "+purchaseStatus);
     
     // ------------------------------------
@@ -1117,8 +1176,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
       
       //  ---  check product stocks  ---
-      if(purchaseStatus.getProductStockBeingRollbacked() != null && !purchaseStatus.getProductStockBeingRollbacked().isEmpty()){
-        String productStockBeingRollbacked = purchaseStatus.getProductStockBeingRollbacked();
+      if(purchaseStatus.getProductStockBeingRollbacked() != null){
+        OfferProduct productStockBeingRollbacked = purchaseStatus.getProductStockBeingRollbacked();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
           purchaseStatus.addProductStockRollbacked(productStockBeingRollbacked);
           purchaseStatus.setProductStockBeingRollbacked(null);
@@ -1185,8 +1244,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
       
       //  ---  check product stocks  ---
-      if(purchaseStatus.getProductStockBeingDebited() != null && !purchaseStatus.getProductStockBeingDebited().isEmpty()){
-        String productStockBeingDebited = purchaseStatus.getProductStockBeingDebited();
+      if(purchaseStatus.getProductStockBeingDebited() != null){
+        OfferProduct productStockBeingDebited = purchaseStatus.getProductStockBeingDebited();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
           purchaseStatus.addProductStockDebited(productStockBeingDebited);
           purchaseStatus.setProductStockBeingDebited(null);
@@ -1224,23 +1283,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
           purchaseStatus.addPaymentDebited(offerPrice);
           purchaseStatus.setPaymentBeingDebited(null);
-          
-          
-          
-          //=========================================================================================
-          //TODO :   | TODO : REMOVE THIS   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!
-          //        \|/
-          //=========================================================================================
-          log.error("SCH : ADDING FAKE PRICE TO TEST ROLLBACK PROCESS");
-          OfferPrice newOfferPrice = new OfferPrice(null, 15, "currency1", "provider1", "paymentMean1");
-          purchaseStatus.addPaymentToBeDebited(newOfferPrice);
-          //=========================================================================================
-          //        /|\
-          //TODO :   | TODO : REMOVE THIS   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!
-          //=========================================================================================
-
-          
-          
           proceedPurchase(purchaseStatus);
           return;
         }else{
@@ -1278,6 +1320,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     }
 
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) DONE");
+
   }
   
   /*****************************************
@@ -1318,13 +1361,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private int deliveryStatusCode = -1;
     private String deliveryStatusMessage = null;
     
-    private List<String> productStockToBeDebited = null;
-    private String productStockBeingDebited = null;
-    private List<String> productStockDebited = null;
-    private String productStockDebitFailed = null;
-    private String productStockBeingRollbacked = null;
-    private List<String> productStockRollbacked = null;
-    private List<String> productStockRollbackFailed = null;
+    private List<OfferProduct> productStockToBeDebited = null;
+    private OfferProduct productStockBeingDebited = null;
+    private List<OfferProduct> productStockDebited = null;
+    private OfferProduct productStockDebitFailed = null;
+    private OfferProduct productStockBeingRollbacked = null;
+    private List<OfferProduct> productStockRollbacked = null;
+    private List<OfferProduct> productStockRollbackFailed = null;
     
     private List<String> offerStockToBeDebited = null;
     private String offerStockBeingDebited = null;
@@ -1372,13 +1415,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public int getDeliveryStatusCode(){return deliveryStatusCode;}
     public String getDeliveryStatusMessage(){return deliveryStatusMessage;}
 
-    public List<String> getProductStockToBeDebited(){return productStockToBeDebited;}
-    public String getProductStockBeingDebited(){return productStockBeingDebited;}
-    public List<String> getProductStockDebited(){return productStockDebited;}
-    public String getProductStockDebitFailed(){return productStockDebitFailed;}
-    public String getProductStockBeingRollbacked(){return productStockBeingRollbacked;}
-    public List<String> getProductStockRollbacked(){return productStockRollbacked;}
-    public List<String> getProductStockRollbackFailed(){return productStockRollbackFailed;}
+    public List<OfferProduct> getProductStockToBeDebited(){return productStockToBeDebited;}
+    public OfferProduct getProductStockBeingDebited(){return productStockBeingDebited;}
+    public List<OfferProduct> getProductStockDebited(){return productStockDebited;}
+    public OfferProduct getProductStockDebitFailed(){return productStockDebitFailed;}
+    public OfferProduct getProductStockBeingRollbacked(){return productStockBeingRollbacked;}
+    public List<OfferProduct> getProductStockRollbacked(){return productStockRollbacked;}
+    public List<OfferProduct> getProductStockRollbackFailed(){return productStockRollbackFailed;}
 
     public List<String> getOfferStockToBeDebited(){return offerStockToBeDebited;}
     public String getOfferStockBeingDebited(){return offerStockBeingDebited;}
@@ -1414,29 +1457,29 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setDeliveryStatusCode(int deliveryStatusCode){this.deliveryStatusCode = deliveryStatusCode;}
     public void setDeliveryStatusMessage(String deliveryStatusMessage){this.deliveryStatusMessage = deliveryStatusMessage;}
 
-    public void addProductStockToBeDebited(String productID){if(productStockToBeDebited == null){productStockToBeDebited = new ArrayList<String>(); productStockToBeDebited.add(productID);}}
-    public void setProductStockBeingDebited(String productID){this.productStockBeingDebited = productID;}
-    public void addProductStockDebited(String productID){if(productStockDebited == null){productStockDebited = new ArrayList<String>(); productStockDebited.add(productID);}}
-    public void setProductStockDebitFailed(String productID){this.productStockDebitFailed = productID;}
-    public void setProductStockBeingRollbacked(String productID){this.productStockBeingRollbacked = productID;}
-    public void addProductStockRollbacked(String productID){if(productStockRollbacked == null){productStockRollbacked = new ArrayList<String>(); productStockRollbacked.add(productID);}}
-    public void addProductStockRollbackFailed(String productID){if(productStockRollbackFailed == null){productStockRollbackFailed = new ArrayList<String>(); productStockRollbackFailed.add(productID);}}
+    public void addProductStockToBeDebited(OfferProduct product){if(productStockToBeDebited == null){productStockToBeDebited = new ArrayList<OfferProduct>();} productStockToBeDebited.add(product);}
+    public void setProductStockBeingDebited(OfferProduct product){this.productStockBeingDebited = product;}
+    public void addProductStockDebited(OfferProduct product){if(productStockDebited == null){productStockDebited = new ArrayList<OfferProduct>();} productStockDebited.add(product);}
+    public void setProductStockDebitFailed(OfferProduct product){this.productStockDebitFailed = product;}
+    public void setProductStockBeingRollbacked(OfferProduct product){this.productStockBeingRollbacked = product;}
+    public void addProductStockRollbacked(OfferProduct product){if(productStockRollbacked == null){productStockRollbacked = new ArrayList<OfferProduct>();} productStockRollbacked.add(product);}
+    public void addProductStockRollbackFailed(OfferProduct product){if(productStockRollbackFailed == null){productStockRollbackFailed = new ArrayList<OfferProduct>();} productStockRollbackFailed.add(product);}
     
-    public void addOfferStockToBeDebited(String offerID){if(offerStockToBeDebited == null){offerStockToBeDebited = new ArrayList<String>(); offerStockToBeDebited.add(offerID);}}
+    public void addOfferStockToBeDebited(String offerID){if(offerStockToBeDebited == null){offerStockToBeDebited = new ArrayList<String>();} offerStockToBeDebited.add(offerID);}
     public void setOfferStockBeingDebited(String offerID){this.offerStockBeingDebited = offerID;}
-    public void addOfferStockDebited(String offerID){if(offerStockDebited == null){offerStockDebited = new ArrayList<String>(); offerStockDebited.add(offerID);}}
+    public void addOfferStockDebited(String offerID){if(offerStockDebited == null){offerStockDebited = new ArrayList<String>();} offerStockDebited.add(offerID);}
     public void setOfferStockDebitFailed(String offerID){this.offerStockDebitFailed = offerID;}
     public void setOfferStockBeingRollbacked(String offerID){this.offerStockBeingRollbacked = offerID;}
-    public void addOfferStockRollbacked(String offerID){if(offerStockRollbacked == null){offerStockRollbacked = new ArrayList<String>(); offerStockRollbacked.add(offerID);}}
-    public void addOfferStockRollbackFailed(String offerID){if(offerStockRollbackFailed == null){offerStockRollbackFailed = new ArrayList<String>(); offerStockRollbackFailed.add(offerID);}}
+    public void addOfferStockRollbacked(String offerID){if(offerStockRollbacked == null){offerStockRollbacked = new ArrayList<String>();} offerStockRollbacked.add(offerID);}
+    public void addOfferStockRollbackFailed(String offerID){if(offerStockRollbackFailed == null){offerStockRollbackFailed = new ArrayList<String>();} offerStockRollbackFailed.add(offerID);}
 
-    public void addPaymentToBeDebited(OfferPrice offerPrice){if(paymentToBeDebited == null){paymentToBeDebited = new ArrayList<OfferPrice>(); paymentToBeDebited.add(offerPrice);}}
+    public void addPaymentToBeDebited(OfferPrice offerPrice){if(paymentToBeDebited == null){paymentToBeDebited = new ArrayList<OfferPrice>();} paymentToBeDebited.add(offerPrice);}
     public void setPaymentBeingDebited(OfferPrice offerPrice){this.paymentBeingDebited = offerPrice;}
-    public void addPaymentDebited(OfferPrice offerPrice){if(paymentDebited == null){paymentDebited = new ArrayList<OfferPrice>(); paymentDebited.add(offerPrice);}}
+    public void addPaymentDebited(OfferPrice offerPrice){if(paymentDebited == null){paymentDebited = new ArrayList<OfferPrice>();} paymentDebited.add(offerPrice);}
     public void setPaymentDebitFailed(OfferPrice offerPrice){this.paymentDebitFailed = offerPrice;}
     public void setPaymentBeingRollbacked(OfferPrice offerPrice){this.paymentBeingRollbacked = offerPrice;}
-    public void addPaymentRollbacked(OfferPrice offerPrice){if(paymentRollbacked == null){paymentRollbacked = new ArrayList<OfferPrice>(); paymentRollbacked.add(offerPrice);}}
-    public void addPaymentRollbackFailed(OfferPrice offerPrice){if(paymentRollbackFailed == null){paymentRollbackFailed = new ArrayList<OfferPrice>(); paymentRollbackFailed.add(offerPrice);}}
+    public void addPaymentRollbacked(OfferPrice offerPrice){if(paymentRollbacked == null){paymentRollbacked = new ArrayList<OfferPrice>();} paymentRollbacked.add(offerPrice);}
+    public void addPaymentRollbackFailed(OfferPrice offerPrice){if(paymentRollbackFailed == null){paymentRollbackFailed = new ArrayList<OfferPrice>();} paymentRollbackFailed.add(offerPrice);}
     
     /*****************************************
     *
@@ -1444,9 +1487,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseRequestStatus(){
-    }
-    
     public PurchaseRequestStatus(String correlator, String offerID, String subscriberID, int quantity, String salesChannelID){
       this.correlator = correlator;
       this.offerID = offerID;
@@ -1457,32 +1497,257 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     /*****************************************
     *
-    *  Object to/from json
+    *  constructor -- JSON
     *
     *****************************************/
 
-    public static String toJSON(PurchaseRequestStatus purchaseRequestStatus){
-      ObjectMapper mapper = new ObjectMapper();
-      String jsonInString = null;
-      try {
-        jsonInString = mapper.writeValueAsString(purchaseRequestStatus);
-      } catch (IOException e)
-      {
-        e.printStackTrace();
+    public PurchaseRequestStatus(JSONObject jsonRoot)
+    {  
+      this.correlator = JSONUtilities.decodeString(jsonRoot, "correlator", true);
+      this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
+      this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+      this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+      this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
+      
+      this.rollbackInProgress = JSONUtilities.decodeBoolean(jsonRoot, "rollbackInProgress", false);
+      
+      this.deliveryStatus = DeliveryStatus.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryStatus", false));
+      this.deliveryStatusCode = JSONUtilities.decodeInteger(jsonRoot, "deliveryStatusCode", false);
+      this.deliveryStatusMessage = JSONUtilities.decodeString(jsonRoot, "deliveryStatusMessage", false);
+      
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "productStockBeingDebited", false) != null){
+        this.productStockBeingDebited = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productStockBeingDebited", false));
       }
-      return jsonInString;
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "productStockDebitFailed", false) != null){
+        this.productStockDebitFailed = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productStockDebitFailed", false));
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "productStockBeingRollbacked", false) != null){
+        this.productStockBeingRollbacked = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productStockBeingRollbacked", false));
+      }
+      JSONArray productStockToBeDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productStockToBeDebited", false);
+      if (productStockToBeDebitedJSON != null){
+        List<OfferProduct> productStockToBeDebitedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productStockToBeDebitedJSON.size(); i++){
+          productStockToBeDebitedList.add(new OfferProduct((JSONObject) productStockToBeDebitedJSON.get(i)));
+        }
+        this.productStockToBeDebited = productStockToBeDebitedList;
+      }
+      JSONArray productStockDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productStockDebited", false);
+      if (productStockDebitedJSON != null){
+        List<OfferProduct> productStockDebitedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productStockDebitedJSON.size(); i++){
+          productStockDebitedList.add(new OfferProduct((JSONObject) productStockDebitedJSON.get(i)));
+        }
+        this.productStockDebited = productStockDebitedList;
+      }
+      JSONArray productStockRollbackedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productStockRollbacked", false);
+      if (productStockRollbackedJSON != null){
+        List<OfferProduct> productStockRollbackedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productStockRollbackedJSON.size(); i++){
+          productStockRollbackedList.add(new OfferProduct((JSONObject) productStockRollbackedJSON.get(i)));
+        }
+        this.productStockRollbacked = productStockRollbackedList;
+      }
+      JSONArray productStockRollbackFailedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productStockRollbackFailed", false);
+      if (productStockRollbackFailedJSON != null){
+        List<OfferProduct> productStockRollbackFailedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productStockRollbackFailedJSON.size(); i++){
+          productStockRollbackFailedList.add(new OfferProduct((JSONObject) productStockRollbackFailedJSON.get(i)));
+        }
+        this.productStockRollbackFailed = productStockRollbackFailedList;
+      }
+
+      JSONArray offerStockToBeDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "offerStockToBeDebited", false);
+      if (offerStockToBeDebitedJSON != null){
+        List<String> offerStockToBeDebitedList = new ArrayList<String>();
+        for (int i=0; i<offerStockToBeDebitedJSON.size(); i++){
+          offerStockToBeDebitedList.add((String) offerStockToBeDebitedJSON.get(i));
+        }
+        this.offerStockToBeDebited = offerStockToBeDebitedList;
+      }
+      this.offerStockBeingDebited = JSONUtilities.decodeString(jsonRoot, "offerStockBeingDebited", false);
+      JSONArray offerStockDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "offerStockDebited", false);
+      if (offerStockDebitedJSON != null){
+        List<String> offerStockDebitedList = new ArrayList<String>();
+        for (int i=0; i<offerStockDebitedJSON.size(); i++){
+          offerStockDebitedList.add((String) offerStockDebitedJSON.get(i));
+        }
+        this.offerStockDebited = offerStockDebitedList;
+      }
+      this.offerStockDebitFailed = JSONUtilities.decodeString(jsonRoot, "offerStockDebitFailed", false);
+      this.offerStockBeingRollbacked = JSONUtilities.decodeString(jsonRoot, "offerStockBeingRollbacked", false);
+      JSONArray offerStockRollbackedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "offerStockRollbacked", false);
+      if (offerStockRollbackedJSON != null){
+        List<String> offerStockRollbackedList = new ArrayList<String>();
+        for (int i=0; i<offerStockRollbackedJSON.size(); i++){
+          offerStockRollbackedList.add((String) offerStockRollbackedJSON.get(i));
+        }
+        this.offerStockRollbacked = offerStockRollbackedList;
+      }
+      JSONArray offerStockRollbackFailedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "offerStockRollbackFailed", false);
+      if (offerStockRollbackFailedJSON != null){
+        List<String> offerStockRollbackFailedList = new ArrayList<String>();
+        for (int i=0; i<offerStockRollbackFailedJSON.size(); i++){
+          offerStockRollbackFailedList.add((String) offerStockRollbackFailedJSON.get(i));
+        }
+        this.offerStockRollbackFailed = offerStockRollbackFailedList;
+      }
+      
+      JSONArray paymentToBeDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "paymentToBeDebited", false);
+      if (paymentToBeDebitedJSON != null){
+        List<OfferPrice> paymentToBeDebitedList = new ArrayList<OfferPrice>();
+        for (int i=0; i<paymentToBeDebitedJSON.size(); i++){
+            paymentToBeDebitedList.add(new OfferPrice((JSONObject) paymentToBeDebitedJSON.get(i)));
+        }
+        this.paymentToBeDebited = paymentToBeDebitedList;
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "paymentBeingDebited", false) != null){
+        this.paymentBeingDebited = new OfferPrice(JSONUtilities.decodeJSONObject(jsonRoot, "paymentBeingDebited", false));
+      }
+      JSONArray paymentDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "paymentDebited", false);
+      if (paymentDebitedJSON != null){
+        List<OfferPrice> paymentDebitedList = new ArrayList<OfferPrice>();
+        for (int i=0; i<paymentDebitedJSON.size(); i++){
+          paymentDebitedList.add(new OfferPrice((JSONObject) paymentDebitedJSON.get(i)));
+        }
+        this.paymentDebited = paymentDebitedList;
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "paymentDebitFailed", false) != null){
+        this.paymentDebitFailed = new OfferPrice(JSONUtilities.decodeJSONObject(jsonRoot, "paymentDebitFailed", false));
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "paymentBeingRollbacked", false) != null){
+        this.paymentBeingRollbacked = new OfferPrice(JSONUtilities.decodeJSONObject(jsonRoot, "paymentBeingRollbacked", false));
+      }
+      JSONArray paymentRollbackedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "paymentRollbacked", false);
+      if (paymentRollbackedJSON != null){
+        List<OfferPrice> paymentRollbackedList = new ArrayList<OfferPrice>();
+        for (int i=0; i<paymentRollbackedJSON.size(); i++){
+          paymentRollbackedList.add(new OfferPrice((JSONObject) paymentRollbackedJSON.get(i)));
+        }
+        this.paymentRollbacked = paymentRollbackedList;
+      }
+      JSONArray paymentRollbackFailedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "paymentRollbackFailed", false);
+      if (paymentRollbackFailedJSON != null){
+        List<OfferPrice> paymentRollbackFailedList = new ArrayList<OfferPrice>();
+        for (int i=0; i<paymentRollbackFailedJSON.size(); i++){
+          paymentRollbackFailedList.add(new OfferPrice((JSONObject) paymentRollbackFailedJSON.get(i)));
+        }
+        this.paymentRollbackFailed = paymentRollbackFailedList;
+      }
+      
     }
     
-    public static PurchaseRequestStatus fromJSON(String jsonInString){
-      ObjectMapper mapper = new ObjectMapper();
-      PurchaseRequestStatus obj = null;
-      try {
-        obj = mapper.readValue(jsonInString, PurchaseRequestStatus.class);
-      } catch (IOException e)
-      {
-        e.printStackTrace();
+    /*****************************************
+    *  
+    *  to JSONObject
+    *
+    *****************************************/
+//    private List<String> commoditiesToBeCredited = null;
+//    private List<String> commoditiesCredited = null;
+//    
+//    private List<String> providerToBeNotifyed = null;
+//    private List<String> providerNotifyed = null;
+    
+    public JSONObject getJSONRepresentation(){
+      Map<String, Object> data = new HashMap<String, Object>();
+      
+      data.put("correlator", this.getCorrelator());
+      data.put("offerID", this.getOfferID());
+      data.put("subscriberID", this.getSubscriberID());
+      data.put("quantity", this.getQuantity());
+      data.put("salesChannelID", this.getSalesChannelID());
+      
+      data.put("rollbackInProgress", this.getRollbackInProgress());
+      
+      data.put("deliveryStatus", this.getDeliveryStatus().getExternalRepresentation());
+      data.put("deliveryStatusCode", this.getDeliveryStatusCode());
+      data.put("deliveryStatusMessage", this.getDeliveryStatusMessage());
+      
+      if(this.getProductStockBeingDebited() != null){
+        data.put("productStockBeingDebited", this.getProductStockBeingDebited().getJSONRepresentation());
       }
-      return obj;
+      if(this.getProductStockDebitFailed() != null){
+        data.put("productStockDebitFailed", this.getProductStockDebitFailed().getJSONRepresentation());
+      }
+      if(this.getProductStockBeingRollbacked() != null){
+        data.put("productStockBeingRollbacked", this.getProductStockBeingRollbacked().getJSONRepresentation());
+      }
+      if(this.getProductStockToBeDebited() != null){
+        List<JSONObject> productStockToBeDebitedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductStockToBeDebited()){
+          productStockToBeDebitedList.add(product.getJSONRepresentation());
+        }
+        data.put("productStockToBeDebited", productStockToBeDebitedList);
+      }
+      if(this.getProductStockDebited() != null){
+        List<JSONObject> productStockDebitedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductStockDebited()){
+          productStockDebitedList.add(product.getJSONRepresentation());
+        }
+        data.put("productStockDebited", productStockDebitedList);
+      }
+      if(this.getProductStockRollbacked() != null){
+        List<JSONObject> productStockRollbackedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductStockRollbacked()){
+          productStockRollbackedList.add(product.getJSONRepresentation());
+        }
+        data.put("productStockRollbacked", productStockRollbackedList);
+      }
+      if(this.getProductStockRollbackFailed() != null){
+        List<JSONObject> productStockRollbackFailedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductStockRollbackFailed()){
+          productStockRollbackFailedList.add(product.getJSONRepresentation());
+        }
+        data.put("productStockRollbackFailed", productStockRollbackFailedList);
+      }
+
+      data.put("offerStockToBeDebited", this.getOfferStockToBeDebited());
+      data.put("offerStockBeingDebited", this.getOfferStockBeingDebited());
+      data.put("offerStockDebited", this.getOfferStockDebited());
+      data.put("offerStockDebitFailed", this.getOfferStockDebitFailed());
+      data.put("offerStockBeingRollbacked", this.getOfferStockBeingRollbacked());
+      data.put("offerStockRollbacked", this.getOfferStockRollbacked());
+      data.put("offerStockRollbackFailed", this.getOfferStockRollbackFailed());
+
+      if(this.getPaymentBeingDebited() != null){
+        data.put("paymentBeingDebited", this.getPaymentBeingDebited().getJSONRepresentation());
+      }
+      if(this.getPaymentDebitFailed() != null){
+        data.put("paymentDebitFailed", this.getPaymentDebitFailed().getJSONRepresentation());
+      }
+      if(this.getPaymentBeingRollbacked() != null){
+        data.put("paymentBeingRollbacked", this.getPaymentBeingRollbacked().getJSONRepresentation());
+      }
+      if(this.getPaymentToBeDebited() != null){
+        List<JSONObject> paymentToBeDebitedList = new ArrayList<JSONObject>();
+        for(OfferPrice price : this.getPaymentToBeDebited()){
+          paymentToBeDebitedList.add(price.getJSONRepresentation());
+        }
+        data.put("paymentToBeDebited", paymentToBeDebitedList);
+      }
+      if(this.getPaymentDebited() != null){
+        List<JSONObject> paymentDebitedList = new ArrayList<JSONObject>();
+        for(OfferPrice price : this.getPaymentDebited()){
+          paymentDebitedList.add(price.getJSONRepresentation());
+        }
+        data.put("paymentDebited", paymentDebitedList);
+      }
+      if(this.getPaymentRollbacked() != null){
+        List<JSONObject> paymentRollbackedList = new ArrayList<JSONObject>();
+        for(OfferPrice price : this.getPaymentRollbacked()){
+          paymentRollbackedList.add(price.getJSONRepresentation());
+        }
+        data.put("paymentRollbacked", paymentRollbackedList);
+      }
+      if(this.getPaymentRollbackFailed() != null){
+        List<JSONObject> paymentRollbackFailedList = new ArrayList<JSONObject>();
+        for(OfferPrice price : this.getPaymentRollbackFailed()){
+          paymentRollbackFailedList.add(price.getJSONRepresentation());
+        }
+        data.put("paymentRollbackFailed", paymentRollbackFailedList);
+      }
+
+      return JSONUtilities.encodeObject(data);
     }
 
   }

@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.evolution.INFulfillmentManager.Account;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentOperation;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
+import com.evolving.nglm.evolution.purchase.CommodityActionManager;
+import com.evolving.nglm.evolution.purchase.IDRCallback;
+import com.evolving.nglm.evolution.purchase.RequestPusher;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.Deployment;
@@ -144,8 +147,8 @@ public class CommodityActionManager
   *
   *****************************************/
 
-  public boolean makePayment(String originalRequest, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
-    return makeAction(paymentMeans, INFulfillmentOperation.Debit, originalRequest, deliveryRequestID, subscriberID, providerID, paymentMeanID, amount, callback);
+  public boolean makePayment(JSONObject briefcase, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
+    return makeAction(paymentMeans, INFulfillmentOperation.Debit, briefcase, deliveryRequestID, subscriberID, providerID, paymentMeanID, amount, callback);
   }
   
   /*****************************************
@@ -154,15 +157,15 @@ public class CommodityActionManager
   *
   *****************************************/
   
-  public boolean creditCommodity(String originalRequest, String deliveryRequestID, String subscriberID, String providerID, String commodityID, long amount, IDRCallback callback){
-    return makeAction(commodities, INFulfillmentOperation.Credit, originalRequest, deliveryRequestID, subscriberID, providerID, commodityID, amount, callback);
+  public boolean creditCommodity(JSONObject briefcase, String deliveryRequestID, String subscriberID, String providerID, String commodityID, long amount, IDRCallback callback){
+    return makeAction(commodities, INFulfillmentOperation.Credit, briefcase, deliveryRequestID, subscriberID, providerID, commodityID, amount, callback);
   }
 
   
   
   
   
-  private boolean makeAction(Map<String, Map<String, String>> commoditiesSet, INFulfillmentOperation operation, String originalRequest, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
+  private boolean makeAction(Map<String, Map<String, String>> commoditiesSet, INFulfillmentOperation operation, JSONObject briefcase, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
     log.info("CommodityActionManager.makeAction("+operation+", "+providerID+", "+paymentMeanID+", "+amount+") called");
 
     //
@@ -189,10 +192,10 @@ public class CommodityActionManager
               requestData.put("subscriberID", subscriberID);
               requestData.put("providerID", providerID);
               requestData.put("paymentMeanID", paymentMeanID);
-              requestData.put("operation", operation.toString());
+              requestData.put("operation", operation.getExternalRepresentation());
               requestData.put("amount", amount);
               Map<String,String> diplomaticBriefcase = new HashMap<String,String>();
-              diplomaticBriefcase.put(IDRCallback.originalRequest, originalRequest);
+              diplomaticBriefcase.put(IDRCallback.originalRequest, briefcase.toJSONString());
               requestData.put("diplomaticBriefcase", diplomaticBriefcase);
               //requestData.put("startValidityDate", now.toString()); //TODO SCH : what is this date for ?
               //requestData.put("endValidityDate", now.toString()); //TODO SCH : what is this date for ?
