@@ -139,6 +139,14 @@
     <changelog.propensityengine.propensitystate>propensitystate</changelog.propensityengine.propensitystate>
     <changelog.propensityengine.propensitystate.topic>streams-propensityengine-${changelog.propensityengine.propensitystate}-changelog</changelog.propensityengine.propensitystate.topic>
 
+    <!-- gui -->
+    <gui.csr.display>true</gui.csr.display>
+    <gui.opc.display>true</gui.opc.display>
+    <gui.jmr.display>true</gui.jmr.display>
+    <gui.iar.display>true</gui.iar.display>
+    <gui.opr.display>true</gui.opr.display>
+    <gui.itm.display>false</gui.itm.display>
+
   </properties>
 
   <dependencies>
