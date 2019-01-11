@@ -206,6 +206,29 @@ export REPORTSCHEDULER_PROMETHEUS
 export REPORTSCHEDULER_ENABLED
 
 #
+#  mysql-gui -- configuration
+#
+
+MYSQL_GUI_SERVER_HOST=
+MYSQL_GUI_SERVER_HOST_IP=
+MYSQL_GUI_SERVER_PORT=
+for TUPLE in $MYSQL_GUI_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export PORT=`echo $TUPLE | cut -d: -f4`
+   if [ -z "$MYSQL_GUI_SERVER_HOST" ]; then
+     MYSQL_GUI_SERVER_HOST="$HOST"
+     MYSQL_GUI_SERVER_HOST_IP="$HOST_IP"
+     MYSQL_GUI_SERVER_PORT="$PORT"
+   fi
+done
+export MYSQL_GUI_SERVER_HOST
+export MYSQL_GUI_SERVER_HOST_IP
+export MYSQL_GUI_SERVER_PORT
+
+#
 #  subscriberprofile redis -- configuration
 #
 
@@ -768,3 +791,4 @@ export NOTIFICATIONMANAGER_MAIL_CONTAINER_MEMORY_LIMIT=$(memory_limit $NOTIFICAT
 export REPORTMANAGER_CONTAINER_MEMORY_LIMIT=$(memory_limit $REPORTMANAGER_MEMORY)
 export REPORTSCHEDULER_CONTAINER_MEMORY_LIMIT=$(memory_limit $REPORTSCHEDULER_MEMORY)
 export SUBSCRIBERGROUP_CONTAINER_MEMORY_LIMIT=$(memory_limit $SUBSCRIBERGROUP_MEMORY)
+

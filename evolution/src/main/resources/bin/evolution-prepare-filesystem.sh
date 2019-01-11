@@ -114,6 +114,21 @@ do
 done
 
 #
+#  MySQL - GUI
+#
+
+MYSQL_GUI_CONFIGURATION=`echo $MYSQL_GUI_CONFIGURATION | sed 's/ /\n/g' | uniq`
+for TUPLE in $MYSQL_GUI_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   ssh $HOST "
+      mkdir -p $NGLM_MYSQL_RUNTIME/mysql-gui-$KEY \
+        $NGLM_MYSQL_RUNTIME/mysql-gui-$KEY/.mysql-keyring
+   "
+done
+
+#
 # FWK components
 #
 

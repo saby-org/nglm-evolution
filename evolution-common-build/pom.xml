@@ -33,16 +33,19 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.2-build190108-SNAPSHOT</version>
+    <version>4.3.2-build190111-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.3.2-build190108-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.2-build190111-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
+    <!-- dependencies -->
+    <flyway.version>qaveon-dnbo-2.5.0.10.4.3</flyway.version>
+    
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
     <common.build.phase.generate-evolution-partially-assembled-resources>none</common.build.phase.generate-evolution-partially-assembled-resources>
@@ -60,6 +63,7 @@
     <common.build.phase.generate-notificationmanagermail-image>none</common.build.phase.generate-notificationmanagermail-image>
     <common.build.phase.generate-reportmanager-image>none</common.build.phase.generate-reportmanager-image>
     <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
+    <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
     <common.build.skip.docker-prometheus-application-image>true</common.build.skip.docker-prometheus-application-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
@@ -73,6 +77,7 @@
     <common.build.skip.docker-notificationmanagermail-image>true</common.build.skip.docker-notificationmanagermail-image>
     <common.build.skip.docker-reportmanager-image>true</common.build.skip.docker-reportmanager-image>
     <common.build.skip.docker-reportscheduler-image>true</common.build.skip.docker-reportscheduler-image>
+    <common.build.skip.docker-upgrade-image>true</common.build.skip.docker-upgrade-image>
     
     <!-- configuration -->
     <evolutionengine.streamthreads>2</evolutionengine.streamthreads>
@@ -216,11 +221,24 @@
                   <fileset dir="${project.basedir}/src/assembly/resources/docker" includes="prometheus-application-environment.yml"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="prometheus-application-postamble.yml"/>
                 </concat>
+                <concat destfile="${project.build.directory}/assembled-resources/bin/upgrade-run.sh" force="yes">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="upgrade-run-preamble.sh"/>
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="upgrade-run-flyway.sh"/>
+                  <fileset dir="${project.basedir}/src/assembly/resources/bin" includes="upgrade-run-*.sh"/>
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="upgrade-run-postamble.sh"/>
+                </concat>
+                <concat destfile="${project.build.directory}/assembled-resources/docker/upgrade.yml" force="yes">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="upgrade-preamble.yml"/>
+                  <fileset dir="${project.basedir}/src/assembly/resources/docker" includes="upgrade-environment.yml"/>
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="upgrade-postamble.yml"/>
+                </concat>
                 <copy todir="${project.build.directory}/assembled-resources/docker">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker">
                     <include name="*.yml"/>
                     <exclude name="prometheus-application-preamble.yml"/>
                     <exclude name="prometheus-application-postamble.yml"/>
+                    <exclude name="upgrade-preamble.yml"/>
+                    <exclude name="upgrade-postamble.yml"/>
                   </fileset>
                 </copy>
               </target>
@@ -827,6 +845,47 @@
             </configuration>
           </execution>
 
+          <execution>
+            <id>generate-upgrade-stack</id>
+            <phase>${common.build.phase.generate-upgrade-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/upgrade</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/upgrade</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>bin/upgrade-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>databases/</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>src/assembly/resources</directory>
+                  <includes>
+                    <include>databases/</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
 
@@ -1030,7 +1089,22 @@
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>
-          
+
+          <execution>
+            <id>docker-upgrade</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-upgrade-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/upgrade</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-upgrade</repository>
+              <classifier>docker-info-upgrade</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
       

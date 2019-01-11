@@ -1,0 +1,11 @@
+  deploy:
+    restart_policy:
+      condition: none
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_HOST_>
+  networks:
+    - outside
+

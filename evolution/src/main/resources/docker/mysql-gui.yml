@@ -1,0 +1,24 @@
+mysql-gui-<_KEY_>:
+  image: ${env.DOCKER_REGISTRY}ev-mysql-gui:${project.name}-${project.version}
+  user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
+  command: --default-authentication-plugin=mysql_native_password
+  environment:
+    MYSQL_ROOT_PASSWORD: <_MYSQL_ROOT_PASSWORD_>
+    MYSQL_TCP_PORT: <_PORT_>
+  volumes:
+    - type: bind
+      source: <_NGLM_MYSQL_RUNTIME_>/mysql-gui-<_KEY_>
+      target: /var/lib/mysql
+  deploy:
+    restart_policy:
+      condition: any
+      delay: 0s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_HOST_>
+  networks:
+    - outside

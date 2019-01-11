@@ -414,6 +414,39 @@ if [ "$REPORTSCHEDULER_ENABLED" = "true" ]; then
 
 fi  
 
+#########################
+#
+#  construct stack -- mysql
+#
+#########################
+
+#
+#  preamble
+#
+
+mkdir -p $DEPLOY_ROOT/stack
+cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-mysql.yml
+
+#
+#  MySQL GUI
+#
+
+for TUPLE in $MYSQL_GUI_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export PORT=`echo $TUPLE | cut -d: -f4`
+   cat $DEPLOY_ROOT/docker/mysql-gui.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-mysql.yml
+   echo >> $DEPLOY_ROOT/stack/stack-mysql.yml
+done
+
+#
+#  postamble
+#
+
+cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-mysql.yml
+
 #########################################
 #
 #  construct stack -- gui
@@ -657,3 +690,31 @@ done
 #
 
 cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-gui.yml
+
+###########################################################################
+#
+#  construct stack -- Upgrade - preamble to a generic upgrade stack for NGLM
+#
+###########################################################################
+
+#
+#  preamble
+#
+
+mkdir -p $DEPLOY_ROOT/stack
+cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-upgrade.yml
+
+for TUPLE in $NGLM_UPGRADE_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   cat $DEPLOY_ROOT/docker/upgrade.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-upgrade.yml
+   echo >> $DEPLOY_ROOT/stack/stack-upgrade.yml
+done
+
+#
+#  postamble
+#
+
+cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-upgrade.yml
+

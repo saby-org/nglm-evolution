@@ -1,0 +1,41 @@
+upgrade:
+  image: ${env.DOCKER_REGISTRY}ev-upgrade:${project.name}-${project.version}
+  environment:
+    ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
+
+    #
+    # _meta_gui database (GUI)
+    #
+
+    _meta_gui_DB_USER: <_MYSQL_ROOT_USER_>
+    _meta_gui_DB_PASS: <_MYSQL_ROOT_PASSWORD_>
+    _meta_gui_DB_URL: jdbc:mysql://<_MYSQL_GUI_SERVER_HOST_IP_>:<_MYSQL_GUI_SERVER_PORT_>/_meta_gui?useSSL=false
+
+    #
+    # dbframework database (GUI)
+    #
+
+    dbframework_DB_USER: <_MYSQL_ROOT_USER_>
+    dbframework_DB_PASS: <_MYSQL_ROOT_PASSWORD_>
+    dbframework_DB_URL: jdbc:mysql://<_MYSQL_GUI_SERVER_HOST_IP_>:<_MYSQL_GUI_SERVER_PORT_>/dbframework?useSSL=false
+
+    #
+    #  GUI replacement
+    #
+
+    dbframework_WITH_REPLACEMENT: 'true'
+    __REPLACEMENT__FWK_URL_WEB_SERVER_PATH: "http://<_GUI_FWK_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__ITM_URL_WEB_SERVER_PATH: "http://<_GUI_ITM_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_ITM_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__CSR_URL_WEB_SERVER_PATH: "http://<_GUI_CSR_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_CSR_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__OPC_URL_WEB_SERVER_PATH: "http://<_GUI_OPC_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPC_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__JMR_URL_WEB_SERVER_PATH: "http://<_GUI_JMR_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_JMR_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__IAR_URL_WEB_SERVER_PATH: "http://<_GUI_IAR_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_IAR_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__OPR_URL_WEB_SERVER_PATH: "http://<_GUI_OPR_WEB_SERVER_HOST_EXTERNAL_IP_>:<_GUI_OPR_WEB_SERVER_PORT_>/app"
+    __REPLACEMENT__DEV_OR_TEST: "<_MYSQL_DEV_OR_TEST_>"
+    __REPLACEMENT__ITM_INSTALL: "true"
+    __REPLACEMENT__CSR_INSTALL: "true"
+    __REPLACEMENT__OPC_INSTALL: "true"
+    __REPLACEMENT__JMR_INSTALL: "true"
+    __REPLACEMENT__IAR_INSTALL: "true"
+    __REPLACEMENT__OPR_INSTALL: "true"
+
