@@ -58,7 +58,7 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name reportscheduler -loggc com.evolving.nglm.evolution.reports.ReportScheduler $ZOOKEEPER_SERVERS $BROKER_SERVERS
+exec kafka-run-class -name reportscheduler -loggc com.evolving.nglm.evolution.reports.ReportScheduler
 
 
 

@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -27,14 +26,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.ReportConfiguration;
-import com.evolving.nglm.evolution.ReportService;
-import com.evolving.nglm.evolution.ReportService.ReportListener;
 
 public class ReportManager implements Watcher{
 
-	private static final String CONTROL_SUBDIR = "control";
+	public static final String CONTROL_SUBDIR = "control"; // used in ReportScheduler
 	private static final String LOCK_SUBDIR = "lock";
 	private static final int sessionTimeout = 10*1000; // 60 seconds
 
@@ -43,7 +39,7 @@ public class ReportManager implements Watcher{
 	private ZooKeeper zk = null;
 	private Map<String,ReportConfiguration> reportsConfig = null;
 	private static String zkHostList;
-	private static String kafkaNode;
+	private static String brokerServers;
 	private static String esNode;
 	private DateFormat dfrm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z z");
 	private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
@@ -52,12 +48,16 @@ public class ReportManager implements Watcher{
 	 * Used by ReportScheduler to launch reports
 	 */
 	public static String getControlDir() {
-		return controlDir;
+		return getTopDir() + File.separator + CONTROL_SUBDIR;
+	}
+	
+	public static String getTopDir() {
+		return Deployment.getReportManagerZookeeperDir();
 	}
 	
 	public ReportManager() throws Exception {
-		String topDir = Deployment.getReportManagerZookeeperDir();
-		controlDir = topDir + File.separator + CONTROL_SUBDIR;
+		String topDir = getTopDir();
+		controlDir = getControlDir();
 		lockDir = topDir + File.separator + LOCK_SUBDIR;
 		log.debug("controlDir = "+controlDir+" , lockDir = "+lockDir);
 		reportsConfig = Deployment.getReportsConfiguration();
@@ -97,63 +97,68 @@ public class ReportManager implements Watcher{
 		try {
 			if (event.getType().equals(EventType.NodeChildrenChanged)) {
 				List<String> children = zk.getChildren(controlDir, this); // get the children and renew watch
-				Collections.sort(children); // we are getting an unsorted list
-				for (String child : children) {
-					String controlFile = controlDir + File.separator + child;
-					String lockFile = lockDir + File.separator + child;
-					log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
-					if (zk.exists(lockFile, false) == null) {
-						try {
-							log.trace("Trying to create lock file "+lockFile);
-							zk.create(
-									lockFile,
-									dfrm.format(new Date()).getBytes(), 
-									Ids.OPEN_ACL_UNSAFE,
-									CreateMode.EPHEMERAL);
+				if (!children.isEmpty()) {
+					Collections.sort(children); // we are getting an unsorted list
+					for (String child : children) {
+						String controlFile = controlDir + File.separator + child;
+						String lockFile = lockDir + File.separator + child;
+						log.trace("Checking if lock file exists : "+lockFile);
+						if (zk.exists(lockFile, false) == null) {
+							log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
 							try {
-								log.trace("Lock file "+lockFile+" successfully created");
-								Stat stat = null;
-								Charset utf8Charset = Charset.forName("UTF-8");
-								byte[] d = zk.getData(controlFile, false, stat);
-								String data = new String(d, utf8Charset);
-								log.info("Got data "+data);
-								Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
-								String reportName = s.next().trim();
-								String restOfLine = s.nextLine().trim();
-								s.close();
-								ReportConfiguration reportConfig = reportsConfig.get(reportName);
-								if (reportConfig == null) {
-									log.error("Report does not exist : "+reportName);
-								} else {
-									log.debug("reportConfig = "+reportConfig);
-									handleReport(reportName, reportConfig, restOfLine);
-								}
-							} catch (KeeperException | InterruptedException e) {
-								log.error("Issue while reading from control node "+e.getLocalizedMessage());
-							} catch (IllegalCharsetNameException e) {
-								log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage());
-							} finally {
+								log.trace("Trying to create lock file "+lockFile);
+								zk.create(
+										lockFile,
+										dfrm.format(new Date()).getBytes(), 
+										Ids.OPEN_ACL_UNSAFE,
+										CreateMode.EPHEMERAL);
 								try {
-									log.trace("Deleting control file "+controlFile);
-									zk.delete(controlFile, -1);
+									log.trace("Lock file "+lockFile+" successfully created");
+									Stat stat = null;
+									Charset utf8Charset = Charset.forName("UTF-8");
+									byte[] d = zk.getData(controlFile, false, stat);
+									String data = new String(d, utf8Charset);
+									log.info("Got data "+data);
+									Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
+									String reportName = s.next().trim();
+									String restOfLine = s.nextLine().trim();
+									s.close();
+									ReportConfiguration reportConfig = reportsConfig.get(reportName);
+									if (reportConfig == null) {
+										log.error("Report does not exist : "+reportName);
+									} else {
+										log.debug("reportConfig = "+reportConfig);
+										handleReport(reportName, reportConfig, restOfLine);
+									}
 								} catch (KeeperException | InterruptedException e) {
-									log.trace("Issue deleting control file : "+e.getLocalizedMessage());
+									log.error("Issue while reading from control node "+e.getLocalizedMessage());
+								} catch (IllegalCharsetNameException e) {
+									log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage());
+								} finally {
+									try {
+										log.trace("Deleting control file "+controlFile);
+										zk.delete(controlFile, -1);
+									} catch (KeeperException | InterruptedException e) {
+										log.trace("Issue deleting control file : "+e.getLocalizedMessage());
+									}
+									try {
+										log.trace("Deleting lock file "+lockFile);
+										zk.delete(lockFile, -1);
+										log.trace("Both files deleted");
+									} catch (KeeperException | InterruptedException e) {
+										log.trace("Issue deleting lock file : "+e.getLocalizedMessage());
+									}
 								}
-								try {
-									log.trace("Deleting lock file "+lockFile);
-									zk.delete(lockFile, -1);
-									log.trace("Both files deleted");
-								} catch (KeeperException | InterruptedException e) {
-									log.trace("Issue deleting lock file : "+e.getLocalizedMessage());
-								}
-							}
-						} catch (KeeperException | InterruptedException ignore) {
-							// even so we check the existence of a lock,
-							// it could have been created in the mean time
-							// making create fail. We catch and ignore it.
-							log.trace("Failed to create lock file, this is OK "
-									+lockFile+ ":"+ignore.getLocalizedMessage());
-						} 
+							} catch (KeeperException | InterruptedException ignore) {
+								// even so we check the existence of a lock,
+								// it could have been created in the mean time
+								// making create fail. We catch and ignore it.
+								log.trace("Failed to create lock file, this is OK "
+										+lockFile+ ":"+ignore.getLocalizedMessage());
+							} 
+						} else {
+							log.trace("--> This report is already processed by another ReportManager instance");
+						}
 					}
 				}
 			}
@@ -203,7 +208,7 @@ public class ReportManager implements Watcher{
 			Class<ReportDriver> report = (Class<ReportDriver>) Class.forName(reportConfig.getReportClass());
 			Constructor<ReportDriver> cons = report.getConstructor();
 			ReportDriver rd = cons.newInstance((Object[]) null);
-			rd.produceReport(zkHostList, kafkaNode, esNode, csvFilename, reportConfig, params);
+			rd.produceReport(zkHostList, brokerServers, esNode, csvFilename, reportConfig, params);
 		} catch (ClassNotFoundException e) {
 			log.error("Undefined class name "+e.getLocalizedMessage());
 		} catch (NoSuchMethodException e) {
@@ -219,13 +224,13 @@ public class ReportManager implements Watcher{
 		for(String arg : args){
 			log.info("ReportManager main : arg " + arg);
 		}
-		if (args.length < 3) {
-			log.error("Usage : ReportManager ZKhostList KafkaNode ESNode");
+		if (args.length < 2) {
+			log.error("Usage : ReportManager BrokerServers ESNode");
 			System.exit(1);
 		}
-		zkHostList  = args[0];
-		kafkaNode   = args[1];
-		esNode      = args[2];
+		brokerServers = args[0];
+		esNode        = args[1];
+		zkHostList = Deployment.getZookeeperConnect();
 		try {
 			ReportManager rm = new ReportManager();
 			log.debug("ZK client created");

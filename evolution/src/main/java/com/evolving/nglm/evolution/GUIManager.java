@@ -31,6 +31,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.reports.ReportScheduler;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -4117,20 +4118,26 @@ public class GUIManager
   private JSONObject processLaunchReport(String userID, JSONObject jsonRoot)
   {
 	log.trace("In processLaunchReport : "+jsonRoot);
-    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    GUIManagedObject report = reportService.getStoredReport(reportID);
-	log.trace("Looking for "+reportID+" and got "+report);
-    String responseCode = "reportNotFound";
-    if (report != null) {
-        responseCode = "ok";
-		try {
-			reportService.launchReport(report, userID);
-		} catch (GUIManagerException e) {
-			log.debug("Exception launching report : "+e.getLocalizedMessage());
-		}
-    }
     HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", responseCode);
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    GUIManagedObject report1 = reportService.getStoredReport(reportID);
+    log.trace("Looking for "+reportID+" and got "+report1);
+	String responseCode;
+    if (report1 == null) {
+    	responseCode = "reportNotFound";
+    } else {
+    	try {
+    		Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+    		log.trace("Decoded JSON and got "+report);
+   			responseCode = "ok";
+   			String reportName = report.getName();
+   			reportService.launchReport(reportName);
+    	} catch (GUIManagerException e) {
+    		log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+    		responseCode = "internalError";
+    	}
+    }
+	response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
   

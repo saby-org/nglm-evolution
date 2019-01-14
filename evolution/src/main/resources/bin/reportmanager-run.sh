@@ -58,7 +58,7 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $ZOOKEEPER_SERVERS $BROKER_SERVERS $ELASTICSEARCH_SERVERS
+exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $BROKER_SERVERS $ELASTICSEARCH_SERVERS
 
 
 
