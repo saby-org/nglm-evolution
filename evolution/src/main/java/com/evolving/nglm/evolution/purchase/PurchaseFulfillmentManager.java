@@ -172,7 +172,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     subscriberProfileService = new RedisSubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-245", Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), null);
     subscriberProfileService.start();
     
-    offerService = new OfferService(Deployment.getBrokerServers(), "example-offerservice-673", Deployment.getOfferTopic(), false);
+    offerService = new OfferService(Deployment.getBrokerServers(), "example-offerservice-6733", Deployment.getOfferTopic(), false);
     offerService.start();
 
     productService = new ProductService(Deployment.getBrokerServers(), "example-productservice-001", Deployment.getProductTopic(), false);
@@ -1486,6 +1486,76 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     }
 
   }
-  
+
+  /*****************************************
+  *
+  *  class ActionManager
+  *
+  *****************************************/
+
+  public static class ActionManager extends com.evolving.nglm.evolution.ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private SalesChannel salesChannel;
+    
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public ActionManager(JSONObject configuration)
+    {
+      super(configuration);
+      this.salesChannel = Deployment.getSalesChannels().get(JSONUtilities.decodeString(configuration, "salesChannel", true));
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      /*****************************************
+      *
+      *  parameters
+      *
+      *****************************************/
+
+      String offerID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.offerid");
+      int quantity = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.quantity");
+      
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannel.getID());
+
+      /*****************************************
+      *
+      *  return
+      *
+      *****************************************/
+
+      return request;
+    }
+  }
 }
 

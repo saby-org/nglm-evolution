@@ -2954,6 +2954,20 @@ public class GUIManager
             }
           break;
 
+        case "offers":
+          for (GUIManagedObject offerUnchecked : offerService.getStoredOffers())
+            {
+              if (offerUnchecked.getAccepted())
+                {
+                  Offer offer = (Offer) offerUnchecked;
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", offer.getOfferID());
+                  availableValue.put("display", offer.getDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+
         default:
           break;
       }

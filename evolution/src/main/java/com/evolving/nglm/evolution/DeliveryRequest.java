@@ -242,7 +242,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public DeliveryStatus getDeliveryStatus() { return deliveryStatus; }
   public Date getDeliveryDate() { return deliveryDate; }
   public Date getEventDate() { return deliveryDate; }
-  public Map<String, String> getDiplomaticBriefcase() {return diplomaticBriefcase;}
+  public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
 
   //
   //  setters
