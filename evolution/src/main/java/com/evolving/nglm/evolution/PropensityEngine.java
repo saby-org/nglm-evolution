@@ -130,7 +130,7 @@ public class PropensityEngine
   
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-
+  private static PropensityEngineStatistics propensityEngineStatistics;
   
   /****************************************
   *
@@ -186,9 +186,6 @@ public class PropensityEngine
     String propensityStateChangeLog = Deployment.getPropensityStateChangeLog();
     String propensityStateChangeLogTopic = Deployment.getPropensityStateChangeLogTopic();
    
-    
-
-
     //
     //  log
     //
@@ -199,6 +196,7 @@ public class PropensityEngine
     //  create monitoring object
     //
 
+    propensityEngineStatistics = new PropensityEngineStatistics(applicationID);
 
     /*****************************************
     *
@@ -376,11 +374,13 @@ public class PropensityEngine
     {
       propensityState.setAcceptanceCount(propensityState.getAcceptanceCount() + 1L);
       propensityStateUpdated = true;
+      propensityEngineStatistics.incrementAcceptanceCount();
     }
    else 
     {
-     propensityState.setPresentationCount(propensityState.getPresentationCount() + 1L);
-     propensityStateUpdated = true;
+      propensityState.setPresentationCount(propensityState.getPresentationCount() + 1L);
+      propensityStateUpdated = true;
+      propensityEngineStatistics.incrementPresentationCount();
     }
 
     /****************************************
@@ -481,6 +481,12 @@ public class PropensityEngine
 
     @Override public void shutdown(boolean normalShutdown)
     {
+      //
+      //  stop stats collection
+      //
+
+      if (propensityEngineStatistics != null) propensityEngineStatistics.unregister();
+
       //
       //  reference data reader
       //

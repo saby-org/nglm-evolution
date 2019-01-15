@@ -56,7 +56,6 @@ do
    export KEY=`echo $TUPLE | cut -d: -f1`
    export HOST=`echo $TUPLE | cut -d: -f2`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
-   export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
    if [ -n "$PROPENSITYENGINE_PROMETHEUS" ]; then
      PROPENSITYENGINE_PROMETHEUS="$PROPENSITYENGINE_PROMETHEUS,'$HOST:$MONITORING_PORT'"
    else
