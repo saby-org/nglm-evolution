@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>gitversion</version>
+  <version>0.0.1-sc190110-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://maven.sixthsensemedia.com:8090/repository/internal</url>
   <description>NGLM EVOLUTION</description>

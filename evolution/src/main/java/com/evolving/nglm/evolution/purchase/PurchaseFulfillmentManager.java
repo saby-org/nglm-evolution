@@ -531,7 +531,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         int quantity = purchaseRequest.getQuantity();
         String subscriberID = purchaseRequest.getSubscriberID();
         String salesChannelID = purchaseRequest.getSalesChannelID();
-        PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, offerID, subscriberID, quantity, salesChannelID);
+        PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
         
         //
         // Get quantity
@@ -871,7 +871,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *****************************************/
 
   private boolean debitProductStock(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+purchaseStatus.getProductStockBeingDebited()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     boolean allGood = true;
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
       while(!purchaseStatus.getProductStockToBeDebited().isEmpty() && allGood){
@@ -883,6 +883,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           purchaseStatus.setProductStockBeingDebited(null);
           allGood = false;
         }else{
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+product.getProductID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           boolean approved = stockService.reserve(product, quantity);
           if(approved){
@@ -898,7 +899,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
       }
     }
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+purchaseStatus.getProductStockBeingDebited()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return allGood;
   }
 
@@ -935,7 +936,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private boolean makePayment(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
-    boolean paymentDone =  commodityActionManager.makePayment(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
+    boolean paymentDone =  commodityActionManager.makePayment(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return paymentDone;
   }
@@ -1119,7 +1120,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private boolean rollbackPayment(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingRollbacked();
-    boolean paymentDone =  commodityActionManager.creditCommodity(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
+    boolean paymentDone =  commodityActionManager.creditCommodity(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return paymentDone;
   }
@@ -1350,6 +1351,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *****************************************/
 
     private String correlator = null;
+    private String  eventID = null;
+    private String  moduleID = null;
+    private String  featureID = null;
     private String offerID = null;
     private String subscriberID = null;
     private int quantity = -1;
@@ -1404,6 +1408,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *****************************************/
 
     public String getCorrelator(){return correlator;}
+    public String getEventID(){return eventID;}
+    public String getModuleID(){return moduleID;}
+    public String getFeatureID(){return featureID;}
     public String getOfferID(){return offerID;}
     public String getSubscriberID(){return subscriberID;}
     public int getQuantity(){return quantity;}
@@ -1487,8 +1494,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseRequestStatus(String correlator, String offerID, String subscriberID, int quantity, String salesChannelID){
+    public PurchaseRequestStatus(String correlator, String eventID, String moduleID, String featureID, String offerID, String subscriberID, int quantity, String salesChannelID){
       this.correlator = correlator;
+      this.eventID = eventID;
+      this.moduleID = moduleID;
+      this.featureID = featureID;
       this.offerID = offerID;
       this.subscriberID = subscriberID;
       this.quantity = quantity;
@@ -1504,6 +1514,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public PurchaseRequestStatus(JSONObject jsonRoot)
     {  
       this.correlator = JSONUtilities.decodeString(jsonRoot, "correlator", true);
+      this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
+      this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
+      this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
       this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
       this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
       this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
@@ -1652,6 +1665,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       Map<String, Object> data = new HashMap<String, Object>();
       
       data.put("correlator", this.getCorrelator());
+      data.put("eventID", this.getEventID());
+      data.put("moduleID", this.getModuleID());
+      data.put("featureID", this.getFeatureID());
       data.put("offerID", this.getOfferID());
       data.put("subscriberID", this.getSubscriberID());
       data.put("quantity", this.getQuantity());

@@ -147,8 +147,8 @@ public class CommodityActionManager
   *
   *****************************************/
 
-  public boolean makePayment(JSONObject briefcase, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
-    return makeAction(paymentMeans, INFulfillmentOperation.Debit, briefcase, deliveryRequestID, subscriberID, providerID, paymentMeanID, amount, callback);
+  public boolean makePayment(JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
+    return makeAction(paymentMeans, INFulfillmentOperation.Debit, briefcase, eventID, moduleID, featureID, deliveryRequestID, subscriberID, providerID, paymentMeanID, amount, callback);
   }
   
   /*****************************************
@@ -157,15 +157,15 @@ public class CommodityActionManager
   *
   *****************************************/
   
-  public boolean creditCommodity(JSONObject briefcase, String deliveryRequestID, String subscriberID, String providerID, String commodityID, long amount, IDRCallback callback){
-    return makeAction(commodities, INFulfillmentOperation.Credit, briefcase, deliveryRequestID, subscriberID, providerID, commodityID, amount, callback);
+  public boolean creditCommodity(JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String commodityID, long amount, IDRCallback callback){
+    return makeAction(commodities, INFulfillmentOperation.Credit, briefcase, eventID, moduleID, featureID, deliveryRequestID, subscriberID, providerID, commodityID, amount, callback);
   }
 
   
   
   
   
-  private boolean makeAction(Map<String, Map<String, String>> commoditiesSet, INFulfillmentOperation operation, JSONObject briefcase, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
+  private boolean makeAction(Map<String, Map<String, String>> commoditiesSet, INFulfillmentOperation operation, JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
     log.info("CommodityActionManager.makeAction("+operation+", "+providerID+", "+paymentMeanID+", "+amount+") called");
 
     //
@@ -194,6 +194,9 @@ public class CommodityActionManager
               requestData.put("paymentMeanID", paymentMeanID);
               requestData.put("operation", operation.getExternalRepresentation());
               requestData.put("amount", amount);
+              requestData.put("eventID", eventID);
+              requestData.put("moduleID", moduleID);
+              requestData.put("featureID", featureID);
               Map<String,String> diplomaticBriefcase = new HashMap<String,String>();
               diplomaticBriefcase.put(IDRCallback.originalRequest, briefcase.toJSONString());
               requestData.put("diplomaticBriefcase", diplomaticBriefcase);
