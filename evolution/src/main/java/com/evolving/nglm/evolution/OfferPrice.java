@@ -1,12 +1,10 @@
 /*****************************************************************************
 *
-*  Product.java
+*  OfferPrice.java
 *
 *****************************************************************************/
 
 package com.evolving.nglm.evolution;
-
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -14,6 +12,8 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 
 import org.json.simple.JSONObject;
+
+import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -163,11 +163,44 @@ public class OfferPrice
   *
   *****************************************/
 
-  public OfferPrice(JSONObject jsonRoot) throws GUIManagerException
+  public OfferPrice(JSONObject jsonRoot)
   {  
     this.amount = JSONUtilities.decodeLong(jsonRoot, "amount", true);
     this.supportedCurrencyID = JSONUtilities.decodeString(jsonRoot, "supportedCurrencyID", true);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
     this.paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", true);
   }
+  
+  /*****************************************
+  *
+  *  to JSONObject
+  *
+  *****************************************/
+  
+  public JSONObject getJSONRepresentation()
+  {
+    HashMap<String,Object> json = new HashMap<String,Object>();
+    json.put("amount", getAmount());
+    json.put("supportedCurrencyID", getSupportedCurrencyID());
+    json.put("providerID", getProviderID());
+    json.put("paymentMeanID", getPaymentMeanID());
+    return JSONUtilities.encodeObject(json);
+  }
+  
+  /*****************************************
+  *
+  *  toString
+  *
+  *****************************************/
+
+  @Override
+  public String toString()
+  {
+    return "OfferPrice ["
+        + "amount=" + amount 
+        + ", supportedCurrencyID=" + supportedCurrencyID 
+        + ", providerID=" + providerID 
+        + ", paymentMeanID=" + paymentMeanID + "]";
+  }
+
 }

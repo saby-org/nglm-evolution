@@ -6,48 +6,21 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
-
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import com.evolving.nglm.core.SystemTime;
-
-import java.nio.charset.StandardCharsets;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import com.evolving.nglm.core.SchemaUtilities;
 
 public class OfferProduct
 {
@@ -121,8 +94,7 @@ public class OfferProduct
   *
   *****************************************/
 
-  OfferProduct(JSONObject jsonRoot) throws GUIManagerException
-  {
+  public OfferProduct(JSONObject jsonRoot) {
     this.productID = JSONUtilities.decodeString(jsonRoot, "productID", true);
     this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", false);
   }
@@ -193,6 +165,19 @@ public class OfferProduct
     return new OfferProduct(productID, quantity);
   }
 
+  /*****************************************
+  *
+  *  getJSONRepresentation
+  *
+  *****************************************/
+
+  public JSONObject getJSONRepresentation(){
+    Map<String, Object> data = new HashMap<String, Object>();
+    data.put("productID", this.getProductID());
+    data.put("quantity", this.getQuantity());
+    return JSONUtilities.encodeObject(data);
+  }
+  
   /*****************************************
   *
   *  equals
