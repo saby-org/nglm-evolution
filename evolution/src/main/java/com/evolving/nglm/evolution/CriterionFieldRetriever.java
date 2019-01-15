@@ -106,4 +106,13 @@ public abstract class CriterionFieldRetriever
 
     return result;
   }
+
+  //
+  //  getJourneyActionJourneyStatus
+  //
+
+  public static Object getJourneyActionJourneyStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    return null;
+  }
 }

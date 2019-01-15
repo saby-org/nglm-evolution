@@ -163,6 +163,7 @@ public class Journey extends GUIManagedObject
   //
 
   public String getJourneyID() { return getGUIManagedObjectID(); }
+  public String getJourneyName() { return getGUIManagedObjectName(); }
   public Map<CriterionField,CriterionField> getJourneyMetrics() { return journeyMetrics; }
   public Map<String,CriterionField> getJourneyParameters() { return journeyParameters; }
   public boolean getAutoTargeted() { return autoTargeted; }

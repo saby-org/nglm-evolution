@@ -65,6 +65,7 @@ public class CriterionContext
   private static CriterionField nodeEntryDate;
   private static CriterionField evaluationEventName;
   private static CriterionField journeyActionDeliveryStatus;
+  private static CriterionField journeyActionJourneyStatus;
   private static CriterionField internalRandom100;
   static
   {
@@ -138,6 +139,25 @@ public class CriterionContext
         journeyActionDeliveryStatusJSON.put("retriever", "getJourneyActionDeliveryStatus");
         journeyActionDeliveryStatusJSON.put("internalOnly", true);
         journeyActionDeliveryStatus  = new CriterionField(JSONUtilities.encodeObject(journeyActionDeliveryStatusJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
+    //
+    //  journeyActionJourneyStatus
+    //
+
+    try
+      {
+        Map<String,Object> journeyActionJourneyStatusJSON = new LinkedHashMap<String,Object>();
+        journeyActionJourneyStatusJSON.put("id", "node.action.journeystatus");
+        journeyActionJourneyStatusJSON.put("display", "node.action.journeystatus");
+        journeyActionJourneyStatusJSON.put("dataType", "string");
+        journeyActionJourneyStatusJSON.put("retriever", "getJourneyActionJourneyStatus");
+        journeyActionJourneyStatusJSON.put("internalOnly", true);
+        journeyActionJourneyStatus  = new CriterionField(JSONUtilities.encodeObject(journeyActionJourneyStatusJSON));
       }
     catch (GUIManagerException e)
       {
@@ -280,6 +300,7 @@ public class CriterionContext
     this.journeyCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
     this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
     this.journeyCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
+    this.journeyCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
     this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
 
     //

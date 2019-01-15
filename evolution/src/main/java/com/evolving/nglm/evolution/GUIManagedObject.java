@@ -322,8 +322,8 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     this.effectiveEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
     this.readOnly = JSONUtilities.decodeBoolean(jsonRoot, "readOnly", Boolean.FALSE);
-    this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", Boolean.FALSE);
-    this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
+    this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", Boolean.TRUE);
+    this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.TRUE);
   }
 
   //
