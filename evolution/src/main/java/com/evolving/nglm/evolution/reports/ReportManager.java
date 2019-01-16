@@ -1,3 +1,9 @@
+/****************************************************************************
+*
+*  ReportManager.java 
+*
+****************************************************************************/
+
 package com.evolving.nglm.evolution.reports;
 
 import java.io.File;
@@ -43,6 +49,7 @@ public class ReportManager implements Watcher{
 	private static String esNode;
 	private DateFormat dfrm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z z");
 	private static final Logger log = LoggerFactory.getLogger(ReportManager.class);
+        private static ReportManagerStatistics reportManagerStatistics;
 
 	/*
 	 * Used by ReportScheduler to launch reports
@@ -126,14 +133,18 @@ public class ReportManager implements Watcher{
 									ReportConfiguration reportConfig = reportsConfig.get(reportName);
 									if (reportConfig == null) {
 										log.error("Report does not exist : "+reportName);
+                                                                                reportManagerStatistics.incrementFailureCount();
 									} else {
 										log.debug("reportConfig = "+reportConfig);
-										handleReport(reportName, reportConfig, restOfLine);
+                                                                                handleReport(reportName, reportConfig, restOfLine);
+                                                                                reportManagerStatistics.incrementReportCount();
 									}
 								} catch (KeeperException | InterruptedException e) {
 									log.error("Issue while reading from control node "+e.getLocalizedMessage());
+                                                                        reportManagerStatistics.incrementFailureCount();
 								} catch (IllegalCharsetNameException e) {
 									log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage());
+                                                                        reportManagerStatistics.incrementFailureCount();
 								} finally {
 									try {
 										log.trace("Deleting control file "+controlFile);
@@ -211,11 +222,14 @@ public class ReportManager implements Watcher{
 			rd.produceReport(zkHostList, brokerServers, esNode, csvFilename, reportConfig, params);
 		} catch (ClassNotFoundException e) {
 			log.error("Undefined class name "+e.getLocalizedMessage());
+                        reportManagerStatistics.incrementFailureCount();
 		} catch (NoSuchMethodException e) {
 			log.error("Undefined method "+e.getLocalizedMessage());
+                        reportManagerStatistics.incrementFailureCount();
 		} catch (SecurityException|InstantiationException|IllegalAccessException|
 				IllegalArgumentException|InvocationTargetException e) {
 			log.error("Error : "+e.getLocalizedMessage());
+                        reportManagerStatistics.incrementFailureCount();
 		}
 	}
 
@@ -232,6 +246,7 @@ public class ReportManager implements Watcher{
 		esNode        = args[1];
 		zkHostList = Deployment.getZookeeperConnect();
 		try {
+                        reportManagerStatistics = new ReportManagerStatistics("reportmanager");
 			ReportManager rm = new ReportManager();
 			log.debug("ZK client created");
 			while (true) { //  sleep forever
