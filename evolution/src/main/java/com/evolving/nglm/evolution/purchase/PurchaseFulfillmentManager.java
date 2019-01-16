@@ -34,6 +34,7 @@ import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.ODRStatistics;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferPrice;
 import com.evolving.nglm.evolution.OfferProduct;
@@ -153,6 +154,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private StockMonitor stockService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private CommodityActionManager commodityActionManager;
+  private ODRStatistics odrStats = null;
   
   /*****************************************
   *
@@ -188,6 +190,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     commodityActionManager = new CommodityActionManager(this);
 
+    //
+    // statistics
+    //
+    
+    try{
+      odrStats = new ODRStatistics("deliverymanager-purchasefulfillment");
+    }catch(Exception e){
+      log.error("PurchaseFulfillmentManager: could not load statistics ", e);
+      throw new RuntimeException("PurchaseFulfillmentManager: could not load statistics  ", e);
+    }
+    
     //
     //  threads
     //
@@ -705,6 +718,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //purchaseStatus.getDeliveryStatusMessage();
     deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
     completeRequest(deliveryRequest);
+    odrStats.updatePurchasesCount(1, deliveryRequest.getDeliveryStatus());
 
     log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
 

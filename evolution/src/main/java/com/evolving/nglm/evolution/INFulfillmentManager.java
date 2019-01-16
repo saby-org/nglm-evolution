@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
@@ -24,7 +23,6 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
@@ -37,8 +35,6 @@ import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
-import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
   
 public class INFulfillmentManager extends DeliveryManager implements Runnable
 {
@@ -141,6 +137,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   private Set<Account> availableAccounts;
   private INPluginInterface inPlugin;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
+  private BDRStatistics bdrStats = null;
   
   /*****************************************
   *
@@ -204,6 +201,17 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         throw new RuntimeException("INFufillmentManager: could not find class " + inPluginClassName, e);
       }
       
+    
+    //
+    // statistics
+    //
+    try{
+      bdrStats = new BDRStatistics(pluginName);
+    }catch(Exception e){
+      log.error("INFufillmentManager: could not load statistics ", e);
+      throw new RuntimeException("INFufillmentManager: could not load statistics  ", e);
+    }
+    
     //
     //  threads
     //
@@ -743,6 +751,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         deliveryRequest.setDeliveryStatus(getINFulfillmentStatus(status));
         deliveryRequest.setDeliveryDate(SystemTime.getActualCurrentTime());
         completeRequest(deliveryRequest);
+        bdrStats.updateBDREventCount(1, getINFulfillmentStatus(status));
 
       }
   }

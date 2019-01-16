@@ -23,7 +23,6 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -91,6 +90,9 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   private int threadNumber = 5;   //TODO : make this configurable
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   private MailNotificationInterface mailNotification;
+  private NotificationStatistics stats = null;
+  private static String applicationID = "deliverymanager-notificationmanagermail";
+  public String pluginName;
 
   //
   //  logger
@@ -110,12 +112,14 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     //  superclass
     //
 
-    super("deliverymanager-notificationmanagermail", deliveryManagerKey, Deployment.getBrokerServers(), MailNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
+    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), MailNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
 
     //
     //  manager
     //
 
+    this.pluginName = pluginName;
+    
     String mailPluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
     log.info("MailNotificationManager: plugin instanciation : mailPluginClassName = "+mailPluginClassName);
 
@@ -138,6 +142,17 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         throw new RuntimeException("MailNotificationManager: could not find class " + mailPluginClassName, e);
       }
 
+    //
+    // statistics
+    //
+    
+    try{
+      stats = new NotificationStatistics(applicationID, pluginName);
+    }catch(Exception e){
+      log.error("MailNotificationManager: could not load statistics ", e);
+      throw new RuntimeException("MailNotificationManager: could not load statistics  ", e);
+    }
+    
     //
     //  threads
     //
@@ -474,6 +489,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   {
     log.info("MailNotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
     completeRequest(deliveryRequest);
+    stats.updateMessageCount(pluginName, 1, deliveryRequest.getDeliveryStatus());
   }
 
   /*****************************************

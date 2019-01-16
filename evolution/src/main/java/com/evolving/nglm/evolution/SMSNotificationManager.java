@@ -26,8 +26,6 @@ import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.SMSMessage;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
-import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
@@ -97,6 +95,9 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private int threadNumber = 5;   //TODO : make this configurable
   private SMSNotificationInterface smsNotification;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
+  private NotificationStatistics stats = null;
+  private static String applicationID = "deliverymanager-notificationmanagersms";
+  public String pluginName;
   
   //
   //  logger
@@ -116,11 +117,13 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //  superclass
     //
     
-    super("deliverymanager-notificationmanagersms", deliveryManagerKey, Deployment.getBrokerServers(), SMSNotificationManagerRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
+    super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), SMSNotificationManagerRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
     
     //
     //  manager
     //
+    
+    this.pluginName = pluginName;
     
     String smsPluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
     log.info("SMSNotificationManager: plugin instanciation : smsPluginClassName = "+smsPluginClassName);
@@ -143,6 +146,17 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         log.error("SMSNotificationManager: could not find class " + smsPluginClassName, e);
         throw new RuntimeException("SMSNotificationManager: could not find class " + smsPluginClassName, e);
       }
+    
+    //
+    // statistics
+    //
+    
+    try{
+      stats = new NotificationStatistics(applicationID, pluginName);
+    }catch(Exception e){
+      log.error("SMSNotificationManager: could not load statistics ", e);
+      throw new RuntimeException("SMSNotificationManager: could not load statistics  ", e);
+    }
       
     //
     //  threads
@@ -550,6 +564,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   {
     log.debug("SMSNotificationManager.updateDeliveryRequest(deliveryRequest="+deliveryRequest+")");
     completeRequest(deliveryRequest);
+    stats.updateMessageCount(pluginName, 1, deliveryRequest.getDeliveryStatus());
   }
 
   /*****************************************

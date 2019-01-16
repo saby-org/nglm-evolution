@@ -196,7 +196,7 @@
 	          "sales_channel_id" : { "type" : "keyword" },
 	          "offer_price" : { "type" : "integer", "index" : "false" },
 	          "offer_stock" : { "type" : "integer", "index" : "false" },
-	          "offer_content" : { "type" : "Text", "index" : "false" },
+	          "offer_content" : { "type" : "text", "index" : "false" },
 	          "module_id" : { "type" : "keyword" },
 	          "feature_id" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
