@@ -54,6 +54,7 @@ public class NodeType extends DeploymentManagedObject
   *****************************************/
 
   private boolean startNode;
+  private boolean enableCycle;
   private OutputType outputType;
   private LinkedHashMap<String,CriterionField> parameters = new LinkedHashMap<String,CriterionField>();
   private LinkedHashMap<String,CriterionField> outputConnectorParameters = new LinkedHashMap<String,CriterionField>();
@@ -66,6 +67,7 @@ public class NodeType extends DeploymentManagedObject
   *****************************************/
 
   public boolean getStartNode() { return startNode; }
+  public boolean getEnableCycle() { return enableCycle; }
   public OutputType getOutputType() { return  outputType; }
   public Map<String,CriterionField> getParameters() { return parameters; }
   public Map<String,CriterionField> getOutputConnectorParameters() { return outputConnectorParameters; }
@@ -90,6 +92,7 @@ public class NodeType extends DeploymentManagedObject
     //
 
     this.startNode = JSONUtilities.decodeBoolean(jsonRoot, "startNode", Boolean.FALSE);
+    this.enableCycle = JSONUtilities.decodeBoolean(jsonRoot, "enableCycle", Boolean.FALSE);
     this.outputType = OutputType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "outputType", true));
 
     //

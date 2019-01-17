@@ -1468,6 +1468,8 @@ public class EvolutionEngine
         *
         *****************************************/
 
+        Set<JourneyNode> visited = new HashSet<JourneyNode>();
+        boolean terminateCycle = false;
         JourneyLink firedLink = null;
         do
           {
@@ -1511,6 +1513,17 @@ public class EvolutionEngine
                   {
                     break;
                   }
+              }
+
+            /*****************************************
+            *
+            *  terminateCycle?
+            *
+            *****************************************/
+
+            if (terminateCycle)
+              {
+                firedLink = null;
               }
 
             /*****************************************
@@ -1560,6 +1573,27 @@ public class EvolutionEngine
                 subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState, firedLink));
                 journeyNode = nextJourneyNode;
                 subscriberStateUpdated = true;
+
+                /*****************************************
+                *
+                *  terminate at this node if necessary
+                *   -- second visit
+                *   -- an "enableCycle" node
+                *
+                *****************************************/
+
+                if (visited.contains(journeyNode) && journeyNode.getNodeType().getEnableCycle())
+                  {
+                    terminateCycle = true;
+                  }
+                
+                /*****************************************
+                *
+                *  mark visited
+                *
+                *****************************************/
+
+                visited.add(journeyNode);
 
                 /*****************************************
                 *

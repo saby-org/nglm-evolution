@@ -30,7 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 
 public class JourneyNode
 {
@@ -180,5 +182,57 @@ public class JourneyNode
     //
 
     return new JourneyNode(nodeID, nodeName, nodeType, nodeParameters, incomingLinkReferences, outgoingLinkReferences);
+  }
+  
+  /*****************************************
+  *
+  *  detectCycle
+  *
+  *****************************************/
+
+  boolean detectCycle(Set<JourneyNode> visitedNodes, LinkedList<JourneyNode> walkNodes)
+  {
+    //
+    //  visited?
+    //
+
+    if (visitedNodes.contains(this)) return false;
+    
+    //
+    //  cycle found?
+    //
+
+    boolean cycleDetected = walkNodes.contains(this);
+
+    //
+    //  add to path
+    //
+
+    walkNodes.add(this);
+    
+    //
+    //  walk children
+    //
+
+    if (! this.getNodeType().getEnableCycle())
+      {
+        for (JourneyLink journeyLink : outgoingLinks.values())
+          {
+            cycleDetected = cycleDetected || journeyLink.getDestination().detectCycle(visitedNodes, walkNodes);
+          }
+      }
+
+    //
+    //  update path, visited
+    //
+
+    if (! cycleDetected) walkNodes.remove(this);
+    visitedNodes.add(this);
+
+    //
+    //  return
+    //
+
+    return cycleDetected;
   }
 }

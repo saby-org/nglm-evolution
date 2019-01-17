@@ -8063,7 +8063,7 @@ public class GUIManager
 
   /*****************************************
   *
-  *  class GUIManagerException
+  *  class DeliverableSourceService
   *
   *****************************************/
 

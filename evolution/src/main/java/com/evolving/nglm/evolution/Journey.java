@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -711,6 +712,8 @@ public class Journey extends GUIManagedObject
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
         JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), outgoingConnectionPoint.getOutputConnectorParameters(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
+        journeyLink.setSource(sourceJourneyNode);
+        journeyLink.setDestination(destinationJourneyNode);
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
 
         /*****************************************
@@ -809,6 +812,20 @@ public class Journey extends GUIManagedObject
             journeyNode.getIncomingLinkReferences().add(incomingLink.getLinkID());
             journeyNode.getIncomingLinks().put(incomingLink.getLinkID(), incomingLink);
           }
+      }
+
+    /*****************************************
+    *
+    *  ensure no illegal cycles
+    *
+    *****************************************/
+    
+    Set<JourneyNode> visitedNodes = new HashSet<JourneyNode>();
+    LinkedList<JourneyNode> walkNodes = new LinkedList<JourneyNode>();
+    JourneyNode startNode = journeyNodes.get(startNodeID);
+    if (startNode.detectCycle(visitedNodes, walkNodes))
+      {
+        throw new GUIManagerException("illegal cycle", walkNodes.get(walkNodes.size()-1).getNodeID());
       }
 
     /*****************************************
