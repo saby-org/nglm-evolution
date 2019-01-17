@@ -41,15 +41,18 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.2-build190111-SNAPSHOT</version>
+    <version>4.3.2-build190117-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.3.2-build190111-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.2-build190117-SNAPSHOT</nglm.core.version>
 
+    <!-- maven -->
+    <dockerfile.maven.plugin.version>1.4.5</dockerfile.maven.plugin.version>
+    
     <!-- dependencies - gui -->
     <gui-fwk.version>1.0.7</gui-fwk.version>
     <gui-csr.version>1.0.8</gui-csr.version>
@@ -315,14 +318,6 @@
             </configuration>
           </execution>
 
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.0.2</version>
-        <executions>
-
           <execution>
             <id>generate-mysql-gui-docker-stack</id>
             <phase>package</phase>
@@ -351,7 +346,7 @@
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>1.3.5</version>
+        <version>${dockerfile.maven.plugin.version}</version>
         <executions>
           
           <execution>

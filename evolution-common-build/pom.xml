@@ -28,21 +28,30 @@
       <url>http://packages.confluent.io/maven/</url>
     </repository>
 
+    <repository>
+      <id>artifactory</id>
+      <name>artifactory</name>
+      <url>http://artifactory.lumata.int/artifactory/repo</url>
+    </repository>
+
   </repositories>  
 
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.2-build190111-SNAPSHOT</version>
+    <version>4.3.2-build190117-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.3.2-build190111-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.2-build190117-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
+    <!-- maven -->
+    <dockerfile.maven.plugin.version>1.4.5</dockerfile.maven.plugin.version>
+    
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.3</flyway.version>
     
@@ -900,7 +909,7 @@
       <plugin>
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>1.3.5</version>
+        <version>${dockerfile.maven.plugin.version}</version>
         <executions>
 
           <execution>
