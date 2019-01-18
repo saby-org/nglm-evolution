@@ -41,14 +41,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.2-build190117-SNAPSHOT</version>
+    <version>4.3.2-build190118-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.3.2-build190117-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.2-build190118-SNAPSHOT</nglm.core.version>
 
     <!-- maven -->
     <dockerfile.maven.plugin.version>1.4.5</dockerfile.maven.plugin.version>
