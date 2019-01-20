@@ -8,7 +8,7 @@ opc-api-<_KEY_>:
     DNBOEngineSettings__UseSubscriberId: 'true'
     DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
     DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
-    ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
+    ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     ConnectionStrings__OPCConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
     Redis__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_SERVER_>,allowAdmin=true,syncTimeout=5000'
     MatrixBusSettings_RetriveCustomerDetailsDataFromDB: '<_OPC_WEB_GET_CUSTOMER_DATA_FROM_DB_>'

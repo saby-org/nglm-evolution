@@ -4,7 +4,7 @@ iar-api-<_KEY_>:
   environment:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
     FwkSettings__UploadFolder: '/mnt/upload'
-    ConnectionStrings__FwkConnection: 'Server=<_GUI_MYSQL_SERVER_HOST_IP_>;Port=<_GUI_MYSQL_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
+    ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     IAR_API_PORT: <_PORT_>
   volumes:

@@ -53,7 +53,7 @@
     <dockerfile.maven.plugin.version>1.4.5</dockerfile.maven.plugin.version>
     
     <!-- dependencies -->
-    <flyway.version>qaveon-dnbo-2.5.0.10.4.3</flyway.version>
+    <flyway.version>qaveon-dnbo-2.5.0.10.4.5</flyway.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
