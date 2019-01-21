@@ -175,6 +175,11 @@ public class GUIManager
     getCatalogCharacteristic("getCatalogCharacteristic"),
     putCatalogCharacteristic("putCatalogCharacteristic"),
     removeCatalogCharacteristic("removeCatalogCharacteristic"),
+    getJourneyObjectiveList("getJourneyObjectiveList"),
+    getJourneyObjectiveSummaryList("getJourneyObjectiveSummaryList"),
+    getJourneyObjective("getJourneyObjective"),
+    putJourneyObjective("putJourneyObjective"),
+    removeJourneyObjective("removeJourneyObjective"),
     getOfferObjectiveList("getOfferObjectiveList"),
     getOfferObjectiveSummaryList("getOfferObjectiveSummaryList"),
     getOfferObjective("getOfferObjective"),
@@ -240,6 +245,7 @@ public class GUIManager
   private SupplierService supplierService;
   private ProductService productService;
   private CatalogCharacteristicService catalogCharacteristicService;
+  private JourneyObjectiveService journeyObjectiveService;
   private OfferObjectiveService offerObjectiveService;
   private ProductTypeService productTypeService;
   private DeliverableService deliverableService;
@@ -298,6 +304,7 @@ public class GUIManager
     String supplierTopic = Deployment.getSupplierTopic();
     String productTopic = Deployment.getProductTopic();
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
+    String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
@@ -336,6 +343,7 @@ public class GUIManager
     supplierService = new SupplierService(bootstrapServers, "guimanager-supplierservice-" + apiProcessKey, supplierTopic, true);
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
+    journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "guimanager-journeyobjectiveservice-" + apiProcessKey, journeyObjectiveTopic, true);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
@@ -477,6 +485,27 @@ public class GUIManager
       }
     
     //
+    //  journeyObjectives
+    //
+
+    if (journeyObjectiveService.getStoredJourneyObjectives().size() == 0)
+      {
+        try
+          {
+            JSONArray initialJourneyObjectivesJSONArray = Deployment.getInitialJourneyObjectivesJSONArray();
+            for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
+              {
+                JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
+                processPutJourneyObjective("0", journeyObjectiveJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+
+    //
     //  offerObjectives
     //
 
@@ -513,6 +542,7 @@ public class GUIManager
     supplierService.start();
     productService.start();
     catalogCharacteristicService.start();
+    journeyObjectiveService.start();
     offerObjectiveService.start();
     productTypeService.start();
     deliverableService.start();
@@ -606,6 +636,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristic", new APIHandler(API.getCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APIHandler(API.putCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APIHandler(API.removeCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/getJourneyObjectiveList", new APIHandler(API.getJourneyObjectiveList));
+        restServer.createContext("/nglm-guimanager/getJourneyObjectiveSummaryList", new APIHandler(API.getJourneyObjectiveSummaryList));
+        restServer.createContext("/nglm-guimanager/getJourneyObjective", new APIHandler(API.getJourneyObjective));
+        restServer.createContext("/nglm-guimanager/putJourneyObjective", new APIHandler(API.putJourneyObjective));
+        restServer.createContext("/nglm-guimanager/removeJourneyObjective", new APIHandler(API.removeJourneyObjective));
         restServer.createContext("/nglm-guimanager/getOfferObjectiveList", new APIHandler(API.getOfferObjectiveList));
         restServer.createContext("/nglm-guimanager/getOfferObjectiveSummaryList", new APIHandler(API.getOfferObjectiveSummaryList));
         restServer.createContext("/nglm-guimanager/getOfferObjective", new APIHandler(API.getOfferObjective));
@@ -642,7 +677,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService));
     
     /*****************************************
     *
@@ -676,6 +711,7 @@ public class GUIManager
     private SupplierService supplierService;
     private ProductService productService;
     private CatalogCharacteristicService catalogCharacteristicService;
+    private JourneyObjectiveService journeyObjectiveService;
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
     private DeliverableService deliverableService;
@@ -688,7 +724,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -701,6 +737,7 @@ public class GUIManager
       this.supplierService = supplierService;
       this.productService = productService;
       this.catalogCharacteristicService = catalogCharacteristicService;
+      this.journeyObjectiveService = journeyObjectiveService;
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
       this.deliverableService = deliverableService;
@@ -736,6 +773,7 @@ public class GUIManager
       if (supplierService != null) supplierService.stop();
       if (productService != null) productService.stop();
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
+      if (journeyObjectiveService != null) journeyObjectiveService.stop();
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
       if (deliverableService != null) deliverableService.stop();
@@ -1171,6 +1209,26 @@ public class GUIManager
                   jsonResponse = processRemoveCatalogCharacteristic(userID, jsonRoot);
                   break;
                   
+                case getJourneyObjectiveList:
+                  jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, true);
+                  break;
+                  
+                case getJourneyObjectiveSummaryList:
+                  jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, false);
+                  break;
+                  
+                case getJourneyObjective:
+                  jsonResponse = processGetJourneyObjective(userID, jsonRoot);
+                  break;
+                  
+                case putJourneyObjective:
+                  jsonResponse = processPutJourneyObjective(userID, jsonRoot);
+                  break;
+                  
+                case removeJourneyObjective:
+                  jsonResponse = processRemoveJourneyObjective(userID, jsonRoot);
+                  break;
+
                 case getOfferObjectiveList:
                   jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, true);
                   break;
@@ -5812,6 +5870,7 @@ public class GUIManager
         *****************************************/
 
         revalidateOffers(now);
+        revalidateJourneyObjectives(now);
         revalidateOfferObjectives(now);
         revalidateProductTypes(now);
         revalidateProducts(now);
@@ -5847,6 +5906,7 @@ public class GUIManager
         //
 
         revalidateOffers(now);
+        revalidateJourneyObjectives(now);
         revalidateOfferObjectives(now);
         revalidateProductTypes(now);
         revalidateProducts(now);
@@ -5919,6 +5979,7 @@ public class GUIManager
     *****************************************/
 
     revalidateOffers(now);
+    revalidateJourneyObjectives(now);
     revalidateOfferObjectives(now);
     revalidateProductTypes(now);
     revalidateProducts(now);
@@ -5947,6 +6008,294 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+  *
+  *  processGetJourneyObjectiveList
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert journeyObjectives
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> journeyObjectives = new ArrayList<JSONObject>();
+    for (GUIManagedObject journeyObjective : journeyObjectiveService.getStoredJourneyObjectives())
+      {
+        journeyObjectives.add(journeyObjectiveService.generateResponseJSON(journeyObjective, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("journeyObjectives", JSONUtilities.encodeArray(journeyObjectives));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetJourneyObjective
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+    JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (journeyObjective != null) ? "ok" : "journeyObjectiveNotFound");
+    if (journeyObjective != null) response.put("journeyObjective", journeyObjectiveJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutJourneyObjective
+  *
+  *****************************************/
+
+  private JSONObject processPutJourneyObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  journeyObjectiveID
+    *
+    *****************************************/
+    
+    String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (journeyObjectiveID == null)
+      {
+        journeyObjectiveID = journeyObjectiveService.generateJourneyObjectiveID();
+        jsonRoot.put("id", journeyObjectiveID);
+      }
+    
+    /*****************************************
+    *
+    *  existing journeyObjective
+    *
+    *****************************************/
+
+    GUIManagedObject existingJourneyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingJourneyObjective != null && existingJourneyObjective.getReadOnly())
+      {
+        response.put("id", existingJourneyObjective.getGUIManagedObjectID());
+        response.put("accepted", existingJourneyObjective.getAccepted());
+        response.put("processing", journeyObjectiveService.isActiveJourneyObjective(existingJourneyObjective, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process journeyObjective
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate journeyObjective
+        *
+        ****************************************/
+
+        JourneyObjective journeyObjective = new JourneyObjective(jsonRoot, epoch, existingJourneyObjective);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
+
+        /*****************************************
+        *
+        *  revalidate dependent objects
+        *
+        *****************************************/
+
+        revalidateJourneys(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", journeyObjective.getJourneyObjectiveID());
+        response.put("accepted", journeyObjective.getAccepted());
+        response.put("processing", journeyObjectiveService.isActiveJourneyObjective(journeyObjective, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        journeyObjectiveService.putIncompleteJourneyObjective(incompleteObject, (existingJourneyObjective == null), userID);
+
+        //
+        //  revalidate dependent objects
+        //
+
+        revalidateJourneys(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "journeyObjectiveNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveJourneyObjective
+  *
+  *****************************************/
+
+  private JSONObject processRemoveJourneyObjective(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+    if (journeyObjective != null && ! journeyObjective.getReadOnly()) journeyObjectiveService.removeJourneyObjective(journeyObjectiveID, userID);
+
+    /*****************************************
+    *
+    *  revalidate dependent objects
+    *
+    *****************************************/
+    
+    revalidateJourneys(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (journeyObjective != null && ! journeyObjective.getReadOnly())
+      responseCode = "ok";
+    else if (journeyObjective != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "journeyObjectiveNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processGetOfferObjectiveList
@@ -6936,6 +7285,62 @@ public class GUIManager
 
   /*****************************************
   *
+  *  revalidateJourneys
+  *
+  *****************************************/
+
+  private void revalidateJourneys(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedJourneys = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingJourney : journeyService.getStoredJourneys())
+      {
+        //
+        //  modifiedJourney
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedJourney;
+        try
+          {
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney);
+            journey.validate(journeyObjectiveService, catalogCharacteristicService, date);
+            modifiedJourney = journey;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedJourney = new IncompleteObject(existingJourney.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingJourney.getAccepted() != modifiedJourney.getAccepted())
+          {
+            modifiedJourneys.add(modifiedJourney);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedJourney : modifiedJourneys)
+      {
+        journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+      }
+  }
+
+  /*****************************************
+  *
   *  revalidateOffers
   *
   *****************************************/
@@ -7115,9 +7520,74 @@ public class GUIManager
     ****************************************/
 
     revalidateOffers(date);
+    revalidateJourneyObjectives(date);
     revalidateOfferObjectives(date);
     revalidateProductTypes(date);
     revalidateProducts(date);
+  }
+
+  /*****************************************
+  *
+  *  revalidateJourneyObjectives
+  *
+  *****************************************/
+
+  private void revalidateJourneyObjectives(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    
+    Set<GUIManagedObject> modifiedJourneyObjectives = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingJourneyObjective : journeyObjectiveService.getStoredJourneyObjectives())
+      {
+        //
+        //  modifiedJourneyObjective
+        //
+        
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedJourneyObjective;
+        try
+          {
+            JourneyObjective journeyObjective = new JourneyObjective(existingJourneyObjective.getJSONRepresentation(), epoch, existingJourneyObjective);
+            journeyObjective.validate(journeyObjectiveService, catalogCharacteristicService, date);
+            modifiedJourneyObjective = journeyObjective;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedJourneyObjective = new IncompleteObject(existingJourneyObjective.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+        
+        if (existingJourneyObjective.getAccepted() != modifiedJourneyObjective.getAccepted())
+          {
+            modifiedJourneyObjectives.add(modifiedJourneyObjective);
+          }
+      }
+    
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    
+    for (GUIManagedObject modifiedJourneyObjective : modifiedJourneyObjectives)
+      {
+        journeyObjectiveService.putGUIManagedObject(modifiedJourneyObjective, date, false, null);
+      }
+    
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+
+    revalidateJourneys(date);
   }
 
   /*****************************************
@@ -7335,6 +7805,7 @@ public class GUIManager
     response.put("supplierCount", supplierService.getStoredSuppliers().size());
     response.put("productCount", productService.getStoredProducts().size());
     response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
+    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives().size());
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
     response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
@@ -8348,7 +8819,6 @@ public class GUIManager
               //  parse
               //
 
-              String deliverableName =  stringKeySerde.deserializer().deserialize(deliverableSourceRecord.topic(), deliverableSourceRecord.key()).getKey();
               DeliverableSource deliverableSource = null;
               try
                 {

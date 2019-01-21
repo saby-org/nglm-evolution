@@ -974,6 +974,19 @@ public class Journey extends GUIManagedObject
     return links;
   }
 
+  /*****************************************
+  *
+  *  validate
+  *
+  *****************************************/
+
+  public void validate(JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
+  {
+    //
+    //  DEW TBD
+    //
+  }
+
   /*****************************************************************************
   *
   *  class GUINode

@@ -8,7 +8,6 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.OfferObjectiveService.OfferObjectiveListener;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -71,7 +70,7 @@ public class ProductTypeService extends GUIService
   
   public ProductTypeService(String bootstrapServers, String groupID, String productTypeTopic, boolean masterService, ProductTypeListener productTypeListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "OfferObjectiveService", groupID, productTypeTopic, masterService, getSuperListener(productTypeListener), "putProductType", "removeProductType", notifyOnSignificantChange);
+    super(bootstrapServers, "ProductTypeService", groupID, productTypeTopic, masterService, getSuperListener(productTypeListener), "putProductType", "removeProductType", notifyOnSignificantChange);
   }
   //
   //  constructor

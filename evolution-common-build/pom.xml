@@ -104,6 +104,7 @@
     <topic.supplier>supplier</topic.supplier>
     <topic.product>product</topic.product>
     <topic.catalogcharacteristic>catalogcharacteristic</topic.catalogcharacteristic>
+    <topic.journeyobjective>journeyobjective</topic.journeyobjective>
     <topic.offerobjective>offerobjective</topic.offerobjective>
     <topic.producttype>producttype</topic.producttype>
     <topic.catalogobjective>catalogobjective</topic.catalogobjective>

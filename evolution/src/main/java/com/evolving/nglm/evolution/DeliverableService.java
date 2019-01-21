@@ -8,7 +8,6 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.OfferObjectiveService.OfferObjectiveListener;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -72,7 +71,7 @@ public class DeliverableService extends GUIService
   
   public DeliverableService(String bootstrapServers, String groupID, String deliverableTopic, boolean masterService, DeliverableListener deliverableListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "OfferObjectiveService", groupID, deliverableTopic, masterService, getSuperListener(deliverableListener), "putDeliverable", "removeDeliverable", notifyOnSignificantChange);
+    super(bootstrapServers, "DeliverableService", groupID, deliverableTopic, masterService, getSuperListener(deliverableListener), "putDeliverable", "removeDeliverable", notifyOnSignificantChange);
   }
   
   //

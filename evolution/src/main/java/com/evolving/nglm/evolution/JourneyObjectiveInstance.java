@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  OfferObjectiveInstance.java
+*  JourneyObjectiveInstance.java
 *
 *****************************************************************************/
 
@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class OfferObjectiveInstance
+public class JourneyObjectiveInstance
 {
   /*****************************************
   *
@@ -61,7 +61,7 @@ public class OfferObjectiveInstance
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(OfferObjectiveInstance.class);
+  private static final Logger log = LoggerFactory.getLogger(JourneyObjectiveInstance.class);
 
   /*****************************************
   *
@@ -81,9 +81,9 @@ public class OfferObjectiveInstance
     //
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("offer_objective_instance");
+    schemaBuilder.name("journey_objective_instance");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("offerObjectiveID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("journeyObjectiveID", Schema.STRING_SCHEMA);
     schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(CatalogCharacteristicInstance.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -100,7 +100,7 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  private String offerObjectiveID;
+  private String journeyObjectiveID;
   private Set<CatalogCharacteristicInstance> catalogCharacteristics;
 
   /*****************************************
@@ -109,9 +109,9 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  private OfferObjectiveInstance(String offerObjectiveID, Set<CatalogCharacteristicInstance> catalogCharacteristics)
+  private JourneyObjectiveInstance(String journeyObjectiveID, Set<CatalogCharacteristicInstance> catalogCharacteristics)
   {
-    this.offerObjectiveID = offerObjectiveID;
+    this.journeyObjectiveID = journeyObjectiveID;
     this.catalogCharacteristics = catalogCharacteristics;
   }
 
@@ -121,9 +121,9 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  OfferObjectiveInstance(JSONObject jsonRoot) throws GUIManagerException
+  JourneyObjectiveInstance(JSONObject jsonRoot) throws GUIManagerException
   {
-    this.offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "offerObjectiveID", true);
+    this.journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "journeyObjectiveID", true);
     this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", false));
   }
 
@@ -152,7 +152,7 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  public String getOfferObjectiveID() { return offerObjectiveID; }
+  public String getJourneyObjectiveID() { return journeyObjectiveID; }
   public Set<CatalogCharacteristicInstance> getCatalogCharacteristics() { return catalogCharacteristics; }
 
   /*****************************************
@@ -161,9 +161,9 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  public static ConnectSerde<OfferObjectiveInstance> serde()
+  public static ConnectSerde<JourneyObjectiveInstance> serde()
   {
-    return new ConnectSerde<OfferObjectiveInstance>(schema, false, OfferObjectiveInstance.class, OfferObjectiveInstance::pack, OfferObjectiveInstance::unpack);
+    return new ConnectSerde<JourneyObjectiveInstance>(schema, false, JourneyObjectiveInstance.class, JourneyObjectiveInstance::pack, JourneyObjectiveInstance::unpack);
   }
 
   /*****************************************
@@ -174,10 +174,10 @@ public class OfferObjectiveInstance
 
   public static Object pack(Object value)
   {
-    OfferObjectiveInstance offerOfferObjective = (OfferObjectiveInstance) value;
+    JourneyObjectiveInstance journeyJourneyObjective = (JourneyObjectiveInstance) value;
     Struct struct = new Struct(schema);
-    struct.put("offerObjectiveID", offerOfferObjective.getOfferObjectiveID());
-    struct.put("catalogCharacteristics", packCatalogCharacteristics(offerOfferObjective.getCatalogCharacteristics()));
+    struct.put("journeyObjectiveID", journeyJourneyObjective.getJourneyObjectiveID());
+    struct.put("catalogCharacteristics", packCatalogCharacteristics(journeyJourneyObjective.getCatalogCharacteristics()));
     return struct;
   }
 
@@ -203,7 +203,7 @@ public class OfferObjectiveInstance
   *
   *****************************************/
 
-  public static OfferObjectiveInstance unpack(SchemaAndValue schemaAndValue)
+  public static JourneyObjectiveInstance unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -218,26 +218,26 @@ public class OfferObjectiveInstance
     //
 
     Struct valueStruct = (Struct) value;
-    String offerObjectiveID = valueStruct.getString("offerObjectiveID");
+    String journeyObjectiveID = valueStruct.getString("journeyObjectiveID");
     Set<CatalogCharacteristicInstance> catalogCharacteristics = unpackCatalogCharacteristics(schema.field("catalogCharacteristics").schema(), valueStruct.get("catalogCharacteristics"));
     
     //
     //  return
     //
 
-    return new OfferObjectiveInstance(offerObjectiveID, catalogCharacteristics);
+    return new JourneyObjectiveInstance(journeyObjectiveID, catalogCharacteristics);
   }
 
   /*****************************************
   *
-  *  unpackOfferCatalogCharacteristics
+  *  unpackJourneyCatalogCharacteristics
   *
   *****************************************/
 
   private static Set<CatalogCharacteristicInstance> unpackCatalogCharacteristics(Schema schema, Object value)
   {
     //
-    //  get schema for OfferCatalogCharacteristic
+    //  get schema for JourneyCatalogCharacteristic
     //
 
     Schema propertySchema = schema.valueSchema();
@@ -269,12 +269,12 @@ public class OfferObjectiveInstance
   public boolean equals(Object obj)
   {
     boolean result = false;
-    if (obj instanceof OfferObjectiveInstance)
+    if (obj instanceof JourneyObjectiveInstance)
       {
-        OfferObjectiveInstance offerOfferObjective = (OfferObjectiveInstance) obj;
+        JourneyObjectiveInstance journeyJourneyObjective = (JourneyObjectiveInstance) obj;
         result = true;
-        result = result && Objects.equals(offerObjectiveID, offerOfferObjective.getOfferObjectiveID());
-        result = result && Objects.equals(catalogCharacteristics, offerOfferObjective.getCatalogCharacteristics());
+        result = result && Objects.equals(journeyObjectiveID, journeyJourneyObjective.getJourneyObjectiveID());
+        result = result && Objects.equals(catalogCharacteristics, journeyJourneyObjective.getCatalogCharacteristics());
       }
     return result;
   }
@@ -287,7 +287,7 @@ public class OfferObjectiveInstance
 
   public int hashCode()
   {
-    return offerObjectiveID.hashCode();
+    return journeyObjectiveID.hashCode();
   }
 
 }

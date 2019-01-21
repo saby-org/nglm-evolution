@@ -134,6 +134,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Supplier.serde());
     guiManagedObjectSerdes.add(Product.serde());
     guiManagedObjectSerdes.add(CatalogCharacteristic.serde());
+    guiManagedObjectSerdes.add(JourneyObjective.serde());
     guiManagedObjectSerdes.add(OfferObjective.serde());
     guiManagedObjectSerdes.add(ProductType.serde());
     guiManagedObjectSerdes.add(Deliverable.serde());
