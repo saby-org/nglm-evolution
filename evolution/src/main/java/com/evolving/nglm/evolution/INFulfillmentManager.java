@@ -569,7 +569,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
-      guiPresentationMap.put(PROVIDERID, getCorrelator());
+      guiPresentationMap.put(PROVIDERID, getProviderID());
       guiPresentationMap.put(DELIVERABLEID, getPaymentMeanID());
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().toString());
@@ -584,7 +584,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
-      thirdPartyPresentationMap.put(PROVIDERID, getCorrelator());
+      thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
       thirdPartyPresentationMap.put(DELIVERABLEID, getPaymentMeanID());
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().toString());

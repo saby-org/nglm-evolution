@@ -123,6 +123,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "custo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerBDRs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerODRs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerMessages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerMetaData; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 
