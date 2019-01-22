@@ -205,8 +205,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
   
-  protected abstract void addSubscriberFieldsForGUIPresentation(int id, List<Object> baseSubscriberPresentationList);
-  protected abstract void addSubscriberFieldsForThirdPartyPresentation(int id, List<Object> baseSubscriberPresentationList);
+  protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation, List<JSONObject> kpiPresentation);
+  protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation, List<JSONObject> kpiPresentation);
 
   /****************************************
   *
@@ -255,69 +255,105 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   ****************************************/
   
   //
-  //  getSubscriberFieldsForGUIPresentation
+  //  getProfileMapForGUIPresentation
   //
   
-  public List<Object> getSubscriberFieldsForGUIPresentation(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    int id = 0;
-    List<Object> baseSubscriberPresentationList = new ArrayList<Object>();
-
+    HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
+    HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
+    List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
+    
     //
-    // base
+    // prepare basic generalDetails
     //
-
-    baseSubscriberPresentationList.add(new SubscriberPresentation((getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null, ++id, true, "Evolution Subscriber Status", "string", "evolutionSubscriberStatus", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation(getEvolutionSubscriberStatusChangeDate(), ++id, true, "Evolution Subscriber Status Change Date", "date", "evolutionSubscriberStatusChangeDate", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation((getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null, ++id, true, "Previous Evolution Subscriber Status", "string", "previousEvolutionSubscriberStatus", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation(getLanguage(), ++id, true, "Subscriber Language", "string", "language", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation(getSubscriberGroups(subscriberGroupEpochReader), ++id, true, "Subscriber Groups", "string", "subscriberGroups", null, 100));
-
+    
+    generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
+    List<String> subscriberGroupList = new ArrayList<String>();
+    subscriberGroupList.addAll(subscriberGroups);
+    generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
+    generalDetailsPresentation.put("language", getLanguage());
+    
     //
-    // custom
+    // prepare basic kpiPresentation (if any)
     //
-
-    addSubscriberFieldsForGUIPresentation(id, baseSubscriberPresentationList);
-
+    
     //
-    // return
+    // prepare subscriber communicationChannels : TODO
     //
-
-    return baseSubscriberPresentationList;
+    
+    List<Object> communicationChannels = new ArrayList<Object>();
+    
+    //
+    // prepare custom generalDetails and kpiPresentation
+    //
+    
+    addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
+    
+    //
+    // prepare ProfilePresentation
+    //
+    
+    baseProfilePresentation.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
+    baseProfilePresentation.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
+    baseProfilePresentation.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
+    
+    return baseProfilePresentation;
   }
   
   //
-  //  getSubscriberFieldsForThirdPartyPresentation
+  //  getProfileMapForThirdPartyPresentation
   //
   
-  public List<Object> getSubscriberFieldsForThirdPartyPresentation(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    int id = 0;
-    List<Object> baseSubscriberPresentationList = new ArrayList<Object>();
-
+    HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
+    HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
+    List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
+    
     //
-    // base
+    // prepare basic generalDetails
     //
-
-    baseSubscriberPresentationList.add(new SubscriberPresentation((getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null, ++id, true, "Evolution Subscriber Status", "string", "evolutionSubscriberStatus", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation(getEvolutionSubscriberStatusChangeDate(), ++id, true, "Evolution Subscriber Status Change Date", "date", "evolutionSubscriberStatusChangeDate", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation((getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null, ++id, true, "Previous Evolution Subscriber Status", "string", "previousEvolutionSubscriberStatus", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation(getLanguage(), ++id, true, "Subscriber Language", "string", "language", null, 100));
-    baseSubscriberPresentationList.add(new SubscriberPresentation(getSubscriberGroups(subscriberGroupEpochReader), ++id, true, "Subscriber Groups", "string", "subscriberGroups", null, 100));
-
+    
+    generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
+    Set<String> subscriberGroups = getSubscriberGroups(subscriberGroupEpochReader);
+    List<String> subscriberGroupList = new ArrayList<String>();
+    subscriberGroupList.addAll(subscriberGroups);
+    generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroupList));
+    generalDetailsPresentation.put("language", getLanguage());
+    
     //
-    // custom
+    // prepare basic kpiPresentation (if any)
     //
-
-    addSubscriberFieldsForThirdPartyPresentation(id, baseSubscriberPresentationList);
-
+    
     //
-    // return
+    // prepare subscriber communicationChannels : TODO
     //
-
-    return baseSubscriberPresentationList;
+    
+    List<Object> communicationChannels = new ArrayList<Object>();
+    
+    //
+    // prepare custom generalDetails and kpiPresentation
+    //
+    
+    addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
+    
+    //
+    // prepare ProfilePresentation
+    //
+    
+    baseProfilePresentation.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
+    baseProfilePresentation.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
+    baseProfilePresentation.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
+    
+    return baseProfilePresentation;
   }
-
+  
   //
   //  getInSubscriberGroup
   //
@@ -824,194 +860,4 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   {
     return ((0x000000FF & data[0]) << 24) + ((0x000000FF & data[0]) << 16) + ((0x000000FF & data[2]) << 8) + ((0x000000FF) & data[3]);
   }
-  
-  /*****************************************
-  *
-  *  class SubscriberPresentation
-  *
-  *****************************************/
-  
-  public class SubscriberPresentation 
-  {
-	  private Object realData;
-	  private CustomerMetaData metaData;
-	  
-	  //
-	  // constructor
-	  //
-	  
-	  public SubscriberPresentation(Object realData, int id, boolean textProperty, String display, String dataType, String name, Object availableValues, int maxLength)
-	  {
-		  this.realData = realData;
-		  this.metaData = new CustomerMetaData(id, textProperty, display, dataType, name, availableValues, maxLength);
-	  }
-	  
-	  //
-	  // accessors
-	  //
-	  
-	  public Object getRealData() 
-	  {
-		  return realData;
-	  }
-	  
-	  public CustomerMetaData getCustomerMetaData() 
-	  {
-		  return metaData;
-	  }
-	  
-	  public class CustomerMetaData
-	  {
-		  //
-		  //  data
-		  //
-		  
-		  private boolean textProperty;
-		  private String display;
-		  private String dataType;
-		  private String name;
-		  private Object availableValues;
-		  private int id;
-		  private int maxLength;
-		  private JSONObject jsonPresentation;
-		  
-		  //
-		  // constructor
-		  //
-
-		  public CustomerMetaData(int id, boolean textProperty, String display, String dataType, String name, Object availableValues, int maxLength)
-		  {
-			this.id = id;
-			this.textProperty = textProperty;
-			this.display = display;
-			this.dataType = dataType;
-			this.name = name;
-			this.availableValues = availableValues;
-			this.maxLength = maxLength;
-			
-			JSONObject presentation = new JSONObject();
-		    presentation.put("textProperty", this.textProperty);
-		    presentation.put("display", this.display);
-		    presentation.put("dataType", this.dataType);
-		    presentation.put("name", this.name);
-		    presentation.put("availableValues", this.availableValues);
-		    presentation.put("id", String.valueOf(this.id));
-		    presentation.put("maxLength", this.maxLength);
-
-		    this.jsonPresentation = presentation;
-		  }
-		    
-		  //
-		  // accessors
-		  //
-
-		  public JSONObject getJsonPresentation()
-		  {
-		    return jsonPresentation;
-		  }
-		  
-		  public String getName() { return name;}
-		  
-	  }
-  }
-  
-  /*******************************
-   * 
-   * SubscriberProfileKpi
-   *
-   *******************************/
-
-  public class SubscriberProfileKpi
-  {
-    //
-    // data
-    //
-
-    private String kpiID;
-    private String kpiName;
-    private String kpiValue;
-    private String kpiUnit;
-    private boolean topLevel;
-    private String imageURL;
-    private String additionalData;
-    private JSONObject jsonPresentation;
-
-    //
-    // accessors
-    //
-
-    public JSONObject getJsonPresentation()
-    {
-      return jsonPresentation;
-    }
-    
-    //
-    // constructor
-    //
-
-    public SubscriberProfileKpi(String kpiID, String kpiName, String kpiValue, String kpiUnit, boolean topLevel, String imageURL, String additionalData)
-    {
-      this.kpiID = kpiID;
-      this.kpiName = kpiName;
-      this.kpiValue = kpiValue;
-      this.kpiUnit = kpiUnit;
-      this.topLevel = topLevel;
-      this.imageURL = imageURL;
-      this.additionalData = additionalData;
-
-      JSONObject presentation = new JSONObject();
-      presentation.put("kpiID", this.kpiID);
-      presentation.put("kpiName", this.kpiName);
-      presentation.put("kpiValue", this.kpiValue);
-      presentation.put("kpiUnit", this.kpiUnit);
-      presentation.put("topLevel", this.topLevel);
-      presentation.put("imageURL", this.imageURL);
-      presentation.put("additionalData", this.additionalData);
-
-      this.jsonPresentation = presentation;
-    }
-  }
-  
-  /*******************************
-   * 
-   * SubscriberSocialMediaProfile
-   *
-   *******************************/
-
-  public class SubscriberSocialMediaProfile
-  {
-    //
-    // data
-    //
-
-    private String socialMediaProvider;
-    private String socialMediaProfile;
-    private JSONObject jsonPresentation;
-
-    //
-    // accessors
-    //
-
-    public JSONObject getJsonPresentation()
-    {
-      return jsonPresentation;
-    }
-
-    //
-    // constructor
-    //
-
-    public SubscriberSocialMediaProfile(String socialMediaProvider, String socialMediaProfile)
-    {
-      this.socialMediaProvider = socialMediaProvider;
-      this.socialMediaProfile = socialMediaProfile;
-
-      JSONObject presentation = new JSONObject();
-      presentation.put("SocialMediaProvider", this.socialMediaProvider);
-      presentation.put("SocialMediaProfile", this.socialMediaProfile);
-
-      this.jsonPresentation = presentation;
-    }
-  }
-  
 }

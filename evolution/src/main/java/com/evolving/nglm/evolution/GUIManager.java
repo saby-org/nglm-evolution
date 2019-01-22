@@ -29,8 +29,6 @@ import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.SubscriberProfile.SubscriberPresentation;
-import com.evolving.nglm.evolution.SubscriberProfile.SubscriberProfileKpi;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.reports.ReportScheduler;
@@ -1769,7 +1767,7 @@ public class GUIManager
         callingChannelProperties.add(callingChannelPropertyJSON);
       }
 
-    /*****************************************
+    /*****************************************et
     *
     *  response
     *
@@ -7862,43 +7860,7 @@ public class GUIManager
               }
             else
               {
-            	List<Object> subscriberPresentationfields= baseSubscriberProfile.getSubscriberFieldsForGUIPresentation(subscriberGroupEpochReader);
-            	HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
-                List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
-                
-            	//
-                // prepare and decorate response
-                //
-
-                for (Object field : subscriberPresentationfields)
-                   {
-                          if (field instanceof SubscriberPresentation)
-                            {
-                              SubscriberPresentation subscriberPresentation = (SubscriberPresentation) field;
-                              generalDetailsPresentation.put(subscriberPresentation.getCustomerMetaData().getName(), subscriberPresentation.getRealData());
-                            }
-                          else if (field instanceof SubscriberProfileKpi)
-                            {
-                        	  SubscriberProfileKpi subsKpi = (SubscriberProfileKpi) field;
-                        	  kpiPresentation.add(subsKpi.getJsonPresentation());
-                            }
-                          else
-                            {
-                                   //
-                                   // bad
-                                   //
-                            }
-                   }
-                response.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
-                response.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
-                
-                //
-                //  communicationChannels TO DO:
-                //
-                
-                List<Object> communicationChannels = new ArrayList<Object>();
-                response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
-
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           } 
@@ -7926,93 +7888,49 @@ public class GUIManager
 
   private JSONObject processGetCustomerMetaData(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
-	  Map<String, Object> response = new HashMap<String, Object>();
-	  
-	  /****************************************
-	    *
-	    *  argument
-	    *
-	    ****************************************/
-	    
-	    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-
-	    /*****************************************
-	    *
-	    *  resolve subscriberID
-	    *
-	    *****************************************/
-
-	    String subscriberID = resolveSubscriberID(customerID);
-	    if (subscriberID == null)
-	      {
-	        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-	        response.put("responseCode", "CustomerNotFound");
-	      }
-	    
-	    /*****************************************
-	    *
-	    *  getSubscriberProfile
-	    *
-	    *****************************************/
-
-	    if (subscriberID != null)
-	      {
-	        try
-	          {
-	            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-	            if (null == baseSubscriberProfile)
-	              {
-	                response.put("responseCode", "CustomerNotFound");
-	              }
-	            else
-	              {
-	                List<Object> subscriberPresentationfields= baseSubscriberProfile.getSubscriberFieldsForGUIPresentation(subscriberGroupEpochReader);
-	                
-	                //
-	                // prepare and decorate response
-	                //
-	                
-	                List<JSONObject > metadatsJson = new ArrayList<JSONObject>();
-	                for (Object field : subscriberPresentationfields)
-	                   {
-	                	  if (field instanceof SubscriberPresentation)
-	                	    {
-	                	      SubscriberPresentation subscriberPresentation = (SubscriberPresentation) field;
-	                		  metadatsJson.add(subscriberPresentation.getCustomerMetaData().getJsonPresentation());
-	                	    }
-	                	  else if (field instanceof SubscriberProfileKpi)
-	                	    {
-	                		  //
-	                		  // do nothing
-	                		  //
-	                	    }
-	                	  else 
-	                	    {
-	                		   //
-	                		   // bad
-	                		   //
-	                	    }
-	                   }
-	                response.put("customerMetaData", JSONUtilities.encodeArray(metadatsJson));
-	                response.put("responseCode", "ok");
-	              }
-	          } 
-	        catch (SubscriberProfileServiceException e)
-	          {
-	            throw new GUIManagerException(e);
-	          }
-	      }
-
-	    /*****************************************
-	    *
-	    *  return
-	    *
-	    *****************************************/
-	  
-	  return JSONUtilities.encodeObject(response);
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /***************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    //
+    //  no args
+    //
+    
+    /*****************************************
+    *
+    *  retrieve CustomerMetaData
+    *
+    *****************************************/
+    
+    List<JSONObject> customerMetaDataList = new ArrayList<JSONObject>();
+    for (CustomerMetaData customerMetaData : Deployment.getCustomerMetaData().values())
+      {
+        JSONObject customerMetaDataJSON = customerMetaData.getJSONRepresentation();
+        customerMetaDataList.add(customerMetaDataJSON);
+      }
+    
+    /*****************************************et
+    *
+    *  response
+    *
+    *****************************************/
+    response.put("customerMetaData", JSONUtilities.encodeArray(customerMetaDataList));
+    response.put("responseCode", "ok");
+    
+    /****************************************
+    *
+    *  return
+    *
+    *****************************************/
+    
+	return JSONUtilities.encodeObject(response);
   }
   
-  /*****************************************
+  /****************************************
   *
   *  processGetCustomerActivityByDateRange
    * @throws GUIManagerException 

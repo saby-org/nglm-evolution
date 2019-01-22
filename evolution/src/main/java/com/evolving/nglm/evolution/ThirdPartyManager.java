@@ -54,8 +54,6 @@ import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
-import com.evolving.nglm.evolution.SubscriberProfile.SubscriberPresentation;
-import com.evolving.nglm.evolution.SubscriberProfile.SubscriberProfileKpi;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.sun.net.httpserver.HttpExchange;
@@ -710,62 +708,25 @@ public class ThirdPartyManager
     else
       {
         try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-            if (null == baseSubscriberProfile)
-              {
-                response
-                    .put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
-                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND
-                    .getGenericResponseMessage());
-              } else
-              {
-                List<Object> subscriberPresentationfields = baseSubscriberProfile.getSubscriberFieldsForThirdPartyPresentation(subscriberGroupEpochReader);
-                HashMap<String, Object> generalDetailsPresentation = new HashMap<String, Object>();
-                List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
-
-                //
-                // prepare and decorate response
-                //
-
-                for (Object field : subscriberPresentationfields)
-                  {
-                    if (field instanceof SubscriberPresentation)
-                      {
-                        SubscriberPresentation subscriberPresentation = (SubscriberPresentation) field;
-                        generalDetailsPresentation.put(subscriberPresentation.getCustomerMetaData().getName(), subscriberPresentation.getRealData());
-                      } 
-                    else if (field instanceof SubscriberProfileKpi)
-                      {
-                        SubscriberProfileKpi subsKpi = (SubscriberProfileKpi) field;
-                        kpiPresentation.add(subsKpi.getJsonPresentation());
-                      } 
-                    else
-                      {
-                        //
-                        // bad
-                        //
-                      }
-                  }
-                response.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
-                response.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
-                
-                //
-                //  communicationChannels TO DO:
-                //
-                
-                List<Object> communicationChannels = new ArrayList<Object>();
-                response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
-                
-                response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
-              }
-          } 
-        catch (SubscriberProfileServiceException e)
-          {
-            log.error("SubscriberProfileServiceException ", e.getMessage());
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-          }
+        {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+            }
+          else
+            {
+              response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberGroupEpochReader);
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
       }
     return JSONUtilities.encodeObject(response);
   }

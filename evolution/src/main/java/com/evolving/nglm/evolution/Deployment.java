@@ -116,6 +116,7 @@ public class Deployment
   private static String reportManagerStreamsTempDir;
   private static String reportManagerCsvSeparator;
   private static JSONArray reportsConfigValues;
+  private static Map<String, CustomerMetaData> customerMetaData = new LinkedHashMap<String, CustomerMetaData>();
 
   /*****************************************
   *
@@ -238,6 +239,7 @@ public class Deployment
   public static String getReportManagerFileExtension() { return reportManagerFileExtension; }
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
+  public static Map<String, CustomerMetaData> getCustomerMetaData() { return customerMetaData; }
 
 
   /*****************************************
@@ -1436,6 +1438,25 @@ public class Deployment
     catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment : reportManager", e);
+      }
+    
+    //
+    //  customerMetaData
+    //
+
+    try
+      {
+        JSONArray customerMetaDataValues = JSONUtilities.decodeJSONArray(jsonRoot, "customerMetaData", true);
+        for (int i=0; i<customerMetaDataValues.size(); i++)
+          {
+            JSONObject customerMetaDataJSON = (JSONObject) customerMetaDataValues.get(i);
+            CustomerMetaData customerMetadata = new CustomerMetaData(customerMetaDataJSON);
+            customerMetaData.put(customerMetadata.getID(), customerMetadata);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
       }
 
     
