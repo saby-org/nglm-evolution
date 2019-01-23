@@ -30,6 +30,7 @@ do
       docker pull ${env.DOCKER_REGISTRY}iar.web:${gui-iar.version}
       docker pull ${env.DOCKER_REGISTRY}opr.api:${gui-opr.version}
       docker pull ${env.DOCKER_REGISTRY}opr.web:${gui-opr.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version}
    " &
 done
 
