@@ -178,7 +178,7 @@ public class SMSMessage
                 StringBuilder replacement = new StringBuilder();
                 replacement.append("{");
                 replacement.append(tags.size());
-                replacement.append(generateTagFormat(criterionField));
+                replacement.append(criterionField.resolveTagFormat());
                 replacement.append("}");
                 tagReplacements.put(criterionField, replacement.toString());
                 tags.add(criterionField);
@@ -323,70 +323,6 @@ public class SMSMessage
     //  return
     //
 
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  generateTagFormat
-  *
-  *****************************************/
-
-  private String generateTagFormat(CriterionField criterionField)
-  {
-    /*****************************************
-    *
-    *  tagFormat from criterionField
-    *
-    *****************************************/
-
-    String tagFormat = criterionField.getTagFormat();
-
-    /*****************************************
-    *
-    *  tagFormat default (if necessary)
-    *
-    *****************************************/
-
-    if (tagFormat == null)
-      {
-        switch (criterionField.getFieldDataType())
-          {
-            case IntegerCriterion:
-              tagFormat = "#0";
-              break;
-
-            case DoubleCriterion:
-              tagFormat = "#0.00";
-              break;
-
-            case DateCriterion:
-              tagFormat = "date,short";
-              break;
-          }
-      }
-
-    /*****************************************
-    *
-    *  result
-    *
-    *****************************************/
-
-    String result = "";
-    if (tagFormat != null)
-      {
-        switch (criterionField.getFieldDataType())
-          {
-            case IntegerCriterion:
-            case DoubleCriterion:
-              result = "," + "number" + "," + tagFormat;
-              break;
-
-            case DateCriterion:
-              result = "," + tagFormat;
-              break;
-          }
-      }
     return result;
   }
 

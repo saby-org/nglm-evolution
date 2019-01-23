@@ -881,7 +881,7 @@ public class Journey extends GUIManagedObject
             //  journeyMetric
             //
 
-            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric", false, baseMetric.getTagFormat());
+            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric", false, baseMetric.getTagFormat(), baseMetric.getTagMaxLength());
 
             //
             //  result
@@ -908,7 +908,7 @@ public class Journey extends GUIManagedObject
           {
             JSONObject journeyParameterJSON = (JSONObject) jsonArray.get(i);
             CriterionField originalJourneyParameter = new CriterionField(journeyParameterJSON);
-            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter", originalJourneyParameter.getInternalOnly(), originalJourneyParameter.getTagFormat());
+            CriterionField enhancedJourneyParameter = new CriterionField(originalJourneyParameter, originalJourneyParameter.getID(), "getJourneyParameter", originalJourneyParameter.getInternalOnly(), originalJourneyParameter.getTagFormat(), originalJourneyParameter.getTagMaxLength());
             journeyParameters.put(enhancedJourneyParameter.getID(), enhancedJourneyParameter);
           }
       }

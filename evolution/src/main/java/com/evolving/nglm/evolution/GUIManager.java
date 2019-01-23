@@ -123,12 +123,16 @@ public class GUIManager
     getJourney("getJourney"),
     putJourney("putJourney"),
     removeJourney("removeJourney"),
+    startJourney("startJourney"),
+    stopJourney("stopJourney"),
     getCampaignToolbox("getCampaignToolbox"),
     getCampaignList("getCampaignList"),
     getCampaignSummaryList("getCampaignSummaryList"),
     getCampaign("getCampaign"),
     putCampaign("putCampaign"),
     removeCampaign("removeCampaign"),
+    startCampaign("startCampaign"),
+    stopCampaign("stopCampaign"),
     getSegmentationRuleList("getSegmentationRuleList"),
     getSegmentationRuleSummaryList("getSegmentationRuleSummaryList"),
     getSegmentationRule("getSegmentationRule"),
@@ -584,12 +588,16 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourney", new APIHandler(API.getJourney));
         restServer.createContext("/nglm-guimanager/putJourney", new APIHandler(API.putJourney));
         restServer.createContext("/nglm-guimanager/removeJourney", new APIHandler(API.removeJourney));
+        restServer.createContext("/nglm-guimanager/startJourney", new APIHandler(API.startJourney));
+        restServer.createContext("/nglm-guimanager/stopJourney", new APIHandler(API.stopJourney));
         restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APIHandler(API.getCampaignToolbox));
         restServer.createContext("/nglm-guimanager/getCampaignList", new APIHandler(API.getCampaignList));
         restServer.createContext("/nglm-guimanager/getCampaignSummaryList", new APIHandler(API.getCampaignSummaryList));
         restServer.createContext("/nglm-guimanager/getCampaign", new APIHandler(API.getCampaign));
         restServer.createContext("/nglm-guimanager/putCampaign", new APIHandler(API.putCampaign));
         restServer.createContext("/nglm-guimanager/removeCampaign", new APIHandler(API.removeCampaign));
+        restServer.createContext("/nglm-guimanager/startCampaign", new APIHandler(API.startCampaign));
+        restServer.createContext("/nglm-guimanager/stopCampaign", new APIHandler(API.stopCampaign));
         restServer.createContext("/nglm-guimanager/getSegmentationRuleList", new APIHandler(API.getSegmentationRuleList));
         restServer.createContext("/nglm-guimanager/getSegmentationRuleSummaryList", new APIHandler(API.getSegmentationRuleSummaryList));
         restServer.createContext("/nglm-guimanager/getSegmentationRule", new APIHandler(API.getSegmentationRule));
@@ -1007,6 +1015,14 @@ public class GUIManager
                   jsonResponse = processRemoveJourney(userID, jsonRoot);
                   break;
 
+                case startJourney:
+                  jsonResponse = processJourneySetActive(userID, jsonRoot, true);
+                  break;
+
+                case stopJourney:
+                  jsonResponse = processJourneySetActive(userID, jsonRoot, false);
+                  break;
+
                 case getCampaignToolbox:
                   jsonResponse = processGetCampaignToolbox(userID, jsonRoot);
                   break;
@@ -1029,6 +1045,14 @@ public class GUIManager
 
                 case removeCampaign:
                   jsonResponse = processRemoveCampaign(userID, jsonRoot);
+                  break;
+
+                case startCampaign:
+                  jsonResponse = processCampaignSetActive(userID, jsonRoot, true);
+                  break;
+
+                case stopCampaign:
+                  jsonResponse = processCampaignSetActive(userID, jsonRoot, false);
                   break;
 
                 case getSegmentationRuleList:
@@ -2640,6 +2664,12 @@ public class GUIManager
             criterionFieldJSON.put("availableValues", resolvedAvailableValues.get(criterionField.getID()));
 
             //
+            //  resolve maxTagLength
+            //
+
+            criterionFieldJSON.put("tagMaxLength", criterionField.resolveTagMaxLength());
+
+            //
             //  add
             //
 
@@ -3353,6 +3383,142 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processJourneySetActive
+  *
+  *****************************************/
+
+  private JSONObject processJourneySetActive(String userID, JSONObject jsonRoot, boolean active)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  validate existing journey
+    *  - exists
+    *  - valid
+    *  - not read-only
+    *
+    *****************************************/
+
+    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+    String responseCode = null;
+    responseCode = (responseCode == null && existingJourney == null) ? "journeyNotFound" : responseCode;
+    responseCode = (responseCode == null && existingJourney.getGUIManagedObjectType() != GUIManagedObjectType.Journey) ? "journeyNotFound" : responseCode;
+    responseCode = (responseCode == null && ! existingJourney.getAccepted()) ? "journeyNotValid" : responseCode;
+    responseCode = (responseCode == null && existingJourney.getReadOnly()) ? "failedReadOnly" : responseCode;
+    if (responseCode != null)
+      {
+        response.put("id", journeyID);
+        if (existingJourney != null) response.put("accepted", existingJourney.getAccepted());
+        if (existingJourney != null) response.put("processing", journeyService.isActiveJourney(existingJourney, now));
+        response.put("responseCode", responseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process journey
+    *
+    *****************************************/
+
+    JSONObject journeyRoot = (JSONObject) existingJourney.getJSONRepresentation().clone();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  set active
+        *
+        ****************************************/
+
+        journeyRoot.put("active", active);
+        
+        /****************************************
+        *
+        *  instantiate journey
+        *
+        ****************************************/
+
+        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyService.putJourney(journey, (existingJourney == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", journey.getJourneyID());
+        response.put("accepted", journey.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(journey, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(journeyRoot, GUIManagedObjectType.Journey, epoch);
+
+        //
+        //  store
+        //
+
+        journeyService.putJourney(incompleteObject, (existingJourney == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("journeyID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "journeyNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
   *  processGetCampaignList
   *
   *****************************************/
@@ -3625,6 +3791,142 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processCampaignSetActive
+  *
+  *****************************************/
+
+  private JSONObject processCampaignSetActive(String userID, JSONObject jsonRoot, boolean active)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  validate existing campaign
+    *  - exists
+    *  - valid
+    *  - not read-only
+    *
+    *****************************************/
+
+    GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
+    String responseCode = null;
+    responseCode = (responseCode == null && existingCampaign == null) ? "campaignNotFound" : responseCode;
+    responseCode = (responseCode == null && existingCampaign.getGUIManagedObjectType() != GUIManagedObjectType.Campaign) ? "campaignNotFound" : responseCode;
+    responseCode = (responseCode == null && ! existingCampaign.getAccepted()) ? "campaignNotValid" : responseCode;
+    responseCode = (responseCode == null && existingCampaign.getReadOnly()) ? "failedReadOnly" : responseCode;
+    if (responseCode != null)
+      {
+        response.put("id", campaignID);
+        if (existingCampaign != null) response.put("accepted", existingCampaign.getAccepted());
+        if (existingCampaign != null) response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
+        response.put("responseCode", responseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process campaign
+    *
+    *****************************************/
+
+    JSONObject campaignRoot = (JSONObject) existingCampaign.getJSONRepresentation().clone();
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  set active
+        *
+        ****************************************/
+
+        campaignRoot.put("active", active);
+        
+        /****************************************
+        *
+        *  instantiate campaign
+        *
+        ****************************************/
+
+        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyService.putJourney(campaign, (existingCampaign == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", campaign.getJourneyID());
+        response.put("accepted", campaign.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(campaign, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(campaignRoot, GUIManagedObjectType.Campaign, epoch);
+
+        //
+        //  store
+        //
+
+        journeyService.putJourney(incompleteObject, (existingCampaign == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("campaignID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "campaignNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
   /*****************************************
   *
   *  processGetSegmentationRuleList

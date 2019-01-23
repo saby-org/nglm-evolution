@@ -60,6 +60,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("criterionFieldRetriever", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("internalOnly", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tagFormat", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tagMaxLength", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -87,6 +88,7 @@ public class CriterionField extends DeploymentManagedObject
   private String criterionFieldRetriever;
   private boolean internalOnly;
   private String tagFormat;
+  private Integer tagMaxLength;
 
   //
   //  calculated
@@ -105,6 +107,7 @@ public class CriterionField extends DeploymentManagedObject
   public String getCriterionFieldRetriever() { return criterionFieldRetriever; }
   public boolean getInternalOnly() { return internalOnly; }
   public String getTagFormat() { return tagFormat; }
+  public Integer getTagMaxLength() { return tagMaxLength; }
 
   /*****************************************
   *
@@ -138,6 +141,7 @@ public class CriterionField extends DeploymentManagedObject
     this.criterionFieldRetriever = JSONUtilities.decodeString(jsonRoot, "retriever", false);
     this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
     this.tagFormat = JSONUtilities.decodeString(jsonRoot, "tagFormat", false);
+    this.tagMaxLength = JSONUtilities.decodeInteger(jsonRoot, "tagMaxLength", false);
 
     //
     //  retriever
@@ -164,16 +168,16 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  public CriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly, String tagFormat) throws GUIManagerException
+  public CriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly, String tagFormat, Integer tagMaxLength) throws GUIManagerException
   {
-    this(generateCriterionField(criterionField, id, criterionFieldRetriever, internalOnly, tagFormat));
+    this(generateCriterionField(criterionField, id, criterionFieldRetriever, internalOnly, tagFormat, tagMaxLength));
   }
 
   //
   //  constructor -- constructed with default display
   //
 
-  private static JSONObject generateCriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly, String tagFormat)
+  private static JSONObject generateCriterionField(CriterionField criterionField, String id, String criterionFieldRetriever, boolean internalOnly, String tagFormat, Integer tagMaxLength)
   {
     JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
     criterionFieldJSON.put("id", id);
@@ -181,6 +185,7 @@ public class CriterionField extends DeploymentManagedObject
     criterionFieldJSON.put("esField", null);
     criterionFieldJSON.put("internalOnly", internalOnly);
     criterionFieldJSON.put("tagFormat", tagFormat);
+    criterionFieldJSON.put("tagMaxLength", tagMaxLength);
     return criterionFieldJSON;
   }
 
@@ -190,7 +195,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, String esField, String criterionFieldRetriever, boolean internalOnly, String tagFormat)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, String esField, String criterionFieldRetriever, boolean internalOnly, String tagFormat, Integer tagMaxLength)
   {
     //
     //  super
@@ -208,6 +213,7 @@ public class CriterionField extends DeploymentManagedObject
     this.criterionFieldRetriever = criterionFieldRetriever;
     this.internalOnly = internalOnly;
     this.tagFormat = tagFormat;
+    this.tagMaxLength = tagMaxLength;
 
     //
     //  retriever
@@ -244,6 +250,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("criterionFieldRetriever", criterionField.getCriterionFieldRetriever());
     struct.put("internalOnly", criterionField.getInternalOnly());
     struct.put("tagFormat", criterionField.getTagFormat());
+    struct.put("tagMaxLength", criterionField.getTagMaxLength());
     return struct;
   }
 
@@ -274,12 +281,13 @@ public class CriterionField extends DeploymentManagedObject
     String criterionFieldRetriever = valueStruct.getString("criterionFieldRetriever");
     boolean internalOnly = valueStruct.getBoolean("internalOnly");
     String tagFormat = valueStruct.getString("tagFormat");
+    Integer tagMaxLength = valueStruct.getInt32("tagMaxLength");
 
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, esField, criterionFieldRetriever, internalOnly, tagFormat);
+    return new CriterionField(jsonRepresentation, fieldDataType, esField, criterionFieldRetriever, internalOnly, tagFormat, tagMaxLength);
   }
 
   /*****************************************
@@ -333,6 +341,81 @@ public class CriterionField extends DeploymentManagedObject
 
   /*****************************************
   *
+  *  resolveTagFormat
+  *
+  *****************************************/
+
+  public String resolveTagFormat()
+  {
+    /*****************************************
+    *
+    *  tagFormat from criterionField
+    *
+    *****************************************/
+
+    String tagFormat = this.getTagFormat();
+
+    /*****************************************
+    *
+    *  tagFormat default (if necessary)
+    *
+    *****************************************/
+
+    if (tagFormat == null)
+      {
+        switch (this.getFieldDataType())
+          {
+            case IntegerCriterion:
+              tagFormat = "#0";
+              break;
+
+            case DoubleCriterion:
+              tagFormat = "#0.00";
+              break;
+
+            case DateCriterion:
+              tagFormat = "date,short";
+              break;
+          }
+      }
+
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    String result = "";
+    if (tagFormat != null)
+      {
+        switch (this.getFieldDataType())
+          {
+            case IntegerCriterion:
+            case DoubleCriterion:
+              result = "," + "number" + "," + tagFormat;
+              break;
+
+            case DateCriterion:
+              result = "," + tagFormat;
+              break;
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  resolveTagMaxLength
+  *
+  *****************************************/
+
+  public int resolveTagMaxLength()
+  {
+    return (tagMaxLength != null) ? tagMaxLength.intValue() : 20;
+  }
+
+  /*****************************************
+  *
   *  equals
   *
   *****************************************/
@@ -349,7 +432,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && Objects.equals(criterionFieldRetriever, criterionField.getCriterionFieldRetriever());
         result = result && internalOnly == criterionField.getInternalOnly();
         result = result && Objects.equals(tagFormat, criterionField.getTagFormat());
-        
+        result = result && Objects.equals(tagMaxLength, criterionField.getTagMaxLength());
       }
     return result;
   }
