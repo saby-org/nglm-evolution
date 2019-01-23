@@ -178,7 +178,6 @@ public class SMSMessage
                 StringBuilder replacement = new StringBuilder();
                 replacement.append("{");
                 replacement.append(tags.size());
-                replacement.append(criterionField.resolveTagFormat());
                 replacement.append("}");
                 tagReplacements.put(criterionField, replacement.toString());
                 tags.add(criterionField);
@@ -365,40 +364,92 @@ public class SMSMessage
     
     /*****************************************
     *
-    *  message formatter
-    *
-    *****************************************/
-    
-    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
-    MessageFormat formatter = new MessageFormat(messageText, messageLocale);
-    for (Format format : formatter.getFormats())
-      {
-        if (format instanceof SimpleDateFormat)
-          {
-            ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-          }
-      }
-    
-    /*****************************************
-    *
     *  tags
     *
     *****************************************/
 
+    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+    MessageFormat formatter = null;
     Object[] messageTags = new Object[this.tags.size()];
     for (int i=0; i<this.tags.size(); i++)
       {
+        //
+        //  criterionField
+        //
+
         CriterionField tag = this.tags.get(i);
-        Object value = tag.retrieve(subscriberEvaluationRequest);
-        messageTags[i] = value;
+
+        //
+        //  retrieve value
+        //
+        
+        Object tagValue = tag.retrieve(subscriberEvaluationRequest);
+
+        //
+        //  formatter for tag
+        //
+
+        formatter = new MessageFormat("{0" + tag.resolveTagFormat() + "}", messageLocale);
+        for (Format format : formatter.getFormats())
+          {
+            if (format instanceof SimpleDateFormat)
+              {
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+              }
+          }
+
+        //
+        //  formatted tag
+        //
+
+        Object[] tagValues = new Object[1];
+        tagValues[0] = tagValue;
+        String formattedTag = formatter.format(tagValues);
+        
+        //
+        //  truncate (if necessary)
+        //
+
+        int maxLength = tag.resolveTagMaxLength();
+        String resolvedTag = formattedTag;
+        if (formattedTag.length() > maxLength)
+          {
+            switch (tag.getFieldDataType())
+              {
+                case StringCriterion:
+                  resolvedTag = formattedTag.substring(0, maxLength);
+                  break;
+
+                default:
+                  StringBuilder invalidTag = new StringBuilder();
+                  for (int j=0; j<maxLength; j++) invalidTag.append("X");
+                  resolvedTag = invalidTag.toString();
+                  break;
+              }
+          }
+        
+        //
+        //  resolved tag
+        //
+
+        messageTags[i] = resolvedTag;
       }
 
     /*****************************************
     *
-    *  format
+    *  format result
     *
     *****************************************/
 
-    return formatter.format(messageTags);
+    formatter = new MessageFormat(messageText, messageLocale);
+    String resolvedMessage = formatter.format(messageTags);
+
+    /*****************************************
+    *
+    *  return
+    *
+    ****************************************/
+
+    return resolvedMessage;
   }
 }

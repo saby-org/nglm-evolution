@@ -411,7 +411,43 @@ public class CriterionField extends DeploymentManagedObject
 
   public int resolveTagMaxLength()
   {
-    return (tagMaxLength != null) ? tagMaxLength.intValue() : 20;
+    /*****************************************
+    *
+    *  tagMaxLength -- set explicitly
+    *
+    *****************************************/
+
+    if (tagMaxLength != null)
+      {
+        return tagMaxLength.intValue();
+      }
+
+    /*****************************************
+    *
+    *  tagMaxLength -- default
+    *
+    *****************************************/
+
+    switch (this.getFieldDataType())
+      {
+        case StringCriterion:
+          return 20;
+
+        case BooleanCriterion:
+          return 6;
+
+        case IntegerCriterion:
+          return 6;
+          
+        case DoubleCriterion:
+          return 9;
+          
+        case DateCriterion:
+          return 20;
+
+        default:
+          return 20;
+      }
   }
 
   /*****************************************

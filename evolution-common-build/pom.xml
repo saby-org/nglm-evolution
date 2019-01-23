@@ -49,9 +49,6 @@
     <nglm.core.version>4.3.2-build190118-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
-    <!-- maven -->
-    <dockerfile.maven.plugin.version>1.4.5</dockerfile.maven.plugin.version>
-    
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.5</flyway.version>
     
