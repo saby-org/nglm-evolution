@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -163,17 +162,6 @@ public class DeliverableService extends GUIService
   *****************************************/
 
   public void putDeliverable(GUIManagedObject deliverable, boolean newObject, String userID) { putGUIManagedObject(deliverable, SystemTime.getCurrentTime(), newObject, userID); }
-
-  /*****************************************
-  *
-  *  putIncompleteDeliverable
-  *
-  *****************************************/
-
-  public void putIncompleteDeliverable(IncompleteObject deliverable, boolean newObject, String userID)
-  {
-    putGUIManagedObject(deliverable, SystemTime.getCurrentTime(), newObject, userID);
-  }
 
   /*****************************************
   *

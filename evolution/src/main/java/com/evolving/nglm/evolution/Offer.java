@@ -555,7 +555,6 @@ public class Offer extends GUIManagedObject implements StockableItem
     return result;
   }
 
-  
   /*****************************************
   *
   *  decodeOfferSalesChannelsAndPrices
@@ -685,7 +684,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         *****************************************/
 
         //
-        //  set of properties defined for this offer
+        //  set of properties defined for this calling channel
         //
 
         Set<CallingChannelProperty> offerProperties = new HashSet<CallingChannelProperty>();

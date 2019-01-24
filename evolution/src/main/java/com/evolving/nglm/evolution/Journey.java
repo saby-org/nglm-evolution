@@ -118,6 +118,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("targetingWindowRoundUp", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("journeyObjectives", SchemaBuilder.array(JourneyObjectiveInstance.schema()).schema());
     schemaBuilder.field("journeyNodes", SchemaBuilder.array(JourneyNode.schema()).schema());
     schemaBuilder.field("journeyLinks", SchemaBuilder.array(JourneyLink.schema()).schema());
     schema = schemaBuilder.build();
@@ -150,6 +151,7 @@ public class Journey extends GUIManagedObject
   private boolean targetingWindowRoundUp;
   private List<EvaluationCriterion> targetingCriteria;
   private String startNodeID;
+  private Set<JourneyObjectiveInstance> journeyObjectiveInstances; 
   private Map<String,JourneyNode> journeyNodes;
   private Map<String,JourneyLink> journeyLinks;
 
@@ -173,6 +175,7 @@ public class Journey extends GUIManagedObject
   public boolean getTargetingWindowRoundUp() { return targetingWindowRoundUp; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
   public String getStartNodeID() { return startNodeID; }
+  public Set<JourneyObjectiveInstance> getJourneyObjectiveInstances() { return journeyObjectiveInstances;  }
   public Map<String,JourneyNode> getJourneyNodes() { return journeyNodes; }
   public Map<String,JourneyLink> getJourneyLinks() { return journeyLinks; }
 
@@ -182,7 +185,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, int targetingWindowDuration, TimeUnit targetingWindowUnit, boolean targetingWindowRoundUp, List<EvaluationCriterion> targetingCriteria, String startNodeID, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, int targetingWindowDuration, TimeUnit targetingWindowUnit, boolean targetingWindowRoundUp, List<EvaluationCriterion> targetingCriteria, String startNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
   {
     super(schemaAndValue);
     this.journeyMetrics = journeyMetrics;
@@ -193,6 +196,7 @@ public class Journey extends GUIManagedObject
     this.targetingWindowRoundUp = targetingWindowRoundUp;
     this.targetingCriteria = targetingCriteria;
     this.startNodeID = startNodeID;
+    this.journeyObjectiveInstances = journeyObjectiveInstances;
     this.journeyNodes = journeyNodes;
     this.journeyLinks = journeyLinks;
   }
@@ -216,6 +220,7 @@ public class Journey extends GUIManagedObject
     struct.put("targetingWindowRoundUp", journey.getTargetingWindowRoundUp());
     struct.put("targetingCriteria", packTargetingCriteria(journey.getTargetingCriteria()));
     struct.put("startNodeID", journey.getStartNodeID());
+    struct.put("journeyObjectives", packJourneyObjectiveInstances(journey.getJourneyObjectiveInstances()));
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
     struct.put("journeyLinks", packJourneyLinks(journey.getJourneyLinks()));
     return struct;
@@ -271,6 +276,22 @@ public class Journey extends GUIManagedObject
     return result;
   }
 
+  /****************************************
+  *
+  *  packJourneyObjectiveInstances
+  *
+  ****************************************/
+
+  private static List<Object> packJourneyObjectiveInstances(Set<JourneyObjectiveInstance> journeyObjectiveInstances)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectiveInstances)
+      {
+        result.add(JourneyObjectiveInstance.pack(journeyObjectiveInstance));
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  packJourneyNodes
@@ -336,6 +357,7 @@ public class Journey extends GUIManagedObject
     boolean targetingWindowRoundUp = valueStruct.getBoolean("targetingWindowRoundUp");
     List<EvaluationCriterion> targetingCriteria = unpackTargetingCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
     String startNodeID = valueStruct.getString("startNodeID");
+    Set<JourneyObjectiveInstance> journeyObjectiveInstances = unpackJourneyObjectiveInstances(schema.field("journeyObjectives").schema(), valueStruct.get("journeyObjectives"));
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
     Map<String,JourneyLink> journeyLinks = unpackJourneyLinks(schema.field("journeyLinks").schema(), valueStruct.get("journeyLinks"));
 
@@ -399,7 +421,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, targetingWindowDuration, targetingWindowUnit, targetingWindowRoundUp, targetingCriteria, startNodeID, journeyNodes, journeyLinks);
+    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, targetingWindowDuration, targetingWindowUnit, targetingWindowRoundUp, targetingCriteria, startNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks);
   }
   
   /*****************************************
@@ -473,6 +495,38 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
+  *  unpackJourneyObjectiveInstances
+  *
+  *****************************************/
+
+  private static Set<JourneyObjectiveInstance> unpackJourneyObjectiveInstances(Schema schema, Object value)
+  {
+    //
+    //  get schema for JourneyObjectiveInstance
+    //
+
+    Schema journeyObjectiveInstanceSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<JourneyObjectiveInstance> result = new HashSet<JourneyObjectiveInstance>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object journeyObjectiveInstance : valueArray)
+      {
+        result.add(JourneyObjectiveInstance.unpack(new SchemaAndValue(journeyObjectiveInstanceSchema, journeyObjectiveInstance)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
+  /*****************************************
+  *
   *  unpackJourneyNodes
   *
   *****************************************/
@@ -543,7 +597,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     /*****************************************
     *
@@ -574,6 +628,7 @@ public class Journey extends GUIManagedObject
     this.targetingWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingWindowUnit", Deployment.getJourneyDefaultTargetingWindowUnit()));
     this.targetingWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "targetingWindowRoundUp", new Boolean(Deployment.getJourneyDefaultTargetingWindowRoundUp()));
     this.targetingCriteria = decodeTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", false), Deployment.getJourneyUniversalTargetingCriteria());
+    this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true), catalogCharacteristicService);
     Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
@@ -976,6 +1031,25 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
+  *  decodeJourneyObjectiveInstances
+  *
+  *****************************************/
+
+  private Set<JourneyObjectiveInstance> decodeJourneyObjectiveInstances(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  {
+    Set<JourneyObjectiveInstance> result = new HashSet<JourneyObjectiveInstance>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new JourneyObjectiveInstance((JSONObject) jsonArray.get(i)));
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
   *  decodeNodes
   *
   *****************************************/
@@ -1018,9 +1092,61 @@ public class Journey extends GUIManagedObject
 
   public void validate(JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
   {
-    //
-    //  DEW TBD
-    //
+    /****************************************
+    *
+    *  ensure valid/active journey objectives
+    *
+    ****************************************/
+
+    Set<JourneyObjective> validJourneyObjectives = new HashSet<JourneyObjective>();
+    for (JourneyObjectiveInstance journeyObjectiveInstance : journeyObjectiveInstances)
+      {
+        /*****************************************
+        *
+        *  retrieve journeyObjective
+        *
+        *****************************************/
+
+        JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), date);
+
+        /*****************************************
+        *
+        *  validate the journeyObjective exists and is active
+        *
+        *****************************************/
+
+        if (journeyObjective == null)
+          {
+            log.info("journey {} uses unknown journey objective: {}", getJourneyID(), journeyObjectiveInstance.getJourneyObjectiveID());
+            throw new GUIManagerException("journey uses unknown journey objective", journeyObjectiveInstance.getJourneyObjectiveID());
+          }
+
+        /*****************************************
+        *
+        *  validate the characteristics
+        *
+        *****************************************/
+
+        //
+        //  set of catalog characteristics defined for this journey objective
+        //
+            
+        Set<String> configuredCatalogCharacteristics = new HashSet<String>();
+        for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+          {
+            configuredCatalogCharacteristics.add(catalogCharacteristicInstance.getCatalogCharacteristicID());
+          }
+
+        //
+        //  validate against journeyObjective characteristics
+        //
+            
+        if (! configuredCatalogCharacteristics.containsAll(journeyObjective.getCatalogCharacteristics()))
+          {
+            log.info("journey {}, objective {} does not specify all required catalog characteristics", getJourneyID(), journeyObjectiveInstance.getJourneyObjectiveID());
+            throw new GUIManagerException("objective for journey missing required catalog characteristics", journeyObjectiveInstance.getJourneyObjectiveID());
+          }
+      }
   }
 
   /*****************************************************************************
@@ -1415,6 +1541,7 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! (targetingWindowRoundUp == existingJourney.getTargetingWindowRoundUp());
         epochChanged = epochChanged || ! Objects.equals(targetingCriteria, existingJourney.getTargetingCriteria());
         epochChanged = epochChanged || ! Objects.equals(startNodeID, existingJourney.getStartNodeID());
+        epochChanged = epochChanged || ! Objects.equals(journeyObjectiveInstances, existingJourney.getJourneyObjectiveInstances());
         epochChanged = epochChanged || ! Objects.equals(journeyNodes, existingJourney.getJourneyNodes());
         epochChanged = epochChanged || ! Objects.equals(journeyLinks, existingJourney.getJourneyLinks());
         return epochChanged;

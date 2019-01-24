@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -144,17 +143,6 @@ public class OfferObjectiveService extends GUIService
   *****************************************/
 
   public void putOfferObjective(GUIManagedObject offerObjective, boolean newObject, String userID) { putGUIManagedObject(offerObjective, SystemTime.getCurrentTime(), newObject, userID); }
-
-  /*****************************************
-  *
-  *  putIncompleteOfferObjective
-  *
-  *****************************************/
-
-  public void putIncompleteOfferObjective(IncompleteObject offerObjective, boolean newObject, String userID)
-  {
-    putGUIManagedObject(offerObjective, SystemTime.getCurrentTime(), newObject, userID);
-  }
 
   /*****************************************
   *

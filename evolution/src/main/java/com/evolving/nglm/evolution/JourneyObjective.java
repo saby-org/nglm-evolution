@@ -285,5 +285,44 @@ public class JourneyObjective extends GUIManagedObject
         CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, date);
         if (catalogCharacteristic == null) throw new GUIManagerException("unknown catalog characteristic", catalogCharacteristicID);
       }
+    
+    /*****************************************
+    *
+    *  validate journey objective ancestors
+    *  - ensure all parents exist and are active
+    *  - ensure no cycles
+    *
+    *****************************************/
+
+    JourneyObjective walk = this;
+    while (walk != null)
+      {
+        //
+        //  done if no parent
+        //
+        
+        if (walk.getParentJourneyObjectiveID() == null) break;
+        
+        //
+        //  verify parent
+        //   1) exists
+        //   2) is a journeyObjective
+        //   3) is active
+        //   4) does not create a cycle
+        //
+        
+        GUIManagedObject uncheckedParent = journeyObjectiveService.getStoredJourneyObjective(walk.getParentJourneyObjectiveID());
+        if (uncheckedParent == null) throw new GUIManagerException("unknown journey objective ancestor", walk.getParentJourneyObjectiveID());
+        if (uncheckedParent instanceof IncompleteObject) throw new GUIManagerException("invalid journey objective ancestor", walk.getParentJourneyObjectiveID());
+        JourneyObjective parent = (JourneyObjective) uncheckedParent;
+        if (! journeyObjectiveService.isActiveJourneyObjective(parent, date)) throw new GUIManagerException("inactive journey objective ancestor", walk.getParentJourneyObjectiveID());
+        if (parent.equals(this)) throw new GUIManagerException("cycle in journey objective hierarchy", getJourneyObjectiveID());
+
+        //
+        //  "recurse"
+        //
+        
+        walk = parent;
+      }
   }
 }

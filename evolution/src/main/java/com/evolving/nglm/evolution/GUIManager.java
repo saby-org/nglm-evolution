@@ -3259,7 +3259,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney);
+        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService);
 
         /*****************************************
         *
@@ -3267,7 +3267,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(journey, (existingJourney == null), userID);
+        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, (existingJourney == null), userID);
 
         /*****************************************
         *
@@ -3293,7 +3293,7 @@ public class GUIManager
         //  store
         //
 
-        journeyService.putJourney(incompleteObject, (existingJourney == null), userID);
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, (existingJourney == null), userID);
 
         //
         //  log
@@ -3461,7 +3461,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney);
+        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService);
 
         /*****************************************
         *
@@ -3469,7 +3469,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(journey, (existingJourney == null), userID);
+        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, (existingJourney == null), userID);
 
         /*****************************************
         *
@@ -3495,7 +3495,7 @@ public class GUIManager
         //  store
         //
 
-        journeyService.putJourney(incompleteObject, (existingJourney == null), userID);
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, (existingJourney == null), userID);
 
         //
         //  log
@@ -3669,7 +3669,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign);
+        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService);
 
         /*****************************************
         *
@@ -3677,7 +3677,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(campaign, (existingCampaign == null), userID);
+        journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, (existingCampaign == null), userID);
 
         /*****************************************
         *
@@ -3703,7 +3703,7 @@ public class GUIManager
         //  store
         //
 
-        journeyService.putJourney(incompleteObject, (existingCampaign == null), userID);
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, (existingCampaign == null), userID);
 
         //
         //  log
@@ -3871,7 +3871,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign);
+        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService);
 
         /*****************************************
         *
@@ -3879,7 +3879,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(campaign, (existingCampaign == null), userID);
+        journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, (existingCampaign == null), userID);
 
         /*****************************************
         *
@@ -3905,7 +3905,7 @@ public class GUIManager
         //  store
         //
 
-        journeyService.putJourney(incompleteObject, (existingCampaign == null), userID);
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, (existingCampaign == null), userID);
 
         //
         //  log
@@ -4372,7 +4372,7 @@ public class GUIManager
         //  store
         //
 
-        offerService.putIncompleteOffer(incompleteObject, (existingOffer == null), userID);
+        offerService.putOffer(incompleteObject, callingChannelService, productService, (existingOffer == null), userID);
 
         //
         //  log
@@ -4777,7 +4777,7 @@ public class GUIManager
         //  store
         //
 
-        presentationStrategyService.putIncompletePresentationStrategy(incompleteObject, (existingPresentationStrategy == null), userID);
+        presentationStrategyService.putPresentationStrategy(incompleteObject, scoringStrategyService, (existingPresentationStrategy == null), userID);
 
         //
         //  log
@@ -5907,7 +5907,7 @@ public class GUIManager
         //  store
         //
 
-        productService.putIncompleteProduct(incompleteObject, (existingProduct == null), userID);
+        productService.putProduct(incompleteObject, supplierService, productTypeService, deliverableService, (existingProduct == null), userID);
 
         //
         //  revalidateOffers
@@ -6199,7 +6199,7 @@ public class GUIManager
         //  store
         //
 
-        catalogCharacteristicService.putIncompleteCatalogCharacteristic(incompleteObject, (existingCatalogCharacteristic == null), userID);
+        catalogCharacteristicService.putCatalogCharacteristic(incompleteObject, (existingCatalogCharacteristic == null), userID);
 
         //
         //  revalidate dependent objects
@@ -6470,6 +6470,7 @@ public class GUIManager
         *****************************************/
 
         revalidateJourneys(now);
+        revalidateJourneyObjectives(now);
 
         /*****************************************
         *
@@ -6495,13 +6496,14 @@ public class GUIManager
         //  store
         //
 
-        journeyObjectiveService.putIncompleteJourneyObjective(incompleteObject, (existingJourneyObjective == null), userID);
+        journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
         //
         //  revalidate dependent objects
         //
 
         revalidateJourneys(now);
+        revalidateJourneyObjectives(now);
 
         //
         //  log
@@ -6571,6 +6573,7 @@ public class GUIManager
     *****************************************/
     
     revalidateJourneys(now);
+    revalidateJourneyObjectives(now);
 
     /*****************************************
     *
@@ -6784,7 +6787,7 @@ public class GUIManager
         //  store
         //
 
-        offerObjectiveService.putIncompleteOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
+        offerObjectiveService.putOfferObjective(incompleteObject, (existingOfferObjective == null), userID);
 
         //
         //  revalidate dependent objects
@@ -7074,7 +7077,7 @@ public class GUIManager
         //  store
         //
 
-        productTypeService.putIncompleteProductType(incompleteObject, (existingProductType == null), userID);
+        productTypeService.putProductType(incompleteObject, (existingProductType == null), userID);
 
         //
         //  revalidateProducts
@@ -7362,7 +7365,7 @@ public class GUIManager
         //  store
         //
 
-        deliverableService.putIncompleteDeliverable(incompleteObject, (existingDeliverable == null), userID);
+        deliverableService.putDeliverable(incompleteObject, (existingDeliverable == null), userID);
 
         //
         //  revalidateProducts
@@ -7608,7 +7611,7 @@ public class GUIManager
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, date);
             modifiedJourney = journey;
           }
@@ -7888,6 +7891,10 @@ public class GUIManager
     ****************************************/
 
     revalidateJourneys(date);
+    if (modifiedJourneyObjectives.size() > 0)
+      {
+        revalidateJourneyObjectives(date);
+      }
   }
 
   /*****************************************

@@ -147,7 +147,7 @@ public class ProductService extends GUIService
   *
   *****************************************/
 
-  public void putProduct(Product product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID) throws GUIManagerException
+  public void putProduct(GUIManagedObject product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -159,7 +159,10 @@ public class ProductService extends GUIService
     //  validate
     //
 
-    product.validate(supplierService, productTypeService, deliverableService, now);
+    if (product instanceof Product)
+      {
+        ((Product) product).validate(supplierService, productTypeService, deliverableService, now);
+      }
 
     //
     //  put
@@ -170,13 +173,20 @@ public class ProductService extends GUIService
 
   /*****************************************
   *
-  *  putIncompleteProduct
+  *  putProduct
   *
   *****************************************/
 
-  public void putIncompleteProduct(IncompleteObject product, boolean newObject, String userID)
+  public void putProduct(IncompleteObject product, SupplierService supplierService, ProductTypeService productTypeService, DeliverableService deliverableService, boolean newObject, String userID)
   {
-    putGUIManagedObject(product, SystemTime.getCurrentTime(), newObject, userID);
+    try
+      {
+        putProduct((GUIManagedObject) product, supplierService, productTypeService, deliverableService, newObject, userID);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
   }
   
   /*****************************************

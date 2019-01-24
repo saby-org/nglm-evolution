@@ -143,7 +143,7 @@ public class JourneyObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyObjective(JourneyObjective journeyObjective, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID) throws GUIManagerException
+  public void putJourneyObjective(GUIManagedObject journeyObjective, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -155,7 +155,10 @@ public class JourneyObjectiveService extends GUIService
     //  validate
     //
 
-    journeyObjective.validate(journeyObjectiveService, catalogCharacteristicService, now);
+    if (journeyObjective instanceof JourneyObjective)
+      {
+        ((JourneyObjective) journeyObjective).validate(journeyObjectiveService, catalogCharacteristicService, now);
+      }
 
     //
     //  put
@@ -166,15 +169,22 @@ public class JourneyObjectiveService extends GUIService
 
   /*****************************************
   *
-  *  putIncompleteJourneyObjective
+  *  putJourneyObjective
   *
   *****************************************/
 
-  public void putIncompleteJourneyObjective(IncompleteObject journeyObjective, boolean newObject, String userID)
+  public void putJourneyObjective(IncompleteObject journeyObjective, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID)
   {
-    putGUIManagedObject(journeyObjective, SystemTime.getCurrentTime(), newObject, userID);
+    try
+      {
+        putJourneyObjective((GUIManagedObject) journeyObjective, journeyObjectiveService, catalogCharacteristicService, newObject, userID);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
   }
-
+  
   /*****************************************
   *
   *  removeJourneyObjective

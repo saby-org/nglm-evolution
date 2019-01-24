@@ -144,7 +144,7 @@ public class PresentationStrategyService extends GUIService
   *
   *****************************************/
 
-  public void putPresentationStrategy(PresentationStrategy presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID) throws GUIManagerException
+  public void putPresentationStrategy(GUIManagedObject presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -156,7 +156,10 @@ public class PresentationStrategyService extends GUIService
     //  validate scoring strategies
     //
 
-    presentationStrategy.validate(scoringStrategyService, now);
+    if (presentationStrategy instanceof PresentationStrategy)
+      {
+        ((PresentationStrategy) presentationStrategy).validate(scoringStrategyService, now);
+      }
 
     //
     //  put
@@ -167,15 +170,22 @@ public class PresentationStrategyService extends GUIService
 
   /*****************************************
   *
-  *  putIncompletePresentationStrategy
+  *  putPresentationStrategy
   *
   *****************************************/
 
-  public void putIncompletePresentationStrategy(IncompleteObject presentationStrategy, boolean newObject, String userID)
+  public void putPresentationStrategy(IncompleteObject presentationStrategy, ScoringStrategyService scoringStrategyService, boolean newObject, String userID)
   {
-    putGUIManagedObject(presentationStrategy, SystemTime.getCurrentTime(), newObject, userID);
+    try
+      {
+        putPresentationStrategy((GUIManagedObject) presentationStrategy, scoringStrategyService, newObject, userID);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
   }
-
+  
   /*****************************************
   *
   *  removePresentationStrategy

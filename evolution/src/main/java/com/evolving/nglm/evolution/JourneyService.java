@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -124,7 +127,47 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  public void putJourney(GUIManagedObject journey, boolean newObject, String userID) { putGUIManagedObject(journey, SystemTime.getCurrentTime(), newObject, userID); }
+  public void putJourney(GUIManagedObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID) throws GUIManagerException
+  {
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  validate
+    //
+
+    if (journey instanceof Journey)
+      {
+        ((Journey) journey).validate(journeyObjectiveService, catalogCharacteristicService, now);
+      }
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(journey, now, newObject, userID);
+  }
+  
+  /*****************************************
+  *
+  *  putJourney
+  *
+  *****************************************/
+
+  public void putJourney(IncompleteObject journey, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID)
+  {
+    try
+      {
+        putJourney((GUIManagedObject) journey, journeyObjectiveService, catalogCharacteristicService, newObject, userID);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
 
   /*****************************************
   *

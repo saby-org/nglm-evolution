@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -143,17 +142,6 @@ public class ProductTypeService extends GUIService
   *****************************************/
 
   public void putProductType(GUIManagedObject productType, boolean newObject, String userID) { putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID); }
-
-  /*****************************************
-  *
-  *  putIncompleteProductType
-  *
-  *****************************************/
-
-  public void putIncompleteProductType(IncompleteObject productType, boolean newObject, String userID)
-  {
-    putGUIManagedObject(productType, SystemTime.getCurrentTime(), newObject, userID);
-  }
 
   /*****************************************
   *

@@ -6,14 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
-
 import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -146,17 +144,6 @@ public class CatalogCharacteristicService extends GUIService
   *****************************************/
 
   public void putCatalogCharacteristic(GUIManagedObject catalogCharacteristic, boolean newObject, String userID) { putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime(), newObject, userID); }
-
-  /*****************************************
-  *
-  *  putIncompleteCatalogCharacteristic
-  *
-  *****************************************/
-
-  public void putIncompleteCatalogCharacteristic(IncompleteObject catalogCharacteristic, boolean newObject, String userID)
-  {
-    putGUIManagedObject(catalogCharacteristic, SystemTime.getCurrentTime(), newObject, userID);
-  }
 
   /*****************************************
   *
