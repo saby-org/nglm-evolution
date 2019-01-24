@@ -628,7 +628,7 @@ public class Journey extends GUIManagedObject
     this.targetingWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingWindowUnit", Deployment.getJourneyDefaultTargetingWindowUnit()));
     this.targetingWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "targetingWindowRoundUp", new Boolean(Deployment.getJourneyDefaultTargetingWindowRoundUp()));
     this.targetingCriteria = decodeTargetingCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetConditions", false), Deployment.getJourneyUniversalTargetingCriteria());
-    this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", true), catalogCharacteristicService);
+    this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
