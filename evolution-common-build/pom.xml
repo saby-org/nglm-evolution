@@ -149,6 +149,7 @@
     <!-- gui -->
     <gui.csr.display>true</gui.csr.display>
     <gui.opc.display>true</gui.opc.display>
+    <gui.opc.dnbo.display>false</gui.opc.dnbo.display>
     <gui.jmr.display>true</gui.jmr.display>
     <gui.iar.display>true</gui.iar.display>
     <gui.opr.display>true</gui.opr.display>

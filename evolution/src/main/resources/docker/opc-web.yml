@@ -5,6 +5,7 @@ opc-web-<_KEY_>:
     opc_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     opc_fwk_api_server_path_for_upload_files: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/file/flowupload"
     TZ: <_DEPLOYMENT_TIMEZONE_>
+    OPC_DNBO_INSTALL: '${gui.opc.dnbo.display}'
     OPC_WEB_PORT: <_PORT_>
   deploy:
     restart_policy:

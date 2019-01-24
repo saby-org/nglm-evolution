@@ -4,14 +4,15 @@ opc-api-<_KEY_>:
   environment:
     FwkSettings__AuthorizationBaseUrl: 'http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api'
     GuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
-    DNBOEngineSettings__ApiBaseUrl: '<_IOM_SERVER_URL_>'
-    DNBOEngineSettings__UseSubscriberId: 'true'
-    DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
-    DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
-    ConnectionStrings__OPCConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
-    Redis__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_SERVER_>,allowAdmin=true,syncTimeout=5000'
-    MatrixBusSettings_RetriveCustomerDetailsDataFromDB: '<_OPC_WEB_GET_CUSTOMER_DATA_FROM_DB_>'
+    DNBOSettings__DNBO_INSTALL: '${gui.opc.dnbo.display}'
+    DNBOSettings__DNBOEngineSettings__ApiBaseUrl: '<_IOM_SERVER_URL_>'
+    DNBOSettings__DNBOEngineSettings__UseSubscriberId: 'true'
+    DNBOSettings__DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
+    DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
+    DNBOSettings__SQLConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
+    DNBOSettings__Redis__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_SERVER_>,allowAdmin=true,syncTimeout=5000'
+    DNBOSettings__MatrixBusSettings_RetriveCustomerDetailsDataFromDB: '<_OPC_WEB_GET_CUSTOMER_DATA_FROM_DB_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     OPC_API_PORT: <_PORT_>
   volumes:
