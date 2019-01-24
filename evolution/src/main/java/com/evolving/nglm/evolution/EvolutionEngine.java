@@ -1385,7 +1385,7 @@ public class EvolutionEngine
                   {
                     if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
                       {
-                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), journey.getAutoTargetedWindowDuration(), journey.getAutoTargetedWindowUnit(), Deployment.getBaseTimeZone(), journey.getAutoTargetedWindowRoundUp());
+                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), journey.getTargetingWindowDuration(), journey.getTargetingWindowUnit(), Deployment.getBaseTimeZone(), journey.getTargetingWindowRoundUp());
                         if (journeyReentryWindow.after(now))
                           {
                             enterJourney = false;
@@ -1403,7 +1403,7 @@ public class EvolutionEngine
             if (enterJourney)
               {
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAutoTargetingCriteria()))
+                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getTargetingCriteria()))
                   {
                     enterJourney = false;
                   }
