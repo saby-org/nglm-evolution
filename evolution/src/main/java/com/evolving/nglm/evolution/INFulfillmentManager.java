@@ -574,7 +574,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().toString());
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, Module.fromModuleId(getModuleID()).toString());
+      guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, "");
       guiPresentationMap.put(RETURNCODE, "TO DO:");
@@ -589,7 +589,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, Module.fromModuleId(getModuleID()).toString());
+      thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, "TO DO:");

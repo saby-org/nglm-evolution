@@ -8372,7 +8372,6 @@ public class GUIManager
   /*****************************************
   *
   * processGetCustomerBDRs
-  * @throws GUIManagerException 
   *
   *****************************************/
 

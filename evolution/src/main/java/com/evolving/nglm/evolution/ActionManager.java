@@ -14,6 +14,17 @@ public abstract class ActionManager
 {
   /*****************************************
   *
+  *  enum
+  *
+  *****************************************/
+
+  public enum ActionType
+  {
+    DeliveryRequest;
+  }
+
+  /*****************************************
+  *
   *  constructor
   *
   *****************************************/
@@ -26,7 +37,7 @@ public abstract class ActionManager
   *
   *****************************************/
 
-  public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+  public Action executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
   {
     //
     //  default implementation (empty)
@@ -46,5 +57,16 @@ public abstract class ActionManager
     //
     //  default implementation (empty)
     //
+  }
+
+  /*****************************************
+  *
+  *  interface Action
+  *
+  *****************************************/
+
+  public interface Action
+  {
+    public ActionType getActionType();
   }
 }

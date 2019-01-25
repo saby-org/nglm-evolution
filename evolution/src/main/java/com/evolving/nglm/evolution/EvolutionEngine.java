@@ -68,6 +68,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 
 import org.slf4j.Logger;
@@ -437,12 +438,12 @@ public class EvolutionEngine
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
+    final ConnectSerde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberState> subscriberStateSerde = SubscriberState.serde();
     final ConnectSerde<SubscriberHistory> subscriberHistorySerde = SubscriberHistory.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
-    final Serde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
 
     /*****************************************
@@ -457,6 +458,7 @@ public class EvolutionEngine
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
     evolutionEventSerdes.add(timedEvaluationSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
+    evolutionEventSerdes.add(journeyStatisticSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
     evolutionEventSerdes.addAll(evolutionEngineEventSerdes.values());
@@ -491,6 +493,7 @@ public class EvolutionEngine
 
     KStream<StringKey, TimedEvaluation> timedEvaluationSourceStream = builder.stream(timedEvaluationTopic, Consumed.with(stringKeySerde, timedEvaluationSerde));
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
+    KStream<StringKey, JourneyStatistic> journeyStatisticSourceStream = builder.stream(journeyStatisticTopic, Consumed.with(stringKeySerde, journeyStatisticSerde));
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     
@@ -521,6 +524,7 @@ public class EvolutionEngine
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) timedEvaluationSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyStatisticSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
@@ -536,12 +540,12 @@ public class EvolutionEngine
     //  merge source streams -- deliveryResponseStream
     //
 
-    KStream deliveryResponseCompositeStream = emptySourceStream;
+    KStream subscriberHistoryCompositeStream = journeyStatisticSourceStream;
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : deliveryManagerResponseStreams)
       {
-        deliveryResponseCompositeStream = (deliveryResponseCompositeStream == null) ? eventStream : deliveryResponseCompositeStream.merge(eventStream);
+        subscriberHistoryCompositeStream = (subscriberHistoryCompositeStream == null) ? eventStream : subscriberHistoryCompositeStream.merge(eventStream);
       }
-    KStream<StringKey, SubscriberStreamEvent> deliveryResponseStream = (KStream<StringKey, SubscriberStreamEvent>) deliveryResponseCompositeStream;
+    KStream<StringKey, SubscriberStreamEvent> subscriberHistoryStream = (KStream<StringKey, SubscriberStreamEvent>) subscriberHistoryCompositeStream;
 
     /*****************************************
     *
@@ -653,7 +657,7 @@ public class EvolutionEngine
 
     KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
     Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde.optionalSerde());
-    KTable<StringKey, SubscriberHistory> subscriberHistory = deliveryResponseStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
+    KTable<StringKey, SubscriberHistory> subscriberHistory = subscriberHistoryStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
 
     /*****************************************
     *
@@ -1608,7 +1612,7 @@ public class EvolutionEngine
                     //
 
                     SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
-                    DeliveryRequest deliveryRequest = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
+                    DeliveryRequest deliveryRequest = (DeliveryRequest) journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
                     context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
 
                     //
@@ -1697,8 +1701,39 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    DeliveryRequest deliveryRequest = (DeliveryRequest) evolutionEvent;
+    if (evolutionEvent instanceof DeliveryRequest)
+      {
+        subscriberHistoryUpdated = updateSubscriberHistoryDeliveryRequests((DeliveryRequest) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
+      }
 
+    /*****************************************
+    *
+    *  journeyStatistic
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof JourneyStatistic)
+      {
+        subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics((JourneyStatistic) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
+      }
+
+    /****************************************
+    *
+    *  return
+    *
+    ****************************************/
+
+    return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
+  }
+
+  /*****************************************
+  *
+  *  updateSubscriberHistoryDeliveryRequests
+  *
+  *****************************************/
+
+  private static boolean updateSubscriberHistoryDeliveryRequests(DeliveryRequest deliveryRequest, SubscriberHistory subscriberHistory)
+  {
     /*****************************************
     *
     *  clear older history
@@ -1730,15 +1765,63 @@ public class EvolutionEngine
     //
 
     subscriberHistory.getDeliveryRequests().add(i, deliveryRequest);
-    subscriberHistoryUpdated = true;
 
-    /****************************************
+    /*****************************************
     *
     *  return
     *
-    ****************************************/
+    *****************************************/
 
-    return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
+    return true;
+  }
+
+  /*****************************************
+  *
+  *  updateSubscriberHistoryJourneyStatistics
+  *
+  *****************************************/
+
+  private static boolean updateSubscriberHistoryJourneyStatistics(JourneyStatistic journeyStatistic, SubscriberHistory subscriberHistory)
+  {
+    /*****************************************
+    *
+    *  clear older history
+    *
+    *****************************************/
+
+    //
+    //  TBD DEW
+    //
+
+    /*****************************************
+    *
+    *  add to history
+    *
+    *****************************************/
+
+    //
+    //  find sorted location to insert
+    //
+
+    int i = 0;
+    while (i < subscriberHistory.getJourneyStatistics().size() && subscriberHistory.getJourneyStatistics().get(i).getTransitionDate().compareTo(journeyStatistic.getTransitionDate()) <= 0)
+      {
+        i += 1;
+      }
+
+    //
+    //  insert
+    //
+
+    subscriberHistory.getJourneyStatistics().add(i, journeyStatistic);
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return true;
   }
 
   /*****************************************
@@ -2522,5 +2605,36 @@ public class EvolutionEngine
     *****************************************/
 
     return result;
+  }
+
+  /*****************************************
+  *
+  *  class EnterJourneyAction
+  *
+  *****************************************/
+
+  public static class EnterJourneyAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public EnterJourneyAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+    }
+        
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      return null;
+    }
   }
 }

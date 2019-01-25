@@ -475,7 +475,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
       guiPresentationMap.put(SALESCHANNEL, Deployment.getSalesChannels().get(getSalesChannelID()).getName());
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, Module.fromModuleId(getModuleID()).toString());
+      guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       guiPresentationMap.put(RETURNCODE, "TO DO:");
@@ -493,7 +493,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
       thirdPartyPresentationMap.put(SALESCHANNEL, Deployment.getSalesChannels().get(getSalesChannelID()).getName());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, Module.fromModuleId(getModuleID()).toString());
+      thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       thirdPartyPresentationMap.put(RETURNCODE, "TO DO:");

@@ -413,7 +413,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, Module.fromModuleId(getModuleID()).toString());
+      guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, "");
       guiPresentationMap.put(RETURNCODE, "TO DO:");
@@ -429,7 +429,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, Module.fromModuleId(getModuleID()).toString());
+      thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, "TO DO:");

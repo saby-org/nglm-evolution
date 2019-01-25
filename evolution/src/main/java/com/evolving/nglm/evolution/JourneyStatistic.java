@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
@@ -33,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JourneyStatistic implements SubscriberStreamOutput
+public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput
 {
   /*****************************************
   *
@@ -79,6 +80,7 @@ public class JourneyStatistic implements SubscriberStreamOutput
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<JourneyStatistic> serde() { return serde; }
+  public Schema subscriberStreamEventSchema() { return schema(); }
 
   /*****************************************
   *
@@ -119,6 +121,7 @@ public class JourneyStatistic implements SubscriberStreamOutput
   public boolean getStatusControlGroup() { return statusControlGroup; }
   public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
   public boolean getJourneyComplete() { return journeyComplete; }
+  public Date getEventDate() { return transitionDate; }
 
   /*****************************************
   *
@@ -261,6 +264,12 @@ public class JourneyStatistic implements SubscriberStreamOutput
     return struct;
   }
   
+  //
+  //  subscriberStreamEventPack
+  //
+
+  public Object subscriberStreamEventPack(Object value) { return pack(value); }
+
   /*****************************************
   *
   *  unpack

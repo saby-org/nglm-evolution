@@ -118,6 +118,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("targetingWindowRoundUp", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("endNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyObjectives", SchemaBuilder.array(JourneyObjectiveInstance.schema()).schema());
     schemaBuilder.field("journeyNodes", SchemaBuilder.array(JourneyNode.schema()).schema());
     schemaBuilder.field("journeyLinks", SchemaBuilder.array(JourneyLink.schema()).schema());
@@ -151,6 +152,7 @@ public class Journey extends GUIManagedObject
   private boolean targetingWindowRoundUp;
   private List<EvaluationCriterion> targetingCriteria;
   private String startNodeID;
+  private String endNodeID;
   private Set<JourneyObjectiveInstance> journeyObjectiveInstances; 
   private Map<String,JourneyNode> journeyNodes;
   private Map<String,JourneyLink> journeyLinks;
@@ -175,6 +177,7 @@ public class Journey extends GUIManagedObject
   public boolean getTargetingWindowRoundUp() { return targetingWindowRoundUp; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
   public String getStartNodeID() { return startNodeID; }
+  public String getEndNodeID() { return endNodeID; }
   public Set<JourneyObjectiveInstance> getJourneyObjectiveInstances() { return journeyObjectiveInstances;  }
   public Map<String,JourneyNode> getJourneyNodes() { return journeyNodes; }
   public Map<String,JourneyLink> getJourneyLinks() { return journeyLinks; }
@@ -185,7 +188,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, int targetingWindowDuration, TimeUnit targetingWindowUnit, boolean targetingWindowRoundUp, List<EvaluationCriterion> targetingCriteria, String startNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, boolean autoTargeted, int targetingWindowDuration, TimeUnit targetingWindowUnit, boolean targetingWindowRoundUp, List<EvaluationCriterion> targetingCriteria, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
   {
     super(schemaAndValue);
     this.journeyMetrics = journeyMetrics;
@@ -196,6 +199,7 @@ public class Journey extends GUIManagedObject
     this.targetingWindowRoundUp = targetingWindowRoundUp;
     this.targetingCriteria = targetingCriteria;
     this.startNodeID = startNodeID;
+    this.endNodeID = endNodeID;
     this.journeyObjectiveInstances = journeyObjectiveInstances;
     this.journeyNodes = journeyNodes;
     this.journeyLinks = journeyLinks;
@@ -220,6 +224,7 @@ public class Journey extends GUIManagedObject
     struct.put("targetingWindowRoundUp", journey.getTargetingWindowRoundUp());
     struct.put("targetingCriteria", packTargetingCriteria(journey.getTargetingCriteria()));
     struct.put("startNodeID", journey.getStartNodeID());
+    struct.put("endNodeID", journey.getEndNodeID());
     struct.put("journeyObjectives", packJourneyObjectiveInstances(journey.getJourneyObjectiveInstances()));
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
     struct.put("journeyLinks", packJourneyLinks(journey.getJourneyLinks()));
@@ -357,6 +362,7 @@ public class Journey extends GUIManagedObject
     boolean targetingWindowRoundUp = valueStruct.getBoolean("targetingWindowRoundUp");
     List<EvaluationCriterion> targetingCriteria = unpackTargetingCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
     String startNodeID = valueStruct.getString("startNodeID");
+    String endNodeID = valueStruct.getString("endNodeID");
     Set<JourneyObjectiveInstance> journeyObjectiveInstances = unpackJourneyObjectiveInstances(schema.field("journeyObjectives").schema(), valueStruct.get("journeyObjectives"));
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
     Map<String,JourneyLink> journeyLinks = unpackJourneyLinks(schema.field("journeyLinks").schema(), valueStruct.get("journeyLinks"));
@@ -421,7 +427,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, targetingWindowDuration, targetingWindowUnit, targetingWindowRoundUp, targetingCriteria, startNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks);
+    return new Journey(schemaAndValue, journeyMetrics, journeyParameters, autoTargeted, targetingWindowDuration, targetingWindowUnit, targetingWindowRoundUp, targetingCriteria, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks);
   }
   
   /*****************************************
@@ -682,6 +688,63 @@ public class Journey extends GUIManagedObject
       }
     if (this.startNodeID == null) throw new GUIManagerException("no start node", null);
     if (this.journeyNodes.get(this.startNodeID).getNodeType().getActionManager() != null) throw new GUIManagerException("illegal start node", this.startNodeID);
+
+    /*****************************************
+    *
+    *  endNodeID
+    *
+    *****************************************/
+
+    this.endNodeID = null;
+    for (JourneyNode journeyNode : this.journeyNodes.values())
+      {
+        if (journeyNode.getNodeType().getEndNode())
+          {
+            if (this.endNodeID != null) throw new GUIManagerException("multiple end nodes", journeyNode.getNodeID());
+            this.endNodeID = journeyNode.getNodeID();
+          }
+      }
+    if (this.endNodeID == null) throw new GUIManagerException("no end node", null);
+    if (this.journeyNodes.get(this.endNodeID).getNodeType().getActionManager() != null) throw new GUIManagerException("illegal end node", this.endNodeID);
+
+    /*****************************************
+    *
+    *  populate implicit GUILinks
+    *
+    *****************************************/
+
+    //
+    //  build outgoingGUILinksByGUINode
+    //
+
+    Map<String,Map<Integer,GUILink>> outgoingGUILinksByGUINode = new HashMap<String,Map<Integer,GUILink>>();
+    for (GUILink jsonLink : jsonLinks)
+      {
+        Map<Integer,GUILink> linksForGUINode = outgoingGUILinksByGUINode.get(jsonLink.getSourceNodeID());
+        if (linksForGUINode == null)
+          {
+            linksForGUINode = new HashMap<Integer,GUILink>();
+            outgoingGUILinksByGUINode.put(jsonLink.getSourceNodeID(), linksForGUINode);
+          }
+        linksForGUINode.put(jsonLink.getSourceConnectionPoint(), jsonLink);
+      }
+
+    //
+    //  add implicitLinks to jsonLinks
+    //
+
+    for (GUINode jsonNode : jsonNodes.values())
+      {
+        for (int i=0; i<jsonNode.getOutgoingConnectionPoints().size(); i++)
+          {
+            Map<Integer,GUILink> linksForGUINode = outgoingGUILinksByGUINode.get(jsonNode.getNodeID());
+            GUILink outgoingLink = (linksForGUINode != null) ? linksForGUINode.get(i) : null;
+            if (outgoingLink == null)
+              {
+                jsonLinks.add(new GUILink(jsonNode.getNodeID(), i, this.endNodeID));
+              }
+          }
+      }
 
     /*****************************************
     *
@@ -1509,7 +1572,7 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
-    *  constructor
+    *  constructor -- campaign/journey json
     *
     *****************************************/
 
@@ -1518,6 +1581,19 @@ public class Journey extends GUIManagedObject
       this.sourceNodeID = JSONUtilities.decodeString(jsonRoot, "sourceNodeID", true);
       this.sourceConnectionPoint = JSONUtilities.decodeInteger(jsonRoot, "sourceConnectionPoint", true);
       this.destinationNodeID = JSONUtilities.decodeString(jsonRoot, "destinationNodeID", true);
+    }
+
+    /*****************************************
+    *
+    *  constructor -- implicit link
+    *
+    *****************************************/
+
+    private GUILink(String sourceNodeID, int sourceConnectionPoint, String destinationNodeID)
+    {
+      this.sourceNodeID = sourceNodeID;
+      this.sourceConnectionPoint = sourceConnectionPoint;
+      this.destinationNodeID = destinationNodeID;
     }
   }
 
@@ -1541,6 +1617,7 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! (targetingWindowRoundUp == existingJourney.getTargetingWindowRoundUp());
         epochChanged = epochChanged || ! Objects.equals(targetingCriteria, existingJourney.getTargetingCriteria());
         epochChanged = epochChanged || ! Objects.equals(startNodeID, existingJourney.getStartNodeID());
+        epochChanged = epochChanged || ! Objects.equals(endNodeID, existingJourney.getEndNodeID());
         epochChanged = epochChanged || ! Objects.equals(journeyObjectiveInstances, existingJourney.getJourneyObjectiveInstances());
         epochChanged = epochChanged || ! Objects.equals(journeyNodes, existingJourney.getJourneyNodes());
         epochChanged = epochChanged || ! Objects.equals(journeyLinks, existingJourney.getJourneyLinks());

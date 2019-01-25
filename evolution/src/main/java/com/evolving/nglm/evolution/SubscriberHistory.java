@@ -37,6 +37,7 @@ public class SubscriberHistory
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
+    schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -61,6 +62,7 @@ public class SubscriberHistory
 
   private String subscriberID;
   private List<DeliveryRequest> deliveryRequests;
+  private List<JourneyStatistic> journeyStatistics;
 
   /*****************************************
   *
@@ -70,6 +72,7 @@ public class SubscriberHistory
 
   public String getSubscriberID() { return subscriberID; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
+  public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
 
   /*****************************************
   *
@@ -81,6 +84,7 @@ public class SubscriberHistory
   {
     this.subscriberID = subscriberID;
     this.deliveryRequests = new ArrayList<DeliveryRequest>();
+    this.journeyStatistics = new ArrayList<JourneyStatistic>();
   }
 
   /*****************************************
@@ -89,10 +93,11 @@ public class SubscriberHistory
   *
   *****************************************/
 
-  private SubscriberHistory(String subscriberID, List<DeliveryRequest> deliveryRequests)
+  private SubscriberHistory(String subscriberID, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics)
   {
     this.subscriberID = subscriberID;
     this.deliveryRequests = deliveryRequests;
+    this.journeyStatistics = journeyStatistics;
   }
 
   /*****************************************
@@ -105,6 +110,7 @@ public class SubscriberHistory
   {
     this.subscriberID = subscriberHistory.getSubscriberID();
     this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberHistory.getDeliveryRequests());
+    this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberHistory.getJourneyStatistics());
   }
 
   /*****************************************
@@ -119,6 +125,7 @@ public class SubscriberHistory
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberHistory.getSubscriberID());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberHistory.getDeliveryRequests()));
+    struct.put("journeyStatistics", packJourneyStatistics(subscriberHistory.getJourneyStatistics()));
     return struct;
   }
 
@@ -138,6 +145,22 @@ public class SubscriberHistory
     return result;
   }
   
+  /*****************************************
+  *
+  *  packJourneyStatistics
+  *
+  *****************************************/
+
+  private static List<Object> packJourneyStatistics(List<JourneyStatistic> journeyStatistics)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (JourneyStatistic journeyStatistic : journeyStatistics)
+      {
+        result.add(JourneyStatistic.pack(journeyStatistic));
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  unpack
@@ -161,12 +184,13 @@ public class SubscriberHistory
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
+    List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
 
     //  
     //  return
     //
 
-    return new SubscriberHistory(subscriberID, deliveryRequests);
+    return new SubscriberHistory(subscriberID, deliveryRequests, journeyStatistics);
   }
     
   /*****************************************
@@ -193,6 +217,39 @@ public class SubscriberHistory
       {
         DeliveryRequest deliveryRequest = DeliveryRequest.commonSerde().unpack(new SchemaAndValue(deliveryRequestSchema, request));
         result.add(deliveryRequest);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackJourneyStatistics
+  *
+  *****************************************/
+
+  private static List<JourneyStatistic> unpackJourneyStatistics(Schema schema, Object value)
+  {
+    //
+    //  get schema for JourneyStatistic
+    //
+
+    Schema journeyStatisticSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    List<JourneyStatistic> result = new ArrayList<JourneyStatistic>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object request : valueArray)
+      {
+        JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticSchema, request));
+        result.add(journeyStatistic);
       }
 
     //

@@ -26,10 +26,12 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
-public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput
+public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action
 {
   
   /*****************************************
@@ -102,7 +104,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   *
   *****************************************/
   
-  public enum Module{
+  public enum Module
+  {
     Campaign_Manager(1),
     Journey_Manager(2),
     Offer_Catalog(3),
@@ -113,8 +116,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     private Integer externalRepresentation;
     private Module(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getExternalRepresentation() { return externalRepresentation; }
-    public static Module fromModuleId(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
-    
+    public static Module fromExternalRepresentation(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   
   /*****************************************
@@ -123,7 +125,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   *
   *****************************************/
   
-  public enum ActivityType {
+  public enum ActivityType
+  {
     BDR(1),
     ODR(2),
     Messages(3),
@@ -243,6 +246,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public Date getDeliveryDate() { return deliveryDate; }
   public Date getEventDate() { return deliveryDate; }
   public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
+  public ActionType getActionType() { return ActionType.DeliveryRequest; }
 
   //
   //  setters
