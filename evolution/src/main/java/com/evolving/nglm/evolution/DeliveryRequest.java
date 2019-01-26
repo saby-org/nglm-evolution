@@ -69,6 +69,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public static final String MODULEID = "moduleId";
   public static final String MODULENAME = "moduleName";
   public static final String FEATUREID = "featureId";
+  public static final String FEATURENAME = "featureName";
   public static final String ORIGIN = "origin";
   
   //

@@ -8453,7 +8453,7 @@ public class GUIManager
                     }
                   
                   //
-                  // filter
+                  // filter and prepare json
                   //
                   
                   List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
@@ -8461,15 +8461,19 @@ public class GUIManager
                     {
                       if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                         {
-                          result.add(bdr);
+                          Map<String, Object> bdrMap = bdr.getGUIPresentationMap();
+                          DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromModuleId(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
+                          if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
+                            {
+                              bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
+                            }
+                          else 
+                            {
+                              bdrMap.put(DeliveryRequest.FEATURENAME, null);
+                            }
+                          BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                         }
                     }
-                  
-                  //
-                  // prepare json
-                  //
-                  
-                  BDRsJson = result.stream().map(bdr -> JSONUtilities.encodeObject(bdr.getGUIPresentationMap())).collect(Collectors.toList());
                 }
               
               //
@@ -9073,6 +9077,49 @@ public class GUIManager
         }
       while (!stopRequested);
     }
+  }
+  
+  /*****************************************
+  *
+  *  getFeatureName
+  *
+  *****************************************/
+  
+  private String getFeatureName(DeliveryRequest.Module module, String featureId)
+  {
+    String featureName = null;
+    
+    switch (module)
+    {
+      case Campaign_Manager:
+        GUIManagedObject campaign = journeyService.getStoredJourney(featureId);
+        campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
+        featureName = campaign == null ? null : campaign.getGUIManagedObjectName();
+        break;
+        
+      case Journey_Manager:
+        GUIManagedObject journey = journeyService.getStoredJourney(featureId);
+        journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
+        featureName = journey == null ? null : journey.getGUIManagedObjectName();
+        break;
+        
+      case Offer_Catalog:
+        featureName = offerService.getStoredOffer(featureId).getGUIManagedObjectName();
+        break;
+        
+      case Delivery_Manager:
+        featureName = "Delivery_Manager-its temp"; //To DO
+        break;
+        
+      case REST_API:
+        featureName = "REST_API-its temp"; //To DO
+        break;
+      
+      case Unknown:
+        featureName = "Unknown";
+        break;
+    }
+    return featureName;
   }
   
   /*****************************************

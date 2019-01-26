@@ -54,6 +54,7 @@ import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.sun.net.httpserver.HttpExchange;
@@ -84,6 +85,7 @@ public class ThirdPartyManager
   
   private OfferService offerService;
   private SubscriberProfileService subscriberProfileService;
+  private JourneyService journeyService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
@@ -176,6 +178,7 @@ public class ThirdPartyManager
     String offerTopic = Deployment.getOfferTopic();
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
+    String journeyTopic = Deployment.getJourneyTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
@@ -233,6 +236,7 @@ public class ThirdPartyManager
     
     offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false);
     subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "thirdpartymanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
+    journeyService = new JourneyService(bootstrapServers, "thirdpartymanager-journeyservice-" + apiProcessKey, journeyTopic, true);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     
@@ -242,6 +246,7 @@ public class ThirdPartyManager
     
     offerService.start();
     subscriberProfileService.start();
+    journeyService.start();
     
     /*****************************************
     *
@@ -276,7 +281,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, journeyService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -303,6 +308,7 @@ public class ThirdPartyManager
     private HttpServer restServer;
     private OfferService offerService;
     private SubscriberProfileService subscriberProfileService;
+    private JourneyService journeyService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
     
@@ -310,11 +316,12 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, JourneyService journeyService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.offerService = offerService;
       this.subscriberProfileService = subscriberProfileService;
+      this.journeyService = journeyService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
@@ -337,6 +344,7 @@ public class ThirdPartyManager
       
       if (offerService != null) offerService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
+      if (journeyService != null) journeyService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       
       //
@@ -841,7 +849,17 @@ public class ThirdPartyManager
                     {
                       if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                         {
-                          BDRsJson.add(JSONUtilities.encodeObject(bdr.getThirdPartyPresentationMap()));
+                          Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap();
+                          DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromModuleId(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
+                          if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
+                            {
+                              bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
+                            }
+                          else 
+                            {
+                              bdrMap.put(DeliveryRequest.FEATURENAME, null);
+                            }
+                          BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                         }
                     }
                 }
@@ -1611,6 +1629,49 @@ public class ThirdPartyManager
       }
     return result;
   }
+  
+  /*****************************************
+  *
+  *  getFeatureName
+  *
+  *****************************************/
+  
+  private String getFeatureName(DeliveryRequest.Module module, String featureId)
+  {
+    String featureName = null;
+    
+    switch (module)
+    {
+      case Campaign_Manager:
+        GUIManagedObject campaign = journeyService.getStoredJourney(featureId);
+        campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
+        featureName = campaign == null ? null : campaign.getGUIManagedObjectName();
+        break;
+        
+      case Journey_Manager:
+        GUIManagedObject journey = journeyService.getStoredJourney(featureId);
+        journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
+        featureName = journey == null ? null : journey.getGUIManagedObjectName();
+        break;
+        
+      case Offer_Catalog:
+        featureName = offerService.getStoredOffer(featureId).getGUIManagedObjectName();
+        break;
+        
+      case Delivery_Manager:
+        featureName = "Delivery_Manager-its temp"; //TO DO
+        break;
+        
+      case REST_API:
+        featureName = "REST_API-its temp"; //To DO
+        break;
+      
+      case Unknown:
+        featureName = "Unknown";
+        break;
+    }
+    return featureName;
+  }
 
   /*****************************************
   *
@@ -1865,5 +1926,4 @@ public class ThirdPartyManager
       }
     }
   }
-  
 }
