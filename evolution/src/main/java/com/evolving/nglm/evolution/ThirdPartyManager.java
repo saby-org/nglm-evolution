@@ -850,7 +850,7 @@ public class ThirdPartyManager
                       if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                         {
                           Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap();
-                          DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromModuleId(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
+                          DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
                           if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
                             {
                               bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
