@@ -20,7 +20,8 @@ public abstract class ActionManager
 
   public enum ActionType
   {
-    DeliveryRequest;
+    DeliveryRequest,
+    JourneyRequest;
   }
 
   /*****************************************

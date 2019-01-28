@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 import java.util.Random;
 
@@ -113,6 +114,41 @@ public abstract class CriterionFieldRetriever
 
   public static Object getJourneyActionJourneyStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
-    return null;
+    /*****************************************
+    *
+    *  awaited journey entry?
+    *
+    *****************************************/
+
+    boolean awaitedJourneyEntry = true;
+    awaitedJourneyEntry = awaitedJourneyEntry && evaluationRequest.getJourneyState().getJourneyOutstandingJourneyRequestID() != null;
+    awaitedJourneyEntry = awaitedJourneyEntry && evaluationRequest.getSubscriberStreamEvent() instanceof JourneyRequest;
+    awaitedJourneyEntry = awaitedJourneyEntry && ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getJourneyRequestID().equals(evaluationRequest.getJourneyState().getJourneyOutstandingJourneyRequestID());
+
+    /*****************************************
+    *
+    *  awaited journey transition?
+    *
+    *****************************************/
+
+    boolean awaitedJourneyTransition = true;
+    awaitedJourneyTransition = awaitedJourneyTransition && evaluationRequest.getJourneyState().getJourneyOutstandingJourneyInstanceID() != null;
+    awaitedJourneyTransition = awaitedJourneyTransition && evaluationRequest.getSubscriberStreamEvent() instanceof JourneyStatistic;
+    awaitedJourneyTransition = awaitedJourneyTransition && ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getJourneyInstanceID().equals(evaluationRequest.getJourneyState().getJourneyOutstandingJourneyInstanceID());
+
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    if (awaitedJourneyEntry && ! ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
+      return JourneyStatus.NotEligible.getExternalRepresentation();
+    else if (awaitedJourneyEntry && ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
+      return JourneyStatus.Eligible.getExternalRepresentation();
+    else if (awaitedJourneyTransition)
+      return ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getJourneyStatus().getExternalRepresentation();
+    else
+      return null;
   }
 }

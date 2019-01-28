@@ -63,6 +63,7 @@ public class Deployment
   private static String subscriberStateChangeLogTopic;
   private static String subscriberHistoryChangeLog;
   private static String subscriberHistoryChangeLogTopic;
+  private static String journeyRequestTopic;
   private static String journeyStatisticTopic;
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
@@ -186,6 +187,7 @@ public class Deployment
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
+  public static String getJourneyRequestTopic() { return journeyRequestTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
@@ -758,6 +760,19 @@ public class Deployment
     try
       {
         subscriberHistoryChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "subscriberHistoryChangeLogTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  journeyRequestTopic
+    //
+
+    try
+      {
+        journeyRequestTopic = JSONUtilities.decodeString(jsonRoot, "journeyRequestTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

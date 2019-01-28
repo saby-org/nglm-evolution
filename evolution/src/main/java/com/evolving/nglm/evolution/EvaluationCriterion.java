@@ -808,27 +808,6 @@ public class EvaluationCriterion
 
     /****************************************
     *
-    *  handle null values
-    *
-    ****************************************/
-
-    switch (criterionOperator)
-      {
-        case IsNullOperator:
-        case IsNotNullOperator:
-          break;
-
-        default:
-          if (criterionFieldValue == null)
-            {
-              evaluationRequest.subscriberTrace((criterionDefault ? "TrueCondition : " : "FalseCondition: ") + "DefaultCriterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, criterionFieldValue, argument);
-              return criterionDefault;
-            }
-          break;
-      }
-    
-    /****************************************
-    *
     *  evaluate argument
     *
     ****************************************/
@@ -858,6 +837,27 @@ public class EvaluationCriterion
         return false;
       }
 
+    /****************************************
+    *
+    *  handle null field
+    *
+    ****************************************/
+
+    switch (criterionOperator)
+      {
+        case IsNullOperator:
+        case IsNotNullOperator:
+          break;
+
+        default:
+          if (criterionFieldValue == null)
+            {
+              evaluationRequest.subscriberTrace((criterionDefault ? "TrueCondition : " : "FalseCondition: ") + "DefaultCriterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, criterionFieldValue, evaluatedArgument);
+              return criterionDefault;
+            }
+          break;
+      }
+    
     /****************************************
     *
     *  handle null argument

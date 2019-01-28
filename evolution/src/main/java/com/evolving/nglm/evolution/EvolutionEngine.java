@@ -68,6 +68,8 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 
@@ -227,6 +229,8 @@ public class EvolutionEngine
 
     String emptyTopic = Deployment.getEmptyTopic();
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
+    String journeyRequestTopic = Deployment.getJourneyRequestTopic();
+    String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
@@ -236,7 +240,6 @@ public class EvolutionEngine
     //
 
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
-    String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
 
     //
@@ -438,6 +441,7 @@ public class EvolutionEngine
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
+    final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
     final ConnectSerde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
@@ -458,6 +462,7 @@ public class EvolutionEngine
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
     evolutionEventSerdes.add(timedEvaluationSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
+    evolutionEventSerdes.add(journeyRequestSerde);
     evolutionEventSerdes.add(journeyStatisticSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
@@ -493,6 +498,7 @@ public class EvolutionEngine
 
     KStream<StringKey, TimedEvaluation> timedEvaluationSourceStream = builder.stream(timedEvaluationTopic, Consumed.with(stringKeySerde, timedEvaluationSerde));
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
+    KStream<StringKey, JourneyRequest> journeyRequestSourceStream = builder.stream(journeyRequestTopic, Consumed.with(stringKeySerde, journeyRequestSerde));
     KStream<StringKey, JourneyStatistic> journeyStatisticSourceStream = builder.stream(journeyStatisticTopic, Consumed.with(stringKeySerde, journeyStatisticSerde));
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
@@ -524,6 +530,7 @@ public class EvolutionEngine
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) timedEvaluationSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyStatisticSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
@@ -579,11 +586,12 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof SubscriberProfile), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof SubscriberProfile), (key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
     KStream<StringKey, SubscriberProfile> subscriberUpdateStream = (KStream<StringKey, SubscriberProfile>) branchedEvolutionEngineOutputs[0];
-    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[1];
-    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[2];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
+    KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
+    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[2];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[3];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[4];
 
     /*****************************************
     *
@@ -632,6 +640,7 @@ public class EvolutionEngine
     //
 
     subscriberUpdateStream.to(subscriberUpdateTopic, Produced.with(stringKeySerde, (Serde<SubscriberProfile>) subscriberProfileSerde));
+    journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     
@@ -1103,6 +1112,16 @@ public class EvolutionEngine
       }
 
     //
+    //  journeyRequests
+    //
+
+    if (subscriberState.getJourneyRequests().size() > 0)
+      {
+        subscriberState.getJourneyRequests().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
     //  deliveryRequests
     //
 
@@ -1344,13 +1363,26 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  update JourneyState(s) to enter new autoTargetedJourneys
+    *  update JourneyState(s) to enter new journeys
     *
     *****************************************/
 
     for (Journey journey : journeyService.getActiveJourneys(now))
       {
-        if (journey.getAutoTargeted())
+        //
+        //  called journey?
+        //
+
+        boolean calledJourney = true;
+        calledJourney = calledJourney && evolutionEvent instanceof JourneyRequest;
+        calledJourney = calledJourney && Objects.equals(((JourneyRequest) evolutionEvent).getJourneyID(), journey.getJourneyID());
+        calledJourney = calledJourney && ! journey.getAutoTargeted();
+
+        //
+        //  enter journey?
+        //
+
+        if (calledJourney || journey.getAutoTargeted())
           {
             /*****************************************
             *
@@ -1400,7 +1432,7 @@ public class EvolutionEngine
 
             /*****************************************
             *
-            *  pass auto-targeting criteria
+            *  pass targeting criteria
             *
             *****************************************/
 
@@ -1422,10 +1454,49 @@ public class EvolutionEngine
 
             if (enterJourney)
               {
+                /*****************************************
+                *
+                *  enterJourney -- all journeys
+                *
+                *****************************************/
+
                 JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), now);
                 subscriberState.getJourneyStates().add(journeyState);
                 subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState));
                 subscriberStateUpdated = true;
+
+                /*****************************************
+                *
+                *  enterJourney -- called journey
+                *
+                *****************************************/
+
+                if (calledJourney)
+                  {
+                    //
+                    //  journey request
+                    //
+
+                    JourneyRequest journeyRequest = (JourneyRequest) evolutionEvent;
+
+                    //
+                    //  mark eligible
+                    //
+
+                    journeyRequest.setEligible(true);
+
+                    //
+                    //  update calling journeyState with journeyInstanceID
+                    //
+
+                    for (JourneyState waitingJourneyState : subscriberState.getJourneyStates())
+                      {
+                        if (waitingJourneyState.getJourneyOutstandingJourneyRequestID() != null && Objects.equals(waitingJourneyState.getJourneyOutstandingJourneyRequestID(), journeyRequest.getJourneyRequestID()))
+                          {
+                            waitingJourneyState.setJourneyOutstandingJourneyInstanceID(journeyState.getJourneyInstanceID());
+                          }
+                      }
+                  }
               }
           }
       }
@@ -1608,21 +1679,33 @@ public class EvolutionEngine
                 if (journeyNode.getNodeType().getActionManager() != null)
                   {
                     //
-                    //  action
+                    //  evaluate action
                     //
 
                     SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
-                    DeliveryRequest deliveryRequest = (DeliveryRequest) journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
+                    Action action = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
                     context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
 
                     //
-                    //  forward deliveryRequest (if necessary)
+                    //  execute action
                     //
 
-                    if (deliveryRequest != null)
+                    if (action != null)
                       {
-                        subscriberState.getDeliveryRequests().add(deliveryRequest);
-                        journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
+                        switch (action.getActionType())
+                          {
+                            case DeliveryRequest:
+                              DeliveryRequest deliveryRequest = (DeliveryRequest) action;
+                              subscriberState.getDeliveryRequests().add(deliveryRequest);
+                              journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
+                              break;
+
+                            case JourneyRequest:
+                              JourneyRequest journeyRequest = (JourneyRequest) action;
+                              subscriberState.getJourneyRequests().add(journeyRequest);
+                              journeyState.setJourneyOutstandingJourneyRequestID(journeyRequest.getJourneyRequestID());
+                              break;
+                          }
                       }
                   }
 
@@ -1857,6 +1940,7 @@ public class EvolutionEngine
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     result.addAll(subscriberState.getEvolutionSubscriberStatusUpdated() ? Collections.<SubscriberProfile>singletonList(subscriberState.getSubscriberProfile()) : Collections.<SubscriberProfile>emptyList());
+    result.addAll(subscriberState.getJourneyRequests());
     result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatistics());
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
@@ -2632,9 +2716,31 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public JourneyRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
-      return null;
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String journeyID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.journey");
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, journeyID);
+
+      /*****************************************
+      *
+      *  return request
+      *
+      *****************************************/
+
+      return request;
     }
   }
 }

@@ -3063,39 +3063,45 @@ public class GUIManager
             }
           break;
 
-        case "campaigns":
+        case "callableCampaigns":
           for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
             {
               if (campaignUnchecked.getAccepted())
                 {
                   Journey campaign = (Journey) campaignUnchecked;
-                  switch (campaign.getGUIManagedObjectType())
+                  if (! campaign.getAutoTargeted())
                     {
-                      case Campaign:
-                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                        availableValue.put("id", campaign.getJourneyID());
-                        availableValue.put("display", campaign.getJourneyName());
-                        result.add(JSONUtilities.encodeObject(availableValue));
-                        break;
+                      switch (campaign.getGUIManagedObjectType())
+                        {
+                          case Campaign:
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", campaign.getJourneyID());
+                            availableValue.put("display", campaign.getJourneyName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
                     }
                 }
             }
           break;
 
-        case "journeys":
+        case "callableJourneys":
           for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
             {
               if (journeyUnchecked.getAccepted())
                 {
                   Journey journey = (Journey) journeyUnchecked;
-                  switch (journey.getGUIManagedObjectType())
+                  if (! journey.getAutoTargeted())
                     {
-                      case Journey:
-                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                        availableValue.put("id", journey.getJourneyID());
-                        availableValue.put("display", journey.getJourneyName());
-                        result.add(JSONUtilities.encodeObject(availableValue));
-                        break;
+                      switch (journey.getGUIManagedObjectType())
+                        {
+                          case Journey:
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", journey.getJourneyID());
+                            availableValue.put("display", journey.getJourneyName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
                     }
                 }
             }

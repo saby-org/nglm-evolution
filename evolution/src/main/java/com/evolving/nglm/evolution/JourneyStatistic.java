@@ -12,6 +12,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.Journey.JourneyStatusField;
 
 import org.json.simple.JSONArray;
@@ -122,6 +123,22 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
   public boolean getJourneyComplete() { return journeyComplete; }
   public Date getEventDate() { return transitionDate; }
+
+  //
+  //  getJourneyStatus
+  //
+
+  public JourneyStatus getJourneyStatus()
+  {
+    if (journeyComplete && statusConverted)
+      return JourneyStatus.Converted;
+    else if (journeyComplete && ! statusConverted)
+      return JourneyStatus.NotConverted;
+    else if (statusNotified)
+      return JourneyStatus.Notified;
+    else
+      return JourneyStatus.Eligible;
+  }
 
   /*****************************************
   *

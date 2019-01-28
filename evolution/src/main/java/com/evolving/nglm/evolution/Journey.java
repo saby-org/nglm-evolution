@@ -75,6 +75,24 @@ public class Journey extends GUIManagedObject
   }
 
   //
+  //  JourneyStatus
+  //
+
+  public enum JourneyStatus
+  {
+    NotEligible("notEligible"),
+    Eligible("eligible"),
+    Notified("notified"),
+    Converted("converted"),
+    NotConverted("notConverted"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private JourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static JourneyStatus fromExternalRepresentation(String externalRepresentation) { for (JourneyStatus enumeratedValue : JourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  //
   //  JourneyStatusField
   //
 

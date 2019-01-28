@@ -74,6 +74,7 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
     schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).schema());
     schemaBuilder.field("evolutionSubscriberStatusUpdated", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("journeyRequests", SchemaBuilder.array(JourneyRequest.schema()).schema());
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
@@ -105,6 +106,7 @@ public class SubscriberState implements SubscriberStreamOutput
   private Set<JourneyState> recentJourneyStates;
   private SortedSet<TimedEvaluation> scheduledEvaluations;
   private boolean evolutionSubscriberStatusUpdated;
+  private List<JourneyRequest> journeyRequests;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatistic> journeyStatistics;
   private SubscriberTrace subscriberTrace;
@@ -121,6 +123,7 @@ public class SubscriberState implements SubscriberStreamOutput
   public Set<JourneyState> getRecentJourneyStates() { return recentJourneyStates; }
   public SortedSet<TimedEvaluation> getScheduledEvaluations() { return scheduledEvaluations; }
   public boolean getEvolutionSubscriberStatusUpdated() { return evolutionSubscriberStatusUpdated; }
+  public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
@@ -150,6 +153,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.recentJourneyStates = new HashSet<JourneyState>();
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>();
         this.evolutionSubscriberStatusUpdated = true;
+        this.journeyRequests = new ArrayList<JourneyRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatistics = new ArrayList<JourneyStatistic>();
         this.subscriberTrace = null;
@@ -170,7 +174,7 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, boolean evolutionSubscriberStatusUpdated, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, boolean evolutionSubscriberStatusUpdated, List<JourneyRequest> journeyRequests, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -178,6 +182,7 @@ public class SubscriberState implements SubscriberStreamOutput
     this.recentJourneyStates = recentJourneyStates;
     this.scheduledEvaluations = scheduledEvaluations;
     this.evolutionSubscriberStatusUpdated = evolutionSubscriberStatusUpdated;
+    this.journeyRequests = journeyRequests;
     this.deliveryRequests = deliveryRequests;
     this.journeyStatistics = journeyStatistics;
     this.subscriberTrace = subscriberTrace;
@@ -202,6 +207,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.recentJourneyStates = new HashSet<JourneyState>(subscriberState.getRecentJourneyStates());
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>(subscriberState.getScheduledEvaluations());
         this.evolutionSubscriberStatusUpdated = subscriberState.getEvolutionSubscriberStatusUpdated();
+        this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatistics());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
@@ -242,6 +248,7 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
     struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
     struct.put("evolutionSubscriberStatusUpdated", subscriberState.getEvolutionSubscriberStatusUpdated());
+    struct.put("journeyRequests", packJourneyRequests(subscriberState.getJourneyRequests()));
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatistics", packJourneyStatistics(subscriberState.getJourneyStatistics()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
@@ -276,6 +283,22 @@ public class SubscriberState implements SubscriberStreamOutput
     for (TimedEvaluation scheduledEvaluation : scheduledEvaluations)
       {
         result.add(TimedEvaluation.pack(scheduledEvaluation));
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  packJourneyRequests
+  *
+  *****************************************/
+
+  private static List<Object> packJourneyRequests(List<JourneyRequest> journeyRequests)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (JourneyRequest journeyRequest : journeyRequests)
+      {
+        result.add(JourneyRequest.pack(journeyRequest));
       }
     return result;
   }
@@ -339,6 +362,7 @@ public class SubscriberState implements SubscriberStreamOutput
     Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
     SortedSet<TimedEvaluation> scheduledEvaluations = unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations"));
     boolean evolutionSubscriberStatusUpdated = valueStruct.getBoolean("evolutionSubscriberStatusUpdated");
+    List<JourneyRequest> journeyRequests = unpackJourneyRequests(schema.field("journeyRequests").schema(), valueStruct.get("journeyRequests"));
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
@@ -347,7 +371,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, evolutionSubscriberStatusUpdated, deliveryRequests, journeyStatistics, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, evolutionSubscriberStatusUpdated, journeyRequests, deliveryRequests, journeyStatistics, subscriberTrace);
   }
 
   /*****************************************
@@ -406,6 +430,39 @@ public class SubscriberState implements SubscriberStreamOutput
     for (Object scheduledEvaluation : valueArray)
       {
         result.add(TimedEvaluation.unpack(new SchemaAndValue(timedEvaluationSchema, scheduledEvaluation)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackJourneyRequests
+  *
+  *****************************************/
+
+  private static List<JourneyRequest> unpackJourneyRequests(Schema schema, Object value)
+  {
+    //
+    //  get schema for JourneyRequest
+    //
+
+    Schema journeyRequestSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    List<JourneyRequest> result = new ArrayList<JourneyRequest>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object request : valueArray)
+      {
+        JourneyRequest journeyRequest = JourneyRequest.unpack(new SchemaAndValue(journeyRequestSchema, request));
+        result.add(journeyRequest);
       }
 
     //
