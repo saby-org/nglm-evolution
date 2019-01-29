@@ -1827,6 +1827,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
       /*****************************************
       *
+      *  TEMP DEW HACK
+      *
+      *****************************************/
+
+      offerID = (offerID != null) ? offerID : "0";
+
+      /*****************************************
+      *
       *  request arguments
       *
       *****************************************/

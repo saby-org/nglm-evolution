@@ -383,20 +383,10 @@ public class EvaluationCriterion
           switch (criterionField.getFieldDataType())
             {
               case IntegerCriterion:
-                switch (argumentType)
-                  {
-                    case IntegerExpression:
-                      validCombination = true;
-                      break;
-                    default:
-                      validCombination = false;
-                      break;
-                  }
-                break;
-                
               case DoubleCriterion:
                 switch (argumentType)
                   {
+                    case IntegerExpression:
                     case DoubleExpression:
                       validCombination = true;
                       break;

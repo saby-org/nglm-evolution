@@ -1141,8 +1141,7 @@ public class Deployment
 
     try
       {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", false);
-        if (criterionFieldValues == null) criterionFieldValues = new JSONArray();
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "presentationCriterionFields", new JSONArray());
         for (int i=0; i<criterionFieldValues.size(); i++)
           {
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
@@ -1161,8 +1160,7 @@ public class Deployment
 
     try
       {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", false);
-        if (evaluationCriterionValues == null) evaluationCriterionValues = new JSONArray();
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "universalControlGroupCriteria", new JSONArray());
         for (int i=0; i<evaluationCriterionValues.size(); i++)
           {
             JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
@@ -1181,8 +1179,7 @@ public class Deployment
 
     try
       {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", false);
-        if (evaluationCriterionValues == null) evaluationCriterionValues = new JSONArray();
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupCriteria", new JSONArray());
         for (int i=0; i<evaluationCriterionValues.size(); i++)
           {
             JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
@@ -1239,8 +1236,7 @@ public class Deployment
 
     try
       {
-        JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", false);
-        if (offerOptimizationAlgorithmValues == null) offerOptimizationAlgorithmValues = new JSONArray();
+        JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", new JSONArray());
         for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
           {
             JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);
@@ -1302,8 +1298,7 @@ public class Deployment
 
     try
       {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalTargetingCriteria", false);
-        if (evaluationCriterionValues == null) evaluationCriterionValues = new JSONArray();
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalTargetingCriteria", new JSONArray());
         for (int i=0; i<evaluationCriterionValues.size(); i++)
           {
             JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
@@ -1379,8 +1374,7 @@ public class Deployment
 
     try
       {
-        JSONArray thirdPartyMethodPermissions = JSONUtilities.decodeJSONArray(jsonRoot, "thirdPartyMethodPermissions", false);
-        if (thirdPartyMethodPermissions == null) thirdPartyMethodPermissions = new JSONArray();
+        JSONArray thirdPartyMethodPermissions = JSONUtilities.decodeJSONArray(jsonRoot, "thirdPartyMethodPermissions", new JSONArray());
         for (int i=0; i<thirdPartyMethodPermissions.size(); i++)
           {
             JSONObject thirdPartyMethodPermissionsJSON = (JSONObject) thirdPartyMethodPermissions.get(i);

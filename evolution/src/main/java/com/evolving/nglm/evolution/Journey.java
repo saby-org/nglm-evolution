@@ -976,7 +976,8 @@ public class Journey extends GUIManagedObject
 
     if (startNode.getNodeParameters().containsKey("node.parameter.autotargeted"))
       {
-        this.autoTargeted = (Boolean) startNode.getNodeParameters().get("node.parameter.autotargeted");
+        Boolean autoTargeted = (Boolean) startNode.getNodeParameters().get("node.parameter.autotargeted");
+        this.autoTargeted = (autoTargeted != null) ? autoTargeted.booleanValue() : false;
       }
 
     //
@@ -1357,7 +1358,7 @@ public class Journey extends GUIManagedObject
                 
               case StringSetCriterion:
                 Set<String> stringSetValue = new HashSet<String>();
-                JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j=0; j<stringSetArray.size(); j++)
                   {
                     stringSetValue.add((String) stringSetArray.get(j));
@@ -1388,7 +1389,7 @@ public class Journey extends GUIManagedObject
             {
               case EvaluationCriteriaParameter:
                 List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
-                JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                 for (int j=0; j<evaluationCriteriaArray.size(); j++)
                   {
                     evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
@@ -1397,7 +1398,7 @@ public class Journey extends GUIManagedObject
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", true), criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
                 nodeParameters.put(parameterName, smsMessageValue);
                 break;
             }
@@ -1512,7 +1513,7 @@ public class Journey extends GUIManagedObject
 
                   case StringSetCriterion:
                     Set<String> stringSetValue = new HashSet<String>();
-                    JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                    JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                     for (int j=0; j<stringSetArray.size(); j++)
                       {
                         stringSetValue.add((String) stringSetArray.get(j));
@@ -1522,7 +1523,7 @@ public class Journey extends GUIManagedObject
 
                   case EvaluationCriteriaParameter:
                     List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
-                    JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", true);
+                    JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
                     for (int j=0; j<evaluationCriteriaArray.size(); j++)
                       {
                         evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
@@ -1531,7 +1532,7 @@ public class Journey extends GUIManagedObject
                     break;
 
                   case SMSMessageParameter:
-                    SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", true), criterionContext);
+                    SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
                     outputConnectorParameters.put(parameterName, smsMessageValue);
                     break;
                 }

@@ -1404,6 +1404,7 @@ public class EvolutionEngine
                   {
                     if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
                       {
+                        context.subscriberTrace("NotEligible: already in journey {}", journey.getJourneyID());
                         enterJourney = false;
                       }
                   }
@@ -1424,11 +1425,63 @@ public class EvolutionEngine
                         Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), journey.getTargetingWindowDuration(), journey.getTargetingWindowUnit(), Deployment.getBaseTimeZone(), journey.getTargetingWindowRoundUp());
                         if (journeyReentryWindow.after(now))
                           {
+                            context.subscriberTrace("NotEligible: recently in journey {}, window ends {}", journey.getJourneyID(), journeyReentryWindow);
                             enterJourney = false;
                           }
                       }
                   }
               }
+
+            /*****************************************
+            *
+            *  objective-level contact policy -- maxOccurrence
+            *
+            *****************************************/
+
+            /*****************************************
+            *
+            *  objective-level contact policy -- maxSimultaneous
+            *
+            *****************************************/
+
+            if (enterJourney)
+              {
+                //
+                //  running objectives
+                //
+
+                Set<String> runningJourneyObjectiveIDs = new HashSet<String>();
+                for (JourneyState journeyState : subscriberState.getJourneyStates())
+                  {
+                    Journey runningJourney = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+                    if (runningJourney != null)
+                      {
+                        for (JourneyObjectiveInstance journeyObjectiveInstance : runningJourney.getJourneyObjectiveInstances())
+                          {
+                            runningJourneyObjectiveIDs.add(journeyObjectiveInstance.getJourneyObjectiveID());
+                          }
+                      }
+                  }
+
+                //
+                //  check required journey objectives
+                //
+
+                for (JourneyObjectiveInstance journeyObjectiveInstance : journey.getJourneyObjectiveInstances())
+                  {
+                    if (runningJourneyObjectiveIDs.contains(journeyObjectiveInstance.getJourneyObjectiveID()))
+                      {
+                        context.subscriberTrace("NotEligible: one journey per objective, journey {}, objective {}", journey.getJourneyID(), journeyObjectiveInstance.getJourneyObjectiveID());
+                        enterJourney = false;
+                      }
+                  }
+              }
+
+            /*****************************************
+            *
+            *  objective-level contact policy -- waitingPeriod
+            *
+            *****************************************/
 
             /*****************************************
             *
@@ -1444,6 +1497,7 @@ public class EvolutionEngine
                     enterJourney = false;
                   }
                 context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                context.subscriberTrace(enterJourney ? "Eligible: {}" : "NotEligible: targeting criteria {}", journey.getJourneyID());
               }
 
             /*****************************************
