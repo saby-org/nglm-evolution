@@ -31,7 +31,7 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
-public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action
+public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, Comparable
 {
   
   /*****************************************
@@ -513,6 +513,24 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
     addFieldsForGUIPresentation(thirdPartyPresentationMap);
     return thirdPartyPresentationMap;
+  }
+
+  /*****************************************
+  *
+  *  compareTo
+  *
+  *****************************************/
+
+  public int compareTo(Object obj)
+  {
+    int result = -1;
+    if (obj instanceof DeliveryRequest)
+      {
+        DeliveryRequest entry = (DeliveryRequest) obj;
+        result = (deliveryDate != null && entry.getDeliveryDate() != null) ? deliveryDate.compareTo(entry.getDeliveryDate()) : 0;
+        if (result == 0) result = deliveryRequestID.compareTo(entry.getDeliveryRequestID());
+      }
+    return result;
   }
 
   /*****************************************

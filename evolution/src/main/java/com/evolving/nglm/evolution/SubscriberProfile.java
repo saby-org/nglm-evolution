@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -320,6 +321,17 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
     
     //
+    // guiPosition in kpi
+    //
+    
+    int guiPosition = 1;
+    for (JSONObject kpi : kpiPresentation)
+      {
+        kpi.put("guiPosition", guiPosition);
+        guiPosition++;
+      }
+    
+    //
     // prepare ProfilePresentation
     //
     
@@ -365,7 +377,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     // prepare custom generalDetails and kpiPresentation
     //
     
-    addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
+    addProfileFieldsForThirdPartyPresentation(generalDetailsPresentation, kpiPresentation);
     
     //
     // prepare ProfilePresentation

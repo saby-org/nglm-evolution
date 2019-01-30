@@ -1537,7 +1537,7 @@ public class EvolutionEngine
 
                 JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), now);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState));
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState));
                 subscriberStateUpdated = true;
 
                 /*****************************************
@@ -1607,7 +1607,7 @@ public class EvolutionEngine
         if (journey == null || journeyNode == null)
           {
             journeyState.setJourneyExitDate(now);
-            subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState, now));
+            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
             inactiveJourneyStates.add(journeyState);
             break;
           }
@@ -1720,7 +1720,7 @@ public class EvolutionEngine
 
                 JourneyNode nextJourneyNode = firedLink.getDestination();
                 journeyState.setJourneyNodeID(nextJourneyNode.getNodeID(), now);
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(subscriberState.getSubscriberID(), journeyState, firedLink));
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, firedLink));
                 journeyNode = nextJourneyNode;
                 subscriberStateUpdated = true;
 
@@ -1913,7 +1913,7 @@ public class EvolutionEngine
     //
 
     int i = 0;
-    while (i < subscriberHistory.getDeliveryRequests().size() && subscriberHistory.getDeliveryRequests().get(i).getDeliveryDate().compareTo(deliveryRequest.getDeliveryDate()) <= 0)
+    while (i < subscriberHistory.getDeliveryRequests().size() && subscriberHistory.getDeliveryRequests().get(i).compareTo(deliveryRequest) <= 0)
       {
         i += 1;
       }
@@ -1962,7 +1962,7 @@ public class EvolutionEngine
     //
 
     int i = 0;
-    while (i < subscriberHistory.getJourneyStatistics().size() && subscriberHistory.getJourneyStatistics().get(i).getTransitionDate().compareTo(journeyStatistic.getTransitionDate()) <= 0)
+    while (i < subscriberHistory.getJourneyStatistics().size() && subscriberHistory.getJourneyStatistics().get(i).compareTo(journeyStatistic) <= 0)
       {
         i += 1;
       }

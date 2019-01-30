@@ -8148,7 +8148,7 @@ public class GUIManager
   private JSONObject processGetCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
     
-    Map<String, Object> response = new HashMap<String, Object>();
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
     
     /****************************************
     *
@@ -8799,7 +8799,7 @@ public class GUIManager
     
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String journeyObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
-    String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false); // ask
+    String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false);
     String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
     String journeyStartDateStr = JSONUtilities.decodeString(jsonRoot, "journeyStartDate", false);
     String journeyEndDateStr = JSONUtilities.decodeString(jsonRoot, "journeyEndDate", false);
@@ -8924,11 +8924,18 @@ public class GUIManager
                   for (Journey actJourney : activeJourneys)
                     {
                       
+                      List<JourneyNode> journeyNodes = actJourney.getJourneyNodes().values().stream().collect(Collectors.toList());
+
                       //
-                      // look up journey
+                      // filter on journeyState
                       //
-                      
-                      Journey journey = (Journey) journeyService.getStoredJourney(actJourney.getJourneyID());
+
+                      if (null != journeyState && !journeyState.isEmpty())
+                      {
+                      boolean criteriaSatisfied = false;
+                      criteriaSatisfied = journeyNodes.stream().filter(journeyNode -> journeyState.equals(journeyNode.getNodeName())).count() > 0L ;
+                      if (! criteriaSatisfied) continue;
+                      }
                       
                       //
                       // filter on customerStatus
@@ -8972,10 +8979,33 @@ public class GUIManager
                       
                       Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                       journeyResponseMap.put("journeyID", actJourney.getJourneyID());
-                      journeyResponseMap.put("journeyName", journey.getGUIManagedObjectName());
-                      journeyResponseMap.put("startDate", journey.getEffectiveStartDate());
-                      journeyResponseMap.put("endDate", journey.getEffectiveEndDate());
+                      journeyResponseMap.put("journeyName", actJourney.getGUIManagedObjectName());
+                      journeyResponseMap.put("startDate", actJourney.getEffectiveStartDate());
+                      journeyResponseMap.put("endDate", actJourney.getEffectiveEndDate());
                       
+                      List<JourneyStatistic> thisJourneyStatistics = journeyStatisticsMap.get(actJourney.getJourneyID());
+
+                      //
+                      // reverse sort
+                      //
+
+                      Collections.sort(thisJourneyStatistics, Collections.reverseOrder());
+
+                      JSONObject currentStateJson = null;
+                      if (!thisJourneyStatistics.isEmpty())
+                      {
+                      //
+                      // prepare current node
+                      //
+
+                      JourneyStatistic subsLatestStatistic = thisJourneyStatistics.get(0);
+
+                      Map<String, Object> currentState = new HashMap<String, Object>();
+                      currentState.put("nodeID", subsLatestStatistic.getToNodeID());
+                      currentState.put("nodeName", null == subsLatestStatistic.getToNodeID() ? null : actJourney.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
+                      currentStateJson = JSONUtilities.encodeObject(currentState);
+                      }
+
                       //
                       //  node history
                       //
@@ -8986,8 +9016,8 @@ public class GUIManager
                           Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                           nodeHistoriesMap.put("fromNodeID", journeyStatistic.getFromNodeID());
                           nodeHistoriesMap.put("toNodeID", journeyStatistic.getToNodeID());
-                          nodeHistoriesMap.put("fromNode", null == journeyStatistic.getFromNodeID() ? null : journey.getJourneyNode(journeyStatistic.getFromNodeID()).getNodeName());
-                          nodeHistoriesMap.put("toNode", null == journeyStatistic.getToNodeID() ? null : journey.getJourneyNode(journeyStatistic.getToNodeID()).getNodeName());
+                          nodeHistoriesMap.put("fromNode", null == journeyStatistic.getFromNodeID() ? null : actJourney.getJourneyNode(journeyStatistic.getFromNodeID()).getNodeName());
+                          nodeHistoriesMap.put("toNode", null == journeyStatistic.getToNodeID() ? null : actJourney.getJourneyNode(journeyStatistic.getToNodeID()).getNodeName());
                           nodeHistoriesMap.put("transitionDate", journeyStatistic.getTransitionDate());
                           nodeHistoriesMap.put("linkID", journeyStatistic.getLinkID());
                           nodeHistoriesMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
@@ -9000,6 +9030,7 @@ public class GUIManager
                       journeyResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
                       journeyResponseMap.put("journeyComplete", journeyComplete);
                       journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                      journeyResponseMap.put("currentState", currentStateJson);
                       journeysJson.add(JSONUtilities.encodeObject(journeyResponseMap));
                     }
                 }
@@ -9044,7 +9075,7 @@ public class GUIManager
     
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String campaignObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
-    String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false); // ask
+    String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false);
     String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = JSONUtilities.decodeString(jsonRoot, "CampaignStartDate", false);
     String campaignEndDateStr = JSONUtilities.decodeString(jsonRoot, "campaignEndDate", false);
@@ -9168,12 +9199,18 @@ public class GUIManager
                   
                   for (Journey actCampaign : activeCampaigns)
                     {
-                      
+                      List<JourneyNode> journeyNodes = actCampaign.getJourneyNodes().values().stream().collect(Collectors.toList());
+
                       //
-                      // look up campaign
+                      // filter on campaignState
                       //
-                      
-                      Journey campaign = (Journey) journeyService.getStoredJourney(actCampaign.getJourneyID());
+
+                      if (null != campaignState && !campaignState.isEmpty())
+                      {
+                      boolean criteriaSatisfied = false;
+                      criteriaSatisfied = journeyNodes.stream().filter(journeyNode -> campaignState.equals(journeyNode.getNodeName())).count() > 0L ;
+                      if (! criteriaSatisfied) continue;
+                      }
                       
                       //
                       // filter on customerStatus
@@ -9217,22 +9254,45 @@ public class GUIManager
                       
                       Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
                       campaignResponseMap.put("campaignID", actCampaign.getJourneyID());
-                      campaignResponseMap.put("campaignName", campaign.getGUIManagedObjectName());
-                      campaignResponseMap.put("startDate", campaign.getEffectiveStartDate());
-                      campaignResponseMap.put("endDate", campaign.getEffectiveEndDate());
+                      campaignResponseMap.put("campaignName", actCampaign.getGUIManagedObjectName());
+                      campaignResponseMap.put("startDate", actCampaign.getEffectiveStartDate());
+                      campaignResponseMap.put("endDate", actCampaign.getEffectiveEndDate());
+                      
+                      List<JourneyStatistic> thisCampaignStatistics = campaignStatisticsMap.get(actCampaign.getJourneyID());
+
+                      //
+                      // reverse sort
+                      //
+
+                      Collections.sort(thisCampaignStatistics, Collections.reverseOrder());
+                      
+                      JSONObject currentStateJson = null;
+                      if (!thisCampaignStatistics.isEmpty())
+                      {
+                      //
+                      // prepare current node
+                      //
+
+                      JourneyStatistic subsLatestStatistic = thisCampaignStatistics.get(0);
+
+                      Map<String, Object> currentState = new HashMap<String, Object>();
+                      currentState.put("nodeID", subsLatestStatistic.getToNodeID());
+                      currentState.put("nodeName", null == subsLatestStatistic.getToNodeID() ? null : actCampaign.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
+                      currentStateJson = JSONUtilities.encodeObject(currentState);
+                      }
                       
                       //
                       //  node history
                       //
                       
                       List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
-                      for (JourneyStatistic campaignStatistic : campaignStatisticsMap.get(actCampaign.getJourneyID()))
+                      for (JourneyStatistic campaignStatistic : thisCampaignStatistics)
                         {
                           Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                           nodeHistoriesMap.put("fromNodeID", campaignStatistic.getFromNodeID());
                           nodeHistoriesMap.put("toNodeID", campaignStatistic.getToNodeID());
-                          nodeHistoriesMap.put("fromNode", null == campaignStatistic.getFromNodeID() ? null : campaign.getJourneyNode(campaignStatistic.getFromNodeID()).getNodeName());
-                          nodeHistoriesMap.put("toNode", null == campaignStatistic.getToNodeID() ? null : campaign.getJourneyNode(campaignStatistic.getToNodeID()).getNodeName());
+                          nodeHistoriesMap.put("fromNode", null == campaignStatistic.getFromNodeID() ? null : actCampaign.getJourneyNode(campaignStatistic.getFromNodeID()).getNodeName());
+                          nodeHistoriesMap.put("toNode", null == campaignStatistic.getToNodeID() ? null : actCampaign.getJourneyNode(campaignStatistic.getToNodeID()).getNodeName());
                           nodeHistoriesMap.put("transitionDate", campaignStatistic.getTransitionDate());
                           nodeHistoriesMap.put("linkID", campaignStatistic.getLinkID());
                           nodeHistoriesMap.put("deliveryRequestID", campaignStatistic.getDeliveryRequestID());
@@ -9245,6 +9305,7 @@ public class GUIManager
                       campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
                       campaignResponseMap.put("campaignComplete", campaignComplete);
                       campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                      campaignResponseMap.put("currentState", currentStateJson);
                       campaignsJson.add(JSONUtilities.encodeObject(campaignResponseMap));
                     }
                 }

@@ -1459,6 +1459,7 @@ public class Deployment
         for (int i=0; i<customerMetaDataValues.size(); i++)
           {
             JSONObject customerMetaDataJSON = (JSONObject) customerMetaDataValues.get(i);
+            customerMetaDataJSON.put("guiPosition", i+1);
             CustomerMetaData customerMetadata = new CustomerMetaData(customerMetaDataJSON);
             customerMetaData.put(customerMetadata.getID(), customerMetadata);
           }

@@ -12,6 +12,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.Journey.JourneyStatusField;
 
@@ -35,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput
+public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput, Comparable
 {
   /*****************************************
   *
@@ -53,6 +54,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_statistic");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.field("journeyStatisticID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
@@ -89,6 +91,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
+  private String journeyStatisticID;
   private String journeyInstanceID;
   private String journeyID;
   private String subscriberID;
@@ -109,6 +112,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
+  public String getJourneyStatisticID() { return journeyStatisticID; }
   public String getJourneyInstanceID() { return journeyInstanceID; }
   public String getJourneyID() { return journeyID; }
   public String getSubscriberID() { return subscriberID; }
@@ -146,8 +150,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(String subscriberID, JourneyState journeyState)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyState journeyState)
   {
+    this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
     this.subscriberID = subscriberID;
@@ -169,8 +174,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(String subscriberID, JourneyState journeyState, JourneyLink journeyLink)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyState journeyState, JourneyLink journeyLink)
   {
+    this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
     this.subscriberID = subscriberID;
@@ -192,8 +198,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(String subscriberID, JourneyState journeyState, Date exitDate)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyState journeyState, Date exitDate)
   {
+    this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
     this.subscriberID = subscriberID;
@@ -215,8 +222,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete)
+  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete)
   {
+    this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
     this.subscriberID = subscriberID;
@@ -240,6 +248,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
 
   public JourneyStatistic(JourneyStatistic journeyStatistic)
   {
+    this.journeyStatisticID = journeyStatistic.getJourneyStatisticID();
     this.journeyInstanceID = journeyStatistic.getJourneyInstanceID();
     this.journeyID = journeyStatistic.getJourneyID();
     this.subscriberID = journeyStatistic.getSubscriberID();
@@ -265,6 +274,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   {
     JourneyStatistic journeyStatistic = (JourneyStatistic) value;
     Struct struct = new Struct(schema);
+    struct.put("journeyStatisticID", journeyStatistic.getJourneyStatisticID());
     struct.put("journeyInstanceID", journeyStatistic.getJourneyInstanceID());
     struct.put("journeyID", journeyStatistic.getJourneyID());
     struct.put("subscriberID", journeyStatistic.getSubscriberID());
@@ -308,6 +318,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     //
 
     Struct valueStruct = (Struct) value;
+    String journeyStatisticID = valueStruct.getString("journeyStatisticID");
     String journeyInstanceID = valueStruct.getString("journeyInstanceID");
     String journeyID = valueStruct.getString("journeyID");
     String subscriberID = valueStruct.getString("subscriberID");
@@ -326,6 +337,24 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     //  return
     //
 
-    return new JourneyStatistic(journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete);
+    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete);
+  }
+
+  /*****************************************
+  *
+  *  compareTo
+  *
+  *****************************************/
+
+  public int compareTo(Object obj)
+  {
+    int result = -1;
+    if (obj instanceof JourneyStatistic)
+      {
+        JourneyStatistic entry = (JourneyStatistic) obj;
+        result = transitionDate.compareTo(entry.getTransitionDate());
+        if (result == 0) result = journeyStatisticID.compareTo(entry.getJourneyStatisticID());
+      }
+    return result;
   }
 }
