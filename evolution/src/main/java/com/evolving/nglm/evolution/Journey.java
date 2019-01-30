@@ -199,6 +199,8 @@ public class Journey extends GUIManagedObject
   public Set<JourneyObjectiveInstance> getJourneyObjectiveInstances() { return journeyObjectiveInstances;  }
   public Map<String,JourneyNode> getJourneyNodes() { return journeyNodes; }
   public Map<String,JourneyLink> getJourneyLinks() { return journeyLinks; }
+  public JourneyNode getJourneyNode(String nodeID) { return journeyNodes.get(nodeID); }
+  public JourneyLink getJourneyLink(String linkID) { return journeyLinks.get(linkID); }
 
   /*****************************************
   *
