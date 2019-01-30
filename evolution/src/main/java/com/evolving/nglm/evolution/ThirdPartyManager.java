@@ -55,6 +55,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.sun.net.httpserver.HttpExchange;
@@ -95,6 +96,8 @@ public class ThirdPartyManager
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
   private String getCustomerAlternateID;
+  private static final String REQUEST_DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}"; //Represents exact yyyy-MM-dd
+  private static final String REQUEST_DATE_FORMAT= "yyyy-MM-dd";
   
   /*****************************************
   *
@@ -119,6 +122,8 @@ public class ThirdPartyManager
     getCustomerBDRs,
     getCustomerODRs,
     getCustomerMessages,
+    getCustomerJourneys,
+    getCustomerCampaigns,
     getOffersList,
     getActiveOffer,
     getActiveOffers;
@@ -263,6 +268,8 @@ public class ThirdPartyManager
         restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
         restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
         restServer.createContext("/nglm-thirdpartymanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
+        restServer.createContext("/nglm-thirdpartymanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
+        restServer.createContext("/nglm-thirdpartymanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
         restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
@@ -473,6 +480,12 @@ public class ThirdPartyManager
                   break;
                 case getCustomerMessages:
                   jsonResponse = processGetCustomerMessages(jsonRoot);
+                  break;
+                case getCustomerJourneys:
+                  jsonResponse = processGetCustomerJourneys(jsonRoot);
+                  break;
+                case getCustomerCampaigns:
+                  jsonResponse = processGetCustomerCampaigns(jsonRoot);
                   break;
                 case getOffersList:
                   jsonResponse = processGetOffersList(jsonRoot);
@@ -766,12 +779,6 @@ public class ThirdPartyManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
     
-    //
-    // yyyy-MM-dd -- date format
-    //
-    
-    String dateFormat = "yyyy-MM-dd";
-    
     if (null == customerID || customerID.isEmpty())
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
@@ -838,7 +845,7 @@ public class ThirdPartyManager
                     }
                   else
                     {
-                      startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
                     }
                   
                   //
@@ -903,12 +910,6 @@ public class ThirdPartyManager
     
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
-    
-    //
-    // yyyy-MM-dd -- date format
-    //
-    
-    String dateFormat = "yyyy-MM-dd";
     
     if (null == customerID || customerID.isEmpty())
       {
@@ -976,7 +977,7 @@ public class ThirdPartyManager
                     }
                   else
                     {
-                      startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
                     }
                   
                   //
@@ -1052,12 +1053,6 @@ public class ThirdPartyManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
     
-    //
-    // yyyy-MM-dd -- date format
-    //
-    
-    String dateFormat = "yyyy-MM-dd";
-    
     if (null == customerID || customerID.isEmpty())
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
@@ -1124,7 +1119,7 @@ public class ThirdPartyManager
                     }
                   else
                     {
-                      startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
                     }
                   
                   //
@@ -1150,6 +1145,417 @@ public class ThirdPartyManager
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
         }
       }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerJourneys
+  * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+  
+  private JSONObject processGetCustomerJourneys(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    //Journey objective ask
+    String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false); // ask
+    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
+    //Journey characteristics ask
+    String journeyStartDateStr = JSONUtilities.decodeString(jsonRoot, "journeyStartDate", false);
+    String journeyEndDateStr = JSONUtilities.decodeString(jsonRoot, "journeyEndDate", false);
+    
+    Date journeyStartDate = getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    Date journeyEndDate = getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    
+    if (null == customerID || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+        {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+              log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+            }
+          else
+            {
+              List<JSONObject> journeysJson = new ArrayList<JSONObject>();
+              SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+              if (null != subscriberHistory && null != subscriberHistory.getJourneyStatistics()) 
+                {
+                  List<JourneyStatistic> journeyStatistics = subscriberHistory.getJourneyStatistics();
+                  
+                  //
+                  // change data structure to map
+                  //
+                  
+                  Map<String, List<JourneyStatistic>> journeyStatisticsMap = journeyStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+                  
+                  for (String journeyID : journeyStatisticsMap.keySet())
+                    {
+                      
+                      //
+                      // look up journey
+                      //
+                      
+                      GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+                      if ( null == journey || journey.getGUIManagedObjectType() != GUIManagedObjectType.Journey)
+                        {
+                          //
+                          // not a journey skip
+                          //
+                          continue;
+                        }
+                      
+                      //
+                      // filter on journeyStartDate
+                      //
+                      
+                      if (null != journeyStartDate && null != journey.getEffectiveStartDate() && journey.getEffectiveStartDate().compareTo(journeyStartDate) < 0)
+                        {
+                          continue;
+                        }
+                      
+                      //
+                      // filter on journeyEndDate
+                      //
+                      
+                      if (null != journeyEndDate && null != journey.getEffectiveEndDate() && journey.getEffectiveEndDate().compareTo(journeyEndDate) > 0)
+                        {
+                          continue;
+                        }
+                      
+                      //
+                      // filter on customerStatus
+                      //
+                      
+                      boolean statusNotified = journeyStatisticsMap.get(journeyID).stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
+                      boolean statusConverted = journeyStatisticsMap.get(journeyID).stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
+                      boolean statusControlGroup = journeyStatisticsMap.get(journeyID).stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
+                      boolean statusUniversalControlGroup = journeyStatisticsMap.get(journeyID).stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                      boolean journeyComplete = journeyStatisticsMap.get(journeyID).stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
+                      if (null != customerStatus)
+                        {
+                          boolean criteriaSatisfied = false;
+                          Journey.JourneyStatusField journeyStatusField = Journey.JourneyStatusField.fromExternalRepresentation(customerStatus);
+                          switch (journeyStatusField)
+                            {
+                              case StatusNotified:
+                                criteriaSatisfied = statusNotified;
+                                break;
+                              case StatusConverted:
+                                criteriaSatisfied = statusConverted;
+                                break;
+                              case StatusControlGroup:
+                                criteriaSatisfied = statusControlGroup;
+                                break;
+                              case StatusUniversalControlGroup:
+                                criteriaSatisfied = statusUniversalControlGroup;
+                                break;
+                              case Unknown:
+                                break;
+                              default:
+                                criteriaSatisfied = journeyComplete;
+                                break;
+                            }
+                          if (! criteriaSatisfied) continue;
+                        }
+                      
+                      //
+                      // prepare response
+                      //
+                      
+                      Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
+                      journeyResponseMap.put("journeyID", journeyID);
+                      journeyResponseMap.put("journeyName", journey.getGUIManagedObjectName());
+                      journeyResponseMap.put("startDate", journey.getEffectiveStartDate());
+                      journeyResponseMap.put("endDate", journey.getEffectiveEndDate());
+                      
+                      //
+                      //  node history
+                      //
+                      
+                      List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
+                      for (JourneyStatistic journeyStatistic : journeyStatisticsMap.get(journeyID))
+                        {
+                          Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
+                          nodeHistoriesMap.put("fromNodeID", journeyStatistic.getFromNodeID());
+                          nodeHistoriesMap.put("toNodeID", journeyStatistic.getToNodeID());
+                          nodeHistoriesMap.put("transitionDate", journeyStatistic.getTransitionDate());
+                          nodeHistoriesMap.put("linkID", journeyStatistic.getLinkID());
+                          nodeHistoriesMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+                          nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+                        }
+                      
+                      
+                      journeyResponseMap.put("statusNotified", statusNotified);
+                      journeyResponseMap.put("statusConverted", statusConverted);
+                      journeyResponseMap.put("statusControlGroup", statusControlGroup);
+                      journeyResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                      journeyResponseMap.put("journeyComplete", journeyComplete);
+                      journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                      journeysJson.add(JSONUtilities.encodeObject(journeyResponseMap));
+                    }
+                }
+              response.put("journeys", JSONUtilities.encodeArray(journeysJson));
+              response.put("responseCode", "ok");
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerCampaigns
+  * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+  
+  private JSONObject processGetCustomerCampaigns(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    //Journey objective ask
+    String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false); // ask
+    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
+    //campaign characteristics ask
+    String campaignStartDateStr = JSONUtilities.decodeString(jsonRoot, "campaignStartDate", false);
+    String campaignEndDateStr = JSONUtilities.decodeString(jsonRoot, "campaignEndDate", false);
+    
+    
+    Date campaignStartDate = getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    Date campaignEndDate = getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    
+    if (null == customerID || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+        {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          if (null == baseSubscriberProfile)
+            {
+              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+              log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+            }
+          else
+            {
+              List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
+              SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+              if (null != subscriberHistory && null != subscriberHistory.getJourneyStatistics()) 
+                {
+                  List<JourneyStatistic> campaignStatistics = subscriberHistory.getJourneyStatistics();
+                  
+                  //
+                  // change data structure to map
+                  //
+                  
+                  Map<String, List<JourneyStatistic>> campaignStatisticsMap = campaignStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+                  
+                  for (String campaignID : campaignStatisticsMap.keySet())
+                    {
+                      
+                      //
+                      // look up campaign
+                      //
+                      
+                      GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
+                      if ( null == campaign || campaign.getGUIManagedObjectType() != GUIManagedObjectType.Campaign)
+                        {
+                          //
+                          // not a campaign skip
+                          //
+                          continue;
+                        }
+                      
+                      //
+                      // filter on campaignStartDate
+                      //
+                      
+                      if (null != campaignStartDate && null != campaign.getEffectiveStartDate() && campaign.getEffectiveStartDate().compareTo(campaignStartDate) < 0)
+                        {
+                          continue;
+                        }
+                      
+                      //
+                      // filter on campaignEndDate
+                      //
+                      
+                      if (null != campaignEndDate && null != campaign.getEffectiveEndDate() && campaign.getEffectiveEndDate().compareTo(campaignEndDate) > 0)
+                        {
+                          continue;
+                        }
+                      
+                      //
+                      // filter on customerStatus
+                      //
+                      
+                      boolean statusNotified = campaignStatisticsMap.get(campaignID).stream().filter(campaignStat -> campaignStat.getStatusNotified()).count() > 0L ;
+                      boolean statusConverted = campaignStatisticsMap.get(campaignID).stream().filter(campaignStat -> campaignStat.getStatusConverted()).count() > 0L ;
+                      boolean statusControlGroup = campaignStatisticsMap.get(campaignID).stream().filter(campaignStat -> campaignStat.getStatusControlGroup()).count() > 0L ;
+                      boolean statusUniversalControlGroup = campaignStatisticsMap.get(campaignID).stream().filter(campaignStat -> campaignStat.getStatusUniversalControlGroup()).count() > 0L ;
+                      boolean campaignComplete = campaignStatisticsMap.get(campaignID).stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
+                      if (null != customerStatus)
+                        {
+                          boolean criteriaSatisfied = false;
+                          Journey.JourneyStatusField campaignStatusField = Journey.JourneyStatusField.fromExternalRepresentation(customerStatus);
+                          switch (campaignStatusField)
+                            {
+                              case StatusNotified:
+                                criteriaSatisfied = statusNotified;
+                                break;
+                              case StatusConverted:
+                                criteriaSatisfied = statusConverted;
+                                break;
+                              case StatusControlGroup:
+                                criteriaSatisfied = statusControlGroup;
+                                break;
+                              case StatusUniversalControlGroup:
+                                criteriaSatisfied = statusUniversalControlGroup;
+                                break;
+                              case Unknown:
+                                break;
+                              default:
+                                criteriaSatisfied = campaignComplete;
+                                break;
+                            }
+                          if (! criteriaSatisfied) continue;
+                        }
+                      
+                      //
+                      // prepare response
+                      //
+                      
+                      Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
+                      campaignResponseMap.put("campaignID", campaignID);
+                      campaignResponseMap.put("campaignName", campaign.getGUIManagedObjectName());
+                      campaignResponseMap.put("startDate", campaign.getEffectiveStartDate());
+                      campaignResponseMap.put("endDate", campaign.getEffectiveEndDate());
+                      
+                      //
+                      //  node history
+                      //
+                      
+                      List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
+                      for (JourneyStatistic campaignStatistic : campaignStatisticsMap.get(campaignID))
+                        {
+                          Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
+                          nodeHistoriesMap.put("fromNodeID", campaignStatistic.getFromNodeID());
+                          nodeHistoriesMap.put("toNodeID", campaignStatistic.getToNodeID());
+                          nodeHistoriesMap.put("transitionDate", campaignStatistic.getTransitionDate());
+                          nodeHistoriesMap.put("linkID", campaignStatistic.getLinkID());
+                          nodeHistoriesMap.put("deliveryRequestID", campaignStatistic.getDeliveryRequestID());
+                          nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+                        }
+                      
+                      
+                      campaignResponseMap.put("statusNotified", statusNotified);
+                      campaignResponseMap.put("statusConverted", statusConverted);
+                      campaignResponseMap.put("statusControlGroup", statusControlGroup);
+                      campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                      campaignResponseMap.put("campaignComplete", campaignComplete);
+                      campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                      campaignsJson.add(JSONUtilities.encodeObject(campaignResponseMap));
+                    }
+                }
+              response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
+              response.put("responseCode", "ok");
+            }
+        } 
+      catch (SubscriberProfileServiceException e)
+        {
+          log.error("SubscriberProfileServiceException ", e.getMessage());
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
     return JSONUtilities.encodeObject(response);
   }
   
@@ -1370,6 +1776,27 @@ public class ThirdPartyManager
       }
   }
 
+  /*****************************************
+  *
+  *  getDateFromString
+   * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+
+  private Date getDateFromString(String dateString, String dateFormat, String pattern) throws ThirdPartyManagerException
+  {
+    Date result = null;
+    if (null != dateString)
+      {
+        if (null != pattern && !dateString.matches(pattern))
+          {
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"{invalid date format expected in("+dateFormat+") and found ("+dateString+")}", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode()) ;
+          }
+        result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone());
+      }
+    return result;
+  }
+  
   /*****************************************
   *
   *  class APIHandler
