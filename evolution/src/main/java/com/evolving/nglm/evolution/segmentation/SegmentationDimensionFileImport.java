@@ -78,12 +78,8 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   ****************************************/
 
-  //
-  //  public
-  //
-
   public String getFileName() { return fileName; }
-  public List<SegmentFileImport> getSegments() { return segments; }
+  @Override public List<SegmentFileImport> getSegments() { return segments; }
 
   /*****************************************
   *

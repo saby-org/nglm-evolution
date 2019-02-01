@@ -18,6 +18,8 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import java.util.List;
+
 public abstract class SegmentationDimension extends GUIManagedObject
 {
   
@@ -90,6 +92,12 @@ public abstract class SegmentationDimension extends GUIManagedObject
   public String getDisplay() { return display; }
   public SegmentationDimensionTargetingType getTargetingType() { return targetingType; }
 
+  //
+  //  abstract
+  //
+
+  public abstract List<? extends Segment> getSegments();
+  
   /*****************************************
   *
   *  constructor -- unpack

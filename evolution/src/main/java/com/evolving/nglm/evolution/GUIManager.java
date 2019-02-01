@@ -66,6 +66,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.segmentation.Segment;
 import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
 import com.evolving.nglm.evolution.segmentation.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
@@ -2571,6 +2572,7 @@ public class GUIManager
     *
     *****************************************/
 
+    Date now = SystemTime.getCurrentTime();
     Map<String,CriterionField> criterionFields = new LinkedHashMap<String,CriterionField>();
     for (CriterionField criterionField : baseCriterionFields.values())
       {
@@ -2598,7 +2600,7 @@ public class GUIManager
     for (CriterionField criterionField : criterionFields.values())
       {
         JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation();
-        List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(criterionFieldJSON, "availableValues", false));
+        List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(criterionFieldJSON, "availableValues", false), now);
         resolvedFieldTypes.put(criterionField.getID(), new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
         resolvedAvailableValues.put(criterionField.getID(), availableValues);
       }
@@ -2889,6 +2891,7 @@ public class GUIManager
 
   private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes)
   {
+    Date now = SystemTime.getCurrentTime();
     List<JSONObject> result = new ArrayList<JSONObject>();
     for (NodeType nodeType : nodeTypes.values())
       {
@@ -2907,7 +2910,7 @@ public class GUIManager
         for (int i=0; i<parameters.size(); i++)
           {
             JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
-            List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false));
+            List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
             parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
             resolvedParameters.add(parameterJSON);
           }
@@ -2926,7 +2929,7 @@ public class GUIManager
             for (int i=0; i<dynamicOutputConnectorParameters.size(); i++)
               {
                 JSONObject parameterJSON = (JSONObject) ((JSONObject) dynamicOutputConnectorParameters.get(i)).clone();
-                List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false));
+                List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
                 parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
                 resolvedDynamicOutputConnectorParameters.add(parameterJSON);
               }
@@ -2954,7 +2957,7 @@ public class GUIManager
   *
   ****************************************/
 
-  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues)
+  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues, Date now)
   {
     List<JSONObject> result = null;
     if (availableValues != null)
@@ -2969,7 +2972,7 @@ public class GUIManager
                 Matcher matcher = enumeratedValuesPattern.matcher(availableValue);
                 if (matcher.matches())
                   {
-                    result.addAll(evaluateEnumeratedValues(matcher.group(1)));
+                    result.addAll(evaluateEnumeratedValues(matcher.group(1), now));
                   }
                 else
                   {
@@ -3003,7 +3006,7 @@ public class GUIManager
   *
   ****************************************/
 
-  private List<JSONObject> evaluateEnumeratedValues(String reference)
+  private List<JSONObject> evaluateEnumeratedValues(String reference, Date now)
   {
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
@@ -3019,15 +3022,13 @@ public class GUIManager
           break;
 
         case "segments":
-          Map<String,SubscriberGroupEpoch> subscriberGroupEpochs = subscriberGroupEpochReader.getAll();
-          for (String groupName : subscriberGroupEpochs.keySet())
+          for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
             {
-              SubscriberGroupEpoch subscriberGroupEpoch = subscriberGroupEpochs.get(groupName);
-              if (subscriberGroupEpoch.getActive() && ! groupName.equals(SubscriberProfile.UniversalControlGroup))
+              for (Segment segment : dimension.getSegments())
                 {
                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", groupName);
-                  availableValue.put("display", subscriberGroupEpoch.getDisplay());
+                  availableValue.put("id", segment.getID());
+                  availableValue.put("display", segment.getName());
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }

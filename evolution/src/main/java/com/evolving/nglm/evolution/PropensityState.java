@@ -42,9 +42,8 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("propensity_state");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("segmentID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("offerid", Schema.STRING_SCHEMA);
+    schemaBuilder.field("segment", Schema.STRING_SCHEMA);
     schemaBuilder.field("acceptanceCount", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("presentationCount", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("propensity", Schema.OPTIONAL_FLOAT64_SCHEMA);
@@ -70,9 +69,8 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   *
   ****************************************/
 
-  private String offerID;
-  private String dimensionID;
-  private String segmentID;
+  private String offerid;
+  private String segment;
   private Long acceptanceCount;
   private Long presentationCount;
   private Double propensity;
@@ -83,9 +81,8 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   *
   ****************************************/
 
-  public String getOfferID() { return offerID; }
-  public String getdimensionID() { return dimensionID; }
-  public String getSegmentID() { return segmentID; }
+  public String getOfferID() { return offerid; }
+  public String getSegment() { return segment; }
   public Long getAcceptanceCount() { return null == acceptanceCount ? new Long(0) : acceptanceCount; }
   public Long getPresentationCount() { return null == presentationCount ? new Long(0) : presentationCount; }
   public Double getPropensity() 
@@ -103,7 +100,7 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
 
   @Override public PropensityKey getKey() 
   {
-    return new PropensityKey(offerID, dimensionID, segmentID);
+    return new PropensityKey(offerid, segment);
   }
   
   /*****************************************
@@ -112,11 +109,10 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   *
   *****************************************/
 
-  public PropensityState(String offerID, String dimensionID, String segmentID)
+  public PropensityState(String offerid, String segment)
   {
-    this.offerID = offerID;
-    this.dimensionID = dimensionID;
-    this.segmentID = segmentID;
+    this.offerid = offerid;
+    this.segment = segment;
   }
   
   /*****************************************
@@ -125,11 +121,10 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   *
   *****************************************/
 
-  private PropensityState(String offerID, String dimensionID, String segmentID, Long acceptanceCount, Long presentationCount, Double propensity)
+  private PropensityState(String offerid, String segment, Long acceptanceCount, Long presentationCount, Double propensity)
   {
-    this.offerID = offerID;
-    this.dimensionID = dimensionID;
-    this.segmentID = segmentID;
+    this.offerid = offerid;
+    this.segment = segment;
     this.acceptanceCount = acceptanceCount;
     this.presentationCount = presentationCount;
     this.propensity = propensity;
@@ -143,9 +138,8 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
 
   public PropensityState(PropensityState propensityState)
   {
-    this.offerID = propensityState.getOfferID();
-    this.dimensionID = propensityState.getdimensionID();
-    this.segmentID = propensityState.getSegmentID();
+    this.offerid = propensityState.getOfferID();
+    this.segment = propensityState.getSegment();
     this.acceptanceCount = propensityState.getAcceptanceCount();
     this.presentationCount = propensityState.getPresentationCount();
     this.propensity = propensityState.getPropensity();
@@ -161,9 +155,8 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   {
     PropensityState propensityState = (PropensityState) value;
     Struct struct = new Struct(schema);
-    struct.put("offerID", propensityState.getOfferID());
-    struct.put("dimensionID", propensityState.getdimensionID());
-    struct.put("segmentID", propensityState.getSegmentID());
+    struct.put("offerid", propensityState.getOfferID());
+    struct.put("segment", propensityState.getSegment());
     struct.put("acceptanceCount", propensityState.getAcceptanceCount());
     struct.put("presentationCount", propensityState.getPresentationCount());
     struct.put("propensity", propensityState.getPropensity());
@@ -191,9 +184,8 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
     //
 
     Struct valueStruct = (Struct) value;
-    String offerid = valueStruct.getString("offerID");
-    String dimension = valueStruct.getString("dimensionID");
-    String segment = valueStruct.getString("segmentID");
+    String offerid = valueStruct.getString("offerid");
+    String segment = valueStruct.getString("segment");
     Long acceptanceCount = valueStruct.getInt64("acceptanceCount");
     Long presentationCount = valueStruct.getInt64("presentationCount");
     Double propensity = valueStruct.getFloat64("propensity");
@@ -202,6 +194,6 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
     //  return
     //
 
-    return new PropensityState(offerid, dimension, segment, acceptanceCount, presentationCount, propensity);
+    return new PropensityState(offerid, segment, acceptanceCount, presentationCount, propensity);
   }
 }

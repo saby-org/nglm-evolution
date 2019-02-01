@@ -76,12 +76,8 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   ****************************************/
 
-  //
-  //  public
-  //
-
-  public List<SegmentEligibility> getSegments() { return segments; }
-
+  @Override public List<SegmentEligibility> getSegments() { return segments; }
+  
   /*****************************************
   *
   *  constructor -- unpack

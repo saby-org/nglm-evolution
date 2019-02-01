@@ -195,14 +195,17 @@ curl -X POST -H "Content-Type: application/json" -d '{"id":"101","apiVersion":1,
 
 
 --
---  examples of mananging subscriber groups / segments  - new, add, remove, delete
+--  examples of mananging dimensions and segments  - new, add, remove, delete
+--  * creating dimensions
+--  * associating subscribers with dimensions and segments
 --
 
-cp $DEPLOY_ROOT/support/subscribergroup.* <_NGLM_SUBSCRIBERGROUP_DATA_>
-$DEPLOY_ROOT/bin/update-subscribergroup.sh new foobar 'FooBar Segment' subscribergroup.001
-$DEPLOY_ROOT/bin/update-subscribergroup.sh add foobar subscribergroup.002
-$DEPLOY_ROOT/bin/update-subscribergroup.sh remove foobar subscribergroup.002
-$DEPLOY_ROOT/bin/update-subscribergroup.sh delete foobar
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE_IMPORT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
+cp $DEPLOY_ROOT/support/subscribergroup-* <_NGLM_SUBSCRIBERGROUP_DATA_>
+$DEPLOY_ROOT/bin/update-subscribergroup.sh new churnRisk subscribergroup-churnrisk.001
+$DEPLOY_ROOT/bin/update-subscribergroup.sh add churnRisk subscribergroup-churnrisk.002
+$DEPLOY_ROOT/bin/update-subscribergroup.sh remove churnRisk subscribergroup-churnrisk.002
+$DEPLOY_ROOT/bin/update-subscribergroup.sh delete churnRisk
 
 --
 --  criteriaAPI (examples using only evolution-level fields)

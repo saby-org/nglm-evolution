@@ -1315,40 +1315,29 @@ public class EvolutionEngine
         //  ignore if in temporal hole (segmentation dimension has been activated but subscriberGroupEpochReader has not seen it yet)
         //
 
-        if (subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()) != null) {
+        if (subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()) != null)
+          {
+            switch (segmentationDimension.getTargetingType())
+              {
+                case ELIGIBILITY:
+                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
+                  SegmentationDimensionEligibility segmentationDimensionEligibility = (SegmentationDimensionEligibility) segmentationDimension;
+                  boolean inGroup = false;
+                  for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
+                    {
+                      inGroup = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
+                      subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), inGroup);
+                      subscriberProfileUpdated = true;
+                    }
+                  break;
 
-          if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.ELIGIBILITY)){
-            
-            //
-            // ELIGIBILITY
-            // 
+                case RANGES:
+                  break;
 
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
-            SegmentationDimensionEligibility segmentationDimensionEligibility = (SegmentationDimensionEligibility)segmentationDimension;
-            boolean inGroup = false;
-            for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments()){
-              inGroup = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
-              subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), inGroup);
-              subscriberProfileUpdated = true;
-            }
-            
-          }else if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.RANGES)){
-
-            //
-            // RANGES
-            // 
-
-          }else if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE_IMPORT)){
-
-            //
-            // FILE_IMPORT
-            // 
-
-          }else{
-
+                case FILE_IMPORT:
+                  break;
+              }
           }
-
-        }
       }
 
     /*****************************************

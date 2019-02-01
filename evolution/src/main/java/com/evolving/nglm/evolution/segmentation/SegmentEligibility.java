@@ -25,7 +25,7 @@ import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.EvaluationCriterion;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class SegmentEligibility 
+public class SegmentEligibility implements Segment
 {
   /*****************************************
   *

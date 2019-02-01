@@ -68,7 +68,6 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   ****************************************/
 
   private List<BaseSplit> baseSplit;
-  
 
   /****************************************
   *
@@ -81,6 +80,22 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   //
 
   public List<BaseSplit> getBaseSplit() { return baseSplit; }
+
+  /*****************************************
+  *
+  *  getSegments
+  *
+  *****************************************/
+  
+  @Override public List<SegmentRanges> getSegments()
+  {
+    List<SegmentRanges> result = new ArrayList<SegmentRanges>();
+    for (BaseSplit currentBaseSplit : baseSplit)
+      {
+        result.addAll(currentBaseSplit.getSegments());
+      }
+    return result;
+  }
 
   /*****************************************
   *
