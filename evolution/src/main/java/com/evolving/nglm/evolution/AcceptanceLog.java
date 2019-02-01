@@ -68,8 +68,8 @@ public class AcceptanceLog implements SubscriberStreamEvent
     schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
     schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);    
     schemaBuilder.field("userID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
-    schemaBuilder.field("fulfilledDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
+    schemaBuilder.field("fulfilledDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("position", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -210,8 +210,8 @@ public class AcceptanceLog implements SubscriberStreamEvent
     struct.put("channelID", acceptanceLog.getChannelID());
     struct.put("salesChannelID", acceptanceLog.getSalesChannelID());    
     struct.put("userID", acceptanceLog.getUserID());
-    struct.put("eventDate", acceptanceLog.getEventDate());
-    struct.put("fulfilledDate", acceptanceLog.getFulfilledDate());
+    struct.put("eventDate", acceptanceLog.getEventDate().getTime());
+    struct.put("fulfilledDate", acceptanceLog.getFulfilledDate().getTime());
     struct.put("position", acceptanceLog.getPosition());
     return struct;
   }
@@ -251,8 +251,8 @@ public class AcceptanceLog implements SubscriberStreamEvent
     String channelID = valueStruct.getString("channelID");
     String salesChannelID = valueStruct.getString("salesChannelID");
     String userID = valueStruct.getString("userID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
-    Date fulfilledDate = (Date) valueStruct.get("fulfilledDate");
+    Date eventDate = new Date(valueStruct.getInt64("eventDate"));
+    Date fulfilledDate = new Date(valueStruct.getInt64("fulfilledDate"));
     Integer position = valueStruct.getInt32("position");
     
     //

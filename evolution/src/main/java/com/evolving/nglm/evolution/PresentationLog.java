@@ -71,7 +71,7 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
     schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);    
     schemaBuilder.field("userID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
+    schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
     schemaBuilder.field("presentationToken", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -256,7 +256,7 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("channelID", presentationLog.getChannelID());
     struct.put("salesChannelID", presentationLog.getSalesChannelID());    
     struct.put("userID", presentationLog.getUserID());
-    struct.put("eventDate", presentationLog.getEventDate());
+    struct.put("eventDate", presentationLog.getEventDate().getTime());
     struct.put("presentationToken", presentationLog.getPresentationToken());
     return struct;
   }
@@ -295,7 +295,7 @@ public class PresentationLog implements SubscriberStreamEvent
     String channelID = valueStruct.getString("channelID");
     String salesChannelID = valueStruct.getString("salesChannelID");    
     String userID = valueStruct.getString("userID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
+    Date eventDate = new Date(valueStruct.getInt64("eventDate"));
     String presentationToken = valueStruct.getString("presentationToken");
     
     //
