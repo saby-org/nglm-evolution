@@ -35,7 +35,8 @@ public class PropensitySegmentOutput
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("propensitysegment_output");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("segment", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("segmentID", Schema.STRING_SCHEMA);
     schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
     schemaBuilder.field("accepted", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
@@ -60,7 +61,8 @@ public class PropensitySegmentOutput
   *
   ****************************************/
 
-  private String segment;
+  private String dimensionID;
+  private String segmentID;
   private String offerID;
   private boolean accepted;
 
@@ -70,7 +72,8 @@ public class PropensitySegmentOutput
   *
   ****************************************/
 
-  public String getSegment() { return segment; }
+  public String getDimensionID() { return dimensionID; }
+  public String getSegmentID() { return segmentID; }
   public String getOfferID() { return offerID; }
   public boolean isAccepted() { return accepted; }
   
@@ -80,10 +83,11 @@ public class PropensitySegmentOutput
   *
   *****************************************/
 
-  public PropensitySegmentOutput(String offerID, String segment, boolean accepted)
+  public PropensitySegmentOutput(String offerID, String dimensionID, String segmentID, boolean accepted)
   {
     this.offerID = offerID;
-    this.segment = segment;
+    this.dimensionID = dimensionID;
+    this.segmentID = segmentID;
     this.accepted = accepted;
   }
   
@@ -98,7 +102,8 @@ public class PropensitySegmentOutput
     PropensitySegmentOutput propensitySegmentOutput = (PropensitySegmentOutput) value;
     Struct struct = new Struct(schema);
     struct.put("offerID", propensitySegmentOutput.getOfferID());
-    struct.put("segment", propensitySegmentOutput.getSegment());
+    struct.put("dimensionID", propensitySegmentOutput.getDimensionID());
+    struct.put("segmentID", propensitySegmentOutput.getSegmentID());
     struct.put("accepted", propensitySegmentOutput.isAccepted());
     return struct;
   }
@@ -124,7 +129,8 @@ public class PropensitySegmentOutput
     //
 
     Struct valueStruct = (Struct) value;
-    String segment = valueStruct.getString("segment");
+    String dimensionID = valueStruct.getString("dimensionID");
+    String segmentID = valueStruct.getString("segmentID");
     String offerID = valueStruct.getString("offerID");
     boolean accepted = valueStruct.getBoolean("accepted");
     
@@ -132,7 +138,7 @@ public class PropensitySegmentOutput
     //  return
     //
 
-    return new PropensitySegmentOutput(segment, offerID, accepted);
+    return new PropensitySegmentOutput(offerID, dimensionID, segmentID, accepted);
   }
 
 }

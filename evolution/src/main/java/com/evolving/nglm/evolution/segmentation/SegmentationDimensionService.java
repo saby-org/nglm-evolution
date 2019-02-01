@@ -1,0 +1,152 @@
+/****************************************************************************
+*
+*  SegmentationDimensionService.java
+*
+****************************************************************************/
+
+package com.evolving.nglm.evolution.segmentation;
+
+import java.util.Collection;
+import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.GUIService;
+
+public class SegmentationDimensionService extends GUIService
+{
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(SegmentationDimensionService.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+
+  public SegmentationDimensionService(String bootstrapServers, String groupID, String segmentationDimensionTopic, boolean masterService, SegmentationDimensionListener segmentationDimensionListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "segmentationDimensionService", groupID, segmentationDimensionTopic, masterService, getSuperListener(segmentationDimensionListener), "putSegmentationDimension", "removeSegmentationDimension", notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
+  public SegmentationDimensionService(String bootstrapServers, String groupID, String segmentationDimensionTopic, boolean masterService, SegmentationDimensionListener segmentationDimensionListener)
+  {
+    this(bootstrapServers, groupID, segmentationDimensionTopic, masterService, segmentationDimensionListener, true);
+  }
+
+  //
+  //  constructor
+  //
+
+  public SegmentationDimensionService(String bootstrapServers, String groupID, String segmentationDimensionTopic, boolean masterService)
+  {
+    this(bootstrapServers, groupID, segmentationDimensionTopic, masterService, (SegmentationDimensionListener) null, true);
+  }
+
+  //
+  //  getSuperListener
+  //
+
+  private static GUIManagedObjectListener getSuperListener(SegmentationDimensionListener segmentationDimensionListener)
+  {
+    GUIManagedObjectListener superListener = null;
+    if (segmentationDimensionListener != null)
+      {
+        superListener = new GUIManagedObjectListener()
+        {
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { segmentationDimensionListener.segmentationDimensionActivated((SegmentationDimension) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { segmentationDimensionListener.segmentationDimensionDeactivated(guiManagedObjectID); }
+        };
+      }
+    return superListener;
+  }
+
+  /*****************************************
+  *
+  *  getSegmentationDimensions
+  *
+  *****************************************/
+
+  public String generateSegmentationDimensionID() { return generateGUIManagedObjectID(); }
+  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID) { return getStoredGUIManagedObject(segmentationDimensionID); }
+  public Collection<GUIManagedObject> getStoredSegmentationDimensions() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveSegmentationDimension(GUIManagedObject segmentationDimensionUnchecked, Date date) { return isActiveGUIManagedObject(segmentationDimensionUnchecked, date); }
+  public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date); }
+  public Collection<SegmentationDimension> getActiveSegmentationDimensions(Date date) { return (Collection<SegmentationDimension>) getActiveGUIManagedObjects(date); }
+
+  /*****************************************
+  *
+  *  putSegmentationDimension
+  *
+  *****************************************/
+
+  public void putSegmentationDimension(SegmentationDimension segmentationDimension, boolean newObject, String userID) throws GUIManagerException{
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(segmentationDimension, now, newObject, userID);
+  }
+
+  /*****************************************
+  *
+  *  putIncompleteOffer
+  *
+  *****************************************/
+
+  public void putIncompleteSegmentationDimension(IncompleteObject offer, boolean newObject, String userID)
+  {
+    putGUIManagedObject(offer, SystemTime.getCurrentTime(), newObject, userID);
+  }
+
+  /*****************************************
+  *
+  *  removeSegmentationDimension
+  *
+  *****************************************/
+
+  public void removeSegmentationDimension(String segmentationDimensionID, String userID) { removeGUIManagedObject(segmentationDimensionID, SystemTime.getCurrentTime(), userID); }
+
+  /*****************************************
+  *
+  *  interface SegmentationDimensionListener
+  *
+  *****************************************/
+
+  public interface SegmentationDimensionListener
+  {
+    public void segmentationDimensionActivated(SegmentationDimension segmentationDimension);
+    public void segmentationDimensionDeactivated(String guiManagedObjectID);
+  }
+
+}

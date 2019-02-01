@@ -40,7 +40,7 @@ public class Deployment
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static String emptyTopic;
   private static String journeyTopic;
-  private static String segmentationRuleTopic;
+  private static String segmentationDimensionTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String presentationStrategyTopic;
@@ -164,7 +164,7 @@ public class Deployment
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
-  public static String getSegmentationRuleTopic() { return segmentationRuleTopic; }
+  public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
@@ -468,12 +468,12 @@ public class Deployment
       }
     
     //
-    //  segmentationRuleTopic
+    //  segmentationDimensionTopic
     //
 
     try
       {
-    	segmentationRuleTopic = JSONUtilities.decodeString(jsonRoot, "segmentationRuleTopic", true);
+    	segmentationDimensionTopic = JSONUtilities.decodeString(jsonRoot, "segmentationDimensionTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

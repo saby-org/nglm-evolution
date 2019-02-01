@@ -6,101 +6,35 @@
 
 package com.evolving.nglm.evolution;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.kafka.common.metrics.Sensor;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
-import org.apache.kafka.connect.json.JsonConverter;
-import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.kstream.ValueMapper;
-import org.apache.kafka.streams.kstream.internals.ConsumedInternal;
-import org.apache.kafka.streams.processor.AbstractProcessor;
-import org.apache.kafka.streams.processor.ProcessorContext;
-import org.apache.kafka.streams.processor.StateStoreSupplier;
-import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
-import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.Stores;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.RecordAlternateID;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SubscriberTrace;
-import com.evolving.nglm.core.SubscriberTraceControl;
-import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.EvolutionEngine;
-import com.evolving.nglm.evolution.SubscriberGroupEpoch;
-import com.evolving.nglm.evolution.SubscriberProfile;
-import com.evolving.nglm.evolution.SubscriberState;
-import com.rii.utilities.InternCache;
-import com.rii.utilities.JSONUtilities;
-import com.rii.utilities.SystemTime;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 public class PropensityEngine
 {
@@ -361,7 +295,7 @@ public class PropensityEngine
     *
     ****************************************/
 
-    PropensityState propensityState = (currentPropensityState != null) ? new PropensityState(currentPropensityState) : new PropensityState(aggKey.getOfferID(), aggKey.getSegment());
+    PropensityState propensityState = (currentPropensityState != null) ? new PropensityState(currentPropensityState) : new PropensityState(aggKey.getOfferID(), aggKey.getDimensionID(), aggKey.getSegmentID());
     boolean propensityStateUpdated = (currentPropensityState != null) ? false : true;
     
     /*****************************************
@@ -405,24 +339,27 @@ public class PropensityEngine
       {
         if (subscriberState != null)
           {
-            for (String segment : subscriberState.getSubscriberProfile().getSubscriberGroups(subscriberGroupEpochReader))
-              {
-                if (propensityEvent instanceof AcceptanceLog)
-                  {
-                    AcceptanceLog acceptanceLog = (AcceptanceLog) propensityEvent;
-                    PropensitySegmentOutput propensitySegmentOutput = new PropensitySegmentOutput(acceptanceLog.getOfferID(), segment, true);
-                    result.add(propensitySegmentOutput);
-                  }
-                else if (propensityEvent instanceof PresentationLog)
-                  {
-                    PresentationLog presentationLog = (PresentationLog) propensityEvent;
-                    for (String offerID : presentationLog.getOfferIDs())
-                      {
-                        PropensitySegmentOutput propensitySegmentOutput = new PropensitySegmentOutput(offerID, segment, false);
-                        result.add(propensitySegmentOutput);
-                      }
-                  }
-              }
+            if(subscriberState.getSubscriberProfile().getSubscriberGroups(subscriberGroupEpochReader) != null){
+              Map<String, String> subscriberGroups = subscriberState.getSubscriberProfile().getSubscriberGroups(subscriberGroupEpochReader);
+              for (String dimensionID : subscriberGroups.keySet())
+                {
+                  if (propensityEvent instanceof AcceptanceLog)
+                    {
+                      AcceptanceLog acceptanceLog = (AcceptanceLog) propensityEvent;
+                      PropensitySegmentOutput propensitySegmentOutput = new PropensitySegmentOutput(acceptanceLog.getOfferID(), dimensionID, subscriberGroups.get(dimensionID), true);
+                      result.add(propensitySegmentOutput);
+                    }
+                  else if (propensityEvent instanceof PresentationLog)
+                    {
+                      PresentationLog presentationLog = (PresentationLog) propensityEvent;
+                      for (String offerID : presentationLog.getOfferIDs())
+                        {
+                          PropensitySegmentOutput propensitySegmentOutput = new PropensitySegmentOutput(offerID, dimensionID, subscriberGroups.get(dimensionID), false);
+                          result.add(propensitySegmentOutput);
+                        }
+                    }
+                }
+            }
           }
       }
     return result;
@@ -436,7 +373,7 @@ public class PropensityEngine
   
   private static KeyValue<PropensityKey, PropensitySegmentOutput> rekeypropensityStream(StringKey key, PropensitySegmentOutput propensitySegmentOutput)
   {
-    return new KeyValue<PropensityKey, PropensitySegmentOutput>(new PropensityKey(propensitySegmentOutput.getOfferID(), propensitySegmentOutput.getSegment()), propensitySegmentOutput);
+    return new KeyValue<PropensityKey, PropensitySegmentOutput>(new PropensityKey(propensitySegmentOutput.getOfferID(), propensitySegmentOutput.getDimensionID(), propensitySegmentOutput.getSegmentID()), propensitySegmentOutput);
   }
   
   /****************************************

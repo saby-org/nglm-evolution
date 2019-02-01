@@ -72,6 +72,11 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
+import com.evolving.nglm.evolution.segmentation.SegmentEligibility;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionService;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimension.SegmentationDimensionTargetingType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,7 +165,7 @@ public class EvolutionEngine
 
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static JourneyService journeyService;
-  private static SegmentationRuleService segmentationRuleService;
+  private static SegmentationDimensionService segmentationDimensionService;
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
@@ -272,7 +277,7 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  kafka producer for the segmentationRuleListener
+    *  kafka producer for the segmentationDimensionListener
     *
     *****************************************/
 
@@ -284,16 +289,16 @@ public class EvolutionEngine
     KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
     
     //
-    //  segmentationRuleService
+    //  segmentationDimensionService
     //
     
-    SegmentationRuleService.SegmentationRuleListener segmentationRuleListener = new SegmentationRuleService.SegmentationRuleListener()
+    SegmentationDimensionService.SegmentationDimensionListener segmentationDimensionListener = new SegmentationDimensionService.SegmentationDimensionListener()
     {
       //
-      //  segmentationRuleActivated
+      //  segmentationDimensionActivated
       //
 
-      @Override public void segmentationRuleActivated(SegmentationRule segmentationRule)
+      @Override public void segmentationDimensionActivated(SegmentationDimension segmentationDimension)
       {
         /*****************************************
         *
@@ -301,7 +306,7 @@ public class EvolutionEngine
         *
         *****************************************/
 
-        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationRule.getSubscriberGroupName());
+        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getSegmentationDimensionID());
         
         /*****************************************
         *
@@ -309,7 +314,7 @@ public class EvolutionEngine
         *
         *****************************************/
 
-        SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationRule.getSubscriberGroupName(), LoadType.New, segmentationRule.getGUIManagedObjectID());
+        SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID(), LoadType.New, segmentationDimension.getGUIManagedObjectID());
         
         /*****************************************
         *
@@ -333,21 +338,21 @@ public class EvolutionEngine
         *
         *****************************************/
 
-        SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationRule.getSubscriberGroupName());
+        SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
       }
 
       //
-      //  segmentationRuleDeactivated
+      //  segmentationDimensionDeactivated
       //
 
-      @Override public void segmentationRuleDeactivated(String guiManagedObjectID)
+      @Override public void segmentationDimensionDeactivated(String guiManagedObjectID)
       {
         throw new UnsupportedOperationException();
       }
     };
 
-    segmentationRuleService = new SegmentationRuleService(bootstrapServers, "evolutionengine-segmentationruleservice-" + evolutionEngineKey, Deployment.getSegmentationRuleTopic(), false, segmentationRuleListener);
-    segmentationRuleService.start();
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationDimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false, segmentationDimensionListener);
+    segmentationDimensionService.start();
 
     //
     //  subscriberGroupEpochReader
@@ -839,7 +844,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationRuleService, timerService, subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -965,7 +970,7 @@ public class EvolutionEngine
     private KafkaStreams kafkaStreams;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private JourneyService journeyService;
-    private SegmentationRuleService segmentationRuleService;
+    private SegmentationDimensionService segmentationDimensionService;
     private TimerService timerService;
     private HttpServer subscriberProfileServer;
     private HttpServer internalServer;
@@ -974,12 +979,12 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationRuleService segmentationRuleService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.journeyService = journeyService;
-      this.segmentationRuleService = segmentationRuleService;
+      this.segmentationDimensionService = segmentationDimensionService;
       this.timerService = timerService;
       this.subscriberProfileServer = subscriberProfileServer;
       this.internalServer = internalServer;
@@ -1008,7 +1013,7 @@ public class EvolutionEngine
       //
       
       journeyService.stop();
-      segmentationRuleService.stop();
+      segmentationDimensionService.stop();
       timerService.stop();
       
       //
@@ -1294,29 +1299,56 @@ public class EvolutionEngine
         //
         
         SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
-        subscriberProfile.setSubscriberGroup(subscriberGroup.getGroupName(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+        subscriberProfile.setSubscriberGroup(subscriberGroup.getDimensionID(), subscriberGroup.getSegmentID(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
         subscriberProfileUpdated = true;
       }
 
     /*****************************************
     *
-    *  re-evaluate subscriberGroups for epoch changes and segmentation rules
+    *  re-evaluate subscriberGroups for epoch changes and segmentation dimensions
     *
     *****************************************/
 
-    for (SegmentationRule segmentationRule :  segmentationRuleService.getActiveSegmentationRules(evolutionEvent.getEventDate()))
+    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(evolutionEvent.getEventDate()))
       {
         //
-        //  ignore if in temporal hole (segmentation rule has been activated but subscriberGroupEpochReader has not seen it yet)
+        //  ignore if in temporal hole (segmentation dimension has been activated but subscriberGroupEpochReader has not seen it yet)
         //
 
-        if (subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()) != null)
-          {
+        if (subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()) != null) {
+
+          if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.ELIGIBILITY)){
+            
+            //
+            // ELIGIBILITY
+            // 
+
             SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
-            boolean inGroup = EvaluationCriterion.evaluateCriteria(evaluationRequest, segmentationRule.getSegmentationRuleCriteria());
-            subscriberProfile.setSubscriberGroup(segmentationRule.getSubscriberGroupName(), subscriberGroupEpochReader.get(segmentationRule.getSubscriberGroupName()).getEpoch(), inGroup);
-            subscriberProfileUpdated = true;
+            SegmentationDimensionEligibility segmentationDimensionEligibility = (SegmentationDimensionEligibility)segmentationDimension;
+            boolean inGroup = false;
+            for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments()){
+              inGroup = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
+              subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), inGroup);
+              subscriberProfileUpdated = true;
+            }
+            
+          }else if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.RANGES)){
+
+            //
+            // RANGES
+            // 
+
+          }else if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE_IMPORT)){
+
+            //
+            // FILE_IMPORT
+            // 
+
+          }else{
+
           }
+
+        }
       }
 
     /*****************************************

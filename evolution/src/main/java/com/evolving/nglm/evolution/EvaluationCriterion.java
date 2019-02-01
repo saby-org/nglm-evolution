@@ -308,7 +308,7 @@ public class EvaluationCriterion
   *
   *****************************************/
 
-  EvaluationCriterion(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
+  public EvaluationCriterion(JSONObject jsonRoot, CriterionContext criterionContext) throws GUIManagerException
   {
     //
     //  basic fields (all but argument)

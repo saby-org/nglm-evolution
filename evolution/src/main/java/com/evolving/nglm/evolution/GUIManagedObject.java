@@ -9,7 +9,10 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
-
+import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionFileImport;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionRanges;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
@@ -126,7 +129,9 @@ public abstract class GUIManagedObject
   {
     List<ConnectSerde<? extends GUIManagedObject>> guiManagedObjectSerdes = new ArrayList<ConnectSerde<? extends GUIManagedObject>>();
     guiManagedObjectSerdes.add(Journey.serde());
-    guiManagedObjectSerdes.add(SegmentationRule.serde());
+    guiManagedObjectSerdes.add(SegmentationDimensionEligibility.serde());
+    guiManagedObjectSerdes.add(SegmentationDimensionFileImport.serde());
+    guiManagedObjectSerdes.add(SegmentationDimensionRanges.serde());
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());

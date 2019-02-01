@@ -41,7 +41,8 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
-    schemaBuilder.field("groupName", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("segmentID", Schema.STRING_SCHEMA);
     schemaBuilder.field("epoch", Schema.INT32_SCHEMA);
     schemaBuilder.field("addSubscriber", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
@@ -69,7 +70,8 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
 
   private String subscriberID;
   private Date eventDate;
-  private String groupName;
+  private String dimensionID;
+  private String segmentID;
   private int epoch;
   private boolean addSubscriber;
 
@@ -81,7 +83,8 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
 
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
-  public String getGroupName() { return groupName; }
+  public String getDimensionID() { return dimensionID; }
+  public String getSegmentID() { return segmentID; }
   public int getEpoch() { return epoch; }
   public boolean getAddSubscriber() { return addSubscriber; }
   
@@ -99,11 +102,12 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
   *
   *****************************************/
 
-  public SubscriberGroup(String subscriberID, Date eventDate, String groupName, int epoch, boolean addSubscriber)
+  public SubscriberGroup(String subscriberID, Date eventDate, String dimensionID, String segmentID, int epoch, boolean addSubscriber)
   {
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
-    this.groupName = groupName;
+    this.dimensionID = dimensionID;
+    this.segmentID = segmentID;
     this.epoch = epoch;
     this.addSubscriber = addSubscriber;
   }
@@ -120,7 +124,8 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberGroup.getSubscriberID());
     struct.put("eventDate", subscriberGroup.getEventDate());
-    struct.put("groupName", subscriberGroup.getGroupName());
+    struct.put("dimensionID", subscriberGroup.getDimensionID());
+    struct.put("segmentID", subscriberGroup.getSegmentID());
     struct.put("epoch", subscriberGroup.getEpoch());
     struct.put("addSubscriber", subscriberGroup.getAddSubscriber());
     return struct;
@@ -155,7 +160,8 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     Date eventDate = (Date) valueStruct.get("eventDate");
-    String groupName = valueStruct.getString("groupName");
+    String dimensionID = valueStruct.getString("dimensionID");
+    String segmentID = valueStruct.getString("segmentID");
     int epoch = valueStruct.getInt32("epoch");
     boolean addSubscriber = valueStruct.getBoolean("addSubscriber");
     
@@ -163,6 +169,6 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
     //  return
     //
 
-    return new SubscriberGroup(subscriberID, eventDate, groupName, epoch, addSubscriber);
+    return new SubscriberGroup(subscriberID, eventDate, dimensionID, segmentID, epoch, addSubscriber);
   }
 }

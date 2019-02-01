@@ -92,7 +92,7 @@
     <!-- topics -->
     <topic.empty>empty</topic.empty>
     <topic.journey>journey</topic.journey>
-    <topic.segmentationrule>segmentation-rule</topic.segmentationrule>
+    <topic.segmentationdimension>segmentation-dimension</topic.segmentationdimension>
     <topic.offer>offer</topic.offer>
     <topic.report>report</topic.report>
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>

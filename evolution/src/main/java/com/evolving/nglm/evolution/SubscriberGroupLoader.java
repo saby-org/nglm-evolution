@@ -114,7 +114,7 @@ public class SubscriberGroupLoader
     String inputDirectoryName = "/app/data";
     String consumerGroupID = args[1];
     String loadTypeArgument = args[2];
-    String groupName = args[3];
+    String groupID = args[3];
     LoadType loadType = LoadType.fromExternalRepresentation(loadTypeArgument);
 
     //
@@ -163,7 +163,7 @@ public class SubscriberGroupLoader
     ****************************************/
     
     NGLMRuntime.initialize();
-    log.info("main START: {} {} {} {} {} {} {} {} {}", numThreadsArgument, subscriberGroupTopic, subscriberGroupAssignSubscriberIDTopic, subscriberGroupEpochTopic, bootstrapServers, consumerGroupID, loadTypeArgument, groupName, (display != null ? display : ""), (fileName != null ? fileName : ""));
+    log.info("main START: {} {} {} {} {} {} {} {} {}", numThreadsArgument, subscriberGroupTopic, subscriberGroupAssignSubscriberIDTopic, subscriberGroupEpochTopic, bootstrapServers, consumerGroupID, loadTypeArgument, groupID, (display != null ? display : ""), (fileName != null ? fileName : ""));
     
     /****************************************
     *
@@ -186,12 +186,6 @@ public class SubscriberGroupLoader
         System.exit(-1);
       }
 
-    //
-    //  validation -- groupName
-    //
-
-    groupName = (groupName != null) ? groupName.toLowerCase() : groupName;
-    
     //
     //  validation -- input file
     //
@@ -236,7 +230,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(groupName);
+    ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(groupID);
     
     /*****************************************
     *
@@ -244,7 +238,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, groupName, loadType, display);
+    SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, groupID, loadType, display);
 
     /*****************************************
     *
@@ -310,7 +304,7 @@ public class SubscriberGroupLoader
         *
         *****************************************/
 
-        log.info("updating subscribers in group {}", groupName);
+        log.info("updating subscribers in group {}", groupID);
         if (useAlternateID)
           log.info("using alternate id {} {}", Deployment.getSubscriberGroupLoaderAlternateID(), (String) (subscriberGroupAssignSubscriberIDTopic != null ? "with autoprovision" : ""));
         else
@@ -330,11 +324,18 @@ public class SubscriberGroupLoader
                 //  read line
                 //
 
-                String subscriberID = reader.readLine();
-                if (subscriberID == null)
+                String line = reader.readLine();
+                if (line == null)
                   {
                     break;
                   }
+                String[] infos = line.split("|"); //TODO SCH : make the separator configurable
+                if (infos.length != 2)
+                  {
+                    break;
+                  }
+                String subscriberID = infos[0];
+                String segmentID = infos[1];
 
                 //
                 //  resolve subscriberID (if necessary)
@@ -390,7 +391,7 @@ public class SubscriberGroupLoader
                 if (effectiveSubscriberID != null)
                   {
                     String topic = autoProvision ? subscriberGroupAssignSubscriberIDTopic : subscriberGroupTopic;
-                    SubscriberGroup subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, groupName, epoch, loadType.getAddRecord());
+                    SubscriberGroup subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, groupID, segmentID, epoch, loadType.getAddRecord());
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, stringKeySerde.serializer().serialize(topic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(topic, subscriberGroup)));
                   }
                 else
@@ -401,7 +402,7 @@ public class SubscriberGroupLoader
           }
       }
     kafkaProducer.flush();
-    log.info("group {} updated", groupName);
+    log.info("group with ID {} updated", groupID);
     
     /*****************************************
     *
@@ -409,7 +410,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, groupName);
+    SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, groupID);
     subscriberIDService.close();
   }
 }

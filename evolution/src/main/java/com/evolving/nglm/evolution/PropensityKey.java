@@ -28,8 +28,9 @@ public class PropensityKey
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("propensity_key");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("offerid", Schema.STRING_SCHEMA);
-    schemaBuilder.field("segment", Schema.STRING_SCHEMA);
+    schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("segmentID", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
   
@@ -45,8 +46,9 @@ public class PropensityKey
   *
   *****************************************/
   
-  private String offerid;
-  private String segment;
+  private String offerID;
+  private String dimensionID;
+  private String segmentID;
   
   /*****************************************
   *
@@ -54,10 +56,11 @@ public class PropensityKey
   *
   *****************************************/
 
-  public PropensityKey(String offerid, String segment)
+  public PropensityKey(String offerID, String dimensionID, String segmentID)
   {
-    this.offerid = offerid;
-    this.segment = segment;
+    this.offerID = offerID;
+    this.dimensionID = dimensionID;
+    this.segmentID = segmentID;
   }
   
   /*****************************************
@@ -66,8 +69,9 @@ public class PropensityKey
   *
   *****************************************/
 
-  public String getOfferID() { return offerid; }
-  public String getSegment() { return segment; }
+  public String getOfferID() { return offerID; }
+  public String getDimensionID() { return dimensionID; }
+  public String getSegmentID() { return segmentID; }
   
   /*****************************************
   *
@@ -90,8 +94,9 @@ public class PropensityKey
   {
     PropensityKey propensityKey = (PropensityKey) value;
     Struct struct = new Struct(schema);
-    struct.put("offerid", propensityKey.getOfferID());
-    struct.put("segment", propensityKey.getSegment());
+    struct.put("offerID", propensityKey.getOfferID());
+    struct.put("dimensionID", propensityKey.getDimensionID());
+    struct.put("segmentID", propensityKey.getSegmentID());
     return struct;
   }
 
@@ -116,14 +121,15 @@ public class PropensityKey
     //
 
     Struct valueStruct = (Struct) value;
-    String offerid = valueStruct.getString("offerid");
-    String segment = valueStruct.getString("segment");
+    String offerid = valueStruct.getString("offerID");
+    String dimension = valueStruct.getString("dimensionID");
+    String segment = valueStruct.getString("segmentID");
 
     //
     //  return
     //
 
-    return new PropensityKey(offerid, segment);
+    return new PropensityKey(offerid, dimension, segment);
   }
   
   /*****************************************
@@ -142,7 +148,7 @@ public class PropensityKey
     if (obj instanceof PropensityKey)
       {
         PropensityKey propensityKey = (PropensityKey) obj;
-        result = offerid.equals(propensityKey.getOfferID()) && segment.equals(propensityKey.getSegment());
+        result = offerID.equals(propensityKey.getOfferID()) && dimensionID.equals(propensityKey.getDimensionID()) && segmentID.equals(propensityKey.getSegmentID());
       }
     return result;
   }
@@ -153,6 +159,6 @@ public class PropensityKey
   
   public int hashCode()
   {
-    return (offerid+segment).hashCode();
+    return (offerID+dimensionID+segmentID).hashCode();
   }
 }

@@ -6,65 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.Alarm.AlarmLevel;
-import com.evolving.nglm.core.Alarm.AlarmType;
-import com.evolving.nglm.core.Alarm;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.LicenseChecker.LicenseState;
-import com.evolving.nglm.core.LicenseChecker;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.core.UniqueKeyServer;
-
-import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.reports.ReportScheduler;
-
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.errors.WakeupException;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.Executors;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,10 +27,54 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.WakeupException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.Alarm;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.LicenseChecker;
+import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.ServerException;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionFileImport;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionRanges;
+import com.evolving.nglm.evolution.segmentation.SegmentationDimensionService;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
    
 public class GUIManager
 {
@@ -134,11 +131,10 @@ public class GUIManager
     removeCampaign("removeCampaign"),
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
-    getSegmentationRuleList("getSegmentationRuleList"),
-    getSegmentationRuleSummaryList("getSegmentationRuleSummaryList"),
-    getSegmentationRule("getSegmentationRule"),
-    putSegmentationRule("putSegmentationRule"),
-    removeSegmentationRule("removeSegmentationRule"),
+    getSegmentationDimensionList("getSegmentationDimensionList"),
+    getSegmentationDimension("getSegmentationDimension"),
+    putSegmentationDimension("putSegmentationDimension"),
+    removeSegmentationDimension("removeSegmentationDimension"),
     getOfferList("getOfferList"),
     getOfferSummaryList("getOfferSummaryList"),
     getOffer("getOffer"),
@@ -241,7 +237,7 @@ public class GUIManager
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
   private JourneyService journeyService;
-  private SegmentationRuleService segmentationRuleService;
+  private SegmentationDimensionService segmentationDimensionService;
   private OfferService offerService;
   private ReportService reportService;
   private ScoringStrategyService scoringStrategyService;
@@ -300,7 +296,7 @@ public class GUIManager
     int apiRestPort = parseInteger("apiRestPort", args[2]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String journeyTopic = Deployment.getJourneyTopic();
-    String segmentationRuleTopic = Deployment.getSegmentationRuleTopic();
+    String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
     String offerTopic = Deployment.getOfferTopic();
     String reportTopic = Deployment.getReportTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
@@ -324,7 +320,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationRuleTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic);
+    log.info("main START: {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic);
 
     //
     //  license
@@ -339,7 +335,7 @@ public class GUIManager
     *****************************************/
 
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
-    segmentationRuleService = new SegmentationRuleService(bootstrapServers, "guimanager-segmentationruleservice-" + apiProcessKey, segmentationRuleTopic, true);
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
     reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
@@ -538,7 +534,7 @@ public class GUIManager
     *****************************************/
 
     journeyService.start();
-    segmentationRuleService.start();
+    segmentationDimensionService.start();
     offerService.start();
     reportService.start();
     scoringStrategyService.start();
@@ -601,11 +597,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeCampaign", new APIHandler(API.removeCampaign));
         restServer.createContext("/nglm-guimanager/startCampaign", new APIHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APIHandler(API.stopCampaign));
-        restServer.createContext("/nglm-guimanager/getSegmentationRuleList", new APIHandler(API.getSegmentationRuleList));
-        restServer.createContext("/nglm-guimanager/getSegmentationRuleSummaryList", new APIHandler(API.getSegmentationRuleSummaryList));
-        restServer.createContext("/nglm-guimanager/getSegmentationRule", new APIHandler(API.getSegmentationRule));
-        restServer.createContext("/nglm-guimanager/putSegmentationRule", new APIHandler(API.putSegmentationRule));
-        restServer.createContext("/nglm-guimanager/removeSegmentationRule", new APIHandler(API.removeSegmentationRule));
+        restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APIHandler(API.getSegmentationDimensionList));
+        restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APIHandler(API.getSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APIHandler(API.putSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APIHandler(API.removeSegmentationDimension));
         restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APIHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APIHandler(API.getOffer));
@@ -688,7 +683,7 @@ public class GUIManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationRuleService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService));
     
     /*****************************************
     *
@@ -713,7 +708,7 @@ public class GUIManager
 
     private HttpServer restServer;
     private JourneyService journeyService;
-    private SegmentationRuleService segmentationRuleService;
+    private SegmentationDimensionService segmentationDimensionService;
     private OfferService offerService;
     private ReportService reportService;
     private ScoringStrategyService scoringStrategyService;
@@ -735,11 +730,11 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationRuleService segmentationRuleService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
-      this.segmentationRuleService = segmentationRuleService;
+      this.segmentationDimensionService = segmentationDimensionService;
       this.offerService = offerService;
       this.reportService = reportService;
       this.scoringStrategyService = scoringStrategyService;
@@ -775,7 +770,7 @@ public class GUIManager
       //
       
       if (journeyService != null) journeyService.stop();
-      if (segmentationRuleService != null) segmentationRuleService.stop();
+      if (segmentationDimensionService != null) segmentationDimensionService.stop();
       if (offerService != null) offerService.stop();
       if (reportService != null) reportService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
@@ -1060,24 +1055,20 @@ public class GUIManager
                   jsonResponse = processCampaignSetActive(userID, jsonRoot, false);
                   break;
 
-                case getSegmentationRuleList:
-                  jsonResponse = processGetSegmentationRuleList(userID, jsonRoot, true);
+                case getSegmentationDimensionList:
+                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true);
                   break;
 
-                case getSegmentationRuleSummaryList:
-                  jsonResponse = processGetSegmentationRuleList(userID, jsonRoot, false);
-                  break;
-
-                case getSegmentationRule:
-                    jsonResponse = processGetSegmentationRule(userID, jsonRoot);
+                case getSegmentationDimension:
+                    jsonResponse = processGetSegmentationDimension(userID, jsonRoot);
                     break;
 
-                case putSegmentationRule:
-                    jsonResponse = processPutSegmentationRule(userID, jsonRoot);
+                case putSegmentationDimension:
+                    jsonResponse = processPutSegmentationDimension(userID, jsonRoot);
                     break;
 
-                case removeSegmentationRule:
-                    jsonResponse = processRemoveSegmentationRule(userID, jsonRoot);
+                case removeSegmentationDimension:
+                    jsonResponse = processRemoveSegmentationDimension(userID, jsonRoot);
                     break;
                 
                 case getOfferList:
@@ -3948,23 +3939,23 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processGetSegmentationRuleList
+  *  processGetSegmentationDimensionList
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationRuleList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSegmentationDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
-    *  retrieve and convert segmentationRules
+    *  retrieve and convert segmentationDimensions
     *
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    List<JSONObject> segmentationRules = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentationRule : segmentationRuleService.getStoredSegmentationRules())
+    List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
+    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
       {
-        segmentationRules.add(segmentationRuleService.generateResponseJSON(segmentationRule, fullDetails, now));
+        segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
       }
 
     /*****************************************
@@ -3975,17 +3966,17 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
-    response.put("segmentationRules", JSONUtilities.encodeArray(segmentationRules));
+    response.put("segmentationDimensions", JSONUtilities.encodeArray(segmentationDimensions));
     return JSONUtilities.encodeObject(response);
   }
                  
   /*****************************************
   *
-  *  processGetSegmentationRule
+  *  processGetSegmentationDimension
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationRule(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSegmentationDimension(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4001,16 +3992,16 @@ public class GUIManager
     *
     ****************************************/
 
-    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
-    *  retrieve and decorate segmentationRule
+    *  retrieve and decorate segmentationDimension
     *
     *****************************************/
 
-    GUIManagedObject segmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
-    JSONObject segmentationRuleJSON = segmentationRuleService.generateResponseJSON(segmentationRule, true, SystemTime.getCurrentTime());
+    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -4018,18 +4009,18 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (segmentationRule != null) ? "ok" : "segmentationRuleNotFound");
-    if (segmentationRule != null) response.put("segmentationRule", segmentationRuleJSON);
+    response.put("responseCode", (segmentationDimension != null) ? "ok" : "segmentationDimensionNotFound");
+    if (segmentationDimension != null) response.put("segmentationDimension", segmentationDimensionJSON);
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processPutSegmentationRule
+  *  processPutSegmentationDimension
   *
   *****************************************/
 
-  private JSONObject processPutSegmentationRule(String userID, JSONObject jsonRoot)
+  private JSONObject processPutSegmentationDimension(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4042,24 +4033,24 @@ public class GUIManager
     
     /*****************************************
     *
-    *  segmentationRuleID
+    *  segmentationDimensionID
     *
     *****************************************/
     
-    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (segmentationRuleID == null)
+    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (segmentationDimensionID == null)
       {
-        segmentationRuleID = segmentationRuleService.generateSegmentationRuleID();
-        jsonRoot.put("id", segmentationRuleID);
+        segmentationDimensionID = segmentationDimensionService.generateSegmentationDimensionID();
+        jsonRoot.put("id", segmentationDimensionID);
       }
     
     /*****************************************
     *
-    *  existing segmentationRule
+    *  existing segmentationDimension
     *
     *****************************************/
 
-    GUIManagedObject existingSegmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
+    GUIManagedObject existingSegmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
 
     /*****************************************
     *
@@ -4067,18 +4058,18 @@ public class GUIManager
     *
     *****************************************/
 
-    if (existingSegmentationRule != null && existingSegmentationRule.getReadOnly())
+    if (existingSegmentationDimension != null && existingSegmentationDimension.getReadOnly())
       {
-        response.put("id", existingSegmentationRule.getGUIManagedObjectID());
-        response.put("accepted", existingSegmentationRule.getAccepted());
-        response.put("processing", segmentationRuleService.isActiveSegmentationRule(existingSegmentationRule, now));
+        response.put("id", existingSegmentationDimension.getGUIManagedObjectID());
+        response.put("accepted", existingSegmentationDimension.getAccepted());
+        response.put("processing", segmentationDimensionService.isActiveSegmentationDimension(existingSegmentationDimension, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************
     *
-    *  process segmentationRule
+    *  process segmentationDimension
     *
     *****************************************/
 
@@ -4087,11 +4078,19 @@ public class GUIManager
       {
         /****************************************
         *
-        *  instantiate segmentationRule
+        *  instantiate segmentationDimension
         *
         ****************************************/
 
-        SegmentationRule segmentationRule = new SegmentationRule(jsonRoot, epoch, existingSegmentationRule);
+        SegmentationDimension segmentationDimension = null;
+        SegmentationDimensionTargetingType dimensionType = SegmentationDimensionTargetingType.valueOf(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+        if(dimensionType.equals(SegmentationDimensionTargetingType.ELIGIBILITY)){
+          segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+        }else if(dimensionType.equals(SegmentationDimensionTargetingType.FILE_IMPORT)){
+          segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+        }else if(dimensionType.equals(SegmentationDimensionTargetingType.RANGES)){
+          segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+        }
 
         /*****************************************
         *
@@ -4099,7 +4098,7 @@ public class GUIManager
         *
         *****************************************/
 
-        segmentationRuleService.putSegmentationRule(segmentationRule, (existingSegmentationRule == null), userID);
+        segmentationDimensionService.putSegmentationDimension(segmentationDimension, (existingSegmentationDimension == null), userID);
 
         /*****************************************
         *
@@ -4107,9 +4106,9 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("id", segmentationRule.getSegmentationRuleID());
-        response.put("accepted", segmentationRule.getAccepted());
-        response.put("processing", segmentationRuleService.isActiveSegmentationRule(segmentationRule, now));
+        response.put("id", segmentationDimension.getSegmentationDimensionID());
+        response.put("accepted", segmentationDimension.getAccepted());
+        response.put("processing", segmentationDimensionService.isActiveSegmentationDimension(segmentationDimension, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -4125,7 +4124,7 @@ public class GUIManager
         //  store
         //
 
-        segmentationRuleService.putSegmentationRule(incompleteObject, (existingSegmentationRule == null), userID);
+        segmentationDimensionService.putIncompleteSegmentationDimension(incompleteObject, (existingSegmentationDimension == null), userID);
 
         //
         //  log
@@ -4139,8 +4138,8 @@ public class GUIManager
         //  response
         //
 
-        response.put("segmentationRuleID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "segmentationRuleNotValid");
+        response.put("segmentationDimensionID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "segmentationDimensionNotValid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
@@ -4149,11 +4148,11 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processRemoveSegmentationRule
+  *  processRemoveSegmentationDimension
   *
   *****************************************/
 
-  private JSONObject processRemoveSegmentationRule(String userID, JSONObject jsonRoot)
+  private JSONObject processRemoveSegmentationDimension(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -4177,7 +4176,7 @@ public class GUIManager
     *
     ****************************************/
     
-    String segmentationRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
     
     /*****************************************
     *
@@ -4185,8 +4184,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentationRule = segmentationRuleService.getStoredSegmentationRule(segmentationRuleID);
-    if (segmentationRule != null && ! segmentationRule.getReadOnly()) segmentationRuleService.removeSegmentationRule(segmentationRuleID, userID);
+    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    if (segmentationDimension != null && ! segmentationDimension.getReadOnly()) segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
 
     /*****************************************
     *
@@ -4195,12 +4194,12 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (segmentationRule != null && ! segmentationRule.getReadOnly())
+    if (segmentationDimension != null && ! segmentationDimension.getReadOnly())
       responseCode = "ok";
-    else if (segmentationRule != null)
+    else if (segmentationDimension != null)
       responseCode = "failedReadOnly";
     else
-      responseCode = "segmentationRuleNotFound";
+      responseCode = "segmentationDimensionNotFound";
 
     /*****************************************
     *
@@ -8123,7 +8122,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
-    response.put("segmentationRuleCount", segmentationRuleService.getStoredSegmentationRules().size());
+    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
@@ -8241,7 +8240,7 @@ public class GUIManager
         customerMetaDataList.add(customerMetaDataJSON);
       }
     
-    /*****************************************et
+    /*****************************************
     *
     *  response
     *

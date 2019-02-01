@@ -59,7 +59,7 @@ public class PropensityESSinkConnector extends SimpleESSinkConnector
       *
       ****************************************/
       
-      return propensityState.getOfferID() + "_" + propensityState.getSegment();
+      return propensityState.getOfferID() + "_" + propensityState.getdimensionID() + "_" + propensityState.getSegmentID();
     }
     
     /*****************************************
@@ -90,7 +90,8 @@ public class PropensityESSinkConnector extends SimpleESSinkConnector
       
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("offerID", propensityState.getOfferID());
-      documentMap.put("segment", propensityState.getSegment());
+      documentMap.put("dimensionID", propensityState.getdimensionID());
+      documentMap.put("segmentID", propensityState.getSegmentID());
       documentMap.put("propensity", propensityState.getPropensity());
       documentMap.put("evaluationDate", now);
       

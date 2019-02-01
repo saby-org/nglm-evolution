@@ -187,7 +187,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static SubscriberGroupEpoch retrieveSubscriberGroupEpoch(ZooKeeper zookeeper, String groupName, LoadType loadType, String display)
+  public static SubscriberGroupEpoch retrieveSubscriberGroupEpoch(ZooKeeper zookeeper, String dimensionID, LoadType loadType, String display)
   {
     /*****************************************
     *
@@ -206,7 +206,7 @@ public class SubscriberGroupEpochService
     //
 
     boolean subscriberGroupEpochNodeExists = false;
-    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + groupName;
+    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + dimensionID;
     if (! subscriberGroupEpochNodeExists)
       {
         //
@@ -216,7 +216,7 @@ public class SubscriberGroupEpochService
         try
           {
             subscriberGroupEpochNodeExists = (zookeeper.exists(node, false) != null);
-            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node {} does not exist", groupName);
+            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node with ID {} does not exist", dimensionID);
           }
         catch (KeeperException e)
           {
@@ -244,10 +244,10 @@ public class SubscriberGroupEpochService
 
         if (! subscriberGroupEpochNodeExists)
           {
-            log.info("retrieveSubscriberGroupEpoch() - creating node {}", groupName);
+            log.info("retrieveSubscriberGroupEpoch() - creating node {}", dimensionID);
             try
               {
-                SubscriberGroupEpoch newSubscriberGroupEpoch = new SubscriberGroupEpoch(groupName, display);
+                SubscriberGroupEpoch newSubscriberGroupEpoch = new SubscriberGroupEpoch(dimensionID, display);
                 JSONObject jsonNewSubscriberGroupEpoch = newSubscriberGroupEpoch.getJSONRepresentation();
                 String stringNewSubscriberGroupEpoch = jsonNewSubscriberGroupEpoch.toString();
                 byte[] rawNewSubscriberGroupEpoch = stringNewSubscriberGroupEpoch.getBytes(StandardCharsets.UTF_8);
@@ -326,8 +326,8 @@ public class SubscriberGroupEpochService
     //  update subscriberGroupEpoch node
     //
 
-    SubscriberGroupEpoch subscriberGroupEpoch = new SubscriberGroupEpoch(existingSubscriberGroupEpoch.getGroupName(), epoch, existingSubscriberGroupEpoch.getDisplay(), active);
-    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + subscriberGroupEpoch.getGroupName();
+    SubscriberGroupEpoch subscriberGroupEpoch = new SubscriberGroupEpoch(existingSubscriberGroupEpoch.getDimensionID(), epoch, existingSubscriberGroupEpoch.getDisplay(), active);
+    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + subscriberGroupEpoch.getDimensionID();
     try
       {
         JSONObject jsonSubscriberGroupEpoch = subscriberGroupEpoch.getJSONRepresentation();
@@ -337,7 +337,7 @@ public class SubscriberGroupEpochService
       }
     catch (KeeperException.BadVersionException e)
       {
-        log.error("concurrent write aborted for subscriberGroupEpoch {}", subscriberGroupEpoch.getGroupName());
+        log.error("concurrent write aborted for subscriberGroupEpoch {}", subscriberGroupEpoch.getDimensionID());
         throw new ServerRuntimeException("zookeeper", e);
       }
     catch (KeeperException e)
@@ -357,7 +357,7 @@ public class SubscriberGroupEpochService
     *
     *****************************************/
 
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupEpochTopic, stringKeySerde.serializer().serialize(subscriberGroupEpochTopic, new StringKey(subscriberGroupEpoch.getGroupName())), subscriberGroupEpochSerde.serializer().serialize(subscriberGroupEpochTopic, subscriberGroupEpoch)));
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupEpochTopic, stringKeySerde.serializer().serialize(subscriberGroupEpochTopic, new StringKey(subscriberGroupEpoch.getDimensionID())), subscriberGroupEpochSerde.serializer().serialize(subscriberGroupEpochTopic, subscriberGroupEpoch)));
     
     /*****************************************
     *
@@ -365,7 +365,7 @@ public class SubscriberGroupEpochService
     *
     *****************************************/
 
-    log.info("updateSubscriberGroupEpoch() - updated group {}", subscriberGroupEpoch.getGroupName());
+    log.info("updateSubscriberGroupEpoch() - updated group {}", subscriberGroupEpoch.getDimensionID());
   }
 
 }

@@ -46,7 +46,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_group_epoch");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("groupName", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
     schemaBuilder.field("epoch", Schema.INT32_SCHEMA);
     schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
@@ -72,7 +72,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   ****************************************/
 
-  private String groupName;
+  private String dimensionID;
   private int epoch;
   private String display;
   private boolean active;
@@ -84,7 +84,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   ****************************************/
 
-  public String getGroupName() { return groupName; }
+  public String getDimensionID() { return dimensionID; }
   public int getEpoch() { return epoch; }
   public String getDisplay() { return display; }
   public boolean getActive() { return active; }
@@ -94,7 +94,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   //  ReferenceDataValue
   //
   
-  @Override public String getKey() { return groupName; }
+  @Override public String getKey() { return dimensionID; }
   
   /*****************************************
   *
@@ -102,9 +102,9 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  public SubscriberGroupEpoch(String groupName, String display)
+  public SubscriberGroupEpoch(String dimensionID, String display)
   {
-    this.groupName = groupName;
+    this.dimensionID = dimensionID;
     this.epoch = 0;
     this.display = display;
     this.active = true;
@@ -117,9 +117,9 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  public SubscriberGroupEpoch(String groupName, int epoch, String display, boolean active)
+  public SubscriberGroupEpoch(String dimensionID, int epoch, String display, boolean active)
   {
-    this.groupName = groupName;
+    this.dimensionID = dimensionID;
     this.epoch = epoch;
     this.display = display;
     this.active = active;
@@ -134,7 +134,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
 
   public SubscriberGroupEpoch(JSONObject jsonRoot, int zookeeperVersion)
   {
-    this.groupName = JSONUtilities.decodeString(jsonRoot, "groupName", true);
+    this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", true);
     this.epoch = JSONUtilities.decodeInteger(jsonRoot, "epoch", true);
     this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", true);
@@ -150,7 +150,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   public JSONObject getJSONRepresentation()
   {
     HashMap<String,Object> resultMap = new HashMap<String,Object>();;
-    resultMap.put("groupName", groupName);
+    resultMap.put("dimensionID", dimensionID);
     resultMap.put("epoch", epoch);
     resultMap.put("display", display);
     resultMap.put("active", active);
@@ -167,7 +167,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   {
     SubscriberGroupEpoch subscriberGroupEpoch = (SubscriberGroupEpoch) value;
     Struct struct = new Struct(schema);
-    struct.put("groupName", subscriberGroupEpoch.getGroupName());
+    struct.put("dimensionID", subscriberGroupEpoch.getDimensionID());
     struct.put("epoch", subscriberGroupEpoch.getEpoch());
     struct.put("display", subscriberGroupEpoch.getDisplay());
     struct.put("active", subscriberGroupEpoch.getActive());
@@ -195,7 +195,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
     //
 
     Struct valueStruct = (Struct) value;
-    String groupName = valueStruct.getString("groupName");
+    String dimensionID = valueStruct.getString("dimensionID");
     int epoch = valueStruct.getInt32("epoch");
     String display = valueStruct.getString("display");
     boolean active = valueStruct.getBoolean("active");
@@ -204,6 +204,6 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
     //  return
     //
 
-    return new SubscriberGroupEpoch(groupName, epoch, display, active);
+    return new SubscriberGroupEpoch(dimensionID, epoch, display, active);
   }
 }

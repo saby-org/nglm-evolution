@@ -790,7 +790,7 @@ public class GUIService
   *
   *****************************************/
 
-  JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
+  public JSONObject generateResponseJSON(GUIManagedObject guiManagedObject, boolean fullDetails, Date date)
   {
     JSONObject responseJSON = new JSONObject();
     if (guiManagedObject != null)
