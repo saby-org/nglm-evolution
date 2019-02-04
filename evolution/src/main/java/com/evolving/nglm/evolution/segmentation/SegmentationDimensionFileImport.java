@@ -42,8 +42,8 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segmentation_dimension_file_import");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : getCommonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(SegmentationDimension.commonSchema().version(),1));
+    for (Field field : SegmentationDimension.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("fileName", Schema.STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.array(SegmentFileImport.schema()).schema());
     schema = schemaBuilder.build();
@@ -70,7 +70,6 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
 
   private String fileName;
   private List<SegmentFileImport> segments;
-  
 
   /****************************************
   *
@@ -87,9 +86,9 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionFileImport(SchemaAndValue schemaAndValue, String description, String display, SegmentationDimensionTargetingType targetingType, String fileName, List<SegmentFileImport> segments)
+  public SegmentationDimensionFileImport(SchemaAndValue schemaAndValue, String fileName, List<SegmentFileImport> segments)
   {
-    super(schemaAndValue, description, display, targetingType);
+    super(schemaAndValue);
     this.fileName = fileName;
     this.segments = segments;
   }
@@ -104,7 +103,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   {
     SegmentationDimensionFileImport segmentationDimension = (SegmentationDimensionFileImport) value;
     Struct struct = new Struct(schema);
-    getPackCommon(struct, segmentationDimension);
+    SegmentationDimension.packCommon(struct, segmentationDimension);
     struct.put("fileName", segmentationDimension.getFileName());
     struct.put("segments", packSegments(segmentationDimension.getSegments()));
     return struct;
@@ -140,16 +139,13 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack
     //
 
     Struct valueStruct = (Struct) value;
-    String description = valueStruct.getString("description");
-    String display = valueStruct.getString("display");
-    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.valueOf(valueStruct.getString("targetingType"));
     String fileName = valueStruct.getString("fileName");
     List<SegmentFileImport> segments = unpackSegments(schema.field("segments").schema(), valueStruct.get("segments"));
     
@@ -157,7 +153,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     //  return
     //
 
-    return new SegmentationDimensionFileImport(schemaAndValue, description, display, targetingType, fileName, segments);
+    return new SegmentationDimensionFileImport(schemaAndValue, fileName, segments);
   }
   
   /*****************************************
@@ -285,5 +281,4 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
         return true;
       }
    }
-  
 }

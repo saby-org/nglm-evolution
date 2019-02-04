@@ -31,9 +31,14 @@ public abstract class SegmentationDimension extends GUIManagedObject
 
   public enum SegmentationDimensionTargetingType
   {
-    ELIGIBILITY,
-    FILE_IMPORT,
-    RANGES;
+    ELIGIBILITY("ELIGIBILITY"),
+    FILE_IMPORT("FILE_IMPORT"),
+    RANGES("RANGES"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private SegmentationDimensionTargetingType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static SegmentationDimensionTargetingType fromExternalRepresentation(String externalRepresentation) { for (SegmentationDimensionTargetingType enumeratedValue : SegmentationDimensionTargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   /*****************************************
@@ -51,8 +56,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segmentation_dimension");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),1));
+    for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("description", Schema.STRING_SCHEMA);
     schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
@@ -63,7 +68,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
   //  accessor
   //
 
-  public static Schema getCommonSchema() { return commonSchema; }
+  public static Schema commonSchema() { return commonSchema; }
 
   /****************************************
   *
@@ -104,9 +109,35 @@ public abstract class SegmentationDimension extends GUIManagedObject
   *
   *****************************************/
 
-  public SegmentationDimension(SchemaAndValue schemaAndValue, String description, String display, SegmentationDimensionTargetingType targetingType)
+  public SegmentationDimension(SchemaAndValue schemaAndValue)
   {
+    //
+    //  superclass
+    //
+    
     super(schemaAndValue);
+    
+    //
+    //  data
+    //
+
+    Schema schema = schemaAndValue.schema();
+    Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+
+    //
+    //  unpack
+    //
+
+    Struct valueStruct = (Struct) value;
+    String description = valueStruct.getString("description");
+    String display = valueStruct.getString("display");
+    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
+
+    //
+    //  return
+    //
+
     this.description = description;
     this.display = display;
     this.targetingType = targetingType;
@@ -118,12 +149,12 @@ public abstract class SegmentationDimension extends GUIManagedObject
   *
   *****************************************/
   
-  protected static void getPackCommon(Struct struct, SegmentationDimension segmentationDimension)
+  protected static void packCommon(Struct struct, SegmentationDimension segmentationDimension)
   {
-    packCommon(struct, segmentationDimension);
+    GUIManagedObject.packCommon(struct, segmentationDimension);
     struct.put("description", segmentationDimension.getDescription());
     struct.put("display", segmentationDimension.getDisplay());
-    struct.put("targetingType", segmentationDimension.getTargetingType().toString());
+    struct.put("targetingType", segmentationDimension.getTargetingType().getExternalRepresentation());
   }
   
   /*****************************************
@@ -150,7 +181,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
 
     this.description = JSONUtilities.decodeString(jsonRoot, "description", true);
     this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
-    this.targetingType = SegmentationDimensionTargetingType.valueOf(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+    this.targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
   }
-
 }

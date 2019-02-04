@@ -42,7 +42,7 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_request");
-    schemaBuilder.version(1);
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("journeyRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);

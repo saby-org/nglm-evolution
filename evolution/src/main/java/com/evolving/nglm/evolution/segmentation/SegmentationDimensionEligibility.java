@@ -42,8 +42,8 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segmentation_dimension_eligibility");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : getCommonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(SegmentationDimension.commonSchema().version(),1));
+    for (Field field : SegmentationDimension.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("segments", SchemaBuilder.array(SegmentEligibility.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -68,7 +68,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   ****************************************/
 
   private List<SegmentEligibility> segments;
-  
 
   /****************************************
   *
@@ -84,9 +83,9 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionEligibility(SchemaAndValue schemaAndValue, String description, String display, SegmentationDimensionTargetingType targetingType, List<SegmentEligibility> segments)
+  public SegmentationDimensionEligibility(SchemaAndValue schemaAndValue, List<SegmentEligibility> segments)
   {
-    super(schemaAndValue, description, display, targetingType);
+    super(schemaAndValue);
     this.segments = segments;
   }
 
@@ -100,7 +99,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   {
     SegmentationDimensionEligibility segmentationDimension = (SegmentationDimensionEligibility) value;
     Struct struct = new Struct(schema);
-    getPackCommon(struct, segmentationDimension);
+    SegmentationDimension.packCommon(struct, segmentationDimension);
     struct.put("segments", packSegments(segmentationDimension.getSegments()));
     return struct;
   }
@@ -135,23 +134,20 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack
     //
 
     Struct valueStruct = (Struct) value;
-    String description = valueStruct.getString("description");
-    String display = valueStruct.getString("display");
-    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.valueOf(valueStruct.getString("targetingType"));
     List<SegmentEligibility> segments = unpackSegments(schema.field("segments").schema(), valueStruct.get("segments"));
     
     //
     //  return
     //
 
-    return new SegmentationDimensionEligibility(schemaAndValue, description, display, targetingType, segments);
+    return new SegmentationDimensionEligibility(schemaAndValue, segments);
   }
   
   /*****************************************
@@ -277,5 +273,4 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
         return true;
       }
    }
-  
 }

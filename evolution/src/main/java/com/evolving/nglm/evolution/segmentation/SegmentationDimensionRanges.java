@@ -42,8 +42,8 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segmentation_dimension_ranges");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : getCommonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(SegmentationDimension.commonSchema().version(),1));
+    for (Field field : SegmentationDimension.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("baseSplit", SchemaBuilder.array(BaseSplit.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -103,9 +103,9 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionRanges(SchemaAndValue schemaAndValue, String description, String display, SegmentationDimensionTargetingType targetingType, List<BaseSplit> baseSplit)
+  public SegmentationDimensionRanges(SchemaAndValue schemaAndValue, List<BaseSplit> baseSplit)
   {
-    super(schemaAndValue, description, display, targetingType);
+    super(schemaAndValue);
     this.baseSplit = baseSplit;
   }
 
@@ -119,7 +119,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   {
     SegmentationDimensionRanges segmentationDimension = (SegmentationDimensionRanges) value;
     Struct struct = new Struct(schema);
-    getPackCommon(struct, segmentationDimension);
+    SegmentationDimension.packCommon(struct, segmentationDimension);
     struct.put("baseSplit", packBaseSplit(segmentationDimension.getBaseSplit()));
     return struct;
   }
@@ -154,23 +154,20 @@ public class SegmentationDimensionRanges extends SegmentationDimension
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
 
     //
     //  unpack
     //
 
     Struct valueStruct = (Struct) value;
-    String description = valueStruct.getString("description");
-    String display = valueStruct.getString("display");
-    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.valueOf(valueStruct.getString("targetingType"));
     List<BaseSplit> baseSplit = unpackBaseSplit(schema.field("baseSplit").schema(), valueStruct.get("baseSplit"));
     
     //
     //  return
     //
 
-    return new SegmentationDimensionRanges(schemaAndValue, description, display, targetingType, baseSplit);
+    return new SegmentationDimensionRanges(schemaAndValue, baseSplit);
   }
   
   /*****************************************
@@ -289,5 +286,4 @@ public class SegmentationDimensionRanges extends SegmentationDimension
         return true;
       }
    }
-  
 }
