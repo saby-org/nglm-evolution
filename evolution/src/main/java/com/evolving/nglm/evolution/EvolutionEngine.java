@@ -1425,7 +1425,7 @@ public class EvolutionEngine
                   {
                     if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
                       {
-                        context.subscriberTrace("NotEligible: already in journey {}", journey.getJourneyID());
+                        context.subscriberTrace("NotEligible: already in journey {0}", journey.getJourneyID());
                         enterJourney = false;
                       }
                   }
@@ -1446,7 +1446,7 @@ public class EvolutionEngine
                         Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), journey.getTargetingWindowDuration(), journey.getTargetingWindowUnit(), Deployment.getBaseTimeZone(), journey.getTargetingWindowRoundUp());
                         if (journeyReentryWindow.after(now))
                           {
-                            context.subscriberTrace("NotEligible: recently in journey {}, window ends {}", journey.getJourneyID(), journeyReentryWindow);
+                            context.subscriberTrace("NotEligible: recently in journey {0}, window ends {1}", journey.getJourneyID(), journeyReentryWindow);
                             enterJourney = false;
                           }
                       }
@@ -1492,7 +1492,7 @@ public class EvolutionEngine
                   {
                     if (runningJourneyObjectiveIDs.contains(journeyObjectiveInstance.getJourneyObjectiveID()))
                       {
-                        context.subscriberTrace("NotEligible: one journey per objective, journey {}, objective {}", journey.getJourneyID(), journeyObjectiveInstance.getJourneyObjectiveID());
+                        context.subscriberTrace("NotEligible: one journey per objective, journey {0}, objective {1}", journey.getJourneyID(), journeyObjectiveInstance.getJourneyObjectiveID());
                         enterJourney = false;
                       }
                   }
@@ -1518,7 +1518,7 @@ public class EvolutionEngine
                     enterJourney = false;
                   }
                 context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                context.subscriberTrace(enterJourney ? "Eligible: {}" : "NotEligible: targeting criteria {}", journey.getJourneyID());
+                context.subscriberTrace(enterJourney ? "Eligible: {}" : "NotEligible: targeting criteria {0}", journey.getJourneyID());
               }
 
             /*****************************************
