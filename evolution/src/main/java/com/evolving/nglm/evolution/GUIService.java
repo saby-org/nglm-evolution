@@ -656,7 +656,7 @@ public class GUIService
             if (guiManagedObject != null)
               log.info("read {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
             else
-              log.info("clearing {} {}", guiManagedObject.getClass().getSimpleName(), guiManagedObjectID);
+              log.info("clearing {}", guiManagedObjectID);
 
             //
             //  process
