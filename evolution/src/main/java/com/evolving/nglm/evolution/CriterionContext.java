@@ -266,65 +266,110 @@ public class CriterionContext
 
     /*****************************************
     *
-    *  journeyCriterionFields
+    *  journeyCriterionFields -- standard node
     *
     *****************************************/
 
-    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
-
-    //
-    //  standard journey top-level fields
-    //
-
-    this.journeyCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
-
-    //
-    //  journeyMetrics
-    //
-
-    for (CriterionField journeyMetric : journeyMetrics.keySet())
+    if (! journeyNodeType.getStartNode())
       {
-        this.journeyCriterionFields.put(journeyMetric.getID(), journeyMetric);
+        this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
+
+        //
+        //  standard journey top-level fields
+        //
+
+        this.journeyCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+
+        //
+        //  journeyMetrics
+        //
+
+        for (CriterionField journeyMetric : journeyMetrics.keySet())
+          {
+            this.journeyCriterionFields.put(journeyMetric.getID(), journeyMetric);
+          }
+
+        //
+        //  journey parameters
+        //
+
+        this.journeyCriterionFields.putAll(journeyParameters);
+
+        //
+        //  standard journey node-level fields
+        //
+
+        this.journeyCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
+        this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
+        this.journeyCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
+        this.journeyCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
+        this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
+
+        //
+        //  node-level parameters
+        //
+
+        this.journeyCriterionFields.putAll(journeyNodeType.getParameters());
+
+        //
+        //  link-level  parameters
+        //
+
+        if (includeLinkParameters)
+          {
+            this.journeyCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
+          }
+
+        //
+        //  trigger-level fields
+        //
+
+        if (journeyEvent != null)
+          {
+            this.journeyCriterionFields.putAll(journeyEvent.getEventCriterionFields());
+          }
       }
 
-    //
-    //  journey parameters
-    //
+    /*****************************************
+    *
+    *  journeyCriterionFields -- start node
+    *
+    *****************************************/
 
-    this.journeyCriterionFields.putAll(journeyParameters);
-
-    //
-    //  standard journey node-level fields
-    //
-
-    this.journeyCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
-    this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
-    this.journeyCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
-    this.journeyCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
-    this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
-
-    //
-    //  node-level parameters
-    //
-
-    this.journeyCriterionFields.putAll(journeyNodeType.getParameters());
-
-    //
-    //  link-level  parameters
-    //
-
-    if (includeLinkParameters)
+    if (journeyNodeType.getStartNode())
       {
-        this.journeyCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
-      }
+        this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
 
-    //
-    //  trigger-level fields
-    //
+        //
+        //  journey parameters
+        //
 
-    if (journeyEvent != null)
-      {
-        this.journeyCriterionFields.putAll(journeyEvent.getEventCriterionFields());
+        this.journeyCriterionFields.putAll(journeyParameters);
+
+        //
+        //  standard journey node-level fields
+        //
+
+        this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
+        this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
+
+        //
+        //  link-level  parameters
+        //
+
+        if (includeLinkParameters)
+          {
+            this.journeyCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
+          }
+
+        //
+        //  trigger-level fields
+        //
+
+        if (journeyEvent != null)
+          {
+            this.journeyCriterionFields.putAll(journeyEvent.getEventCriterionFields());
+          }
       }
   }
 

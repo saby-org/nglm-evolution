@@ -164,6 +164,7 @@ public class EvolutionEngine
   //
 
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+  private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static JourneyService journeyService;
   private static SegmentationDimensionService segmentationDimensionService;
   private static EvolutionEngineStatistics evolutionEngineStatistics;
@@ -351,15 +352,21 @@ public class EvolutionEngine
       }
     };
 
-    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationDimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false, segmentationDimensionListener);
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationdimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false, segmentationDimensionListener);
     segmentationDimensionService.start();
 
     //
     //  subscriberGroupEpochReader
     //
 
-    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("evolutionEngine-subscriberGroupEpoch", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("evolutionengine-subscribergroupepoch", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
     
+    //
+    //  ucgStateReader
+    //
+
+    ucgStateReader = ReferenceDataReader.<String,UCGState>startReader("evolutionengine-ucgstate", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getUCGStateTopic(), UCGState::unpack);
+
     //
     //  create monitoring object
     //
@@ -844,7 +851,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, journeyService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -969,6 +976,7 @@ public class EvolutionEngine
 
     private KafkaStreams kafkaStreams;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private ReferenceDataReader<String,UCGState> ucgStateReader;
     private JourneyService journeyService;
     private SegmentationDimensionService segmentationDimensionService;
     private TimerService timerService;
@@ -979,10 +987,11 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+      this.ucgStateReader = ucgStateReader;
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
       this.timerService = timerService;
@@ -1003,10 +1012,11 @@ public class EvolutionEngine
       if (evolutionEngineStatistics != null) evolutionEngineStatistics.unregister();
 
       //
-      //  close reference data reader
+      //  close reference data readers
       //
 
       subscriberGroupEpochReader.close();
+      ucgStateReader.close();
       
       //
       //  stop services
@@ -1325,8 +1335,9 @@ public class EvolutionEngine
                   boolean inGroup = false;
                   for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
                     {
-                      inGroup = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
-                      subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), inGroup);
+                      boolean addSegment = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
+                      subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), addSegment);
+                      if (addSegment) inGroup = true;
                       subscriberProfileUpdated = true;
                     }
                   break;

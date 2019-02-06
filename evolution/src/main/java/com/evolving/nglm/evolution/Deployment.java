@@ -58,6 +58,7 @@ public class Deployment
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
   private static String subscriberGroupEpochTopic;
+  private static String ucgStateTopic;
   private static String timedEvaluationTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
@@ -86,6 +87,7 @@ public class Deployment
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialDeliverablesJSONArray = null;
+  private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static Map<String,FulfillmentProvider> fulfillmentProviders = new LinkedHashMap<String,FulfillmentProvider>();
   private static Map<String,PaymentInstrument> paymentMeans = new LinkedHashMap<String,PaymentInstrument>();
   private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
@@ -182,6 +184,7 @@ public class Deployment
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
+  public static String getUCGStateTopic() { return ucgStateTopic; }
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
@@ -210,6 +213,7 @@ public class Deployment
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
+  public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static Map<String,FulfillmentProvider> getFulfillmentProviders() { return fulfillmentProviders; }
   public static Map<String,PaymentInstrument> getPaymentMeans() { return paymentMeans; }
   public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
@@ -702,6 +706,19 @@ public class Deployment
       }
 
     //
+    //  ucgStateTopic
+    //
+
+    try
+      {
+        ucgStateTopic = JSONUtilities.decodeString(jsonRoot, "ucgStateTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  timedEvaluationTopic
     //
 
@@ -996,57 +1013,63 @@ public class Deployment
     //  initialCallingChannelsJSONArray
     //
 
-    initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", true);
+    initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", new JSONArray());
 
     //
     //  initialSuppliersJSONArray
     //
 
-    initialSuppliersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSuppliers", true);
+    initialSuppliersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSuppliers", new JSONArray());
 
     //
     //  initialProductsJSONArray
     //
 
-    initialProductsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProducts", true);
+    initialProductsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProducts", new JSONArray());
 
     //
     //  initialCatalogCharacteristicsJSONArray
     //
 
-    initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", true);
+    initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", new JSONArray());
 
     //
     //  initialJourneyObjectivesJSONArray
     //
 
-    initialJourneyObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyObjectives", true);
+    initialJourneyObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyObjectives", new JSONArray());
 
     //
     //  initialOfferObjectivesJSONArray
     //
 
-    initialOfferObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialOfferObjectives", true);
+    initialOfferObjectivesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialOfferObjectives", new JSONArray());
     
     //
     //  initialProductTypesJSONArray
     //
 
-    initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", true);
+    initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", new JSONArray());
     
     //
     //  initialDeliverablesJSONArray
     //
 
-    initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", true);
+    initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", new JSONArray());
     
+    //
+    //  initialSegmentationDimensionsJSONArray
+    //
+
+    initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
+
     //
     //  fulfillmentProviders
     //
 
     try
       {
-        JSONArray fulfillmentProviderValues = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", true);
+        JSONArray fulfillmentProviderValues = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", new JSONArray());
         for (int i=0; i<fulfillmentProviderValues.size(); i++)
           {
             JSONObject fulfillmentProviderJSON = (JSONObject) fulfillmentProviderValues.get(i);
@@ -1065,7 +1088,7 @@ public class Deployment
 
     try
       {
-        JSONArray paymentInstrumentValues = JSONUtilities.decodeJSONArray(jsonRoot, "paymentMeans", true);
+        JSONArray paymentInstrumentValues = JSONUtilities.decodeJSONArray(jsonRoot, "paymentMeans", new JSONArray());
         for (int i=0; i<paymentInstrumentValues.size(); i++)
           {
             JSONObject paymentInstrumentJSON = (JSONObject) paymentInstrumentValues.get(i);
@@ -1084,7 +1107,7 @@ public class Deployment
 
     try
       {
-        JSONArray salesChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "salesChannels", true);
+        JSONArray salesChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "salesChannels", new JSONArray());
         for (int i=0; i<salesChannelValues.size(); i++)
           {
             JSONObject salesChannelJSON = (JSONObject) salesChannelValues.get(i);
@@ -1103,7 +1126,7 @@ public class Deployment
 
     try
       {
-        JSONArray supportedDataTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedDataTypes", true);
+        JSONArray supportedDataTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedDataTypes", new JSONArray());
         for (int i=0; i<supportedDataTypeValues.size(); i++)
           {
             JSONObject supportedDataTypeJSON = (JSONObject) supportedDataTypeValues.get(i);
@@ -1122,7 +1145,7 @@ public class Deployment
 
     try
       {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", true);
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", new JSONArray());
         for (int i=0; i<criterionFieldValues.size(); i++)
           {
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
@@ -1198,7 +1221,7 @@ public class Deployment
 
     try
       {
-        JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", true);
+        JSONArray offerCategoryValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerCategories", new JSONArray());
         for (int i=0; i<offerCategoryValues.size(); i++)
           {
             JSONObject offerCategoryJSON = (JSONObject) offerCategoryValues.get(i);
@@ -1217,7 +1240,7 @@ public class Deployment
 
     try
       {
-        JSONArray offerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerTypes", true);
+        JSONArray offerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerTypes", new JSONArray());
         for (int i=0; i<offerTypeValues.size(); i++)
           {
             JSONObject offerTypeJSON = (JSONObject) offerTypeValues.get(i);
@@ -1255,7 +1278,7 @@ public class Deployment
 
     try
       {
-        JSONArray deliveryManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", true);
+        JSONArray deliveryManagerValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagers", new JSONArray());
         for (int i=0; i<deliveryManagerValues.size(); i++)
           {
             JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
@@ -1317,7 +1340,7 @@ public class Deployment
 
     try
       {
-        JSONArray nodeTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "nodeTypes", true);
+        JSONArray nodeTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "nodeTypes", new JSONArray());
         for (int i=0; i<nodeTypeValues.size(); i++)
           {
             JSONObject nodeTypeJSON = (JSONObject) nodeTypeValues.get(i);
@@ -1336,7 +1359,7 @@ public class Deployment
 
     try
       {
-        JSONArray journeyToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyToolbox", true);
+        JSONArray journeyToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyToolbox", new JSONArray());
         for (int i=0; i<journeyToolboxSectionValues.size(); i++)
           {
             JSONObject journeyToolboxSectionValueJSON = (JSONObject) journeyToolboxSectionValues.get(i);
@@ -1355,7 +1378,7 @@ public class Deployment
 
     try
       {
-        JSONArray campaignToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "campaignToolbox", true);
+        JSONArray campaignToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "campaignToolbox", new JSONArray());
         for (int i=0; i<campaignToolboxSectionValues.size(); i++)
           {
             JSONObject campaignToolboxSectionValueJSON = (JSONObject) campaignToolboxSectionValues.get(i);

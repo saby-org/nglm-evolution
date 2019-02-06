@@ -111,6 +111,7 @@
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
+    <topic.ucgstate>ucgstate</topic.ucgstate>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
     <topic.journeyrequest>journeyrequest</topic.journeyrequest>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
