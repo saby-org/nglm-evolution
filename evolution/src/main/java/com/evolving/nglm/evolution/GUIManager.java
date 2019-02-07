@@ -8266,22 +8266,22 @@ public class GUIManager
     *  retrieve CustomerMetaData
     *
     *****************************************/
-
-    List<JSONObject> customerMetaDataList = new ArrayList<JSONObject>();
-    for (CustomerMetaData customerMetaData : Deployment.getCustomerMetaData().values())
-      {
-        JSONObject customerMetaDataJSON = customerMetaData.getJSONRepresentation();
-        customerMetaDataList.add(customerMetaDataJSON);
-      }
-
+    
+    Map<String, Object> metadataResponse = new HashMap<String, Object>();
+    List<JSONObject> generalDetailsMetadataList = Deployment.getCustomerMetaData().getGeneralDetailsMetadata().stream().map(generalDetailsMetadata -> generalDetailsMetadata.getJSONRepresentation()).collect(Collectors.toList());
+    List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
+    metadataResponse.put("generalDetailsMetadata", JSONUtilities.encodeArray(generalDetailsMetadataList));
+    metadataResponse.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
+    
     /*****************************************
     *
     *  response
     *
     *****************************************/
-    response.put("customerMetaData", JSONUtilities.encodeArray(customerMetaDataList));
+    
+    response.put("customerMetaData", JSONUtilities.encodeObject(metadataResponse));
     response.put("responseCode", "ok");
-
+    
     /****************************************
     *
     *  return

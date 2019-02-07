@@ -119,7 +119,7 @@ public class Deployment
   private static String reportManagerStreamsTempDir;
   private static String reportManagerCsvSeparator;
   private static JSONArray reportsConfigValues;
-  private static Map<String, CustomerMetaData> customerMetaData = new LinkedHashMap<String, CustomerMetaData>();
+  private static CustomerMetaData customerMetaData = null;
 
   /*****************************************
   *
@@ -245,7 +245,7 @@ public class Deployment
   public static String getReportManagerFileExtension() { return reportManagerFileExtension; }
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
-  public static Map<String, CustomerMetaData> getCustomerMetaData() { return customerMetaData; }
+  public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
 
 
   /*****************************************
@@ -1478,14 +1478,7 @@ public class Deployment
 
     try
       {
-        JSONArray customerMetaDataValues = JSONUtilities.decodeJSONArray(jsonRoot, "customerMetaData", true);
-        for (int i=0; i<customerMetaDataValues.size(); i++)
-          {
-            JSONObject customerMetaDataJSON = (JSONObject) customerMetaDataValues.get(i);
-            customerMetaDataJSON.put("guiPosition", i+1);
-            CustomerMetaData customerMetadata = new CustomerMetaData(customerMetaDataJSON);
-            customerMetaData.put(customerMetadata.getID(), customerMetadata);
-          }
+        customerMetaData = new CustomerMetaData(JSONUtilities.decodeJSONObject(jsonRoot, "customerMetaData", true));
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
       {

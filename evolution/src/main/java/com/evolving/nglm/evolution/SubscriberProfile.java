@@ -231,8 +231,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
   
-  protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation, List<JSONObject> kpiPresentation);
-  protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation, List<JSONObject> kpiPresentation);
+  protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation, Map<String, Object> kpiPresentation);
+  protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation, Map<String, Object> kpiPresentation);
 
   /****************************************
   *
@@ -291,7 +291,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
-    List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
+    HashMap<String, Object> kpiPresentation = new HashMap<String,Object>();
     
     //
     // prepare basic generalDetails
@@ -321,22 +321,11 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
     
     //
-    // guiPosition in kpi
-    //
-    
-    int guiPosition = 1;
-    for (JSONObject kpi : kpiPresentation)
-      {
-        kpi.put("guiPosition", guiPosition);
-        guiPosition++;
-      }
-    
-    //
     // prepare ProfilePresentation
     //
     
     baseProfilePresentation.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
-    baseProfilePresentation.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
+    baseProfilePresentation.put("kpis", JSONUtilities.encodeObject(kpiPresentation));
     baseProfilePresentation.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
     
     return baseProfilePresentation;
@@ -350,7 +339,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
-    List<JSONObject> kpiPresentation = new ArrayList<JSONObject>();
+    HashMap<String, Object> kpiPresentation = new HashMap<String,Object>();
     
     //
     // prepare basic generalDetails
@@ -384,7 +373,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
     
     baseProfilePresentation.put("generalDetails", JSONUtilities.encodeObject(generalDetailsPresentation));
-    baseProfilePresentation.put("kpis", JSONUtilities.encodeArray(kpiPresentation));
+    baseProfilePresentation.put("kpis", JSONUtilities.encodeObject(kpiPresentation));
     baseProfilePresentation.put("communicationChannels", JSONUtilities.encodeArray(communicationChannels));
     
     return baseProfilePresentation;
