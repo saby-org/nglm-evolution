@@ -252,7 +252,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
     String salesChannelID = valueStruct.getString("salesChannelID");
     String userID = valueStruct.getString("userID");
     Date eventDate = new Date(valueStruct.getInt64("eventDate"));
-    Date fulfilledDate = new Date(valueStruct.getInt64("fulfilledDate"));
+    Date fulfilledDate = ((valueStruct.getInt64("fulfilledDate") != null) ? new Date(valueStruct.getInt64("fulfilledDate")) : null);
     Integer position = valueStruct.getInt32("position");
     
     //
