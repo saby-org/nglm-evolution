@@ -207,7 +207,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.transitionDate = exitDate;
     this.linkID = null;
     this.fromNodeID = journeyState.getJourneyNodeID();
-    this.toNodeID = null;
+    this.toNodeID = journeyState.getJourneyNodeID();
     this.deliveryRequestID = null;
     this.statusNotified = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     this.statusConverted = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
