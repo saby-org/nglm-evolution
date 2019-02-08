@@ -27,9 +27,3 @@ ssh $MASTER_SWARM_HOST "
    rm -rf ${NGLM_SUBSCRIBERGROUP_DATA}
 "
 
-#########################################
-#
-#  additional one-time work
-#
-#########################################
-
