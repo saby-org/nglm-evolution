@@ -102,7 +102,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
 
-  public final static String UniversalControlGroupID = "universalcontrolgroup";
   public static final byte SubscriberProfileCompressionEpoch = 0;
   
   /*****************************************
@@ -142,6 +141,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("evolutionSubscriberStatusChangeDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("previousEvolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("subscriberGroups", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_subscribergroups").schema());
+    schemaBuilder.field("universalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     commonSchema = schemaBuilder.build();
@@ -206,6 +206,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private Date evolutionSubscriberStatusChangeDate;
   private EvolutionSubscriberStatus previousEvolutionSubscriberStatus;
   private Map<Pair<String,String>,Integer> subscriberGroups; // Map<Pair<dimensionID,segmentID> epoch>>
+  private boolean universalControlGroup;
   private String language;
   private SubscriberHistory subscriberHistory;
 
@@ -221,10 +222,16 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Date getEvolutionSubscriberStatusChangeDate() { return evolutionSubscriberStatusChangeDate; }
   public EvolutionSubscriberStatus getPreviousEvolutionSubscriberStatus() { return previousEvolutionSubscriberStatus; }
   public Map<Pair<String, String>, Integer> getSubscriberGroups() { return subscriberGroups; }
-  public boolean getUniversalControlGroup(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) { return getInSubscriberGroup(UniversalControlGroupID, subscriberGroupEpochReader); }
+  public boolean getUniversalControlGroup() { return universalControlGroup; }
   public String getLanguage() { return language; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
+
+  //
+  //  temporary (until we can update nglm-kazakhstan)
+  //
   
+  public boolean getUniversalControlGroup(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) { return getUniversalControlGroup(); }
+
   /*****************************************
   *
   *  abstract
@@ -465,6 +472,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public void setEvolutionSubscriberStatus(EvolutionSubscriberStatus evolutionSubscriberStatus) { this.evolutionSubscriberStatus = evolutionSubscriberStatus; }
   public void setEvolutionSubscriberStatusChangeDate(Date evolutionSubscriberStatusChangeDate) { this.evolutionSubscriberStatusChangeDate = evolutionSubscriberStatusChangeDate; }
   public void setPreviousEvolutionSubscriberStatus(EvolutionSubscriberStatus previousEvolutionSubscriberStatus) { this.previousEvolutionSubscriberStatus = previousEvolutionSubscriberStatus; }
+  public void setUniversalControlGroup(boolean universalControlGroup) { this.universalControlGroup = universalControlGroup; }
   public void setLanguage(String language) { this.language = language; }
   public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
 
@@ -508,6 +516,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatusChangeDate = null;
     this.previousEvolutionSubscriberStatus = null;
     this.subscriberGroups = new HashMap<Pair<String,String>, Integer>();
+    this.universalControlGroup = false;
     this.language = null;
     this.subscriberHistory = null;
   }
@@ -539,6 +548,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     Date evolutionSubscriberStatusChangeDate = (Date) valueStruct.get("evolutionSubscriberStatusChangeDate");
     EvolutionSubscriberStatus previousEvolutionSubscriberStatus = (valueStruct.getString("previousEvolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("previousEvolutionSubscriberStatus")) : null;
     Map<Pair<String,String>, Integer> subscriberGroups = unpackSubscriberGroups(valueStruct.get("subscriberGroups"));
+    boolean universalControlGroup = valueStruct.getBoolean("universalControlGroup");
     String language = valueStruct.getString("language");
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
 
@@ -552,6 +562,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatusChangeDate = evolutionSubscriberStatusChangeDate;
     this.previousEvolutionSubscriberStatus = previousEvolutionSubscriberStatus;
     this.subscriberGroups = subscriberGroups;
+    this.universalControlGroup = universalControlGroup; 
     this.language = language;
     this.subscriberHistory = subscriberHistory;
   }
@@ -606,6 +617,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatusChangeDate = subscriberProfile.getEvolutionSubscriberStatusChangeDate();
     this.previousEvolutionSubscriberStatus = subscriberProfile.getPreviousEvolutionSubscriberStatus();
     this.subscriberGroups = new HashMap<Pair<String,String>, Integer>(subscriberProfile.getSubscriberGroups());
+    this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
     this.language = subscriberProfile.getLanguage();
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
   }
@@ -624,6 +636,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("evolutionSubscriberStatusChangeDate", subscriberProfile.getEvolutionSubscriberStatusChangeDate());
     struct.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     struct.put("subscriberGroups", packSubscriberGroups(subscriberProfile.getSubscriberGroups()));
+    struct.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
     struct.put("language", subscriberProfile.getLanguage());
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
   }
@@ -704,8 +717,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     b.append("," + evolutionSubscriberStatus);
     b.append("," + evolutionSubscriberStatusChangeDate);
     b.append("," + previousEvolutionSubscriberStatus);
+    b.append("," + universalControlGroup);
     b.append("," + language);
-    b.append("," + getUniversalControlGroup(subscriberGroupEpochReader));
     b.append("," + (subscriberHistory != null ? subscriberHistory.getDeliveryRequests().size() : null));
     return b.toString();
   }

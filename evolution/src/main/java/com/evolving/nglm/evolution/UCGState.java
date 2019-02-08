@@ -96,7 +96,8 @@ public class UCGState implements ReferenceDataValue<String>
   //  ReferenceDataValue
   //
   
-  @Override public String getKey() { return "ucgState"; }
+  public static String getSingletonKey() { return "ucgState"; }
+  @Override public String getKey() { return getSingletonKey(); }
   
   /*****************************************
   *

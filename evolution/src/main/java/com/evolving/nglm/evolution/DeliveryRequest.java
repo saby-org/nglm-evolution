@@ -302,7 +302,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.retries = 0;
     this.timeout = null;
     this.correlator = null;
-    this.control = context.getSubscriberState().getSubscriberProfile().getUniversalControlGroup(context.getSubscriberGroupEpochReader());
+    this.control = context.getSubscriberState().getSubscriberProfile().getUniversalControlGroup();
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;

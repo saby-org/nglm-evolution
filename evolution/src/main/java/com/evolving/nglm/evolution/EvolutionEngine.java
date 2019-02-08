@@ -1242,6 +1242,15 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
+    /*****************************************
+    *
+    *  lastEvaluationDate
+    *
+    *****************************************/
+
+    subscriberState.setLastEvaluationDate(now);
+    subscriberStateUpdated = true;
+
     /****************************************
     *
     *  return
@@ -1349,6 +1358,35 @@ public class EvolutionEngine
                   break;
               }
           }
+      }
+
+    /*****************************************
+    *
+    *  ucg evaluation
+    *
+    *****************************************/
+
+    UCGState ucgState = ucgStateReader.get(UCGState.getSingletonKey());
+    if (ucgState != null && (context.getSubscriberState().getUCGEpoch() == null || context.getSubscriberState().getUCGEpoch() < ucgState.getEpoch()))
+      {
+        /*****************************************
+        *
+        *  UCG calculations
+        *
+        *****************************************/
+
+        boolean addToUCG = false;
+        boolean removeFromUCG = false;
+
+        /*****************************************
+        *
+        *  add/remove from UCG
+        *
+        *****************************************/
+
+        if (addToUCG) subscriberProfile.setUniversalControlGroup(true);
+        if (removeFromUCG) subscriberProfile.setUniversalControlGroup(false);
+        context.getSubscriberState().setUCGEpoch(ucgState.getEpoch());
       }
 
     /*****************************************

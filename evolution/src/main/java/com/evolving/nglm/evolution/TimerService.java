@@ -7,9 +7,12 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.CronFormat;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.utilities.UtilitiesException;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -28,6 +31,7 @@ import java.io.StringWriter;
 import java.util.Date;
 import java.util.Properties;
 import java.util.SortedSet;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 public class TimerService
@@ -145,6 +149,19 @@ public class TimerService
         Runnable scheduler = new Runnable() { @Override public void run() { runScheduler(); } };
         Thread schedulerThread = new Thread(scheduler, "TimerService-Scheduler");
         schedulerThread.start();
+      }
+
+    /*****************************************
+    *
+    *  periodic evaluation thread
+    *
+    *****************************************/
+
+    if (! stopRequested)
+      {
+        Runnable periodicEvaluator = new Runnable() { @Override public void run() { runPeriodicEvaluator(); } };
+        Thread periodicEvaluatorThread = new Thread(periodicEvaluator, "TimerService-PeriodicEvaluator");
+        periodicEvaluatorThread.start();
       }
   }
 
@@ -417,6 +434,134 @@ public class TimerService
           {
             log.info("loadSchedule (end): schedule size {}, earliest date {}, latest date {}", schedule.size(), (schedule.size() > 0) ? schedule.first().getEvaluationDate() : null, (schedule.size() > 0) ? schedule.last().getEvaluationDate() : null);
           }
+      }
+  }
+
+  /*****************************************
+  *
+  *  runPeriodicEvaluator
+  *
+  *****************************************/
+
+  private void runPeriodicEvaluator()
+  {
+    /*****************************************
+    *
+    *  abort if periodic evaluation is not configured
+    *
+    *****************************************/
+
+    if (Deployment.getPeriodicEvaluationCronEntry() == null) return;
+
+    /*****************************************
+    *
+    *  cron
+    *
+    *****************************************/
+
+    CronFormat periodicEvaluation = null;
+    try
+      {
+        periodicEvaluation = new CronFormat(Deployment.getPeriodicEvaluationCronEntry(), TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      }
+    catch (UtilitiesException e)
+      {
+        log.error("bad perodicEvaluationCronEntry {}", e.getMessage());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.info(stackTraceWriter.toString());
+      }
+
+    /*****************************************
+    *
+    *  main loop
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    Date nextPeriodicEvaluation = periodicEvaluation.previous(now);
+    while (! stopRequested)
+      {
+        /*****************************************
+        *
+        *  wait until reload schedule is needed
+        *
+        *****************************************/
+
+        synchronized (this)
+          {
+            while (! stopRequested && now.before(nextPeriodicEvaluation))
+              {
+                try
+                  {
+                    this.wait(nextPeriodicEvaluation.getTime() - now.getTime());
+                  }
+                catch (InterruptedException e)
+                  {
+                  }
+                now = SystemTime.getCurrentTime();
+              }
+          }
+
+        //
+        //  abort if stopping
+        //
+
+        if (stopRequested)
+          {
+            continue;
+          }
+          
+        /*****************************************
+        *
+        *  waitForStreams
+        *
+        *****************************************/
+
+        evolutionEngine.waitForStreams();
+
+        /*****************************************
+        *
+        *  log start
+        *
+        *****************************************/
+
+        log.info("periodicEvaluation {} (start)", nextPeriodicEvaluation);
+
+        /*****************************************
+        *
+        *  periodic evaluation
+        *
+        *****************************************/
+
+        KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+        while (! stopRequested && subscriberStateStoreIterator.hasNext())
+          {
+            SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+            if (subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
+              {
+                TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation);
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));                
+              }
+          }
+        subscriberStateStoreIterator.close();
+
+        /*****************************************
+        *
+        *  log end
+        *
+        *****************************************/
+
+        log.info("periodicEvaluation {} (end)", nextPeriodicEvaluation);
+
+        /*****************************************
+        *
+        *  nextPeriodicEvaluation
+        *
+        *****************************************/
+
+        nextPeriodicEvaluation = periodicEvaluation.next(RLMDateUtils.addSeconds(nextPeriodicEvaluation,1));
+        log.info("periodicEvaluation {} (next)", nextPeriodicEvaluation);
       }
   }
 }

@@ -36,6 +36,7 @@ public class Deployment
   private static boolean subscriberGroupLoaderAutoProvision;
   private static String criterionFieldRetrieverClassName;
   private static String evolutionEngineExtensionClassName;
+  private static String guiManagerExtensionClassName;
   private static String subscriberProfileClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static String emptyTopic;
@@ -111,6 +112,7 @@ public class Deployment
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static int stockRefreshPeriod;
+  private static String periodicEvaluationCronEntry;
   private static Map<String,ReportConfiguration> reportsConfiguration = new LinkedHashMap<String,ReportConfiguration>();
   private static String reportManagerZookeeperDir;
   private static String reportManagerOutputPath;
@@ -162,6 +164,7 @@ public class Deployment
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
   public static String getCriterionFieldRetrieverClassName() { return criterionFieldRetrieverClassName; }
   public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
+  public static String getGUIManagerExtensionClassName() { return guiManagerExtensionClassName; }
   public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static String getEmptyTopic() { return emptyTopic; }
@@ -237,6 +240,7 @@ public class Deployment
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
+  public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static Map<String,ReportConfiguration> getReportsConfiguration() { return reportsConfiguration; }
   public static JSONArray getReportsConfigJSon() { return reportsConfigValues; }
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
@@ -279,6 +283,25 @@ public class Deployment
       {
         Class<? extends EvolutionEngineExtension> evolutionEngineExtensionClass = (Class<? extends EvolutionEngineExtension>) Class.forName(evolutionEngineExtensionClassName);
         return evolutionEngineExtensionClass;
+      }
+    catch (ClassNotFoundException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
+
+  /*****************************************
+  *
+  *  getGUIManagerExtensionClass
+  *
+  *****************************************/
+
+  public static Class<? extends GUIManagerExtension> getGUIManagerExtensionClass()
+  {
+    try
+      {
+        Class<? extends GUIManagerExtension> guiManagerExtensionClass = (guiManagerExtensionClassName != null) ? (Class<? extends GUIManagerExtension>) Class.forName(guiManagerExtensionClassName) : null;
+        return guiManagerExtensionClass;
       }
     catch (ClassNotFoundException e)
       {
@@ -407,6 +430,19 @@ public class Deployment
     try
       {
         evolutionEngineExtensionClassName = JSONUtilities.decodeString(jsonRoot, "evolutionEngineExtensionClass", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  guiManagerExtensionClassName
+    //
+
+    try
+      {
+        guiManagerExtensionClassName = JSONUtilities.decodeString(jsonRoot, "guiManagerExtensionClass", false);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1430,6 +1466,11 @@ public class Deployment
 
     stockRefreshPeriod = JSONUtilities.decodeInteger(jsonRoot, "stockRefreshPeriod", 30);
     
+    //
+    //  periodicEvaluationCronEntry
+    //
+
+    periodicEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "periodicEvaluationCronEntry", false);
 
     //
     //  Reports

@@ -6,6 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -235,7 +237,17 @@ public class GUIManager
   *
   *****************************************/
 
+  //
+  //  static
+  //
+  
   private static final int RESTAPIVersion = 1;
+  private static Method guiManagerExtensionEvaluateEnumeratedValuesMethod;
+  
+  //
+  //  instance
+  //
+  
   private HttpServer restServer;
   private JourneyService journeyService;
   private SegmentationDimensionService segmentationDimensionService;
@@ -329,6 +341,19 @@ public class GUIManager
 
     licenseChecker = new LicenseChecker(ProductID, nodeID, Deployment.getZookeeperRoot(), Deployment.getZookeeperConnect());
 
+    //
+    //  guiManagerExtensionEvaluateEnumeratedValuesMethod
+    //
+    
+    try
+      {
+        guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",String.class,Date.class) : null;
+      }
+    catch (NoSuchMethodException e)
+      {
+        throw new RuntimeException(e);
+      }
+    
     /*****************************************
     *
     *  services - construct
@@ -3140,6 +3165,17 @@ public class GUIManager
           break;
 
         default:
+          if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null)
+            {
+              try
+                {
+                  result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, reference, now));
+                }
+              catch (IllegalAccessException|InvocationTargetException e)
+                {
+                  throw new RuntimeException(e);
+                }
+            }
           break;
       }
     return result;
