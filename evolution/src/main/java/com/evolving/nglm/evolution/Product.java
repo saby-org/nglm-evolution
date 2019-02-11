@@ -93,6 +93,7 @@ public class Product extends GUIManagedObject implements StockableItem
   ****************************************/
 
   public String getProductID() { return getGUIManagedObjectID(); }
+  public String getDisplay() { return getGUIManagedObjectName(); }
   public String getSupplierID() { return supplierID; }
   public String getDeliverableID() { return deliverableID; }
   public Integer getStock() { return stock; }

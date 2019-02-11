@@ -3120,6 +3120,34 @@ public class GUIManager
             }
           break;
 
+        case "products":
+          for (GUIManagedObject productUnchecked : productService.getStoredProducts())
+            {
+              if (productUnchecked.getAccepted())
+                {
+                  Product product = (Product) productUnchecked;
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", product.getProductID());
+                  availableValue.put("display", product.getDisplay());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+
+        case "productTypes":
+          for (GUIManagedObject productTypeUnchecked : productTypeService.getStoredProductTypes())
+            {
+              if (productTypeUnchecked.getAccepted())
+                {
+                  ProductType productType = (ProductType) productTypeUnchecked;
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", productType.getProductTypeID());
+                  availableValue.put("display", productType.getProductTypeName());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+
         case "callableCampaigns":
           for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
             {
