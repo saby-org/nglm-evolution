@@ -104,6 +104,8 @@ public class EvaluationCriterion
 
     EvaluationCriteriaParameter("evaluationCriteria"),
     SMSMessageParameter("smsMessage"),
+    EmailMessageParameter("emailMessage"),
+    PushMessageParameter("pushMessage"),
 
     //
     //  only for criterionArguments

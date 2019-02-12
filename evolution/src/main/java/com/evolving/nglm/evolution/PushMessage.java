@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  SMSMessage.java
+*  PushMessage.java
 *
 *****************************************************************************/
 
@@ -33,7 +33,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SMSMessage
+public class PushMessage
 {
   /*****************************************
   *
@@ -49,7 +49,7 @@ public class SMSMessage
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("sms_message");
+    schemaBuilder.name("push_message");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("messageText", DialogMessage.schema());
     schema = schemaBuilder.build();
@@ -59,14 +59,14 @@ public class SMSMessage
   //  serde
   //
 
-  private static ConnectSerde<SMSMessage> serde = new ConnectSerde<SMSMessage>(schema, false, SMSMessage.class, SMSMessage::pack, SMSMessage::unpack);
+  private static ConnectSerde<PushMessage> serde = new ConnectSerde<PushMessage>(schema, false, PushMessage.class, PushMessage::pack, PushMessage::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<SMSMessage> serde() { return serde; }
+  public static ConnectSerde<PushMessage> serde() { return serde; }
 
   /*****************************************
   *
@@ -90,7 +90,7 @@ public class SMSMessage
   *
   *****************************************/
 
-  public SMSMessage(JSONArray messagesJSON, CriterionContext criterionContext) throws GUIManagerException
+  public PushMessage(JSONArray messagesJSON, CriterionContext criterionContext) throws GUIManagerException
   {
     this.messageText = new DialogMessage(messagesJSON, "messageText", criterionContext);
   }
@@ -101,7 +101,7 @@ public class SMSMessage
   *
   *****************************************/
 
-  private SMSMessage(DialogMessage messageText)
+  private PushMessage(DialogMessage messageText)
   {
     this.messageText = messageText;
   }
@@ -112,9 +112,9 @@ public class SMSMessage
   *
   *****************************************/
 
-  public SMSMessage(SMSMessage smsMessage)
+  public PushMessage(PushMessage pushMessage)
   {
-    this.messageText = new DialogMessage(smsMessage.getMessageText());
+    this.messageText = new DialogMessage(pushMessage.getMessageText());
   }
 
   /*****************************************
@@ -125,9 +125,9 @@ public class SMSMessage
 
   public static Object pack(Object value)
   {
-    SMSMessage smsMessage = (SMSMessage) value;
+    PushMessage pushMessage = (PushMessage) value;
     Struct struct = new Struct(schema);
-    struct.put("messageText", DialogMessage.pack(smsMessage.getMessageText()));
+    struct.put("messageText", DialogMessage.pack(pushMessage.getMessageText()));
     return struct;
   }
 
@@ -137,7 +137,7 @@ public class SMSMessage
   *
   *****************************************/
 
-  public static SMSMessage unpack(SchemaAndValue schemaAndValue)
+  public static PushMessage unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -158,7 +158,7 @@ public class SMSMessage
     //  return
     //
 
-    return new SMSMessage(messageText);
+    return new PushMessage(messageText);
   }
 
   /*****************************************

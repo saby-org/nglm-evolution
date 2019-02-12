@@ -115,9 +115,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         case BAD_OFFER_DATES:
         case CUSTOMER_OFFER_LIMIT_REACHED:
         case NO_VOUCHER_CODE_AVAILABLE:
-          return DeliveryStatus.Failed;
         default:
-          return DeliveryStatus.Unknown;
+          return DeliveryStatus.Failed;
       }
   }
 

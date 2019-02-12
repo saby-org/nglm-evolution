@@ -200,7 +200,7 @@ public class SimpleEmailSender {
 					else if(trans!=null && trans.getLastReturnCode() == NotificationStatusCode.ADDRESS_FAILED.getReturnCode())
 					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.ADDRESS_FAILED.getReturnCode()).toString());
 					else 
-					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNKNOWN, DeliveryStatus.Unknown, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
+					  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNKNOWN, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());
 				}
 			}else if (smtpMsg!=null && smtpMsg.getHeader("From")==null){
 			  completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.UNDELIVERABLE, DeliveryStatus.Failed, NotificationStatusCode.fromReturnCode(NotificationStatusCode.UNKNOWN.getReturnCode()).toString());

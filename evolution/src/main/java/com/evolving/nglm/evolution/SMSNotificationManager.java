@@ -79,10 +79,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         case UNDELIVERABLE:
         case INVALID:
         case QUEUE_FULL:
-          return DeliveryStatus.Failed;
         default:
-          return DeliveryStatus.Unknown;
-
+          return DeliveryStatus.Failed;
       }
   }
 
@@ -432,7 +430,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, null);
       thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getText());
       thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, null);
-      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
+      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
   }

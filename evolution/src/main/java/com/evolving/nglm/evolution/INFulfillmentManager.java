@@ -106,7 +106,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         case THROTTLING:
           return DeliveryStatus.FailedRetry;
         default:
-          return DeliveryStatus.Unknown;
+          return DeliveryStatus.Failed;
       }
   }
 

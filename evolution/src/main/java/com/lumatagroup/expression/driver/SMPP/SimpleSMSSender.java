@@ -954,7 +954,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 //                    logger.debug("SimpleSMSSender.onSubmitSmResp No message Id " + packet + " " + packet.getMessageStatus());
 //                }
 //            }
-            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.UNKNOWN, DeliveryStatus.Unknown, PacketStatusUtils.getMessage(packet.getCommandStatus()));
+            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.UNKNOWN, DeliveryStatus.Failed, PacketStatusUtils.getMessage(packet.getCommandStatus()));
             
             logger.info("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + "SimpleSMSSender "+ this.hashCode());
         break;

@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  SMSMessage.java
+*  EmailMessage.java
 *
 *****************************************************************************/
 
@@ -33,7 +33,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SMSMessage
+public class EmailMessage
 {
   /*****************************************
   *
@@ -49,9 +49,11 @@ public class SMSMessage
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("sms_message");
+    schemaBuilder.name("email_message");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("messageText", DialogMessage.schema());
+    schemaBuilder.field("subject", DialogMessage.schema());
+    schemaBuilder.field("htmlBody", DialogMessage.schema());
+    schemaBuilder.field("textBody", DialogMessage.schema());
     schema = schemaBuilder.build();
   };
 
@@ -59,14 +61,14 @@ public class SMSMessage
   //  serde
   //
 
-  private static ConnectSerde<SMSMessage> serde = new ConnectSerde<SMSMessage>(schema, false, SMSMessage.class, SMSMessage::pack, SMSMessage::unpack);
+  private static ConnectSerde<EmailMessage> serde = new ConnectSerde<EmailMessage>(schema, false, EmailMessage.class, EmailMessage::pack, EmailMessage::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<SMSMessage> serde() { return serde; }
+  public static ConnectSerde<EmailMessage> serde() { return serde; }
 
   /*****************************************
   *
@@ -74,7 +76,9 @@ public class SMSMessage
   *
   *****************************************/
 
-  private DialogMessage messageText = null;
+  private DialogMessage subject = null;
+  private DialogMessage htmlBody = null;
+  private DialogMessage textBody = null;
 
   /*****************************************
   *
@@ -82,7 +86,9 @@ public class SMSMessage
   *
   *****************************************/
 
-  public DialogMessage getMessageText() { return messageText; }
+  public DialogMessage getSubject() { return subject; }
+  public DialogMessage getHTMLBody() { return htmlBody; }
+  public DialogMessage getTextBody() { return textBody; }
   
   /*****************************************
   *
@@ -90,9 +96,11 @@ public class SMSMessage
   *
   *****************************************/
 
-  public SMSMessage(JSONArray messagesJSON, CriterionContext criterionContext) throws GUIManagerException
+  public EmailMessage(JSONArray messagesJSON, CriterionContext criterionContext) throws GUIManagerException
   {
-    this.messageText = new DialogMessage(messagesJSON, "messageText", criterionContext);
+    this.subject = new DialogMessage(messagesJSON, "subject", criterionContext);
+    this.htmlBody = new DialogMessage(messagesJSON, "htmlBody", criterionContext);
+    this.textBody = new DialogMessage(messagesJSON, "textBody", criterionContext);
   }
 
   /*****************************************
@@ -101,9 +109,11 @@ public class SMSMessage
   *
   *****************************************/
 
-  private SMSMessage(DialogMessage messageText)
+  private EmailMessage(DialogMessage subject, DialogMessage htmlBody, DialogMessage textBody)
   {
-    this.messageText = messageText;
+    this.subject = subject;
+    this.htmlBody = htmlBody;
+    this.textBody = textBody;
   }
 
   /*****************************************
@@ -112,9 +122,11 @@ public class SMSMessage
   *
   *****************************************/
 
-  public SMSMessage(SMSMessage smsMessage)
+  public EmailMessage(EmailMessage emailMessage)
   {
-    this.messageText = new DialogMessage(smsMessage.getMessageText());
+    this.subject = new DialogMessage(emailMessage.getSubject());
+    this.htmlBody = new DialogMessage(emailMessage.getHTMLBody());
+    this.textBody = new DialogMessage(emailMessage.getTextBody());
   }
 
   /*****************************************
@@ -125,9 +137,11 @@ public class SMSMessage
 
   public static Object pack(Object value)
   {
-    SMSMessage smsMessage = (SMSMessage) value;
+    EmailMessage emailMessage = (EmailMessage) value;
     Struct struct = new Struct(schema);
-    struct.put("messageText", DialogMessage.pack(smsMessage.getMessageText()));
+    struct.put("subject", DialogMessage.pack(emailMessage.getSubject()));
+    struct.put("htmlBody", DialogMessage.pack(emailMessage.getHTMLBody()));
+    struct.put("textBody", DialogMessage.pack(emailMessage.getTextBody()));
     return struct;
   }
 
@@ -137,7 +151,7 @@ public class SMSMessage
   *
   *****************************************/
 
-  public static SMSMessage unpack(SchemaAndValue schemaAndValue)
+  public static EmailMessage unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -152,13 +166,15 @@ public class SMSMessage
     //
 
     Struct valueStruct = (Struct) value;
-    DialogMessage messageText = DialogMessage.unpack(new SchemaAndValue(schema.field("messageText").schema(), valueStruct.get("messageText")));
+    DialogMessage subject = DialogMessage.unpack(new SchemaAndValue(schema.field("subject").schema(), valueStruct.get("subject")));
+    DialogMessage htmlBody = DialogMessage.unpack(new SchemaAndValue(schema.field("htmlBody").schema(), valueStruct.get("htmlBody")));
+    DialogMessage textBody = DialogMessage.unpack(new SchemaAndValue(schema.field("textBody").schema(), valueStruct.get("textBody")));
 
     //
     //  return
     //
 
-    return new SMSMessage(messageText);
+    return new EmailMessage(subject, htmlBody, textBody);
   }
 
   /*****************************************
@@ -167,5 +183,7 @@ public class SMSMessage
   *
   *****************************************/
 
-  public String resolve(SubscriberEvaluationRequest subscriberEvaluationRequest) { return messageText.resolve(subscriberEvaluationRequest); }
+  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return subject.resolve(subscriberEvaluationRequest); }
+  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return htmlBody.resolve(subscriberEvaluationRequest); }
+  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return textBody.resolve(subscriberEvaluationRequest); }
 }

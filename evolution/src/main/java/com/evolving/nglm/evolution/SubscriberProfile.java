@@ -257,6 +257,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   ****************************************/
 
   public String getMSISDN() { return null; }
+  public String getEmail() { return null; }
+  public String getAppID() { return null; }
 
   /****************************************
   *

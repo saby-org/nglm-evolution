@@ -1567,7 +1567,7 @@ public class EvolutionEngine
                     enterJourney = false;
                   }
                 context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                context.subscriberTrace(enterJourney ? "Eligible: {}" : "NotEligible: targeting criteria {0}", journey.getJourneyID());
+                context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: targeting criteria {0}", journey.getJourneyID());
               }
 
             /*****************************************

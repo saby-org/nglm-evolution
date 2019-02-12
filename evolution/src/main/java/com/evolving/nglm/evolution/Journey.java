@@ -1403,6 +1403,16 @@ public class Journey extends GUIManagedObject
                 SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
                 nodeParameters.put(parameterName, smsMessageValue);
                 break;
+
+              case EmailMessageParameter:
+                EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                nodeParameters.put(parameterName, emailMessageValue);
+                break;
+
+              case PushMessageParameter:
+                PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                nodeParameters.put(parameterName, pushMessageValue);
+                break;
             }
         }
       return nodeParameters;
@@ -1536,6 +1546,16 @@ public class Journey extends GUIManagedObject
                   case SMSMessageParameter:
                     SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
                     outputConnectorParameters.put(parameterName, smsMessageValue);
+                    break;
+
+                  case EmailMessageParameter:
+                    EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                    outputConnectorParameters.put(parameterName, emailMessageValue);
+                    break;
+
+                  case PushMessageParameter:
+                    PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                    outputConnectorParameters.put(parameterName, pushMessageValue);
                     break;
                 }
             }

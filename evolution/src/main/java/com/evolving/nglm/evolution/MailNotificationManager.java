@@ -74,10 +74,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         case UNDELIVERABLE:
         case INVALID:
         case QUEUE_FULL:
-          return DeliveryStatus.Failed;
         default:
-          return DeliveryStatus.Unknown;
-
+          return DeliveryStatus.Failed;
       }
   }
 
@@ -259,9 +257,9 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryRequestSource, String destination, String source, String subject, String htmlBody, String textBody)
+    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String subject, String htmlBody, String textBody)
     {
-      super(context, "notification", deliveryRequestSource);
+      super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
       this.source = source;
       this.subject = subject;
@@ -439,6 +437,88 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody());
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+    }
+  }
+
+  /*****************************************
+  *
+  *  class ActionManager
+  *
+  *****************************************/
+
+  public static class ActionManager extends com.evolving.nglm.evolution.ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private String deliveryType;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public ActionManager(JSONObject configuration)
+    {
+      super(configuration);
+      this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      /*****************************************
+      *
+      *  parameters
+      *
+      *****************************************/
+
+      EmailMessage emailMessage = (EmailMessage) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.message");
+
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
+      String emailSubject = emailMessage.resolveSubject(subscriberEvaluationRequest);
+      String emailHTMLBody = emailMessage.resolveHTMLBody(subscriberEvaluationRequest);
+      String emailTextBody = emailMessage.resolveTextBody(subscriberEvaluationRequest);
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      MailNotificationManagerRequest request = null;
+      if (email != null)
+        {
+          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, "TBD", emailSubject, emailHTMLBody, emailTextBody);
+        }
+      else
+        {
+          log.info("MailNotificationManager unknown email for subscriberID {}" + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+        }
+
+      /*****************************************
+      *
+      *  return
+      *
+      *****************************************/
+
+      return request;
     }
   }
 

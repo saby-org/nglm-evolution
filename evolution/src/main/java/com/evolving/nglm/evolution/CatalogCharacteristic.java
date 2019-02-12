@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -32,29 +33,6 @@ public class CatalogCharacteristic extends GUIManagedObject
 {
   /*****************************************
   *
-  *  enum
-  *
-  *****************************************/
-
-  //
-  //  CatalogCharacteristicType
-  //
-
-  public enum CatalogCharacteristicType
-  {
-    Unit("unit"),
-    Text("text"),
-    Choice("choice"),
-    List("list"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private CatalogCharacteristicType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static CatalogCharacteristicType fromExternalRepresentation(String externalRepresentation) { for (CatalogCharacteristicType enumeratedValue : CatalogCharacteristicType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
-  /*****************************************
-  *
   *  schema
   *
   *****************************************/
@@ -70,7 +48,7 @@ public class CatalogCharacteristic extends GUIManagedObject
     schemaBuilder.name("catalogcharacteristic");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("type", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dataType", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -93,7 +71,7 @@ public class CatalogCharacteristic extends GUIManagedObject
   *
   *****************************************/
 
-  private CatalogCharacteristicType type;
+  private CriterionDataType dataType;
 
   /*****************************************
   *
@@ -103,7 +81,7 @@ public class CatalogCharacteristic extends GUIManagedObject
 
   public String getCatalogCharacteristicID() { return getGUIManagedObjectID(); }
   public String getCatalogCharacteristicName() { return getGUIManagedObjectName(); }
-  public CatalogCharacteristicType getType() { return type; }
+  public CriterionDataType getDataType() { return dataType; }
   
   /*****************************************
   *
@@ -111,10 +89,10 @@ public class CatalogCharacteristic extends GUIManagedObject
   *
   *****************************************/
 
-  public CatalogCharacteristic(SchemaAndValue schemaAndValue, CatalogCharacteristicType type)
+  public CatalogCharacteristic(SchemaAndValue schemaAndValue, CriterionDataType dataType)
   {
     super(schemaAndValue);
-    this.type = type;
+    this.dataType = dataType;
   }
                 
   /*****************************************
@@ -128,7 +106,7 @@ public class CatalogCharacteristic extends GUIManagedObject
     CatalogCharacteristic catalogCharacteristic = (CatalogCharacteristic) value;
     Struct struct = new Struct(schema);
     packCommon(struct, catalogCharacteristic);
-    struct.put("type", catalogCharacteristic.getType().getExternalRepresentation());
+    struct.put("dataType", catalogCharacteristic.getDataType().getExternalRepresentation());
     return struct;
   }
   
@@ -153,13 +131,13 @@ public class CatalogCharacteristic extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    CatalogCharacteristicType type = CatalogCharacteristicType.fromExternalRepresentation((String) valueStruct.get("type"));
+    CriterionDataType dataType = CriterionDataType.fromExternalRepresentation((String) valueStruct.get("dataType"));
     
     //
     //  return
     //
 
-    return new CatalogCharacteristic(schemaAndValue, type);
+    return new CatalogCharacteristic(schemaAndValue, dataType);
   }
 
   /*****************************************
@@ -192,7 +170,7 @@ public class CatalogCharacteristic extends GUIManagedObject
     *
     *****************************************/
 
-    this.type = CatalogCharacteristicType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "type", true));
+    this.dataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
 
     /*****************************************
     *
@@ -227,7 +205,7 @@ public class CatalogCharacteristic extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingCatalogCharacteristic.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(type, existingCatalogCharacteristic.getType());
+        epochChanged = epochChanged || ! Objects.equals(dataType, existingCatalogCharacteristic.getDataType());
         return epochChanged;
       }
     else
