@@ -312,6 +312,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroups(subscriberGroupEpochReader));
     generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
     generalDetailsPresentation.put("language", getLanguage());
+    generalDetailsPresentation.put("subscriberID", getSubscriberID());
     
     //
     // prepare basic kpiPresentation (if any)

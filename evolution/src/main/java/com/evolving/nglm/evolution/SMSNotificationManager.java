@@ -408,8 +408,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, "");
-      guiPresentationMap.put(RETURNCODE, "TO DO:");
-      guiPresentationMap.put(RETURNCODEDETAILS, "TO DO:");
+      guiPresentationMap.put(RETURNCODE, getMessageStatus().getReturnCode());
+      guiPresentationMap.put(RETURNCODEDETAILS, getMessageStatus().toString());
       guiPresentationMap.put(NOTIFICATION_SUBJECT, null);
       guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getText());
       guiPresentationMap.put(NOTIFICATION_HTML_BODY, null);
@@ -425,8 +425,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, "");
-      thirdPartyPresentationMap.put(RETURNCODE, "TO DO:");
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, "TO DO:");
+      thirdPartyPresentationMap.put(RETURNCODE, getMessageStatus().getReturnCode());
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getMessageStatus().toString());
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, null);
       thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getText());
       thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, null);
