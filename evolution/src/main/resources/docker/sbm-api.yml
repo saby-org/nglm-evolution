@@ -3,8 +3,8 @@ sbm-api-<_KEY_>:
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
-    UCGSettings__UCGApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
-    UCGSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
+    SBMSettings__SBMApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
+    SBMSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     SBM_API_PORT: <_PORT_>
