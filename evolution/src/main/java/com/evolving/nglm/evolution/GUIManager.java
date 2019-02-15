@@ -8368,11 +8368,10 @@ public class GUIManager
     *
     *****************************************/
     
-    Map<String, Object> metadataResponse = new HashMap<String, Object>();
     List<JSONObject> generalDetailsMetadataList = Deployment.getCustomerMetaData().getGeneralDetailsMetadata().stream().map(generalDetailsMetadata -> generalDetailsMetadata.getJSONRepresentation()).collect(Collectors.toList());
     List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
-    metadataResponse.put("generalDetailsMetadata", JSONUtilities.encodeArray(generalDetailsMetadataList));
-    metadataResponse.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
+    response.put("generalDetailsMetadata", JSONUtilities.encodeArray(generalDetailsMetadataList));
+    response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
     
     /*****************************************
     *
@@ -8380,7 +8379,6 @@ public class GUIManager
     *
     *****************************************/
     
-    response.put("customerMetaData", JSONUtilities.encodeObject(metadataResponse));
     response.put("responseCode", "ok");
     
     /****************************************

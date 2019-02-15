@@ -577,8 +577,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, "");
-      guiPresentationMap.put(RETURNCODE, getStatus().getExternalRepresentation());
-      guiPresentationMap.put(RETURNCODEDETAILS, getStatus().toString());
+      guiPresentationMap.put(RETURNCODE, getReturnCode());
+      guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
     
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap)
@@ -592,8 +592,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, "");
-      thirdPartyPresentationMap.put(RETURNCODE, getStatus().getExternalRepresentation());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getStatus().toString());
+      thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
   }
 
