@@ -155,6 +155,8 @@
     <gui.jmr.display>true</gui.jmr.display>
     <gui.iar.display>true</gui.iar.display>
     <gui.opr.display>true</gui.opr.display>
+    <gui.stg.display>true</gui.stg.display>
+    <gui.sbm.display>true</gui.sbm.display>
     <gui.itm.display>false</gui.itm.display>
 
   </properties>

@@ -335,7 +335,7 @@ public class Product extends GUIManagedObject implements StockableItem
 
     /****************************************
     *
-    *  ensure valid/active deliverable
+    *  ensure active deliverable
     *
     ****************************************/
 

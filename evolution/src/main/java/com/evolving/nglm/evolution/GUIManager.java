@@ -2666,14 +2666,17 @@ public class GUIManager
     Map<ResolvedFieldType, List<CriterionField>> defaultFieldsForResolvedType = new LinkedHashMap<ResolvedFieldType, List<CriterionField>>();
     for (CriterionField criterionField : criterionFields.values())
       {
-        ResolvedFieldType resolvedFieldType = resolvedFieldTypes.get(criterionField.getID());
-        List<CriterionField> fields = defaultFieldsForResolvedType.get(resolvedFieldType);
-        if (fields == null)
+        if (! criterionField.getID().equals(CriterionField.EvaluationDateField))
           {
-            fields = new ArrayList<CriterionField>();
-            defaultFieldsForResolvedType.put(resolvedFieldType, fields);
+            ResolvedFieldType resolvedFieldType = resolvedFieldTypes.get(criterionField.getID());
+            List<CriterionField> fields = defaultFieldsForResolvedType.get(resolvedFieldType);
+            if (fields == null)
+              {
+                fields = new ArrayList<CriterionField>();
+                defaultFieldsForResolvedType.put(resolvedFieldType, fields);
+              }
+            fields.add(criterionField);
           }
-        fields.add(criterionField);
       }
 
     /****************************************
@@ -3341,6 +3344,7 @@ public class GUIManager
       {
         response.put("id", existingJourney.getGUIManagedObjectID());
         response.put("accepted", existingJourney.getAccepted());
+        response.put("valid", existingJourney.getAccepted());
         response.put("processing", journeyService.isActiveJourney(existingJourney, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -3379,6 +3383,7 @@ public class GUIManager
 
         response.put("id", journey.getJourneyID());
         response.put("accepted", journey.getAccepted());
+        response.put("valid", journey.getAccepted());
         response.put("processing", journeyService.isActiveJourney(journey, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -3534,6 +3539,7 @@ public class GUIManager
       {
         response.put("id", journeyID);
         if (existingJourney != null) response.put("accepted", existingJourney.getAccepted());
+        if (existingJourney != null) response.put("valid", existingJourney.getAccepted());
         if (existingJourney != null) response.put("processing", journeyService.isActiveJourney(existingJourney, now));
         response.put("responseCode", responseCode);
         return JSONUtilities.encodeObject(response);
@@ -3581,6 +3587,7 @@ public class GUIManager
 
         response.put("id", journey.getJourneyID());
         response.put("accepted", journey.getAccepted());
+        response.put("valid", journey.getAccepted());
         response.put("processing", journeyService.isActiveJourney(journey, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -3751,6 +3758,7 @@ public class GUIManager
       {
         response.put("id", existingCampaign.getGUIManagedObjectID());
         response.put("accepted", existingCampaign.getAccepted());
+        response.put("valid", existingCampaign.getAccepted());
         response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -3789,6 +3797,7 @@ public class GUIManager
 
         response.put("id", campaign.getJourneyID());
         response.put("accepted", campaign.getAccepted());
+        response.put("valid", campaign.getAccepted());
         response.put("processing", journeyService.isActiveJourney(campaign, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -3944,6 +3953,7 @@ public class GUIManager
       {
         response.put("id", campaignID);
         if (existingCampaign != null) response.put("accepted", existingCampaign.getAccepted());
+        if (existingCampaign != null) response.put("valid", existingCampaign.getAccepted());
         if (existingCampaign != null) response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
         response.put("responseCode", responseCode);
         return JSONUtilities.encodeObject(response);
@@ -3991,6 +4001,7 @@ public class GUIManager
 
         response.put("id", campaign.getJourneyID());
         response.put("accepted", campaign.getAccepted());
+        response.put("valid", campaign.getAccepted());
         response.put("processing", journeyService.isActiveJourney(campaign, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -4154,6 +4165,7 @@ public class GUIManager
       {
         response.put("id", existingSegmentationDimension.getGUIManagedObjectID());
         response.put("accepted", existingSegmentationDimension.getAccepted());
+        response.put("valid", existingSegmentationDimension.getAccepted());
         response.put("processing", segmentationDimensionService.isActiveSegmentationDimension(existingSegmentationDimension, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -4200,6 +4212,7 @@ public class GUIManager
 
         response.put("id", segmentationDimension.getSegmentationDimensionID());
         response.put("accepted", segmentationDimension.getAccepted());
+        response.put("valid", segmentationDimension.getAccepted());
         response.put("processing", segmentationDimensionService.isActiveSegmentationDimension(segmentationDimension, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -4428,6 +4441,7 @@ public class GUIManager
       {
         response.put("id", existingOffer.getGUIManagedObjectID());
         response.put("accepted", existingOffer.getAccepted());
+        response.put("valid", existingOffer.getAccepted());
         response.put("processing", offerService.isActiveOffer(existingOffer, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -4466,6 +4480,7 @@ public class GUIManager
 
         response.put("id", offer.getOfferID());
         response.put("accepted", offer.getAccepted());
+        response.put("valid", offer.getAccepted());
         response.put("processing", offerService.isActiveOffer(offer, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -4685,6 +4700,7 @@ public class GUIManager
         log.trace("existingReport : "+existingReport);
         response.put("id", existingReport.getGUIManagedObjectID());
         response.put("accepted", existingReport.getAccepted());
+        response.put("valid", existingReport.getAccepted());
         response.put("processing", reportService.isActiveReport(existingReport, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -4697,6 +4713,7 @@ public class GUIManager
         reportService.putReport(report, true, userID);
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
+        response.put("valid", report.getAccepted());
         response.put("processing", reportService.isActiveReport(report, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -4839,6 +4856,7 @@ public class GUIManager
       {
         response.put("id", existingPresentationStrategy.getGUIManagedObjectID());
         response.put("accepted", existingPresentationStrategy.getAccepted());
+        response.put("valid", existingPresentationStrategy.getAccepted());
         response.put("processing", presentationStrategyService.isActivePresentationStrategy(existingPresentationStrategy, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -4877,6 +4895,7 @@ public class GUIManager
 
         response.put("id", presentationStrategy.getPresentationStrategyID());
         response.put("accepted", presentationStrategy.getAccepted());
+        response.put("valid", presentationStrategy.getAccepted());
         response.put("processing", presentationStrategyService.isActivePresentationStrategy(presentationStrategy, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -5097,6 +5116,7 @@ public class GUIManager
       {
         response.put("id", existingScoringStrategy.getGUIManagedObjectID());
         response.put("accepted", existingScoringStrategy.getAccepted());
+        response.put("valid", existingScoringStrategy.getAccepted());
         response.put("processing", scoringStrategyService.isActiveScoringStrategy(existingScoringStrategy, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -5143,6 +5163,7 @@ public class GUIManager
 
         response.put("id", scoringStrategy.getScoringStrategyID());
         response.put("accepted", scoringStrategy.getAccepted());
+        response.put("valid", scoringStrategy.getAccepted());
         response.put("processing", scoringStrategyService.isActiveScoringStrategy(scoringStrategy, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -5385,6 +5406,7 @@ public class GUIManager
       {
         response.put("id", existingCallingChannel.getGUIManagedObjectID());
         response.put("accepted", existingCallingChannel.getAccepted());
+        response.put("valid", existingCallingChannel.getAccepted());
         response.put("processing", callingChannelService.isActiveCallingChannel(existingCallingChannel, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -5431,6 +5453,7 @@ public class GUIManager
 
         response.put("id", callingChannel.getCallingChannelID());
         response.put("accepted", callingChannel.getAccepted());
+        response.put("valid", callingChannel.getAccepted());
         response.put("processing", callingChannelService.isActiveCallingChannel(callingChannel, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -5673,6 +5696,7 @@ public class GUIManager
       {
         response.put("id", existingSupplier.getGUIManagedObjectID());
         response.put("accepted", existingSupplier.getAccepted());
+        response.put("valid", existingSupplier.getAccepted());
         response.put("processing", supplierService.isActiveSupplier(existingSupplier, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -5719,6 +5743,7 @@ public class GUIManager
 
         response.put("id", supplier.getSupplierID());
         response.put("accepted", supplier.getAccepted());
+        response.put("valid", supplier.getAccepted());
         response.put("processing", supplierService.isActiveSupplier(supplier, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -5961,6 +5986,7 @@ public class GUIManager
       {
         response.put("id", existingProduct.getGUIManagedObjectID());
         response.put("accepted", existingProduct.getAccepted());
+        response.put("valid", existingProduct.getAccepted());
         response.put("processing", productService.isActiveProduct(existingProduct, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -6007,6 +6033,7 @@ public class GUIManager
 
         response.put("id", product.getProductID());
         response.put("accepted", product.getAccepted());
+        response.put("valid", product.getAccepted());
         response.put("processing", productService.isActiveProduct(product, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -6249,6 +6276,7 @@ public class GUIManager
       {
         response.put("id", existingCatalogCharacteristic.getGUIManagedObjectID());
         response.put("accepted", existingCatalogCharacteristic.getAccepted());
+        response.put("valid", existingCatalogCharacteristic.getAccepted());
         response.put("processing", catalogCharacteristicService.isActiveCatalogCharacteristic(existingCatalogCharacteristic, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -6299,6 +6327,7 @@ public class GUIManager
 
         response.put("id", catalogCharacteristic.getCatalogCharacteristicID());
         response.put("accepted", catalogCharacteristic.getAccepted());
+        response.put("valid", catalogCharacteristic.getAccepted());
         response.put("processing", catalogCharacteristicService.isActiveCatalogCharacteristic(catalogCharacteristic, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -6549,6 +6578,7 @@ public class GUIManager
       {
         response.put("id", existingJourneyObjective.getGUIManagedObjectID());
         response.put("accepted", existingJourneyObjective.getAccepted());
+        response.put("valid", existingJourneyObjective.getAccepted());
         response.put("processing", journeyObjectiveService.isActiveJourneyObjective(existingJourneyObjective, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -6596,6 +6626,7 @@ public class GUIManager
 
         response.put("id", journeyObjective.getJourneyObjectiveID());
         response.put("accepted", journeyObjective.getAccepted());
+        response.put("valid", journeyObjective.getAccepted());
         response.put("processing", journeyObjectiveService.isActiveJourneyObjective(journeyObjective, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -6840,6 +6871,7 @@ public class GUIManager
       {
         response.put("id", existingOfferObjective.getGUIManagedObjectID());
         response.put("accepted", existingOfferObjective.getAccepted());
+        response.put("valid", existingOfferObjective.getAccepted());
         response.put("processing", offerObjectiveService.isActiveOfferObjective(existingOfferObjective, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -6887,6 +6919,7 @@ public class GUIManager
 
         response.put("id", offerObjective.getOfferObjectiveID());
         response.put("accepted", offerObjective.getAccepted());
+        response.put("valid", offerObjective.getAccepted());
         response.put("processing", offerObjectiveService.isActiveOfferObjective(offerObjective, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -7131,6 +7164,7 @@ public class GUIManager
       {
         response.put("id", existingProductType.getGUIManagedObjectID());
         response.put("accepted", existingProductType.getAccepted());
+        response.put("valid", existingProductType.getAccepted());
         response.put("processing", productTypeService.isActiveProductType(existingProductType, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -7177,6 +7211,7 @@ public class GUIManager
 
         response.put("id", productType.getProductTypeID());
         response.put("accepted", productType.getAccepted());
+        response.put("valid", productType.getAccepted());
         response.put("processing", productTypeService.isActiveProductType(productType, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
@@ -7419,6 +7454,7 @@ public class GUIManager
       {
         response.put("id", existingDeliverable.getGUIManagedObjectID());
         response.put("accepted", existingDeliverable.getAccepted());
+        response.put("valid", existingDeliverable.getAccepted());
         response.put("processing", deliverableService.isActiveDeliverable(existingDeliverable, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
@@ -7465,6 +7501,7 @@ public class GUIManager
 
         response.put("id", deliverable.getDeliverableID());
         response.put("accepted", deliverable.getAccepted());
+        response.put("valid", deliverable.getAccepted());
         response.put("processing", deliverableService.isActiveDeliverable(deliverable, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);

@@ -650,7 +650,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   {
     /****************************************
     *
-    *  ensure valid/active calling channels
+    *  ensure active calling channels
     *
     ****************************************/
     

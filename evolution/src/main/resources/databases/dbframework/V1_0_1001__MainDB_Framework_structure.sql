@@ -44,7 +44,7 @@ CREATE TABLE `tbl_apps` (
 
 LOCK TABLES `tbl_apps` WRITE;
 /*!40000 ALTER TABLE `tbl_apps` DISABLE KEYS */;
-INSERT INTO `tbl_apps` VALUES (1,'UM','Users Management','The Users Management System  enables you to create and manage users and workgroups. You can also define permissions that limit user access to applications functionalities.','fwk_components/styles/images/um.png',NULL,'FWK_URL_WEB_SERVER_PATH','/um',NULL),(2,'AM','Application Management','The Applications Management','fwk_components/styles/images/am.png',NULL,'FWK_URL_WEB_SERVER_PATH','/am',NULL);
+INSERT INTO `tbl_apps` VALUES (1,'UM','Application & User Management','The User Management System  enables you to create and manage users and workgroups. You can also add or remove permissions that limit user access to applications functionalities.','fwk_components/styles/images/um.png',NULL,'FWK_URL_WEB_SERVER_PATH','/um',NULL);
 /*!40000 ALTER TABLE `tbl_apps` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -183,7 +183,7 @@ CREATE TABLE `tbl_permissions` (
 
 LOCK TABLES `tbl_permissions` WRITE;
 /*!40000 ALTER TABLE `tbl_permissions` DISABLE KEYS */;
-INSERT INTO `tbl_permissions` VALUES (1,'UM-ACCESS','Users Management Access ','Permission to access Users Management Module',1,NULL),(2,'UM-USERS-VIEW','View users list','Permission to view users list',1,'Users'),(3,'UM-USERS-EDIT','Add/Edit user','Permission to add/ edit a user',1,'Users'),(4,'UM-USERS-DELETE','Delete user','Permission to delete a user',1,'Users'),(5,'UM-WORKGROUPS-VIEW','View workgroups hierarchy','Permission to view workgroups hierarchy',1,'Workgroups'),(6,'UM-WORKGROUPS-EDIT','Add/Edit workgroup','Permission to add/ edit a workgroup',1,'Workgroups'),(7,'UM-WORKGROUPS-DELETE','Delete workgroup','Permission to delete a workgroup',1,'Workgroups'),(8,'UM-TOOLS','Tools','Permission to create/delete users from a file',1,'Users'),(9,'AM-ACCESS','Applications Management Access','Permission to access Applications Management',2,NULL);
+INSERT INTO `tbl_permissions` VALUES (1,'UM-ACCESS','Users Management Access ','Permission to access Users Management Module',1,NULL),(2,'UM-USERS-VIEW','View users list','Permission to view users list',1,'Users'),(3,'UM-USERS-EDIT','Add/Edit user','Permission to add/ edit a user',1,'Users'),(4,'UM-USERS-DELETE','Delete user','Permission to delete a user',1,'Users'),(5,'UM-WORKGROUPS-VIEW','View workgroups hierarchy','Permission to view workgroups hierarchy',1,'Workgroups'),(6,'UM-WORKGROUPS-EDIT','Add/Edit workgroup','Permission to add/ edit a workgroup',1,'Workgroups'),(7,'UM-WORKGROUPS-DELETE','Delete workgroup','Permission to delete a workgroup',1,'Workgroups'),(8,'UM-TOOLS','Tools','Permission to create/delete users from a file',1,'Users'),(9,'AM-ACCESS','Applications Management Access','Permission to access Applications Management',1,NULL);
 /*!40000 ALTER TABLE `tbl_permissions` ENABLE KEYS */;
 UNLOCK TABLES;
 

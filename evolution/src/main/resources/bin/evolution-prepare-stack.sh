@@ -685,6 +685,66 @@ do
 done
 
 #
+#  stg-web
+#
+
+for TUPLE in $GUI_STG_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/stg-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  stg-api
+#
+
+for TUPLE in $GUI_STG_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/stg-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  sbm-web
+#
+
+for TUPLE in $GUI_SBM_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/sbm-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
+#  sbm-api
+#
+
+for TUPLE in $GUI_SBM_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   cat $DEPLOY_ROOT/docker/sbm-api.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
+#
 #  postamble
 #
 

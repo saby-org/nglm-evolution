@@ -464,6 +464,46 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
+
+  //
+  //  getThreeMonthAverage
+  //
+
+  protected long getThreeMonthAverage(MetricHistory metricHistory, Date evaluationDate)
+  {
+    //
+    //  retrieve values by month
+    //
+
+    int numberOfMonths = 3;
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    long[] valuesByMonth = new long[numberOfMonths];
+    for (int i=0; i<numberOfMonths; i++)
+      {
+        Date startDay = RLMDateUtils.addMonths(startOfMonth, -(i+1), Deployment.getBaseTimeZone());
+        Date endDay = RLMDateUtils.addDays(RLMDateUtils.addMonths(startDay, 1, Deployment.getBaseTimeZone()), -1, Deployment.getBaseTimeZone());
+        valuesByMonth[i] = metricHistory.getValue(startDay, endDay);
+      }
+
+    //
+    //  average (excluding "leading" zeroes)
+    //
+
+    long totalValue = 0L;
+    int includedMonths = 0;
+    for (int i=numberOfMonths-1; i>=0; i--)
+      {
+        totalValue += valuesByMonth[i];
+        if (totalValue > 0L) includedMonths += 1;
+      }
+
+    //
+    //  result
+    //
+
+    return (includedMonths > 0) ? totalValue / includedMonths : 0L;
+  }
   
   /****************************************
   *

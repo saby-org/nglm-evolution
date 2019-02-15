@@ -340,7 +340,7 @@ public class GUIService
 
   protected boolean isActiveThroughInterval(GUIManagedObject guiManagedObject, Date startDate, Date endDate)
   {
-    boolean active = (guiManagedObject != null) && guiManagedObject.getAccepted() && guiManagedObject.getValid() && guiManagedObject.getActive();
+    boolean active = (guiManagedObject != null) && guiManagedObject.getAccepted() && guiManagedObject.getActive();
     boolean activeThroughInterval = active && (guiManagedObject.getEffectiveStartDate().compareTo(startDate) <= 0) && (guiManagedObject.getEffectiveEndDate().compareTo(endDate) >= 0);
     return activeThroughInterval;
   }
@@ -487,8 +487,8 @@ public class GUIService
         //  classify
         //
 
-        boolean active = accepted && guiManagedObject.getValid() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
-        boolean future = accepted && guiManagedObject.getValid() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
+        boolean active = accepted && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
+        boolean future = accepted && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
 
         //
         //  copy
@@ -797,6 +797,7 @@ public class GUIService
       {
         responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : getSummaryJSONRepresentation(guiManagedObject));
         responseJSON.put("accepted", guiManagedObject.getAccepted());
+        responseJSON.put("valid", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
         responseJSON.put("readOnly", guiManagedObject.getReadOnly());
       }
@@ -814,7 +815,6 @@ public class GUIService
     JSONObject result = new JSONObject();
     result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
-    result.put("valid", guiManagedObject.getJSONRepresentation().get("valid"));
     result.put("active", guiManagedObject.getJSONRepresentation().get("active"));
     return result;
   }

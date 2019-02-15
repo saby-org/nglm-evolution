@@ -30,6 +30,10 @@ do
       docker pull ${env.DOCKER_REGISTRY}iar.web:${gui-iar.version}
       docker pull ${env.DOCKER_REGISTRY}opr.api:${gui-opr.version}
       docker pull ${env.DOCKER_REGISTRY}opr.web:${gui-opr.version}
+      docker pull ${env.DOCKER_REGISTRY}stg.api:${gui-stg.version}
+      docker pull ${env.DOCKER_REGISTRY}stg.web:${gui-stg.version}
+      docker pull ${env.DOCKER_REGISTRY}sbm.api:${gui-sbm.version}
+      docker pull ${env.DOCKER_REGISTRY}sbm.web:${gui-sbm.version}
       docker pull ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version}
    " &
 done

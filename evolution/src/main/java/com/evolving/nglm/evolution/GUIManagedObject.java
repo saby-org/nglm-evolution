@@ -114,7 +114,6 @@ public abstract class GUIManagedObject
     schemaBuilder.field("effectiveStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("effectiveEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("readOnly", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("valid", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
@@ -171,7 +170,6 @@ public abstract class GUIManagedObject
   private Date effectiveStartDate;
   private Date effectiveEndDate;
   private boolean readOnly;
-  private boolean valid;
   private boolean active;
 
   /****************************************
@@ -197,7 +195,6 @@ public abstract class GUIManagedObject
   Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
   boolean getReadOnly() { return readOnly; }
-  boolean getValid() { return valid; }
   boolean getActive() { return active; }
 
   //
@@ -240,7 +237,6 @@ public abstract class GUIManagedObject
     struct.put("effectiveStartDate", guiManagedObject.getRawEffectiveStartDate());
     struct.put("effectiveEndDate", guiManagedObject.getRawEffectiveEndDate());
     struct.put("readOnly", guiManagedObject.getReadOnly());
-    struct.put("valid", guiManagedObject.getValid());
     struct.put("active", guiManagedObject.getActive());
   }
 
@@ -260,7 +256,6 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = null;
     this.effectiveEndDate = null;
     this.readOnly = false;
-    this.valid = false;
     this.active = false;
   }
                              
@@ -293,7 +288,6 @@ public abstract class GUIManagedObject
     Date effectiveStartDate = (Date) valueStruct.get("effectiveStartDate");
     Date effectiveEndDate = (Date) valueStruct.get("effectiveEndDate");
     boolean readOnly = valueStruct.getBoolean("readOnly");
-    boolean valid = valueStruct.getBoolean("valid");
     boolean active = valueStruct.getBoolean("active");
 
     //
@@ -308,7 +302,6 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
     this.readOnly = readOnly;
-    this.valid = valid;
     this.active = active;
   }
 
@@ -328,7 +321,6 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     this.effectiveEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
     this.readOnly = JSONUtilities.decodeBoolean(jsonRoot, "readOnly", Boolean.FALSE);
-    this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", Boolean.TRUE);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.TRUE);
   }
 

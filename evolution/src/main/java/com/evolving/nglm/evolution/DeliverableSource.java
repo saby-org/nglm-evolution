@@ -67,7 +67,6 @@ public class DeliverableSource
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("display", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("valid", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("effectiveStartDate", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("effectiveEndDate", Schema.OPTIONAL_STRING_SCHEMA);
@@ -98,7 +97,6 @@ public class DeliverableSource
   private String id;
   private String name;
   private String display;
-  private boolean valid;
   private boolean active;
   private String effectiveStartDate;
   private String effectiveEndDate;
@@ -114,7 +112,6 @@ public class DeliverableSource
   public String getID() { return id; }
   public String getName() { return name; }
   public String getDisplay() { return display; }
-  public boolean getValid() { return valid; }
   public boolean getActive() { return active; }
   String getEffectiveStartDate() { return effectiveStartDate; }
   String getEffectiveEndDate() { return effectiveEndDate; }
@@ -133,7 +130,6 @@ public class DeliverableSource
     deliverableJSON.put("id", id);
     deliverableJSON.put("name", name);
     deliverableJSON.put("display", display);
-    deliverableJSON.put("valid", valid);
     deliverableJSON.put("active", active);
     deliverableJSON.put("effectiveStartDate", effectiveStartDate);
     deliverableJSON.put("effectiveEndDate", effectiveEndDate);
@@ -161,7 +157,6 @@ public class DeliverableSource
     this.id = null;
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
     this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
-    this.valid = JSONUtilities.decodeBoolean(jsonRoot, "valid", true);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", true);
     this.effectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false);
     this.effectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false);
@@ -175,12 +170,11 @@ public class DeliverableSource
   *
   *****************************************/
 
-  public DeliverableSource(String name, String display, boolean valid, boolean active, String effectiveStartDate, String effectiveEndDate, String fulfillmentProviderID, int unitaryCost)
+  public DeliverableSource(String name, String display, boolean active, String effectiveStartDate, String effectiveEndDate, String fulfillmentProviderID, int unitaryCost)
   {
     this.id = null;
     this.name = name;
     this.display = display;
-    this.valid = valid;
     this.active = active;
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
@@ -200,7 +194,6 @@ public class DeliverableSource
     Struct struct = new Struct(schema);
     struct.put("name", deliverableSource.getName());
     struct.put("display", deliverableSource.getDisplay());
-    struct.put("valid", deliverableSource.getValid());
     struct.put("active", deliverableSource.getActive());
     struct.put("effectiveStartDate", deliverableSource.getEffectiveStartDate());
     struct.put("effectiveEndDate", deliverableSource.getEffectiveEndDate());
@@ -232,7 +225,6 @@ public class DeliverableSource
     Struct valueStruct = (Struct) value;
     String name = valueStruct.getString("name");
     String display = valueStruct.getString("display");
-    boolean valid = valueStruct.getBoolean("valid");
     boolean active = valueStruct.getBoolean("active");
     String effectiveStartDate = valueStruct.getString("effectiveStartDate");
     String effectiveEndDate = valueStruct.getString("effectiveEndDate");
@@ -243,6 +235,6 @@ public class DeliverableSource
     //  return
     //
 
-    return new DeliverableSource(name, display, valid, active, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, unitaryCost);
+    return new DeliverableSource(name, display, active, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, unitaryCost);
   }
 }

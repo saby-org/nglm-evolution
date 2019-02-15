@@ -73,7 +73,6 @@ public class ReportScheduler implements Watcher {
             String guiManagedObjectName = "objectName-"+json.get(Report.REPORT_NAME); // TODO : check this
             json.put("name", guiManagedObjectName);
             json.put("readOnly", Boolean.FALSE);
-            json.put("valid", Boolean.TRUE);
             json.put("active", Boolean.TRUE);
             json.put("apiVersion", 1);
             json.remove("reportClass");
