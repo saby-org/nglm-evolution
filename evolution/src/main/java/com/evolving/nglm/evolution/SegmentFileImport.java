@@ -1,10 +1,10 @@
 /*****************************************************************************
 *
-*  SegmentRanges.java
+*  SegmentFileImport.java
 *
 *****************************************************************************/
 
-package com.evolving.nglm.evolution.segmentation;
+package com.evolving.nglm.evolution;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -19,7 +19,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class SegmentRanges implements Segment
+public class SegmentFileImport implements Segment
 {
   /*****************************************
   *
@@ -31,7 +31,7 @@ public class SegmentRanges implements Segment
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(SegmentRanges.class);
+  private static final Logger log = LoggerFactory.getLogger(SegmentFileImport.class);
 
   /*****************************************
   *
@@ -51,12 +51,10 @@ public class SegmentRanges implements Segment
     //
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("segment_ranges");
+    schemaBuilder.name("segment_file_import");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
-    schemaBuilder.field("range_min", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("range_max", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -74,8 +72,6 @@ public class SegmentRanges implements Segment
 
   private String id;
   private String name;
-  private Integer range_min;
-  private Integer range_max;
 
   /*****************************************
   *
@@ -83,12 +79,10 @@ public class SegmentRanges implements Segment
   *
   *****************************************/
 
-  private SegmentRanges(String id, String name, Integer range_min, Integer range_max)
+  public SegmentFileImport(String id, String name)
   {
     this.id = id;
     this.name = name;
-    this.range_min = range_min;
-    this.range_max = range_max;
   }
 
   /*****************************************
@@ -97,12 +91,10 @@ public class SegmentRanges implements Segment
   *
   *****************************************/
 
-  SegmentRanges(JSONObject jsonRoot) throws GUIManagerException
+  SegmentFileImport(JSONObject jsonRoot) throws GUIManagerException
   {
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.range_min = JSONUtilities.decodeInteger(jsonRoot, "range_min", false);
-    this.range_max = JSONUtilities.decodeInteger(jsonRoot, "range_max", false);
   }
 
   /*****************************************
@@ -110,11 +102,9 @@ public class SegmentRanges implements Segment
   *  accessors
   *
   *****************************************/
-
+  
   public String getID() { return id; }
   public String getName() { return name; }
-  public Integer getRangeMin() { return range_min; }
-  public Integer getRangeMax() { return range_max; }
 
   /*****************************************
   *
@@ -122,9 +112,9 @@ public class SegmentRanges implements Segment
   *
   *****************************************/
 
-  public static ConnectSerde<SegmentRanges> serde()
+  public static ConnectSerde<SegmentFileImport> serde()
   {
-    return new ConnectSerde<SegmentRanges>(schema, false, SegmentRanges.class, SegmentRanges::pack, SegmentRanges::unpack);
+    return new ConnectSerde<SegmentFileImport>(schema, false, SegmentFileImport.class, SegmentFileImport::pack, SegmentFileImport::unpack);
   }
 
   /*****************************************
@@ -135,12 +125,10 @@ public class SegmentRanges implements Segment
 
   public static Object pack(Object value)
   {
-    SegmentRanges segment = (SegmentRanges) value;
+    SegmentFileImport segment = (SegmentFileImport) value;
     Struct struct = new Struct(schema);
     struct.put("id", segment.getID());
     struct.put("name", segment.getName());
-    struct.put("range_min", segment.getRangeMin());
-    struct.put("range_max", segment.getRangeMax());
     return struct;
   }
 
@@ -150,7 +138,7 @@ public class SegmentRanges implements Segment
   *
   *****************************************/
 
-  public static SegmentRanges unpack(SchemaAndValue schemaAndValue)
+  public static SegmentFileImport unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -170,14 +158,12 @@ public class SegmentRanges implements Segment
     Struct valueStruct = (Struct) value;
     String id = valueStruct.getString("id");
     String name = valueStruct.getString("name");
-    Integer range_min = valueStruct.getInt32("range_min");
-    Integer range_max = valueStruct.getInt32("range_max");
 
     //
     //  construct
     //
 
-    SegmentRanges result = new SegmentRanges(id, name, range_min, range_max);
+    SegmentFileImport result = new SegmentFileImport(id, name);
 
     //
     //  return
@@ -185,5 +171,5 @@ public class SegmentRanges implements Segment
 
     return result;
   }
-
+  
 }

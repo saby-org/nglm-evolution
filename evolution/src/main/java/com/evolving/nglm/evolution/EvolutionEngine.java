@@ -72,11 +72,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
-import com.evolving.nglm.evolution.segmentation.SegmentEligibility;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionService;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1279,6 +1275,14 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  now
+    *
+    *****************************************/
+
+    Date now = context.now();
+
+    /*****************************************
+    *
     *  process subscriberTraceControl
     *
     *****************************************/
@@ -1328,7 +1332,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(evolutionEvent.getEventDate()))
+    for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(now))
       {
         //
         //  ignore if in temporal hole (segmentation dimension has been activated but subscriberGroupEpochReader has not seen it yet)
@@ -1339,7 +1343,7 @@ public class EvolutionEngine
             switch (segmentationDimension.getTargetingType())
               {
                 case ELIGIBILITY:
-                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, evolutionEvent.getEventDate());
+                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
                   SegmentationDimensionEligibility segmentationDimensionEligibility = (SegmentationDimensionEligibility) segmentationDimension;
                   boolean inGroup = false;
                   for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())

@@ -39,14 +39,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.3.2-build190220-SNAPSHOT</version>
+    <version>4.3.2-build190220a-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.3.2-build190220-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.3.2-build190220a-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -98,6 +98,7 @@
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
     <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
     <topic.callingchannel>callingchannel</topic.callingchannel>
+    <topic.saleschannel>saleschannel</topic.saleschannel>
     <topic.supplier>supplier</topic.supplier>
     <topic.product>product</topic.product>
     <topic.catalogcharacteristic>catalogcharacteristic</topic.catalogcharacteristic>
@@ -107,6 +108,8 @@
     <topic.catalogobjective>catalogobjective</topic.catalogobjective>
     <topic.guiaudit>guiaudit</topic.guiaudit>
     <topic.deliverable>deliverable</topic.deliverable>
+    <topic.template.mail>template-mail</topic.template.mail>
+    <topic.template.sms>template-sms</topic.template.sms>
     <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

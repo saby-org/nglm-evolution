@@ -9,10 +9,6 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionFileImport;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionRanges;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
@@ -39,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
+
 
 public abstract class GUIManagedObject
 {
@@ -135,6 +132,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());
     guiManagedObjectSerdes.add(CallingChannel.serde());
+    guiManagedObjectSerdes.add(SalesChannel.serde());
     guiManagedObjectSerdes.add(Supplier.serde());
     guiManagedObjectSerdes.add(Product.serde());
     guiManagedObjectSerdes.add(CatalogCharacteristic.serde());
@@ -144,6 +142,8 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Deliverable.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     guiManagedObjectSerdes.add(Report.serde());
+    guiManagedObjectSerdes.add(MailTemplate.serde());
+    guiManagedObjectSerdes.add(SMSTemplate.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

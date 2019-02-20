@@ -68,17 +68,12 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.segmentation.Segment;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimension.SegmentationDimensionTargetingType;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionEligibility;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionFileImport;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionRanges;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionService;
+
+import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
+   
 public class GUIManager
 {
   /*****************************************
@@ -103,7 +98,6 @@ public class GUIManager
     getSupportedTimeUnits("getSupportedTimeUnits"),
     getServiceTypes("getServiceTypes"),
     getCallingChannelProperties("getCallingChannelProperties"),
-    getSalesChannels("getSalesChannels"),
     getSupportedDataTypes("getSupportedDataTypes"),
     getProfileCriterionFields("getProfileCriterionFields"),
     getProfileCriterionFieldIDs("getProfileCriterionFieldIDs"),
@@ -162,6 +156,11 @@ public class GUIManager
     getCallingChannel("getCallingChannel"),
     putCallingChannel("putCallingChannel"),
     removeCallingChannel("removeCallingChannel"),
+    getSalesChannelList("getSalesChannelList"),
+    getSalesChannelSummaryList("getSalesChannelSummaryList"),
+    getSalesChannel("getSalesChannel"),
+    putSalesChannel("putSalesChannel"),
+    removeSalesChannel("removeSalesChannel"),
     getSupplierList("getSupplierList"),
     getSupplierSummaryList("getSupplierSummaryList"),
     getSupplier("getSupplier"),
@@ -195,6 +194,16 @@ public class GUIManager
     getDeliverableList("getDeliverableList"),
     getDeliverableSummaryList("getDeliverableSummaryList"),
     getDeliverable("getDeliverable"),
+    getMailTemplateList("getMailTemplateList"),
+    getMailTemplateSummaryList("getMailTemplateSummaryList"),
+    getMailTemplate("getMailTemplate"),
+    putMailTemplate("putMailTemplate"),
+    removeMailTemplate("removeMailTemplate"),
+    getSMSTemplateList("getSMSTemplateList"),
+    getSMSTemplateSummaryList("getSMSTemplateSummaryList"),
+    getSMSTemplate("getSMSTemplate"),
+    putSMSTemplate("putSMSTemplate"),
+    removeSMSTemplate("removeSMSTemplate"),
     getFulfillmentProviders("getFulfillmentProviders"),
     getPaymentMeans("getPaymentMeans"),
     getDashboardCounts("getDashboardCounts"),
@@ -256,6 +265,7 @@ public class GUIManager
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
   private CallingChannelService callingChannelService;
+  private SalesChannelService salesChannelService;
   private SupplierService supplierService;
   private ProductService productService;
   private CatalogCharacteristicService catalogCharacteristicService;
@@ -263,6 +273,8 @@ public class GUIManager
   private OfferObjectiveService offerObjectiveService;
   private ProductTypeService productTypeService;
   private DeliverableService deliverableService;
+  private MailTemplateService mailTemplateService;
+  private SMSTemplateService smsTemplateService;
   private SubscriberProfileService subscriberProfileService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -315,6 +327,7 @@ public class GUIManager
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String callingChannelTopic = Deployment.getCallingChannelTopic();
+    String salesChannelTopic = Deployment.getSalesChannelTopic();
     String supplierTopic = Deployment.getSupplierTopic();
     String productTopic = Deployment.getProductTopic();
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
@@ -322,6 +335,8 @@ public class GUIManager
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
+    String mailTemplateTopic = Deployment.getMailTemplateTopic();
+    String smsTemplateTopic = Deployment.getSMSTemplateTopic();
     String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
@@ -333,7 +348,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic);
+    log.info("main START: {} {} {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic, mailTemplateTopic, smsTemplateTopic);
 
     //
     //  license
@@ -367,6 +382,7 @@ public class GUIManager
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
     callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
+    salesChannelService = new SalesChannelService(bootstrapServers, "guimanager-saleschannelservice-" + apiProcessKey, salesChannelTopic, true);
     supplierService = new SupplierService(bootstrapServers, "guimanager-supplierservice-" + apiProcessKey, supplierTopic, true);
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
@@ -374,6 +390,8 @@ public class GUIManager
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
+    mailTemplateService = new MailTemplateService(bootstrapServers, "guimanager-mailtemplateservice-" + apiProcessKey, mailTemplateTopic, true);
+    smsTemplateService = new SMSTemplateService(bootstrapServers, "guimanager-smstemplateservice-" + apiProcessKey, smsTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "guimanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
@@ -440,6 +458,27 @@ public class GUIManager
               {
                 JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
                 processPutCallingChannel("0", callingChannelJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+
+    //
+    //  sales channels
+    //
+
+    if (salesChannelService.getStoredSalesChannels().size() == 0)
+      {
+        try
+          {
+            JSONArray initialSalesChannelsJSONArray = Deployment.getInitialSalesChannelsJSONArray();
+            for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
+              {
+                JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
+                processPutSalesChannel("0", salesChannelJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -588,6 +627,7 @@ public class GUIManager
     scoringStrategyService.start();
     presentationStrategyService.start();
     callingChannelService.start();
+    salesChannelService.start();
     supplierService.start();
     productService.start();
     catalogCharacteristicService.start();
@@ -595,6 +635,8 @@ public class GUIManager
     offerObjectiveService.start();
     productTypeService.start();
     deliverableService.start();
+    mailTemplateService.start();
+    smsTemplateService.start();
     subscriberProfileService.start();
     deliverableSourceService.start();
 
@@ -614,7 +656,6 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
         restServer.createContext("/nglm-guimanager/getServiceTypes", new APIHandler(API.getServiceTypes));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
-        restServer.createContext("/nglm-guimanager/getSalesChannels", new APIHandler(API.getSalesChannels));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APIHandler(API.getProfileCriterionFieldIDs));
@@ -673,6 +714,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCallingChannel", new APIHandler(API.getCallingChannel));
         restServer.createContext("/nglm-guimanager/putCallingChannel", new APIHandler(API.putCallingChannel));
         restServer.createContext("/nglm-guimanager/removeCallingChannel", new APIHandler(API.removeCallingChannel));
+        restServer.createContext("/nglm-guimanager/getSalesChannelList", new APIHandler(API.getSalesChannelList));
+        restServer.createContext("/nglm-guimanager/getSalesChannelSummaryList", new APIHandler(API.getSalesChannelSummaryList));
+        restServer.createContext("/nglm-guimanager/getSalesChannel", new APIHandler(API.getSalesChannel));
+        restServer.createContext("/nglm-guimanager/putSalesChannel", new APIHandler(API.putSalesChannel));
+        restServer.createContext("/nglm-guimanager/removeSalesChannel", new APIHandler(API.removeSalesChannel));
         restServer.createContext("/nglm-guimanager/getSupplierList", new APIHandler(API.getSupplierList));
         restServer.createContext("/nglm-guimanager/getSupplierSummaryList", new APIHandler(API.getSupplierSummaryList));
         restServer.createContext("/nglm-guimanager/getSupplier", new APIHandler(API.getSupplier));
@@ -706,6 +752,16 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APIHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APIHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APIHandler(API.getDeliverable));
+        restServer.createContext("/nglm-guimanager/getMailTemplateList", new APIHandler(API.getMailTemplateList));
+        restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APIHandler(API.getMailTemplateSummaryList));
+        restServer.createContext("/nglm-guimanager/getMailTemplate", new APIHandler(API.getMailTemplate));
+        restServer.createContext("/nglm-guimanager/putMailTemplate", new APIHandler(API.putMailTemplate));
+        restServer.createContext("/nglm-guimanager/removeMailTemplate", new APIHandler(API.removeMailTemplate));
+        restServer.createContext("/nglm-guimanager/getSMSTemplateList", new APIHandler(API.getSMSTemplateList));
+        restServer.createContext("/nglm-guimanager/getSMSTemplateSummaryList", new APIHandler(API.getSMSTemplateSummaryList));
+        restServer.createContext("/nglm-guimanager/getSMSTemplate", new APIHandler(API.getSMSTemplate));
+        restServer.createContext("/nglm-guimanager/putSMSTemplate", new APIHandler(API.putSMSTemplate));
+        restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APIHandler(API.removeSMSTemplate));
         restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APIHandler(API.getFulfillmentProviders));
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
@@ -731,7 +787,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
 
     /*****************************************
     *
@@ -762,6 +818,7 @@ public class GUIManager
     private ScoringStrategyService scoringStrategyService;
     private PresentationStrategyService presentationStrategyService;
     private CallingChannelService callingChannelService;
+    private SalesChannelService salesChannelService;
     private SupplierService supplierService;
     private ProductService productService;
     private CatalogCharacteristicService catalogCharacteristicService;
@@ -769,6 +826,8 @@ public class GUIManager
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
     private DeliverableService deliverableService;
+    private MailTemplateService mailTemplateService;
+    private SMSTemplateService smsTemplateService;
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -778,7 +837,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -788,6 +847,7 @@ public class GUIManager
       this.scoringStrategyService = scoringStrategyService;
       this.presentationStrategyService = presentationStrategyService;
       this.callingChannelService = callingChannelService;
+      this.salesChannelService = salesChannelService;
       this.supplierService = supplierService;
       this.productService = productService;
       this.catalogCharacteristicService = catalogCharacteristicService;
@@ -795,6 +855,8 @@ public class GUIManager
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
       this.deliverableService = deliverableService;
+      this.mailTemplateService = mailTemplateService;
+      this.smsTemplateService = smsTemplateService;
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -824,6 +886,7 @@ public class GUIManager
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (presentationStrategyService != null) presentationStrategyService.stop();
       if (callingChannelService != null) callingChannelService.stop();
+      if (salesChannelService != null) salesChannelService.stop();
       if (supplierService != null) supplierService.stop();
       if (productService != null) productService.stop();
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
@@ -831,6 +894,8 @@ public class GUIManager
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
       if (deliverableService != null) deliverableService.stop();
+      if (mailTemplateService != null) mailTemplateService.stop();
+      if (smsTemplateService != null) smsTemplateService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop(); 
       if (subscriberIDService != null) subscriberIDService.stop();
       if (deliverableSourceService != null) deliverableSourceService.stop();
@@ -977,10 +1042,6 @@ public class GUIManager
 
                 case getCallingChannelProperties:
                   jsonResponse = processGetCallingChannelProperties(userID, jsonRoot);
-                  break;
-
-                case getSalesChannels:
-                  jsonResponse = processGetSalesChannels(userID, jsonRoot);
                   break;
 
                 case getSupportedDataTypes:
@@ -1215,6 +1276,26 @@ public class GUIManager
                   jsonResponse = processRemoveCallingChannel(userID, jsonRoot);
                   break;
 
+                case getSalesChannelList:
+                  jsonResponse = processGetSalesChannelList(userID, jsonRoot, true);
+                  break;
+
+                case getSalesChannelSummaryList:
+                  jsonResponse = processGetSalesChannelList(userID, jsonRoot, false);
+                  break;
+
+                case getSalesChannel:
+                  jsonResponse = processGetSalesChannel(userID, jsonRoot);
+                  break;
+
+                case putSalesChannel:
+                  jsonResponse = processPutSalesChannel(userID, jsonRoot);
+                  break;
+
+                case removeSalesChannel:
+                  jsonResponse = processRemoveSalesChannel(userID, jsonRoot);
+                  break;
+
                 case getSupplierList:
                   jsonResponse = processGetSupplierList(userID, jsonRoot, true);
                   break;
@@ -1346,6 +1427,46 @@ public class GUIManager
                 case getDeliverable:
                   jsonResponse = processGetDeliverable(userID, jsonRoot);
                   break;
+
+               case getMailTemplateList:
+                 jsonResponse = processGetMailTemplateList(userID, jsonRoot, true);
+                 break;
+
+               case getMailTemplateSummaryList:
+                 jsonResponse = processGetMailTemplateList(userID, jsonRoot, false);
+                 break;
+
+               case getMailTemplate:
+                 jsonResponse = processGetMailTemplate(userID, jsonRoot);
+                 break;
+
+               case putMailTemplate:
+                 jsonResponse = processPutMailTemplate(userID, jsonRoot);
+                 break;
+                 
+               case removeMailTemplate:
+                 jsonResponse = processRemoveMailTemplate(userID, jsonRoot);
+                 break;
+
+               case getSMSTemplateList:
+                 jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true);
+                 break;
+
+               case getSMSTemplateSummaryList:
+                 jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false);
+                 break;
+
+               case getSMSTemplate:
+                 jsonResponse = processGetSMSTemplate(userID, jsonRoot);
+                 break;
+
+               case putSMSTemplate:
+                 jsonResponse = processPutSMSTemplate(userID, jsonRoot);
+                 break;
+                 
+               case removeSMSTemplate:
+                 jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
+                 break;
 
                 case getFulfillmentProviders:
                   jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
@@ -1553,19 +1674,6 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve salesChannels
-    *
-    *****************************************/
-
-    List<JSONObject> salesChannels = new ArrayList<JSONObject>();
-    for (SalesChannel salesChannel : Deployment.getSalesChannels().values())
-      {
-        JSONObject salesChannelJSON = salesChannel.getJSONRepresentation();
-        salesChannels.add(salesChannelJSON);
-      }
-
-    /*****************************************
-    *
     *  retrieve supported data types
     *
     *****************************************/
@@ -1677,7 +1785,6 @@ public class GUIManager
     response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
     response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
-    response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
@@ -1852,39 +1959,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getSalesChannels
-  *
-  *****************************************/
-
-  private JSONObject processGetSalesChannels(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve salesChannels
-    *
-    *****************************************/
-
-    List<JSONObject> salesChannels = new ArrayList<JSONObject>();
-    for (SalesChannel salesChannel : Deployment.getSalesChannels().values())
-      {
-        JSONObject salesChannelJSON = salesChannel.getJSONRepresentation();
-        salesChannels.add(salesChannelJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2729,6 +2803,17 @@ public class GUIManager
             //
 
             criterionFieldJSON.put("tagMaxLength", criterionField.resolveTagMaxLength());
+
+            //
+            //  normalize set-valued dataTypes to singleton-valued dataTypes (required by GUI)
+            //
+
+            switch (criterionField.getFieldDataType())
+              {
+                case StringSetCriterion:
+                  criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+                  break;
+              }
 
             //
             //  add
@@ -4470,7 +4555,7 @@ public class GUIManager
         *
         *****************************************/
 
-        offerService.putOffer(offer, callingChannelService, productService, (existingOffer == null), userID);
+        offerService.putOffer(offer, callingChannelService, salesChannelService, productService, (existingOffer == null), userID);
 
         /*****************************************
         *
@@ -4497,7 +4582,7 @@ public class GUIManager
         //  store
         //
 
-        offerService.putOffer(incompleteObject, callingChannelService, productService, (existingOffer == null), userID);
+        offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService, (existingOffer == null), userID);
 
         //
         //  log
@@ -5443,6 +5528,7 @@ public class GUIManager
         *
         *****************************************/
 
+        revalidateSalesChannels(now);
         revalidateOffers(now);
 
         /*****************************************
@@ -5476,6 +5562,7 @@ public class GUIManager
         //  revalidateOffers
         //
 
+        revalidateSalesChannels(now);
         revalidateOffers(now);
 
         //
@@ -5545,6 +5632,7 @@ public class GUIManager
     *
     *****************************************/
 
+    revalidateSalesChannels(now);
     revalidateOffers(now);
 
     /*****************************************
@@ -5560,6 +5648,296 @@ public class GUIManager
       responseCode = "failedReadOnly";
     else
       responseCode = "callingChannelNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetSalesChannelList
+  *
+  *****************************************/
+
+  private JSONObject processGetSalesChannelList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert salesChannels
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> salesChannels = new ArrayList<JSONObject>();
+    for (GUIManagedObject salesChannel : salesChannelService.getStoredSalesChannels())
+      {
+        salesChannels.add(salesChannelService.generateResponseJSON(salesChannel, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("salesChannels", JSONUtilities.encodeArray(salesChannels));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetSalesChannel
+  *
+  *****************************************/
+
+  private JSONObject processGetSalesChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+    JSONObject salesChannelJSON = salesChannelService.generateResponseJSON(salesChannel, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (salesChannel != null) ? "ok" : "salesChannelNotFound");
+    if (salesChannel != null) response.put("salesChannel", salesChannelJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutSalesChannel
+  *
+  *****************************************/
+
+  private JSONObject processPutSalesChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  salesChannelID
+    *
+    *****************************************/
+
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (salesChannelID == null)
+      {
+        salesChannelID = salesChannelService.generateSalesChannelID();
+        jsonRoot.put("id", salesChannelID);
+      }
+
+    /*****************************************
+    *
+    *  existing salesChannel
+    *
+    *****************************************/
+
+    GUIManagedObject existingSalesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingSalesChannel != null && existingSalesChannel.getReadOnly())
+      {
+        response.put("id", existingSalesChannel.getGUIManagedObjectID());
+        response.put("accepted", existingSalesChannel.getAccepted());
+        response.put("valid", existingSalesChannel.getAccepted());
+        response.put("processing", salesChannelService.isActiveSalesChannel(existingSalesChannel, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process salesChannel
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate salesChannel
+        *
+        ****************************************/
+
+        SalesChannel salesChannel = new SalesChannel(jsonRoot, epoch, existingSalesChannel);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        salesChannelService.putSalesChannel(salesChannel, callingChannelService, (existingSalesChannel == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateOffers
+        *
+        *****************************************/
+
+        revalidateOffers(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", salesChannel.getSalesChannelID());
+        response.put("accepted", salesChannel.getAccepted());
+        response.put("valid", salesChannel.getAccepted());
+        response.put("processing", salesChannelService.isActiveSalesChannel(salesChannel, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        salesChannelService.putSalesChannel(incompleteObject, callingChannelService, (existingSalesChannel == null), userID);
+
+        //
+        //  revalidateOffers
+        //
+
+        revalidateOffers(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "salesChannelNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveSalesChannel
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSalesChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+    if (salesChannel != null && ! salesChannel.getReadOnly()) salesChannelService.removeSalesChannel(salesChannelID, userID);
+
+    /*****************************************
+    *
+    *  revalidateOffers
+    *
+    *****************************************/
+
+    revalidateOffers(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (salesChannel != null && ! salesChannel.getReadOnly())
+      responseCode = "ok";
+    else if (salesChannel != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "salesChannelNotFound";
 
     /*****************************************
     *
@@ -7621,6 +7999,531 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processGetMailTemplateList
+  *
+  *****************************************/
+
+  private JSONObject processGetMailTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert templates
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> templates = new ArrayList<JSONObject>();
+    for (GUIManagedObject template : mailTemplateService.getStoredMailTemplates())
+      {
+        templates.add(mailTemplateService.generateResponseJSON(template, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("templates", JSONUtilities.encodeArray(templates));
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetMailTemplate
+  *
+  *****************************************/
+
+  private JSONObject processGetMailTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate template
+    *
+    *****************************************/
+
+    GUIManagedObject template = mailTemplateService.getStoredMailTemplate(templateID);
+    JSONObject templateJSON = mailTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (template != null) ? "ok" : "templateNotFound");
+    if (template != null) response.put("template", templateJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutMailTemplate
+  *
+  *****************************************/
+
+  private JSONObject processPutMailTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  templateID
+    *
+    *****************************************/
+    
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (templateID == null)
+      {
+        templateID = mailTemplateService.generateMailTemplateID();
+        jsonRoot.put("id", templateID);
+      }
+    
+    /*****************************************
+    *
+    *  existing template
+    *
+    *****************************************/
+
+    GUIManagedObject existingTemplate = mailTemplateService.getStoredMailTemplate(templateID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingTemplate != null && existingTemplate.getReadOnly())
+      {
+        response.put("id", existingTemplate.getGUIManagedObjectID());
+        response.put("accepted", existingTemplate.getAccepted());
+        response.put("processing", mailTemplateService.isActiveMailTemplate(existingTemplate, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process template
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate template
+        *
+        ****************************************/
+
+        MailTemplate mailTemplate = new MailTemplate(jsonRoot, epoch, existingTemplate);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        mailTemplateService.putMailTemplate(mailTemplate, (existingTemplate == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", mailTemplate.getMailTemplateID());
+        response.put("accepted", mailTemplate.getAccepted());
+        response.put("processing", mailTemplateService.isActiveMailTemplate(mailTemplate, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        mailTemplateService.putIncompleteMailTemplate(incompleteObject, (existingTemplate == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "mailTemplateNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveMailTemplate
+  *
+  *****************************************/
+
+  private JSONObject processRemoveMailTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject template = mailTemplateService.getStoredMailTemplate(templateID);
+    if (template != null && ! template.getReadOnly()) mailTemplateService.removeMailTemplate(templateID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (template != null && ! template.getReadOnly())
+      responseCode = "ok";
+    else if (template != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "templateNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetSMSTemplateList
+  *
+  *****************************************/
+
+  private JSONObject processGetSMSTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    log.info("GUIManager.processGetSMSTemplateList("+userID+", "+jsonRoot+", "+fullDetails+") called ...");
+
+    /*****************************************
+    *
+    *  retrieve and convert templates
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> templates = new ArrayList<JSONObject>();
+    for (GUIManagedObject template : smsTemplateService.getStoredSMSTemplates())
+      {
+        templates.add(smsTemplateService.generateResponseJSON(template, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("templates", JSONUtilities.encodeArray(templates));
+
+    log.info("GUIManager.processGetSMSTemplateList("+userID+", "+jsonRoot+", "+fullDetails+") Done");
+
+    return JSONUtilities.encodeObject(response);
+  }
+                 
+  /*****************************************
+  *
+  *  processGetSMSTemplate
+  *
+  *****************************************/
+
+  private JSONObject processGetSMSTemplate(String userID, JSONObject jsonRoot)
+  {
+    log.info("GUIManager.processGetSMSTemplate("+userID+", "+jsonRoot+") called ...");
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  retrieve and decorate template
+    *
+    *****************************************/
+
+    GUIManagedObject template = smsTemplateService.getStoredSMSTemplate(templateID);
+    JSONObject templateJSON = smsTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (template != null) ? "ok" : "templateNotFound");
+    if (template != null) response.put("template", templateJSON);
+    
+    log.info("GUIManager.processGetSMSTemplate("+userID+", "+jsonRoot+") DONE");
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutSMSTemplate
+  *
+  *****************************************/
+
+  private JSONObject processPutSMSTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  templateID
+    *
+    *****************************************/
+    
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (templateID == null)
+      {
+        templateID = smsTemplateService.generateSMSTemplateID();
+        jsonRoot.put("id", templateID);
+      }
+    
+    /*****************************************
+    *
+    *  existing template
+    *
+    *****************************************/
+
+    GUIManagedObject existingTemplate = smsTemplateService.getStoredSMSTemplate(templateID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingTemplate != null && existingTemplate.getReadOnly())
+      {
+        response.put("id", existingTemplate.getGUIManagedObjectID());
+        response.put("accepted", existingTemplate.getAccepted());
+        response.put("processing", smsTemplateService.isActiveSMSTemplate(existingTemplate, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process template
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate template
+        *
+        ****************************************/
+
+        SMSTemplate smsTemplate = new SMSTemplate(jsonRoot, epoch, existingTemplate);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        smsTemplateService.putSMSTemplate(smsTemplate, (existingTemplate == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", smsTemplate.getSMSTemplateID());
+        response.put("accepted", smsTemplate.getAccepted());
+        response.put("processing", smsTemplateService.isActiveSMSTemplate(smsTemplate, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        smsTemplateService.putIncompleteSMSTemplate(incompleteObject, (existingTemplate == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "smsTemplateNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveSMSTemplate
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSMSTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject template = smsTemplateService.getStoredSMSTemplate(templateID);
+    if (template != null && ! template.getReadOnly()) smsTemplateService.removeSMSTemplate(templateID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (template != null && ! template.getReadOnly())
+      responseCode = "ok";
+    else if (template != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "templateNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  revalidateScoringStrategies
   *
   *****************************************/
@@ -7821,7 +8724,7 @@ public class GUIManager
         try
           {
             Offer offer = new Offer(existingOffer.getJSONRepresentation(), epoch, existingOffer, catalogCharacteristicService);
-            offer.validate(callingChannelService, productService, date);
+            offer.validate(callingChannelService, salesChannelService, productService, date);
             modifiedOffer = offer;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -8049,6 +8952,70 @@ public class GUIManager
         revalidateJourneyObjectives(date);
       }
   }
+  
+  /*****************************************
+  *
+  *  revalidateSalesChannels
+  *
+  *****************************************/
+
+  private void revalidateSalesChannels(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+
+    Set<GUIManagedObject> modifiedSalesChannels = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingSalesChannel : salesChannelService.getStoredSalesChannels())
+      {
+        //
+        //  modifiedsalesChannel
+        //
+
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedSalesChannel;
+        try
+          {
+            SalesChannel salesChannel = new SalesChannel(existingSalesChannel.getJSONRepresentation(), epoch, existingSalesChannel);
+            salesChannel.validate(callingChannelService, date);
+            modifiedSalesChannel = salesChannel;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedSalesChannel = new IncompleteObject(existingSalesChannel.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+
+        if (existingSalesChannel.getAccepted() != modifiedSalesChannel.getAccepted())
+          {
+            modifiedSalesChannels.add(modifiedSalesChannel);
+          }
+      }
+
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+
+    for (GUIManagedObject modifiedSalesChannel : modifiedSalesChannels)
+      {
+        salesChannelService.putGUIManagedObject(modifiedSalesChannel, date, false, null);
+      }
+    
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+
+    revalidateOffers(date);
+  }
 
   /*****************************************
   *
@@ -8262,6 +9229,7 @@ public class GUIManager
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
     response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
+    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels().size());
     response.put("supplierCount", supplierService.getStoredSuppliers().size());
     response.put("productCount", productService.getStoredProducts().size());
     response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
@@ -8269,6 +9237,8 @@ public class GUIManager
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
     response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
+    response.put("mailTemplateCount", mailTemplateService.getStoredMailTemplates().size());
+    response.put("smsTemplateCount", smsTemplateService.getStoredSMSTemplates().size());
     return JSONUtilities.encodeObject(response);
   }
 
@@ -8493,7 +9463,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap())).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(salesChannelService))).collect(Collectors.toList());
                   }
 
                 //
@@ -8611,7 +9581,7 @@ public class GUIManager
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap();
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(salesChannelService);
                             DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
                             if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
                               {
@@ -8740,7 +9710,7 @@ public class GUIManager
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap();
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(salesChannelService);
                             String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
                             if (null != offerID)
                               {
@@ -8880,7 +9850,7 @@ public class GUIManager
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap()));
+                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap(salesChannelService)));
                           }
                       }
                   }
@@ -9450,7 +10420,7 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
-
+  
   /****************************************
   *
   *  resolveSubscriberID

@@ -47,6 +47,7 @@ public class Deployment
   private static String presentationStrategyTopic;
   private static String scoringStrategyTopic;
   private static String callingChannelTopic;
+  private static String salesChannelTopic;
   private static String supplierTopic;
   private static String productTopic;
   private static String catalogCharacteristicTopic;
@@ -54,6 +55,8 @@ public class Deployment
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
   private static String deliverableTopic;
+  private static String mailTemplateTopic;
+  private static String smsTemplateTopic;
   private static String guiAuditTopic;
   private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
@@ -81,6 +84,7 @@ public class Deployment
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static JSONArray initialCallingChannelsJSONArray = null;
+  private static JSONArray initialSalesChannelsJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
   private static JSONArray initialProductsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
@@ -91,7 +95,6 @@ public class Deployment
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static Map<String,FulfillmentProvider> fulfillmentProviders = new LinkedHashMap<String,FulfillmentProvider>();
   private static Map<String,PaymentInstrument> paymentMeans = new LinkedHashMap<String,PaymentInstrument>();
-  private static Map<String,SalesChannel> salesChannels = new LinkedHashMap<String,SalesChannel>();
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -175,6 +178,7 @@ public class Deployment
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
   public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
   public static String getCallingChannelTopic() { return callingChannelTopic; }
+  public static String getSalesChannelTopic() { return salesChannelTopic; }
   public static String getSupplierTopic() { return supplierTopic; }
   public static String getProductTopic() { return productTopic; }
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
@@ -182,6 +186,8 @@ public class Deployment
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
+  public static String getMailTemplateTopic() { return mailTemplateTopic; }
+  public static String getSMSTemplateTopic() { return smsTemplateTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
   public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
@@ -209,6 +215,7 @@ public class Deployment
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
+  public static JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
@@ -219,7 +226,6 @@ public class Deployment
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static Map<String,FulfillmentProvider> getFulfillmentProviders() { return fulfillmentProviders; }
   public static Map<String,PaymentInstrument> getPaymentMeans() { return paymentMeans; }
-  public static Map<String,SalesChannel> getSalesChannels() { return salesChannels; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
@@ -586,6 +592,19 @@ public class Deployment
       }
 
     //
+    //  salesChannelTopic
+    //
+
+    try
+      {
+        salesChannelTopic = JSONUtilities.decodeString(jsonRoot, "salesChannelTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  supplierTopic
     //
 
@@ -676,6 +695,32 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  mailTemplateTopic
+    //
+
+    try
+      {
+        mailTemplateTopic = JSONUtilities.decodeString(jsonRoot, "mailTemplateTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  smsTemplateTopic
+    //
+
+    try
+      {
+        smsTemplateTopic = JSONUtilities.decodeString(jsonRoot, "smsTemplateTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  guiAuditTopic
     //
@@ -1052,6 +1097,12 @@ public class Deployment
     initialCallingChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCallingChannels", new JSONArray());
 
     //
+    //  initialSalesChannelsJSONArray
+    //
+
+    initialSalesChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSalesChannels", new JSONArray());
+
+    //
     //  initialSuppliersJSONArray
     //
 
@@ -1130,25 +1181,6 @@ public class Deployment
             JSONObject paymentInstrumentJSON = (JSONObject) paymentInstrumentValues.get(i);
             PaymentInstrument paymentInstrument = new PaymentInstrument(paymentInstrumentJSON);
             paymentMeans.put(paymentInstrument.getID(), paymentInstrument);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  salesChannels
-    //
-
-    try
-      {
-        JSONArray salesChannelValues = JSONUtilities.decodeJSONArray(jsonRoot, "salesChannels", new JSONArray());
-        for (int i=0; i<salesChannelValues.size(); i++)
-          {
-            JSONObject salesChannelJSON = (JSONObject) salesChannelValues.get(i);
-            SalesChannel salesChannel = new SalesChannel(salesChannelJSON);
-            salesChannels.put(salesChannel.getID(), salesChannel);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

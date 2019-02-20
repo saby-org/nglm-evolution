@@ -43,6 +43,7 @@ import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.Product;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.SalesChannel;
+import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.StockMonitor;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
@@ -150,6 +151,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private SubscriberProfileService subscriberProfileService;
   private OfferService offerService;
   private ProductService productService;
+  private SalesChannelService salesChannelService;
   private StockMonitor stockService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private CommodityActionManager commodityActionManager;
@@ -182,6 +184,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     productService = new ProductService(Deployment.getBrokerServers(), "PurchaseMgr-productservice-"+deliveryManagerKey, Deployment.getProductTopic(), false);
     productService.start();
     
+    salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "PurchaseMgr-salesChannelservice-"+deliveryManagerKey, Deployment.getSalesChannelTopic(), false);
+    salesChannelService.start();
+
     stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService);
     stockService.start();
 
@@ -465,14 +470,24 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
     {
+      //
+      //  salesChannel
+      //
+
+      SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime());
+
+      //
+      //  presentation
+      //
+
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PURCHASEID, getEventID());
       guiPresentationMap.put(OFFERID, getOfferID());
       guiPresentationMap.put(OFFERQTY, getQuantity());
       guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-      guiPresentationMap.put(SALESCHANNEL, Deployment.getSalesChannels().get(getSalesChannelID()).getName());
+      guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
@@ -483,14 +498,24 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(VOUCHERPARTNERID, "");
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap) 
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService) 
     {
+      //
+      //  salesChannel
+      //
+
+      SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime());
+
+      //
+      //  presentation
+      //
+
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(PURCHASEID, getEventID());
       thirdPartyPresentationMap.put(OFFERID, getOfferID());
       thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
       thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-      thirdPartyPresentationMap.put(SALESCHANNEL, Deployment.getSalesChannels().get(getSalesChannelID()).getName());
+      thirdPartyPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
@@ -602,7 +627,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // Get sales channel
         //
 
-        SalesChannel salesChannel = Deployment.getSalesChannels().get(salesChannelID);
+        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
         if(salesChannel == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "salesChannel " + salesChannelID + " not found"/* TODO : use right message here */);
@@ -618,10 +643,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferPrice offerPrice = null;
         Boolean priceFound = false;
         for(OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offer.getOfferSalesChannelsAndPrices()){
-          if(offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getID())){
+          if(offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getSalesChannelID())){
             offerPrice = offerSalesChannelsAndPrice.getPrice();
             priceFound = true;
-            log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getID()+" found ("+offerPrice.getAmount()+" "+offerPrice.getPaymentMeanID()+")");
+            log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getSalesChannelID()+" found ("+offerPrice.getAmount()+" "+offerPrice.getPaymentMeanID()+")");
             break;
           }
         }
@@ -1793,7 +1818,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private SalesChannel salesChannel;
+    private String salesChannelID;
     
     /*****************************************
     *
@@ -1804,7 +1829,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public ActionManager(JSONObject configuration)
     {
       super(configuration);
-      this.salesChannel = Deployment.getSalesChannels().get(JSONUtilities.decodeString(configuration, "salesChannel", true));
+      this.salesChannelID = JSONUtilities.decodeString(configuration, "salesChannel", true);
     }
 
     /*****************************************
@@ -1846,7 +1871,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannel.getID());
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
 
       /*****************************************
       *

@@ -407,7 +407,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(MODULEID, getModuleID());
@@ -423,7 +423,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());

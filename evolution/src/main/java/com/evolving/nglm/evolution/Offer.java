@@ -646,7 +646,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, ProductService productService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, Date date) throws GUIManagerException
   {
     /****************************************
     *
@@ -654,7 +654,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     ****************************************/
     
-    Set<CallingChannel> validCallingChannels = new HashSet<CallingChannel>();
+    Set<String> validCallingChannelIDs = new HashSet<String>();
     for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
       {
         /*****************************************
@@ -713,7 +713,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         *
         *****************************************/
 
-        validCallingChannels.add(callingChannel);
+        validCallingChannelIDs.add(callingChannel.getCallingChannelID());
       }
 
     /*****************************************
@@ -722,11 +722,64 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     *****************************************/
 
-    if (validCallingChannels.size() == 0)
+    if (validCallingChannelIDs.size() == 0)
       {
         throw new GUIManagerException("no valid calling channels", getOfferID());
       }
 
+    /****************************************
+    *
+    *  ensure active sales channel
+    *
+    ****************************************/
+
+    Set<OfferSalesChannelsAndPrice> validOfferSalesChannelsAndPrices = new HashSet<OfferSalesChannelsAndPrice>();
+    for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offerSalesChannelsAndPrices)
+      {
+        for (String salesChannelID : offerSalesChannelsAndPrice.getSalesChannelIDs())
+          {
+            //
+            //  retrieve salesChannel
+            //
+
+            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, date);
+
+            //
+            //  validate the salesChannel exists and is active
+            //
+
+            if (salesChannel == null)
+              {
+                log.info("offer {} uses unknown sales channel: {}", getOfferID(), salesChannelID);
+                continue;
+              }
+
+            //
+            //  ensure matching calling channel
+            //
+
+            for (String callingChannelIDForSalesChannel : salesChannel.getCallingChannelIDs())
+              {
+                if (validCallingChannelIDs.contains(callingChannelIDForSalesChannel))
+                  {
+                    validOfferSalesChannelsAndPrices.add(offerSalesChannelsAndPrice);
+                    break;
+                  }
+              }
+          }
+      }
+
+    /*****************************************
+    *
+    *  ensure at least one valid sales channel
+    *
+    *****************************************/
+
+    if (validOfferSalesChannelsAndPrices.size() == 0)
+      {
+        throw new GUIManagerException("no valid sales channels", getOfferID());
+      }
+    
     /****************************************
     *
     *  ensure valid/active products

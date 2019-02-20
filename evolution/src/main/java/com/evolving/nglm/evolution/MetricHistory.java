@@ -13,6 +13,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberTrace;
+import com.evolving.nglm.core.SystemTime;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
@@ -523,7 +524,9 @@ public class MetricHistory
     *
     ****************************************/
     
-    Date day = RLMDateUtils.truncate(date, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date now = SystemTime.getCurrentTime();
+    Date effectiveDate = date.before(now) ? date : now;
+    Date day = RLMDateUtils.truncate(effectiveDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date beginningOfCurrentMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getBaseTimeZone());
 
     /****************************************
@@ -618,12 +621,12 @@ public class MetricHistory
   *
   *  startDay - legal values are
   *    A - the beginning of time (NULL)
-  *    B - the first of the previous "4" months (including this one)
+  *    B - the first of the previous "3" months
   *    C - any of the last "34" days
   *    D - any date in the future
   *
   *  endDay - legal values are
-  *    A - the last of the previous "4" months (including this one)
+  *    A - the last of the previous "3" months
   *    B - any of the last "34" days
   *    C - any date in the future
   *    D - the end of time (NULL)

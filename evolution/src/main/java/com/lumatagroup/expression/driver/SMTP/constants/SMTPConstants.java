@@ -65,4 +65,36 @@ public final class SMTPConstants {
 	
 	//Need to remove the to email address constants
 	//public static final String TO_EMAIL = "bhavishya.soni@lumatagroup.com";
+	
+	public static final String initial_duration_days = "1";
+	public static final String subject_charset = "UTF-8";
+	public static final String feedback_generic_polling_retry_delay = "150000";
+	public static final String smtp_driver_connection_checking_time_delay = "20000";
+	public static final String feedback_polling_initial_try_with_delay = "false";
+	public static final String polling_interval_secs = "30";
+	public static final String dyn_timezone = "GMT";
+	public static final String dyn_api_call_date_format = "yyyy-MM-dd'T'HH";
+	public static final String html_content_charset = "utf-8";
+	public static final String driver_smtp_connection_timeout = "180000";
+	public static final String feedback_generic_polling_retry_attempts = "10";
+	public static final String date_id = "1";
+	public static final String feedback_polling_retry_attempts = "20";
+	public static final String table_name_date = "dialog_manager.smtp_driver_date";
+	public static final String dyn_url_emailBounced = "http";
+	public static final String dyn_url_clickedUrl = "http";
+	public static final String dyn_api_call_time_margin = "3600000";
+	public static final String mail_smtp_socketFactory_class = "javax.net.ssl.SSLSocketFactory";
+	public static final String http_connection_timeout_secs = "60";
+	public static final String smtp_protocol = "SMTP";
+	public static final String dyn_url_emailDelivery = "http";
+	public static final String mail_smtp_auth = "true";
+	public static final String mail_smtp_host = "smtp.dynect.net";
+	public static final String dyn_url_emailOpened = "http";
+	public static final String name = "smtp_3rdparty";
+	public static final String smtp_driver_session_debug_flag = "true";
+	public static final String lock_grace_period_minutes = "10";
+	public static final String sql_date_format = "yyyy-MM-dd HH";
+	public static final String mail_smtp_socketFactory_port = "25";
+	public static final String feedback_polling_try_constant_delay = "150000";
+	
 }

@@ -104,9 +104,7 @@ public class OfferSalesChannelsAndPrice
     OfferSalesChannelsAndPrice offerSalesChannelsAndPrice = (OfferSalesChannelsAndPrice) value;
     Struct struct = new Struct(schema);
     struct.put("salesChannelIDs", packSalesChannelIDs(offerSalesChannelsAndPrice.getSalesChannelIDs()));
-    if(offerSalesChannelsAndPrice.getPrice() != null){
-      struct.put("price", OfferPrice.pack(offerSalesChannelsAndPrice.getPrice()));
-    }
+    if(offerSalesChannelsAndPrice.getPrice() != null) struct.put("price", OfferPrice.pack(offerSalesChannelsAndPrice.getPrice()));
     return struct;
   }
   
@@ -149,9 +147,7 @@ public class OfferSalesChannelsAndPrice
     Struct valueStruct = (Struct) value;
     List<String> salesChannelIDs = (List<String>) valueStruct.get("salesChannelIDs");
     OfferPrice price = null;
-    if(valueStruct.get("price") != null){
-      price = OfferPrice.unpack(new SchemaAndValue(schema.field("price").schema(), valueStruct.get("price")));
-    }
+    if(valueStruct.get("price") != null) price = OfferPrice.unpack(new SchemaAndValue(schema.field("price").schema(), valueStruct.get("price")));
     
     //
     //  return
@@ -170,9 +166,7 @@ public class OfferSalesChannelsAndPrice
   {
   
     this.salesChannelIDs = decodeSalesChannelIDs(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelIDs", true));
-    if(jsonRoot.get("price") != null){
-      this.price = new OfferPrice((JSONObject)jsonRoot.get("price"));
-    }
+    if(jsonRoot.get("price") != null) this.price = new OfferPrice((JSONObject)jsonRoot.get("price"));
 
   }
   

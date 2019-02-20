@@ -59,6 +59,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.sun.net.httpserver.HttpExchange;
@@ -92,6 +93,7 @@ public class ThirdPartyManager
   private SubscriberProfileService subscriberProfileService;
   private JourneyService journeyService;
   private JourneyObjectiveService journeyObjectiveService;
+  private SalesChannelService salesChannelService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
@@ -249,6 +251,7 @@ public class ThirdPartyManager
     subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "thirdpartymanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
     journeyService = new JourneyService(bootstrapServers, "thirdpartymanager-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "thirdpartymanager-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
+    salesChannelService = new SalesChannelService(bootstrapServers, "thirdpartymanager-salesChannelService-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     
@@ -260,6 +263,7 @@ public class ThirdPartyManager
     subscriberProfileService.start();
     journeyService.start();
     journeyObjectiveService.start();
+    salesChannelService.start();
     
     /*****************************************
     *
@@ -296,7 +300,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, journeyService, journeyObjectiveService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, journeyService, journeyObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -325,6 +329,7 @@ public class ThirdPartyManager
     private SubscriberProfileService subscriberProfileService;
     private JourneyService journeyService;
     private JourneyObjectiveService journeyObjectiveService;
+    private SalesChannelService salesChannelService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
     
@@ -332,13 +337,14 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.offerService = offerService;
       this.subscriberProfileService = subscriberProfileService;
       this.journeyService = journeyService;
       this.journeyObjectiveService = journeyObjectiveService;
+      this.salesChannelService = salesChannelService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     }
@@ -363,6 +369,7 @@ public class ThirdPartyManager
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (journeyService != null) journeyService.stop();
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
+      if (salesChannelService != null) salesChannelService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       
       //
@@ -867,7 +874,7 @@ public class ThirdPartyManager
                     {
                       if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                         {
-                          Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap();
+                          Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(salesChannelService);
                           DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
                           if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
                             {
@@ -999,7 +1006,7 @@ public class ThirdPartyManager
                     {
                       if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                         {
-                          Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap();
+                          Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(salesChannelService);
                           String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
                           if (null != offerID)
                             {
@@ -1141,7 +1148,7 @@ public class ThirdPartyManager
                     {
                       if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                         {
-                          messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap()));
+                          messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(salesChannelService)));
                         }
                     }
                 }

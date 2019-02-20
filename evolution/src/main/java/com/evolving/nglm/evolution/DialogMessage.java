@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -451,5 +452,34 @@ public class DialogMessage
     ****************************************/
 
     return resolvedMessage;
+  }
+
+  /*****************************************
+  *
+  *  equals
+  *
+  *****************************************/
+
+  public boolean equals(Object obj)
+  {
+    boolean result = false;
+    if (obj instanceof DialogMessage)
+      {
+        DialogMessage dialogMessage = (DialogMessage) obj;
+        result = true;
+        result = result && Objects.equals(messageTextByLanguage, dialogMessage.getMessageTextByLanguage());
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  hashCode
+  *
+  *****************************************/
+
+  public int hashCode()
+  {
+    return messageTextByLanguage.hashCode();
   }
 }

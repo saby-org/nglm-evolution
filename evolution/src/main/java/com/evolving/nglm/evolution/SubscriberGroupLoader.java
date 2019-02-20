@@ -6,10 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.segmentation.Segment;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimension;
-import com.evolving.nglm.evolution.segmentation.SegmentationDimensionService;
-
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ServerRuntimeException;

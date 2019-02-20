@@ -4,7 +4,7 @@
 *
 ****************************************************************************/
 
-package com.evolving.nglm.evolution.segmentation;
+package com.evolving.nglm.evolution;
 
 import java.util.Collection;
 import java.util.Date;

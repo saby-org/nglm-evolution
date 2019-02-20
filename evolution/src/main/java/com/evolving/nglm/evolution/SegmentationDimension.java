@@ -4,7 +4,7 @@
 *
 *****************************************************************************/
 
-package com.evolving.nglm.evolution.segmentation;
+package com.evolving.nglm.evolution;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
