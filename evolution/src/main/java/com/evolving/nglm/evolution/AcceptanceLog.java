@@ -60,15 +60,18 @@ public class AcceptanceLog implements SubscriberStreamEvent
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("acceptance_log");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("msisdn", Schema.STRING_SCHEMA);
-    schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("presentationStrategyID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("presentationToken", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);    
-    schemaBuilder.field("userID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Schema.INT64_SCHEMA);
+    schemaBuilder.field("callUniqueIdentifier", Schema.STRING_SCHEMA);
+    schemaBuilder.field("channelID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("userID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("presentationToken", Schema.OPTIONAL_STRING_SCHEMA);    
+    schemaBuilder.field("presentationStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("transactionDurationMs", Schema.INT32_SCHEMA);
+    schemaBuilder.field("controlGroupState", Schema.STRING_SCHEMA);
+    schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
     schemaBuilder.field("fulfilledDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("position", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
@@ -94,15 +97,18 @@ public class AcceptanceLog implements SubscriberStreamEvent
   *
   ****************************************/
 
-  private String subscriberID;
   private String msisdn;
-  private String offerID;
-  private String presentationStrategyID;
-  private String presentationToken;
-  private String channelID;
-  private String salesChannelID;  
-  private String userID;
+  private String subscriberID;
   private Date eventDate;
+  private String callUniqueIdentifier;
+  private String channelID;
+  private String salesChannelID;
+  private String userID;
+  private String presentationToken;
+  private String presentationStrategyID;
+  private Integer transactionDurationMs;
+  private String controlGroupState;
+  private String offerID;
   private Date fulfilledDate;
   private Integer position;
 
@@ -112,15 +118,18 @@ public class AcceptanceLog implements SubscriberStreamEvent
   *
   ****************************************/
 
+  public String getMsisdn() { return msisdn; }
   public String getSubscriberID() { return subscriberID; }
-  public String getMsisdn() { return msisdn; }  
-  public String getOfferID() { return offerID; }
-  public String getPresentationStrategyID() { return presentationStrategyID; }
-  public String getPresentationToken() { return presentationToken; }
-  public String getChannelID() { return channelID; }
-  public String getSalesChannelID() { return salesChannelID; }  
-  public String getUserID() { return userID; }
   public Date getEventDate() { return eventDate; }
+  public String getCallUniqueIdentifier() { return callUniqueIdentifier; }
+  public String getChannelID() { return channelID; }
+  public String getSalesChannelID() { return salesChannelID; }
+  public String getUserID() { return userID; }
+  public String getPresentationToken() { return presentationToken; }
+  public String getPresentationStrategyID() { return presentationStrategyID; }
+  public Integer getTransactionDurationMs() { return transactionDurationMs; }
+  public String getControlGroupState() { return controlGroupState; }  
+  public String getOfferID() { return offerID; }
   public Date getFulfilledDate() { return fulfilledDate; }
   public Integer getPosition() { return position; }
 
@@ -130,17 +139,20 @@ public class AcceptanceLog implements SubscriberStreamEvent
   *
   *****************************************/
 
-  public AcceptanceLog(String subscriberID, String msisdn, String offerID, String presentationStrategyID, String presentationToken, String channelID, String salesChannelID, String userID, Date eventDate, Date fulfilledDate, Integer position)
+  public AcceptanceLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, String controlGroupState, String offerID, Date fulfilledDate, Integer position)
   {
+    this.msisdn = msisdn;
     this.subscriberID = subscriberID;
-    this.msisdn = msisdn;    
-    this.offerID = offerID;
-    this.presentationStrategyID = presentationStrategyID;
-    this.presentationToken = presentationToken;
-    this.channelID = channelID;
-    this.salesChannelID = salesChannelID;    
-    this.userID = userID;
     this.eventDate = eventDate;
+    this.callUniqueIdentifier = callUniqueIdentifier;
+    this.channelID = channelID;
+    this.salesChannelID = salesChannelID;
+    this.userID = userID;
+    this.presentationToken = presentationToken;
+    this.presentationStrategyID = presentationStrategyID;
+    this.transactionDurationMs = transactionDurationMs;
+    this.controlGroupState = controlGroupState;
+    this.offerID = offerID;
     this.fulfilledDate = fulfilledDate;
     this.position = position;
   }
@@ -153,15 +165,18 @@ public class AcceptanceLog implements SubscriberStreamEvent
 
   public AcceptanceLog(JSONObject jsonRoot)
   {
-    this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.msisdn = JSONUtilities.decodeString(jsonRoot, "msisdn", true);
-    this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
-    this.presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", true);
-    this.presentationToken = JSONUtilities.decodeString(jsonRoot, "presentationToken", false);
-    this.channelID = JSONUtilities.decodeString(jsonRoot, "channelID", true);
-    this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);    
-    this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.eventDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "eventDate", true));
+    this.callUniqueIdentifier = JSONUtilities.decodeString(jsonRoot, "callUniqueIdentifier", true);
+    this.channelID = JSONUtilities.decodeString(jsonRoot, "channelID", true);
+    this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
+    this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    this.presentationToken = JSONUtilities.decodeString(jsonRoot, "presentationToken", false);
+    this.presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", false);
+    this.transactionDurationMs = JSONUtilities.decodeInteger(jsonRoot, "transactionDurationMs", true);
+    this.controlGroupState = JSONUtilities.decodeString(jsonRoot, "controlGroupState", true);
+    this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
     this.fulfilledDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "fulfilledDate", false));
     this.position = JSONUtilities.decodeInteger(jsonRoot, "position", false);
   }
@@ -202,15 +217,18 @@ public class AcceptanceLog implements SubscriberStreamEvent
   {
     AcceptanceLog acceptanceLog = (AcceptanceLog) value;
     Struct struct = new Struct(schema);
-    struct.put("subscriberID", acceptanceLog.getSubscriberID());
     struct.put("msisdn", acceptanceLog.getMsisdn());
-    struct.put("offerID", acceptanceLog.getOfferID());
-    struct.put("presentationStrategyID", acceptanceLog.getPresentationStrategyID());
-    struct.put("presentationToken", acceptanceLog.getPresentationToken());
-    struct.put("channelID", acceptanceLog.getChannelID());
-    struct.put("salesChannelID", acceptanceLog.getSalesChannelID());    
-    struct.put("userID", acceptanceLog.getUserID());
+    struct.put("subscriberID", acceptanceLog.getSubscriberID());
     struct.put("eventDate", acceptanceLog.getEventDate().getTime());
+    struct.put("callUniqueIdentifier", acceptanceLog.getCallUniqueIdentifier());
+    struct.put("channelID", acceptanceLog.getChannelID());
+    struct.put("salesChannelID", acceptanceLog.getSalesChannelID());
+    struct.put("userID", acceptanceLog.getUserID());
+    struct.put("presentationToken", acceptanceLog.getPresentationToken());
+    struct.put("presentationStrategyID", acceptanceLog.getPresentationStrategyID());    
+    struct.put("transactionDurationMs", acceptanceLog.getTransactionDurationMs());
+    struct.put("controlGroupState", acceptanceLog.getControlGroupState());
+    struct.put("offerID", acceptanceLog.getOfferID());
     struct.put("fulfilledDate", acceptanceLog.getFulfilledDate().getTime());
     struct.put("position", acceptanceLog.getPosition());
     return struct;
@@ -243,15 +261,18 @@ public class AcceptanceLog implements SubscriberStreamEvent
     //
 
     Struct valueStruct = (Struct) value;
+    String msisdn = valueStruct.getString("msisdn");
     String subscriberID = valueStruct.getString("subscriberID");
-    String msisdn = valueStruct.getString("msisdn");    
-    String offerID = valueStruct.getString("offerID");
-    String presentationStrategyID = valueStruct.getString("presentationStrategyID");
-    String presentationToken = valueStruct.getString("presentationToken");
+    Date eventDate = new Date(valueStruct.getInt64("eventDate"));
+    String callUniqueIdentifier = valueStruct.getString("callUniqueIdentifier");
     String channelID = valueStruct.getString("channelID");
     String salesChannelID = valueStruct.getString("salesChannelID");
     String userID = valueStruct.getString("userID");
-    Date eventDate = new Date(valueStruct.getInt64("eventDate"));
+    String presentationToken = valueStruct.getString("presentationToken");
+    String presentationStrategyID = valueStruct.getString("presentationStrategyID");
+    Integer transactionDurationMs = valueStruct.getInt32("transactionDurationMs");
+    String controlGroupState = valueStruct.getString("controlGroupState");
+    String offerID = valueStruct.getString("offerID");
     Date fulfilledDate = ((valueStruct.getInt64("fulfilledDate") != null) ? new Date(valueStruct.getInt64("fulfilledDate")) : null);
     Integer position = valueStruct.getInt32("position");
     
@@ -259,6 +280,6 @@ public class AcceptanceLog implements SubscriberStreamEvent
     //  return
     //
 
-    return new AcceptanceLog(subscriberID, msisdn, offerID, presentationStrategyID, presentationToken, channelID, salesChannelID, userID, eventDate, fulfilledDate, position);
+    return new AcceptanceLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, controlGroupState, offerID, fulfilledDate, position);
   }
 }
