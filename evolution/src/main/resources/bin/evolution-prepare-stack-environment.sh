@@ -872,6 +872,21 @@ done
 export THIRDPARTYMANAGER_PROMETHEUS
 export THIRDPARTYMANAGER_ENABLED
 
+#
+#  Fake IN -- configuration
+#
+
+for TUPLE in $FAKE_IN_IN_SERVERS
+do
+  export KEY=`echo $TUPLE | cut -d: -f1`
+  export HOST=`echo $TUPLE | cut -d: -f2`
+  export PORT=`echo $TUPLE | cut -d: -f3`
+  export DETERMINISTIC=`echo $TUPLE | cut -d: -f4`
+  declare FAKE_IN_IN_SERVERS_$KEY="$HOST:$PORT"
+  DYNAMIC_IN=FAKE_IN_IN_SERVERS_$KEY
+  export ${DYNAMIC_IN}
+done
+
 #########################################
 #
 #  heap opts

@@ -64,6 +64,10 @@
     <!-- dependencies - mysql -->
     <mysql.gui.version>8.0.13</mysql.gui.version>
     
+    <!-- dependencies - fake components -->
+    <fake.smsc.version>0.0.2</fake.smsc.version>
+    <fake.smtp.version>latest</fake.smtp.version>
+    
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
     <common.build.phase.generate-setup-stack>none</common.build.phase.generate-setup-stack>
@@ -239,6 +243,7 @@
                     <include>bin/upgrade-run-preamble.sh</include>
                     <include>bin/upgrade-run-flyway.sh</include>
                     <include>bin/upgrade-run-postamble.sh</include>
+                    <include>bin/fakein-run.sh</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/propensityengine_jmx.yml</include>
@@ -339,6 +344,41 @@
             </configuration>
           </execution>
 
+          <execution>
+            <id>generate-fakein-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/fakein</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources/docker/fakein</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>bin/fakein-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
 
@@ -358,6 +398,20 @@
               <contextDirectory>${project.build.directory}/assembled-docker/mysql-gui</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-mysql-gui</repository>
               <classifier>docker-info-mysql-gui</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          
+          <execution>
+            <id>docker-fakein</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <contextDirectory>${project.build.directory}/assembled-docker/fakein</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-fakein</repository>
+              <classifier>docker-info-fakein</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

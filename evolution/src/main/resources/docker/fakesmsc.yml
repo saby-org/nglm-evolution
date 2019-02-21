@@ -1,0 +1,16 @@
+fakesmsc:
+  image: ${env.DOCKER_REGISTRY}ev-fakesmsc:${fake.smsc.version}
+  deploy: 
+    restart_policy:
+      condition: <_DOCKER_RESTART_POLICY_>
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_SMTP_HOST_>
+  networks:
+    - outside
+

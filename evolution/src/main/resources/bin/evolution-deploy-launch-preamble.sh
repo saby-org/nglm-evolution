@@ -12,6 +12,10 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml ${DOCKER_STA
 #  optional stacks (from configuration)
 #
 
+if [ "${FAKEEMULATORS_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-fake.yml ${DOCKER_STACK}-fake
+fi
+
 if [ "${PROPENSITYENGINE_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml ${DOCKER_STACK}-propensityengine
 fi

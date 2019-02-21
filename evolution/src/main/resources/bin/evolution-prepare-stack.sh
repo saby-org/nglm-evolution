@@ -777,3 +777,53 @@ done
 
 cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-upgrade.yml
 
+#########################################
+#
+#  construct stack -- emulators(if necessary)
+#
+#########################################
+
+if [ "$FAKEEMULATORS_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-fake.yml
+
+  #
+  #  fake smsc
+  #
+
+  cat $DEPLOY_ROOT/docker/fakesmsc.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-fake.yml
+
+  #
+  #  fake smtp
+  #
+
+  cat $DEPLOY_ROOT/docker/fakesmtp.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-fake.yml
+
+  #
+  #  fake in
+  #
+
+  for TUPLE in $FAKE_IN_IN_SERVERS
+  do
+    export KEY=`echo $TUPLE | cut -d: -f1`
+    export HOST=`echo $TUPLE | cut -d: -f2`
+    export PORT=`echo $TUPLE | cut -d: -f3`
+    export DETERMINISTIC=`echo $TUPLE | cut -d: -f4`
+    declare FAKE_IN_IN_SERVERS_$KEY="$HOST:$PORT"
+    varname=FAKE_IN_IN_SERVERS_$KEY
+    cat $DEPLOY_ROOT/docker/fakein.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-fake.yml
+  done
+  
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-fake.yml
+  
+fi
+
