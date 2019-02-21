@@ -4,6 +4,8 @@ iar-web-<_KEY_>:
     iar_api_server_path: "http://<_GUI_IAR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_IAR_API_SERVER_PORT_>/api/"
     iar_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
     iar_api_server_path_for_upload_files: "http://<_GUI_IAR_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_IAR_API_SERVER_PORT_>/api/file/flowupload"
+    IAR_URL_ELASTICSEARCH_PATH: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>"
+    IAR_URL_KIBANA_PATH: "http://<_MONITORING_HOST_>:<_KIBANA_PORT_>"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     IAR_WEB_PORT: <_PORT_>
   deploy:
