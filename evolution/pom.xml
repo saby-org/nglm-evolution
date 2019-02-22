@@ -65,7 +65,7 @@
     <mysql.gui.version>8.0.13</mysql.gui.version>
     
     <!-- dependencies - fake components -->
-    <fake.smsc.version>0.0.2</fake.smsc.version>
+    <fake.smsc.version>0.0.3</fake.smsc.version>
     <fake.smtp.version>latest</fake.smtp.version>
     
     <!-- core-common-build -->
