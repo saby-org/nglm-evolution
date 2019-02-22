@@ -35,7 +35,7 @@ do
       docker pull ${env.DOCKER_REGISTRY}sbm.api:${gui-sbm.version}
       docker pull ${env.DOCKER_REGISTRY}sbm.web:${gui-sbm.version}
       docker pull ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version}
-      docker pull ${env.DOCKER_REGISTRY}fakesmsc:${fake.smsc.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-fakesmsc:${fake.smsc.version}
       docker pull digiplant/fake-smtp:${fake.smtp.version}
       docker pull ${env.DOCKER_REGISTRY}ev-fakein:${project.name}-${project.version}
    " &
