@@ -54,6 +54,7 @@ public class Deployment
   private static String journeyObjectiveTopic;
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
+  private static String ucgRuleTopic;
   private static String deliverableTopic;
   private static String mailTemplateTopic;
   private static String smsTemplateTopic;
@@ -185,6 +186,7 @@ public class Deployment
   public static String getJourneyObjectiveTopic() { return journeyObjectiveTopic; }
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
+  public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getMailTemplateTopic() { return mailTemplateTopic; }
   public static String getSMSTemplateTopic() { return smsTemplateTopic; }
@@ -256,7 +258,6 @@ public class Deployment
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
-
 
   /*****************************************
   *
@@ -683,6 +684,19 @@ public class Deployment
       }
 
     //
+    //  ucgRuleTopic
+    //
+
+    try
+      {
+        ucgRuleTopic = JSONUtilities.decodeString(jsonRoot, "ucgRuleTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  deliverable
     //
 
@@ -948,20 +962,20 @@ public class Deployment
 
     try
       {
-      propensityStateChangeLog = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLog", true);
+        propensityStateChangeLog = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLog", true);
       }
     catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
-    
+
     //
     //  propensityStateChangeLogTopic
     //
 
     try
       {
-      propensityStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLogTopic", true);
+        propensityStateChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "propensityStateChangeLogTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1557,8 +1571,6 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-
-    
   }
 
   /*****************************************
@@ -1571,5 +1583,4 @@ public class Deployment
   {
     System.out.println("zookeeper root: " + getZookeeperRoot());
   }
-
 }

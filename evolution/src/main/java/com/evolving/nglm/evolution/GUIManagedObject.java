@@ -139,6 +139,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(JourneyObjective.serde());
     guiManagedObjectSerdes.add(OfferObjective.serde());
     guiManagedObjectSerdes.add(ProductType.serde());
+    guiManagedObjectSerdes.add(UCGRule.serde());
     guiManagedObjectSerdes.add(Deliverable.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     guiManagedObjectSerdes.add(Report.serde());

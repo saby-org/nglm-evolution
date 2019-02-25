@@ -188,7 +188,7 @@ public class UCGState implements ReferenceDataValue<String>
   private static Set<UCGGroup> unpackUCGGroups(Schema schema, Object value)
   {
     //
-    //  get schema for ProductType
+    //  get schema for ucgGroup
     //
 
     Schema ucgGroupSchema = schema.valueSchema();

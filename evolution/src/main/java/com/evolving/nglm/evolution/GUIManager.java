@@ -191,6 +191,11 @@ public class GUIManager
     getProductType("getProductType"),
     putProductType("putProductType"),
     removeProductType("removeProductType"),
+    getUCGRuleList("getUCGRuleList"),
+    getUCGRuleSummaryList("getUCGRuleSummaryList"),
+    getUCGRule("getUCGRule"),
+    putUCGRule("putUCGRule"),
+    removeUCGRule("removeUCGRule"),
     getDeliverableList("getDeliverableList"),
     getDeliverableSummaryList("getDeliverableSummaryList"),
     getDeliverable("getDeliverable"),
@@ -272,6 +277,7 @@ public class GUIManager
   private JourneyObjectiveService journeyObjectiveService;
   private OfferObjectiveService offerObjectiveService;
   private ProductTypeService productTypeService;
+  private UCGRuleService ucgRuleService;
   private DeliverableService deliverableService;
   private MailTemplateService mailTemplateService;
   private SMSTemplateService smsTemplateService;
@@ -334,6 +340,7 @@ public class GUIManager
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
+    String ucgRuleTopic = Deployment.getUCGRuleTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
     String mailTemplateTopic = Deployment.getMailTemplateTopic();
     String smsTemplateTopic = Deployment.getSMSTemplateTopic();
@@ -389,6 +396,7 @@ public class GUIManager
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "guimanager-journeyobjectiveservice-" + apiProcessKey, journeyObjectiveTopic, true);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
+    ucgRuleService = new UCGRuleService(bootstrapServers,"guimanager-ucgruleservice-"+apiProcessKey,ucgRuleTopic,true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     mailTemplateService = new MailTemplateService(bootstrapServers, "guimanager-mailtemplateservice-" + apiProcessKey, mailTemplateTopic, true);
     smsTemplateService = new SMSTemplateService(bootstrapServers, "guimanager-smstemplateservice-" + apiProcessKey, smsTemplateTopic, true);
@@ -634,6 +642,7 @@ public class GUIManager
     journeyObjectiveService.start();
     offerObjectiveService.start();
     productTypeService.start();
+    ucgRuleService.start();
     deliverableService.start();
     mailTemplateService.start();
     smsTemplateService.start();
@@ -749,6 +758,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getProductType", new APIHandler(API.getProductType));
         restServer.createContext("/nglm-guimanager/putProductType", new APIHandler(API.putProductType));
         restServer.createContext("/nglm-guimanager/removeProductType", new APIHandler(API.removeProductType));
+        restServer.createContext("/nglm-guimanager/getUCGRuleList", new APIHandler(API.getUCGRuleList));
+        restServer.createContext("/nglm-guimanager/getUCGRuleSummaryList",new APIHandler(API.getUCGRuleSummaryList));
+        restServer.createContext("/nglm-guimanager/getUCGRule", new APIHandler(API.getUCGRule));
+        restServer.createContext("/nglm-guimanager/putUCGRule", new APIHandler(API.putUCGRule));
+        restServer.createContext("/nglm-guimanager/removeUCGRule", new APIHandler(API.removeUCGRule));
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APIHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APIHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APIHandler(API.getDeliverable));
@@ -787,7 +801,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
 
     /*****************************************
     *
@@ -825,6 +839,7 @@ public class GUIManager
     private JourneyObjectiveService journeyObjectiveService;
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
+    private UCGRuleService ucgRuleService;
     private DeliverableService deliverableService;
     private MailTemplateService mailTemplateService;
     private SMSTemplateService smsTemplateService;
@@ -837,7 +852,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
@@ -854,6 +869,7 @@ public class GUIManager
       this.journeyObjectiveService = journeyObjectiveService;
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
+      this.ucgRuleService = ucgRuleService;
       this.deliverableService = deliverableService;
       this.mailTemplateService = mailTemplateService;
       this.smsTemplateService = smsTemplateService;
@@ -893,6 +909,7 @@ public class GUIManager
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
+      if (ucgRuleService != null) ucgRuleService.stop();
       if (deliverableService != null) deliverableService.stop();
       if (mailTemplateService != null) mailTemplateService.stop();
       if (smsTemplateService != null) smsTemplateService.stop();
@@ -1414,6 +1431,26 @@ public class GUIManager
 
                 case removeProductType:
                   jsonResponse = processRemoveProductType(userID, jsonRoot);
+                  break;
+
+                case getUCGRuleList:
+                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, true);
+                  break;
+
+                case getUCGRuleSummaryList:
+                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, false);
+                  break;
+
+                case getUCGRule:
+                  jsonResponse = processGetUCGRule(userID, jsonRoot);
+                  break;
+
+                case putUCGRule:
+                  jsonResponse = processPutUCGRule(userID, jsonRoot);
+                  break;
+
+                case removeUCGRule:
+                  jsonResponse = processRemoveUCGRule(userID, jsonRoot);
                   break;
 
                 case getDeliverableList:
@@ -4272,14 +4309,23 @@ public class GUIManager
         ****************************************/
 
         SegmentationDimension segmentationDimension = null;
-        SegmentationDimensionTargetingType dimensionType = SegmentationDimensionTargetingType.valueOf(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
-        if(dimensionType.equals(SegmentationDimensionTargetingType.ELIGIBILITY)){
-          segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
-        }else if(dimensionType.equals(SegmentationDimensionTargetingType.FILE_IMPORT)){
-          segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
-        }else if(dimensionType.equals(SegmentationDimensionTargetingType.RANGES)){
-          segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
-        }
+        switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
+          {
+            case ELIGIBILITY:
+              segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+              break;
+
+            case RANGES:
+              segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+              break;
+              
+            case FILE_IMPORT:
+              segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+              break;
+
+            case Unknown:
+              throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+          }
 
         /*****************************************
         *
@@ -4288,6 +4334,14 @@ public class GUIManager
         *****************************************/
 
         segmentationDimensionService.putSegmentationDimension(segmentationDimension, (existingSegmentationDimension == null), userID);
+
+        /*****************************************
+        *
+        *  revalidate 
+        *
+        *****************************************/
+
+        revalidateUCGRules(now);
 
         /*****************************************
         *
@@ -4315,6 +4369,12 @@ public class GUIManager
         //
 
         segmentationDimensionService.putIncompleteSegmentationDimension(incompleteObject, (existingSegmentationDimension == null), userID);
+
+        //
+        //  revalidate
+        // 
+
+        revalidateUCGRules(now);
 
         //
         //  log
@@ -4376,6 +4436,14 @@ public class GUIManager
 
     GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
     if (segmentationDimension != null && ! segmentationDimension.getReadOnly()) segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
+
+    /*****************************************
+    *
+    *  revalidate
+    *
+    *****************************************/
+
+    revalidateUCGRules(now);
 
     /*****************************************
     *
@@ -7476,7 +7544,7 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve and decorate scoring strategy
+    *  retrieve and decorate product type
     *
     *****************************************/
 
@@ -7696,6 +7764,275 @@ public class GUIManager
       responseCode = "failedReadOnly";
     else
       responseCode = "productTypeNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetUCGRuleList
+  *
+  *****************************************/
+
+  private JSONObject processGetUCGRuleList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert ucg rules
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> ucgRules = new ArrayList<JSONObject>();
+    for (GUIManagedObject ucgRule : ucgRuleService.getStoredUCGRules())
+      {
+        ucgRules.add(ucgRuleService.generateResponseJSON(ucgRule, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("ucgRules", JSONUtilities.encodeArray(ucgRules));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetUCGRule
+  *
+  *****************************************/
+
+  private JSONObject processGetUCGRule(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate ucg rule
+    *
+    *****************************************/
+
+    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
+    JSONObject productJSON = ucgRuleService.generateResponseJSON(ucgRule, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (ucgRule != null) ? "ok" : "ucgRuleNotFound");
+    if (ucgRule != null) response.put("ucgRule", productJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutProduct
+  *
+  *****************************************/
+
+  private JSONObject processPutUCGRule(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  productID
+    *
+    *****************************************/
+
+    String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (ucgRuleID == null)
+      {
+        ucgRuleID = ucgRuleService.generateUCGRuleID();
+        jsonRoot.put("id", ucgRuleID);
+      }
+
+    /*****************************************
+    *
+    *  existing product
+    *
+    *****************************************/
+
+    GUIManagedObject existingUCGRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingUCGRule != null && existingUCGRule.getReadOnly())
+      {
+        response.put("id", existingUCGRule.getGUIManagedObjectID());
+        response.put("accepted", existingUCGRule.getAccepted());
+        response.put("valid", existingUCGRule.getAccepted());
+        response.put("processing", ucgRuleService.isActiveUCGRule(existingUCGRule, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process product
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate product
+        *
+        ****************************************/
+
+        UCGRule ucgRule = new UCGRule(jsonRoot, epoch, existingUCGRule);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        ucgRuleService.putUCGRule(ucgRule,segmentationDimensionService,(existingUCGRule == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", ucgRule.getUCGRuleID());
+        response.put("accepted", ucgRule.getAccepted());
+        response.put("valid", ucgRule.getAccepted());
+        response.put("processing", ucgRuleService.isActiveUCGRule(ucgRule, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        ucgRuleService.putUCGRule(incompleteObject, segmentationDimensionService, (existingUCGRule == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "ucgRuleNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveProduct
+  *
+  *****************************************/
+
+  private JSONObject processRemoveUCGRule(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
+    if (ucgRule != null && ! ucgRule.getReadOnly()) ucgRuleService.removeUCGRule(ucgRuleID, userID);
+
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (ucgRule != null && ! ucgRule.getReadOnly())
+      responseCode = "ok";
+    else if (ucgRule != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "ucgRuleNotFound";
 
     /*****************************************
     *
@@ -9148,6 +9485,62 @@ public class GUIManager
 
   /*****************************************
   *
+  *  revalidateUCGRules
+  *
+  *****************************************/
+
+  private void revalidateUCGRules(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+
+    Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+      {
+        //
+        //  modifiedUCGRule
+        //
+
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedUCGRule;
+        try
+          {
+            UCGRule ucgRule = new UCGRule(existingUCGRule.getJSONRepresentation(), epoch, existingUCGRule);
+            ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
+            modifiedUCGRule = ucgRule;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+
+        if (existingUCGRule.getAccepted() != modifiedUCGRule.getAccepted())
+          {
+            modifiedUCGRules.add(modifiedUCGRule);
+          }
+      }
+
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+
+    for (GUIManagedObject modifiedUCGRule : modifiedUCGRules)
+      {
+        ucgRuleService.putGUIManagedObject(modifiedUCGRule, date, false, null);
+      }
+  }
+
+  /*****************************************
+  *
   *  getFulfillmentProviders
   *
   *****************************************/
@@ -9314,7 +9707,6 @@ public class GUIManager
   /*****************************************
   *
   *  processGetCustomerMetaData
-  * @throws GUIManagerException 
   *
   *****************************************/
 
