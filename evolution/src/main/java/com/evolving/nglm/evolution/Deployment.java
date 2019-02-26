@@ -260,10 +260,6 @@ public class Deployment
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
-<<<<<<< HEAD
-=======
-
->>>>>>> rm190220a
 
   /*****************************************
   *
@@ -1591,11 +1587,6 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> rm190220a
   }
 
   /*****************************************
