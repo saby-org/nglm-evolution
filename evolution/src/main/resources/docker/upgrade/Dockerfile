@@ -1,6 +1,9 @@
 # Import E4O flyway image as it is
 FROM ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version} as original
 
+# Import GUI flyway image as it is
+FROM ${env.DOCKER_REGISTRY}ev-gui.sqlscripts:${flyway.gui.version} as guioriginal
+
 # Main upgrade image
 FROM confluentinc/cp-zookeeper:${confluent.version}
 
@@ -16,6 +19,7 @@ RUN curl -O http://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/5.2.1/
 RUN chmod 0755 /flyway-5.2.1/flyway
 
 COPY databases/ /databases
+COPY --from=guioriginal /database/ /databases/
 
 COPY bin/upgrade-run.sh /app/upgrade-run.sh
 
