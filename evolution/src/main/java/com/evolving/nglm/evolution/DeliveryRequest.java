@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -19,6 +21,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
@@ -39,6 +43,12 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   *  presentation-keys
   *
   *****************************************/
+	
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(DeliveryRequest.class);
   
   //
   // this
@@ -496,7 +506,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
     guiPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
     guiPresentationMap.put(EVENTID, getEventID());
-    guiPresentationMap.put(EVENTDATETIME, getEventDate());
+    guiPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
     addFieldsForGUIPresentation(guiPresentationMap, salesChannelService);
@@ -508,7 +518,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
     thirdPartyPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTID, getEventID());
-    thirdPartyPresentationMap.put(EVENTDATETIME, getEventDate());
+    thirdPartyPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
     addFieldsForGUIPresentation(thirdPartyPresentationMap, salesChannelService);
@@ -573,5 +583,29 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append(toStringFields());
     b.append("}");
     return b.toString();
+  }
+  
+  /*****************************************
+  *
+  *  getDateString
+  *
+  *****************************************/
+  
+  public String getDateString(Date date)
+
+  {
+    String result = null;
+    if (null == date) return result;
+    try
+      {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        result = dateFormat.format(date);
+      }
+    catch (Exception e)
+      {
+    	log.warn(e.getMessage());
+      }
+    return result;
   }
 }

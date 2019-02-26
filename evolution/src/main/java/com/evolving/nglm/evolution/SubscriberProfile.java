@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -307,7 +309,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
     
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroups(subscriberGroupEpochReader));
     generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
@@ -356,7 +358,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
     
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getEvolutionSubscriberStatusChangeDate());
+    generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
     List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroups(subscriberGroupEpochReader));
     generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
@@ -1005,4 +1007,29 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   {
     return ((0x000000FF & data[0]) << 24) + ((0x000000FF & data[0]) << 16) + ((0x000000FF & data[2]) << 8) + ((0x000000FF) & data[3]);
   }
+  
+  /*****************************************
+  *
+  *  getDateString
+  *
+  *****************************************/
+  
+  public String getDateString(Date date)
+
+  {
+    String result = null;
+    if (null == date) return result;
+    try
+      {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        result = dateFormat.format(date);
+      }
+    catch (Exception e)
+      {
+    	log.warn(e.getMessage());
+      }
+    return result;
+  }
+  
 }

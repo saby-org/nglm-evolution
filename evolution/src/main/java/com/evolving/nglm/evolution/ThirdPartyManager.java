@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -1370,8 +1372,8 @@ public class ThirdPartyManager
                       Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                       journeyResponseMap.put("journeyID", actJourney.getJourneyID());
                       journeyResponseMap.put("journeyName", actJourney.getGUIManagedObjectName());
-                      journeyResponseMap.put("startDate", actJourney.getEffectiveStartDate());
-                      journeyResponseMap.put("endDate", actJourney.getEffectiveEndDate());
+                      journeyResponseMap.put("startDate", getDateString(actJourney.getEffectiveStartDate()));
+                      journeyResponseMap.put("endDate", getDateString(actJourney.getEffectiveEndDate()));
                       
                       List<JourneyStatistic> thisJourneyStatistics = journeyStatisticsMap.get(actJourney.getJourneyID());
 
@@ -1408,7 +1410,7 @@ public class ThirdPartyManager
                           nodeHistoriesMap.put("toNodeID", journeyStatistic.getToNodeID());
                           nodeHistoriesMap.put("fromNode", null == journeyStatistic.getFromNodeID() ? null : actJourney.getJourneyNode(journeyStatistic.getFromNodeID()).getNodeName());
                           nodeHistoriesMap.put("toNode", null == journeyStatistic.getToNodeID() ? null : actJourney.getJourneyNode(journeyStatistic.getToNodeID()).getNodeName());
-                          nodeHistoriesMap.put("transitionDate", journeyStatistic.getTransitionDate());
+                          nodeHistoriesMap.put("transitionDate", getDateString(journeyStatistic.getTransitionDate()));
                           nodeHistoriesMap.put("linkID", journeyStatistic.getLinkID());
                           nodeHistoriesMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
                           nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -1650,8 +1652,8 @@ public class ThirdPartyManager
                       Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
                       campaignResponseMap.put("campaignID", actCampaign.getJourneyID());
                       campaignResponseMap.put("campaignName", actCampaign.getGUIManagedObjectName());
-                      campaignResponseMap.put("startDate", actCampaign.getEffectiveStartDate());
-                      campaignResponseMap.put("endDate", actCampaign.getEffectiveEndDate());
+                      campaignResponseMap.put("startDate", getDateString(actCampaign.getEffectiveStartDate()));
+                      campaignResponseMap.put("endDate", getDateString(actCampaign.getEffectiveEndDate()));
                       
                       List<JourneyStatistic> thisCampaignStatistics = campaignStatisticsMap.get(actCampaign.getJourneyID());
 
@@ -1688,7 +1690,7 @@ public class ThirdPartyManager
                           nodeHistoriesMap.put("toNodeID", campaignStatistic.getToNodeID());
                           nodeHistoriesMap.put("fromNode", null == campaignStatistic.getFromNodeID() ? null : actCampaign.getJourneyNode(campaignStatistic.getFromNodeID()).getNodeName());
                           nodeHistoriesMap.put("toNode", null == campaignStatistic.getToNodeID() ? null : actCampaign.getJourneyNode(campaignStatistic.getToNodeID()).getNodeName());
-                          nodeHistoriesMap.put("transitionDate", campaignStatistic.getTransitionDate());
+                          nodeHistoriesMap.put("transitionDate", getDateString(campaignStatistic.getTransitionDate()));
                           nodeHistoriesMap.put("linkID", campaignStatistic.getLinkID());
                           nodeHistoriesMap.put("deliveryRequestID", campaignStatistic.getDeliveryRequestID());
                           nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
@@ -2518,5 +2520,29 @@ public class ThirdPartyManager
         
       }
     }
+  }
+  
+  /*****************************************
+  *
+  *  getDateString
+  *
+  *****************************************/
+  
+  public String getDateString(Date date)
+
+  {
+    String result = null;
+    if (null == date) return result;
+    try
+      {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        result = dateFormat.format(date);
+      }
+    catch (Exception e)
+      {
+    	log.warn(e.getMessage());
+      }
+    return result;
   }
 }

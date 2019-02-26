@@ -126,6 +126,7 @@ public class Deployment
   private static String reportManagerCsvSeparator;
   private static JSONArray reportsConfigValues;
   private static CustomerMetaData customerMetaData = null;
+  private static String APIresponseDateFormat;
 
   /*****************************************
   *
@@ -258,6 +259,7 @@ public class Deployment
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
+  public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
 
   /*****************************************
   *
@@ -1568,6 +1570,20 @@ public class Deployment
         customerMetaData = new CustomerMetaData(JSONUtilities.decodeJSONObject(jsonRoot, "customerMetaData", true));
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  APIresponseDateFormat
+    //
+
+    try
+      {
+        APIresponseDateFormat = JSONUtilities.decodeString(jsonRoot, "APIresponseDateFormat", false);
+	if (null == APIresponseDateFormat) APIresponseDateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZ" ; 
+      }
+    catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }
