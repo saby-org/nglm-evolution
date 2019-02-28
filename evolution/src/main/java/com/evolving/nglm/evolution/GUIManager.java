@@ -131,6 +131,7 @@ public class GUIManager
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
     getSegmentationDimensionList("getSegmentationDimensionList"),
+    getSegmentationDimensionSummaryList("getSegmentationDimensionSummaryList"),
     getSegmentationDimension("getSegmentationDimension"),
     putSegmentationDimension("putSegmentationDimension"),
     removeSegmentationDimension("removeSegmentationDimension"),
@@ -222,6 +223,7 @@ public class GUIManager
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
+    refreshUCG("refreshUCG"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -698,6 +700,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/startCampaign", new APIHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APIHandler(API.stopCampaign));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APIHandler(API.getSegmentationDimensionList));
+        restServer.createContext("/nglm-guimanager/getSegmentationDimensionSummaryList", new APIHandler(API.getSegmentationDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APIHandler(API.getSegmentationDimension));
         restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APIHandler(API.putSegmentationDimension));
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APIHandler(API.removeSegmentationDimension));
@@ -789,6 +792,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
+        restServer.createContext("/nglm-guimanager/refreshUCG", new APIHandler(API.refreshUCG));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1187,6 +1191,10 @@ public class GUIManager
                   jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true);
                   break;
 
+                case getSegmentationDimensionSummaryList:
+                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, false);
+                  break;
+
                 case getSegmentationDimension:
                   jsonResponse = processGetSegmentationDimension(userID, jsonRoot);
                   break;
@@ -1549,6 +1557,10 @@ public class GUIManager
 
                 case getCustomerCampaigns:
                   jsonResponse = processGetCustomerCampaigns(userID, jsonRoot);
+                  break;
+
+                case refreshUCG:
+                  jsonResponse = processRefreshUCG(userID, jsonRoot);
                   break;
               }
           }
@@ -7856,7 +7868,7 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processPutProduct
+  *  processPutUCGRule
   *
   *****************************************/
 
@@ -10815,6 +10827,57 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  /*****************************************
+  *
+  * refreshUCG
+  *
+  *****************************************/
+
+  private JSONObject processRefreshUCG(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  identify active UCGRule (if any)
+    *
+    *****************************************/
+
+    UCGRule activeUCGRule = null;
+    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
+      {
+        activeUCGRule = ucgRule;
+      }
+
+    /*****************************************
+    *
+    *  refresh
+    *
+    *****************************************/
+    
+    if (activeUCGRule != null)
+      {
+        activeUCGRule.setRefreshEpoch(activeUCGRule.getRefreshEpoch() != null ? activeUCGRule.getRefreshEpoch() + 1 : 1);
+        ucgRuleService.putUCGRule(activeUCGRule,segmentationDimensionService,false, userID);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (activeUCGRule != null) ? "ok" : "noActiveUCGRule");
+    return JSONUtilities.encodeObject(response);
+  }
+
   /****************************************
   *
   *  resolveSubscriberID

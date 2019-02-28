@@ -187,6 +187,42 @@ fi
 
 #########################################
 #
+#  construct stack -- ucgengine
+#
+#########################################
+
+if [ "$UCGENGINE_ENABLED" = "true" ]; then
+
+  #
+  #  preamble
+  #
+
+  mkdir -p $DEPLOY_ROOT/stack
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-ucgengine.yml
+
+  #
+  #  ucgengine
+  #
+
+  for TUPLE in $UCGENGINE_CONFIGURATION
+  do
+     export KEY=`echo $TUPLE | cut -d: -f1`
+     export HOST=`echo $TUPLE | cut -d: -f2`
+     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
+     cat $DEPLOY_ROOT/docker/ucgengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-ucgengine.yml
+     echo >> $DEPLOY_ROOT/stack/stack-ucgengine.yml
+  done
+
+  #
+  #  postamble
+  #
+
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-ucgengine.yml
+
+fi  
+
+#########################################
+#
 #  construct stack -- infulfillmentmanager
 #
 #########################################

@@ -12,6 +12,10 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-evolutionengine.yml ${DOCKER_STA
 #  optional stacks (from configuration)
 #
 
+if [ "${UCGENGINE_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-ucgengine.yml ${DOCKER_STACK}-ucgengine
+fi
+
 if [ "${FAKEEMULATORS_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-fake.yml ${DOCKER_STACK}-fake
 fi

@@ -64,6 +64,7 @@
     <common.build.phase.generate-criteriaapi-image>none</common.build.phase.generate-criteriaapi-image>
     <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
     <common.build.phase.generate-propensityengine-image>none</common.build.phase.generate-propensityengine-image>
+    <common.build.phase.generate-ucgengine-image>none</common.build.phase.generate-ucgengine-image>
     <common.build.phase.generate-infulfillmentmanager-image>none</common.build.phase.generate-infulfillmentmanager-image>
     <common.build.phase.generate-purchasefulfillmentmanager-image>none</common.build.phase.generate-purchasefulfillmentmanager-image>
     <common.build.phase.generate-notificationmanagersms-image>none</common.build.phase.generate-notificationmanagersms-image>
@@ -78,6 +79,7 @@
     <common.build.skip.docker-criteriaapi-image>true</common.build.skip.docker-criteriaapi-image>
     <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
     <common.build.skip.docker-propensityengine-image>true</common.build.skip.docker-propensityengine-image>
+    <common.build.skip.docker-ucgengine-image>true</common.build.skip.docker-ucgengine-image>
     <common.build.skip.docker-infulfillmentmanager-image>true</common.build.skip.docker-infulfillmentmanager-image>
     <common.build.skip.docker-purchasefulfillmentmanager-image>true</common.build.skip.docker-purchasefulfillmentmanager-image>
     <common.build.skip.docker-notificationmanagersms-image>true</common.build.skip.docker-notificationmanagersms-image>
@@ -613,6 +615,49 @@
           </execution>
 
           <execution>
+            <id>generate-ucgengine-docker-stack</id>
+            <phase>${common.build.phase.generate-ucgengine-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/ucgengine</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/ucgengine</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/ucgengine-run.sh</include>
+                    <include>config/ucgengine_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
             <id>generate-infulfillmentmanager-docker-stack</id>
             <phase>${common.build.phase.generate-infulfillmentmanager-image}</phase>
             <goals>
@@ -1021,6 +1066,21 @@
               <contextDirectory>${project.build.directory}/assembled-docker/propensityengine</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-propensityengine</repository>
               <classifier>docker-info-propensityengine</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-ucgengine</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-ucgengine-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/ucgengine</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-ucgengine</repository>
+              <classifier>docker-info-ucgengine</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

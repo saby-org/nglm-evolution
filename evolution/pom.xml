@@ -230,6 +230,7 @@
                     <include>bin/prometheus-application-run-postamble.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>bin/propensityengine-run.sh</include>
+                    <include>bin/ucgengine-run.sh</include>
                     <include>bin/infulfillmentmanager-run.sh</include>
                     <include>bin/purchasefulfillmentmanager-run.sh</include>
                     <include>bin/notificationmanagersms-run.sh</include>
@@ -248,6 +249,7 @@
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/propensityengine_jmx.yml</include>
+                    <include>config/ucgengine_jmx.yml</include>
                     <include>config/infulfillmentmanager_jmx.yml</include>
                     <include>config/purchasefulfillmentmanager_jmx.yml</include>
                     <include>config/notificationmanagersms_jmx.yml</include>
@@ -271,6 +273,8 @@
                     <include>docker/evolutionengine.yml</include>
                     <include>docker/propensityengine/*</include>
                     <include>docker/propensityengine.yml</include>
+                    <include>docker/ucgengine/*</include>
+                    <include>docker/ucgengine.yml</include>
                     <include>docker/infulfillmentmanager/*</include>
                     <include>docker/infulfillmentmanager.yml</include>
                     <include>docker/purchasefulfillmentmanager/*</include>
@@ -307,6 +311,7 @@
                     <exclude>docker/thirdpartymanager.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
                     <exclude>docker/propensityengine.yml</exclude>
+                    <exclude>docker/ucgengine.yml</exclude>
                     <exclude>docker/infulfillmentmanager.yml</exclude>
                     <exclude>docker/purchasefulfillmentmanager.yml</exclude>
                     <exclude>docker/notificationmanagersms.yml</exclude>

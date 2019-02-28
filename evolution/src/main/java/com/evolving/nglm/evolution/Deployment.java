@@ -117,6 +117,7 @@ public class Deployment
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
+  private static String ucgEvaluationCronEntry;
   private static Map<String,ReportConfiguration> reportsConfiguration = new LinkedHashMap<String,ReportConfiguration>();
   private static String reportManagerZookeeperDir;
   private static String reportManagerOutputPath;
@@ -250,6 +251,7 @@ public class Deployment
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
+  public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; }
   public static Map<String,ReportConfiguration> getReportsConfiguration() { return reportsConfiguration; }
   public static JSONArray getReportsConfigJSon() { return reportsConfigValues; }
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
@@ -1519,6 +1521,12 @@ public class Deployment
     //
 
     periodicEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "periodicEvaluationCronEntry", false);
+
+    //
+    //  ucgEvaluationCronEntry
+    //
+
+    ucgEvaluationCronEntry = JSONUtilities.decodeString(jsonRoot, "ucgEvaluationCronEntry", false);
 
     //
     //  Reports

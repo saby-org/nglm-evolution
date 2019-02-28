@@ -470,6 +470,7 @@ public class TimerService
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.info(stackTraceWriter.toString());
+        return;
       }
 
     /*****************************************

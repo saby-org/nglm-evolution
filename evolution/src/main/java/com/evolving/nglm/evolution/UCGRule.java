@@ -62,6 +62,7 @@ public class UCGRule extends GUIManagedObject
     schemaBuilder.field("size",Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("percentageOfRefresh",Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("noOfDaysForStayOut",Schema.INT32_SCHEMA);
+    schemaBuilder.field("refreshEpoch",Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -89,6 +90,7 @@ public class UCGRule extends GUIManagedObject
   private Integer size;
   private Integer percentageOfRefresh;
   private int noOfDaysForStayOut;
+  private Integer refreshEpoch;
 
   /*****************************************
   *
@@ -99,10 +101,19 @@ public class UCGRule extends GUIManagedObject
   public String getUCGRuleID() { return getGUIManagedObjectID(); }
   public String getUCGRuleName() { return getGUIManagedObjectName(); }
   public List<String> getSelectedDimensions() { return selectedDimensions; }
-  public UCGRuleCalculationType getCalculationType() {return calculationType;}
-  public Integer getSize(){return size;}
-  public Integer getPercentageOfRefresh(){return percentageOfRefresh;}
-  public int getNoOfDaysForStayOut() {return noOfDaysForStayOut;}
+  public UCGRuleCalculationType getCalculationType() {return calculationType; }
+  public Integer getSize(){return size; }
+  public Integer getPercentageOfRefresh(){return percentageOfRefresh; }
+  public int getNoOfDaysForStayOut() {return noOfDaysForStayOut; }
+  public Integer getRefreshEpoch() { return refreshEpoch; }
+
+  /*****************************************
+  *
+  *  setters
+  *
+  *****************************************/
+
+  public void setRefreshEpoch(int refreshEpoch) { this.refreshEpoch = refreshEpoch; }
 
   /*****************************************
   *
@@ -110,7 +121,7 @@ public class UCGRule extends GUIManagedObject
   *
   *****************************************/
 
-  public UCGRule(SchemaAndValue schemaAndValue, List<String> selectedDimensions, UCGRuleCalculationType calculationType, Integer size, Integer percentageOfRefresh, int noOfDaysForStayOut)
+  public UCGRule(SchemaAndValue schemaAndValue, List<String> selectedDimensions, UCGRuleCalculationType calculationType, Integer size, Integer percentageOfRefresh, int noOfDaysForStayOut, Integer refreshEpoch)
   {
     super(schemaAndValue);
     this.selectedDimensions = selectedDimensions;
@@ -118,6 +129,7 @@ public class UCGRule extends GUIManagedObject
     this.size = size;
     this.percentageOfRefresh = percentageOfRefresh;
     this.noOfDaysForStayOut = noOfDaysForStayOut;
+    this.refreshEpoch = refreshEpoch;
   }
 
   /*****************************************
@@ -136,6 +148,7 @@ public class UCGRule extends GUIManagedObject
     struct.put("size", ucgRule.getSize());
     struct.put("percentageOfRefresh", ucgRule.getPercentageOfRefresh());
     struct.put("noOfDaysForStayOut", ucgRule.getNoOfDaysForStayOut());
+    struct.put("refreshEpoch", ucgRule.getRefreshEpoch());
     return struct;
   }
 
@@ -165,12 +178,13 @@ public class UCGRule extends GUIManagedObject
     Integer size = valueStruct.getInt32("size");
     Integer percentageOfRefresh = valueStruct.getInt32("percentageOfRefresh");
     int noOfDaysForStayOut = valueStruct.getInt32("noOfDaysForStayOut");
+    Integer refreshEpoch = valueStruct.getInt32("refreshEpoch");
 
     //
     //  return
     //
 
-    return new UCGRule(schemaAndValue, selectedDimensions, calculationType, size, percentageOfRefresh, noOfDaysForStayOut);
+    return new UCGRule(schemaAndValue, selectedDimensions, calculationType, size, percentageOfRefresh, noOfDaysForStayOut, refreshEpoch);
   }
 
   /*****************************************
@@ -209,6 +223,7 @@ public class UCGRule extends GUIManagedObject
     this.size = JSONUtilities.decodeInteger(jsonRoot,"size",false);
     this.percentageOfRefresh = JSONUtilities.decodeInteger(jsonRoot,"percentageOfRefresh",false);
     this.noOfDaysForStayOut = JSONUtilities.decodeInteger(jsonRoot,"noOfDaysForStayOut",true);
+    this.refreshEpoch = null;
 
     /*****************************************
     *
@@ -312,6 +327,7 @@ public class UCGRule extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(size, ucgRule.getSize());
         epochChanged = epochChanged || ! Objects.equals(percentageOfRefresh, ucgRule.getPercentageOfRefresh());
         epochChanged = epochChanged || ! Objects.equals(noOfDaysForStayOut, ucgRule.getNoOfDaysForStayOut());
+        epochChanged = epochChanged || ! Objects.equals(refreshEpoch, ucgRule.getRefreshEpoch());
         return epochChanged;
       }
     else

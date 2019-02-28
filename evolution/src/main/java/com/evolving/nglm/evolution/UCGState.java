@@ -50,10 +50,9 @@ public class UCGState implements ReferenceDataValue<String>
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("ucg_state");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.field("ucgRule", UCGRule.schema());
     schemaBuilder.field("ucgGroups", SchemaBuilder.array(UCGGroup.schema()).schema());
-    schemaBuilder.field("ucgPercentage", Schema.INT32_SCHEMA);
-    schemaBuilder.field("refreshPercentage", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("epoch", Schema.INT32_SCHEMA);
+    schemaBuilder.field("evaluationDate", Timestamp.SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -76,10 +75,9 @@ public class UCGState implements ReferenceDataValue<String>
   *
   ****************************************/
 
+  private UCGRule ucgRule;
   private Set<UCGGroup> ucgGroups;
-  private int ucgPercentage;
-  private Integer refreshPercentage;
-  private int epoch;
+  private Date evaluationDate;
 
   /****************************************
   *
@@ -87,10 +85,17 @@ public class UCGState implements ReferenceDataValue<String>
   *
   ****************************************/
 
+  public UCGRule getUCGRule() { return ucgRule; }
   public Set<UCGGroup> getUCGGroups() { return ucgGroups; }
-  public int getUCGPercentage() { return ucgPercentage; }
-  public Integer getRefreshPercentage() { return refreshPercentage; }
-  public int getEpoch() { return epoch; }
+  public Date getEvaluationDate() { return evaluationDate; }
+
+  //
+  //  convenience accessors
+  //
+
+  public String getUCGRuleID() { return ucgRule.getUCGRuleID(); }
+  public Integer getRefreshEpoch() { return ucgRule.getRefreshEpoch(); }
+  public int getRefreshWindowDays() { return ucgRule.getNoOfDaysForStayOut(); }
 
   //
   //  ReferenceDataValue
@@ -105,12 +110,11 @@ public class UCGState implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  public UCGState(Set<UCGGroup> ucgGroups, int ucgPercentage, Integer refreshPercentage, int epoch)
+  public UCGState(UCGRule ucgRule, Set<UCGGroup> ucgGroups, Date evaluationDate)
   {
+    this.ucgRule = ucgRule;
     this.ucgGroups = ucgGroups;
-    this.ucgPercentage = ucgPercentage;
-    this.refreshPercentage = refreshPercentage;
-    this.epoch = epoch;
+    this.evaluationDate = evaluationDate;
   }
 
   /*****************************************
@@ -123,10 +127,9 @@ public class UCGState implements ReferenceDataValue<String>
   {
     UCGState ucgState = (UCGState) value;
     Struct struct = new Struct(schema);
+    struct.put("ucgRule", UCGRule.pack(ucgState.getUCGRule()));
     struct.put("ucgGroups", packUCGGroups(ucgState.getUCGGroups()));
-    struct.put("ucgPercentage", ucgState.getUCGPercentage());
-    struct.put("refreshPercentage" , ucgState.getRefreshPercentage());
-    struct.put("epoch", ucgState.getEpoch());
+    struct.put("evaluationDate", ucgState.getEvaluationDate());
     return struct;
   }
 
@@ -167,16 +170,15 @@ public class UCGState implements ReferenceDataValue<String>
     //
 
     Struct valueStruct = (Struct) value;
+    UCGRule ucgRule = UCGRule.unpack(new SchemaAndValue(schema.field("ucgRule").schema(), valueStruct.get("ucgRule")));
     Set<UCGGroup> ucgGroups = unpackUCGGroups(schema.field("ucgGroups").schema(), valueStruct.get("ucgGroups"));
-    int ucgPercentage = valueStruct.getInt32("ucgPercentage");
-    Integer refreshPercentage = valueStruct.getInt32("refreshPercentage");
-    int epoch = valueStruct.getInt32("epoch");
+    Date evaluationDate = (Date) valueStruct.get("evaluationDate");
     
     //
     //  return
     //
 
-    return new UCGState(ucgGroups, ucgPercentage, refreshPercentage, epoch);
+    return new UCGState(ucgRule, ucgGroups, evaluationDate);
   }
 
   /*****************************************

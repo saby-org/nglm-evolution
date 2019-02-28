@@ -1371,26 +1371,50 @@ public class EvolutionEngine
     *****************************************/
 
     UCGState ucgState = ucgStateReader.get(UCGState.getSingletonKey());
-    if (ucgState != null && (context.getSubscriberState().getUCGEpoch() == null || context.getSubscriberState().getUCGEpoch() < ucgState.getEpoch()))
+    if (ucgState != null && ucgState.getRefreshEpoch() != null)
       {
-        /*****************************************
-        *
-        *  UCG calculations
-        *
-        *****************************************/
+        //
+        //  refreshUCG -- should we refresh the UCG status of this subscriber?
+        //
 
-        boolean addToUCG = false;
-        boolean removeFromUCG = false;
+        boolean refreshUCG = false;
+        refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() == null;
+        refreshUCG = refreshUCG || ! Objects.equals(context.getSubscriberState().getUCGRuleID(), ucgState.getUCGRuleID());
+        refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() < ucgState.getRefreshEpoch();
 
-        /*****************************************
-        *
-        *  add/remove from UCG
-        *
-        *****************************************/
+        //
+        //  refreshWindow -- is this subscriber outside the window where we can refresh the UCG?
+        //
 
-        if (addToUCG) subscriberProfile.setUniversalControlGroup(true);
-        if (removeFromUCG) subscriberProfile.setUniversalControlGroup(false);
-        context.getSubscriberState().setUCGEpoch(ucgState.getEpoch());
+        boolean refreshWindow = false;
+        refreshWindow = refreshWindow || context.getSubscriberState().getUCGRefreshDay() == null;
+        refreshWindow = refreshWindow || RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), ucgState.getRefreshWindowDays(), Deployment.getBaseTimeZone()).compareTo(now) <= 0;
+
+        //
+        //  refresh if necessary
+        //
+
+        if (refreshUCG && refreshWindow)
+          {
+            /*****************************************
+            *
+            *  UCG calculations
+            *
+            *****************************************/
+
+            boolean addToUCG = false;
+            boolean removeFromUCG = false;
+
+            /*****************************************
+            *
+            *  add/remove from UCG
+            *
+            *****************************************/
+
+            if (addToUCG) subscriberProfile.setUniversalControlGroup(true);
+            if (removeFromUCG) subscriberProfile.setUniversalControlGroup(false);
+            context.getSubscriberState().setUCGState(ucgState, now);
+          }
       }
 
     /*****************************************

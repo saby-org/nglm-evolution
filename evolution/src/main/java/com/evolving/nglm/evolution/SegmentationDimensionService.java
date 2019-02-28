@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.Collection;
 import java.util.Date;
 
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +84,24 @@ public class SegmentationDimensionService extends GUIService
         };
       }
     return superListener;
+  }
+
+  /*****************************************
+   *
+   *  getSummaryJSONRepresentation
+   *
+   *****************************************/
+
+  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
+    result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
+    result.put("status",guiManagedObject.getJSONRepresentation().get("status"));
+    result.put("targetingType", guiManagedObject.getJSONRepresentation().get("targetingType"));
+    result.put("noOfSegments",guiManagedObject.getJSONRepresentation().get("numberOfSegments"));
+    result.put("description",guiManagedObject.getJSONRepresentation().get("description"));
+    return result;
   }
 
   /*****************************************

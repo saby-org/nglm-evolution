@@ -19,6 +19,10 @@ docker stack rm <_DOCKER_STACK_>-evolutionengine
 #  optional stacks (from configuration)
 #
 
+if [ "<_UCGENGINE_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-ucgengine
+fi
+
 if [ "<_FAKEEMULATORS_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-fake
 fi

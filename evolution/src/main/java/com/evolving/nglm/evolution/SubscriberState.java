@@ -73,7 +73,9 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
     schemaBuilder.field("recentJourneyStates", SchemaBuilder.array(JourneyState.schema()).schema());
     schemaBuilder.field("scheduledEvaluations", SchemaBuilder.array(TimedEvaluation.schema()).schema());
+    schemaBuilder.field("ucgRuleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("ucgEpoch", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("ucgRefreshDay", Timestamp.builder().optional().schema());
     schemaBuilder.field("lastEvaluationDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("evolutionSubscriberStatusUpdated", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("journeyRequests", SchemaBuilder.array(JourneyRequest.schema()).schema());
@@ -107,7 +109,9 @@ public class SubscriberState implements SubscriberStreamOutput
   private Set<JourneyState> journeyStates;
   private Set<JourneyState> recentJourneyStates;
   private SortedSet<TimedEvaluation> scheduledEvaluations;
+  private String ucgRuleID;
   private Integer ucgEpoch;
+  private Date ucgRefreshDay;
   private Date lastEvaluationDate;
   private boolean evolutionSubscriberStatusUpdated;
   private List<JourneyRequest> journeyRequests;
@@ -126,7 +130,9 @@ public class SubscriberState implements SubscriberStreamOutput
   public Set<JourneyState> getJourneyStates() { return journeyStates; }
   public Set<JourneyState> getRecentJourneyStates() { return recentJourneyStates; }
   public SortedSet<TimedEvaluation> getScheduledEvaluations() { return scheduledEvaluations; }
+  public String getUCGRuleID() { return ucgRuleID; }
   public Integer getUCGEpoch() { return ucgEpoch; }
+  public Date getUCGRefreshDay() { return ucgRefreshDay; }
   public Date getLastEvaluationDate() { return lastEvaluationDate; }
   public boolean getEvolutionSubscriberStatusUpdated() { return evolutionSubscriberStatusUpdated; }
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
@@ -140,10 +146,20 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   ****************************************/
 
-  public void setUCGEpoch(int ucgEpoch) { this.ucgEpoch = ucgEpoch; }
   public void setLastEvaluationDate(Date lastEvaluationDate) { this.lastEvaluationDate = lastEvaluationDate; }
   public void setEvolutionSubscriberStatusUpdated(boolean evolutionSubscriberStatusUpdated) { this.evolutionSubscriberStatusUpdated = evolutionSubscriberStatusUpdated; }
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
+
+  //
+  //  setUCGState
+  //
+
+  public void setUCGState(UCGState ucgState, Date evaluationDate)
+  {
+    this.ucgRuleID = ucgState.getUCGRuleID();
+    this.ucgEpoch = ucgState.getRefreshEpoch();
+    this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+  }
 
   /*****************************************
   *
@@ -160,7 +176,9 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyStates = new HashSet<JourneyState>();
         this.recentJourneyStates = new HashSet<JourneyState>();
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>();
+        this.ucgRuleID = null;
         this.ucgEpoch = null;
+        this.ucgRefreshDay = null;
         this.lastEvaluationDate = null;
         this.evolutionSubscriberStatusUpdated = true;
         this.journeyRequests = new ArrayList<JourneyRequest>();
@@ -184,14 +202,16 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Integer ucgEpoch, Date lastEvaluationDate, boolean evolutionSubscriberStatusUpdated, List<JourneyRequest> journeyRequests, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, boolean evolutionSubscriberStatusUpdated, List<JourneyRequest> journeyRequests, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
     this.journeyStates = journeyStates;
     this.recentJourneyStates = recentJourneyStates;
     this.scheduledEvaluations = scheduledEvaluations;
+    this.ucgRuleID = ucgRuleID;
     this.ucgEpoch = ucgEpoch;
+    this.ucgRefreshDay = ucgRefreshDay;
     this.lastEvaluationDate = lastEvaluationDate;
     this.evolutionSubscriberStatusUpdated = evolutionSubscriberStatusUpdated;
     this.journeyRequests = journeyRequests;
@@ -218,7 +238,9 @@ public class SubscriberState implements SubscriberStreamOutput
         this.subscriberProfile = (SubscriberProfile) SubscriberProfile.getSubscriberProfileCopyConstructor().newInstance(subscriberState.getSubscriberProfile());
         this.recentJourneyStates = new HashSet<JourneyState>(subscriberState.getRecentJourneyStates());
         this.scheduledEvaluations = new TreeSet<TimedEvaluation>(subscriberState.getScheduledEvaluations());
+        this.ucgRuleID = subscriberState.getUCGRuleID();
         this.ucgEpoch = subscriberState.getUCGEpoch();
+        this.ucgRefreshDay = subscriberState.getUCGRefreshDay();
         this.lastEvaluationDate = subscriberState.getLastEvaluationDate();
         this.evolutionSubscriberStatusUpdated = subscriberState.getEvolutionSubscriberStatusUpdated();
         this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
@@ -261,7 +283,9 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("journeyStates", packJourneyStates(subscriberState.getJourneyStates()));
     struct.put("recentJourneyStates", packJourneyStates(subscriberState.getRecentJourneyStates()));
     struct.put("scheduledEvaluations", packScheduledEvaluations(subscriberState.getScheduledEvaluations()));
+    struct.put("ucgRuleID", subscriberState.getUCGRuleID());
     struct.put("ucgEpoch", subscriberState.getUCGEpoch());
+    struct.put("ucgRefreshDay", subscriberState.getUCGRefreshDay());
     struct.put("lastEvaluationDate", subscriberState.getLastEvaluationDate());
     struct.put("evolutionSubscriberStatusUpdated", subscriberState.getEvolutionSubscriberStatusUpdated());
     struct.put("journeyRequests", packJourneyRequests(subscriberState.getJourneyRequests()));
@@ -377,7 +401,9 @@ public class SubscriberState implements SubscriberStreamOutput
     Set<JourneyState> journeyStates = unpackJourneyStates(schema.field("journeyStates").schema(), valueStruct.get("journeyStates"));
     Set<JourneyState> recentJourneyStates = unpackJourneyStates(schema.field("recentJourneyStates").schema(), valueStruct.get("recentJourneyStates"));
     SortedSet<TimedEvaluation> scheduledEvaluations = unpackScheduledEvaluations(schema.field("scheduledEvaluations").schema(), valueStruct.get("scheduledEvaluations"));
+    String ucgRuleID = valueStruct.getString("ucgRuleID");
     Integer ucgEpoch = valueStruct.getInt32("ucgEpoch");
+    Date ucgRefreshDay = (Date) valueStruct.get("ucgRefreshDay");
     Date lastEvaluationDate = (Date) valueStruct.get("lastEvaluationDate");
     boolean evolutionSubscriberStatusUpdated = valueStruct.getBoolean("evolutionSubscriberStatusUpdated");
     List<JourneyRequest> journeyRequests = unpackJourneyRequests(schema.field("journeyRequests").schema(), valueStruct.get("journeyRequests"));
@@ -389,7 +415,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgEpoch, lastEvaluationDate, evolutionSubscriberStatusUpdated, journeyRequests, deliveryRequests, journeyStatistics, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, evolutionSubscriberStatusUpdated, journeyRequests, deliveryRequests, journeyStatistics, subscriberTrace);
   }
 
   /*****************************************
