@@ -14,5 +14,5 @@ public interface GUIManagerExtension
   *
   ****************************************/
 
-  // public static List<JSONObject> evaluateEnumeratedValues(String reference, Date now);
+  // public static List<JSONObject> evaluateEnumeratedValues(String reference, Date now, boolean includeDynamic);
 }
