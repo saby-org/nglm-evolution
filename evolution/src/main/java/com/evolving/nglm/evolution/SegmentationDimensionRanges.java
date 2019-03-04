@@ -286,4 +286,36 @@ public class SegmentationDimensionRanges extends SegmentationDimension
         return true;
       }
    }
+
+  /*****************************************
+  *
+  *  validation
+  *
+  *****************************************/
+  
+  @Override
+  public boolean validate() throws GUIManagerException {
+    //TODO : check mandatory fields (if any ...)
+    //TODO : need to check that rangeMin and rangeMax are valid integers ???
+    //throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
+    return super.validate();
+  }
+
+  /*****************************************
+  *
+  *  hasDefaultSegment
+  *
+  *****************************************/
+  
+  @Override
+  public boolean hasDefaultSegment(){
+    boolean hasDefault = false;
+    //iterate over all BaseSplit to check if it is a default one
+    for(BaseSplit split : baseSplit){
+      if((split.getProfileCriteria() == null || split.getProfileCriteria().isEmpty()) && (split.getVariableName() == null || split.getVariableName().isEmpty())){
+        hasDefault =true;
+      }
+    }
+    return hasDefault;
+  }
 }

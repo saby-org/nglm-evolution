@@ -61,6 +61,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
     schemaBuilder.field("description", Schema.STRING_SCHEMA);
     schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("hasDefaultSegment", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("isSimpleProfileDimension", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
 
@@ -79,7 +81,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
   private String description;
   private String display;
   private SegmentationDimensionTargetingType targetingType;
-  
+  private boolean hasDefaultSegment;
+  private boolean isSimpleProfileDimension;
 
   /****************************************
   *
@@ -96,6 +99,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
   public String getDescription() { return description; }
   public String getDisplay() { return display; }
   public SegmentationDimensionTargetingType getTargetingType() { return targetingType; }
+  public boolean getHasDefaultSegment() { return hasDefaultSegment; }
+  public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
 
   //
   //  abstract
@@ -133,6 +138,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
     String description = valueStruct.getString("description");
     String display = valueStruct.getString("display");
     SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
+    boolean hasDefaultSegment = valueStruct.getBoolean("hasDefaultSegment");
+    boolean isSimpleProfileDimension = valueStruct.getBoolean("isSimpleProfileDimension");
 
     //
     //  return
@@ -141,6 +148,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.description = description;
     this.display = display;
     this.targetingType = targetingType;
+    this.hasDefaultSegment = hasDefaultSegment;
+    this.isSimpleProfileDimension = isSimpleProfileDimension;
   }
 
   /*****************************************
@@ -155,6 +164,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
     struct.put("description", segmentationDimension.getDescription());
     struct.put("display", segmentationDimension.getDisplay());
     struct.put("targetingType", segmentationDimension.getTargetingType().getExternalRepresentation());
+    struct.put("hasDefaultSegment", segmentationDimension.getHasDefaultSegment());
+    struct.put("isSimpleProfileDimension", segmentationDimension.getIsSimpleProfileDimension());
   }
   
   /*****************************************
@@ -182,5 +193,31 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.description = JSONUtilities.decodeString(jsonRoot, "description", true);
     this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
     this.targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+    this.hasDefaultSegment = JSONUtilities.decodeBoolean(jsonRoot, "hasDefaultSegment", Boolean.FALSE);
+    this.isSimpleProfileDimension = JSONUtilities.decodeBoolean(jsonRoot, "isSimpleProfileDimension", Boolean.FALSE);
   }
+
+  /*****************************************
+  *
+  *  validation
+  *
+  *****************************************/
+  
+  public boolean validate() throws GUIManagerException {
+    this.hasDefaultSegment = hasDefaultSegment();
+    return true;
+  }
+  
+  /*****************************************
+  *
+  *  hasDefaultSegment
+  *
+  *****************************************/
+  
+  //
+  //  abstract
+  //
+
+  protected abstract boolean hasDefaultSegment();
+  
 }

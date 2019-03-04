@@ -70,6 +70,8 @@ import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
@@ -1311,23 +1313,6 @@ public class EvolutionEngine
     
     /*****************************************
     *
-    *  process subscriberGroup
-    *
-    *****************************************/
-
-    if (evolutionEvent instanceof SubscriberGroup)
-      {
-        //
-        //  apply
-        //
-        
-        SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
-        subscriberProfile.setSubscriberGroup(subscriberGroup.getDimensionID(), subscriberGroup.getSegmentID(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
-        subscriberProfileUpdated = true;
-      }
-
-    /*****************************************
-    *
     *  re-evaluate subscriberGroups for epoch changes and segmentation dimensions
     *
     *****************************************/
@@ -1340,12 +1325,12 @@ public class EvolutionEngine
 
         if (subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()) != null)
           {
+            boolean inGroup = false;
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
             switch (segmentationDimension.getTargetingType())
               {
                 case ELIGIBILITY:
-                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
                   SegmentationDimensionEligibility segmentationDimensionEligibility = (SegmentationDimensionEligibility) segmentationDimension;
-                  boolean inGroup = false;
                   for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
                     {
                       boolean addSegment = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
@@ -1356,9 +1341,87 @@ public class EvolutionEngine
                   break;
 
                 case RANGES:
+                  SegmentationDimensionRanges segmentationDimensionRanges = (SegmentationDimensionRanges) segmentationDimension;
+                  List<BaseSplit> baseSplitList = segmentationDimensionRanges.getBaseSplit();
+                  if(baseSplitList != null && !baseSplitList.isEmpty()){
+                    for(BaseSplit baseSplit : baseSplitList){
+                      
+                      //
+                      // evaluate criteria defined in baseSplit
+                      //
+                      
+                      boolean profileCriteriaEvaluation = EvaluationCriterion.evaluateCriteria(evaluationRequest, baseSplit.getProfileCriteria());
+                          
+                      //
+                      // get field value of criterion used for ranges 
+                      //
+                      
+                      String variableName = baseSplit.getVariableName();
+                      CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(variableName);
+                      Object normalized = baseMetric == null ? null : baseMetric.retrieveNormalized(evaluationRequest);
+
+                      //
+                      // check if the subscriber belongs to the segment
+                      //
+                      
+                      List<SegmentRanges> segmentList = baseSplit.getSegments();
+                      for(SegmentRanges segment : segmentList){
+                        boolean minValueOK =true;
+                        boolean maxValueOK =true;
+                        if(baseMetric != null){
+                          CriterionDataType dataType = baseMetric.getFieldDataType();
+                          switch (dataType) {
+                          case IntegerCriterion:
+                            if(segment.getRangeMin() != null){
+                              minValueOK = (normalized != null) && (Long)normalized >= segment.getRangeMin(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ... 
+                            }
+                            if(segment.getRangeMax() != null){
+                              minValueOK = (normalized == null) || (Long)normalized < segment.getRangeMax(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ... 
+                            }
+                            break;
+
+                          default: //TODO : will need to handle those dataTypes in a future version ...
+                            // DoubleCriterion
+                            // StringCriterion
+                            // BooleanCriterion
+                            // DateCriterion
+                            // StringSetCriterion
+                            break;
+                          }
+                        }
+
+                        //
+                        // update subscriberGroup
+                        //
+
+                        boolean addSegment = !inGroup && minValueOK && maxValueOK && profileCriteriaEvaluation;
+                        subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), addSegment);
+                        if (addSegment) inGroup = true;
+                        subscriberProfileUpdated = true;
+                      }
+                    }
+                  }
                   break;
 
                 case FILE_IMPORT:
+                  
+                  /*****************************************
+                  *
+                  *  process subscriberGroup
+                  *
+                  *****************************************/
+
+                  if (evolutionEvent instanceof SubscriberGroup)
+                    {
+                      //
+                      //  apply
+                      //
+                      
+                      SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
+                      subscriberProfile.setSubscriberGroup(subscriberGroup.getDimensionID(), subscriberGroup.getSegmentID(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+                      subscriberProfileUpdated = true;
+                    }
+
                   break;
               }
           }

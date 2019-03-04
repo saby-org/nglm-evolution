@@ -281,4 +281,29 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
         return true;
       }
    }
+
+  /*****************************************
+  *
+  *  validation
+  *
+  *****************************************/
+  
+  @Override
+  public boolean validate() throws GUIManagerException {
+    //TODO : check mandatory fields (if any ...)
+    //throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
+    return true;
+  }
+
+  /*****************************************
+  *
+  *  hasDefaultSegment
+  *
+  *****************************************/
+  
+  @Override
+  public boolean hasDefaultSegment(){
+    //TODO : do the check
+    return false;
+  }
 }

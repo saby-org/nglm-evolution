@@ -131,6 +131,12 @@ public class SegmentationDimensionService extends GUIService
     Date now = SystemTime.getCurrentTime();
 
     //
+    // validate dimension
+    //
+    
+    segmentationDimension.validate();
+    
+    //
     //  put
     //
 

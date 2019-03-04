@@ -273,4 +273,35 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
         return true;
       }
    }
+
+  /*****************************************
+  *
+  *  validation
+  *
+  *****************************************/
+  
+  @Override
+  public boolean validate() throws GUIManagerException {
+    //TODO : check mandatory fields (if any ...)
+    //throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
+    return super.validate();
+  }
+
+  /*****************************************
+  *
+  *  hasDefaultSegment
+  *
+  *****************************************/
+  
+  @Override
+  public boolean hasDefaultSegment(){
+    boolean hasDefault = false;
+    //iterate over all segments to check if it is a default one 
+    for(SegmentEligibility segment : segments){
+      if(segment.getProfileCriteria() == null || segment.getProfileCriteria().isEmpty()){
+        hasDefault =true;
+      }
+    }
+    return hasDefault;
+  }
 }

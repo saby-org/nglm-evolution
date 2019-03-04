@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -24,6 +25,9 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.common.errors.SerializationException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -32,12 +36,30 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 
 public class CriterionField extends DeploymentManagedObject
 {
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(CriterionField.class);
+
   /*****************************************
   *
   *  schema
@@ -337,6 +359,118 @@ public class CriterionField extends DeploymentManagedObject
       {
         throw new UnsupportedOperationException();
       }
+  }
+
+  /*****************************************
+  *
+  *  retrieveNormalized
+  *
+  *****************************************/
+
+  public Object retrieveNormalized(SubscriberEvaluationRequest evaluationRequest)
+  {
+    /****************************************
+    *
+    *  retrieve fieldValue
+    *
+    ****************************************/
+
+    Object criterionFieldValue;
+    try
+      {
+        /*****************************************
+        *
+        *  retreive criterionFieldValue
+        *
+        *****************************************/
+
+        criterionFieldValue = this.retrieve(evaluationRequest);
+        
+        /*****************************************
+        *
+        *  validate dataType
+        *
+        *****************************************/
+
+        if (criterionFieldValue != null)
+          {
+            switch (this.getFieldDataType())
+              {
+                case IntegerCriterion:
+                  if (criterionFieldValue instanceof Integer) criterionFieldValue = new Long(((Integer) criterionFieldValue).longValue());
+                  if (! (criterionFieldValue instanceof Long)) throw new CriterionException("criterionField " + this + " expected integer retrieved " + criterionFieldValue.getClass());
+                  break;
+
+                case DoubleCriterion:
+                  if (criterionFieldValue instanceof Float) criterionFieldValue = new Double(((Float) criterionFieldValue).doubleValue());
+                  if (! (criterionFieldValue instanceof Double)) throw new CriterionException("criterionField " + this + " expected double retrieved " + criterionFieldValue.getClass());
+                  break;
+
+                case StringCriterion:
+                  if (! (criterionFieldValue instanceof String)) throw new CriterionException("criterionField " + this + " expected string retrieved " + criterionFieldValue.getClass());
+                  break;
+
+                case BooleanCriterion:
+                  if (! (criterionFieldValue instanceof Boolean)) throw new CriterionException("criterionField " + this + " expected boolean retrieved " + criterionFieldValue.getClass());
+                  break;
+
+                case DateCriterion:
+                  if (! (criterionFieldValue instanceof Date)) throw new CriterionException("criterionField " + this + " expected date retrieved " + criterionFieldValue.getClass());
+                  break;
+
+                case StringSetCriterion:
+                  if (! (criterionFieldValue instanceof Set)) throw new CriterionException("criterionField " + this + " expected set retrieved " + criterionFieldValue.getClass());
+                  for (Object object : (Set<Object>) criterionFieldValue)
+                    {
+                      if (! (object instanceof String)) throw new CriterionException("criterionField " + this + " expected set of string retrieved " + object.getClass());
+                    }
+                  break;
+              }
+          }
+
+        /*****************************************
+        *
+        *  normalize
+        *
+        *****************************************/
+
+        if (criterionFieldValue != null)
+          {
+            switch (this.getFieldDataType())
+              {
+                case StringCriterion:
+                  String stringFieldValue = (String) criterionFieldValue;
+                  criterionFieldValue = (stringFieldValue != null) ? stringFieldValue.toLowerCase() : stringFieldValue;
+                  break;
+                  
+                case StringSetCriterion:
+                  Set<String> normalizedStringSetFieldValue = new HashSet<String>();
+                  for (String stringValue : (Set<String>) criterionFieldValue)
+                    {
+                      normalizedStringSetFieldValue.add((stringValue != null) ? stringValue.toLowerCase(): (String) stringValue);
+                    }
+                  criterionFieldValue = normalizedStringSetFieldValue;
+                  break;
+              }
+          }
+      }
+    catch (CriterionException e)
+      {
+        log.info("invalid criterion field {}", this.getID());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.info(stackTraceWriter.toString());
+        evaluationRequest.subscriberTrace("TrueCondition : criterionField {0} not supported", this.getID());
+        return true;
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return criterionFieldValue;
   }
 
   /*****************************************
