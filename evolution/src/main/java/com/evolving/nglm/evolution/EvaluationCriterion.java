@@ -709,7 +709,7 @@ public class EvaluationCriterion
     *
     ****************************************/
 
-    Object criterionFieldValue = criterionField.retrieve(evaluationRequest);
+    Object criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
 
     /****************************************
     *
