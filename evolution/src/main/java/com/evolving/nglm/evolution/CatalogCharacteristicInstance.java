@@ -14,6 +14,7 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 /****************************************************************************
@@ -46,8 +47,7 @@ public class CatalogCharacteristicInstance
     schemaBuilder.name("offer_catalog_characteristic");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("catalogCharacteristicID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("singletonValue", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("listValues", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("parameterMap", ParameterMap.schema());
     schema = schemaBuilder.build();
   };
 
@@ -64,8 +64,7 @@ public class CatalogCharacteristicInstance
   *****************************************/
 
   private String catalogCharacteristicID;
-  private String singletonValue;
-  private List<String> listValues;
+  private ParameterMap value;
 
   /*****************************************
   *
@@ -73,11 +72,10 @@ public class CatalogCharacteristicInstance
   *
   *****************************************/
 
-  private CatalogCharacteristicInstance(String catalogCharacteristicID, String singletonValue, List<String> listValues)
+  private CatalogCharacteristicInstance(String catalogCharacteristicID, ParameterMap value)
   {
     this.catalogCharacteristicID = catalogCharacteristicID;
-    this.singletonValue = singletonValue;
-    this.listValues = listValues;
+    this.value = value;
   }
 
   /*****************************************
@@ -93,38 +91,55 @@ public class CatalogCharacteristicInstance
     //
 
     this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true);
-    Object valueJSON = jsonRoot.get("value");
-    if (valueJSON instanceof JSONArray)
+    CriterionDataType dataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
+
+    //
+    //  parse value
+    //
+
+    Object value = null;
+    switch (dataType)
       {
-        this.singletonValue = null;
-        this.listValues = decodeListValues((JSONArray) valueJSON);
+        case IntegerCriterion:
+          value = JSONUtilities.decodeInteger(jsonRoot, "value", false);
+          break;
+
+        case DoubleCriterion:
+          value = JSONUtilities.decodeDouble(jsonRoot, "value", false);
+          break;
+
+        case StringCriterion:
+          value = JSONUtilities.decodeString(jsonRoot, "value", false);
+          break;
+
+        case DateCriterion:
+          value = JSONUtilities.decodeDate(jsonRoot, "value", false);
+          break;
+
+        case BooleanCriterion:
+          value = JSONUtilities.decodeBoolean(jsonRoot, "value", false);
+          break;
+
+        case StringSetCriterion:
+        case IntegerSetCriterion:
+          JSONArray jsonArray = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+          List<Object> listValue = new ArrayList<Object>();
+          for (int i=0; i<jsonArray.size(); i++)
+            {
+              listValue.add(jsonArray.get(i));
+            }
+          value = listValue;
+          break;
       }
-    else
-      {
-        this.singletonValue = JSONUtilities.decodeString(jsonRoot, "value", false);
-        this.listValues = null;
-      }
+
+    //
+    //  store in singleton parameterMap
+    //
+          
+    this.value = new ParameterMap();
+    this.value.put("value", value);
   }
   
-  /*****************************************
-  *
-  *  decodeListValues
-  *
-  *****************************************/
-
-  private List<String> decodeListValues(JSONArray jsonArray)
-  {
-    List<String> result = new ArrayList<String>();
-    if (jsonArray != null)
-      {
-        for (int i=0; i<jsonArray.size(); i++)
-          {
-            result.add((String) jsonArray.get(i));
-          }
-      }
-    return result;
-  }
-
   /*****************************************
   *
   *  accessors
@@ -132,9 +147,8 @@ public class CatalogCharacteristicInstance
   *****************************************/
 
   public String getCatalogCharacteristicID() { return catalogCharacteristicID; }
-  public String getSingletonValue() { return singletonValue; }
-  public List<String> getListValues() { return listValues; }
-  public Object getValue() { return (singletonValue != null) ? singletonValue : listValues; }
+  public Object getValue() { return value.get("value"); }
+  private ParameterMap getParameterMap() { return value; }
   
   /*****************************************
   *
@@ -158,8 +172,7 @@ public class CatalogCharacteristicInstance
     CatalogCharacteristicInstance offerCatalogCharacteristic = (CatalogCharacteristicInstance) value;
     Struct struct = new Struct(schema);
     struct.put("catalogCharacteristicID", offerCatalogCharacteristic.getCatalogCharacteristicID());
-    struct.put("singletonValue", offerCatalogCharacteristic.getSingletonValue());
-    struct.put("listValues", offerCatalogCharacteristic.getListValues());
+    struct.put("value", ParameterMap.pack(offerCatalogCharacteristic.getParameterMap()));
     return struct;
   }
 
@@ -185,20 +198,13 @@ public class CatalogCharacteristicInstance
 
     Struct valueStruct = (Struct) value;
     String catalogCharacteristicID = valueStruct.getString("catalogCharacteristicID");
-    String singletonValue = valueStruct.getString("singletonValue");
-    List<String> listValues = (List<String>) valueStruct.get("listValues");
-
-    //
-    //  validate
-    //
-
-    // TBD
+    ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("value").schema(), valueStruct.get("value")));
 
     //
     //  return
     //
 
-    return new CatalogCharacteristicInstance(catalogCharacteristicID, singletonValue, listValues);
+    return new CatalogCharacteristicInstance(catalogCharacteristicID, parameterMap);
   }
 
   /*****************************************
@@ -215,8 +221,7 @@ public class CatalogCharacteristicInstance
         CatalogCharacteristicInstance offerCatalogCharacteristic = (CatalogCharacteristicInstance) obj;
         result = true;
         result = result && Objects.equals(catalogCharacteristicID, offerCatalogCharacteristic.getCatalogCharacteristicID());
-        result = result && Objects.equals(singletonValue, offerCatalogCharacteristic.getSingletonValue());
-        result = result && Objects.equals(listValues, offerCatalogCharacteristic.getListValues());
+        result = result && Objects.equals(value, offerCatalogCharacteristic.getParameterMap());
       }
     return result;
   }
@@ -232,4 +237,3 @@ public class CatalogCharacteristicInstance
     return catalogCharacteristicID.hashCode();
   }
 }
-
