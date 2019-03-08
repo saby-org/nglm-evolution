@@ -170,7 +170,22 @@ public class CatalogCharacteristic extends GUIManagedObject
     *
     *****************************************/
 
-    this.dataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
+    CriterionDataType baseDataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
+    boolean allowMultipleValues = JSONUtilities.decodeBoolean(jsonRoot, "allowMultipleValues", Boolean.FALSE);
+    switch (baseDataType)
+      {
+        case IntegerCriterion:
+          this.dataType = allowMultipleValues ? CriterionDataType.IntegerSetCriterion : CriterionDataType.IntegerCriterion;
+          break;
+
+        case StringCriterion:
+          this.dataType = allowMultipleValues ? CriterionDataType.StringSetCriterion : CriterionDataType.StringCriterion;
+          break;
+
+        default:
+          this.dataType = baseDataType;
+          break;
+      }
 
     /*****************************************
     *

@@ -1,8 +1,10 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -14,6 +16,7 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -47,7 +50,7 @@ public class CatalogCharacteristicInstance
     schemaBuilder.name("offer_catalog_characteristic");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("catalogCharacteristicID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("parameterMap", ParameterMap.schema());
+    schemaBuilder.field("value", ParameterMap.schema());
     schema = schemaBuilder.build();
   };
 
@@ -84,14 +87,15 @@ public class CatalogCharacteristicInstance
   *
   *****************************************/
 
-  CatalogCharacteristicInstance(JSONObject jsonRoot) throws GUIManagerException
+  CatalogCharacteristicInstance(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     //
     //  catalog characteristic
     //
 
     this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", true);
-    CriterionDataType dataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
+    CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
+    CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
 
     //
     //  parse value
@@ -121,15 +125,27 @@ public class CatalogCharacteristicInstance
           break;
 
         case StringSetCriterion:
-        case IntegerSetCriterion:
-          JSONArray jsonArray = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
-          List<Object> listValue = new ArrayList<Object>();
-          for (int i=0; i<jsonArray.size(); i++)
+          JSONArray jsonArrayString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+          Set<Object> stringSetValue = new HashSet<Object>();
+          for (int i=0; i<jsonArrayString.size(); i++)
             {
-              listValue.add(jsonArray.get(i));
+              stringSetValue.add(jsonArrayString.get(i));
             }
-          value = listValue;
+          value = stringSetValue;
           break;
+
+        case IntegerSetCriterion:
+          JSONArray jsonArrayInteger = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+          Set<Object> integerSetValue = new HashSet<Object>();
+          for (int i=0; i<jsonArrayInteger.size(); i++)
+            {
+              integerSetValue.add(new Integer(((Number) jsonArrayInteger.get(i)).intValue()));
+            }
+          value = integerSetValue;
+          break;
+
+        default:
+          throw new GUIManagerException("unsupported catalogCharacteristic", catalogCharacteristicID);
       }
 
     //

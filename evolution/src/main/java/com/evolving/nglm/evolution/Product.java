@@ -300,7 +300,7 @@ public class Product extends GUIManagedObject implements StockableItem
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new ProductTypeInstance((JSONObject) jsonArray.get(i)));
+            result.add(new ProductTypeInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;

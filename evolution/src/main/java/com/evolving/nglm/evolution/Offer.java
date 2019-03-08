@@ -549,7 +549,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferObjectiveInstance((JSONObject) jsonArray.get(i)));
+            result.add(new OfferObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;

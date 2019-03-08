@@ -1126,7 +1126,7 @@ public class Journey extends GUIManagedObject
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new JourneyObjectiveInstance((JSONObject) jsonArray.get(i)));
+            result.add(new JourneyObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
