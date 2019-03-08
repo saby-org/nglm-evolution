@@ -93,6 +93,7 @@ public class Deployment
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialDeliverablesJSONArray = null;
+  private static boolean generateSimpleProfileDimensions;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static Map<String,FulfillmentProvider> fulfillmentProviders = new LinkedHashMap<String,FulfillmentProvider>();
   private static Map<String,PaymentInstrument> paymentMeans = new LinkedHashMap<String,PaymentInstrument>();
@@ -227,6 +228,7 @@ public class Deployment
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
+  public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static Map<String,FulfillmentProvider> getFulfillmentProviders() { return fulfillmentProviders; }
   public static Map<String,PaymentInstrument> getPaymentMeans() { return paymentMeans; }
@@ -1162,6 +1164,19 @@ public class Deployment
 
     initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", new JSONArray());
     
+    //
+    //  generateSimpleProfileDimensions
+    //
+
+    try
+      {
+        generateSimpleProfileDimensions = JSONUtilities.decodeBoolean(jsonRoot, "generateSimpleProfileDimensions", Boolean.TRUE);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  initialSegmentationDimensionsJSONArray
     //

@@ -61,7 +61,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     schemaBuilder.field("description", Schema.STRING_SCHEMA);
     schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("hasDefaultSegment", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("hasDefaultSegment", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isSimpleProfileDimension", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     commonSchema = schemaBuilder.build();
   };

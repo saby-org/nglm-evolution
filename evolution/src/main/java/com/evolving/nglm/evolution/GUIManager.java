@@ -6,8 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -15,7 +13,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,12 +31,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -66,12 +66,12 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-
-import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -135,6 +135,7 @@ public class GUIManager
     getSegmentationDimension("getSegmentationDimension"),
     putSegmentationDimension("putSegmentationDimension"),
     removeSegmentationDimension("removeSegmentationDimension"),
+    getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
     getOfferList("getOfferList"),
     getOfferSummaryList("getOfferSummaryList"),
     getOffer("getOffer"),
@@ -628,6 +629,183 @@ public class GUIManager
 
     /*****************************************
     *
+    *  simple profile dimensions 
+    *
+    *****************************************/
+    
+    if (Deployment.getGenerateSimpleProfileDimensions()){
+      
+      //
+      // remove all existing simple profile dimensions
+      //
+      
+      for(GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions()){
+        if(dimensionObject instanceof SegmentationDimension){
+          SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
+          if(dimension.getIsSimpleProfileDimension()){
+            log.debug("SimpleProfileDimension : removing dimension '"+dimension.getDisplay() + "'");
+            segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0");
+          }else{
+            log.debug("SimpleProfileDimension : dimension '"+dimension.getDisplay() + "' is not a simpleProfile dimension, do Not remove");
+          }
+        //}else if(dimensionObject instanceof IncompleteObject){
+        //  log.info("SimpleProfileDimension : removing IncompleteObject '"+dimensionObject.getGUIManagedObjectName() + "'");
+        //  segmentationDimensionService.removeSegmentationDimension(dimensionObject.getGUIManagedObjectID(), "0");
+        }else{
+          log.debug("SimpleProfileDimension : '"+dimensionObject.getGUIManagedObjectName()+"' is NOT a dimension (probablyl IncompleteObject) : WHAT DO WE DO ???");
+        }
+      }
+      
+      //
+      // re-create simple profile dimensions (=> so we are sure that dimensions are in line with profile fields)
+      //
+      
+      Date now = SystemTime.getCurrentTime();
+      Map<String,CriterionField> profileCriterionFields = CriterionContext.Profile.getCriterionFields();
+      for(CriterionField criterion : profileCriterionFields.values()){
+        log.debug("SimpleProfileDimension : handling field '"+criterion.getName()+"' ...");
+        List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false);
+        if(availableValues != null && !availableValues.isEmpty()){
+          log.debug("     field '"+criterion.getName()+"' : field has availableValues => create a new dimension");
+
+          //
+          // create dimension
+          //
+
+          String dimensionID = "simple.subscriber." + criterion.getID();
+          HashMap<String,Object> newSimpleProfileDimensionJSON = new HashMap<String,Object>();
+          newSimpleProfileDimensionJSON.put("isSimpleProfileDimension", true);
+          newSimpleProfileDimensionJSON.put("id", dimensionID);
+          newSimpleProfileDimensionJSON.put("name", criterion.getName());
+          newSimpleProfileDimensionJSON.put("display", criterion.getDisplay());
+          newSimpleProfileDimensionJSON.put("description", "Simple profile criteria (from "+criterion.getName()+")");
+          newSimpleProfileDimensionJSON.put("targetingType", SegmentationDimensionTargetingType.ELIGIBILITY.getExternalRepresentation());
+          newSimpleProfileDimensionJSON.put("readOnly", Boolean.TRUE);
+
+          //
+          // create all segments of this dimension
+          //
+
+          ArrayList<Object> newSimpleProfileDimensionSegments = new ArrayList<Object>();
+          for(JSONObject availableValue : availableValues){
+            HashMap<String,Object> segmentJSON = new HashMap<String,Object>();
+            ArrayList<Object> segmentProfileCriteriaList = new ArrayList<Object>();
+            switch (criterion.getFieldDataType()) {
+            case StringCriterion:
+              
+              //
+              // create a segment
+              //
+
+              String stringValueID = JSONUtilities.decodeString(availableValue, "id", true);
+              String stringValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+              segmentJSON.put("id", dimensionID + "." + stringValueID);
+              segmentJSON.put("name", stringValueDisplay);
+              if(!newSimpleProfileDimensionSegments.isEmpty()){ // first element is the default value => fill criteria for all values except the first
+                HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                segmentProfileCriteria.put("criterionField", criterion.getName());
+                segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
+                HashMap<String,Object> argument = new HashMap<String,Object> ();
+                argument.put("expression", "'"+stringValueID+"'");
+                segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+              }
+              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+              break;
+
+            case StringSetCriterion:
+
+              //
+              // create a segment
+              //
+
+              String setValueID = JSONUtilities.decodeString(availableValue, "id", true);
+              String setValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+              segmentJSON.put("id", dimensionID + "." + setValueID);
+              segmentJSON.put("name", setValueDisplay);
+              if(!newSimpleProfileDimensionSegments.isEmpty()){ // first element is the default value => fill criteria for all values except the first
+                HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                segmentProfileCriteria.put("criterionField", criterion.getName());
+                segmentProfileCriteria.put("criterionOperator", CriterionOperator.ContainsOperator.getExternalRepresentation());
+                HashMap<String,Object> argument = new HashMap<String,Object> ();
+                argument.put("expression", "'"+setValueID+"'");
+                segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+              }
+              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+              break;
+
+            case BooleanCriterion:
+
+              //
+              // create a segment
+              //
+
+              boolean booleanValueID = JSONUtilities.decodeBoolean(availableValue, "id", true);
+              String booleanValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+              segmentJSON.put("id", dimensionID + "." + booleanValueID);
+              segmentJSON.put("name", booleanValueDisplay);
+              if(!newSimpleProfileDimensionSegments.isEmpty()){ // first element is the default value => fill criteria for all values except the first
+                HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                segmentProfileCriteria.put("criterionField", criterion.getName());
+                segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
+                HashMap<String,Object> argument = new HashMap<String,Object> ();
+                argument.put("expression", Boolean.toString(booleanValueID));
+                segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+              }
+              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+              break;
+
+            case IntegerCriterion:
+
+              //
+              // create a segment
+              //
+
+              int intValueID = JSONUtilities.decodeInteger(availableValue, "id", true);
+              String intValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
+              segmentJSON.put("id", dimensionID + "." + intValueID);
+              segmentJSON.put("name", intValueDisplay);
+              if(!newSimpleProfileDimensionSegments.isEmpty()){ // first element is the default value => fill criteria for all values except the first
+                HashMap<String,Object> segmentProfileCriteria = new HashMap<String,Object> ();
+                segmentProfileCriteria.put("criterionField", criterion.getName());
+                segmentProfileCriteria.put("criterionOperator", CriterionOperator.EqualOperator.getExternalRepresentation());
+                HashMap<String,Object> argument = new HashMap<String,Object> ();
+                argument.put("expression", ""+intValueID);
+                segmentProfileCriteria.put("argument", JSONUtilities.encodeObject(argument));
+                segmentProfileCriteriaList.add(JSONUtilities.encodeObject(segmentProfileCriteria));
+              }
+              segmentJSON.put("profileCriteria", JSONUtilities.encodeArray(segmentProfileCriteriaList));
+              newSimpleProfileDimensionSegments.add((newSimpleProfileDimensionSegments.isEmpty() ? 0 : newSimpleProfileDimensionSegments.size() - 1), JSONUtilities.encodeObject(segmentJSON)); // first element is the default value => need to be the last element of segments list
+              break;
+
+            default:
+              //DoubleCriterion
+              //DateCriterion
+              break;
+            }
+          }
+
+          newSimpleProfileDimensionJSON.put("segments", JSONUtilities.encodeArray(newSimpleProfileDimensionSegments));
+
+          JSONObject newSimpleProfileDimension = JSONUtilities.encodeObject(newSimpleProfileDimensionJSON);
+          processPutSegmentationDimension("0", newSimpleProfileDimension);
+          log.debug("     field '"+criterion.getName()+"' : field has availableValues => new dimension CREATED "+newSimpleProfileDimension);
+        }else{
+          log.debug("     field '"+criterion.getName()+"' : field DO NOT have availableValues => NO dimension created");
+        }
+      }
+      
+    }else{
+      log.debug("SimpleProfileDimension : flag GenerateSimpleProfileDimensions = false => do not generate any dimension");
+    }
+    
+    /*****************************************
+    *
     *  services - start
     *
     *****************************************/
@@ -704,6 +882,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APIHandler(API.getSegmentationDimension));
         restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APIHandler(API.putSegmentationDimension));
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APIHandler(API.removeSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APIHandler(API.getUCGDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APIHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APIHandler(API.getOffer));
@@ -1205,6 +1384,10 @@ public class GUIManager
 
                 case removeSegmentationDimension:
                   jsonResponse = processRemoveSegmentationDimension(userID, jsonRoot);
+                  break;
+
+                case getUCGDimensionSummaryList:
+                  jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false);
                   break;
 
                 case getOfferList:
@@ -4522,6 +4705,42 @@ public class GUIManager
     *****************************************/
 
     response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetUCGDimensionList
+  *
+  *****************************************/
+
+  private JSONObject processGetUCGDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert segmentationDimensions
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
+    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
+      {
+        SegmentationDimension dimension = (SegmentationDimension) segmentationDimension;
+        if(dimension.getHasDefaultSegment()){
+          segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
+        }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("segmentationDimensions", JSONUtilities.encodeArray(segmentationDimensions));
     return JSONUtilities.encodeObject(response);
   }
 
