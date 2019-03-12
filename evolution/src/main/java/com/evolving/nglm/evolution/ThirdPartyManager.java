@@ -198,7 +198,7 @@ public class ThirdPartyManager
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
-    getCustomerAlternateID = Deployment.getSubscriberTraceControlAlternateID();
+    getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
     
     //
     //  log
@@ -1291,13 +1291,16 @@ public class ThirdPartyManager
                       //  filter activejourneyObjective by name
                       //
                       
-                      JourneyObjective journeyObjective = activejourneyObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(journeyObjectiveName)).collect(Collectors.toList()).get(0);
-                      
+                      List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(journeyObjectiveName)).collect(Collectors.toList());
+                      JourneyObjective exactJourneyObjective = journeyObjectives.size() > 0 ? journeyObjectives.get(0) : null;
+
                       //
                       //  filter
                       //
-                      
-                      activeJourneys = activeJourneys.stream().filter(campaign -> (null != campaign.getJourneyObjectiveInstances() && (campaign.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(journeyObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
+                      if (null == exactJourneyObjective)
+                        activeJourneys = new ArrayList<Journey>();
+                      else
+                        activeJourneys = activeJourneys.stream().filter(campaign -> (null != campaign.getJourneyObjectiveInstances() && (campaign.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactJourneyObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
                      
                     }
                   
@@ -1492,7 +1495,7 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(customerID);
     if (subscriberID == null)
       {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
       }
@@ -1571,13 +1574,16 @@ public class ThirdPartyManager
                       //  filter activecampaignObjective by name
                       //
                       
-                      JourneyObjective campaignObjective = activecampaignObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(campaignObjectiveName)).collect(Collectors.toList()).get(0);
-                      
+                      List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(campaignObjectiveName)).collect(Collectors.toList());
+                      JourneyObjective exactCampaignObjective = campaignObjectives.size() > 0 ? campaignObjectives.get(0) : null;
                       //
                       //  filter
                       //
                       
-                      activeCampaigns = activeCampaigns.stream().filter(campaign -> (null != campaign.getJourneyObjectiveInstances() && (campaign.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(campaignObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
+                      if (null == exactCampaignObjective)
+                        activeCampaigns = new ArrayList<Journey>();
+                      else
+                        activeCampaigns = activeCampaigns.stream().filter(campaign -> (null != campaign.getJourneyObjectiveInstances() && (campaign.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactCampaignObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
                      
                     }
                   
