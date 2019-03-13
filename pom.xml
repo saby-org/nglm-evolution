@@ -27,7 +27,6 @@
       <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
     </snapshotRepository>
  
-
   </distributionManagement>
 
 </project>

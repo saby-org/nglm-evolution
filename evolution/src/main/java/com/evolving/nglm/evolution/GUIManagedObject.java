@@ -13,8 +13,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -27,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import org.json.simple.parser.JSONParser;
 
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -128,6 +125,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(SegmentationDimensionEligibility.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionFileImport.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionRanges.serde());
+    guiManagedObjectSerdes.add(Point.serde());
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());

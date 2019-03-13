@@ -42,6 +42,7 @@ public class Deployment
   private static String emptyTopic;
   private static String journeyTopic;
   private static String segmentationDimensionTopic;
+  private static String pointTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String presentationStrategyTopic;
@@ -177,6 +178,7 @@ public class Deployment
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
+  public static String getPointTopic() { return pointTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
@@ -527,6 +529,19 @@ public class Deployment
     try
       {
     	segmentationDimensionTopic = JSONUtilities.decodeString(jsonRoot, "segmentationDimensionTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  pointTopic
+    //
+
+    try
+      {
+        pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

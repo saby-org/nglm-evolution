@@ -136,6 +136,11 @@ public class GUIManager
     putSegmentationDimension("putSegmentationDimension"),
     removeSegmentationDimension("removeSegmentationDimension"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
+    getPointList("getPointList"),
+    getPointSummaryList("getPointSummaryList"),
+    getPoint("getPoint"),
+    putPoint("putPoint"),
+    removePoint("removePoint"),
     getOfferList("getOfferList"),
     getOfferSummaryList("getOfferSummaryList"),
     getOffer("getOffer"),
@@ -270,6 +275,7 @@ public class GUIManager
   private HttpServer restServer;
   private JourneyService journeyService;
   private SegmentationDimensionService segmentationDimensionService;
+  private PointService pointService;
   private OfferService offerService;
   private ReportService reportService;
   private ScoringStrategyService scoringStrategyService;
@@ -333,6 +339,7 @@ public class GUIManager
     String nodeID = System.getProperty("nglm.license.nodeid");
     String journeyTopic = Deployment.getJourneyTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
+    String pointTopic = Deployment.getPointTopic();
     String offerTopic = Deployment.getOfferTopic();
     String reportTopic = Deployment.getReportTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
@@ -389,6 +396,7 @@ public class GUIManager
 
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
+    pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
     reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
@@ -812,6 +820,7 @@ public class GUIManager
 
     journeyService.start();
     segmentationDimensionService.start();
+    pointService.start();
     offerService.start();
     reportService.start();
     scoringStrategyService.start();
@@ -883,6 +892,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APIHandler(API.putSegmentationDimension));
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APIHandler(API.removeSegmentationDimension));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APIHandler(API.getUCGDimensionSummaryList));
+        restServer.createContext("/nglm-guimanager/getPointList", new APIHandler(API.getPointList));
+        restServer.createContext("/nglm-guimanager/getPointSummaryList", new APIHandler(API.getPointSummaryList));
+        restServer.createContext("/nglm-guimanager/getPoint", new APIHandler(API.getPoint));
+        restServer.createContext("/nglm-guimanager/putPoint", new APIHandler(API.putPoint));
+        restServer.createContext("/nglm-guimanager/removePoint", new APIHandler(API.removePoint));
         restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APIHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APIHandler(API.getOffer));
@@ -986,7 +1000,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
 
     /*****************************************
     *
@@ -1012,6 +1026,7 @@ public class GUIManager
     private HttpServer restServer;
     private JourneyService journeyService;
     private SegmentationDimensionService segmentationDimensionService;
+    private PointService pointService;
     private OfferService offerService;
     private ReportService reportService;
     private ScoringStrategyService scoringStrategyService;
@@ -1037,11 +1052,12 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
+    private ShutdownHook(HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
     {
       this.restServer = restServer;
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
+      this.pointService = pointService;
       this.offerService = offerService;
       this.reportService = reportService;
       this.scoringStrategyService = scoringStrategyService;
@@ -1082,6 +1098,7 @@ public class GUIManager
 
       if (journeyService != null) journeyService.stop();
       if (segmentationDimensionService != null) segmentationDimensionService.stop();
+      if (pointService != null) pointService.stop();
       if (offerService != null) offerService.stop();
       if (reportService != null) reportService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
@@ -1388,6 +1405,26 @@ public class GUIManager
 
                 case getUCGDimensionSummaryList:
                   jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false);
+                  break;
+
+                case getPointList:
+                  jsonResponse = processGetPointList(userID, jsonRoot, true);
+                  break;
+
+                case getPointSummaryList:
+                  jsonResponse = processGetPointList(userID, jsonRoot, false);
+                  break;
+
+                case getPoint:
+                  jsonResponse = processGetPoint(userID, jsonRoot);
+                  break;
+
+                case putPoint:
+                  jsonResponse = processPutPoint(userID, jsonRoot);
+                  break;
+
+                case removePoint:
+                  jsonResponse = processRemovePoint(userID, jsonRoot);
                   break;
 
                 case getOfferList:
@@ -4741,6 +4778,266 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
     response.put("segmentationDimensions", JSONUtilities.encodeArray(segmentationDimensions));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPointList
+  *
+  *****************************************/
+
+  private JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert Points
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> points = new ArrayList<JSONObject>();
+    for (GUIManagedObject point : pointService.getStoredPoints())
+      {
+        points.add(pointService.generateResponseJSON(point, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("points", JSONUtilities.encodeArray(points));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPoint
+  *
+  *****************************************/
+
+  private JSONObject processGetPoint(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate point
+    *
+    *****************************************/
+
+    GUIManagedObject point = pointService.getStoredPoint(pointID);
+    JSONObject pointJSON = pointService.generateResponseJSON(point, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (point != null) ? "ok" : "pointNotFound");
+    if (point != null) response.put("point", pointJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPoint
+  *
+  *****************************************/
+
+  private JSONObject processPutPoint(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  pointID
+    *
+    *****************************************/
+
+    String pointID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (pointID == null)
+      {
+        pointID = pointService.generatePointID();
+        jsonRoot.put("id", pointID);
+      }
+
+    /*****************************************
+    *
+    *  existing point
+    *
+    *****************************************/
+
+    GUIManagedObject existingPoint = pointService.getStoredPoint(pointID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingPoint != null && existingPoint.getReadOnly())
+      {
+        response.put("id", existingPoint.getGUIManagedObjectID());
+        response.put("accepted", existingPoint.getAccepted());
+        response.put("valid", existingPoint.getAccepted());
+        response.put("processing", pointService.isActivePoint(existingPoint, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process point
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate Point
+        *
+        ****************************************/
+
+        Point point = new Point(jsonRoot, epoch, existingPoint);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        pointService.putPoint(point, (existingPoint == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", point.getPointID());
+        response.put("accepted", point.getAccepted());
+        response.put("valid", point.getAccepted());
+        response.put("processing", pointService.isActivePoint(point, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        pointService.putIncompletePoint(incompleteObject, (existingPoint == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("pointID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "pointNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemovePoint
+  *
+  *****************************************/
+
+  private JSONObject processRemovePoint(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject point = pointService.getStoredPoint(pointID);
+    if (point != null && ! point.getReadOnly()) pointService.removePoint(pointID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (point != null && ! point.getReadOnly())
+      responseCode = "ok";
+    else if (point != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "pointNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -9893,6 +10190,7 @@ public class GUIManager
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
+    response.put("pointCount", pointService.getStoredPoints().size());
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
