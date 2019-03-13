@@ -55,8 +55,6 @@ public class SMSSenderFactory {
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.encoding_charset)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.expiration_period)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.delay_on_queue_full)),
-					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.max_per_sec)),
-					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.interval_retry)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.support_sar)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.support_udh)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.handle_submit_sm_response_in_multi_part)),

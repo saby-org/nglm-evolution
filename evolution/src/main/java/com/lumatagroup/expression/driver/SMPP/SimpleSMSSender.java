@@ -134,8 +134,6 @@ public class SimpleSMSSender extends SMSSenderListener {
 	                       String encoding_charset,
 	                       String expiration_period,
 	                       String delay_on_queue_full,
-	                       String max_per_sec,
-	                       String interval_retry,
 	                       String support_sar,
 	                       String support_udh,
 	                       String handle_submit_sm_response_in_multi_part, // "all" (default), "first" or "last"

@@ -35,8 +35,6 @@ public class SMPPUtil {
 		encoding_charset,
 		expiration_period,
 		delay_on_queue_full,
-		max_per_sec,
-		interval_retry,
 		support_sar,
 		support_udh,
 		handle_submit_sm_response_in_multi_part,
