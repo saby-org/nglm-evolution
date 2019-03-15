@@ -15,8 +15,8 @@
         {
           "index" :
             {
-              "number_of_shards" : "6",
-              "number_of_replicas" : "1",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" : 
                 { 
@@ -25,7 +25,7 @@
                 },
               "routing" : 
                 {
-                  "allocation" : { "total_shards_per_node" : 4 }
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
                 },
               "merge" : 
                 {
@@ -64,8 +64,8 @@
         {
           "index" :
             {
-              "number_of_shards" : "6",
-              "number_of_replicas" : "1",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS__SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" :
                 {
@@ -74,7 +74,7 @@
                 },
               "routing" :
                 {
-                  "allocation" : { "total_shards_per_node" : 4 }
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
                 },
               "merge" :
                 {
@@ -109,8 +109,8 @@
         {
           "index" :
             {
-              "number_of_shards" : "6",
-              "number_of_replicas" : "1",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" : 
                 { 
@@ -119,7 +119,7 @@
                 },
               "routing" : 
                 {
-                  "allocation" : { "total_shards_per_node" : 4 }
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
                 },
               "merge" : 
                 {
@@ -163,8 +163,8 @@
         {
           "index" :
             {
-              "number_of_shards" : "6",
-              "number_of_replicas" : "1",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" : 
                 { 
@@ -173,7 +173,7 @@
                 },
               "routing" : 
                 {
-                  "allocation" : { "total_shards_per_node" : 4 }
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
                 },
               "merge" : 
                 {
@@ -222,8 +222,8 @@
         {
           "index" :
             {
-              "number_of_shards" : "6",
-              "number_of_replicas" : "1",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" : 
                 { 
@@ -232,7 +232,7 @@
                 },
               "routing" : 
                 {
-                  "allocation" : { "total_shards_per_node" : 4 }
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
                 },
               "merge" : 
                 {
@@ -273,8 +273,8 @@
         {
           "index" :
             {
-              "number_of_shards" : "6",
-              "number_of_replicas" : "1",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" : 
                 { 
@@ -283,7 +283,7 @@
                 },
               "routing" : 
                 {
-                  "allocation" : { "total_shards_per_node" : 4 }
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
                 },
               "merge" : 
                 {
@@ -328,9 +328,9 @@
           {
             "index" :
               {
-                "number_of_shards" : "12",
-                "number_of_replicas" : "1",
-                "refresh_interval" : "5s"
+                "number_of_shards" : "'$ELASTICSEARCH_SHARDS_LARGE'",
+                "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+	        "refresh_interval" : "5s"
               }
           },
         "mappings" :
@@ -362,8 +362,8 @@
           {
             "index" :
               {
-                "number_of_shards" : "12",
-                "number_of_replicas" : "1",
+                "number_of_shards" : "'$ELASTICSEARCH_SHARDS_LARGE'",
+                "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
                 "refresh_interval" : "5s"
               }
           },

@@ -47,7 +47,6 @@
   #  source connector -- externalDeliveryRequest
   #
 
-  create_topic ${topic.externaldeliveryrequest_fileconnector} $KAFKA_REPLICATION_FACTOR $FILECONNECTOR_PARTITIONS_LARGE "$TOPIC_DATA_TWO_DAYS"
   curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "externaldeliveryrequest_file_connector",
@@ -72,7 +71,6 @@
   #  source connector -- presentationLog
   #
 
-  create_topic ${topic.presentationlog_fileconnector} $KAFKA_REPLICATION_FACTOR $FILECONNECTOR_PARTITIONS_LARGE "$TOPIC_DATA_TWO_DAYS"
   curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "presentationlog_file_connector",
@@ -97,7 +95,6 @@
   #  source connector -- acceptanceLog
   #
 
-  create_topic ${topic.acceptancelog_fileconnector} $KAFKA_REPLICATION_FACTOR $FILECONNECTOR_PARTITIONS_LARGE "$TOPIC_DATA_TWO_DAYS"
   curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "acceptancelog_file_connector",
