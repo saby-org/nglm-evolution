@@ -38,6 +38,7 @@
         "topics" : "${topic.journeystatistic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "journeystatistic"
         }
     }'
