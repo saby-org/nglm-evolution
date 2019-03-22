@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution;
 
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -15,6 +17,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -117,7 +120,7 @@ public class CatalogCharacteristicInstance
           break;
 
         case DateCriterion:
-          value = JSONUtilities.decodeDate(jsonRoot, "value", false);
+          value = parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
           break;
 
         case BooleanCriterion:
@@ -155,7 +158,33 @@ public class CatalogCharacteristicInstance
     this.value = new ParameterMap();
     this.value.put("value", value);
   }
-  
+
+  /*****************************************
+  *
+  *  parseDateField
+  *
+  *****************************************/
+
+  private Date parseDateField(String stringDate) throws JSONUtilitiesException
+  {
+    Date result = null;
+    try
+      {
+        if (stringDate != null && stringDate.trim().length() > 0)
+          {
+            synchronized (GUIManagedObject.standardDateFormat)
+              {
+                result = GUIManagedObject.standardDateFormat.parse(stringDate.trim());
+              }
+          }
+      }
+    catch (ParseException e)
+      {
+        throw new JSONUtilitiesException("parseDateField", e);
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  accessors
