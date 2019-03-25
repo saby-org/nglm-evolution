@@ -95,6 +95,7 @@ public class ThirdPartyManager
   private SubscriberProfileService subscriberProfileService;
   private JourneyService journeyService;
   private JourneyObjectiveService journeyObjectiveService;
+  private OfferObjectiveService offerObjectiveService;
   private SalesChannelService salesChannelService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -194,6 +195,7 @@ public class ThirdPartyManager
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
+    String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
@@ -253,6 +255,7 @@ public class ThirdPartyManager
     subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "thirdpartymanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
     journeyService = new JourneyService(bootstrapServers, "thirdpartymanager-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "thirdpartymanager-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
+    offerObjectiveService = new OfferObjectiveService(bootstrapServers, "thirdpartymanager-offerObjectiveService-" + apiProcessKey, offerObjectiveTopic, false);
     salesChannelService = new SalesChannelService(bootstrapServers, "thirdpartymanager-salesChannelService-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
@@ -265,6 +268,7 @@ public class ThirdPartyManager
     subscriberProfileService.start();
     journeyService.start();
     journeyObjectiveService.start();
+    offerObjectiveService.start();
     salesChannelService.start();
     
     /*****************************************
@@ -302,7 +306,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, journeyService, journeyObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, journeyService, journeyObjectiveService, offerObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -331,6 +335,7 @@ public class ThirdPartyManager
     private SubscriberProfileService subscriberProfileService;
     private JourneyService journeyService;
     private JourneyObjectiveService journeyObjectiveService;
+    private OfferObjectiveService offerObjectiveService;
     private SalesChannelService salesChannelService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -339,13 +344,14 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.offerService = offerService;
       this.subscriberProfileService = subscriberProfileService;
       this.journeyService = journeyService;
       this.journeyObjectiveService = journeyObjectiveService;
+      this.offerObjectiveService = offerObjectiveService;
       this.salesChannelService = salesChannelService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -371,6 +377,7 @@ public class ThirdPartyManager
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (journeyService != null) journeyService.stop();
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
+      if (offerObjectiveService != null ) offerObjectiveService.stop();
       if (salesChannelService != null) salesChannelService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       
@@ -1757,6 +1764,13 @@ public class ThirdPartyManager
     ****************************************/
     
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    String offerState = JSONUtilities.decodeString(jsonRoot, "state", false);
+    String startDateString = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
+    String offerObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
+    
+    Date offerStartDate = getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    Date offerEndDate = getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
     
     try
       {
@@ -1771,13 +1785,33 @@ public class ThirdPartyManager
             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
           }
+        else if ( null != offerState && !offerState.isEmpty() && !offerState.equalsIgnoreCase("ACTIVE"))
+          {
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"-{state}");
+          }
         else
           {
-            //
-            // retrieve offers
-            //
-            
-            Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
+            Collection<Offer> offers = new ArrayList<>();
+            if ( null == offerState || offerState.isEmpty())
+              {
+                //
+                // retrieve stored offers
+                //
+                
+                for (GUIManagedObject ofr : offerService.getStoredOffers())
+                  {
+                    offers.add( (Offer) ofr);
+                  }
+              }
+            else
+              {
+                //
+                // retrieve active offers
+                //
+                
+                offers = offerService.getActiveOffers(SystemTime.getCurrentTime());
+              }
             
             //
             // filter using customerID
@@ -1787,6 +1821,52 @@ public class ThirdPartyManager
               {
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
                 offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              }
+            
+            //
+            // filter using startDate
+            //
+            
+            if (null != offerStartDate)
+              {
+                offers = offers.stream().filter(offer -> (null == offer.getEffectiveStartDate() || offer.getEffectiveStartDate().compareTo(offerStartDate) >= 0)).collect(Collectors.toList()); 
+              }
+            
+            //
+            // filter using endDate
+            //
+            
+            if (null != offerEndDate)
+              {
+                offers = offers.stream().filter(campaign -> (null == campaign.getEffectiveEndDate() || campaign.getEffectiveEndDate().compareTo(offerEndDate) <= 0)).collect(Collectors.toList());
+              }
+            
+            
+            if (null != offerObjectiveName && !offerObjectiveName.isEmpty())
+              {
+                
+                //
+                //  read objective
+                //
+                
+                Collection<OfferObjective> activeOfferObjectives = offerObjectiveService.getActiveOfferObjectives(SystemTime.getCurrentTime());
+               
+                //
+                //  filter activejourneyObjective by name
+                //
+                
+                List<OfferObjective> offerObjectives = activeOfferObjectives.stream().filter(offerObj -> offerObj.getOfferObjectiveName().equals(offerObjectiveName)).collect(Collectors.toList());
+                OfferObjective exactOfferObjectives = offerObjectives.size() > 0 ? offerObjectives.get(0) : null;
+
+                //
+                //  filter
+                //
+                
+                if (null == exactOfferObjectives)
+                  offers = new ArrayList<Offer>();
+                else
+                  offers = offers.stream().filter(offer -> (null != offer.getOfferObjectives() && (offer.getOfferObjectives().stream().filter(obj -> obj.getOfferObjectiveID().equals(exactOfferObjectives.getOfferObjectiveID())).count() > 0L))).collect(Collectors.toList());
+               
               }
             
             /*****************************************
@@ -2158,7 +2238,7 @@ public class ThirdPartyManager
       }
     catch(IOException e) 
       {
-        log.error("failed to FWK server with data {} ", thirdPartyCredential.getJSONString());
+        log.error("failed to authenticate in FWK server");
         log.error("IOException: {}", e.getMessage());
         throw e;
       }
