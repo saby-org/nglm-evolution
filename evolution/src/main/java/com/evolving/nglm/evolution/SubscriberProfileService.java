@@ -91,244 +91,21 @@ public abstract class SubscriberProfileService
   *****************************************/
 
   protected volatile boolean stopRequested = false;
-  private String bootstrapServers;
-  private Thread listenerThread = null;
-  private Thread subscriberUpdateReaderThread;
-  private SubscriberUpdateListener subscriberUpdateListener;
-  private BlockingQueue<SubscriberProfile> listenerQueue = new LinkedBlockingQueue<SubscriberProfile>();
-  private KafkaConsumer<byte[], byte[]> consumer = null;
 
   //
   //  serdes
   //
   
-  protected ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
   protected ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
-
+  
   /*****************************************
   *
-  *  constructor
+  *  start/stop
   *
   *****************************************/
 
-  protected SubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, SubscriberUpdateListener subscriberUpdateListener)
-  {
-    /*****************************************
-    *
-    *  configuration
-    *
-    *****************************************/
-
-    this.bootstrapServers = bootstrapServers;
-    this.subscriberUpdateListener = subscriberUpdateListener;
-
-    /*****************************************
-    *
-    *  kafka
-    *
-    *****************************************/
-
-    //
-    //  set up consumer
-    //
-
-    Properties consumerProperties = new Properties();
-    consumerProperties.put("bootstrap.servers", bootstrapServers);
-    consumerProperties.put("group.id", groupID);
-    consumerProperties.put("auto.offset.reset", "earliest");
-    consumerProperties.put("enable.auto.commit", "false");
-    consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    this.consumer = new KafkaConsumer<>(consumerProperties);
-
-    //
-    //  subscribe to the subscriberUpdate topic
-    //
-
-    this.consumer.subscribe(Arrays.asList(subscriberUpdateTopic));
-  }
-
-  /*****************************************
-  *
-  *  start
-  *
-  *****************************************/
-
-  public void start()
-  {
-    /*****************************************
-    *
-    *  listener
-    *
-    *****************************************/
-
-    if (subscriberUpdateListener != null)
-      {
-        Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
-        listenerThread = new Thread(listener, "SubscriberUpdateListener");
-        listenerThread.start();
-      }
-
-    /*****************************************
-    *
-    *  consumer
-    *
-    *****************************************/
-
-    Runnable subscriberUpdateReader = new Runnable() { @Override public void run() { readSubscriberUpdates(consumer); } };
-    subscriberUpdateReaderThread = new Thread(subscriberUpdateReader, "SubscriberUpdateReader");
-    subscriberUpdateReaderThread.start();
-  }
-
-  /*****************************************
-  *
-  *  stop
-  *
-  *****************************************/
-
-  public void stop()
-  {
-    //
-    //  mark stopRequested
-    //
-
-    stopRequested = true;
-
-    //
-    //  wake sleeping poll (if necessary)
-    //
-
-    if (consumer != null) consumer.wakeup();
-
-    //
-    //  wake listenerThread (if necessary)
-    //
-
-    if (listenerThread != null) listenerThread.interrupt();
-
-    //
-    //  wait for threads to finish
-    //
-
-    try
-      {
-        if (subscriberUpdateReaderThread != null) subscriberUpdateReaderThread.join();
-        if (listenerThread != null) listenerThread.join();
-      }
-    catch (InterruptedException e)
-      {
-        // nothing
-      }
-
-    //
-    //  consumer
-    //
-
-    if (consumer != null) consumer.close();
-  }
-
-  /*****************************************
-  *
-  *  readSubscriberUpdates
-  *
-  *****************************************/
-
-  private void readSubscriberUpdates(KafkaConsumer<byte[], byte[]> consumer)
-  {
-    boolean readInitialTopicRecords = false;
-    boolean consumedAllAvailable = false;
-    Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    do
-      {
-        //
-        //  poll
-        //
-
-        ConsumerRecords<byte[], byte[]> subscriberUpdateRecords = consumer.poll(5000);
-
-        //
-        //  interrupted?
-        //
-
-        if (stopRequested) continue;
-        
-        //
-        //  process
-        //
-
-        for (ConsumerRecord<byte[], byte[]> subscriberUpdateRecord : subscriberUpdateRecords)
-          {
-            //
-            //  parse
-            //
-
-            String subscriberID =  stringKeySerde.deserializer().deserialize(subscriberUpdateRecord.topic(), subscriberUpdateRecord.key()).getKey();
-            SubscriberProfile subscriberUpdate = subscriberProfileSerde.deserializer().deserialize(subscriberUpdateRecord.topic(), subscriberUpdateRecord.value());
-            if (subscriberUpdateListener != null) listenerQueue.add(subscriberUpdate);
-            
-            //
-            //  offsets
-            //
-
-            consumedOffsets.put(new TopicPartition(subscriberUpdateRecord.topic(), subscriberUpdateRecord.partition()), subscriberUpdateRecord.offset());
-          }
-
-        //
-        //  commit
-        //
-
-        consumer.commitSync();
-
-        //
-        //  consumed all available?
-        //
-
-        Set<TopicPartition> assignedPartitions = consumer.assignment();
-        Map<TopicPartition,Long> availableOffsets = consumer.endOffsets(assignedPartitions);
-        consumedAllAvailable = true;
-        for (TopicPartition partition : availableOffsets.keySet())
-          {
-            Long availableOffsetForPartition = availableOffsets.get(partition);
-            Long consumedOffsetForPartition = (consumedOffsets.get(partition) != null) ? consumedOffsets.get(partition) : -1L;
-            if (consumedOffsetForPartition < availableOffsetForPartition-1)
-              {
-                consumedAllAvailable = false;
-                break;
-              }
-          }
-      }
-    while (!stopRequested && (! consumedAllAvailable || ! readInitialTopicRecords));
-  }
-
-  /*****************************************
-  *
-  *  runListener
-  *
-  *****************************************/
-
-  private void runListener()
-  {
-    while (!stopRequested)
-      {
-        try
-          {
-            SubscriberProfile subscriberUpdate = listenerQueue.take();
-            subscriberUpdateListener.evolutionSubscriberStatusUpdated(subscriberUpdate);
-          }
-        catch (InterruptedException e)
-          {
-            //
-            // ignore
-            //
-          }
-        catch (Throwable e)
-          {
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.warn("Exception processing listener: {}", stackTraceWriter.toString());
-          }
-      }
-  }
+  public void start() {}
+  public void stop() {}
 
   /*****************************************
   *
@@ -348,17 +125,6 @@ public abstract class SubscriberProfileService
 
   public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException { return getSubscriberProfile(subscriberID, false); }
   
-  /*****************************************
-  *
-  *  interface SubscriberUpdateListener
-  *
-  *****************************************/
-
-  public interface SubscriberUpdateListener
-  {
-    public void evolutionSubscriberStatusUpdated(SubscriberProfile subscriberProfile);
-  }
-
   /*****************************************
   *
   *  class SubscriberProfileServiceException
@@ -405,33 +171,22 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisSentinels, SubscriberUpdateListener subscriberUpdateListener)
+    public RedisSubscriberProfileService(String redisSentinels)
     {
-      super(bootstrapServers, groupID, subscriberUpdateTopic, subscriberUpdateListener);
-
-      /*****************************************
-      *
-      *  redis
-      *
-      *****************************************/
-
-      //
-      //  instantiate
-      //  
-
       Set<String> sentinels = new HashSet<String>(Arrays.asList(redisSentinels.split("\\s*,\\s*")));
       this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels);
       this.jedis = null;
     }
 
     //
-    //  constructor
+    //  legacy historical constructor
     //
-
-    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisServer)
+    
+    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisSentinels)
     {
-      this(bootstrapServers, groupID, subscriberUpdateTopic, redisServer, (SubscriberUpdateListener) null);
+      this(redisSentinels);
     }
+    
 
     /*****************************************
     *
@@ -441,12 +196,6 @@ public abstract class SubscriberProfileService
 
     @Override public void stop()
     {
-      //
-      //  super
-      //
-
-      super.stop();
-
       //
       //  close
       //
@@ -585,10 +334,8 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints, SubscriberUpdateListener subscriberUpdateListener)
+    public EngineSubscriberProfileService(String subscriberProfileEndpoints)
     {
-      super(bootstrapServers, groupID, subscriberUpdateTopic, subscriberUpdateListener);
-
       /*****************************************
       *
       *  subscriberProfileEndpoints
@@ -621,14 +368,14 @@ public abstract class SubscriberProfileService
     }
 
     //
-    //  constructor
+    //  legacy historical constructor
     //
-
+    
     public EngineSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String subscriberProfileEndpoints)
     {
-      this(bootstrapServers, groupID, subscriberUpdateTopic, subscriberProfileEndpoints, (SubscriberUpdateListener) null);
+      this(subscriberProfileEndpoints);
     }
-
+    
     /*****************************************
     *
     *  getSubscriberProfile
@@ -890,23 +637,14 @@ public abstract class SubscriberProfileService
     ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", "example-subscriberGroupReader-001", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
     //
-    //  instantiate listener
-    //
-
-    SubscriberUpdateListener subscriberUpdateListener = new SubscriberUpdateListener()
-    {
-      @Override public void evolutionSubscriberStatusUpdated(SubscriberProfile subscriberUpdate) { System.out.println("subscriberUpdate: " + subscriberUpdate.getSubscriberID() + ", " + subscriberUpdate.getEvolutionSubscriberStatus()); }
-    };
-
-    //
     //  instantiate service
     //
     
     SubscriberProfileService subscriberProfileService;
     if (true)
-      subscriberProfileService = new EngineSubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-001", Deployment.getSubscriberUpdateTopic(), Deployment.getSubscriberProfileEndpoints(), subscriberUpdateListener);
+      subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
     else
-      subscriberProfileService = new RedisSubscriberProfileService(Deployment.getBrokerServers(), "example-subscriberprofileservice-001", Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), subscriberUpdateListener);
+      subscriberProfileService = new RedisSubscriberProfileService(Deployment.getRedisSentinels());
 
     //
     //  start

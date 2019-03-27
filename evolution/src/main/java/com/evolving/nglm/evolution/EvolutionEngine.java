@@ -243,7 +243,6 @@ public class EvolutionEngine
     //  sink topics
     //
 
-    String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
 
     //
@@ -596,12 +595,11 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof SubscriberProfile), (key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
-    KStream<StringKey, SubscriberProfile> subscriberUpdateStream = (KStream<StringKey, SubscriberProfile>) branchedEvolutionEngineOutputs[0];
-    KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
-    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[2];
-    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[3];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
+    KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
+    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[1];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[2];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
 
     /*****************************************
     *
@@ -649,7 +647,6 @@ public class EvolutionEngine
     //  sink - core streams
     //
 
-    subscriberUpdateStream.to(subscriberUpdateTopic, Produced.with(stringKeySerde, (Serde<SubscriberProfile>) subscriberProfileSerde));
     journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
@@ -1115,16 +1112,6 @@ public class EvolutionEngine
       }
 
     //
-    //  statusUpdated
-    //
-
-    if (subscriberState.getEvolutionSubscriberStatusUpdated())
-      {
-        subscriberState.setEvolutionSubscriberStatusUpdated(false);
-        subscriberStateUpdated = true;
-      }
-
-    //
     //  journeyRequests
     //
 
@@ -1214,18 +1201,6 @@ public class EvolutionEngine
           {
             timerService.schedule(scheduledEvaluation);
           }
-      }
-
-    /*****************************************
-    *
-    *  evolutionSubscriberStatusUpdated
-    *
-    *****************************************/
-
-    if (currentSubscriberState == null || subscriberProfile.getEvolutionSubscriberStatus() != currentSubscriberState.getSubscriberProfile().getEvolutionSubscriberStatus())
-      {
-        subscriberState.setEvolutionSubscriberStatusUpdated(true);
-        subscriberStateUpdated = true;
       }
 
     /*****************************************
@@ -2154,7 +2129,6 @@ public class EvolutionEngine
   private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberState subscriberState)
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
-    result.addAll(subscriberState.getEvolutionSubscriberStatusUpdated() ? Collections.<SubscriberProfile>singletonList(subscriberState.getSubscriberProfile()) : Collections.<SubscriberProfile>emptyList());
     result.addAll(subscriberState.getJourneyRequests());
     result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatistics());

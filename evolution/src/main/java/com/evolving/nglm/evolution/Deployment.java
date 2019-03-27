@@ -60,7 +60,6 @@ public class Deployment
   private static String mailTemplateTopic;
   private static String smsTemplateTopic;
   private static String guiAuditTopic;
-  private static String subscriberUpdateTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
   private static String subscriberGroupEpochTopic;
@@ -196,7 +195,6 @@ public class Deployment
   public static String getMailTemplateTopic() { return mailTemplateTopic; }
   public static String getSMSTemplateTopic() { return smsTemplateTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
-  public static String getSubscriberUpdateTopic() { return subscriberUpdateTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
@@ -763,19 +761,6 @@ public class Deployment
     try
       {
         guiAuditTopic = JSONUtilities.decodeString(jsonRoot, "guiAuditTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  subscriberUpdateTopic
-    //
-
-    try
-      {
-        subscriberUpdateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberUpdateTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

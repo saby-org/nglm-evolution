@@ -191,7 +191,6 @@ public class ThirdPartyManager
     int threadPoolSize = parseInteger("threadPoolSize", args[4]);
     String nodeID = System.getProperty("nglm.license.nodeid");
     String offerTopic = Deployment.getOfferTopic();
-    String subscriberUpdateTopic = Deployment.getSubscriberUpdateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
@@ -252,7 +251,7 @@ public class ThirdPartyManager
     //
     
     offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false);
-    subscriberProfileService = new EngineSubscriberProfileService(bootstrapServers, "thirdpartymanager-subscriberprofileservice-001", subscriberUpdateTopic, subscriberProfileEndpoints);
+    subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     journeyService = new JourneyService(bootstrapServers, "thirdpartymanager-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "thirdpartymanager-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "thirdpartymanager-offerObjectiveService-" + apiProcessKey, offerObjectiveTopic, false);

@@ -175,7 +175,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  plugin instanciation
     //
     
-    subscriberProfileService = new RedisSubscriberProfileService(Deployment.getBrokerServers(), "PurchaseMgr-redissubscriberprofileservice-"+deliveryManagerKey, Deployment.getSubscriberUpdateTopic(), Deployment.getRedisSentinels(), null);
+    subscriberProfileService = new RedisSubscriberProfileService(Deployment.getRedisSentinels());
     subscriberProfileService.start();
     
     offerService = new OfferService(Deployment.getBrokerServers(), "PurchaseMgr-offerservice-"+deliveryManagerKey, Deployment.getOfferTopic(), false);

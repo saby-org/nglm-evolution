@@ -39,14 +39,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.4.1-build190319a-SNAPSHOT</version>
+    <version>4.4.1-build190325-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.4.1-build190319a-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.4.1-build190325-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -115,7 +115,6 @@
     <topic.deliverable>deliverable</topic.deliverable>
     <topic.template.mail>template-mail</topic.template.mail>
     <topic.template.sms>template-sms</topic.template.sms>
-    <topic.subscriberupdate>subscriberupdate</topic.subscriberupdate>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
