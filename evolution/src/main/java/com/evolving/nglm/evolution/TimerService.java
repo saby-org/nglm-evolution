@@ -413,16 +413,28 @@ public class TimerService
         *
         *****************************************/
 
-        KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
-        while (! stopRequested && subscriberStateStoreIterator.hasNext())
+        boolean loadScheduleCompleted = false;
+        try
           {
-            SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
-            for (TimedEvaluation timedEvaluation : subscriberState.getScheduledEvaluations())
+            KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+            while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
-                schedule(timedEvaluation);
+                SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+                for (TimedEvaluation timedEvaluation : subscriberState.getScheduledEvaluations())
+                  {
+                    schedule(timedEvaluation);
+                  }
               }
+            subscriberStateStoreIterator.close();
+            loadScheduleCompleted = true;
           }
-        subscriberStateStoreIterator.close();
+        catch (InvalidStateStoreException e)
+          {
+            log.error("load schedule exception {}", e.getMessage());
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.info(stackTraceWriter.toString());
+          }
 
         /*****************************************
         *
@@ -432,7 +444,7 @@ public class TimerService
 
         synchronized (this)
           {
-            log.info("loadSchedule (end): schedule size {}, earliest date {}, latest date {}", schedule.size(), (schedule.size() > 0) ? schedule.first().getEvaluationDate() : null, (schedule.size() > 0) ? schedule.last().getEvaluationDate() : null);
+            log.info("loadSchedule ({}): schedule size {}, earliest date {}, latest date {}", (loadScheduleCompleted ? "end" : "aborted"), schedule.size(), (schedule.size() > 0) ? schedule.first().getEvaluationDate() : null, (schedule.size() > 0) ? schedule.last().getEvaluationDate() : null);
           }
       }
   }
@@ -535,17 +547,39 @@ public class TimerService
         *
         *****************************************/
 
-        KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
-        while (! stopRequested && subscriberStateStoreIterator.hasNext())
+        boolean periodicEvaluationComplete = false;
+        try
           {
-            SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
-            if (subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
+            KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+            while (! stopRequested && subscriberStateStoreIterator.hasNext())
               {
-                TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation);
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));                
+                SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+                if (subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
+                  {
+                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation);
+                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));                
+                  }
               }
+            subscriberStateStoreIterator.close();
+            periodicEvaluationComplete = true;
           }
-        subscriberStateStoreIterator.close();
+        catch (InvalidStateStoreException e)
+          {
+            log.error("perodicEvaluation exception {}", e.getMessage());
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.info(stackTraceWriter.toString());
+          }
+
+        //
+        //  complete?
+        //
+
+        if (! periodicEvaluationComplete)
+          {
+            log.info("periodicEvaluation {} (retrying)", nextPeriodicEvaluation);
+            continue;
+          }
 
         /*****************************************
         *

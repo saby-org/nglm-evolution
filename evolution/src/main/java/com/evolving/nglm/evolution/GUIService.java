@@ -236,25 +236,36 @@ public class GUIService
   *
   *****************************************/
 
-  public synchronized void stop()
+  public void stop()
   {
-    //
-    //  mark stopRequested
-    //
+    /*****************************************
+    *
+    *  stopRequested
+    *
+    *****************************************/
 
-    stopRequested = true;
-    
-    //
-    //  wake sleeping polls/threads (if necessary)
-    //
+    synchronized (this)
+      {
+        //
+        //  mark stopRequested
+        //
 
-    if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.wakeup();
-    if (schedulerThread != null) schedulerThread.interrupt();
-    if (listenerThread != null) listenerThread.interrupt();
+        stopRequested = true;
 
-    //
-    //  wait for threads to finish
-    //
+        //
+        //  wake sleeping polls/threads (if necessary)
+        //
+
+        if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.wakeup();
+        if (schedulerThread != null) schedulerThread.interrupt();
+        if (listenerThread != null) listenerThread.interrupt();
+      }
+
+    /*****************************************
+    *
+    *  wait for threads to finish
+    *
+    *****************************************/
 
     try
       {
@@ -267,9 +278,11 @@ public class GUIService
         // nothing
       }
 
-    //
-    //  close
-    //
+    /*****************************************
+    *
+    *  close resources
+    *
+    *****************************************/
 
     if (guiManagedObjectsConsumer != null) guiManagedObjectsConsumer.close();
     if (kafkaProducer != null) kafkaProducer.close();

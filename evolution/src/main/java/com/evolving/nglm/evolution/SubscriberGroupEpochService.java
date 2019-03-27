@@ -100,7 +100,7 @@ public class SubscriberGroupEpochService
     catch (KeeperException.NodeExistsException e)
       {
         log.error("subscriber group {} currently being updated", groupName);
-        System.exit(-1);
+        throw new ServerRuntimeException("zookeeper", e);
       }
     catch (KeeperException e)
       {

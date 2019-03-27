@@ -700,9 +700,9 @@ public class EvolutionEngine
         //  streams state
         //
 
-        synchronized (this)
+        synchronized (EvolutionEngine.this)
           {
-            this.notifyAll();
+            EvolutionEngine.this.notifyAll();
           }
 
         //
