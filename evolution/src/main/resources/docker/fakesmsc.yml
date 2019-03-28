@@ -1,5 +1,10 @@
-fakesmsc:
+fakesmsc-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-fakesmsc:${fake.smsc.version}
+  environment:
+    KEY: <_KEY_>
+    SMPP_PORT: <_SMPP_PORT_>
+    HTTP_PORT: <_HTTP_PORT_>
+    TRACE_LEVEL: WARN
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -10,7 +15,7 @@ fakesmsc:
     replicas: 1
     placement:
       constraints:
-        - engine.labels.hostname == <_SMTP_HOST_>
+        - engine.labels.hostname == <_HOST_>
   networks:
     - outside
 

@@ -895,6 +895,25 @@ export THIRDPARTYMANAGER_PROMETHEUS
 export THIRDPARTYMANAGER_ENABLED
 
 #
+#  Fake SMSC -- configuration
+#
+
+FAKE_SMSC_CONFIGURATION=`echo $FAKE_SMSC_CONFIGURATION | sed 's/ /\n/g' | uniq`
+SMSC_CONNECTION_1=
+for TUPLE in $FAKE_SMSC_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export SMPP_PORT=`echo $TUPLE | cut -d: -f4`
+   export HTTP_PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$SMSC_CONNECTION_1" ]; then
+     SMSC_CONNECTION_1="$HOST_IP:$SMPP_PORT"
+   fi
+done
+export SMSC_CONNECTION_1
+
+#
 #  Fake IN -- configuration
 #
 
