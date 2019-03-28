@@ -93,6 +93,7 @@ public class ThirdPartyManager
   
   private OfferService offerService;
   private SubscriberProfileService subscriberProfileService;
+  private SegmentationDimensionService segmentationDimensionService;
   private JourneyService journeyService;
   private JourneyObjectiveService journeyObjectiveService;
   private OfferObjectiveService offerObjectiveService;
@@ -195,6 +196,7 @@ public class ThirdPartyManager
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
+    String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
@@ -252,6 +254,7 @@ public class ThirdPartyManager
     
     offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "thirdpartymanager-segmentationDimensionservice-001", segmentationDimensionTopic, false);
     journeyService = new JourneyService(bootstrapServers, "thirdpartymanager-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "thirdpartymanager-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "thirdpartymanager-offerObjectiveService-" + apiProcessKey, offerObjectiveTopic, false);
@@ -265,6 +268,7 @@ public class ThirdPartyManager
     
     offerService.start();
     subscriberProfileService.start();
+    segmentationDimensionService.start();
     journeyService.start();
     journeyObjectiveService.start();
     offerObjectiveService.start();
@@ -305,7 +309,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, journeyService, journeyObjectiveService, offerObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, offerObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -332,6 +336,7 @@ public class ThirdPartyManager
     private HttpServer restServer;
     private OfferService offerService;
     private SubscriberProfileService subscriberProfileService;
+    private SegmentationDimensionService segmentationDimensionService;
     private JourneyService journeyService;
     private JourneyObjectiveService journeyObjectiveService;
     private OfferObjectiveService offerObjectiveService;
@@ -343,11 +348,12 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.restServer = restServer;
       this.offerService = offerService;
       this.subscriberProfileService = subscriberProfileService;
+      this.segmentationDimensionService = segmentationDimensionService;
       this.journeyService = journeyService;
       this.journeyObjectiveService = journeyObjectiveService;
       this.offerObjectiveService = offerObjectiveService;
@@ -374,6 +380,7 @@ public class ThirdPartyManager
       
       if (offerService != null) offerService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
+      if (segmentationDimensionService != null) segmentationDimensionService.stop();
       if (journeyService != null) journeyService.stop();
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
       if (offerObjectiveService != null ) offerObjectiveService.stop();
@@ -764,7 +771,7 @@ public class ThirdPartyManager
             }
           else
             {
-              response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(subscriberGroupEpochReader);
+              response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader);
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
               response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
             }

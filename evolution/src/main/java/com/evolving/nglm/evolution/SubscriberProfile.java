@@ -280,13 +280,34 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
         int epoch = subscriberGroups.get(groupID);
-        if (epoch >= (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
+        if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
           {
             result.add(segmentID);
           }
       }
     return result;
   }
+
+  //
+  //  getSubscriberGroupNames (set of segment name)
+  //
+
+  public Set<String> getSubscriberGroupNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  {
+    Set<String> result = new HashSet<String>();
+    for (Pair<String,String> groupID : subscriberGroups.keySet())
+      {
+        String dimensionID = groupID.getFirstElement();
+        String segmentID = groupID.getSecondElement();
+        int epoch = subscriberGroups.get(groupID);
+        if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
+          {
+            result.add(segmentationDimensionService.getSegment(segmentID).getName());
+          }
+      }
+    return result;
+  }
+  
   
   /****************************************
   *
@@ -298,7 +319,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getProfileMapForGUIPresentation
   //
   
-  public Map<String, Object> getProfileMapForGUIPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -311,7 +332,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroups(subscriberGroupEpochReader));
+    List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroupNames(segmentationDimensionService, subscriberGroupEpochReader));
     generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
@@ -347,7 +368,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getProfileMapForThirdPartyPresentation
   //
   
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -360,7 +381,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroups(subscriberGroupEpochReader));
+    List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroupNames(segmentationDimensionService, subscriberGroupEpochReader));
     generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
     generalDetailsPresentation.put("language", getLanguage());
     

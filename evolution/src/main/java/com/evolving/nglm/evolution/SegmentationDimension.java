@@ -63,6 +63,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("hasDefaultSegment", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isSimpleProfileDimension", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("subscriberGroupEpoch", SubscriberGroupEpoch.schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -83,6 +84,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
   private SegmentationDimensionTargetingType targetingType;
   private boolean hasDefaultSegment;
   private boolean isSimpleProfileDimension;
+  private SubscriberGroupEpoch subscriberGroupEpoch;
 
   /****************************************
   *
@@ -101,12 +103,19 @@ public abstract class SegmentationDimension extends GUIManagedObject
   public SegmentationDimensionTargetingType getTargetingType() { return targetingType; }
   public boolean getHasDefaultSegment() { return hasDefaultSegment; }
   public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
+  public SubscriberGroupEpoch getSubscriberGroupEpoch() { return subscriberGroupEpoch; }
 
   //
   //  abstract
   //
 
   public abstract List<? extends Segment> getSegments();
+
+  //
+  //  setters
+  //
+
+  public void setSubscriberGroupEpoch(SubscriberGroupEpoch subscriberGroupEpoch) { this.subscriberGroupEpoch = subscriberGroupEpoch; }
   
   /*****************************************
   *
@@ -140,6 +149,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     boolean hasDefaultSegment = valueStruct.getBoolean("hasDefaultSegment");
     boolean isSimpleProfileDimension = valueStruct.getBoolean("isSimpleProfileDimension");
+    SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpoch.unpack(new SchemaAndValue(schema.field("subscriberGroupEpoch").schema(), valueStruct.get("subscriberGroupEpoch")));
 
     //
     //  return
@@ -150,6 +160,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.targetingType = targetingType;
     this.hasDefaultSegment = hasDefaultSegment;
     this.isSimpleProfileDimension = isSimpleProfileDimension;
+    this.subscriberGroupEpoch = subscriberGroupEpoch;
   }
 
   /*****************************************
@@ -166,6 +177,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     struct.put("targetingType", segmentationDimension.getTargetingType().getExternalRepresentation());
     struct.put("hasDefaultSegment", segmentationDimension.getHasDefaultSegment());
     struct.put("isSimpleProfileDimension", segmentationDimension.getIsSimpleProfileDimension());
+    struct.put("subscriberGroupEpoch", SubscriberGroupEpoch.pack(segmentationDimension.getSubscriberGroupEpoch()));
   }
   
   /*****************************************
@@ -195,6 +207,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
     this.hasDefaultSegment = JSONUtilities.decodeBoolean(jsonRoot, "hasDefaultSegment", Boolean.FALSE);
     this.isSimpleProfileDimension = JSONUtilities.decodeBoolean(jsonRoot, "isSimpleProfileDimension", Boolean.FALSE);
+    this.subscriberGroupEpoch = new SubscriberGroupEpoch(this);
   }
 
   /*****************************************
@@ -203,11 +216,23 @@ public abstract class SegmentationDimension extends GUIManagedObject
   *
   *****************************************/
   
-  public boolean validate() throws GUIManagerException {
+  public boolean validate() throws GUIManagerException
+  {
     this.hasDefaultSegment = hasDefaultSegment();
     return true;
   }
   
+  /*****************************************
+  *
+  *  updateSubscriberGroupEpoch
+  *
+  *****************************************/
+
+  public void updateSubscriberGroupEpoch()
+  {
+    this.subscriberGroupEpoch = new SubscriberGroupEpoch(this, this.subscriberGroupEpoch);
+  }
+
   /*****************************************
   *
   *  hasDefaultSegment
@@ -219,5 +244,4 @@ public abstract class SegmentationDimension extends GUIManagedObject
   //
 
   protected abstract boolean hasDefaultSegment();
-  
 }

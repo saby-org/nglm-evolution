@@ -102,22 +102,37 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  public SubscriberGroupEpoch(String dimensionID, String display)
+  public SubscriberGroupEpoch(SegmentationDimension segmentationDimension)
   {
-    this.dimensionID = dimensionID;
+    this.dimensionID = segmentationDimension.getSegmentationDimensionID();
     this.epoch = 0;
-    this.display = display;
-    this.active = true;
+    this.display = segmentationDimension.getDisplay();
+    this.active = segmentationDimension.getActive();
     this.zookeeperVersion = -1;
   }
 
   /*****************************************
   *
-  *  constructor (simple)
+  *  constructor (update)
   *
   *****************************************/
 
-  public SubscriberGroupEpoch(String dimensionID, int epoch, String display, boolean active)
+  public SubscriberGroupEpoch(SegmentationDimension segmentationDimension, SubscriberGroupEpoch currentSubscriberGroupEpoch)
+  {
+    this.dimensionID = segmentationDimension.getSegmentationDimensionID();
+    this.epoch = currentSubscriberGroupEpoch.getEpoch() + 1;
+    this.display = segmentationDimension.getDisplay();
+    this.active = segmentationDimension.getActive();
+    this.zookeeperVersion = -1;
+  }
+
+  /*****************************************
+  *
+  *  constructor (unpack)
+  *
+  *****************************************/
+
+  private SubscriberGroupEpoch(String dimensionID, int epoch, String display, boolean active)
   {
     this.dimensionID = dimensionID;
     this.epoch = epoch;
@@ -125,6 +140,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
     this.active = active;
     this.zookeeperVersion = -1;
   }
+
 
   /*****************************************
   *

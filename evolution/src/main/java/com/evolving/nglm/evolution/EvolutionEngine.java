@@ -273,83 +273,11 @@ public class EvolutionEngine
 
     timerService = new TimerService(this, bootstrapServers);
 
-    /*****************************************
-    *
-    *  kafka producer for the segmentationDimensionListener
-    *
-    *****************************************/
-
-    Properties producerProperties = new Properties();
-    producerProperties.put("bootstrap.servers", bootstrapServers);
-    producerProperties.put("acks", "all");
-    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
-    
     //
     //  segmentationDimensionService
     //
     
-    SegmentationDimensionService.SegmentationDimensionListener segmentationDimensionListener = new SegmentationDimensionService.SegmentationDimensionListener()
-    {
-      //
-      //  segmentationDimensionActivated
-      //
-
-      @Override public void segmentationDimensionActivated(SegmentationDimension segmentationDimension)
-      {
-        /*****************************************
-        *
-        *  open zookeeper and lock group
-        *
-        *****************************************/
-
-        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getSegmentationDimensionID());
-        
-        /*****************************************
-        *
-        *  create or ensure exists
-        *
-        *****************************************/
-
-        SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID(), LoadType.New, segmentationDimension.getGUIManagedObjectID());
-        
-        /*****************************************
-        *
-        *  epoch
-        *
-        *****************************************/
-
-        int epoch = existingEpoch.getEpoch() + 1;
-
-        /*****************************************
-        *
-        *  submit new epoch (if necessary)
-        *
-        *****************************************/
-
-        SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, existingEpoch, epoch, true, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
-
-        /*****************************************
-        *
-        *  close
-        *
-        *****************************************/
-
-        SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
-      }
-
-      //
-      //  segmentationDimensionDeactivated
-      //
-
-      @Override public void segmentationDimensionDeactivated(String guiManagedObjectID)
-      {
-        throw new UnsupportedOperationException();
-      }
-    };
-
-    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationdimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false, segmentationDimensionListener);
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationdimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
 
     //
@@ -1288,17 +1216,18 @@ public class EvolutionEngine
     
     /*****************************************
     *
-    *  re-evaluate subscriberGroups for epoch changes and segmentation dimensions
+    *  re-evaluate subscriberGroups for epoch changes and eligibility/range segmentation dimensions
     *
     *****************************************/
 
     for (SegmentationDimension segmentationDimension :  segmentationDimensionService.getActiveSegmentationDimensions(now))
       {
         //
-        //  ignore if in temporal hole (segmentation dimension has been activated but subscriberGroupEpochReader has not seen it yet)
+        //  ignore if in temporal hole (segmentation dimension has been activated/updated but subscriberGroupEpochReader has not seen it yet)
         //
 
-        if (subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()) != null)
+        SubscriberGroupEpoch subscriberGroupEpoch = subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID());
+        if (subscriberGroupEpoch != null && subscriberGroupEpoch.getEpoch() == segmentationDimension.getSubscriberGroupEpoch().getEpoch())
           {
             boolean inGroup = false;
             SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
@@ -1309,7 +1238,7 @@ public class EvolutionEngine
                   for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
                     {
                       boolean addSegment = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
-                      subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), addSegment);
+                      subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
                       if (addSegment) inGroup = true;
                       subscriberProfileUpdated = true;
                     }
@@ -1370,33 +1299,34 @@ public class EvolutionEngine
                         //
 
                         boolean addSegment = !inGroup && minValueOK && maxValueOK && profileCriteriaEvaluation;
-                        subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpochReader.get(segmentationDimension.getSegmentationDimensionID()).getEpoch(), addSegment);
+                        subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
                         if (addSegment) inGroup = true;
                         subscriberProfileUpdated = true;
                       }
                     }
                   }
                   break;
+              }
+          }
+      }
 
+    /*****************************************
+    *
+    *  process file-sourced subscriberGroup event
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof SubscriberGroup)
+      {
+        SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
+        SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(subscriberGroup.getDimensionID(), now);
+        if (segmentationDimension != null)
+          {
+            switch (segmentationDimension.getTargetingType())
+              {
                 case FILE_IMPORT:
-                  
-                  /*****************************************
-                  *
-                  *  process subscriberGroup
-                  *
-                  *****************************************/
-
-                  if (evolutionEvent instanceof SubscriberGroup)
-                    {
-                      //
-                      //  apply
-                      //
-                      
-                      SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
-                      subscriberProfile.setSubscriberGroup(subscriberGroup.getDimensionID(), subscriberGroup.getSegmentID(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
-                      subscriberProfileUpdated = true;
-                    }
-
+                  subscriberProfile.setSubscriberGroup(subscriberGroup.getDimensionID(), subscriberGroup.getSegmentID(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+                  subscriberProfileUpdated = true;
                   break;
               }
           }

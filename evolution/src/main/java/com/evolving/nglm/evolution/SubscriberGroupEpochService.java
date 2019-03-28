@@ -64,7 +64,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static ZooKeeper openZooKeeperAndLockGroup(String groupName)
+  public static ZooKeeper openZooKeeperAndLockSegmentationDimension(SegmentationDimension segmentationDimension)
   {
     //
     //  open zookeeper
@@ -95,11 +95,11 @@ public class SubscriberGroupEpochService
 
     try
       {
-        zookeeper.create(Deployment.getZookeeperRoot() + SubscriberGroupLockNodes + groupName, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        zookeeper.create(Deployment.getZookeeperRoot() + SubscriberGroupLockNodes + segmentationDimension.getSegmentationDimensionID(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
       }
     catch (KeeperException.NodeExistsException e)
       {
-        log.error("subscriber group {} currently being updated", groupName);
+        log.error("subscriber group {} currently being updated", segmentationDimension.getSegmentationDimensionID());
         throw new ServerRuntimeException("zookeeper", e);
       }
     catch (KeeperException e)
@@ -122,11 +122,11 @@ public class SubscriberGroupEpochService
 
   /****************************************
   *
-  *  closeZooKeeperAndReleaseGroup
+  *  closeZooKeeperAndReleaseSegmentationDimension
   *
   ****************************************/
 
-  public static void closeZooKeeperAndReleaseGroup(ZooKeeper zookeeper, String groupName)
+  public static void closeZooKeeperAndReleaseSegmentationDimension(ZooKeeper zookeeper, SegmentationDimension segmentationDimension)
   {
     //
     //  ensure connected
@@ -187,7 +187,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static SubscriberGroupEpoch retrieveSubscriberGroupEpoch(ZooKeeper zookeeper, String dimensionID, LoadType loadType, String display)
+  public static SubscriberGroupEpoch retrieveSubscriberGroupEpoch(ZooKeeper zookeeper, SegmentationDimension segmentationDimension)
   {
     /*****************************************
     *
@@ -206,7 +206,7 @@ public class SubscriberGroupEpochService
     //
 
     boolean subscriberGroupEpochNodeExists = false;
-    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + dimensionID;
+    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + segmentationDimension.getSegmentationDimensionID();
     if (! subscriberGroupEpochNodeExists)
       {
         //
@@ -216,7 +216,7 @@ public class SubscriberGroupEpochService
         try
           {
             subscriberGroupEpochNodeExists = (zookeeper.exists(node, false) != null);
-            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node with ID {} does not exist", dimensionID);
+            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node with ID {} does not exist", segmentationDimension.getSegmentationDimensionID());
           }
         catch (KeeperException e)
           {
@@ -230,24 +230,15 @@ public class SubscriberGroupEpochService
           }
 
         //
-        //  ensure exists (if not new)
-        //
-
-        if (! subscriberGroupEpochNodeExists && loadType != LoadType.New)
-          {
-            throw new ServerRuntimeException("no such group");
-          }
-        
-        //
         //  create subscriberGroupEpoch node (if necessary)
         //
 
         if (! subscriberGroupEpochNodeExists)
           {
-            log.info("retrieveSubscriberGroupEpoch() - creating node {}", dimensionID);
+            log.info("retrieveSubscriberGroupEpoch() - creating node {}", segmentationDimension.getSegmentationDimensionID());
             try
               {
-                SubscriberGroupEpoch newSubscriberGroupEpoch = new SubscriberGroupEpoch(dimensionID, display);
+                SubscriberGroupEpoch newSubscriberGroupEpoch = new SubscriberGroupEpoch(segmentationDimension);
                 JSONObject jsonNewSubscriberGroupEpoch = newSubscriberGroupEpoch.getJSONRepresentation();
                 String stringNewSubscriberGroupEpoch = jsonNewSubscriberGroupEpoch.toString();
                 byte[] rawNewSubscriberGroupEpoch = stringNewSubscriberGroupEpoch.getBytes(StandardCharsets.UTF_8);
@@ -308,7 +299,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static void updateSubscriberGroupEpoch(ZooKeeper zookeeper, SubscriberGroupEpoch existingSubscriberGroupEpoch, int epoch, boolean active, KafkaProducer<byte[], byte[]> kafkaProducer, String subscriberGroupEpochTopic)
+  public static SubscriberGroupEpoch updateSubscriberGroupEpoch(ZooKeeper zookeeper, SegmentationDimension segmentationDimension, SubscriberGroupEpoch existingSubscriberGroupEpoch, KafkaProducer<byte[], byte[]> kafkaProducer, String subscriberGroupEpochTopic)
   {
     /*****************************************
     *
@@ -326,7 +317,7 @@ public class SubscriberGroupEpochService
     //  update subscriberGroupEpoch node
     //
 
-    SubscriberGroupEpoch subscriberGroupEpoch = new SubscriberGroupEpoch(existingSubscriberGroupEpoch.getDimensionID(), epoch, existingSubscriberGroupEpoch.getDisplay(), active);
+    SubscriberGroupEpoch subscriberGroupEpoch = new SubscriberGroupEpoch(segmentationDimension, existingSubscriberGroupEpoch);
     String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + subscriberGroupEpoch.getDimensionID();
     try
       {
@@ -366,6 +357,13 @@ public class SubscriberGroupEpochService
     *****************************************/
 
     log.info("updateSubscriberGroupEpoch() - updated group {}", subscriberGroupEpoch.getDimensionID());
-  }
 
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return subscriberGroupEpoch;
+  }
 }

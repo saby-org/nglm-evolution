@@ -255,7 +255,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(dimensionID);
+    ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockSegmentationDimension(dimension);
     
     /*****************************************
     *
@@ -263,7 +263,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, dimensionID, loadType, dimension.getSegmentationDimensionName());
+    SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, dimension);
 
     /*****************************************
     *
@@ -271,17 +271,17 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    int epoch;
+    boolean updateEpoch = false;
     switch (loadType)
       {
         case New:
         case Delete:
-          epoch = existingEpoch.getEpoch() + 1;
+          updateEpoch = true;
           break;
           
         case Add:
         case Remove:
-          epoch = existingEpoch.getEpoch();
+          updateEpoch = false;
           break;
 
         default:
@@ -301,15 +301,16 @@ public class SubscriberGroupLoader
     producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
 
-    /*****************************************
+    /*************a****************************
     *
     *  submit new epoch (if necessary)
     *
     *****************************************/
 
-    if (existingEpoch.getEpoch() != epoch)
+    SubscriberGroupEpoch subscriberGroupEpoch = existingEpoch;
+    if (updateEpoch)
       {
-        SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, existingEpoch, epoch, (loadType != LoadType.Delete), kafkaProducer, subscriberGroupEpochTopic);
+        subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, dimension, existingEpoch, kafkaProducer, subscriberGroupEpochTopic);
       }
 
     /*****************************************
@@ -444,7 +445,7 @@ public class SubscriberGroupLoader
                 if (effectiveSubscriberID != null)
                   {
                     String topic = autoProvision ? subscriberGroupAssignSubscriberIDTopic : subscriberGroupTopic;
-                    SubscriberGroup subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, dimensionID, segmentID, epoch, loadType.getAddRecord());
+                    SubscriberGroup subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, dimensionID, segmentID, subscriberGroupEpoch.getEpoch(), loadType.getAddRecord());
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, stringKeySerde.serializer().serialize(topic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(topic, subscriberGroup)));
                   }
                 else
@@ -463,7 +464,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, dimensionID);
+    SubscriberGroupEpochService.closeZooKeeperAndReleaseSegmentationDimension(zookeeper, dimension);
     subscriberIDService.close();
   }
 }

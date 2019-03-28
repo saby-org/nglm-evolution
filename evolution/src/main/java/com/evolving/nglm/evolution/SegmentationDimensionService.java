@@ -8,6 +8,8 @@ package com.evolving.nglm.evolution;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -39,6 +41,8 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
+  private Map<String,Segment> segmentsByID = new HashMap<String,Segment>();
+
   /*****************************************
   *
   *  constructor
@@ -47,7 +51,59 @@ public class SegmentationDimensionService extends GUIService
 
   public SegmentationDimensionService(String bootstrapServers, String groupID, String segmentationDimensionTopic, boolean masterService, SegmentationDimensionListener segmentationDimensionListener, boolean notifyOnSignificantChange)
   {
+    //
+    //  super
+    //  
+
     super(bootstrapServers, "segmentationDimensionService", groupID, segmentationDimensionTopic, masterService, getSuperListener(segmentationDimensionListener), "putSegmentationDimension", "removeSegmentationDimension", notifyOnSignificantChange);
+
+    //
+    //  listener
+    //
+
+    GUIManagedObjectListener segmentListener = new GUIManagedObjectListener()
+    {
+      //
+      //  guiManagedObjectActivated
+      //
+
+      @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject)
+      {
+        SegmentationDimension segmentationDimension = (SegmentationDimension) guiManagedObject;
+        for (Segment segment : segmentationDimension.getSegments())
+          {
+            segmentsByID.put(segment.getID(), segment);
+          }
+      }
+
+      //
+      //  guiManagedObjectDeactivated
+      //
+
+      @Override public void guiManagedObjectDeactivated(String guiManagedObjectID)
+      {
+        throw new UnsupportedOperationException();
+      }
+    };
+
+    //
+    //  register
+    //
+
+    registerListener(segmentListener);
+
+    //
+    //  initialize segmentsByID
+    //
+
+    Date now = SystemTime.getCurrentTime();
+    for (SegmentationDimension segmentationDimension : getActiveSegmentationDimensions(now))
+      {
+        for (Segment segment : segmentationDimension.getSegments())
+          {
+            segmentsByID.put(segment.getID(), segment);
+          }
+      }
   }
 
   //
@@ -116,6 +172,12 @@ public class SegmentationDimensionService extends GUIService
   public boolean isActiveSegmentationDimension(GUIManagedObject segmentationDimensionUnchecked, Date date) { return isActiveGUIManagedObject(segmentationDimensionUnchecked, date); }
   public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date); }
   public Collection<SegmentationDimension> getActiveSegmentationDimensions(Date date) { return (Collection<SegmentationDimension>) getActiveGUIManagedObjects(date); }
+
+  //
+  //  getSegment
+  //
+
+  public Segment getSegment(String segmentID) { synchronized (this) { return segmentsByID.get(segmentID); } }
 
   /*****************************************
   *
