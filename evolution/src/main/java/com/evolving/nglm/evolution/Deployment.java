@@ -57,6 +57,7 @@ public class Deployment
   private static String productTypeTopic;
   private static String ucgRuleTopic;
   private static String deliverableTopic;
+  private static String tokenTypeTopic;
   private static String mailTemplateTopic;
   private static String smsTemplateTopic;
   private static String guiAuditTopic;
@@ -93,6 +94,7 @@ public class Deployment
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialDeliverablesJSONArray = null;
+  private static JSONArray initialTokenTypesJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static Map<String,FulfillmentProvider> fulfillmentProviders = new LinkedHashMap<String,FulfillmentProvider>();
@@ -192,6 +194,7 @@ public class Deployment
   public static String getProductTypeTopic() { return productTypeTopic; }
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
+  public static String getTokenTypeTopic() { return tokenTypeTopic; }
   public static String getMailTemplateTopic() { return mailTemplateTopic; }
   public static String getSMSTemplateTopic() { return smsTemplateTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
@@ -228,6 +231,7 @@ public class Deployment
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
+  public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static Map<String,FulfillmentProvider> getFulfillmentProviders() { return fulfillmentProviders; }
@@ -729,6 +733,19 @@ public class Deployment
       }
     
     //
+    //  tokenType
+    //
+
+    try
+      {
+        tokenTypeTopic = JSONUtilities.decodeString(jsonRoot, "tokenTypeTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  mailTemplateTopic
     //
 
@@ -1163,6 +1180,12 @@ public class Deployment
     //
 
     initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", new JSONArray());
+    
+    //
+    //  initialTokenTypesJSONArray
+    //
+
+    initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
     
     //
     //  generateSimpleProfileDimensions

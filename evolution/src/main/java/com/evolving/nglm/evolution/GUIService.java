@@ -371,7 +371,7 @@ public class GUIService
         GUIManagedObject guiManagedObject = (GUIManagedObject) guiManagedObjectUnchecked;
         synchronized (this)
           {
-            return activeGUIManagedObjects.containsKey(guiManagedObject.getGUIManagedObjectID()) && guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0;
+            return guiManagedObject.getAccepted() && activeGUIManagedObjects.containsKey(guiManagedObject.getGUIManagedObjectID()) && guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0 && date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0;
           }
       }
     else

@@ -82,7 +82,9 @@ public class SegmentationDimensionService extends GUIService
 
       @Override public void guiManagedObjectDeactivated(String guiManagedObjectID)
       {
-        throw new UnsupportedOperationException();
+        //
+        //  ignore
+        //
       }
     };
 

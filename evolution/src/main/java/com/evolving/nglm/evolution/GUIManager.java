@@ -210,6 +210,11 @@ public class GUIManager
     getDeliverableList("getDeliverableList"),
     getDeliverableSummaryList("getDeliverableSummaryList"),
     getDeliverable("getDeliverable"),
+    getTokenTypeList("getTokenTypeList"),
+    getTokenTypeSummaryList("getTokenTypeSummaryList"),
+    putTokenType("putTokenType"),
+    getTokenType("getTokenType"),
+    removeTokenType("removeTokenType"),
     getMailTemplateList("getMailTemplateList"),
     getMailTemplateSummaryList("getMailTemplateSummaryList"),
     getMailTemplate("getMailTemplate"),
@@ -293,6 +298,7 @@ public class GUIManager
   private ProductTypeService productTypeService;
   private UCGRuleService ucgRuleService;
   private DeliverableService deliverableService;
+  private TokenTypeService tokenTypeService;
   private MailTemplateService mailTemplateService;
   private SMSTemplateService smsTemplateService;
   private SubscriberProfileService subscriberProfileService;
@@ -357,6 +363,7 @@ public class GUIManager
     String productTypeTopic = Deployment.getProductTypeTopic();
     String ucgRuleTopic = Deployment.getUCGRuleTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
+    String tokenTypeTopic = Deployment.getTokenTypeTopic();
     String mailTemplateTopic = Deployment.getMailTemplateTopic();
     String smsTemplateTopic = Deployment.getSMSTemplateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
@@ -426,6 +433,7 @@ public class GUIManager
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
     ucgRuleService = new UCGRuleService(bootstrapServers,"guimanager-ucgruleservice-"+apiProcessKey,ucgRuleTopic,true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
+    tokenTypeService = new TokenTypeService(bootstrapServers, "guimanager-tokentypeservice-" + apiProcessKey, tokenTypeTopic, true);
     mailTemplateService = new MailTemplateService(bootstrapServers, "guimanager-mailtemplateservice-" + apiProcessKey, mailTemplateTopic, true);
     smsTemplateService = new SMSTemplateService(bootstrapServers, "guimanager-smstemplateservice-" + apiProcessKey, smsTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
@@ -452,6 +460,27 @@ public class GUIManager
               {
                 JSONObject deliverableJSON = (JSONObject) initialDeliverablesJSONArray.get(i);
                 processPutDeliverable("0", deliverableJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+
+    //
+    //  tokenTypes
+    //
+
+    if (tokenTypeService.getStoredTokenTypes().size() == 0)
+      {
+        try
+          {
+            JSONArray initialTokenTypesJSONArray = Deployment.getInitialTokenTypesJSONArray();
+            for (int i=0; i<initialTokenTypesJSONArray.size(); i++)
+              {
+                JSONObject tokenTypeJSON = (JSONObject) initialTokenTypesJSONArray.get(i);
+                processPutTokenType("0", tokenTypeJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -840,6 +869,7 @@ public class GUIManager
     productTypeService.start();
     ucgRuleService.start();
     deliverableService.start();
+    tokenTypeService.start();
     mailTemplateService.start();
     smsTemplateService.start();
     subscriberProfileService.start();
@@ -969,6 +999,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APIHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APIHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APIHandler(API.getDeliverable));
+        restServer.createContext("/nglm-guimanager/getTokenTypeList", new APIHandler(API.getTokenTypeList));
+        restServer.createContext("/nglm-guimanager/getTokenTypeSummaryList", new APIHandler(API.getTokenTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/putTokenType", new APIHandler(API.putTokenType));
+        restServer.createContext("/nglm-guimanager/getTokenType", new APIHandler(API.getTokenType));
+        restServer.createContext("/nglm-guimanager/removeTokenType", new APIHandler(API.removeTokenType));
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APIHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APIHandler(API.getMailTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getMailTemplate", new APIHandler(API.getMailTemplate));
@@ -1005,7 +1040,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
 
     /*****************************************
     *
@@ -1047,6 +1082,7 @@ public class GUIManager
     private ProductTypeService productTypeService;
     private UCGRuleService ucgRuleService;
     private DeliverableService deliverableService;
+    private TokenTypeService tokenTypeService;
     private MailTemplateService mailTemplateService;
     private SMSTemplateService smsTemplateService;
     private SubscriberProfileService subscriberProfileService;
@@ -1058,7 +1094,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1079,6 +1115,7 @@ public class GUIManager
       this.productTypeService = productTypeService;
       this.ucgRuleService = ucgRuleService;
       this.deliverableService = deliverableService;
+      this.tokenTypeService = tokenTypeService;
       this.mailTemplateService = mailTemplateService;
       this.smsTemplateService = smsTemplateService;
       this.subscriberProfileService = subscriberProfileService;
@@ -1120,6 +1157,7 @@ public class GUIManager
       if (productTypeService != null) productTypeService.stop();
       if (ucgRuleService != null) ucgRuleService.stop();
       if (deliverableService != null) deliverableService.stop();
+      if (tokenTypeService != null) tokenTypeService.stop();
       if (mailTemplateService != null) mailTemplateService.stop();
       if (smsTemplateService != null) smsTemplateService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop(); 
@@ -1706,6 +1744,26 @@ public class GUIManager
 
                 case getDeliverable:
                   jsonResponse = processGetDeliverable(userID, jsonRoot);
+                  break;
+                  
+                case getTokenTypeList:  
+                  jsonResponse = processGetTokenTypeList(userID, jsonRoot, true);
+                  break;
+                  
+                case getTokenTypeSummaryList:
+                  jsonResponse = processGetTokenTypeList(userID, jsonRoot, false);
+                  break;
+                  
+                case putTokenType:
+                  jsonResponse = processPutTokenType(userID, jsonRoot);
+                  break;
+                  
+                case getTokenType:
+                  jsonResponse = processGetTokenType(userID, jsonRoot);
+                  break;
+                  
+                case removeTokenType:
+                  jsonResponse = processRemoveTokenType(userID, jsonRoot);
                   break;
 
                case getMailTemplateList:
@@ -8944,6 +9002,296 @@ public class GUIManager
       responseCode = "failedReadOnly";
     else
       responseCode = "deliverableNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetTokenTypeList
+  *
+  *****************************************/
+
+  private JSONObject processGetTokenTypeList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert tokenTypes
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> tokenTypes = new ArrayList<JSONObject>();
+    for (GUIManagedObject tokenType : tokenTypeService.getStoredTokenTypes())
+      {
+        tokenTypes.add(tokenTypeService.generateResponseJSON(tokenType, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("tokenTypes", JSONUtilities.encodeArray(tokenTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetTokenType
+  *
+  *****************************************/
+
+  private JSONObject processGetTokenType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate tokenType
+    *
+    *****************************************/
+
+    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
+    JSONObject tokenTypeJSON = tokenTypeService.generateResponseJSON(tokenType, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (tokenType != null) ? "ok" : "tokenTypeNotFound");
+    if (tokenType != null) response.put("tokenType", tokenTypeJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutTokenType
+  *
+  *****************************************/
+
+  private JSONObject processPutTokenType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  tokenTypeID
+    *
+    *****************************************/
+
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (tokenTypeID == null)
+      {
+        tokenTypeID = tokenTypeService.generateTokenTypeID();
+        jsonRoot.put("id", tokenTypeID);
+      }
+
+    /*****************************************
+    *
+    *  existing tokenType
+    *
+    *****************************************/
+
+    GUIManagedObject existingTokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingTokenType != null && existingTokenType.getReadOnly())
+      {
+        response.put("id", existingTokenType.getGUIManagedObjectID());
+        response.put("accepted", existingTokenType.getAccepted());
+        response.put("valid", existingTokenType.getAccepted());
+        response.put("processing", tokenTypeService.isActiveTokenType(existingTokenType, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process tokenType
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate tokenType
+        *
+        ****************************************/
+
+        TokenType tokenType = new TokenType(jsonRoot, epoch, existingTokenType);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        tokenTypeService.putTokenType(tokenType, (existingTokenType == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", tokenType.getTokenTypeID());
+        response.put("accepted", tokenType.getAccepted());
+        response.put("valid", tokenType.getAccepted());
+        response.put("processing", tokenTypeService.isActiveTokenType(tokenType, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        tokenTypeService.putTokenType(incompleteObject, (existingTokenType == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "tokenTypeNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveTokenType
+  *
+  *****************************************/
+
+  private JSONObject processRemoveTokenType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
+    if (tokenType != null && ! tokenType.getReadOnly()) tokenTypeService.removeTokenType(tokenTypeID, userID);
+
+    /*****************************************
+    *
+    *  revalidateProducts
+    *
+    *****************************************/
+
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (tokenType != null && ! tokenType.getReadOnly())
+      responseCode = "ok";
+    else if (tokenType != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "tokenTypeNotFound";
 
     /*****************************************
     *
