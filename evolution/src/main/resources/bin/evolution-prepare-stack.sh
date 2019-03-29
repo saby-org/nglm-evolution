@@ -853,14 +853,19 @@ if [ "$FAKEEMULATORS_ENABLED" = "true" ]; then
    export HTTP_PORT=`echo $TUPLE | cut -d: -f5`
    cat $DEPLOY_ROOT/docker/fakesmsc.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-fake.yml
   done
-  
 
   #
   #  fake smtp
   #
 
-  cat $DEPLOY_ROOT/docker/fakesmtp.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-fake.yml
-
+  for TUPLE in $FAKE_SMTP_CONFIGURATION
+  do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export SMTP_PORT=`echo $TUPLE | cut -d: -f3`
+   cat $DEPLOY_ROOT/docker/fakesmtp.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-fake.yml
+  done
+  
   #
   #  fake in
   #

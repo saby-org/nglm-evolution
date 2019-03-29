@@ -1,5 +1,7 @@
-fakesmtp:
-  image: digiplant/fake-smtp:${fake.smtp.version}
+fakesmtp-<_KEY_>:
+  image: ${env.DOCKER_REGISTRY}ev-fakesmtp:${project.name}-${project.version}
+  environment:
+    SMTP_PORT: <_SMTP_PORT_>
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -10,7 +12,7 @@ fakesmtp:
     replicas: 1
     placement:
       constraints:
-        - engine.labels.hostname == <_SMTP_HOST_>
+        - engine.labels.hostname == <_HOST_>
   networks:
     - outside
 

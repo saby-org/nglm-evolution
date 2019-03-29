@@ -914,6 +914,26 @@ done
 export SMSC_CONNECTION_1
 
 #
+#  Fake SMTP -- configuration
+#
+
+FAKE_SMTP_CONFIGURATION=`echo $FAKE_SMTP_CONFIGURATION | sed 's/ /\n/g' | uniq`
+SMTP_HOST_1=
+SMTP_PORT_1=
+for TUPLE in $FAKE_SMTP_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export SMTP_PORT=`echo $TUPLE | cut -d: -f3`
+   if [ -z "$SMTP_HOST_1" ]; then
+     SMTP_HOST_1="$HOST"
+     SMTP_PORT_1="$SMTP_PORT"
+   fi
+done
+export SMTP_HOST_1
+export SMTP_PORT_1
+
+#
 #  Fake IN -- configuration
 #
 

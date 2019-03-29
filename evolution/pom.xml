@@ -67,7 +67,6 @@
     
     <!-- dependencies - fake components -->
     <fake.smsc.version>0.0.5</fake.smsc.version>
-    <fake.smtp.version>latest</fake.smtp.version>
     
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
@@ -385,6 +384,26 @@
             </configuration>
           </execution>
 
+          <execution>
+            <id>generate-fakesmtp-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/fakesmtp</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources/docker/fakesmtp</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
 
@@ -418,6 +437,20 @@
               <contextDirectory>${project.build.directory}/assembled-docker/fakein</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-fakein</repository>
               <classifier>docker-info-fakein</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+          
+          <execution>
+            <id>docker-fakesmtp</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <contextDirectory>${project.build.directory}/assembled-docker/fakesmtp</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-fakesmtp</repository>
+              <classifier>docker-info-fakesmtp</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>
