@@ -38,7 +38,7 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version}
       docker pull ${env.DOCKER_REGISTRY}ev-gui.sqlscripts:${flyway.gui.version}
       docker pull ${env.DOCKER_REGISTRY}ev-fakesmsc:${fake.smsc.version}
-      docker pull digiplant/fake-smtp:${fake.smtp.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-fakesmtp:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-fakein:${project.name}-${project.version}
    " &
 done

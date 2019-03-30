@@ -7,7 +7,7 @@ FROM ${env.DOCKER_REGISTRY}ev-gui.sqlscripts:${flyway.gui.version} as guiorigina
 # Main upgrade image
 FROM confluentinc/cp-zookeeper:${confluent.version}
 
-RUN apt-get update
+RUN apt-get update; exit 0
 
 RUN apt-get install -y curl tar
 
