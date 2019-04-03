@@ -63,11 +63,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.PatternSyntaxException;
 
 public abstract class SubscriberProfileService
@@ -326,7 +326,6 @@ public abstract class SubscriberProfileService
 
     private HttpClient httpClient;
     private List<String> subscriberProfileEndpoints;
-    private Random random = new Random();
 
     /*****************************************
     *
@@ -420,7 +419,7 @@ public abstract class SubscriberProfileService
       *****************************************/
 
       List<String> allEndpoints = new LinkedList<String>(subscriberProfileEndpoints);
-      Collections.shuffle(allEndpoints, random);
+      Collections.shuffle(allEndpoints, ThreadLocalRandom.current());
       Iterator<String> endpoints = allEndpoints.iterator();
 
       /*****************************************

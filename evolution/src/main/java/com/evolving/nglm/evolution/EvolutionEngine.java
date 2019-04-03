@@ -83,6 +83,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import com.google.common.collect.Sets;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.io.BufferedReader;
@@ -112,6 +114,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 public class EvolutionEngine
@@ -164,6 +167,7 @@ public class EvolutionEngine
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static JourneyService journeyService;
+  private static JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService;
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
@@ -266,6 +270,13 @@ public class EvolutionEngine
 
     journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), false);
     journeyService.start();
+
+    //
+    //  journeyObjectiveService
+    //
+
+    journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "evolutionengine-journeyobjectiveservice-" + evolutionEngineKey, Deployment.getJourneyObjectiveTopic(), false);
+    journeyObjectiveService.start();
 
     //
     //  timerService (DO NOT START until streams is started)
@@ -774,7 +785,7 @@ public class EvolutionEngine
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, journeyObjectiveService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -901,6 +912,7 @@ public class EvolutionEngine
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ReferenceDataReader<String,UCGState> ucgStateReader;
     private JourneyService journeyService;
+    private JourneyObjectiveService journeyObjectiveService;
     private SegmentationDimensionService segmentationDimensionService;
     private TimerService timerService;
     private HttpServer subscriberProfileServer;
@@ -910,12 +922,13 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.ucgStateReader = ucgStateReader;
       this.journeyService = journeyService;
+      this.journeyObjectiveService = journeyObjectiveService;
       this.segmentationDimensionService = segmentationDimensionService;
       this.timerService = timerService;
       this.subscriberProfileServer = subscriberProfileServer;
@@ -946,6 +959,7 @@ public class EvolutionEngine
       //
       
       journeyService.stop();
+      journeyObjectiveService.stop();
       segmentationDimensionService.stop();
       timerService.stop();
       
@@ -1429,12 +1443,85 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  determine permitted journeys by objective
+    *
+    *****************************************/
+
+    //
+    //  permitted journeys by limiting criteria
+    //
+        
+    Map<JourneyObjective, Integer> permittedSimultaneousJourneys = new HashMap<JourneyObjective, Integer>();
+    Map<JourneyObjective, Boolean> permittedWaitingPeriod = new HashMap<JourneyObjective, Boolean>();
+    Map<JourneyObjective, Integer> permittedSlidingWindowJourneys = new HashMap<JourneyObjective, Integer>();
+    for (JourneyState journeyState : Sets.union(subscriberState.getJourneyStates(), subscriberState.getRecentJourneyStates()))
+      {
+        //
+        //  candidate journey
+        //
+        
+        Journey candidateJourney = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+        if (candidateJourney == null) continue;
+        boolean activeJourney = subscriberState.getJourneyStates().contains(journeyState);
+
+        //
+        //  process journey objectives
+        //
+        
+        Set<JourneyObjective> journeyObjectives = candidateJourney.getAllObjectives(journeyObjectiveService, now);
+        for (JourneyObjective journeyObjective : journeyObjectives)
+          {
+            //
+            //  ensure data structures
+            //
+            
+            if (! permittedSimultaneousJourneys.containsKey(journeyObjective))
+              {
+                permittedSimultaneousJourneys.put(journeyObjective, journeyObjective.getEffectiveTargetingLimitMaxSimultaneous());
+                permittedWaitingPeriod.put(journeyObjective, Boolean.TRUE);
+                permittedSlidingWindowJourneys.put(journeyObjective, journeyObjective.getEffectiveTargetingLimitMaxOccurrence());
+              }
+
+            //
+            //  update
+            //
+            
+            if (activeJourney) permittedSimultaneousJourneys.put(journeyObjective, permittedSimultaneousJourneys.get(journeyObjective) - 1);
+            if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0) permittedWaitingPeriod.put(journeyObjective, Boolean.FALSE);
+            if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0) permittedSlidingWindowJourneys.put(journeyObjective, permittedSlidingWindowJourneys.get(journeyObjective) - 1);
+          }
+      }
+
+    //
+    //  permitted journeys
+    //
+        
+    Map<JourneyObjective, Integer> permittedJourneys = new HashMap<JourneyObjective, Integer>();
+    for (JourneyObjective journeyObjective : permittedSimultaneousJourneys.keySet())
+      {
+        permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
+        if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE) permittedJourneys.put(journeyObjective, 0);
+      }
+         
+    /*****************************************
+    *
     *  update JourneyState(s) to enter new journeys
     *
     *****************************************/
 
-    for (Journey journey : journeyService.getActiveJourneys(now))
+    List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
+    Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    for (Journey journey : activeJourneys)
       {
+        //
+        //  entry period
+        //
+
+        if (now.compareTo(journey.getEffectiveEntryPeriodEndDate()) >= 0)
+          {
+            continue;
+          }
+          
         //
         //  called journey?
         //
@@ -1450,6 +1537,21 @@ public class EvolutionEngine
 
         if (calledJourney || journey.getAutoTargeted())
           {
+            /*****************************************
+            *
+            *  retrieve relevant journey objectives, ensuring all are in permittedJourneys
+            *
+            *****************************************/
+
+            Set<JourneyObjective> allObjectives = journey.getAllObjectives(journeyObjectiveService, now);
+            for (JourneyObjective journeyObjective : allObjectives)
+              {
+                if (! permittedJourneys.containsKey(journeyObjective))
+                  {
+                    permittedJourneys.put(journeyObjective, Math.max(Math.min(journeyObjective.getEffectiveTargetingLimitMaxSimultaneous(), journeyObjective.getEffectiveTargetingLimitMaxOccurrence()), 0));
+                  }
+              }
+
             /*****************************************
             *
             *  enterJourney
@@ -1475,7 +1577,7 @@ public class EvolutionEngine
                       }
                   }
               }
-
+            
             /*****************************************
             *
             *  recently in journey?
@@ -1488,7 +1590,7 @@ public class EvolutionEngine
                   {
                     if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
                       {
-                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), journey.getTargetingWindowDuration(), journey.getTargetingWindowUnit(), Deployment.getBaseTimeZone(), journey.getTargetingWindowRoundUp());
+                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), Deployment.getJourneyDefaultTargetingWindowDuration(), Deployment.getJourneyDefaultTargetingWindowUnit(), Deployment.getBaseTimeZone(), Deployment.getJourneyDefaultTargetingWindowRoundUp());
                         if (journeyReentryWindow.after(now))
                           {
                             context.subscriberTrace("NotEligible: recently in journey {0}, window ends {1}", journey.getJourneyID(), journeyReentryWindow);
@@ -1500,54 +1602,22 @@ public class EvolutionEngine
 
             /*****************************************
             *
-            *  objective-level contact policy -- maxOccurrence
-            *
-            *****************************************/
-
-            /*****************************************
-            *
-            *  objective-level contact policy -- maxSimultaneous
+            *  verify pass all objective-level targeting policies
             *
             *****************************************/
 
             if (enterJourney)
               {
-                //
-                //  running objectives
-                //
-
-                Set<String> runningJourneyObjectiveIDs = new HashSet<String>();
-                for (JourneyState journeyState : subscriberState.getJourneyStates())
+                for (JourneyObjective journeyObjective : allObjectives)
                   {
-                    Journey runningJourney = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
-                    if (runningJourney != null)
+                    if (permittedJourneys.get(journeyObjective) < 1)
                       {
-                        for (JourneyObjectiveInstance journeyObjectiveInstance : runningJourney.getJourneyObjectiveInstances())
-                          {
-                            runningJourneyObjectiveIDs.add(journeyObjectiveInstance.getJourneyObjectiveID());
-                          }
-                      }
-                  }
-
-                //
-                //  check required journey objectives
-                //
-
-                for (JourneyObjectiveInstance journeyObjectiveInstance : journey.getJourneyObjectiveInstances())
-                  {
-                    if (runningJourneyObjectiveIDs.contains(journeyObjectiveInstance.getJourneyObjectiveID()))
-                      {
-                        context.subscriberTrace("NotEligible: one journey per objective, journey {0}, objective {1}", journey.getJourneyID(), journeyObjectiveInstance.getJourneyObjectiveID());
                         enterJourney = false;
+                        context.subscriberTrace("NotEligible: journey {0}, objective {1}", journey.getJourneyID(), journeyObjective.getJourneyObjectiveID());
+                        break;
                       }
                   }
               }
-
-            /*****************************************
-            *
-            *  objective-level contact policy -- waitingPeriod
-            *
-            *****************************************/
 
             /*****************************************
             *
@@ -1558,7 +1628,7 @@ public class EvolutionEngine
             if (enterJourney)
               {
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getTargetingCriteria()))
+                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria()))
                   {
                     enterJourney = false;
                   }
@@ -1584,6 +1654,17 @@ public class EvolutionEngine
                 subscriberState.getJourneyStates().add(journeyState);
                 subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState));
                 subscriberStateUpdated = true;
+
+                /*****************************************
+                *
+                *  update permittedJourneys
+                *
+                *****************************************/
+
+                for (JourneyObjective journeyObjective : allObjectives)
+                  {
+                    permittedJourneys.put(journeyObjective, permittedJourneys.get(journeyObjective) - 1);
+                  }
 
                 /*****************************************
                 *

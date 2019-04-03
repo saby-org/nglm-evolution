@@ -45,17 +45,17 @@ public class ParameterMap extends HashMap<String,Object>
     schemaBuilder.field("nullParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptySetParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptyListParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("integerParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.INT32_SCHEMA).schema());
-    schemaBuilder.field("doubleParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.FLOAT64_SCHEMA).schema());
-    schemaBuilder.field("stringParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("booleanParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.BOOLEAN_SCHEMA).schema());
-    schemaBuilder.field("dateParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Timestamp.SCHEMA).schema());
-    schemaBuilder.field("stringSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.STRING_SCHEMA)).schema());
-    schemaBuilder.field("integerSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.INT32_SCHEMA)).schema());
-    schemaBuilder.field("evaluationCriteriaParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(EvaluationCriterion.schema())).schema());
-    schemaBuilder.field("smsMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SMSMessage.schema()).schema());
-    schemaBuilder.field("emailMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, EmailMessage.schema()).schema());
-    schemaBuilder.field("pushMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, PushMessage.schema()).schema());
+    schemaBuilder.field("integerParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.INT32_SCHEMA).name("parameter_map_integers").schema());
+    schemaBuilder.field("doubleParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.FLOAT64_SCHEMA).name("parameter_map_doubles").schema());
+    schemaBuilder.field("stringParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).name("parameter_map_strings").schema());
+    schemaBuilder.field("booleanParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.BOOLEAN_SCHEMA).name("parameter_map_booleans").schema());
+    schemaBuilder.field("dateParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,Timestamp.SCHEMA).name("parameter_map_dates").schema());
+    schemaBuilder.field("stringSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.STRING_SCHEMA)).name("parameter_map_stringsets").schema());
+    schemaBuilder.field("integerSetParameters", SchemaBuilder.map(Schema.STRING_SCHEMA,SchemaBuilder.array(Schema.INT32_SCHEMA)).name("parameter_map_integersets").schema());
+    schemaBuilder.field("evaluationCriteriaParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(EvaluationCriterion.schema())).name("parameter_map_criteria").schema());
+    schemaBuilder.field("smsMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, SMSMessage.schema()).name("parameter_map_sms").schema());
+    schemaBuilder.field("emailMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, EmailMessage.schema()).name("parameter_map_email").schema());
+    schemaBuilder.field("pushMessageParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, PushMessage.schema()).name("parameter_map_push").schema());
     schema = schemaBuilder.build();
   };
   

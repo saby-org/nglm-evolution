@@ -101,6 +101,7 @@ public class GUIManager
     getSupportedCurrencies("getSupportedCurrencies"),
     getSupportedTimeUnits("getSupportedTimeUnits"),
     getServiceTypes("getServiceTypes"),
+    getTouchPoints("getTouchPoints"),
     getCallingChannelProperties("getCallingChannelProperties"),
     getSupportedDataTypes("getSupportedDataTypes"),
     getProfileCriterionFields("getProfileCriterionFields"),
@@ -448,6 +449,27 @@ public class GUIManager
     *****************************************/
 
     //
+    //  catalogCharacteristics
+    //
+
+    if (catalogCharacteristicService.getStoredCatalogCharacteristics().size() == 0)
+      {
+        try
+          {
+            JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getInitialCatalogCharacteristicsJSONArray();
+            for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
+              {
+                JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
+                processPutCatalogCharacteristic("0", catalogCharacteristicJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+
+    //
     //  deliverables
     //
 
@@ -586,27 +608,6 @@ public class GUIManager
               {
                 JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
                 processPutProduct("0", productJSON);
-              }
-          }
-        catch (JSONUtilitiesException e)
-          {
-            throw new ServerRuntimeException("deployment", e);
-          }
-      }
-
-    //
-    //  catalogCharacteristics
-    //
-
-    if (catalogCharacteristicService.getStoredCatalogCharacteristics().size() == 0)
-      {
-        try
-          {
-            JSONArray initialCatalogCharacteristicsJSONArray = Deployment.getInitialCatalogCharacteristicsJSONArray();
-            for (int i=0; i<initialCatalogCharacteristicsJSONArray.size(); i++)
-              {
-                JSONObject catalogCharacteristicJSON = (JSONObject) initialCatalogCharacteristicsJSONArray.get(i);
-                processPutCatalogCharacteristic("0", catalogCharacteristicJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -890,6 +891,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APIHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
         restServer.createContext("/nglm-guimanager/getServiceTypes", new APIHandler(API.getServiceTypes));
+        restServer.createContext("/nglm-guimanager/getTouchPoints", new APIHandler(API.getTouchPoints));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
@@ -1308,6 +1310,10 @@ public class GUIManager
 
                 case getServiceTypes:
                   jsonResponse = processGetServiceTypes(userID, jsonRoot);
+                  break;
+
+                case getTouchPoints:
+                  jsonResponse = processGetTouchPoints(userID, jsonRoot);
                   break;
 
                 case getCallingChannelProperties:
@@ -2003,6 +2009,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve touchPoints
+    *
+    *****************************************/
+
+    List<JSONObject> touchPoints = new ArrayList<JSONObject>();
+    for (TouchPoint touchPoint : Deployment.getTouchPoints().values())
+      {
+        JSONObject touchPointJSON = touchPoint.getJSONRepresentation();
+        touchPoints.add(touchPointJSON);
+      }
+
+    /*****************************************
+    *
     *  retrieve callingChannelProperties
     *
     *****************************************/
@@ -2268,6 +2287,39 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("serviceTypes", JSONUtilities.encodeArray(serviceTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getTouchPoints
+  *
+  *****************************************/
+
+  private JSONObject processGetTouchPoints(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve touchPoints
+    *
+    *****************************************/
+
+    List<JSONObject> touchPoints = new ArrayList<JSONObject>();
+    for (TouchPoint touchPoint : Deployment.getTouchPoints().values())
+      {
+        JSONObject touchPointJSON = touchPoint.getJSONRepresentation();
+        touchPoints.add(touchPointJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("touchPoints", JSONUtilities.encodeArray(touchPoints));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -3622,17 +3674,19 @@ public class GUIManager
                   if (campaignUnchecked.getAccepted())
                     {
                       Journey campaign = (Journey) campaignUnchecked;
-                      if (! campaign.getAutoTargeted())
+                      switch (campaign.getTargetingType())
                         {
-                          switch (campaign.getGUIManagedObjectType())
-                            {
-                              case Campaign:
-                                HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                availableValue.put("id", campaign.getJourneyID());
-                                availableValue.put("display", campaign.getJourneyName());
-                                result.add(JSONUtilities.encodeObject(availableValue));
-                                break;
-                            }
+                          case Manual:
+                            switch (campaign.getGUIManagedObjectType())
+                              {
+                                case Campaign:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", campaign.getJourneyID());
+                                  availableValue.put("display", campaign.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
                         }
                     }
                 }
@@ -3647,17 +3701,19 @@ public class GUIManager
                   if (journeyUnchecked.getAccepted())
                     {
                       Journey journey = (Journey) journeyUnchecked;
-                      if (! journey.getAutoTargeted())
+                      switch (journey.getTargetingType())
                         {
-                          switch (journey.getGUIManagedObjectType())
-                            {
-                              case Journey:
-                                HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                availableValue.put("id", journey.getJourneyID());
-                                availableValue.put("display", journey.getJourneyName());
-                                result.add(JSONUtilities.encodeObject(availableValue));
-                                break;
-                            }
+                          case Manual:
+                            switch (journey.getGUIManagedObjectType())
+                              {
+                                case Journey:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", journey.getJourneyID());
+                                  availableValue.put("display", journey.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
                         }
                     }
                 }

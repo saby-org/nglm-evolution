@@ -10,18 +10,10 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class CriterionFieldRetriever
 {
-  /*****************************************
-  *
-  *  support
-  *
-  *****************************************/
-
-  private static Random random = new Random();
-
   /*****************************************
   *
   *  simle
@@ -34,7 +26,7 @@ public abstract class CriterionFieldRetriever
 
   public static Object getEvaluationDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getEvaluationDate(); }
   public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; } 
-  public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return random.nextInt(100); }
+  public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ThreadLocalRandom.current().nextInt(100); }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return null; }
 
   //

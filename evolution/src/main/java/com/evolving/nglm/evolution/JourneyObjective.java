@@ -26,7 +26,9 @@ import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Objects;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JourneyObjective extends GUIManagedObject
 {
@@ -49,10 +51,13 @@ public class JourneyObjective extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("parentJourneyObjectiveID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("contactPolicyMaxOccurrence", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("contactPolicyMaxSimultaneous", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("contactPolicyWaitingPeriodDuration", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("contactPolicyWaitingPeriodTimeUnit", Schema.STRING_SCHEMA);
+    schemaBuilder.field("targetingLimitMaxSimultaneous", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("targetingLimitWaitingPeriodDuration", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("targetingLimitWaitingPeriodTimeUnit", Schema.STRING_SCHEMA);
+    schemaBuilder.field("targetingLimitMaxOccurrence", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("targetingLimitSlidingWindowDuration", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("targetingLimitSlidingWindowTimeUnit", Schema.STRING_SCHEMA);
+    schemaBuilder.field("contactPolicyTouchPoints", SchemaBuilder.array(ContactPolicyTouchPoint.schema()).name("journey_objective_contactpolicy_touchpoints").schema());
     schemaBuilder.field("catalogCharacteristics", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
@@ -77,10 +82,13 @@ public class JourneyObjective extends GUIManagedObject
   *****************************************/
 
   private String parentJourneyObjectiveID;
-  private Integer contactPolicyMaxOccurrence;
-  private Integer contactPolicyMaxSimultaneous;
-  private Integer contactPolicyWaitingPeriodDuration;
-  private TimeUnit contactPolicyWaitingPeriodTimeUnit;
+  private Integer targetingLimitMaxSimultaneous;
+  private Integer targetingLimitWaitingPeriodDuration;
+  private TimeUnit targetingLimitWaitingPeriodTimeUnit;
+  private Integer targetingLimitMaxOccurrence;
+  private Integer targetingLimitSlidingWindowDuration;
+  private TimeUnit targetingLimitSlidingWindowTimeUnit;
+  private Map<String, ContactPolicyTouchPoint> contactPolicyTouchPoints;
   private List<String> catalogCharacteristics;
 
   /*****************************************
@@ -92,11 +100,23 @@ public class JourneyObjective extends GUIManagedObject
   public String getJourneyObjectiveID() { return getGUIManagedObjectID(); }
   public String getJourneyObjectiveName() { return getGUIManagedObjectName(); }
   public String getParentJourneyObjectiveID() { return parentJourneyObjectiveID; }
-  public Integer getContactPolicyMaxOccurrence() { return contactPolicyMaxOccurrence; }
-  public Integer getContactPolicyMaxSimultaneous() { return contactPolicyMaxSimultaneous; }
-  public Integer getContactPolicyWaitingPeriodDuration() { return contactPolicyWaitingPeriodDuration; }
-  public TimeUnit getContactPolicyWaitingPeriodTimeUnit() { return contactPolicyWaitingPeriodTimeUnit; }
+  public Integer getTargetingLimitMaxSimultaneous() { return targetingLimitMaxSimultaneous; }
+  public Integer getTargetingLimitWaitingPeriodDuration() { return targetingLimitWaitingPeriodDuration; }
+  public TimeUnit getTargetingLimitWaitingPeriodTimeUnit() { return targetingLimitWaitingPeriodTimeUnit; }
+  public Integer getTargetingLimitMaxOccurrence() { return targetingLimitMaxOccurrence; }
+  public Integer getTargetingLimitSlidingWindowDuration() { return targetingLimitSlidingWindowDuration; }
+  public TimeUnit getTargetingLimitSlidingWindowTimeUnit() { return targetingLimitSlidingWindowTimeUnit; }
+  public Map<String, ContactPolicyTouchPoint> getContactPolicyTouchPoints() { return contactPolicyTouchPoints; }
   public List<String> getCatalogCharacteristics() { return catalogCharacteristics; }
+
+  //
+  //  effective limit accessors
+  //
+  
+  public Integer getEffectiveTargetingLimitMaxSimultaneous() { return targetingLimitMaxSimultaneous != null ? targetingLimitMaxSimultaneous : new Integer(Integer.MAX_VALUE); }
+  public Date getEffectiveWaitingPeriodEndDate(Date now) { return (targetingLimitMaxSimultaneous != null && targetingLimitMaxSimultaneous == 1 && targetingLimitWaitingPeriodDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitWaitingPeriodDuration,  targetingLimitWaitingPeriodTimeUnit, Deployment.getBaseTimeZone(), false) : now; }
+  public Integer getEffectiveTargetingLimitMaxOccurrence() { return targetingLimitMaxOccurrence != null ? targetingLimitMaxOccurrence : new Integer(Integer.MAX_VALUE); }
+  public Date getEffectiveSlidingWindowStartDate(Date now) { return (targetingLimitSlidingWindowDuration != null) ? EvolutionUtilities.addTime(now, -1 * targetingLimitSlidingWindowDuration,  targetingLimitSlidingWindowTimeUnit, Deployment.getBaseTimeZone(), false) : now; }
   
   /*****************************************
   *
@@ -104,14 +124,17 @@ public class JourneyObjective extends GUIManagedObject
   *
   *****************************************/
 
-  public JourneyObjective(SchemaAndValue schemaAndValue, String parentJourneyObjectiveID, Integer contactPolicyMaxOccurrence, Integer contactPolicyMaxSimultaneous, Integer contactPolicyWaitingPeriodDuration, TimeUnit contactPolicyWaitingPeriodTimeUnit, List<String> catalogCharacteristics)
+  public JourneyObjective(SchemaAndValue schemaAndValue, String parentJourneyObjectiveID, Integer targetingLimitMaxSimultaneous, Integer targetingLimitWaitingPeriodDuration, TimeUnit targetingLimitWaitingPeriodTimeUnit, Integer targetingLimitMaxOccurrence, Integer targetingLimitSlidingWindowDuration, TimeUnit targetingLimitSlidingWindowTimeUnit, Map<String, ContactPolicyTouchPoint> contactPolicyTouchPoints, List<String> catalogCharacteristics)
   {
     super(schemaAndValue);
     this.parentJourneyObjectiveID = parentJourneyObjectiveID;
-    this.contactPolicyMaxOccurrence = contactPolicyMaxOccurrence;
-    this.contactPolicyMaxSimultaneous = contactPolicyMaxSimultaneous;
-    this.contactPolicyWaitingPeriodDuration = contactPolicyWaitingPeriodDuration;
-    this.contactPolicyWaitingPeriodTimeUnit = contactPolicyWaitingPeriodTimeUnit;
+    this.targetingLimitMaxSimultaneous = targetingLimitMaxSimultaneous;
+    this.targetingLimitWaitingPeriodDuration = targetingLimitWaitingPeriodDuration;
+    this.targetingLimitWaitingPeriodTimeUnit = targetingLimitWaitingPeriodTimeUnit;
+    this.targetingLimitMaxOccurrence = targetingLimitMaxOccurrence;
+    this.targetingLimitSlidingWindowDuration = targetingLimitSlidingWindowDuration;
+    this.targetingLimitSlidingWindowTimeUnit = targetingLimitSlidingWindowTimeUnit;
+    this.contactPolicyTouchPoints = contactPolicyTouchPoints;
     this.catalogCharacteristics = catalogCharacteristics;
   }
   
@@ -127,12 +150,31 @@ public class JourneyObjective extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, journeyObjective);
     struct.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
-    struct.put("contactPolicyMaxOccurrence", journeyObjective.getContactPolicyMaxOccurrence());
-    struct.put("contactPolicyMaxSimultaneous", journeyObjective.getContactPolicyMaxSimultaneous());
-    struct.put("contactPolicyWaitingPeriodDuration", journeyObjective.getContactPolicyWaitingPeriodDuration());
-    struct.put("contactPolicyWaitingPeriodTimeUnit", journeyObjective.getContactPolicyWaitingPeriodTimeUnit().getExternalRepresentation());
+    struct.put("targetingLimitMaxSimultaneous", journeyObjective.getTargetingLimitMaxSimultaneous());
+    struct.put("targetingLimitWaitingPeriodDuration", journeyObjective.getTargetingLimitWaitingPeriodDuration());
+    struct.put("targetingLimitWaitingPeriodTimeUnit", journeyObjective.getTargetingLimitWaitingPeriodTimeUnit().getExternalRepresentation());
+    struct.put("targetingLimitMaxOccurrence", journeyObjective.getTargetingLimitMaxOccurrence());
+    struct.put("targetingLimitSlidingWindowDuration", journeyObjective.getTargetingLimitSlidingWindowDuration());
+    struct.put("targetingLimitSlidingWindowTimeUnit", journeyObjective.getTargetingLimitSlidingWindowTimeUnit().getExternalRepresentation());
+    struct.put("contactPolicyTouchPoints", packContactPolicyTouchPoints(journeyObjective.getContactPolicyTouchPoints()));
     struct.put("catalogCharacteristics", journeyObjective.getCatalogCharacteristics());
     return struct;
+  }
+
+  /*****************************************
+  *
+  *  packContactPolicyTouchPoints
+  *
+  *****************************************/
+
+  private static List<Object> packContactPolicyTouchPoints(Map<String, ContactPolicyTouchPoint> contactPolicyTouchPoints)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (ContactPolicyTouchPoint contactPolicyTouchPoint : contactPolicyTouchPoints.values())
+      {
+        result.add(ContactPolicyTouchPoint.pack(contactPolicyTouchPoint));
+      }
+    return result;
   }
 
   /*****************************************
@@ -157,17 +199,53 @@ public class JourneyObjective extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String parentJourneyObjectiveID = valueStruct.getString("parentJourneyObjectiveID");
-    Integer contactPolicyMaxOccurrence = valueStruct.getInt32("contactPolicyMaxOccurrence");
-    Integer contactPolicyMaxSimultaneous = valueStruct.getInt32("contactPolicyMaxSimultaneous");
-    Integer contactPolicyWaitingPeriodDuration = valueStruct.getInt32("contactPolicyWaitingPeriodDuration");
-    TimeUnit contactPolicyWaitingPeriodTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("contactPolicyWaitingPeriodTimeUnit"));
+    Integer targetingLimitMaxSimultaneous = valueStruct.getInt32("targetingLimitMaxSimultaneous");
+    Integer targetingLimitWaitingPeriodDuration = valueStruct.getInt32("targetingLimitWaitingPeriodDuration");
+    TimeUnit targetingLimitWaitingPeriodTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("targetingLimitWaitingPeriodTimeUnit"));
+    Integer targetingLimitMaxOccurrence = valueStruct.getInt32("targetingLimitMaxOccurrence");
+    Integer targetingLimitSlidingWindowDuration = valueStruct.getInt32("targetingLimitSlidingWindowDuration");
+    TimeUnit targetingLimitSlidingWindowTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("targetingLimitSlidingWindowTimeUnit"));
+    Map<String, ContactPolicyTouchPoint> contactPolicyTouchPoints = unpackContactPolicyTouchPoints(schema.field("contactPolicyTouchPoints").schema(), valueStruct.get("contactPolicyTouchPoints"));
     List<String> catalogCharacteristics = (List<String>) valueStruct.get("catalogCharacteristics");
 
     //
     //  return
     //
 
-    return new JourneyObjective(schemaAndValue, parentJourneyObjectiveID, contactPolicyMaxOccurrence, contactPolicyMaxSimultaneous, contactPolicyWaitingPeriodDuration, contactPolicyWaitingPeriodTimeUnit, catalogCharacteristics);
+    return new JourneyObjective(schemaAndValue, parentJourneyObjectiveID, targetingLimitMaxSimultaneous, targetingLimitWaitingPeriodDuration, targetingLimitWaitingPeriodTimeUnit, targetingLimitMaxOccurrence, targetingLimitSlidingWindowDuration, targetingLimitSlidingWindowTimeUnit, contactPolicyTouchPoints, catalogCharacteristics);
+  }
+
+  /*****************************************
+  *
+  *  unpackContactPolicyTouchPoints
+  *
+  *****************************************/
+
+  private static Map<String, ContactPolicyTouchPoint> unpackContactPolicyTouchPoints(Schema schema, Object value)
+  {
+    //
+    //  get schema for ContactPolicyTouchPoint
+    //
+
+    Schema contactPolicyTouchPointSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String, ContactPolicyTouchPoint> result = new LinkedHashMap<String, ContactPolicyTouchPoint>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object contactPolicyTouchPoint : valueArray)
+      {
+        ContactPolicyTouchPoint contactPolicyTouchPointObject = ContactPolicyTouchPoint.unpack(new SchemaAndValue(contactPolicyTouchPointSchema, contactPolicyTouchPoint));
+        result.put(contactPolicyTouchPointObject.getTouchPointID(), contactPolicyTouchPointObject);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
   }
 
   /*****************************************
@@ -201,10 +279,13 @@ public class JourneyObjective extends GUIManagedObject
     *****************************************/
 
     this.parentJourneyObjectiveID = JSONUtilities.decodeString(jsonRoot, "parentJourneyObjectiveID", false);
-    this.contactPolicyMaxOccurrence = JSONUtilities.decodeInteger(jsonRoot, "contactPolicyMaxOccurrence", false);
-    this.contactPolicyMaxSimultaneous = JSONUtilities.decodeInteger(jsonRoot, "contactPolicyMaxSimultaneous", false);
-    this.contactPolicyWaitingPeriodDuration = JSONUtilities.decodeInteger(jsonRoot, "contactPolicyWaitingPeriodDuration", false);
-    this.contactPolicyWaitingPeriodTimeUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "contactPolicyWaitingPeriodTimeUnit", "(unknown)"));
+    this.targetingLimitMaxSimultaneous = JSONUtilities.decodeInteger(jsonRoot, "targetingLimitMaxSimultaneous", false);
+    this.targetingLimitWaitingPeriodDuration = JSONUtilities.decodeInteger(jsonRoot, "targetingLimitWaitingPeriodDuration", false);
+    this.targetingLimitWaitingPeriodTimeUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingLimitWaitingPeriodTimeUnit", "(unknown)"));
+    this.targetingLimitMaxOccurrence = JSONUtilities.decodeInteger(jsonRoot, "targetingLimitMaxOccurrence", false);
+    this.targetingLimitSlidingWindowDuration = JSONUtilities.decodeInteger(jsonRoot, "targetingLimitSlidingWindowDuration", false);
+    this.targetingLimitSlidingWindowTimeUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingLimitSlidingWindowTimeUnit", "(unknown)"));
+    this.contactPolicyTouchPoints = decodeContactPolicyTouchPoints(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyTouchPoints", true));
     this.catalogCharacteristics = decodeCatalogCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristics", true));
 
     /*****************************************
@@ -226,6 +307,23 @@ public class JourneyObjective extends GUIManagedObject
       {
         this.setEpoch(epoch);
       }
+  }
+
+  /*****************************************
+  *
+  *  decodeContactPolicyTouchPoints
+  *
+  *****************************************/
+
+  private Map<String, ContactPolicyTouchPoint> decodeContactPolicyTouchPoints(JSONArray jsonArray) throws GUIManagerException
+  {
+    Map<String, ContactPolicyTouchPoint> contactPolicyTouchPoints = new LinkedHashMap<String, ContactPolicyTouchPoint>();
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        ContactPolicyTouchPoint contactPolicyTouchPoint = new ContactPolicyTouchPoint((JSONObject) jsonArray.get(i));
+        contactPolicyTouchPoints.put(contactPolicyTouchPoint.getTouchPointID(), contactPolicyTouchPoint);
+      }
+    return contactPolicyTouchPoints;
   }
 
   /*****************************************
@@ -257,6 +355,14 @@ public class JourneyObjective extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingJourneyObjective.getGUIManagedObjectID());
+        epochChanged = epochChanged || ! Objects.equals(parentJourneyObjectiveID, existingJourneyObjective.getParentJourneyObjectiveID());
+        epochChanged = epochChanged || ! Objects.equals(targetingLimitMaxSimultaneous, existingJourneyObjective.getTargetingLimitMaxSimultaneous());
+        epochChanged = epochChanged || ! Objects.equals(targetingLimitWaitingPeriodDuration, existingJourneyObjective.getTargetingLimitWaitingPeriodDuration());
+        epochChanged = epochChanged || ! Objects.equals(targetingLimitWaitingPeriodTimeUnit, existingJourneyObjective.getTargetingLimitWaitingPeriodTimeUnit());
+        epochChanged = epochChanged || ! Objects.equals(targetingLimitMaxOccurrence, existingJourneyObjective.getTargetingLimitMaxOccurrence());
+        epochChanged = epochChanged || ! Objects.equals(targetingLimitSlidingWindowDuration, existingJourneyObjective.getTargetingLimitSlidingWindowDuration());
+        epochChanged = epochChanged || ! Objects.equals(targetingLimitSlidingWindowTimeUnit, existingJourneyObjective.getTargetingLimitSlidingWindowTimeUnit());
+        epochChanged = epochChanged || ! Objects.equals(contactPolicyTouchPoints, existingJourneyObjective.getContactPolicyTouchPoints());
         epochChanged = epochChanged || ! Objects.equals(catalogCharacteristics, existingJourneyObjective.getCatalogCharacteristics());
         return epochChanged;
       }
@@ -274,6 +380,18 @@ public class JourneyObjective extends GUIManagedObject
 
   public void validate(JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, Date date) throws GUIManagerException
   {
+    /*****************************************
+    *
+    *  validate touch points exist
+    *
+    *****************************************/
+
+    for (String touchPointID : contactPolicyTouchPoints.keySet())
+      {
+        TouchPoint touchPoint = Deployment.getTouchPoints().get(touchPointID);
+        if (touchPoint == null) throw new GUIManagerException("unknown touch point", touchPointID);
+      }
+    
     /*****************************************
     *
     *  validate catalog characteristics exist and are active

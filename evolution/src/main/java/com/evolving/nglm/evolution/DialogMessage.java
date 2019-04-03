@@ -52,7 +52,7 @@ public class DialogMessage
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dialog_message");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("messageTextByLanguage", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA));
+    schemaBuilder.field("messageTextByLanguage", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("dialog_message_text").schema());
     schemaBuilder.field("tags", SchemaBuilder.array(CriterionField.schema()));
     schema = schemaBuilder.build();
   };

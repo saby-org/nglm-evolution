@@ -20,6 +20,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
+import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 
@@ -84,6 +85,7 @@ public class Deployment
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
+  private static Map<String,TouchPoint> touchPoints = new LinkedHashMap<String,TouchPoint>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static JSONArray initialCallingChannelsJSONArray = null;
   private static JSONArray initialSalesChannelsJSONArray = null;
@@ -108,11 +110,10 @@ public class Deployment
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
-  private static boolean journeyDefaultAutoTarget;
   private static int journeyDefaultTargetingWindowDuration;
-  private static String journeyDefaultTargetingWindowUnit;
+  private static TimeUnit journeyDefaultTargetingWindowUnit;
   private static boolean journeyDefaultTargetingWindowRoundUp;
-  private static List<EvaluationCriterion> journeyUniversalTargetingCriteria = new ArrayList<EvaluationCriterion>();
+  private static List<EvaluationCriterion> journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
@@ -221,6 +222,7 @@ public class Deployment
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
+  public static Map<String,TouchPoint> getTouchPoints() { return touchPoints; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
   public static JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
@@ -245,11 +247,10 @@ public class Deployment
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
-  public static boolean getJourneyDefaultAutoTarget() { return journeyDefaultAutoTarget; }
   public static int getJourneyDefaultTargetingWindowDuration() { return journeyDefaultTargetingWindowDuration; }
-  public static String getJourneyDefaultTargetingWindowUnit() { return journeyDefaultTargetingWindowUnit; }
+  public static TimeUnit getJourneyDefaultTargetingWindowUnit() { return journeyDefaultTargetingWindowUnit; }
   public static boolean getJourneyDefaultTargetingWindowRoundUp() { return journeyDefaultTargetingWindowRoundUp; }
-  public static List<EvaluationCriterion> getJourneyUniversalTargetingCriteria() { return journeyUniversalTargetingCriteria; }
+  public static List<EvaluationCriterion> getJourneyUniversalEligibilityCriteria() { return journeyUniversalEligibilityCriteria; }
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
@@ -1109,6 +1110,25 @@ public class Deployment
       }
     
     //
+    //  touchPoints
+    //
+
+    try
+      {
+        JSONArray touchPointValues = JSONUtilities.decodeJSONArray(jsonRoot, "touchPoints", true);
+        for (int i=0; i<touchPointValues.size(); i++)
+          {
+            JSONObject touchPointJSON = (JSONObject) touchPointValues.get(i);
+            TouchPoint touchPoint = new TouchPoint(touchPointJSON);
+            touchPoints.put(touchPoint.getID(), touchPoint);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
     //  callingChannelProperties
     //
 
@@ -1416,12 +1436,6 @@ public class Deployment
       }
     
     //
-    //  journeyDefaultAutoTarget
-    //
-
-    journeyDefaultAutoTarget = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultAutoTarget", Boolean.FALSE);
-
-    //
     //  journeyDefaultTargetingWindowDuration
     //
 
@@ -1431,7 +1445,7 @@ public class Deployment
     //  journeyDefaultTargetingWindowUnit
     //
 
-    journeyDefaultTargetingWindowUnit = JSONUtilities.decodeString(jsonRoot, "journeyDefaultTargetingWindowUnit", "month");
+    journeyDefaultTargetingWindowUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "journeyDefaultTargetingWindowUnit", "month"));
 
     //
     //  journeyDefaultTargetingWindowRoundUp
@@ -1440,17 +1454,17 @@ public class Deployment
     journeyDefaultTargetingWindowRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "journeyDefaultTargetingWindowRoundUp", Boolean.FALSE);
     
     //
-    //  journeyUniversalTargetingCriteria
+    //  journeyUniversalEligibilityCriteria
     //
 
     try
       {
-        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalTargetingCriteria", new JSONArray());
+        JSONArray evaluationCriterionValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyUniversalEligibilityCriteria", new JSONArray());
         for (int i=0; i<evaluationCriterionValues.size(); i++)
           {
             JSONObject evaluationCriterionJSON = (JSONObject) evaluationCriterionValues.get(i);
             EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile);
-            journeyUniversalTargetingCriteria.add(evaluationCriterion);
+            journeyUniversalEligibilityCriteria.add(evaluationCriterion);
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)
