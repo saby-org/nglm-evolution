@@ -120,7 +120,7 @@ public class CatalogCharacteristicInstance
           break;
 
         case DateCriterion:
-          value = parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+          value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
           break;
 
         case BooleanCriterion:
@@ -157,32 +157,6 @@ public class CatalogCharacteristicInstance
           
     this.value = new ParameterMap();
     this.value.put("value", value);
-  }
-
-  /*****************************************
-  *
-  *  parseDateField
-  *
-  *****************************************/
-
-  private Date parseDateField(String stringDate) throws JSONUtilitiesException
-  {
-    Date result = null;
-    try
-      {
-        if (stringDate != null && stringDate.trim().length() > 0)
-          {
-            synchronized (GUIManagedObject.standardDateFormat)
-              {
-                result = GUIManagedObject.standardDateFormat.parse(stringDate.trim());
-              }
-          }
-      }
-    catch (ParseException e)
-      {
-        throw new JSONUtilitiesException("parseDateField", e);
-      }
-    return result;
   }
 
   /*****************************************

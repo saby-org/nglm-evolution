@@ -43,13 +43,13 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
 
     /*****************************************
     *
-    *  constructor
+    *  start
     *
     *****************************************/
 
-    protected SubscriberProfileESSinkTask()
+    @Override public void start(Map<String, String> taskConfig)
     {
-      super();
+      super.start(taskConfig);
       this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", sinkTaskKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
     }

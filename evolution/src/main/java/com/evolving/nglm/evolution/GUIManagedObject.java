@@ -77,11 +77,25 @@ public abstract class GUIManagedObject
   *
   *****************************************/
 
-  public static SimpleDateFormat standardDateFormat;
+  private static List<SimpleDateFormat> standardDateFormats;
   static
   {
-    standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX");
-    standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+    //
+    //  standardDateFormats
+    //
+        
+    standardDateFormats = new ArrayList<SimpleDateFormat>();
+    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX"));
+    standardDateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"));
+
+    //
+    //  setTimeZone
+    //
+
+    for (SimpleDateFormat standardDateFormat : standardDateFormats)
+      {
+        standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+      }
   }
 
   /*****************************************
@@ -359,23 +373,57 @@ public abstract class GUIManagedObject
   *
   *****************************************/
 
-  protected Date parseDateField(String stringDate) throws JSONUtilitiesException
+  public static Date parseDateField(String stringDate) throws JSONUtilitiesException
   {
+    //
+    //  parse via standard date formats
+    //
+
     Date result = null;
-    try
+    ParseException parseException = null;
+    if (stringDate != null && stringDate.trim().length() > 0)
       {
-        if (stringDate != null && stringDate.trim().length() > 0)
+        for (SimpleDateFormat standardDateFormat : standardDateFormats)
           {
+            //
+            //  parse
+            //
+
             synchronized (standardDateFormat)
               {
-                result = standardDateFormat.parse(stringDate.trim());
+                try
+                  {
+                    result = standardDateFormat.parse(stringDate.trim());
+                    parseException = null;
+                  }
+                catch (ParseException e)
+                  {
+                    result = null;
+                    parseException = e;
+                  }
               }
+
+            //
+            //  result
+            //
+
+            if (result != null) break;
           }
       }
-    catch (ParseException e)
+
+    //
+    //  exception
+    //
+
+    if (parseException != null)
       {
-        throw new JSONUtilitiesException("parseDateField", e);
+        throw new JSONUtilitiesException("parseDateField", parseException);
       }
+
+    //
+    //  return
+    //
+
     return result;
   }
 

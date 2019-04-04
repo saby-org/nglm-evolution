@@ -1430,7 +1430,7 @@ public class Journey extends GUIManagedObject
                 break;
                 
               case DateCriterion:
-                nodeParameters.put(parameterName, JSONUtilities.decodeDate(parameterJSON, "value", false));  // TBD DEW:  use a string date format
+                nodeParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                 break;
                 
               case StringSetCriterion:
@@ -1595,7 +1595,7 @@ public class Journey extends GUIManagedObject
                     break;
 
                   case DateCriterion:
-                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeDate(parameterJSON, "value", false));  // TBD DEW:  use a string date format
+                    outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
                     break;
 
                   case StringSetCriterion:

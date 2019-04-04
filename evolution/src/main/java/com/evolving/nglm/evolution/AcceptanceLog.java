@@ -33,19 +33,6 @@ public class AcceptanceLog implements SubscriberStreamEvent
 {
   /*****************************************
   *
-  *  standard formats
-  *
-  *****************************************/
-
-  private static SimpleDateFormat standardDateFormat;
-  static
-  {
-    standardDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSSXXX");
-    standardDateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-  }
-
-  /*****************************************
-  *
   *  schema
   *
   *****************************************/
@@ -167,7 +154,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
   {
     this.msisdn = JSONUtilities.decodeString(jsonRoot, "msisdn", true);
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    this.eventDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "eventDate", true));
+    this.eventDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "eventDate", true));
     this.callUniqueIdentifier = JSONUtilities.decodeString(jsonRoot, "callUniqueIdentifier", true);
     this.channelID = JSONUtilities.decodeString(jsonRoot, "channelID", true);
     this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
@@ -177,34 +164,8 @@ public class AcceptanceLog implements SubscriberStreamEvent
     this.transactionDurationMs = JSONUtilities.decodeInteger(jsonRoot, "transactionDurationMs", true);
     this.controlGroupState = JSONUtilities.decodeString(jsonRoot, "controlGroupState", true);
     this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
-    this.fulfilledDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "fulfilledDate", false));
+    this.fulfilledDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "fulfilledDate", false));
     this.position = JSONUtilities.decodeInteger(jsonRoot, "position", false);
-  }
-
-  /*****************************************
-  *
-  *  parseDateField
-  *
-  *****************************************/
-
-  private Date parseDateField(String stringDate) throws JSONUtilitiesException
-  {
-    Date result = null;
-    try
-      {
-        if (stringDate != null && stringDate.trim().length() > 0)
-          {
-            synchronized (standardDateFormat)
-              {
-                result = standardDateFormat.parse(stringDate.trim());
-              }
-          }
-      }
-    catch (ParseException e)
-      {
-        throw new JSONUtilitiesException("parseDateField", e);
-      }
-    return result;
   }
 
   /*****************************************
