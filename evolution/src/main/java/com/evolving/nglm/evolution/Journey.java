@@ -276,6 +276,17 @@ public class Journey extends GUIManagedObject
   
   /*****************************************
   *
+  *  evaluateEligibilityCriteria
+  *
+  *****************************************/
+
+  public boolean evaluateEligibilityCriteria(SubscriberEvaluationRequest evaluationRequest)
+  {
+    return EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityCriteria);
+  }
+  
+  /*****************************************
+  *
   *  constructor -- unpack
   *
   *****************************************/
