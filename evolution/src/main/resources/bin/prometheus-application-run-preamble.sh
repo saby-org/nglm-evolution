@@ -29,8 +29,6 @@ sed -i "s/<_NOTIFICATIONMANAGER_SMS_PROMETHEUS_>/${NOTIFICATIONMANAGER_SMS_PROME
 sed -i "s/<_NOTIFICATIONMANAGER_MAIL_PROMETHEUS_>/${NOTIFICATIONMANAGER_MAIL_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_GUIMANAGER_HOST_>/${GUIMANAGER_HOST}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_GUIMANAGER_MONITORING_PORT_>/${GUIMANAGER_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
-sed -i "s/<_CRITERIAAPI_HOST_>/${CRITERIAAPI_HOST}/g" /etc/prometheus/prometheus-application.yml
-sed -i "s/<_CRITERIAAPI_MONITORING_PORT_>/${CRITERIAAPI_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_THIRDPARTYMANAGER_PROMETHEUS_>/${THIRDPARTYMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_REPORTMANAGER_PROMETHEUS_>/${REPORTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_REPORTSCHEDULER_PROMETHEUS_>/${REPORTSCHEDULER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
