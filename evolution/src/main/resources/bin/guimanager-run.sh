@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager 001 $BROKER_SERVERS $GUIMANAGER_PORT
+exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager 001 $BROKER_SERVERS $GUIMANAGER_PORT $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.http.HttpHost;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -44,6 +46,28 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.zookeeper.ZooKeeper;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.ParsedAggregation;
+import org.elasticsearch.search.aggregations.bucket.filter.Filters;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -66,18 +90,21 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-   
+
 public class GUIManager
 {
   /*****************************************
@@ -138,6 +165,8 @@ public class GUIManager
     getSegmentationDimension("getSegmentationDimension"),
     putSegmentationDimension("putSegmentationDimension"),
     removeSegmentationDimension("removeSegmentationDimension"),
+    countBySegmentationRanges("countBySegmentationRanges"),
+    evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
     getPointList("getPointList"),
     getPointSummaryList("getPointSummaryList"),
@@ -272,16 +301,17 @@ public class GUIManager
   //
   //  static
   //
-  
+
   private static final int RESTAPIVersion = 1;
   private static Method guiManagerExtensionEvaluateEnumeratedValuesMethod;
-  
+
   //
   //  instance
   //
-  
+
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private HttpServer restServer;
+  private RestHighLevelClient elasticsearch;
   private JourneyService journeyService;
   private SegmentationDimensionService segmentationDimensionService;
   private PointService pointService;
@@ -346,7 +376,10 @@ public class GUIManager
     String apiProcessKey = args[0];
     String bootstrapServers = args[1];
     int apiRestPort = parseInteger("apiRestPort", args[2]);
+    String elasticsearchServerHost = args[3];
+    int elasticsearchServerPort = parseInteger("elasticsearchServerPort", args[4]);
     String nodeID = System.getProperty("nglm.license.nodeid");
+
     String journeyTopic = Deployment.getJourneyTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
     String pointTopic = Deployment.getPointTopic();
@@ -377,7 +410,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic, mailTemplateTopic, smsTemplateTopic);
+    log.info("main START: {} {} {} {} {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, elasticsearchServerHost, elasticsearchServerPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic, mailTemplateTopic, smsTemplateTopic);
 
     //
     //  license
@@ -388,7 +421,7 @@ public class GUIManager
     //
     //  guiManagerExtensionEvaluateEnumeratedValuesMethod
     //
-    
+
     try
       {
         guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",String.class,Date.class,boolean.class) : null;
@@ -397,7 +430,7 @@ public class GUIManager
       {
         throw new RuntimeException(e);
       }
-    
+
     /*****************************************
     *
     *  kafka producer for the segmentationDimensionListener
@@ -410,7 +443,7 @@ public class GUIManager
     producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
-    
+
     /*****************************************
     *
     *  services - construct
@@ -441,6 +474,21 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
+
+    /*****************************************
+    *
+    *  Elasticsearch -- client
+    *
+    *****************************************/
+
+    try
+      {
+        elasticsearch = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
+      }
+    catch (ElasticsearchException e)
+      {
+        throw new ServerRuntimeException("could not initialize elasticsearch client", e);
+      }
 
     /*****************************************
     *
@@ -682,10 +730,10 @@ public class GUIManager
 
     /*****************************************
     *
-    *  simple profile dimensions 
+    *  simple profile dimensions
     *
     *****************************************/
-    
+
     if (Deployment.getGenerateSimpleProfileDimensions())
       {
         //
@@ -846,7 +894,7 @@ public class GUIManager
               }
           }
       }
-    
+
     /*****************************************
     *
     *  services - start
@@ -928,6 +976,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APIHandler(API.getSegmentationDimension));
         restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APIHandler(API.putSegmentationDimension));
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APIHandler(API.removeSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/countBySegmentationRanges", new APIHandler(API.countBySegmentationRanges));
+        restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APIHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APIHandler(API.getUCGDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getPointList", new APIHandler(API.getPointList));
         restServer.createContext("/nglm-guimanager/getPointSummaryList", new APIHandler(API.getPointSummaryList));
@@ -1162,7 +1212,7 @@ public class GUIManager
       if (tokenTypeService != null) tokenTypeService.stop();
       if (mailTemplateService != null) mailTemplateService.stop();
       if (smsTemplateService != null) smsTemplateService.stop();
-      if (subscriberProfileService != null) subscriberProfileService.stop(); 
+      if (subscriberProfileService != null) subscriberProfileService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       if (deliverableSourceService != null) deliverableSourceService.stop();
 
@@ -1460,6 +1510,14 @@ public class GUIManager
                   jsonResponse = processRemoveSegmentationDimension(userID, jsonRoot);
                   break;
 
+                case countBySegmentationRanges:
+                  jsonResponse = processCountBySegmentationRanges(userID, jsonRoot);
+                  break;
+
+                case evaluateProfileCriteria:
+                  jsonResponse = processEvaluateProfileCriteria(userID, jsonRoot);
+                  break;
+
                 case getUCGDimensionSummaryList:
                   jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false);
                   break;
@@ -1751,23 +1809,23 @@ public class GUIManager
                 case getDeliverable:
                   jsonResponse = processGetDeliverable(userID, jsonRoot);
                   break;
-                  
-                case getTokenTypeList:  
+
+                case getTokenTypeList:
                   jsonResponse = processGetTokenTypeList(userID, jsonRoot, true);
                   break;
-                  
+
                 case getTokenTypeSummaryList:
                   jsonResponse = processGetTokenTypeList(userID, jsonRoot, false);
                   break;
-                  
+
                 case putTokenType:
                   jsonResponse = processPutTokenType(userID, jsonRoot);
                   break;
-                  
+
                 case getTokenType:
                   jsonResponse = processGetTokenType(userID, jsonRoot);
                   break;
-                  
+
                 case removeTokenType:
                   jsonResponse = processRemoveTokenType(userID, jsonRoot);
                   break;
@@ -1787,7 +1845,7 @@ public class GUIManager
                case putMailTemplate:
                  jsonResponse = processPutMailTemplate(userID, jsonRoot);
                  break;
-                 
+
                case removeMailTemplate:
                  jsonResponse = processRemoveMailTemplate(userID, jsonRoot);
                  break;
@@ -1807,7 +1865,7 @@ public class GUIManager
                case putSMSTemplate:
                  jsonResponse = processPutSMSTemplate(userID, jsonRoot);
                  break;
-                 
+
                case removeSMSTemplate:
                  jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
                  break;
@@ -3486,7 +3544,7 @@ public class GUIManager
 
   /*****************************************
   *
-  *  evaluateAvailableValues  
+  *  evaluateAvailableValues
   *
   *****************************************/
 
@@ -4721,7 +4779,7 @@ public class GUIManager
             case RANGES:
               segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
               break;
-              
+
             case FILE_IMPORT:
               segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
               break;
@@ -4741,13 +4799,13 @@ public class GUIManager
         //
 
         ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockSegmentationDimension(segmentationDimension);
-        
+
         //
         //  create or ensure subscriberGroupEpoch exists
         //
 
         SubscriberGroupEpoch existingSubscriberGroupEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension);
-        
+
         //
         //  submit new subscriberGroupEpoch
         //
@@ -4776,7 +4834,7 @@ public class GUIManager
 
         /*****************************************
         *
-        *  revalidate 
+        *  revalidate
         *
         *****************************************/
 
@@ -4811,7 +4869,7 @@ public class GUIManager
 
         //
         //  revalidate
-        // 
+        //
 
         revalidateUCGRules(now);
 
@@ -4905,6 +4963,442 @@ public class GUIManager
     *****************************************/
 
     response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processCountBySegmentationRanges
+   *
+   *****************************************/
+
+  private JSONObject processCountBySegmentationRanges(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+     *
+     *  parse input (segmentationDimension)
+     *
+     *****************************************/
+
+    jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
+    SegmentationDimensionRanges segmentationDimensionRanges = null;
+    try
+    {
+      switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
+      {
+      case RANGES:
+        segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+        break;
+
+      case Unknown:
+        throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+      }
+    }
+    catch (JSONUtilitiesException|GUIManagerException e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "segmentationDimensionNotValid");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    // Extract BaseSplits
+    List<BaseSplit> baseSplits = segmentationDimensionRanges.getBaseSplit();
+    int nbBaseSplits = baseSplits.size();
+
+    /*****************************************
+     *
+     *  construct query
+     *
+     *****************************************/
+
+    final String MAIN_AGG_NAME = "MAIN";
+    final String RANGE_AGG_PREFIX = "RANGE-";
+
+    //
+    //  Main aggregation query: BaseSplit
+    //
+
+    List<BoolQueryBuilder> baseSplitQueries = new ArrayList<BoolQueryBuilder>();
+    try
+    {
+      // BaseSplit query creation
+      for(int i = 0; i < nbBaseSplits; i++) {
+        baseSplitQueries.add(QueryBuilders.boolQuery());
+      }
+
+      for(int i = 0; i < nbBaseSplits; i++) {
+        BoolQueryBuilder query = baseSplitQueries.get(i);
+        BaseSplit baseSplit = baseSplits.get(i);
+
+        // Filter this bucket with this BaseSplit criteria
+        if(baseSplit.getProfileCriteria().isEmpty()) {
+          // If there is not any profile criteria, just filter with a match_all query.
+          query = query.filter(QueryBuilders.matchAllQuery());
+        } else {
+          for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+          {
+            query = query.filter(evaluationCriterion.esQuery());
+          }
+        }
+
+        // Must_not for all following buckets (reminder : bucket must be disjointed, if not, some customer could be counted in several buckets)
+        for(int j = i+1; j < nbBaseSplits; j++) {
+          BoolQueryBuilder nextQuery = baseSplitQueries.get(j);
+
+          if(baseSplit.getProfileCriteria().isEmpty()) {
+            // If there is not any profile criteria, just filter with a match_all query.
+            nextQuery = nextQuery.mustNot(QueryBuilders.matchAllQuery());
+          } else {
+            for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+            {
+              nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery());
+            }
+          }
+        }
+      }
+    }
+    catch (CriterionException e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "argumentError");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    // The main aggregation is a filter aggregation. Each filter query will constitute a bucket representing a BaseSplit.
+    List<KeyedFilter> queries = new ArrayList<KeyedFilter>();
+    for(int i = 0; i < nbBaseSplits; i++) {
+      BoolQueryBuilder query = baseSplitQueries.get(i);
+      String bucketName = baseSplits.get(i).getSplitName(); // Warning: input must ensure that all BaseSplit names are different. ( TODO )
+      queries.add(new FiltersAggregator.KeyedFilter(bucketName, query));
+    }
+
+    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+    AggregationBuilder aggregation = AggregationBuilders
+        .filters(MAIN_AGG_NAME, queries.toArray(new KeyedFilter[queries.size()]));
+    // @DEBUG: *otherBucket* can be activated for debug purpose: .otherBucket(true).otherBucketKey("OTH_BUCK")
+
+    //
+    //  Sub-aggregation query: Segments
+    //
+
+    // Sub-aggregations corresponding to all ranges-aggregation are added to the query
+    for(int i = 0; i < nbBaseSplits; i++) {
+      BaseSplit baseSplit = baseSplits.get(i);
+
+      if(baseSplit.getVariableName() == null) {
+        // This means that it should be the default segment, ranges-aggregation does not make sense here.
+
+        QueryBuilder match_all = QueryBuilders.matchAllQuery();
+        AggregationBuilder other = AggregationBuilders.filter(RANGE_AGG_PREFIX+baseSplit.getSplitName(), match_all);
+        aggregation.subAggregation(other);
+      } else {
+        // Warning: input must ensure that all BaseSplit names are different. ( TODO )
+        RangeAggregationBuilder range = AggregationBuilders.range(RANGE_AGG_PREFIX+baseSplit.getSplitName());
+
+        // Retrieving the ElasticSearch field from the Criterion field.
+        CriterionField criterionField = CriterionContext.Profile.getCriterionFields().get(baseSplit.getVariableName());
+        if(criterionField.getESField() == null) {
+          // If this Criterion field does not correspond to any field from Deployment.json, raise an error
+
+          log.warn("Unknown criterion field {}", baseSplit.getVariableName());
+
+          //
+          //  response
+          //
+
+          response.put("responseCode", "systemError");
+          response.put("responseMessage", "Unknown criterion field "+baseSplit.getVariableName()); // TODO security issue ?
+          response.put("responseParameter", null);
+          return JSONUtilities.encodeObject(response);
+        }
+
+        range = range.field(criterionField.getESField());
+
+        for(SegmentRanges segment : baseSplit.getSegments()) {
+          // Warning: input must ensure that all segment names are different. ( TODO )
+          range = range.addRange(new Range(segment.getName(),
+              (segment.getRangeMin() != null)? new Double (segment.getRangeMin()) : null,
+              (segment.getRangeMax() != null)? new Double (segment.getRangeMax()) : null));
+        }
+        aggregation.subAggregation(range);
+      }
+    }
+
+    searchSourceBuilder.aggregation(aggregation);
+    // @DEBUG log.info(searchSourceBuilder.toString());
+
+    /*****************************************
+     *
+     *  construct response (JSON object)
+     *
+     *****************************************/
+
+    JSONObject responseJSON = new JSONObject();
+    List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
+    for(int i = 0; i < nbBaseSplits; i++) {
+      BaseSplit baseSplit = baseSplits.get(i);
+
+      JSONObject responseBaseSplit = new JSONObject();
+      List<JSONObject> responseSegments = new ArrayList<JSONObject>();
+      responseBaseSplit.put("splitName", baseSplit.getSplitName());
+
+      // Ranges
+      for(SegmentRanges segment : baseSplit.getSegments()) {
+        JSONObject responseSegment = new JSONObject();
+        responseSegment.put("name", segment.getName());
+        responseSegments.add(responseSegment);
+        // The "count" field will be filled with the result of the ElasticSearch query
+      }
+      responseBaseSplit.put("segments", responseSegments);
+      responseBaseSplits.add(responseBaseSplit);
+    }
+
+    /*****************************************
+     *
+     *  execute query
+     *
+     *****************************************/
+
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).aggregation(aggregation).size(0));
+    SearchResponse searchResponse = null;
+
+    try
+    {
+      searchResponse = elasticsearch.search(searchRequest);
+      // @DEBUG log.info(searchResponse.toString());
+    }
+    catch (IOException e)
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", null);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    /*****************************************
+     *
+     *  retrieve result and fill the response JSON object
+     *
+     *****************************************/
+
+    Filters mainAggregationResult = searchResponse.getAggregations().get(MAIN_AGG_NAME);
+    // @DEBUG log.info(mainAggregationResult.toString());
+
+    // Fill response JSON object with counts for each segments from ElasticSearch result
+    for(JSONObject responseBaseSplit : responseBaseSplits) {
+      Filters.Bucket bucket = mainAggregationResult.getBucketByKey((String) responseBaseSplit.get("splitName"));
+      ParsedAggregation segmentAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString());
+
+      if (segmentAggregationResult instanceof ParsedFilter) {
+        // This specific segment aggregation is corresponding to the "default" BaseSplit (without any variableName)
+        ParsedFilter other = (ParsedFilter) segmentAggregationResult;
+
+        // Fill the "count" field of the response JSON object (for each segments)
+        for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments")) {
+          responseSegment.put("count", other.getDocCount());
+        }
+      } else {
+        // Segment aggregation is a range-aggregation.
+        ParsedRange ranges = (ParsedRange) segmentAggregationResult;
+        List<ParsedRange.ParsedBucket> segmentBuckets = (List<ParsedRange.ParsedBucket>) ranges.getBuckets();
+
+        // bucketMap is an hash map for caching purpose
+        Map<String, ParsedRange.ParsedBucket> bucketMap = new HashMap<>(segmentBuckets.size());
+        for (ParsedRange.ParsedBucket segmentBucket : segmentBuckets) {
+          bucketMap.put(segmentBucket.getKey(), segmentBucket);
+        }
+
+        // Fill the "count" field of the response JSON object (for each segments)
+        for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments")) {
+          responseSegment.put("count", bucketMap.get(responseSegment.get("name")).getDocCount());
+        }
+      }
+    }
+    responseJSON.put("baseSplit", responseBaseSplits);
+    // @DEBUG log.info(responseJSON.toJSONString());
+
+    /*****************************************
+     *
+     *  response
+     *
+     *****************************************/
+
+    response.put("result", responseJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processEvaluateProfileCriteria
+  *
+  *****************************************/
+
+  private JSONObject processEvaluateProfileCriteria(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  parse
+    *
+    *****************************************/
+
+    List<EvaluationCriterion> criteriaList = new ArrayList<EvaluationCriterion>();
+    try
+      {
+        JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
+        for (int i=0; i<jsonCriteriaList.size(); i++)
+          {
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.Profile));
+          }
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "argumentError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  construct query
+    *
+    *****************************************/
+
+    BoolQueryBuilder query;
+    try
+      {
+        query = QueryBuilders.boolQuery();
+        for (EvaluationCriterion evaluationCriterion : criteriaList)
+          {
+            query = query.filter(evaluationCriterion.esQuery());
+          }
+      }
+    catch (CriterionException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "argumentError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  excecute query
+    *
+    *****************************************/
+
+    long result;
+    try
+      {
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
+        SearchResponse searchResponse = elasticsearch.search(searchRequest);
+        result = searchResponse.getHits().getTotalHits();
+      }
+    catch (IOException e)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "systemError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("result", result);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -9391,7 +9885,7 @@ public class GUIManager
     response.put("templates", JSONUtilities.encodeArray(templates));
     return JSONUtilities.encodeObject(response);
   }
-                 
+
   /*****************************************
   *
   *  processGetMailTemplate
@@ -9405,7 +9899,7 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    
+
     HashMap<String,Object> response = new HashMap<String,Object>();
 
     /****************************************
@@ -9415,7 +9909,7 @@ public class GUIManager
     ****************************************/
 
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
+
     /*****************************************
     *
     *  retrieve and decorate template
@@ -9449,23 +9943,23 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    
+
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
-    
+
     /*****************************************
     *
     *  templateID
     *
     *****************************************/
-    
+
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (templateID == null)
       {
         templateID = mailTemplateService.generateMailTemplateID();
         jsonRoot.put("id", templateID);
       }
-    
+
     /*****************************************
     *
     *  existing template
@@ -9547,7 +10041,7 @@ public class GUIManager
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        
+
         //
         //  response
         //
@@ -9559,7 +10053,7 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
-  
+
   /*****************************************
   *
   *  processRemoveMailTemplate
@@ -9573,7 +10067,7 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    
+
     HashMap<String,Object> response = new HashMap<String,Object>();
 
     /****************************************
@@ -9581,9 +10075,9 @@ public class GUIManager
     *  argument
     *
     ****************************************/
-    
+
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
+
     /*****************************************
     *
     *  remove
@@ -9654,7 +10148,7 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
-                 
+
   /*****************************************
   *
   *  processGetSMSTemplate
@@ -9669,7 +10163,7 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    
+
     HashMap<String,Object> response = new HashMap<String,Object>();
 
     /****************************************
@@ -9679,7 +10173,7 @@ public class GUIManager
     ****************************************/
 
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
+
     /*****************************************
     *
     *  retrieve and decorate template
@@ -9697,7 +10191,7 @@ public class GUIManager
 
     response.put("responseCode", (template != null) ? "ok" : "templateNotFound");
     if (template != null) response.put("template", templateJSON);
-    
+
     log.info("GUIManager.processGetSMSTemplate("+userID+", "+jsonRoot+") DONE");
 
     return JSONUtilities.encodeObject(response);
@@ -9716,23 +10210,23 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    
+
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
-    
+
     /*****************************************
     *
     *  templateID
     *
     *****************************************/
-    
+
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (templateID == null)
       {
         templateID = smsTemplateService.generateSMSTemplateID();
         jsonRoot.put("id", templateID);
       }
-    
+
     /*****************************************
     *
     *  existing template
@@ -9814,7 +10308,7 @@ public class GUIManager
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        
+
         //
         //  response
         //
@@ -9826,7 +10320,7 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
-  
+
   /*****************************************
   *
   *  processRemoveSMSTemplate
@@ -9840,7 +10334,7 @@ public class GUIManager
     *  response
     *
     ****************************************/
-    
+
     HashMap<String,Object> response = new HashMap<String,Object>();
 
     /****************************************
@@ -9848,9 +10342,9 @@ public class GUIManager
     *  argument
     *
     ****************************************/
-    
+
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
+
     /*****************************************
     *
     *  remove
@@ -10314,7 +10808,7 @@ public class GUIManager
         revalidateJourneyObjectives(date);
       }
   }
-  
+
   /*****************************************
   *
   *  revalidateSalesChannels
@@ -10369,7 +10863,7 @@ public class GUIManager
       {
         salesChannelService.putGUIManagedObject(modifiedSalesChannel, date, false, null);
       }
-    
+
     /****************************************
     *
     *  revalidate dependent objects
@@ -10595,7 +11089,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProviders));
     return JSONUtilities.encodeObject(response);
-  }  
+  }
 
   /*****************************************
   *
@@ -10664,7 +11158,7 @@ public class GUIManager
   /*****************************************
   *
   *  processGetCustomer
-  * @throws GUIManagerException 
+  * @throws GUIManagerException
   *
   *****************************************/
 
@@ -10714,7 +11208,7 @@ public class GUIManager
                 response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -10755,20 +11249,20 @@ public class GUIManager
     *  retrieve CustomerMetaData
     *
     *****************************************/
-    
+
     List<JSONObject> generalDetailsMetadataList = Deployment.getCustomerMetaData().getGeneralDetailsMetadata().stream().map(generalDetailsMetadata -> generalDetailsMetadata.getJSONRepresentation()).collect(Collectors.toList());
     List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
     response.put("generalDetailsMetadata", JSONUtilities.encodeArray(generalDetailsMetadataList));
     response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
-    
+
     /*****************************************
     *
     *  response
     *
     *****************************************/
-    
+
     response.put("responseCode", "ok");
-    
+
     /****************************************
     *
     *  return
@@ -10836,7 +11330,7 @@ public class GUIManager
               {
                 List<JSONObject> deliveryRequestsJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests())
                   {
                     List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
 
@@ -10848,7 +11342,7 @@ public class GUIManager
                     Date toDate = null;
                     Date now = SystemTime.getCurrentTime();
 
-                    if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty()) 
+                    if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty())
                       {
                         toDate = now;
                         fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
@@ -10858,7 +11352,7 @@ public class GUIManager
                         toDate = now;
                         fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getBaseTimeZone());
                       }
-                    else 
+                    else
                       {
                         toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getBaseTimeZone());
                         fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
@@ -10869,9 +11363,9 @@ public class GUIManager
                     //
 
                     List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                    for (DeliveryRequest activity : activities) 
+                    for (DeliveryRequest activity : activities)
                       {
-                        if ( (activity.getEventDate().before(toDate) && activity.getEventDate().after(fromDate)) || (activity.getEventDate().equals(toDate) || activity.getEventDate().equals(fromDate)) ) 
+                        if ( (activity.getEventDate().before(toDate) && activity.getEventDate().after(fromDate)) || (activity.getEventDate().equals(toDate) || activity.getEventDate().equals(fromDate)) )
                           {
                             result.add(activity);
                           }
@@ -10891,7 +11385,7 @@ public class GUIManager
                 response.put("activities", JSONUtilities.encodeArray(deliveryRequestsJson));
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -10964,7 +11458,7 @@ public class GUIManager
               {
                 List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests())
                   {
                     List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
 
@@ -10972,7 +11466,7 @@ public class GUIManager
                     // filterBDRs
                     //
 
-                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList()); 
+                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList());
 
                     //
                     // prepare dates
@@ -10981,7 +11475,7 @@ public class GUIManager
                     Date startDate = null;
                     Date now = SystemTime.getCurrentTime();
 
-                    if (startDateReq == null || startDateReq.isEmpty()) 
+                    if (startDateReq == null || startDateReq.isEmpty())
                       {
                         startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
                       }
@@ -10995,7 +11489,7 @@ public class GUIManager
                     //
 
                     List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                    for (DeliveryRequest bdr : BDRs) 
+                    for (DeliveryRequest bdr : BDRs)
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
@@ -11005,7 +11499,7 @@ public class GUIManager
                               {
                                 bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
                               }
-                            else 
+                            else
                               {
                                 bdrMap.put(DeliveryRequest.FEATURENAME, null);
                               }
@@ -11021,7 +11515,7 @@ public class GUIManager
                 response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -11094,7 +11588,7 @@ public class GUIManager
               {
                 List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests())
                   {
                     List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
 
@@ -11102,7 +11596,7 @@ public class GUIManager
                     // filter ODRs
                     //
 
-                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList()); 
+                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList());
 
                     //
                     // prepare dates
@@ -11111,7 +11605,7 @@ public class GUIManager
                     Date startDate = null;
                     Date now = SystemTime.getCurrentTime();
 
-                    if (startDateReq == null || startDateReq.isEmpty()) 
+                    if (startDateReq == null || startDateReq.isEmpty())
                       {
                         startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
                       }
@@ -11124,7 +11618,7 @@ public class GUIManager
                     // filter using dates and prepare json
                     //
 
-                    for (DeliveryRequest odr : ODRs) 
+                    for (DeliveryRequest odr : ODRs)
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
@@ -11160,7 +11654,7 @@ public class GUIManager
                 response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -11233,7 +11727,7 @@ public class GUIManager
               {
                 List<JSONObject> messagesJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests()) 
+                if (null != subscriberHistory && null != subscriberHistory.getDeliveryRequests())
                   {
                     List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
 
@@ -11241,7 +11735,7 @@ public class GUIManager
                     // filter ODRs
                     //
 
-                    List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList()); 
+                    List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList());
 
                     //
                     // prepare dates
@@ -11250,7 +11744,7 @@ public class GUIManager
                     Date startDate = null;
                     Date now = SystemTime.getCurrentTime();
 
-                    if (startDateReq == null || startDateReq.isEmpty()) 
+                    if (startDateReq == null || startDateReq.isEmpty())
                       {
                         startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
                       }
@@ -11264,7 +11758,7 @@ public class GUIManager
                     //
 
                     List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                    for (DeliveryRequest message : messages) 
+                    for (DeliveryRequest message : messages)
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
@@ -11280,7 +11774,7 @@ public class GUIManager
                 response.put("messages", JSONUtilities.encodeArray(messagesJson));
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -11359,7 +11853,7 @@ public class GUIManager
               {
                 List<JSONObject> journeysJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (null != subscriberHistory && null != subscriberHistory.getJourneyStatistics()) 
+                if (null != subscriberHistory && null != subscriberHistory.getJourneyStatistics())
                   {
 
                     //
@@ -11377,7 +11871,7 @@ public class GUIManager
                     // filter Journeys
                     //
 
-                    activeJourneys = activeJourneys.stream().filter(journey -> journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey).collect(Collectors.toList()); 
+                    activeJourneys = activeJourneys.stream().filter(journey -> journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey).collect(Collectors.toList());
 
                     //
                     // filter on journeyStartDate
@@ -11385,7 +11879,7 @@ public class GUIManager
 
                     if (null != journeyStartDate)
                       {
-                        activeJourneys = activeJourneys.stream().filter(journey -> (null == journey.getEffectiveStartDate() || journey.getEffectiveStartDate().compareTo(journeyStartDate) >= 0)).collect(Collectors.toList()); 
+                        activeJourneys = activeJourneys.stream().filter(journey -> (null == journey.getEffectiveStartDate() || journey.getEffectiveStartDate().compareTo(journeyStartDate) >= 0)).collect(Collectors.toList());
                       }
 
                     //
@@ -11420,7 +11914,7 @@ public class GUIManager
                         //
                         //  filter
                         //
-                        
+
                         if (null == exactJourneyObjective)
                           activeJourneys = new ArrayList<Journey>();
                         else
@@ -11429,7 +11923,7 @@ public class GUIManager
                       }
 
                     //
-                    //  read campaign statistics 
+                    //  read campaign statistics
                     //
 
                     List<JourneyStatistic> journeyStatistics = subscriberHistory.getJourneyStatistics();
@@ -11556,7 +12050,7 @@ public class GUIManager
                 response.put("journeys", JSONUtilities.encodeArray(journeysJson));
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -11635,7 +12129,7 @@ public class GUIManager
               {
                 List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (null != subscriberHistory && null != subscriberHistory.getJourneyStatistics()) 
+                if (null != subscriberHistory && null != subscriberHistory.getJourneyStatistics())
                   {
 
                     //
@@ -11653,7 +12147,7 @@ public class GUIManager
                     // filter campaigns
                     //
 
-                    activeCampaigns = activeCampaigns.stream().filter(campaign -> campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList()); 
+                    activeCampaigns = activeCampaigns.stream().filter(campaign -> campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList());
 
                     //
                     // filter on campaignStartDate
@@ -11661,7 +12155,7 @@ public class GUIManager
 
                     if (null != campaignStartDate)
                       {
-                        activeCampaigns = activeCampaigns.stream().filter(campaign -> (null == campaign.getEffectiveStartDate() || campaign.getEffectiveStartDate().compareTo(campaignStartDate) >= 0)).collect(Collectors.toList()); 
+                        activeCampaigns = activeCampaigns.stream().filter(campaign -> (null == campaign.getEffectiveStartDate() || campaign.getEffectiveStartDate().compareTo(campaignStartDate) >= 0)).collect(Collectors.toList());
                       }
 
                     //
@@ -11705,7 +12199,7 @@ public class GUIManager
                       }
 
                     //
-                    //  read campaign statistics 
+                    //  read campaign statistics
                     //
 
                     List<JourneyStatistic> campaignStatistics = subscriberHistory.getJourneyStatistics();
@@ -11831,7 +12325,7 @@ public class GUIManager
                 response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
                 response.put("responseCode", "ok");
               }
-          } 
+          }
         catch (SubscriberProfileServiceException e)
           {
             throw new GUIManagerException(e);
@@ -11846,7 +12340,7 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
-  
+
   /*****************************************
   *
   * refreshUCG
@@ -11881,7 +12375,7 @@ public class GUIManager
     *  refresh
     *
     *****************************************/
-    
+
     if (activeUCGRule != null)
       {
         activeUCGRule.setRefreshEpoch(activeUCGRule.getRefreshEpoch() != null ? activeUCGRule.getRefreshEpoch() + 1 : 1);
@@ -12335,7 +12829,7 @@ public class GUIManager
       return super.toString() + "(" + responseParameter + ")";
     }
   }
-  
+
   /*****************************************
   *
   *  normalizeSegmentName
@@ -12352,7 +12846,7 @@ public class GUIManager
   *  getDateString
   *
   *****************************************/
-  
+
   private String getDateString(Date date)
   {
     String result = null;

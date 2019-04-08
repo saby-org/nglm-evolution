@@ -64,13 +64,6 @@ cat $DEPLOY_ROOT/docker/guimanager.yml | perl -e 'while ( $line=<STDIN> ) { $lin
 echo >> $DEPLOY_ROOT/stack/stack-guimanager.yml
 
 #
-#  criteriaapi
-#
-
-cat $DEPLOY_ROOT/docker/criteriaapi.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-guimanager.yml
-echo >> $DEPLOY_ROOT/stack/stack-guimanager.yml
-
-#
 #  postamble
 #
 

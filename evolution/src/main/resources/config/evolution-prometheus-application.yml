@@ -110,10 +110,3 @@ scrape_configs:
     static_configs:
       - targets: [<_THIRDPARTYMANAGER_PROMETHEUS_>]
 
-  # criteriaapi job
-  - job_name: 'criteriaapi'
-
-    # main config
-    static_configs:
-      - targets: ['<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_MONITORING_PORT_>']
-

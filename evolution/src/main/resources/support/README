@@ -171,8 +171,17 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "custo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerCampaigns; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerJourneys; echo
 
-
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ '\''active'\'', '\''inactive'\'' ]" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:00:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">", "argument" : { "timeUnit" : "instant", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:00:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "hour", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "hour", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 
 --
 --  elasticsearch - propensity
@@ -237,20 +246,6 @@ $DEPLOY_ROOT/bin/update-subscribergroup.sh new churnRisk subscribergroup-churnri
 $DEPLOY_ROOT/bin/update-subscribergroup.sh add churnRisk subscribergroup-churnrisk.002
 $DEPLOY_ROOT/bin/update-subscribergroup.sh remove churnRisk subscribergroup-churnrisk.002
 $DEPLOY_ROOT/bin/update-subscribergroup.sh delete churnRisk
-
---
---  criteriaAPI (examples using only evolution-level fields)
---
-
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ '\''active'\'', '\''inactive'\'' ]" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:00:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">", "argument" : { "timeUnit" : "instant", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:00:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "instant", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:30:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "hour", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T00:30:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "hour", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_CRITERIAAPI_HOST_>:<_CRITERIAAPI_PORT_>/nglm-criteriaapi/evaluateProfileCriteria; echo
 
 --
 --  service example programs
