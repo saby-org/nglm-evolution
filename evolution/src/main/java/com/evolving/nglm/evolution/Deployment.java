@@ -53,6 +53,7 @@ public class Deployment
   private static String supplierTopic;
   private static String productTopic;
   private static String catalogCharacteristicTopic;
+  private static String contactPolicyTopic;
   private static String journeyObjectiveTopic;
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
@@ -92,6 +93,7 @@ public class Deployment
   private static JSONArray initialSuppliersJSONArray = null;
   private static JSONArray initialProductsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
+  private static JSONArray initialContactPoliciesJSONArray = null;
   private static JSONArray initialJourneyObjectivesJSONArray = null;
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
@@ -190,6 +192,7 @@ public class Deployment
   public static String getSupplierTopic() { return supplierTopic; }
   public static String getProductTopic() { return productTopic; }
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
+  public static String getContactPolicyTopic() { return contactPolicyTopic; }
   public static String getJourneyObjectiveTopic() { return journeyObjectiveTopic; }
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
@@ -229,6 +232,7 @@ public class Deployment
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
+  public static JSONArray getInitialContactPoliciesJSONArray() { return initialContactPoliciesJSONArray; }
   public static JSONArray getInitialJourneyObjectivesJSONArray() { return initialJourneyObjectivesJSONArray; }
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
@@ -662,6 +666,19 @@ public class Deployment
     try
       {
         catalogCharacteristicTopic = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  contactPolicyTopic
+    //
+
+    try
+      {
+        contactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "contactPolicyTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1176,6 +1193,12 @@ public class Deployment
     //
 
     initialCatalogCharacteristicsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialCatalogCharacteristics", new JSONArray());
+
+    //
+    //  initialContactPoliciesJSONArray
+    //
+
+    initialContactPoliciesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialContactPolicies", new JSONArray());
 
     //
     //  initialJourneyObjectivesJSONArray

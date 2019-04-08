@@ -90,6 +90,7 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.ContactPolicyTouchPoint.ContactType;
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -217,6 +218,11 @@ public class GUIManager
     getCatalogCharacteristic("getCatalogCharacteristic"),
     putCatalogCharacteristic("putCatalogCharacteristic"),
     removeCatalogCharacteristic("removeCatalogCharacteristic"),
+    getContactPolicyList("getContactPolicyList"),
+    getContactPolicySummaryList("getContactPolicySummaryList"),
+    getContactPolicy("getContactPolicy"),
+    putContactPolicy("putContactPolicy"),
+    removeContactPolicy("removeContactPolicy"),
     getJourneyObjectiveList("getJourneyObjectiveList"),
     getJourneyObjectiveSummaryList("getJourneyObjectiveSummaryList"),
     getJourneyObjective("getJourneyObjective"),
@@ -324,6 +330,7 @@ public class GUIManager
   private SupplierService supplierService;
   private ProductService productService;
   private CatalogCharacteristicService catalogCharacteristicService;
+  private ContactPolicyService contactPolicyService;
   private JourneyObjectiveService journeyObjectiveService;
   private OfferObjectiveService offerObjectiveService;
   private ProductTypeService productTypeService;
@@ -392,6 +399,7 @@ public class GUIManager
     String supplierTopic = Deployment.getSupplierTopic();
     String productTopic = Deployment.getProductTopic();
     String catalogCharacteristicTopic = Deployment.getCatalogCharacteristicTopic();
+    String contactPolicyTopic = Deployment.getContactPolicyTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
@@ -462,6 +470,7 @@ public class GUIManager
     supplierService = new SupplierService(bootstrapServers, "guimanager-supplierservice-" + apiProcessKey, supplierTopic, true);
     productService = new ProductService(bootstrapServers, "guimanager-productservice-" + apiProcessKey, productTopic, true);
     catalogCharacteristicService = new CatalogCharacteristicService(bootstrapServers, "guimanager-catalogcharacteristicservice-" + apiProcessKey, catalogCharacteristicTopic, true);
+    contactPolicyService = new ContactPolicyService(bootstrapServers, "guimanager-contactpolicieservice-" + apiProcessKey, contactPolicyTopic, true);
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "guimanager-journeyobjectiveservice-" + apiProcessKey, journeyObjectiveTopic, true);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
@@ -656,6 +665,27 @@ public class GUIManager
               {
                 JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
                 processPutProduct("0", productJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
+
+    //
+    //  contactPolicies
+    //
+
+    if (contactPolicyService.getStoredContactPolicies().size() == 0)
+      {
+        try
+          {
+            JSONArray initialContactPoliciesJSONArray = Deployment.getInitialContactPoliciesJSONArray();
+            for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
+              {
+                JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
+                processPutContactPolicy("0", contactPolicyJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -913,6 +943,7 @@ public class GUIManager
     supplierService.start();
     productService.start();
     catalogCharacteristicService.start();
+    contactPolicyService.start();
     journeyObjectiveService.start();
     offerObjectiveService.start();
     productTypeService.start();
@@ -1028,6 +1059,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristic", new APIHandler(API.getCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APIHandler(API.putCatalogCharacteristic));
         restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APIHandler(API.removeCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/getContactPolicyList", new APIHandler(API.getContactPolicyList));
+        restServer.createContext("/nglm-guimanager/getContactPolicySummaryList", new APIHandler(API.getContactPolicySummaryList));
+        restServer.createContext("/nglm-guimanager/getContactPolicy", new APIHandler(API.getContactPolicy));
+        restServer.createContext("/nglm-guimanager/putContactPolicy", new APIHandler(API.putContactPolicy));
+        restServer.createContext("/nglm-guimanager/removeContactPolicy", new APIHandler(API.removeContactPolicy));
         restServer.createContext("/nglm-guimanager/getJourneyObjectiveList", new APIHandler(API.getJourneyObjectiveList));
         restServer.createContext("/nglm-guimanager/getJourneyObjectiveSummaryList", new APIHandler(API.getJourneyObjectiveSummaryList));
         restServer.createContext("/nglm-guimanager/getJourneyObjective", new APIHandler(API.getJourneyObjective));
@@ -1092,7 +1128,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
 
     /*****************************************
     *
@@ -1129,6 +1165,7 @@ public class GUIManager
     private SupplierService supplierService;
     private ProductService productService;
     private CatalogCharacteristicService catalogCharacteristicService;
+    private ContactPolicyService contactPolicyService;
     private JourneyObjectiveService journeyObjectiveService;
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
@@ -1146,7 +1183,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1162,6 +1199,7 @@ public class GUIManager
       this.supplierService = supplierService;
       this.productService = productService;
       this.catalogCharacteristicService = catalogCharacteristicService;
+      this.contactPolicyService = contactPolicyService;
       this.journeyObjectiveService = journeyObjectiveService;
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
@@ -1204,6 +1242,7 @@ public class GUIManager
       if (supplierService != null) supplierService.stop();
       if (productService != null) productService.stop();
       if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
+      if (contactPolicyService != null) contactPolicyService.stop();
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
@@ -1716,6 +1755,26 @@ public class GUIManager
 
                 case removeCatalogCharacteristic:
                   jsonResponse = processRemoveCatalogCharacteristic(userID, jsonRoot);
+                  break;
+
+                case getContactPolicyList:
+                  jsonResponse = processGetContactPolicyList(userID, jsonRoot, true);
+                  break;
+
+                case getContactPolicySummaryList:
+                  jsonResponse = processGetContactPolicyList(userID, jsonRoot, false);
+                  break;
+
+                case getContactPolicy:
+                  jsonResponse = processGetContactPolicy(userID, jsonRoot);
+                  break;
+
+                case putContactPolicy:
+                  jsonResponse = processPutContactPolicy(userID, jsonRoot);
+                  break;
+
+                case removeContactPolicy:
+                  jsonResponse = processRemoveContactPolicy(userID, jsonRoot);
                   break;
 
                 case getJourneyObjectiveList:
@@ -3775,6 +3834,16 @@ public class GUIManager
                         }
                     }
                 }
+            }
+          break;
+
+        case "contactTypes":
+          for (ContactType contactType : ContactType.values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", contactType.getExternalRepresentation());
+              availableValue.put("display", contactType.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
 
@@ -8130,6 +8199,296 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processGetContactPolicyList
+  *
+  *****************************************/
+
+  private JSONObject processGetContactPolicyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert contactPolicies
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> contactPolicies = new ArrayList<JSONObject>();
+    for (GUIManagedObject contactPolicy : contactPolicyService.getStoredContactPolicies())
+      {
+        contactPolicies.add(contactPolicyService.generateResponseJSON(contactPolicy, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("contactPolicies", JSONUtilities.encodeArray(contactPolicies));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processGetContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+    JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(contactPolicy, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (contactPolicy != null) ? "ok" : "contactPolicyNotFound");
+    if (contactPolicy != null) response.put("contactPolicy", contactPolicyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processPutContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  contactPolicyID
+    *
+    *****************************************/
+
+    String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (contactPolicyID == null)
+      {
+        contactPolicyID = contactPolicyService.generateContactPolicyID();
+        jsonRoot.put("id", contactPolicyID);
+      }
+
+    /*****************************************
+    *
+    *  existing contactPolicy
+    *
+    *****************************************/
+
+    GUIManagedObject existingContactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingContactPolicy != null && existingContactPolicy.getReadOnly())
+      {
+        response.put("id", existingContactPolicy.getGUIManagedObjectID());
+        response.put("accepted", existingContactPolicy.getAccepted());
+        response.put("valid", existingContactPolicy.getAccepted());
+        response.put("processing", contactPolicyService.isActiveContactPolicy(existingContactPolicy, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process contactPolicy
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate contactPolicy
+        *
+        ****************************************/
+
+        ContactPolicy contactPolicy = new ContactPolicy(jsonRoot, epoch, existingContactPolicy);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        contactPolicyService.putContactPolicy(contactPolicy, (existingContactPolicy == null), userID);
+
+        /*****************************************
+        *
+        *  revalidate dependent objects
+        *
+        *****************************************/
+
+        revalidateJourneyObjectives(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", contactPolicy.getContactPolicyID());
+        response.put("accepted", contactPolicy.getAccepted());
+        response.put("valid", contactPolicy.getAccepted());
+        response.put("processing", contactPolicyService.isActiveContactPolicy(contactPolicy, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        contactPolicyService.putContactPolicy(incompleteObject, (existingContactPolicy == null), userID);
+
+        //
+        //  revalidate dependent objects
+        //
+
+        revalidateJourneyObjectives(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "contactPolicyNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processRemoveContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+    if (contactPolicy != null && ! contactPolicy.getReadOnly()) contactPolicyService.removeContactPolicy(contactPolicyID, userID);
+
+    /*****************************************
+    *
+    *  revalidate dependent objects
+    *
+    *****************************************/
+
+    revalidateJourneyObjectives(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (contactPolicy != null && ! contactPolicy.getReadOnly())
+      responseCode = "ok";
+    else if (contactPolicy != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "contactPolicyNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  processGetJourneyObjectiveList
   *
   *****************************************/
@@ -8282,7 +8641,7 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
+        journeyObjectiveService.putJourneyObjective(journeyObjective, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
         /*****************************************
         *
@@ -8318,7 +8677,7 @@ public class GUIManager
         //  store
         //
 
-        journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
+        journeyObjectiveService.putJourneyObjective(incompleteObject, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, (existingJourneyObjective == null), userID);
 
         //
         //  revalidate dependent objects
@@ -10767,7 +11126,7 @@ public class GUIManager
         try
           {
             JourneyObjective journeyObjective = new JourneyObjective(existingJourneyObjective.getJSONRepresentation(), epoch, existingJourneyObjective);
-            journeyObjective.validate(journeyObjectiveService, catalogCharacteristicService, date);
+            journeyObjective.validate(journeyObjectiveService, contactPolicyService, catalogCharacteristicService, date);
             modifiedJourneyObjective = journeyObjective;
           }
         catch (JSONUtilitiesException|GUIManagerException e)

@@ -44,6 +44,26 @@ public class ContactPolicyTouchPoint
 {
   /*****************************************
   *
+  *  enum
+  *
+  *****************************************/
+
+  public enum ContactType
+  {
+    CallToAction("callToAction", "Call To Action"),
+    Reminder("reminder", "Reminder"),
+    Response("response", "Response"),
+    Unknown("(unknown)", "(unknown)");
+    private String externalRepresentation;
+    private String display;
+    private ContactType(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public String getDisplay() { return display; }
+    public static ContactType fromExternalRepresentation(String externalRepresentation) { for (ContactType enumeratedValue : ContactType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  /*****************************************
+  *
   *  schema
   *
   *****************************************/
@@ -59,7 +79,7 @@ public class ContactPolicyTouchPoint
     schemaBuilder.name("contactpolicy_touchpoint");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("touchPointID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("contactPolicyTimeWindows", SchemaBuilder.array(ContactPolicyTimeWindow.schema()).name("contactpolicy_touchpoint_contactpolicy_timewindows").schema());
+    schemaBuilder.field("contactTypes", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
 
@@ -83,7 +103,7 @@ public class ContactPolicyTouchPoint
   *****************************************/
 
   private String touchPointID;
-  private List<ContactPolicyTimeWindow> contactPolicyTimeWindows;
+  private Set<ContactType> contactTypes;
 
   /*****************************************
   *
@@ -92,7 +112,7 @@ public class ContactPolicyTouchPoint
   *****************************************/
 
   public String getTouchPointID() { return touchPointID; }
-  public List<ContactPolicyTimeWindow> getContactPolicyTimeWindows() { return contactPolicyTimeWindows; }
+  public Set<ContactType> getContactTypes() { return contactTypes; }
 
   /*****************************************
   *
@@ -100,10 +120,10 @@ public class ContactPolicyTouchPoint
   *
   *****************************************/
 
-  public ContactPolicyTouchPoint(String touchPointID, List<ContactPolicyTimeWindow> contactPolicyTimeWindows)
+  public ContactPolicyTouchPoint(String touchPointID, Set<ContactType> contactTypes)
   {
     this.touchPointID = touchPointID;
-    this.contactPolicyTimeWindows = contactPolicyTimeWindows;
+    this.contactTypes = contactTypes;
   }
 
   /*****************************************
@@ -117,22 +137,22 @@ public class ContactPolicyTouchPoint
     ContactPolicyTouchPoint contactPolicyTouchPoint = (ContactPolicyTouchPoint) value;
     Struct struct = new Struct(schema);
     struct.put("touchPointID", contactPolicyTouchPoint.getTouchPointID());
-    struct.put("contactPolicyTimeWindows", packContactPolicyTimeWindows(contactPolicyTouchPoint.getContactPolicyTimeWindows()));
+    struct.put("contactTypes", packContactTypes(contactPolicyTouchPoint.getContactTypes()));
     return struct;
   }
 
   /*****************************************
   *
-  *  packContactPolicyTimeWindows
+  *  packContactTypes
   *
   *****************************************/
 
-  private static List<Object> packContactPolicyTimeWindows(List<ContactPolicyTimeWindow> contactPolicyTimeWindows)
+  private static List<Object> packContactTypes(Set<ContactType> contactTypes)
   {
     List<Object> result = new ArrayList<Object>();
-    for (ContactPolicyTimeWindow contactPolicyTimeWindow : contactPolicyTimeWindows)
+    for (ContactType contactType : contactTypes)
       {
-        result.add(ContactPolicyTimeWindow.pack(contactPolicyTimeWindow));
+        result.add(contactType.getExternalRepresentation());
       }
     return result;
   }
@@ -159,38 +179,28 @@ public class ContactPolicyTouchPoint
 
     Struct valueStruct = (Struct) value;
     String touchPointID = valueStruct.getString("touchPointID");
-    List<ContactPolicyTimeWindow> contactPolicyTimeWindows = unpackContactPolicyTimeWindows(schema.field("contactPolicyTimeWindows").schema(), valueStruct.get("contactPolicyTimeWindows"));
+    Set<ContactType> contactTypes = unpackContactTypes(schema.field("contactTypes").schema(), valueStruct.get("contactTypes"));
 
     //
     //  return
     //
 
-    return new ContactPolicyTouchPoint(touchPointID, contactPolicyTimeWindows);
+    return new ContactPolicyTouchPoint(touchPointID, contactTypes);
   }
 
   /*****************************************
   *
-  *  unpackContactPolicyTimeWindows
+  *  unpackContactTypes
   *
   *****************************************/
 
-  private static List<ContactPolicyTimeWindow> unpackContactPolicyTimeWindows(Schema schema, Object value)
+  private static Set<ContactType> unpackContactTypes(Schema schema, Object value)
   {
-    //
-    //  get schema for ContactPolicyTimeWindow
-    //
-
-    Schema contactPolicyTimeWindowSchema = schema.valueSchema();
-
-    //
-    //  unpack
-    //
-
-    List<ContactPolicyTimeWindow> result = new ArrayList<ContactPolicyTimeWindow>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object contactPolicyTimeWindow : valueArray)
+    Set<ContactType> result = new HashSet<ContactType>();
+    List<String> valueArray = (List<String>) value;
+    for (String contactType : valueArray)
       {
-        result.add(ContactPolicyTimeWindow.unpack(new SchemaAndValue(contactPolicyTimeWindowSchema, contactPolicyTimeWindow)));
+        result.add(ContactType.fromExternalRepresentation(contactType));
       }
 
     //
@@ -209,23 +219,23 @@ public class ContactPolicyTouchPoint
   public ContactPolicyTouchPoint(JSONObject jsonRoot) throws GUIManagerException
   {
     this.touchPointID = JSONUtilities.decodeString(jsonRoot, "touchPointID", true);
-    this.contactPolicyTimeWindows = decodeContactPolicyTimeWindows(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyTimeWindows", true));
+    this.contactTypes = decodeContactTypes(JSONUtilities.decodeJSONArray(jsonRoot, "contactTypes", true));
   }
 
   /*****************************************
   *
-  *  decodeContactPolicyTimeWindows
+  *  decodeContactTypes
   *
   *****************************************/
 
-  private List<ContactPolicyTimeWindow> decodeContactPolicyTimeWindows(JSONArray jsonArray) throws GUIManagerException
+  private Set<ContactType> decodeContactTypes(JSONArray jsonArray) throws GUIManagerException
   {
-    List<ContactPolicyTimeWindow> contactPolicyTimeWindows = new ArrayList<ContactPolicyTimeWindow>();
+    Set<ContactType> contactTypes = new HashSet<ContactType>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        contactPolicyTimeWindows.add(new ContactPolicyTimeWindow((JSONObject) jsonArray.get(i)));
+        contactTypes.add(ContactType.fromExternalRepresentation((String) jsonArray.get(i)));
       }
-    return contactPolicyTimeWindows;
+    return contactTypes;
   }
 
   /*****************************************
@@ -242,7 +252,7 @@ public class ContactPolicyTouchPoint
         ContactPolicyTouchPoint contactPolicyTouchPoint = (ContactPolicyTouchPoint) obj;
         result = true;
         result = result && Objects.equals(touchPointID, contactPolicyTouchPoint.getTouchPointID());
-        result = result && Objects.equals(contactPolicyTimeWindows, contactPolicyTouchPoint.getContactPolicyTimeWindows());
+        result = result && Objects.equals(contactTypes, contactPolicyTouchPoint.getContactTypes());
       }
     return result;
   }

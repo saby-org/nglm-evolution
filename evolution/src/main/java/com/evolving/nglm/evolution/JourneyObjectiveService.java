@@ -143,7 +143,7 @@ public class JourneyObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyObjective(GUIManagedObject journeyObjective, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID) throws GUIManagerException
+  public void putJourneyObjective(GUIManagedObject journeyObjective, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -157,7 +157,7 @@ public class JourneyObjectiveService extends GUIService
 
     if (journeyObjective instanceof JourneyObjective)
       {
-        ((JourneyObjective) journeyObjective).validate(journeyObjectiveService, catalogCharacteristicService, now);
+        ((JourneyObjective) journeyObjective).validate(journeyObjectiveService, contactPolicyService, catalogCharacteristicService, now);
       }
 
     //
@@ -173,11 +173,11 @@ public class JourneyObjectiveService extends GUIService
   *
   *****************************************/
 
-  public void putJourneyObjective(IncompleteObject journeyObjective, JourneyObjectiveService journeyObjectiveService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID)
+  public void putJourneyObjective(IncompleteObject journeyObjective, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService, CatalogCharacteristicService catalogCharacteristicService, boolean newObject, String userID)
   {
     try
       {
-        putJourneyObjective((GUIManagedObject) journeyObjective, journeyObjectiveService, catalogCharacteristicService, newObject, userID);
+        putJourneyObjective((GUIManagedObject) journeyObjective, journeyObjectiveService, contactPolicyService, catalogCharacteristicService, newObject, userID);
       }
     catch (GUIManagerException e)
       {
