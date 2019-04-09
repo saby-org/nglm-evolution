@@ -55,6 +55,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.log4j.EnhancedThrowableRenderer;
 import org.apache.zookeeper.ZooKeeper;
 
 import org.elasticsearch.ElasticsearchException;
@@ -134,6 +135,23 @@ public class GUIManager
   *  enum
   *
   *****************************************/
+  
+  public enum CustomerStatusInJourney
+  {
+    ENTERED("ENTERED"), 
+    NOTIFIED("NOTIFIED"), 
+    CONVERTED("CONVERTED"),
+    CONTROL("CONTROL"), 
+    UCG("UCG"), 
+    NOTIFIED_CONVERTED("NOTIFIED CONVERTED"), 
+    CONTROL_CONVERTED("CONTROL CONVERTED"), 
+    COMPLETED("COMPLETED"),
+    UNKNOWN("UNKNOWN");
+    private String externalRepresentation;
+    private CustomerStatusInJourney(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static CustomerStatusInJourney fromExternalRepresentation(String externalRepresentation) { for (CustomerStatusInJourney enumeratedValue : CustomerStatusInJourney.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
+  }
 
   public enum API
   {
@@ -13434,18 +13452,24 @@ public class GUIManager
                         
                         if (thisJourneyStatistics == null || thisJourneyStatistics.isEmpty()) continue;
                         
-                        List<JourneyNode> journeyNodes = storeJourney.getJourneyNodes().values().stream().collect(Collectors.toList());
-
                         //
                         // filter on journeyState
                         //
 
                         if (journeyState != null && !journeyState.isEmpty())
-                        {
-                        boolean criteriaSatisfied = false;
-                        criteriaSatisfied = journeyNodes.stream().filter(journeyNode -> journeyState.equals(journeyNode.getNodeName())).count() > 0L ;
-                        if (! criteriaSatisfied) continue;
-                        }
+                          {
+                            boolean criteriaSatisfied = false;
+                            switch (journeyState)
+                              {
+                                case "active":
+                                  criteriaSatisfied = storeJourney.getActive();
+                                  break;
+                                case "inactive":
+                                  criteriaSatisfied = !storeJourney.getActive();
+                                  break;
+                              }
+                            if (! criteriaSatisfied) continue;
+                          }
                         
                         //
                         // filter on customerStatus
@@ -13458,43 +13482,38 @@ public class GUIManager
                         boolean journeyComplete = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
                         if (customerStatus != null)
                           {
+                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
                             boolean criteriaSatisfied = false;
-                            
-                            //
-                            //  customerStatus
-                            //
-                            
-                            if ("StatusNotCompleted".equals(customerStatus))
+                            switch (customerStatusInJourney)
                               {
-                                if (!journeyComplete) criteriaSatisfied = true;
+                                case ENTERED:
+                                  criteriaSatisfied = !journeyComplete;
+                                  break;
+                                case NOTIFIED:
+                                  criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
+                                  break;
+                                case CONVERTED:
+                                  criteriaSatisfied = statusConverted && !journeyComplete;
+                                  break;
+                                case CONTROL:
+                                  criteriaSatisfied = statusControlGroup && !journeyComplete;
+                                  break;
+                                case UCG:
+                                  criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
+                                  break;
+                                case NOTIFIED_CONVERTED:
+                                  criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
+                                  break;
+                                case CONTROL_CONVERTED:
+                                  criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
+                                  break;
+                                case COMPLETED:
+                                  criteriaSatisfied = journeyComplete;
+                                  break;
+                                case UNKNOWN:
+                                  break;
                               }
-                            else if ("StatusCompleted".equals(customerStatus))
-                              {
-                                if (journeyComplete) criteriaSatisfied = true;
-                              }
-                            else
-                              {
-                                Journey.JourneyStatusField journeyStatusField = Journey.JourneyStatusField.fromExternalRepresentation(customerStatus);
-                                switch (journeyStatusField)
-                                  {
-                                    case StatusNotified:
-                                      criteriaSatisfied = statusNotified;
-                                      break;
-                                    case StatusConverted:
-                                      criteriaSatisfied = statusConverted;
-                                      break;
-                                    case StatusControlGroup:
-                                      criteriaSatisfied = statusControlGroup;
-                                      break;
-                                    case StatusUniversalControlGroup:
-                                      criteriaSatisfied = statusUniversalControlGroup;
-                                      break;
-                                    case Unknown:
-                                      break;
-                                  }
-                              }
-                            
-                            if (! criteriaSatisfied) continue;
+                            if (!criteriaSatisfied) continue;
                           }
                         
                         //
@@ -13729,20 +13748,24 @@ public class GUIManager
                         
                         if (thisCampaignStatistics == null || thisCampaignStatistics.isEmpty()) continue;
                         
-                        
-                        
-                        List<JourneyNode> journeyNodes = storeCampaign.getJourneyNodes().values().stream().collect(Collectors.toList());
-
                         //
                         // filter on campaignState
                         //
 
                         if (campaignState != null && !campaignState.isEmpty())
-                        {
-                          boolean criteriaSatisfied = false;
-                          criteriaSatisfied = journeyNodes.stream().filter(journeyNode -> campaignState.equals(journeyNode.getNodeName())).count() > 0L ;
-                          if (! criteriaSatisfied) continue;
-                        }
+                          {
+                            boolean criteriaSatisfied = false;
+                            switch (campaignState)
+                              {
+                                case "active":
+                                  criteriaSatisfied = storeCampaign.getActive();
+                                  break;
+                                case "inactive":
+                                  criteriaSatisfied = !storeCampaign.getActive();
+                                  break;
+                              }
+                            if (! criteriaSatisfied) continue;
+                          }
                         
                         //
                         // filter on customerStatus
@@ -13753,44 +13776,40 @@ public class GUIManager
                         boolean statusControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusControlGroup()).count() > 0L ;
                         boolean statusUniversalControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusUniversalControlGroup()).count() > 0L ;
                         boolean campaignComplete = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
+                        
                         if (customerStatus != null)
                           {
+                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
                             boolean criteriaSatisfied = false;
-                            
-                            //
-                            //  customerStatus
-                            //
-                            
-                            if ("StatusNotCompleted".equals(customerStatus))
+                            switch (customerStatusInJourney)
                               {
-                                if (!campaignComplete) criteriaSatisfied = true;
+                                case ENTERED:
+                                  criteriaSatisfied = !campaignComplete;
+                                  break;
+                                case NOTIFIED:
+                                  criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
+                                  break;
+                                case CONVERTED:
+                                  criteriaSatisfied = statusConverted && !campaignComplete;
+                                  break;
+                                case CONTROL:
+                                  criteriaSatisfied = statusControlGroup && !campaignComplete;
+                                  break;
+                                case UCG:
+                                  criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;
+                                  break;
+                                case NOTIFIED_CONVERTED:
+                                  criteriaSatisfied = statusNotified && statusConverted && !campaignComplete;
+                                  break;
+                                case CONTROL_CONVERTED:
+                                  criteriaSatisfied = statusControlGroup && statusConverted && !campaignComplete;
+                                  break;
+                                case COMPLETED:
+                                  criteriaSatisfied = campaignComplete;
+                                  break;
+                                case UNKNOWN:
+                                  break;
                               }
-                            else if ("StatusCompleted".equals(customerStatus))
-                              {
-                                if (campaignComplete) criteriaSatisfied = true;
-                              }
-                            else
-                              {
-                                Journey.JourneyStatusField campaignStatusField = Journey.JourneyStatusField.fromExternalRepresentation(customerStatus);
-                                switch (campaignStatusField)
-                                  {
-                                    case StatusNotified:
-                                      criteriaSatisfied = statusNotified;
-                                      break;
-                                    case StatusConverted:
-                                      criteriaSatisfied = statusConverted;
-                                      break;
-                                    case StatusControlGroup:
-                                      criteriaSatisfied = statusControlGroup;
-                                      break;
-                                    case StatusUniversalControlGroup:
-                                      criteriaSatisfied = statusUniversalControlGroup;
-                                      break;
-                                    case Unknown:
-                                      break;
-                                  }
-                              }
-                            
                             if (! criteriaSatisfied) continue;
                           }
                         
@@ -13999,20 +14018,24 @@ public class GUIManager
                 //  consider if not enter
                 //
                 
-                Collection<Journey> availableCampaigns = new ArrayList<Journey>();
+                List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
                 for (Journey elgibleActiveCampaign : elgibleActiveCampaigns)
                   {
                     if (campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()) == null || campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()).isEmpty())
                       {
-                        availableCampaigns.add(elgibleActiveCampaign);
+                        //
+                        // prepare and decorate response
+                        //
+                        
+                        Map<String, Object> campaignMap = new HashMap<String, Object>();
+                        campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
+                        campaignMap.put("campaignName", elgibleActiveCampaign.getJourneyName());
+                        campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
+                        campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
+                        campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
+                        campaignsJson.add(JSONUtilities.encodeObject(campaignMap));
                       }
                   }
-                
-                //
-                // prepare and decorate response
-                //
-                
-                List<JSONObject> campaignsJson = availableCampaigns.stream().map(eligibleJourney -> journeyService.generateResponseJSON(eligibleJourney, false, now)).collect(Collectors.toList());
                 response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
                 response.put("responseCode", "ok");
               }
