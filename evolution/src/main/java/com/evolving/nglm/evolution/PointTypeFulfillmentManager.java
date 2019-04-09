@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  INFulfillmentManager.java
+*  PointTypeFulfillmentManager.java
 *
 *****************************************************************************/
 
@@ -9,8 +9,6 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -18,7 +16,6 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,15 +25,10 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryManager;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.EvolutionUtilities;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
   
-public class INFulfillmentManager extends DeliveryManager implements Runnable
+public class PointTypeFulfillmentManager extends DeliveryManager implements Runnable
 {
   /*****************************************
   *
@@ -45,42 +37,38 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *****************************************/
 
   //
-  //  INFulfillmentOperation
+  //  PointTypeOperation
   //
 
-  public enum INFulfillmentOperation
+  public enum PointTypeOperation
   {
     Credit("credit"),
     Debit("debit"),
-    Set("set"),
-    Activate("activate"),
-    Deactivate("deactivate"),
     Unknown("(unknown)");
     private String externalRepresentation;
-    private INFulfillmentOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private PointTypeOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
-    public static INFulfillmentOperation fromExternalRepresentation(String externalRepresentation) { for (INFulfillmentOperation enumeratedValue : INFulfillmentOperation.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static PointTypeOperation fromExternalRepresentation(String externalRepresentation) { for (PointTypeOperation enumeratedValue : PointTypeOperation.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   //
-  //  INFulfillmentStatus
+  //  PointTypeFulfillmentStatus
   //
 
-  public enum INFulfillmentStatus
+  public enum PointTypeFulfillmentStatus
   {
     PENDING(10),
     SUCCESS(0),
     SYSTEM_ERROR(21),
     TIMEOUT(22),
     THROTTLING(23),
-    THIRD_PARTY_ERROR(24),
     CUSTOMER_NOT_FOUND(20),
     BONUS_NOT_FOUND(101),
     UNKNOWN(999);
     private Integer externalRepresentation;
-    private INFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private PointTypeFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getExternalRepresentation() { return externalRepresentation; }
-    public static INFulfillmentStatus fromReturnCode(Integer externalRepresentation) { for (INFulfillmentStatus enumeratedValue : INFulfillmentStatus.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
+    public static PointTypeFulfillmentStatus fromReturnCode(Integer externalRepresentation) { for (PointTypeFulfillmentStatus enumeratedValue : PointTypeFulfillmentStatus.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
   }
 
   /*****************************************
@@ -89,7 +77,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public DeliveryStatus getINFulfillmentStatus (INFulfillmentStatus status)
+  public DeliveryStatus getPointTypeFulfillmentStatus (PointTypeFulfillmentStatus status)
   {
     switch(status)
       {
@@ -98,7 +86,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         case SUCCESS:
           return DeliveryStatus.Delivered;
         case SYSTEM_ERROR:
-        case THIRD_PARTY_ERROR:
         case CUSTOMER_NOT_FOUND:
         case BONUS_NOT_FOUND:
           return DeliveryStatus.Failed;
@@ -120,7 +107,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(INFulfillmentManager.class);
+  private static final Logger log = LoggerFactory.getLogger(PointTypeFulfillmentManager.class);
 
   //
   //  number of threads
@@ -134,18 +121,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  private Set<Account> availableAccounts;
-  private INPluginInterface inPlugin;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   private BDRStatistics bdrStats = null;
-  
-  /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/
-
-  public Set<Account> getAvailableAccounts() { return availableAccounts; }
   
   /*****************************************
   *
@@ -153,63 +130,22 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public INFulfillmentManager(String deliveryManagerKey, String pluginName, String pluginConfiguration)
+  public PointTypeFulfillmentManager(String deliveryManagerKey)
   {
     //
     //  superclass
     //
     
-    super("deliverymanager-infulfillment", deliveryManagerKey, Deployment.getBrokerServers(), INFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
+    super("deliverymanager-pointtypefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PointTypeFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get("pointTypeFulfillment"));
 
-    //
-    //  manager
-    //
-
-    log.info("INFufillmentManager: getting the list of available accounts for IN "+pluginName);
-    availableAccounts = new HashSet<Account>();
-    JSONArray availableAccountsArray = JSONUtilities.decodeJSONArray(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "availableAccounts", true);
-    for (int i=0; i<availableAccountsArray.size(); i++)
-      {
-        Account newAccount = new Account((JSONObject) availableAccountsArray.get(i));
-        availableAccounts.add(newAccount);
-        log.info("INFufillmentManager: new availableAccount added : "+newAccount.getName()+" (with ID "+newAccount.getAccountID()+")");
-      }
-
-    //
-    //  plugin instanciation
-    //
-    
-    String inPluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "inPluginClass", true);
-    log.info("INFufillmentManager: plugin instanciation : inPluginClassName = "+inPluginClassName);
-
-    JSONObject inPluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "inPluginConfiguration", true);
-    log.info("INFufillmentManager: plugin instanciation : inPluginConfiguration = "+inPluginConfiguration);
-
-    try
-      {
-        inPlugin = (INPluginInterface) (Class.forName(inPluginClassName).newInstance());
-        inPlugin.init(inPluginConfiguration, pluginConfiguration);
-      }
-    catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
-      {
-        log.error("INFufillmentManager: could not create new instance of class " + inPluginClassName, e);
-        throw new RuntimeException("INFufillmentManager: could not create new instance of class " + inPluginClassName, e);
-      }
-    catch (ClassNotFoundException e)
-      {
-        log.error("INFufillmentManager: could not find class " + inPluginClassName, e);
-        throw new RuntimeException("INFufillmentManager: could not find class " + inPluginClassName, e);
-      }
-      
-    
     //
     // statistics
     //
     try{
-      bdrStats = new BDRStatistics(pluginName);
+      bdrStats = new BDRStatistics("pointTypeFulfillment");
     }catch(Exception e){
-      log.error("INFufillmentManager: could not load statistics ", e);
-      throw new RuntimeException("INFufillmentManager: could not load statistics  ", e);
+      log.error("PointTypeFulfillmentManager: could not load statistics ", e);
+      throw new RuntimeException("PointTypeFulfillmentManager: could not load statistics  ", e);
     }
     
     //
@@ -218,7 +154,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     
     for(int i = 0; i < threadNumber; i++)
       {
-        threads.add(new Thread(this, "INFufillmentManagerThread_"+i));
+        threads.add(new Thread(this, "PointTypeFulfillmentManagerThread_"+i));
       }
     
     //
@@ -229,71 +165,71 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   }
 
+//  /*****************************************
+//  *
+//  *  class Account
+//  *
+//  *****************************************/
+//  
+//  public static class Account 
+//  {
+//    /*****************************************
+//    *
+//    *  data
+//    *
+//    *****************************************/
+//
+//    private String accountID;
+//    private String name;
+//    private boolean creditable;
+//    private boolean debitable;
+//    
+//    //
+//    //  accessors
+//    //
+//
+//    public String getAccountID() { return accountID; }
+//    public String getName() { return name; }
+//    public boolean getCreditable() { return creditable; }
+//    public boolean getDebitable() { return debitable; }
+//    
+//    /*****************************************
+//    *
+//    *  constructor
+//    *
+//    *****************************************/
+//
+//    public Account(String accountID, String name, boolean creditable, boolean debitable)
+//    {
+//      this.accountID = accountID;
+//      this.name = name;
+//      this.creditable = creditable;
+//      this.debitable = debitable;
+//    }
+//
+//    /*****************************************
+//    *
+//    *  constructor -- external
+//    *
+//    *****************************************/
+//
+//    public Account(JSONObject jsonRoot)
+//    {
+//      this.accountID = JSONUtilities.decodeString(jsonRoot, "accountID", true);
+//      this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
+//      this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
+//      this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
+//    }
+//    
+//  }
+  
   /*****************************************
   *
-  *  class Account
-  *
-  *****************************************/
-  
-  public static class Account 
-  {
-    /*****************************************
-    *
-    *  data
-    *
-    *****************************************/
-
-    private String accountID;
-    private String name;
-    private boolean creditable;
-    private boolean debitable;
-    
-    //
-    //  accessors
-    //
-
-    public String getAccountID() { return accountID; }
-    public String getName() { return name; }
-    public boolean getCreditable() { return creditable; }
-    public boolean getDebitable() { return debitable; }
-    
-    /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
-
-    public Account(String accountID, String name, boolean creditable, boolean debitable)
-    {
-      this.accountID = accountID;
-      this.name = name;
-      this.creditable = creditable;
-      this.debitable = debitable;
-    }
-
-    /*****************************************
-    *
-    *  constructor -- external
-    *
-    *****************************************/
-
-    public Account(JSONObject jsonRoot)
-    {
-      this.accountID = JSONUtilities.decodeString(jsonRoot, "accountID", true);
-      this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-      this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
-      this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
-    }
-    
-  }
-  
-  /*****************************************
-  *
-  *  class INFulfillmentRequest
+  *  class PointTypeFulfillmentRequest
   *
   *****************************************/
 
-  public static class INFulfillmentRequest extends DeliveryRequest
+  public static class PointTypeFulfillmentRequest extends DeliveryRequest
   {
     /*****************************************
     *
@@ -309,11 +245,11 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("service_infulfillment_request");
+      schemaBuilder.name("service_pointtypefulfillment_request");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-      schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("paymentMeanID", Schema.STRING_SCHEMA);
+//      schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("pointTypeID", Schema.STRING_SCHEMA);
       schemaBuilder.field("operation", Schema.STRING_SCHEMA);
       schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("startValidityDate", Timestamp.builder().optional().schema());
@@ -326,14 +262,14 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //  serde
     //
         
-    private static ConnectSerde<INFulfillmentRequest> serde = new ConnectSerde<INFulfillmentRequest>(schema, false, INFulfillmentRequest.class, INFulfillmentRequest::pack, INFulfillmentRequest::unpack);
+    private static ConnectSerde<PointTypeFulfillmentRequest> serde = new ConnectSerde<PointTypeFulfillmentRequest>(schema, false, PointTypeFulfillmentRequest.class, PointTypeFulfillmentRequest::pack, PointTypeFulfillmentRequest::unpack);
 
     //
     //  accessor
     //
 
     public static Schema schema() { return schema; }
-    public static ConnectSerde<INFulfillmentRequest> serde() { return serde; }
+    public static ConnectSerde<PointTypeFulfillmentRequest> serde() { return serde; }
     public Schema subscriberStreamEventSchema() { return schema(); }
         
     /*****************************************
@@ -350,29 +286,29 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 //  private String featureID;
 //  private String subscriberID;
 //  private boolean control;
-  
-    private String providerID;
-    private String paymentMeanID;
-    private INFulfillmentOperation operation;
+
+//  public String providerID;
+    private String pointTypeID;
+    private PointTypeOperation operation;
     private int amount;
     private Date startValidityDate;
     private Date endValidityDate;
     private int returnCode;
-    private INFulfillmentStatus status;
+    private PointTypeFulfillmentStatus status;
     private String returnCodeDetails;
 
     //
     //  accessors
     //
 
-    public String getProviderID() { return providerID; }
-    public String getPaymentMeanID() { return paymentMeanID; }
-    public INFulfillmentOperation getOperation() { return operation; }
+//  public String getProviderID() { return providerID; }
+    public String getPointTypeID() { return pointTypeID; }
+    public PointTypeOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public Date getStartValidityDate() { return startValidityDate; }
     public Date getEndValidityDate() { return endValidityDate; }
     public Integer getReturnCode() { return returnCode; }
-    public INFulfillmentStatus getStatus() { return status; }
+    public PointTypeFulfillmentStatus getStatus() { return status; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
 
     //
@@ -380,7 +316,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //  
 
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
-    public void setStatus(INFulfillmentStatus status) { this.status = status; }
+    public void setStatus(PointTypeFulfillmentStatus status) { this.status = status; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
 
     /*****************************************
@@ -389,17 +325,17 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String paymentMeanID, INFulfillmentOperation operation, int amount, Date startValidityDate, Date endValidityDate)
+    public PointTypeFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, /*String providerID,*/ String pointTypeID, PointTypeOperation operation, int amount, Date startValidityDate, Date endValidityDate)
     {
       super(context, deliveryType, deliveryRequestSource);
-      this.providerID = providerID;
-      this.paymentMeanID = paymentMeanID;
+//      this.providerID = providerID;
+      this.pointTypeID = pointTypeID;
       this.operation = operation;
       this.amount = amount;
       this.startValidityDate = startValidityDate;
       this.endValidityDate = endValidityDate;
-      this.status = INFulfillmentStatus.PENDING;
-      this.returnCode = INFulfillmentStatus.PENDING.getExternalRepresentation();
+      this.status = PointTypeFulfillmentStatus.PENDING;
+      this.returnCode = PointTypeFulfillmentStatus.PENDING.getExternalRepresentation();
       this.returnCodeDetails = "";
     }
 
@@ -409,18 +345,18 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public PointTypeFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
     {
       super(jsonRoot);
       String dateFormat = JSONUtilities.decodeString(deliveryManager.getJSONRepresentation(), "dateFormat", true);
-      this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
-      this.paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", true);
-      this.operation = INFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
+//      this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
+      this.pointTypeID = JSONUtilities.decodeString(jsonRoot, "pointTypeID", true);
+      this.operation = PointTypeOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
       this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
       this.startValidityDate = RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "startValidityDate", false), dateFormat, Deployment.getBaseTimeZone());
       this.endValidityDate = RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "endValidityDate", false), dateFormat, Deployment.getBaseTimeZone());
-      this.status = INFulfillmentStatus.PENDING;
-      this.returnCode = INFulfillmentStatus.PENDING.getExternalRepresentation();
+      this.status = PointTypeFulfillmentStatus.PENDING;
+      this.returnCode = PointTypeFulfillmentStatus.PENDING.getExternalRepresentation();
       this.returnCodeDetails = "";
     }
 
@@ -430,11 +366,11 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String paymentMeanID, INFulfillmentOperation operation, int amount, Date startValidityDate, Date endValidityDate, INFulfillmentStatus status)
+    private PointTypeFulfillmentRequest(SchemaAndValue schemaAndValue, /*String providerID,*/ String pointTypeID, PointTypeOperation operation, int amount, Date startValidityDate, Date endValidityDate, PointTypeFulfillmentStatus status)
     {
       super(schemaAndValue);
-      this.providerID = providerID;
-      this.paymentMeanID = paymentMeanID;
+//      this.providerID = providerID;
+      this.pointTypeID = pointTypeID;
       this.operation = operation;
       this.amount = amount;
       this.startValidityDate = startValidityDate;
@@ -449,18 +385,18 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private INFulfillmentRequest(INFulfillmentRequest inFulfillmentRequest)
+    private PointTypeFulfillmentRequest(PointTypeFulfillmentRequest pointTypeFulfillmentRequest)
     {
-      super(inFulfillmentRequest);
-      this.providerID = inFulfillmentRequest.getProviderID();
-      this.paymentMeanID = inFulfillmentRequest.getPaymentMeanID();
-      this.operation = inFulfillmentRequest.getOperation();
-      this.amount = inFulfillmentRequest.getAmount();
-      this.startValidityDate = inFulfillmentRequest.getStartValidityDate();
-      this.endValidityDate = inFulfillmentRequest.getEndValidityDate();
-      this.status = inFulfillmentRequest.getStatus();
-      this.returnCode = inFulfillmentRequest.getReturnCode();
-      this.returnCodeDetails = inFulfillmentRequest.getReturnCodeDetails();
+      super(pointTypeFulfillmentRequest);
+//      this.providerID = pointTypeFulfillmentRequest.getProviderID();
+      this.pointTypeID = pointTypeFulfillmentRequest.getPointTypeID();
+      this.operation = pointTypeFulfillmentRequest.getOperation();
+      this.amount = pointTypeFulfillmentRequest.getAmount();
+      this.startValidityDate = pointTypeFulfillmentRequest.getStartValidityDate();
+      this.endValidityDate = pointTypeFulfillmentRequest.getEndValidityDate();
+      this.status = pointTypeFulfillmentRequest.getStatus();
+      this.returnCode = pointTypeFulfillmentRequest.getReturnCode();
+      this.returnCodeDetails = pointTypeFulfillmentRequest.getReturnCodeDetails();
     }
 
     /*****************************************
@@ -469,9 +405,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest copy()
+    public PointTypeFulfillmentRequest copy()
     {
-      return new INFulfillmentRequest(this);
+      return new PointTypeFulfillmentRequest(this);
     }
 
     /*****************************************
@@ -482,16 +418,16 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
     public static Object pack(Object value)
     {
-      INFulfillmentRequest inFulfillmentRequest = (INFulfillmentRequest) value;
+      PointTypeFulfillmentRequest pointTypeFulfillmentRequest = (PointTypeFulfillmentRequest) value;
       Struct struct = new Struct(schema);
-      packCommon(struct, inFulfillmentRequest);
-      struct.put("providerID", inFulfillmentRequest.getProviderID());
-      struct.put("paymentMeanID", inFulfillmentRequest.getPaymentMeanID());
-      struct.put("operation", inFulfillmentRequest.getOperation().getExternalRepresentation());
-      struct.put("amount", inFulfillmentRequest.getAmount());
-      struct.put("startValidityDate", inFulfillmentRequest.getStartValidityDate());
-      struct.put("endValidityDate", inFulfillmentRequest.getEndValidityDate());
-      struct.put("return_code", inFulfillmentRequest.getReturnCode());
+      packCommon(struct, pointTypeFulfillmentRequest);
+//      struct.put("providerID", pointTypeFulfillmentRequest.getProviderID());
+      struct.put("pointTypeID", pointTypeFulfillmentRequest.getPointTypeID());
+      struct.put("operation", pointTypeFulfillmentRequest.getOperation().getExternalRepresentation());
+      struct.put("amount", pointTypeFulfillmentRequest.getAmount());
+      struct.put("startValidityDate", pointTypeFulfillmentRequest.getStartValidityDate());
+      struct.put("endValidityDate", pointTypeFulfillmentRequest.getEndValidityDate());
+      struct.put("return_code", pointTypeFulfillmentRequest.getReturnCode());
       return struct;
     }
 
@@ -507,7 +443,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public static INFulfillmentRequest unpack(SchemaAndValue schemaAndValue)
+    public static PointTypeFulfillmentRequest unpack(SchemaAndValue schemaAndValue)
     {
       //
       //  data
@@ -521,20 +457,20 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       //
 
       Struct valueStruct = (Struct) value;
-      String providerID = valueStruct.getString("providerID");
-      String paymentMeanID = valueStruct.getString("paymentMeanID");
-      INFulfillmentOperation operation = INFulfillmentOperation.fromExternalRepresentation(valueStruct.getString("operation"));
+//      String providerID = valueStruct.getString("providerID");
+      String pointTypeID = valueStruct.getString("pointTypeID");
+      PointTypeOperation operation = PointTypeOperation.fromExternalRepresentation(valueStruct.getString("operation"));
       int amount = valueStruct.getInt32("amount");
       Date startValidityDate = (Date) valueStruct.get("startValidityDate");
       Date endValidityDate = (Date) valueStruct.get("endValidityDate");
       Integer returnCode = valueStruct.getInt32("return_code");
-      INFulfillmentStatus status = INFulfillmentStatus.fromReturnCode(returnCode);
+      PointTypeFulfillmentStatus status = PointTypeFulfillmentStatus.fromReturnCode(returnCode);
 
       //
       //  return
       //
 
-      return new INFulfillmentRequest(schemaAndValue, providerID, paymentMeanID, operation, amount, startValidityDate, endValidityDate, status);
+      return new PointTypeFulfillmentRequest(schemaAndValue, /*providerID,*/ pointTypeID, operation, amount, startValidityDate, endValidityDate, status);
     }
 
     /*****************************************
@@ -546,11 +482,11 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     public String toString()
     {
       StringBuilder b = new StringBuilder();
-      b.append("INFulfillmentRequest:{");
+      b.append("PointTypeFulfillmentRequest:{");
       b.append(super.toStringFields());
       b.append("," + getSubscriberID());
-      b.append("," + providerID);
-      b.append("," + paymentMeanID);
+//      b.append("," + providerID);
+      b.append("," + pointTypeID);
       b.append("," + operation);
       b.append("," + amount);
       b.append("," + startValidityDate);
@@ -572,8 +508,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
-      guiPresentationMap.put(PROVIDERID, getProviderID());
-      guiPresentationMap.put(DELIVERABLEID, getPaymentMeanID());
+//      guiPresentationMap.put(PROVIDERID, getProviderID());
+      guiPresentationMap.put(DELIVERABLEID, getPointTypeID());
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().toString());
       guiPresentationMap.put(MODULEID, getModuleID());
@@ -587,8 +523,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
-      thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
-      thirdPartyPresentationMap.put(DELIVERABLEID, getPaymentMeanID());
+//      thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
+      thirdPartyPresentationMap.put(DELIVERABLEID, getPointTypeID());
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
@@ -598,22 +534,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
-  }
-
-  /*****************************************
-  *
-  *  interface INPluginInterface
-  *
-  *****************************************/
-
-  public interface INPluginInterface
-  {
-    public void init(JSONObject inPluginSharedConfiguration, String inPluginSpecificConfiguration);
-    public INFulfillmentStatus credit(INFulfillmentRequest inFulfillmentRequest);
-    public INFulfillmentStatus debit(INFulfillmentRequest inFulfillmentRequest);
-    public INFulfillmentStatus activate(INFulfillmentRequest inFulfillmentRequest);
-    public INFulfillmentStatus deactivate(INFulfillmentRequest inFulfillmentRequest);
-    public INFulfillmentStatus set(INFulfillmentRequest inFulfillmentRequest);
   }
 
   /*****************************************
@@ -631,8 +551,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *****************************************/
 
     private String deliveryType;
-    private String providerID;
-    private INFulfillmentOperation operation;
+//    private String providerID;
+    private PointTypeOperation operation;
     
     /*****************************************
     *
@@ -644,8 +564,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     {
       super(configuration);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
-      this.providerID = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(this.deliveryType).getJSONRepresentation(), "providerID", true);
-      this.operation = INFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+//      this.providerID = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(this.deliveryType).getJSONRepresentation(), "providerID", true);
+      this.operation = PointTypeOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
     }
 
     /*****************************************
@@ -662,7 +582,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      String paymentMeanID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.paymentmeanid");
+      String pointTypeID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.pointTypeid");
       int amount = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.amount");
       Integer endValidityDuration = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.endvalidityduration");
       String endValidityUnits = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.endvalidityunits");
@@ -674,7 +594,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      INFulfillmentOperation operation = this.operation;
+      PointTypeOperation operation = this.operation;
       Date startValidityDate = subscriberEvaluationRequest.getEvaluationDate();
       Date endValidityDate = (endValidityDuration != null && endValidityUnits != null) ? EvolutionUtilities.addTime(startValidityDate, endValidityDuration, TimeUnit.fromExternalRepresentation(endValidityUnits), Deployment.getBaseTimeZone(), false) : null;
 
@@ -684,7 +604,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      INFulfillmentRequest request = new INFulfillmentRequest(evolutionEventContext, deliveryType, deliveryRequestSource, providerID, paymentMeanID, operation, amount, startValidityDate, endValidityDate);
+      PointTypeFulfillmentRequest request = new PointTypeFulfillmentRequest(evolutionEventContext, deliveryType, deliveryRequestSource, /*providerID,*/ pointTypeID, operation, amount, startValidityDate, endValidityDate);
 
       /*****************************************
       *
@@ -721,23 +641,14 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         *
         *****************************************/
         
-        INFulfillmentStatus status = null;
-        INFulfillmentOperation operation = ((INFulfillmentRequest)deliveryRequest).getOperation();
+        PointTypeFulfillmentStatus status = null;
+        PointTypeOperation operation = ((PointTypeFulfillmentRequest)deliveryRequest).getOperation();
         switch (operation) {
         case Credit:
-          status = inPlugin.credit((INFulfillmentRequest)deliveryRequest);
+          status = credit((PointTypeFulfillmentRequest)deliveryRequest);
           break;
         case Debit:
-          status = inPlugin.debit((INFulfillmentRequest)deliveryRequest);
-          break;
-        case Activate:
-          status = inPlugin.activate((INFulfillmentRequest)deliveryRequest);
-          break;
-        case Deactivate:
-          status = inPlugin.deactivate((INFulfillmentRequest)deliveryRequest);
-          break;
-        case Set:
-          status = inPlugin.set((INFulfillmentRequest)deliveryRequest);
+          status = debit((PointTypeFulfillmentRequest)deliveryRequest);
           break;
         default:
           break;
@@ -749,16 +660,42 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         *
         *****************************************/
 
-        ((INFulfillmentRequest)deliveryRequest).setStatus(status);
-        ((INFulfillmentRequest)deliveryRequest).setReturnCode(status.getExternalRepresentation());
-        deliveryRequest.setDeliveryStatus(getINFulfillmentStatus(status));
+        ((PointTypeFulfillmentRequest)deliveryRequest).setStatus(status);
+        ((PointTypeFulfillmentRequest)deliveryRequest).setReturnCode(status.getExternalRepresentation());
+        deliveryRequest.setDeliveryStatus(getPointTypeFulfillmentStatus(status));
         deliveryRequest.setDeliveryDate(SystemTime.getActualCurrentTime());
         completeRequest(deliveryRequest);
-        bdrStats.updateBDREventCount(1, getINFulfillmentStatus(status));
+        bdrStats.updateBDREventCount(1, getPointTypeFulfillmentStatus(status));
 
       }
   }
 
+  /*****************************************
+  *
+  *  credit
+  *
+  *****************************************/
+
+  private PointTypeFulfillmentStatus credit(PointTypeFulfillmentRequest pointTypeFulfillmentRequest)
+  {
+    //TODO SCH : TBD
+    log.info("PointTypeFulfillmentManager.credit("+pointTypeFulfillmentRequest+") : called ...");
+    return PointTypeFulfillmentStatus.SUCCESS;
+  }
+  
+  /*****************************************
+  *
+  *  debit
+  *
+  *****************************************/
+
+  private PointTypeFulfillmentStatus debit(PointTypeFulfillmentRequest pointTypeFulfillmentRequest)
+  {
+    //TODO SCH : TBD
+    log.info("PointTypeFulfillmentManager.debit("+pointTypeFulfillmentRequest+") : called ...");
+    return PointTypeFulfillmentStatus.SUCCESS;
+  }
+  
   /*****************************************
   *
   *  processCorrelatorUpdate
@@ -767,24 +704,19 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   @Override protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
   {
+    log.info("PointTypeFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
+
     int result = JSONUtilities.decodeInteger(correlatorUpdate, "result", true);
-    switch (result)
+    PointTypeFulfillmentRequest pointTypeFulfillmentRequest = (PointTypeFulfillmentRequest) deliveryRequest;
+    if (pointTypeFulfillmentRequest != null)
       {
-        case 0:
-        case 1:
-          log.info("INFufillmentManager:  processCorrelatorUpdate success for {}", deliveryRequest.getDeliveryRequestID());
-          deliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
-          deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
-          completeRequest(deliveryRequest);
-          break;
-          
-        case 2:
-          log.info("INFufillmentManager:  processCorrelatorUpdate failure for {}", deliveryRequest.getDeliveryRequestID());
-          deliveryRequest.setDeliveryStatus(DeliveryStatus.Failed);
-          deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
-          completeRequest(deliveryRequest);
-          break;          
+        pointTypeFulfillmentRequest.setStatus(PointTypeFulfillmentStatus.fromReturnCode(result));
+        pointTypeFulfillmentRequest.setDeliveryStatus(getPointTypeFulfillmentStatus(pointTypeFulfillmentRequest.getStatus()));
+        pointTypeFulfillmentRequest.setDeliveryDate(SystemTime.getCurrentTime());
+        completeRequest(pointTypeFulfillmentRequest);
       }
+  
+    log.debug("PointTypeFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
   }
 
   
@@ -796,7 +728,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   @Override protected void shutdown()
   {
-    log.info("INFufillmentManager:  shutdown");
+    log.info("PointTypeFulfillmentManager:  shutdown");
   }
   
   /*****************************************
@@ -807,9 +739,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   public static void main(String[] args)
   {
-    log.info("INFufillmentManager: recieved " + args.length + " args");
+    log.info("PointTypeFulfillmentManager: recieved " + args.length + " args");
     for(String arg : args){
-      log.info("INFufillmentManager: arg " + arg);
+      log.info("PointTypeFulfillmentManager: arg " + arg);
     }
     
     //
@@ -817,8 +749,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //
 
     String deliveryManagerKey = args[0];
-    String pluginName = args[1];
-    String pluginConfiguration = args[2];
 
     //
     //  instance  
@@ -827,7 +757,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     log.info("Configuration " + Deployment.getDeliveryManagers());
 
     
-    INFulfillmentManager manager = new INFulfillmentManager(deliveryManagerKey, pluginName, pluginConfiguration);
+    PointTypeFulfillmentManager manager = new PointTypeFulfillmentManager(deliveryManagerKey);
 
     //
     //  run

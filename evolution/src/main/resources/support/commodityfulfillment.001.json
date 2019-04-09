@@ -1,0 +1,26 @@
+--
+--  commodityfulfillment.001.json
+--    
+
+--  private String deliveryType;
+--  private String eventID;
+--  private String moduleID;
+--  private String featureID;
+--  private String subscriberID;
+--  private String providerID;
+--  private String commodityID;
+--  private CommodityOperation operation;
+--  private int amount;
+
+
+{
+  "deliveryType"                   : "commodityDelivery",
+  "eventID"                        : "112233",
+  "moduleID"                       : "module-13",
+  "featureID"                      : "feature-18",
+  "subscriberID"                   : "001",
+  "providerID"                     : "internalProvider",
+  "commodityID"                    : "4",
+  "operation"                      : "credit",
+  "amount"                         : 55
+}

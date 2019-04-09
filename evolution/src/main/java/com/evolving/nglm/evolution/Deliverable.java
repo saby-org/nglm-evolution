@@ -184,7 +184,7 @@ public class Deliverable extends GUIManagedObject
     *****************************************/
 
     //
-    //  validate fulfillment provider
+    //  validate provider
     //
 
     //  TBD

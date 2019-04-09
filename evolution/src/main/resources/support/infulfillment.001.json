@@ -1,0 +1,29 @@
+--
+--  infulfillment.001.json
+--    
+
+--    private String deliveryType;
+--    private String eventID;
+--    private String moduleID;
+--    private String featureID;
+--    private String subscriberID;
+--    private String providerID;
+--    private String paymentMeanID;
+--    private INFulfillmentOperation operation;
+--    private int amount;
+--    private Date startValidityDate;
+--    private Date endValidityDate;
+
+
+{
+  "deliveryType"       : "inFulfillmentFakeA",
+  "eventID"            : "12345",
+  "moduleID"           : "module-id-24",
+  "featureID"          : "feature-id-16",
+  "subscriberID"       : "001",
+  "providerID"         : "2",
+  "paymentMeanID"      : "1",
+  "operation"          : "debit",
+  "amount"             : 25,
+  "startValidityDate"  : "${sampledata.infulfillment.now}"
+}

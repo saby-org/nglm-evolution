@@ -32,6 +32,18 @@ if [ "${INFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml ${DOCKER_STACK}-infulfillmentmanager
 fi
 
+if [ "${EMPTYFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-emptyfulfillmentmanager.yml ${DOCKER_STACK}-emptyfulfillmentmanager
+fi
+
+if [ "${POINTTYPEFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-pointtypefulfillmentmanager.yml ${DOCKER_STACK}-pointtypefulfillmentmanager
+fi
+
+if [ "${COMMODITYDELIVERYMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-commoditydeliverymanager.yml ${DOCKER_STACK}-commoditydeliverymanager
+fi
+
 if [ "${PURCHASEFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-purchasefulfillmentmanager.yml ${DOCKER_STACK}-purchasefulfillmentmanager
 fi

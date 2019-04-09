@@ -2,7 +2,7 @@
 
 #################################################################################
 #
-#  purchasefulfillmentmanager-run.sh
+#  pointtypefulfillmentmanager-run.sh
 #
 #################################################################################
 
@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.purchase.PurchaseFulfillmentManager $KEY 
+exec kafka-run-class -name pointTypeFulfillmentManager -loggc com.evolving.nglm.evolution.PointTypeFulfillmentManager $KEY

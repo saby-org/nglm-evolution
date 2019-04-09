@@ -972,7 +972,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private boolean makePayment(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
-    boolean paymentDone =  commodityActionManager.makePayment(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
+    boolean paymentDone =  commodityActionManager.makePayment(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity());
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return paymentDone;
   }
@@ -1156,7 +1156,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private boolean rollbackPayment(PurchaseRequestStatus purchaseStatus){
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingRollbacked();
-    boolean paymentDone =  commodityActionManager.creditCommodity(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity(), this);
+    boolean paymentDone =  commodityActionManager.creditCommodity(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity());
     log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return paymentDone;
   }

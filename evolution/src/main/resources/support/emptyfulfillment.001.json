@@ -1,0 +1,26 @@
+--
+--  emptyfulfillment.001.json
+--    
+
+--  private String deliveryType;
+--  private String eventID;
+--  private String moduleID;
+--  private String featureID;
+--  private String subscriberID;
+--  private String providerID;
+--  private String commodityID;
+--  private PointTypeOperation operation;
+--  private int amount;
+
+
+{
+  "deliveryType"                   : "emptyFulfillment",
+  "eventID"                        : "789789",
+  "moduleID"                       : "module-4",
+  "featureID"                      : "feature-2",
+  "providerID"                     : "empty_provider",
+  "subscriberID"                   : "001",
+  "commodityID"                    : "8",
+  "operation"                      : "credit",
+  "amount"                         : 33
+}

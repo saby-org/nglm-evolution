@@ -65,6 +65,9 @@
     <common.build.phase.generate-propensityengine-image>none</common.build.phase.generate-propensityengine-image>
     <common.build.phase.generate-ucgengine-image>none</common.build.phase.generate-ucgengine-image>
     <common.build.phase.generate-infulfillmentmanager-image>none</common.build.phase.generate-infulfillmentmanager-image>
+    <common.build.phase.generate-emptyfulfillmentmanager-image>none</common.build.phase.generate-emptyfulfillmentmanager-image>
+    <common.build.phase.generate-pointtypefulfillmentmanager-image>none</common.build.phase.generate-pointtypefulfillmentmanager-image>
+    <common.build.phase.generate-commoditydeliverymanager-image>none</common.build.phase.generate-commoditydeliverymanager-image>
     <common.build.phase.generate-purchasefulfillmentmanager-image>none</common.build.phase.generate-purchasefulfillmentmanager-image>
     <common.build.phase.generate-notificationmanagersms-image>none</common.build.phase.generate-notificationmanagersms-image>
     <common.build.phase.generate-notificationmanagermail-image>none</common.build.phase.generate-notificationmanagermail-image>
@@ -79,6 +82,9 @@
     <common.build.skip.docker-propensityengine-image>true</common.build.skip.docker-propensityengine-image>
     <common.build.skip.docker-ucgengine-image>true</common.build.skip.docker-ucgengine-image>
     <common.build.skip.docker-infulfillmentmanager-image>true</common.build.skip.docker-infulfillmentmanager-image>
+    <common.build.skip.docker-emptyfulfillmentmanager-image>true</common.build.skip.docker-emptyfulfillmentmanager-image>
+    <common.build.skip.docker-pointtypefulfillmentmanager-image>true</common.build.skip.docker-pointtypefulfillmentmanager-image>
+    <common.build.skip.docker-commoditydeliverymanager-image>true</common.build.skip.docker-commoditydeliverymanager-image>
     <common.build.skip.docker-purchasefulfillmentmanager-image>true</common.build.skip.docker-purchasefulfillmentmanager-image>
     <common.build.skip.docker-notificationmanagersms-image>true</common.build.skip.docker-notificationmanagersms-image>
     <common.build.skip.docker-notificationmanagermail-image>true</common.build.skip.docker-notificationmanagermail-image>
@@ -94,9 +100,10 @@
     <topic.empty>empty</topic.empty>
     <topic.journey>journey</topic.journey>
     <topic.segmentationdimension>segmentation-dimension</topic.segmentationdimension>
-    <topic.point>point</topic.point>
+    <topic.pointType>pointType</topic.pointType>
     <topic.offer>offer</topic.offer>
     <topic.report>report</topic.report>
+    <topic.paymentMean>paymentMean</topic.paymentMean>
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
     <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
     <topic.callingchannel>callingchannel</topic.callingchannel>
@@ -129,6 +136,14 @@
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
     <topic.propensitylog>propensitylog</topic.propensitylog>
+    <topic.pointtypefulfillment.request>pointtypefulfillment-request</topic.pointtypefulfillment.request>
+    <topic.pointtypefulfillment.response>pointtypefulfillment-response</topic.pointtypefulfillment.response>
+    <topic.pointtypefulfillment.internal>pointtypefulfillment-internal</topic.pointtypefulfillment.internal>
+    <topic.pointtypefulfillment.routing>pointtypefulfillment-routing</topic.pointtypefulfillment.routing>
+    <topic.commoditydelivery.request>commoditydelivery-request</topic.commoditydelivery.request>
+    <topic.commoditydelivery.response>commoditydelivery-response</topic.commoditydelivery.response>
+    <topic.commoditydelivery.internal>commoditydelivery-internal</topic.commoditydelivery.internal>
+    <topic.commoditydelivery.routing>commoditydelivery-routing</topic.commoditydelivery.routing>
     <topic.fulfillment.purchasefulfillment.request>purchasefulfillment-request</topic.fulfillment.purchasefulfillment.request>
     <topic.fulfillment.purchasefulfillment.response>purchasefulfillment-response</topic.fulfillment.purchasefulfillment.response>
     <topic.fulfillment.purchasefulfillment.internal>purchasefulfillment-internal</topic.fulfillment.purchasefulfillment.internal>
@@ -659,6 +674,135 @@
           </execution>
 
           <execution>
+            <id>generate-emptyfulfillmentmanager-docker-stack</id>
+            <phase>${common.build.phase.generate-emptyfulfillmentmanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/emptyfulfillmentmanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/emptyfulfillmentmanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/emptyfulfillmentmanager-run.sh</include>
+                    <include>config/emptyfulfillmentmanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-pointtypefulfillmentmanager-docker-stack</id>
+            <phase>${common.build.phase.generate-pointtypefulfillmentmanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/pointtypefulfillmentmanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/pointtypefulfillmentmanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/pointtypefulfillmentmanager-run.sh</include>
+                    <include>config/pointtypefulfillmentmanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>generate-commoditydeliverymanager-docker-stack</id>
+            <phase>${common.build.phase.generate-commoditydeliverymanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/commoditydeliverymanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/commoditydeliverymanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/commoditydeliverymanager-run.sh</include>
+                    <include>config/commoditydeliverymanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
             <id>generate-purchasefulfillmentmanager-docker-stack</id>
             <phase>${common.build.phase.generate-purchasefulfillmentmanager-image}</phase>
             <goals>
@@ -1039,6 +1183,51 @@
               <contextDirectory>${project.build.directory}/assembled-docker/infulfillmentmanager</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-infulfillmentmanager</repository>
               <classifier>docker-info-infulfillmentmanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-emptyfulfillmentmanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-emptyfulfillmentmanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/emptyfulfillmentmanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-emptyfulfillmentmanager</repository>
+              <classifier>docker-info-emptyfulfillmentmanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-pointtypefulfillmentmanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-pointtypefulfillmentmanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/pointtypefulfillmentmanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-pointtypefulfillmentmanager</repository>
+              <classifier>docker-info-pointtypefulfillmentmanager</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-commoditydeliverymanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-commoditydeliverymanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/commoditydeliverymanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-commoditydeliverymanager</repository>
+              <classifier>docker-info-commoditydeliverymanager</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

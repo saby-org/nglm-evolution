@@ -231,6 +231,9 @@
                     <include>bin/propensityengine-run.sh</include>
                     <include>bin/ucgengine-run.sh</include>
                     <include>bin/infulfillmentmanager-run.sh</include>
+                    <include>bin/emptyfulfillmentmanager-run.sh</include>
+                    <include>bin/pointtypefulfillmentmanager-run.sh</include>
+                    <include>bin/commoditydeliverymanager-run.sh</include>
                     <include>bin/purchasefulfillmentmanager-run.sh</include>
                     <include>bin/notificationmanagersms-run.sh</include>
                     <include>bin/notificationmanagermail-run.sh</include>
@@ -249,6 +252,9 @@
                     <include>config/propensityengine_jmx.yml</include>
                     <include>config/ucgengine_jmx.yml</include>
                     <include>config/infulfillmentmanager_jmx.yml</include>
+                    <include>config/emptyfulfillmentmanager_jmx.yml</include>
+                    <include>config/pointtypefulfillmentmanager_jmx.yml</include>
+                    <include>config/commoditydeliverymanager_jmx.yml</include>
                     <include>config/purchasefulfillmentmanager_jmx.yml</include>
                     <include>config/notificationmanagersms_jmx.yml</include>
                     <include>config/notificationmanagermail_jmx.yml</include>
@@ -274,6 +280,12 @@
                     <include>docker/ucgengine.yml</include>
                     <include>docker/infulfillmentmanager/*</include>
                     <include>docker/infulfillmentmanager.yml</include>
+                    <include>docker/emptyfulfillmentmanager/*</include>
+                    <include>docker/emptyfulfillmentmanager.yml</include>
+                    <include>docker/pointtypefulfillmentmanager/*</include>
+                    <include>docker/pointtypefulfillmentmanager.yml</include>
+                    <include>docker/commoditydeliverymanager/*</include>
+                    <include>docker/commoditydeliverymanager.yml</include>
                     <include>docker/purchasefulfillmentmanager/*</include>
                     <include>docker/purchasefulfillmentmanager.yml</include>
                     <include>docker/notificationmanagersms/*</include>
@@ -308,6 +320,9 @@
                     <exclude>docker/propensityengine.yml</exclude>
                     <exclude>docker/ucgengine.yml</exclude>
                     <exclude>docker/infulfillmentmanager.yml</exclude>
+                    <exclude>docker/emptyfulfillmentmanager.yml</exclude>
+                    <exclude>docker/pointtypefulfillmentmanager.yml</exclude>
+                    <exclude>docker/commoditydeliverymanager.yml</exclude>
                     <exclude>docker/purchasefulfillmentmanager.yml</exclude>
                     <exclude>docker/notificationmanagersms.yml</exclude>
                     <exclude>docker/notificationmanagermail.yml</exclude>

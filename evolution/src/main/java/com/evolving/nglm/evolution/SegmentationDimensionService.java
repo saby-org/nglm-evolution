@@ -209,7 +209,7 @@ public class SegmentationDimensionService extends GUIService
 
   /*****************************************
   *
-  *  putIncompleteOffer
+  *  putIncompleteSegmentationDimension
   *
   *****************************************/
 

@@ -2,7 +2,7 @@
 
 #################################################################################
 #
-#  purchasefulfillmentmanager-run.sh
+#  emptyfulfillmentmanager-run.sh
 #
 #################################################################################
 
@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name purchaseFulfillmentManager -loggc com.evolving.nglm.evolution.purchase.PurchaseFulfillmentManager $KEY 
+exec kafka-run-class -name emptyFulfillmentManager -loggc com.evolving.nglm.evolution.EmptyFulfillmentManager $KEY $PLUGIN_NAME

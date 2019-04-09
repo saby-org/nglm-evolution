@@ -61,6 +61,27 @@ scrape_configs:
     static_configs:
       - targets: [<_INFULFILLMENTMANAGER_PROMETHEUS_>]
       
+  # emptyfulfillmentmanager job
+  - job_name: 'emptyfulfillmentmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_EMPTYFULFILLMENTMANAGER_PROMETHEUS_>]
+      
+  # pointtypefulfillmentmanager job
+  - job_name: 'pointtypefulfillmentmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_POINTTYPEFULFILLMENTMANAGER_PROMETHEUS_>]
+      
+  # commoditydeliverymanager job
+  - job_name: 'commoditydeliverymanager'
+
+    # main config
+    static_configs:
+      - targets: [<_COMMODITYDELIVERYMANAGER_PROMETHEUS_>]
+      
   # purchasefulfillmentmanager job
   - job_name: 'purchasefulfillmentmanager'
 

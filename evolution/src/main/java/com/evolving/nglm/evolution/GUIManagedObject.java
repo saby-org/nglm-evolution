@@ -139,13 +139,14 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(SegmentationDimensionEligibility.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionFileImport.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionRanges.serde());
-    guiManagedObjectSerdes.add(Point.serde());
+    guiManagedObjectSerdes.add(PointType.serde());
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());
     guiManagedObjectSerdes.add(CallingChannel.serde());
     guiManagedObjectSerdes.add(SalesChannel.serde());
     guiManagedObjectSerdes.add(Supplier.serde());
+    guiManagedObjectSerdes.add(PaymentMean.serde());
     guiManagedObjectSerdes.add(Product.serde());
     guiManagedObjectSerdes.add(CatalogCharacteristic.serde());
     guiManagedObjectSerdes.add(ContactPolicy.serde());

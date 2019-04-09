@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  SegmentEligibility.java
+*  PointTypeValidity.java
 *
 *****************************************************************************/
 
@@ -17,7 +17,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class PointValidity 
+public class PointTypeValidity 
 {
 
   /*****************************************
@@ -93,7 +93,7 @@ public class PointValidity
     //
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("point_validity");
+    schemaBuilder.name("point_type_validity");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("type", Schema.STRING_SCHEMA);
     schemaBuilder.field("periodType", Schema.STRING_SCHEMA);
@@ -125,7 +125,7 @@ public class PointValidity
   *
   *****************************************/
 
-  private PointValidity(ValidityType type, PeriodType periodType, int periodQuantity, PeriodRoundUp periodRoundUp)
+  private PointTypeValidity(ValidityType type, PeriodType periodType, int periodQuantity, PeriodRoundUp periodRoundUp)
   {
     this.type = type;
     this.periodType = periodType;
@@ -139,7 +139,7 @@ public class PointValidity
   *
   *****************************************/
 
-  PointValidity(JSONObject jsonRoot) throws GUIManagerException
+  PointTypeValidity(JSONObject jsonRoot) throws GUIManagerException
   {
     this.type = ValidityType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "type", true));
     this.periodType = PeriodType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
@@ -166,9 +166,9 @@ public class PointValidity
   *
   *****************************************/
 
-  public static ConnectSerde<PointValidity> serde()
+  public static ConnectSerde<PointTypeValidity> serde()
   {
-    return new ConnectSerde<PointValidity>(schema, false, PointValidity.class, PointValidity::pack, PointValidity::unpack);
+    return new ConnectSerde<PointTypeValidity>(schema, false, PointTypeValidity.class, PointTypeValidity::pack, PointTypeValidity::unpack);
   }
 
   /*****************************************
@@ -179,7 +179,7 @@ public class PointValidity
 
   public static Object pack(Object value)
   {
-    PointValidity segment = (PointValidity) value;
+    PointTypeValidity segment = (PointTypeValidity) value;
     Struct struct = new Struct(schema);
     struct.put("type", segment.getType().getExternalRepresentation());
     struct.put("periodType", segment.getPeriodType().getExternalRepresentation());
@@ -196,7 +196,7 @@ public class PointValidity
   *
   *****************************************/
 
-  public static PointValidity unpack(SchemaAndValue schemaAndValue)
+  public static PointTypeValidity unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -223,7 +223,7 @@ public class PointValidity
     //  return
     //
 
-    return new PointValidity(type, periodType, periodQuantity, periodRoundUp);
+    return new PointTypeValidity(type, periodType, periodQuantity, periodRoundUp);
   }
   
 }

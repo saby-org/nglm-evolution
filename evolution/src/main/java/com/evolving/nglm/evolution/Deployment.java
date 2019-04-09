@@ -23,6 +23,8 @@ import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
 import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Deployment
 {
@@ -31,6 +33,7 @@ public class Deployment
   *  data
   *
   *****************************************/
+  private static final Logger log = LoggerFactory.getLogger(Deployment.class);
 
   private static String subscriberGroupLoaderAlternateID;
   private static String getCustomerAlternateID;
@@ -43,9 +46,10 @@ public class Deployment
   private static String emptyTopic;
   private static String journeyTopic;
   private static String segmentationDimensionTopic;
-  private static String pointTopic;
+  private static String pointTypeTopic;
   private static String offerTopic;
   private static String reportTopic;
+  private static String paymentMeanTopic;
   private static String presentationStrategyTopic;
   private static String scoringStrategyTopic;
   private static String callingChannelTopic;
@@ -99,10 +103,9 @@ public class Deployment
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialDeliverablesJSONArray = null;
   private static JSONArray initialTokenTypesJSONArray = null;
-  private static boolean generateSimpleProfileDimensions;
+  private static JSONArray initialPaymentMeansJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
-  private static Map<String,FulfillmentProvider> fulfillmentProviders = new LinkedHashMap<String,FulfillmentProvider>();
-  private static Map<String,PaymentInstrument> paymentMeans = new LinkedHashMap<String,PaymentInstrument>();
+  private static boolean generateSimpleProfileDimensions;
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -182,9 +185,10 @@ public class Deployment
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
-  public static String getPointTopic() { return pointTopic; }
+  public static String getPointTypeTopic() { return pointTypeTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
+  public static String getPaymentMeanTopic() { return paymentMeanTopic; }
   public static String getPresentationStrategyTopic() { return presentationStrategyTopic; }
   public static String getScoringStrategyTopic() { return scoringStrategyTopic; }
   public static String getCallingChannelTopic() { return callingChannelTopic; }
@@ -238,10 +242,9 @@ public class Deployment
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
-  public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
+  public static JSONArray getInitialPaymentMeansJSONArray() { return initialPaymentMeansJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
-  public static Map<String,FulfillmentProvider> getFulfillmentProviders() { return fulfillmentProviders; }
-  public static Map<String,PaymentInstrument> getPaymentMeans() { return paymentMeans; }
+  public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
@@ -543,12 +546,12 @@ public class Deployment
       }
 
     //
-    //  pointTopic
+    //  pointTypeTopic
     //
 
     try
       {
-        pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
+        pointTypeTopic = JSONUtilities.decodeString(jsonRoot, "pointTypeTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -575,6 +578,19 @@ public class Deployment
     try
       {
         reportTopic = JSONUtilities.decodeString(jsonRoot, "reportTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  paymentMeanTopic
+    //
+
+    try
+      {
+        paymentMeanTopic = JSONUtilities.decodeString(jsonRoot, "paymentMeanTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1231,6 +1247,18 @@ public class Deployment
     initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
     
     //
+    //  initialPaymentMeansJSONArray
+    //
+
+    initialPaymentMeansJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialPaymentMeans", true);
+    
+    //
+    //  initialSegmentationDimensionsJSONArray
+    //
+
+    initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
+
+    //
     //  generateSimpleProfileDimensions
     //
 
@@ -1239,50 +1267,6 @@ public class Deployment
         generateSimpleProfileDimensions = JSONUtilities.decodeBoolean(jsonRoot, "generateSimpleProfileDimensions", Boolean.TRUE);
       }
     catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  initialSegmentationDimensionsJSONArray
-    //
-
-    initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
-
-    //
-    //  fulfillmentProviders
-    //
-
-    try
-      {
-        JSONArray fulfillmentProviderValues = JSONUtilities.decodeJSONArray(jsonRoot, "fulfillmentProviders", new JSONArray());
-        for (int i=0; i<fulfillmentProviderValues.size(); i++)
-          {
-            JSONObject fulfillmentProviderJSON = (JSONObject) fulfillmentProviderValues.get(i);
-            FulfillmentProvider fulfillmentProvider = new FulfillmentProvider(fulfillmentProviderJSON);
-            fulfillmentProviders.put(fulfillmentProvider.getID(), fulfillmentProvider);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  paymentMeans
-    //
-
-    try
-      {
-        JSONArray paymentInstrumentValues = JSONUtilities.decodeJSONArray(jsonRoot, "paymentMeans", new JSONArray());
-        for (int i=0; i<paymentInstrumentValues.size(); i++)
-          {
-            JSONObject paymentInstrumentJSON = (JSONObject) paymentInstrumentValues.get(i);
-            PaymentInstrument paymentInstrument = new PaymentInstrument(paymentInstrumentJSON);
-            paymentMeans.put(paymentInstrument.getID(), paymentInstrument);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

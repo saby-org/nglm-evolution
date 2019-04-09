@@ -3,37 +3,22 @@ package com.evolving.nglm.evolution.purchase;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.INFulfillmentManager.Account;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentOperation;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.purchase.CommodityActionManager;
 import com.evolving.nglm.evolution.purchase.IDRCallback;
 import com.evolving.nglm.evolution.purchase.RequestPusher;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.GUIUtils;
+import com.evolving.nglm.evolution.RequestClass;
 
 public class CommodityActionManager
 {
-
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-
-  private enum RequestClass {
-    IN(INFulfillmentRequest.class.getName());
-    private String externalRepresentation;
-    private RequestClass(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static RequestClass fromExternalRepresentation(String externalRepresentation) { for (RequestClass enumeratedValue : RequestClass.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return null; }
-  }
 
   private static final Logger log = LoggerFactory.getLogger(CommodityActionManager.class);
 
@@ -54,91 +39,11 @@ public class CommodityActionManager
   *****************************************/
 
   public CommodityActionManager(IDRCallback callback){
-    
     pusher = new RequestPusher(callback);    
-    
-    //
-    // generate map ({providersID -> {paymentMeanID -> deliveryManager}})
-    //
-
-    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
-      RequestClass requestClass = RequestClass.fromExternalRepresentation(deliveryManager.getRequestClassName());
-      if(requestClass != null){
-
-        log.debug("CommodityActionManager() : get information from deliveryManager "+deliveryManager);
-        
-        // get information
-        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-        String deliveryType = (String) deliveryManagerJSON.get("deliveryType");
-        String providerID = (String) deliveryManagerJSON.get("providerID");
-        JSONArray availableAccountsArray = (JSONArray) deliveryManagerJSON.get("availableAccounts");
-        
-        //
-        Map<String, String> paymentMeanIDs = new HashMap<String/*paymentMeanID*/, String/*deliveryType*/>();
-        Map<String, String> commodityIDs = new HashMap<String/*commodityID*/, String/*deliveryType*/>();
-        for (int i=0; i<availableAccountsArray.size(); i++) {
-          Account newAccount = new Account((JSONObject) availableAccountsArray.get(i));
-          if(newAccount.getDebitable()){
-            paymentMeanIDs.put(newAccount.getAccountID(), requestClass+"-"+deliveryType);
-          }
-          if(newAccount.getCreditable()){
-            commodityIDs.put(newAccount.getAccountID(), requestClass+"-"+deliveryType);
-          }
-        }
-        if(!paymentMeanIDs.isEmpty()){
-          if(!paymentMeans.keySet().contains(providerID)){
-            paymentMeans.put(providerID, paymentMeanIDs);
-          }else{
-            paymentMeans.get(providerID).putAll(paymentMeanIDs);
-          }
-        }
-        if(!commodityIDs.isEmpty()){
-          if(!commodities.keySet().contains(providerID)){
-            commodities.put(providerID, commodityIDs);
-          }else{
-            commodities.get(providerID).putAll(commodityIDs);
-          }
-        }
-        
-        log.debug("CommodityActionManager() : get information from deliveryManager "+deliveryManager+" DONE");
-        
-      }else{
-        
-        log.debug("CommodityActionManager() : skip deliveryManager "+deliveryManager);
-        
-      }
-    }
-    
-    //=========================================================================================
-    //TODO :   | TODO : REMOVE THIS   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!
-    //        \|/
-    //=========================================================================================
-    log.info("====================================================================================");
-    log.info("        PAYMENT MEANS");
-    log.info("====================================================================================");
-    for(String providerIdentifier : paymentMeans.keySet()){
-      log.info("PROVIDER : "+providerIdentifier);
-      Map<String, String> providerPaymentMeans = paymentMeans.get(providerIdentifier);
-      for(String paymentID : providerPaymentMeans.keySet()){
-        log.info("      PaymentMean "+paymentID+"  ->  "+providerPaymentMeans.get(paymentID));
-      }
-    }
-    log.info("====================================================================================");
-    log.info("        COMMODITIES");
-    log.info("====================================================================================");
-    for(String providerIdentifier : commodities.keySet()){
-      log.info("PROVIDER : "+providerIdentifier);
-      Map<String, String> providerPaymentMeans = commodities.get(providerIdentifier);
-      for(String commodityID : providerPaymentMeans.keySet()){
-        log.info("      commodity "+commodityID+"  ->  "+providerPaymentMeans.get(commodityID));
-      }
-    }
-    log.info("====================================================================================");
-    //=========================================================================================
-    //        /|\
-    //TODO :   | TODO : REMOVE THIS   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!   !!!
-    //=========================================================================================
-
+    GUIUtils.generateMaps(paymentMeans, commodities);
+    GUIUtils.getProviders();
+    GUIUtils.getPaymentMeans();
+    GUIUtils.getCommodities();
   }
   
   /*****************************************
@@ -147,25 +52,21 @@ public class CommodityActionManager
   *
   *****************************************/
 
-  public boolean makePayment(JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
-    return makeAction(paymentMeans, INFulfillmentOperation.Debit, briefcase, eventID, moduleID, featureID, deliveryRequestID, subscriberID, providerID, paymentMeanID, amount, callback);
+  public boolean makePayment(JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount){
+    return makeAction(paymentMeans, INFulfillmentOperation.Debit, briefcase, eventID, moduleID, featureID, deliveryRequestID, subscriberID, providerID, paymentMeanID, amount);
   }
   
   /*****************************************
   *
-  *  method makePayment
+  *  method creditCommodity
   *
   *****************************************/
   
-  public boolean creditCommodity(JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String commodityID, long amount, IDRCallback callback){
-    return makeAction(commodities, INFulfillmentOperation.Credit, briefcase, eventID, moduleID, featureID, deliveryRequestID, subscriberID, providerID, commodityID, amount, callback);
+  public boolean creditCommodity(JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String commodityID, long amount){
+    return makeAction(commodities, INFulfillmentOperation.Credit, briefcase, eventID, moduleID, featureID, deliveryRequestID, subscriberID, providerID, commodityID, amount);
   }
-
   
-  
-  
-  
-  private boolean makeAction(Map<String, Map<String, String>> commoditiesSet, INFulfillmentOperation operation, JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount, IDRCallback callback){
+  private boolean makeAction(Map<String, Map<String, String>> commoditiesSet, INFulfillmentOperation operation, JSONObject briefcase, String eventID, String moduleID, String featureID, String deliveryRequestID, String subscriberID, String providerID, String paymentMeanID, long amount){
     log.info("CommodityActionManager.makeAction("+operation+", "+providerID+", "+paymentMeanID+", "+amount+") called");
 
     //

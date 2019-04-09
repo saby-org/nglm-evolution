@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -90,6 +89,7 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
 import com.evolving.nglm.evolution.ContactPolicyTouchPoint.ContactType;
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
@@ -98,7 +98,6 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -169,11 +168,11 @@ public class GUIManager
     countBySegmentationRanges("countBySegmentationRanges"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
-    getPointList("getPointList"),
-    getPointSummaryList("getPointSummaryList"),
-    getPoint("getPoint"),
-    putPoint("putPoint"),
-    removePoint("removePoint"),
+    getPointTypeList("getPointTypeList"),
+    getPointTypeSummaryList("getPointTypeSummaryList"),
+    getPointType("getPointType"),
+    putPointType("putPointType"),
+    removePointType("removePointType"),
     getOfferList("getOfferList"),
     getOfferSummaryList("getOfferSummaryList"),
     getOffer("getOffer"),
@@ -263,6 +262,11 @@ public class GUIManager
     removeSMSTemplate("removeSMSTemplate"),
     getFulfillmentProviders("getFulfillmentProviders"),
     getPaymentMeans("getPaymentMeans"),
+    getPaymentMeanList("getPaymentMeanList"),
+    getPaymentMeanSummaryList("getPaymentMeanSummaryList"),
+    getPaymentMean("getPaymentMean"),
+    putPaymentMean("putPaymentMean"),
+    removePaymentMean("removePaymentMean"),
     getDashboardCounts("getDashboardCounts"),
     getCustomer("getCustomer"),
     getCustomerMetaData("getCustomerMetaData"),
@@ -320,9 +324,10 @@ public class GUIManager
   private RestHighLevelClient elasticsearch;
   private JourneyService journeyService;
   private SegmentationDimensionService segmentationDimensionService;
-  private PointService pointService;
+  private PointTypeService pointTypeService;
   private OfferService offerService;
   private ReportService reportService;
+  private PaymentMeanService paymentMeanService;
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
   private CallingChannelService callingChannelService;
@@ -389,9 +394,10 @@ public class GUIManager
 
     String journeyTopic = Deployment.getJourneyTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
-    String pointTopic = Deployment.getPointTopic();
+    String pointTypeTopic = Deployment.getPointTypeTopic();
     String offerTopic = Deployment.getOfferTopic();
     String reportTopic = Deployment.getReportTopic();
+    String paymentMeanTopic = Deployment.getPaymentMeanTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String callingChannelTopic = Deployment.getCallingChannelTopic();
@@ -460,9 +466,10 @@ public class GUIManager
 
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
-    pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
+    pointTypeService = new PointTypeService(bootstrapServers, "guimanager-pointTypeservice-" + apiProcessKey, pointTypeTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
     reportService = new ReportService(bootstrapServers, "guimanager-reportservice-" + apiProcessKey, reportTopic, true);
+    paymentMeanService = new PaymentMeanService(bootstrapServers, "guimanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
     callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
@@ -567,7 +574,28 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
+                
+    //
+    //  paymentMeans
+    //
 
+    if (paymentMeanService.getStoredPaymentMeans().size() == 0)
+      {
+        try
+        {
+          JSONArray initialPaymentMeansJSONArray = Deployment.getInitialPaymentMeansJSONArray();
+          for (int i=0; i<initialPaymentMeansJSONArray.size(); i++)
+            {
+              JSONObject paymentMeansJSON = (JSONObject) initialPaymentMeansJSONArray.get(i);
+              processPutPaymentMean("0", paymentMeansJSON);
+            }
+        }
+        catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      }
+    
     //
     //  productTypes
     //
@@ -933,9 +961,10 @@ public class GUIManager
 
     journeyService.start();
     segmentationDimensionService.start();
-    pointService.start();
+    pointTypeService.start();
     offerService.start();
     reportService.start();
+    paymentMeanService.start();
     scoringStrategyService.start();
     presentationStrategyService.start();
     callingChannelService.start();
@@ -1010,11 +1039,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/countBySegmentationRanges", new APIHandler(API.countBySegmentationRanges));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APIHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APIHandler(API.getUCGDimensionSummaryList));
-        restServer.createContext("/nglm-guimanager/getPointList", new APIHandler(API.getPointList));
-        restServer.createContext("/nglm-guimanager/getPointSummaryList", new APIHandler(API.getPointSummaryList));
-        restServer.createContext("/nglm-guimanager/getPoint", new APIHandler(API.getPoint));
-        restServer.createContext("/nglm-guimanager/putPoint", new APIHandler(API.putPoint));
-        restServer.createContext("/nglm-guimanager/removePoint", new APIHandler(API.removePoint));
+        restServer.createContext("/nglm-guimanager/getPointTypeList", new APIHandler(API.getPointTypeList));
+        restServer.createContext("/nglm-guimanager/getPointTypeSummaryList", new APIHandler(API.getPointTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/getPointType", new APIHandler(API.getPointType));
+        restServer.createContext("/nglm-guimanager/putPointType", new APIHandler(API.putPointType));
+        restServer.createContext("/nglm-guimanager/removePointType", new APIHandler(API.removePointType));
         restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APIHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APIHandler(API.getOffer));
@@ -1104,6 +1133,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APIHandler(API.removeSMSTemplate));
         restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APIHandler(API.getFulfillmentProviders));
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
+        restServer.createContext("/nglm-guimanager/getPaymentMeanList", new APIHandler(API.getPaymentMeanList));
+        restServer.createContext("/nglm-guimanager/getPaymentMeanSummaryList", new APIHandler(API.getPaymentMeanSummaryList));
+        restServer.createContext("/nglm-guimanager/getPaymentMean", new APIHandler(API.getPaymentMean));
+        restServer.createContext("/nglm-guimanager/putPaymentMean", new APIHandler(API.putPaymentMean));
+        restServer.createContext("/nglm-guimanager/removePaymentMean", new APIHandler(API.removePaymentMean));
         restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
         restServer.createContext("/nglm-guimanager/getCustomer", new APIHandler(API.getCustomer));
         restServer.createContext("/nglm-guimanager/getCustomerMetaData", new APIHandler(API.getCustomerMetaData));
@@ -1128,7 +1162,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
 
     /*****************************************
     *
@@ -1155,7 +1189,7 @@ public class GUIManager
     private HttpServer restServer;
     private JourneyService journeyService;
     private SegmentationDimensionService segmentationDimensionService;
-    private PointService pointService;
+    private PointTypeService pointTypeService;
     private OfferService offerService;
     private ReportService reportService;
     private ScoringStrategyService scoringStrategyService;
@@ -1183,13 +1217,13 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointTypeService pointTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
-      this.pointService = pointService;
+      this.pointTypeService = pointTypeService;
       this.offerService = offerService;
       this.reportService = reportService;
       this.scoringStrategyService = scoringStrategyService;
@@ -1232,7 +1266,7 @@ public class GUIManager
 
       if (journeyService != null) journeyService.stop();
       if (segmentationDimensionService != null) segmentationDimensionService.stop();
-      if (pointService != null) pointService.stop();
+      if (pointTypeService != null) pointTypeService.stop();
       if (offerService != null) offerService.stop();
       if (reportService != null) reportService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
@@ -1561,24 +1595,24 @@ public class GUIManager
                   jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false);
                   break;
 
-                case getPointList:
-                  jsonResponse = processGetPointList(userID, jsonRoot, true);
+                case getPointTypeList:
+                  jsonResponse = processGetPointTypeList(userID, jsonRoot, true);
                   break;
 
-                case getPointSummaryList:
-                  jsonResponse = processGetPointList(userID, jsonRoot, false);
+                case getPointTypeSummaryList:
+                  jsonResponse = processGetPointTypeList(userID, jsonRoot, false);
                   break;
 
-                case getPoint:
-                  jsonResponse = processGetPoint(userID, jsonRoot);
+                case getPointType:
+                  jsonResponse = processGetPointType(userID, jsonRoot);
                   break;
 
-                case putPoint:
-                  jsonResponse = processPutPoint(userID, jsonRoot);
+                case putPointType:
+                  jsonResponse = processPutPointType(userID, jsonRoot);
                   break;
 
-                case removePoint:
-                  jsonResponse = processRemovePoint(userID, jsonRoot);
+                case removePointType:
+                  jsonResponse = processRemovePointType(userID, jsonRoot);
                   break;
 
                 case getOfferList:
@@ -1929,12 +1963,32 @@ public class GUIManager
                  jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
                  break;
 
-                case getFulfillmentProviders:
-                  jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
+               case getFulfillmentProviders:
+                 jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
+                 break;
+
+               case getPaymentMeans:
+                 jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
+                 break;
+
+               case getPaymentMeanList:
+                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
                   break;
 
-                case getPaymentMeans:
-                  jsonResponse = processGetPaymentMeans(userID, jsonRoot);
+                case getPaymentMeanSummaryList:
+                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, false);
+                  break;
+
+                case getPaymentMean:
+                  jsonResponse = processGetPaymentMean(userID, jsonRoot);
+                  break;
+
+                case putPaymentMean:
+                  jsonResponse = processPutPaymentMean(userID, jsonRoot);
+                  break;
+
+                case removePaymentMean:
+                  jsonResponse = processRemovePaymentMean(userID, jsonRoot);
                   break;
 
                 case getDashboardCounts:
@@ -3723,12 +3777,19 @@ public class GUIManager
           break;
 
         case "paymentMeans":
-          for (PaymentInstrument paymentInstrument : Deployment.getPaymentMeans().values())
+          if (includeDynamic)
             {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", paymentInstrument.getID());
-              availableValue.put("display", paymentInstrument.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
+              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+                {
+                  if (paymentMeanUnchecked.getAccepted())
+                    {
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", paymentMean.getPaymentMeanID());
+                      availableValue.put("display", paymentMean.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
             }
           break;
 
@@ -3743,6 +3804,23 @@ public class GUIManager
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offer.getOfferID());
                       availableValue.put("display", offer.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "pointTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject pointTypeUnchecked : pointTypeService.getStoredPointTypes())
+                {
+                  if (pointTypeUnchecked.getAccepted())
+                    {
+                      PointType pointType = (PointType) pointTypeUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", pointType.getPointTypeID());
+                      availableValue.put("display", pointType.getDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -5509,23 +5587,23 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetPointList
+  *  processGetPointTypeList
   *
   *****************************************/
 
-  private JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPointTypeList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
-    *  retrieve and convert Points
+    *  retrieve and convert PointTypes
     *
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    List<JSONObject> points = new ArrayList<JSONObject>();
-    for (GUIManagedObject point : pointService.getStoredPoints())
+    List<JSONObject> pointTypes = new ArrayList<JSONObject>();
+    for (GUIManagedObject pointType : pointTypeService.getStoredPointTypes())
       {
-        points.add(pointService.generateResponseJSON(point, fullDetails, now));
+        pointTypes.add(pointTypeService.generateResponseJSON(pointType, fullDetails, now));
       }
 
     /*****************************************
@@ -5536,17 +5614,17 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
-    response.put("points", JSONUtilities.encodeArray(points));
+    response.put("pointTypes", JSONUtilities.encodeArray(pointTypes));
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processGetPoint
+  *  processGetPointType
   *
   *****************************************/
 
-  private JSONObject processGetPoint(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPointType(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5562,16 +5640,16 @@ public class GUIManager
     *
     ****************************************/
 
-    String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String pointTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
     /*****************************************
     *
-    *  retrieve and decorate point
+    *  retrieve and decorate pointType
     *
     *****************************************/
 
-    GUIManagedObject point = pointService.getStoredPoint(pointID);
-    JSONObject pointJSON = pointService.generateResponseJSON(point, true, SystemTime.getCurrentTime());
+    GUIManagedObject pointType = pointTypeService.getStoredPointType(pointTypeID);
+    JSONObject pointTypeJSON = pointTypeService.generateResponseJSON(pointType, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -5579,18 +5657,18 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (point != null) ? "ok" : "pointNotFound");
-    if (point != null) response.put("point", pointJSON);
+    response.put("responseCode", (pointType != null) ? "ok" : "pointTypeNotFound");
+    if (pointType != null) response.put("pointType", pointTypeJSON);
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processPutPoint
+  *  processPutPointType
   *
   *****************************************/
 
-  private JSONObject processPutPoint(String userID, JSONObject jsonRoot)
+  private JSONObject processPutPointType(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5603,24 +5681,24 @@ public class GUIManager
 
     /*****************************************
     *
-    *  pointID
+    *  pointTypeID
     *
     *****************************************/
 
-    String pointID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (pointID == null)
+    String pointTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (pointTypeID == null)
       {
-        pointID = pointService.generatePointID();
-        jsonRoot.put("id", pointID);
+        pointTypeID = pointTypeService.generatePointTypeID();
+        jsonRoot.put("id", pointTypeID);
       }
 
     /*****************************************
     *
-    *  existing point
+    *  existing pointType
     *
     *****************************************/
 
-    GUIManagedObject existingPoint = pointService.getStoredPoint(pointID);
+    GUIManagedObject existingPointType = pointTypeService.getStoredPointType(pointTypeID);
 
     /*****************************************
     *
@@ -5628,19 +5706,19 @@ public class GUIManager
     *
     *****************************************/
 
-    if (existingPoint != null && existingPoint.getReadOnly())
+    if (existingPointType != null && existingPointType.getReadOnly())
       {
-        response.put("id", existingPoint.getGUIManagedObjectID());
-        response.put("accepted", existingPoint.getAccepted());
-        response.put("valid", existingPoint.getAccepted());
-        response.put("processing", pointService.isActivePoint(existingPoint, now));
+        response.put("id", existingPointType.getGUIManagedObjectID());
+        response.put("accepted", existingPointType.getAccepted());
+        response.put("valid", existingPointType.getAccepted());
+        response.put("processing", pointTypeService.isActivePointType(existingPointType, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************
     *
-    *  process point
+    *  process pointType
     *
     *****************************************/
 
@@ -5649,11 +5727,11 @@ public class GUIManager
       {
         /****************************************
         *
-        *  instantiate Point
+        *  instantiate PointType
         *
         ****************************************/
 
-        Point point = new Point(jsonRoot, epoch, existingPoint);
+        PointType pointType = new PointType(jsonRoot, epoch, existingPointType);
 
         /*****************************************
         *
@@ -5661,7 +5739,7 @@ public class GUIManager
         *
         *****************************************/
 
-        pointService.putPoint(point, (existingPoint == null), userID);
+        pointTypeService.putPointType(pointType, (existingPointType == null), userID);
 
         /*****************************************
         *
@@ -5669,10 +5747,10 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("id", point.getPointID());
-        response.put("accepted", point.getAccepted());
-        response.put("valid", point.getAccepted());
-        response.put("processing", pointService.isActivePoint(point, now));
+        response.put("id", pointType.getPointTypeID());
+        response.put("accepted", pointType.getAccepted());
+        response.put("valid", pointType.getAccepted());
+        response.put("processing", pointTypeService.isActivePointType(pointType, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -5688,7 +5766,7 @@ public class GUIManager
         //  store
         //
 
-        pointService.putIncompletePoint(incompleteObject, (existingPoint == null), userID);
+        pointTypeService.putIncompletePointType(incompleteObject, (existingPointType == null), userID);
 
         //
         //  log
@@ -5702,8 +5780,8 @@ public class GUIManager
         //  response
         //
 
-        response.put("pointID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "pointNotValid");
+        response.put("pointTypeID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "pointTypeNotValid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
@@ -5712,11 +5790,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processRemovePoint
+  *  processRemovePointType
   *
   *****************************************/
 
-  private JSONObject processRemovePoint(String userID, JSONObject jsonRoot)
+  private JSONObject processRemovePointType(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -5732,7 +5810,7 @@ public class GUIManager
     *
     ****************************************/
 
-    String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String pointTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
     /*****************************************
     *
@@ -5740,8 +5818,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject point = pointService.getStoredPoint(pointID);
-    if (point != null && ! point.getReadOnly()) pointService.removePoint(pointID, userID);
+    GUIManagedObject pointType = pointTypeService.getStoredPointType(pointTypeID);
+    if (pointType != null && ! pointType.getReadOnly()) pointTypeService.removePointType(pointTypeID, userID);
 
     /*****************************************
     *
@@ -5750,12 +5828,12 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (point != null && ! point.getReadOnly())
+    if (pointType != null && ! pointType.getReadOnly())
       responseCode = "ok";
-    else if (point != null)
+    else if (pointType != null)
       responseCode = "failedReadOnly";
     else
-      responseCode = "pointNotFound";
+      responseCode = "pointTypeNotFound";
 
     /*****************************************
     *
@@ -9105,7 +9183,321 @@ public class GUIManager
     response.put("productTypes", JSONUtilities.encodeArray(productTypes));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetFulfillmentProviders
+  *
+  *****************************************/
 
+  private JSONObject processGetFulfillmentProviders(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve fulfillment providers
+    *
+    *****************************************/
+    
+    List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
+    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
+      CommodityType commodityType = CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
+      if(commodityType != null){
+        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+        Map<String, String> providerJSON = new HashMap<String, String>();
+        providerJSON.put("id", (String) deliveryManagerJSON.get("providerID"));
+        providerJSON.put("name", (String) deliveryManagerJSON.get("providerName"));
+        providerJSON.put("providerType", commodityType.toString());
+        providerJSON.put("url", (String) deliveryManagerJSON.get("url"));
+        FulfillmentProvider provider = new FulfillmentProvider(JSONUtilities.encodeObject(providerJSON));
+        fulfillmentProviders.add(provider.getJSONRepresentation());
+      } 
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProviders));
+    return JSONUtilities.encodeObject(response);
+  }  
+  
+  /*****************************************
+  *
+  *  processGetPaymentMeanList
+  *
+  *****************************************/
+
+  private JSONObject processGetPaymentMeanList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+
+    /*****************************************
+    *
+    *  retrieve payment means
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
+    for (GUIManagedObject paymentMean : paymentMeanService.getStoredPaymentMeans())
+      {
+        paymentMeans.add(paymentMeanService.generateResponseJSON(paymentMean, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeans));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPaymentMean
+  *
+  *****************************************/
+
+  private JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate payment mean
+    *
+    *****************************************/
+
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+    JSONObject paymentMeanJSON = paymentMeanService.generateResponseJSON(paymentMean, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (paymentMean != null) ? "ok" : "paymentMeanNotFound");
+    if (paymentMean != null) response.put("paymentMean", paymentMeanJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPaymentMean
+  *
+  *****************************************/
+
+  private JSONObject processPutPaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    
+    /*****************************************
+    *
+    *  paymentMeanID
+    *
+    *****************************************/
+    
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (paymentMeanID == null)
+      {
+        paymentMeanID = paymentMeanService.generatePaymentMeanID();
+        jsonRoot.put("id", paymentMeanID);
+      }
+    
+    /*****************************************
+    *
+    *  existing paymentMean
+    *
+    *****************************************/
+
+    GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingPaymentMean != null && existingPaymentMean.getReadOnly())
+      {
+        response.put("id", existingPaymentMean.getGUIManagedObjectID());
+        response.put("accepted", existingPaymentMean.getAccepted());
+        response.put("processing", paymentMeanService.isActivePaymentMean(existingPaymentMean, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process paymentMean
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate paymentMean
+        *
+        ****************************************/
+
+        PaymentMean paymentMean = new PaymentMean(jsonRoot, epoch, existingPaymentMean);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", paymentMean.getPaymentMeanID());
+        response.put("accepted", paymentMean.getAccepted());
+        response.put("processing", paymentMeanService.isActivePaymentMean(paymentMean, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingPaymentMean == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "paymentMeanNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemovePaymentMean
+  *
+  *****************************************/
+
+  private JSONObject processRemovePaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+    if (paymentMean != null && ! paymentMean.getReadOnly()) paymentMeanService.removePaymentMean(paymentMeanID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (paymentMean != null && ! paymentMean.getReadOnly())
+      responseCode = "ok";
+    else if (paymentMean != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "paymentMeanNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processGetProductType
@@ -11419,72 +11811,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getFulfillmentProviders
-  *
-  *****************************************/
-
-  private JSONObject processGetFulfillmentProviders(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve fulfillment providers
-    *
-    *****************************************/
-
-    List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
-    for (FulfillmentProvider fulfillmentProvider : Deployment.getFulfillmentProviders().values())
-      {
-        JSONObject fulfillmentProviderJSON = fulfillmentProvider.getJSONRepresentation();
-        fulfillmentProviders.add(fulfillmentProviderJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProviders));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getPaymentMeans
-  *
-  *****************************************/
-
-  private JSONObject processGetPaymentMeans(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve payment means
-    *
-    *****************************************/
-
-    List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
-    for (PaymentInstrument paymentInstrument : Deployment.getPaymentMeans().values())
-      {
-        JSONObject paymentInstrumentJSON = paymentInstrument.getJSONRepresentation();
-        paymentMeans.add(paymentInstrumentJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeans));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  processGetDashboardCounts
   *
   *****************************************/
@@ -11496,7 +11822,7 @@ public class GUIManager
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
-    response.put("pointCount", pointService.getStoredPoints().size());
+    response.put("pointTypeCount", pointTypeService.getStoredPointTypes().size());
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
