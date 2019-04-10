@@ -101,6 +101,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.TokenType.TokenTypeKind;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -3924,6 +3925,46 @@ public class GUIManager
               result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
+
+        case "presentationStrategies":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
+                {
+                  if (presentationStrategyUnchecked.getAccepted())
+                    {
+                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
+                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "offersPresentationTokenTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
+                {
+                  if (tokenTypeUnchecked.getAccepted())
+                    {
+                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
+                      switch (tokenType.getTokenTypeKind())
+                        {
+                          case OffersPresentation:
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", tokenType.getTokenTypeID());
+                            availableValue.put("display", tokenType.getTokenTypeName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
 
         default:
           if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null)

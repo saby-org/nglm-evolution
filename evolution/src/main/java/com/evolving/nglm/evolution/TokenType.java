@@ -96,6 +96,7 @@ public class TokenType extends GUIManagedObject
   *****************************************/
 
   public String getTokenTypeID() { return getGUIManagedObjectID(); }
+  public String getTokenTypeName() { return getGUIManagedObjectName(); }
   public TokenTypeKind getTokenTypeKind() { return tokenTypeKind; }
   public int getValidityDuration() { return validityDuration; }
   public TimeUnit getValidityUnit() { return validityUnit; }
