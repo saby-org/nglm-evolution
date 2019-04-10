@@ -35,6 +35,10 @@ if [ "<_THIRDPARTYMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-thirdpartymanager
 fi
 
+if [ "<_DNBOPROXY_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-dnboproxy
+fi
+
 if [ "<_INFULFILLMENTMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-infulfillmentmanager
 fi

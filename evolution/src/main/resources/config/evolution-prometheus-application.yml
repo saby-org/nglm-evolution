@@ -131,3 +131,10 @@ scrape_configs:
     static_configs:
       - targets: [<_THIRDPARTYMANAGER_PROMETHEUS_>]
 
+  # dnboproxy job
+  - job_name: 'dnboproxy'
+
+    # main config
+    static_configs:
+      - targets: [<_DNBOPROXY_PROMETHEUS_>]
+

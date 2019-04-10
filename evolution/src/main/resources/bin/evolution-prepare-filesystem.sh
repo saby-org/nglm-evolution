@@ -89,6 +89,22 @@ do
 done
 
 #
+#  dnboproxy
+#
+
+DNBOPROXY_CONFIGURATION=`echo $DNBOPROXY_CONFIGURATION | sed 's/ /\n/g' | uniq`
+for TUPLE in $DNBOPROXY_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export API_PORT=`echo $TUPLE | cut -d: -f3`
+   export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
+   #
+   # nothing to prepare
+   #
+done
+
+#
 #  subscriber group
 #
 

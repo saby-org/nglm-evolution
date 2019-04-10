@@ -33,13 +33,6 @@ sed -i "s/<_NOTIFICATIONMANAGER_MAIL_PROMETHEUS_>/${NOTIFICATIONMANAGER_MAIL_PRO
 sed -i "s/<_GUIMANAGER_HOST_>/${GUIMANAGER_HOST}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_GUIMANAGER_MONITORING_PORT_>/${GUIMANAGER_MONITORING_PORT}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_THIRDPARTYMANAGER_PROMETHEUS_>/${THIRDPARTYMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
+sed -i "s/<_DNBOPROXY_PROMETHEUS_>/${DNBOPROXY_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_REPORTMANAGER_PROMETHEUS_>/${REPORTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_REPORTSCHEDULER_PROMETHEUS_>/${REPORTSCHEDULER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
-
-#
-# remove thirdpartymanager configuration(when not running) 
-#
-
-if [ -z "$THIRDPARTYMANAGER_PROMETHEUS" ]; then
-  sed -i "/THIRDPARTYMANAGER_PROMETHEUS:/d" /etc/prometheus/prometheus-application.yml
-fi

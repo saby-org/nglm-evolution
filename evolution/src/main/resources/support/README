@@ -228,6 +228,13 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "state" : "ACTIVE", "objectiveName":"objectiveName", "startDate" : "2018-10-12", "endDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList; echo
 
 --
+--  dnbo proxy
+--
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "subscriberID" : "101", "scoringStrategyID" : "1", "salesChannelID" : "1" }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers; echo
+curl -X GET http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers?strategy=1\&msisdn=101\&salesChannel=1; echo
+
+--
 --  zookeeper - stock
 --
 

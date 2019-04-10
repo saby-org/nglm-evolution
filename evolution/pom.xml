@@ -242,6 +242,7 @@
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/thirdpartymanager-run.sh</include>
+                    <include>bin/dnboproxy-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
                     <include>bin/upgrade-run-flyway.sh</include>
@@ -262,6 +263,7 @@
                     <include>config/reportscheduler_jmx.yml</include>
                     <include>config/guimanager_jmx.yml</include>
                     <include>config/thirdpartymanager_jmx.yml</include>
+                    <include>config/dnboproxy_jmx.yml</include>
                     <include>config/evolution-prometheus-application.yml</include>
                     <include>databases/_meta_gui/*</include>
                     <include>databases/dbframework/*</include>
@@ -269,9 +271,11 @@
                     <include>docker/prometheus-application-preamble.yml</include>
                     <include>docker/prometheus-application-postamble.yml</include>
                     <include>docker/guimanager/*</include>
-                    <include>docker/thirdpartymanager/*</include>
                     <include>docker/guimanager.yml</include>
+                    <include>docker/thirdpartymanager/*</include>
                     <include>docker/thirdpartymanager.yml</include>
+                    <include>docker/dnboproxy/*</include>
+                    <include>docker/dnboproxy.yml</include>
                     <include>docker/evolutionengine/*</include>
                     <include>docker/evolutionengine.yml</include>
                     <include>docker/propensityengine/*</include>
@@ -316,6 +320,7 @@
                     <exclude>docker/prometheus-application-postamble.yml</exclude>
                     <exclude>docker/guimanager.yml</exclude>
                     <exclude>docker/thirdpartymanager.yml</exclude>
+                    <exclude>docker/dnboproxy.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
                     <exclude>docker/propensityengine.yml</exclude>
                     <exclude>docker/ucgengine.yml</exclude>

@@ -29,6 +29,10 @@ if [ "<_THIRDPARTYMANAGER_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml <_DOCKER_STACK_>-thirdpartymanager
 fi
 
+if [ "<_DNBOPROXY_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-dnboproxy.yml <_DOCKER_STACK_>-dnboproxy
+fi
+
 if [ "<_INFULFILLMENTMANAGER_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-infulfillmentmanager.yml <_DOCKER_STACK_>-infulfillmentmanager
 fi

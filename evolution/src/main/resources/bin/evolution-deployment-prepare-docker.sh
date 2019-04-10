@@ -16,6 +16,7 @@ do
    ssh $SWARM_HOST "
       docker pull ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-thirdpartymanager:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-dnboproxy:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-evolutionengine:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribergroup:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-simpletransform:${project.name}-${project.version}
