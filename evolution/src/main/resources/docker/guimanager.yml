@@ -33,3 +33,7 @@ guimanager:
         - engine.labels.hostname == <_GUIMANAGER_HOST_>
   networks:
     - outside
+  volumes:
+    - type: bind
+      source: <_NGLM_UPLOADED_>
+      target: /app/uploaded

@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -38,6 +39,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUpload;
+import org.apache.commons.fileupload.RequestContext;
+import org.apache.commons.fileupload.util.Streams;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -278,6 +284,10 @@ public class GUIManager
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
     refreshUCG("refreshUCG"),
+    putUploadedFile("putUploadedFile"),
+    getUploadedFileList("getUploadedFileList"),
+    getUploadedFileSummaryList("getUploadedFileSummaryList"),
+    removeUploadedFile("removeUploadedFile"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -350,6 +360,12 @@ public class GUIManager
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private DeliverableSourceService deliverableSourceService;
   private String getCustomerAlternateID;
+  private UploadedFileService uploadFileService;
+  
+  private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
+  private static final String BOUNDARY_EQUALS = "boundary="; 
+  private static final String FILE_REQUEST = "file"; 
+  private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
 
   /*****************************************
   *
@@ -419,6 +435,7 @@ public class GUIManager
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
+    String uploadedFileTopic = Deployment.getUploadedFileTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -491,7 +508,8 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
-
+    uploadFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
+    
     /*****************************************
     *
     *  Elasticsearch -- client
@@ -984,6 +1002,7 @@ public class GUIManager
     smsTemplateService.start();
     subscriberProfileService.start();
     deliverableSourceService.start();
+    uploadFileService.start();
 
     /*****************************************
     *
@@ -1149,6 +1168,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
         restServer.createContext("/nglm-guimanager/refreshUCG", new APIHandler(API.refreshUCG));
+        restServer.createContext("/nglm-guimanager/putUploadedFile", new APIFileHandler(API.putUploadedFile));
+        restServer.createContext("/nglm-guimanager/getUploadedFileList", new APIFileHandler(API.getUploadedFileList));
+        restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APIFileHandler(API.getUploadedFileSummaryList));
+        restServer.createContext("/nglm-guimanager/removeUploadedFile", new APIFileHandler(API.removeUploadedFile));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1163,7 +1186,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService, uploadFileService));
 
     /*****************************************
     *
@@ -1213,12 +1236,13 @@ public class GUIManager
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private DeliverableSourceService deliverableSourceService;
+    private UploadedFileService uploadFileService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointTypeService pointTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointTypeService pointTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, UploadedFileService uploadFileService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1247,6 +1271,7 @@ public class GUIManager
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.deliverableSourceService = deliverableSourceService;
+      this.uploadFileService = uploadFileService;
     }
 
     //
@@ -1262,7 +1287,7 @@ public class GUIManager
       if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
 
       //
-      //  services
+      //  services 
       //
 
       if (journeyService != null) journeyService.stop();
@@ -1289,7 +1314,7 @@ public class GUIManager
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       if (deliverableSourceService != null) deliverableSourceService.stop();
-
+      if (uploadFileService != null) uploadFileService.stop();
       //
       //  rest server
       //
@@ -2101,6 +2126,465 @@ public class GUIManager
         writer.close();
         exchange.close();
       }
+  }
+  
+  /*****************************************
+  *
+  *  handleFileAPI
+  *
+  *****************************************/
+
+  private synchronized void handleFileAPI(API api, HttpExchange exchange) throws IOException
+  {
+    try
+    {
+      /*****************************************
+       *
+       *  get the user
+       *
+       *****************************************/
+
+      String userID = null;
+      if (exchange.getRequestURI().getQuery() != null)
+        {
+          Pattern pattern = Pattern.compile("^(.*\\&user_id|user_id)=(.*?)(\\&.*$|$)");
+          Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+          if (matcher.matches())
+            {
+              userID = matcher.group(2);
+            }
+        }
+
+      /*****************************************
+       *
+       *  get the body
+       *
+       *****************************************/
+      JSONObject jsonRoot = null;
+      if(!api.equals(API.putUploadedFile)){
+        StringBuilder requestBodyStringBuilder = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+        while (true)
+          {
+            String line = reader.readLine();
+            if (line == null) break;
+            requestBodyStringBuilder.append(line);
+          }
+        reader.close();
+        log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
+        jsonRoot = (JSONObject) (new JSONParser()).parse(requestBodyStringBuilder.toString());
+
+        /*****************************************
+         *
+         *  validate
+         *
+         *****************************************/
+
+        int apiVersion = JSONUtilities.decodeInteger(jsonRoot, "apiVersion", true);
+        if (apiVersion > RESTAPIVersion)
+          {
+            throw new ServerRuntimeException("unknown api version " + apiVersion);
+          }
+        jsonRoot.remove("apiVersion");
+      }
+
+      /*****************************************
+       *
+       *  license state
+       *
+       *****************************************/
+
+      LicenseState licenseState = licenseChecker.checkLicense();
+      Alarm licenseAlarm = licenseState.getHighestAlarm();
+      boolean allowAccess = true;
+      switch (licenseAlarm.getLevel())
+      {
+      case None:
+      case Alert:
+      case Alarm:
+        allowAccess = true;
+        break;
+
+      case Limit:
+      case Block:
+        allowAccess = false;
+        break;
+      }
+
+      /*****************************************
+       *
+       *  process
+       *
+       *****************************************/
+
+      JSONObject jsonResponse = null;
+      JSONObject logFile = null;
+      if (licenseState.isValid() && allowAccess)
+        { 
+          switch (api)
+          {
+          case putUploadedFile:
+            jsonResponse = processPutFile(exchange);
+            break;
+
+          case getUploadedFileList:
+            jsonResponse = processGetFilesList(userID, jsonRoot, true);
+            break;
+
+          case getUploadedFileSummaryList:
+            jsonResponse = processGetFilesList(userID, jsonRoot, false);
+            break;
+
+          case removeUploadedFile:
+            jsonResponse = removeUploadedFile(userID, jsonRoot);
+            break;
+          }
+        }
+      else
+        {
+          log.warn("Failed license check {} ", licenseState);
+          jsonResponse = processFailedLicenseCheck(licenseState);
+          exchange.sendResponseHeaders(200, 0);
+          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+          writer.write(jsonResponse.toString());
+          writer.close();
+          exchange.close();
+        }
+
+      /*****************************************
+       *
+       *  send response
+       *
+       *****************************************/
+
+      //
+      //  standard response fields
+      //
+
+      jsonResponse.put("apiVersion", RESTAPIVersion);
+      jsonResponse.put("licenseCheck", licenseAlarm.getJSONRepresentation());
+
+      //
+      //  log
+      //
+
+      log.debug("API (raw response): {}", jsonResponse.toString());
+
+      //
+      //  send
+      //
+
+      exchange.sendResponseHeaders(200, 0);
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+      writer.write(jsonResponse.toString());
+      writer.close();
+      exchange.close();
+
+    }    catch (org.json.simple.parser.ParseException | IOException | RuntimeException e )
+    {
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  send error response
+      //
+
+      HashMap<String,Object> response = new HashMap<String,Object>();
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", e.getMessage());
+      JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+      exchange.sendResponseHeaders(200, 0);
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+      writer.write(jsonResponse.toString());
+      writer.close();
+      exchange.close();
+    }
+  }
+  
+  private JSONObject processPutFile(HttpExchange exchange){
+
+    /****************************************
+     *
+     *  response map and object
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    JSONObject jsonResponse = null;
+    JSONObject jsonRoot = null;
+    String fileID = null;
+    String userID = null;
+
+    /****************************************
+    *
+    *  check incoming request
+    *
+    ****************************************/
+    
+    final String contentType = exchange.getRequestHeaders().getFirst("Content-Type"); 
+    if(contentType == null) { 
+      return responseError("Content-Type is null");    
+    } 
+    
+    if (!contentType.startsWith(MULTIPART_FORM_DATA)) { 
+      return responseError("Message is not multipart/form-data");
+    } 
+ 
+    String contentLengthString = exchange.getRequestHeaders().getFirst("Content-Length"); 
+    if(contentLengthString == null) { 
+      return responseError("Content of message is null");  
+    } 
+
+    /****************************************
+    *
+    *  apache FileUpload API
+    *
+    ****************************************/
+    
+    final InputStream requestBodyStream = exchange.getRequestBody(); 
+    final String contentEncoding = exchange.getRequestHeaders().getFirst("Content-Encoding");
+    FileUpload upload = new FileUpload(); 
+    FileItemIterator fileItemIterator; 
+    try{
+      fileItemIterator = upload.getItemIterator(new RequestContext() { 
+
+        public String getCharacterEncoding() { 
+          return contentEncoding; 
+        } 
+
+        public String getContentType() { 
+          return contentType; 
+        } 
+
+        public int getContentLength() { 
+          return 0; 
+        } 
+
+        public InputStream getInputStream() throws IOException { 
+          return requestBodyStream; 
+        }}); 
+
+      if(!fileItemIterator.hasNext()) { 
+        return responseError("Body is empty");
+      }
+
+      //
+      // here we will extract the meta data of the request and the file
+      //
+      
+      boolean uploadFile = false;
+      for(;fileItemIterator.hasNext();) {
+        FileItemStream fis = fileItemIterator.next();
+        if(fis.getFieldName().equals(FILE_UPLOAD_META_DATA)) {
+          InputStream streams = fis.openStream();
+          String jsonAsString = Streams.asString(streams, "UTF-8");
+          jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+          userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+          if(!jsonRoot.containsKey("id")) {
+            fileID = uploadFileService.generateFileID();
+          }else {
+            fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+          }
+          jsonRoot.put("id", fileID);
+          uploadFile = true;
+        }
+        if(fis.getFieldName().equals(FILE_REQUEST) && uploadFile){
+          
+          //
+          // converted the meta data and now attempting to save the file locally
+          //
+          
+          long epoch = epochServer.getKey();
+
+          /*****************************************
+           *
+           *  existing UploadedFile
+           *
+           *****************************************/
+          String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
+          GUIManagedObject existingFileUpload = uploadFileService.getStoredUploadedFile(fileID);
+
+          try
+          {
+            /****************************************
+             *
+             *  instantiate new UploadedFile
+             *
+             ****************************************/
+
+            UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
+
+            /*****************************************
+             *
+             *  store UploadedFile
+             *
+             *****************************************/
+
+            uploadFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+          }catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            //
+            //  incompleteObject
+            //
+
+            IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+            //
+            //  store
+            //
+
+            uploadFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
+
+            //
+            //  log
+            //
+
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+            //
+            //  response
+            //
+
+            response.put("id", incompleteObject.getGUIManagedObjectID());
+            response.put("responseCode", "fileNotValid");
+            response.put("responseMessage", e.getMessage());
+            response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+            return JSONUtilities.encodeObject(response);
+          }
+        }
+      }
+
+      //
+      // file has been added successfully, return fileID
+      //
+      
+      response.put("fileID", fileID);
+      jsonResponse = JSONUtilities.encodeObject(response);
+      log.debug("API (raw response): {}", jsonResponse.toString());
+
+    } catch (Exception e) { 
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.error("Failed to write file REST api: {}", stackTraceWriter.toString());
+      jsonResponse = responseError("System error");
+    } 
+
+    return jsonResponse;
+  }
+  
+  private JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails){
+
+    /*****************************************
+    *
+    *  retrieve and convert UploadedFiles
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> uploadedFiles = new ArrayList<JSONObject>();
+    String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
+    for (GUIManagedObject uploaded : uploadFileService.getStoredGUIManagedObjects())
+      {
+        if(uploaded instanceof UploadedFile) {
+          if(((UploadedFile) uploaded).getApplicationID().equals(applicationID)) {
+            uploadedFiles.add(uploadFileService.generateResponseJSON(uploaded, fullDetails, now));
+          }
+        }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> responseResult = new HashMap<String,Object>();
+    responseResult.put("applicationID", applicationID);
+    responseResult.put("uploadedFiles", JSONUtilities.encodeArray(uploadedFiles));
+    
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("uploadedFiles", JSONUtilities.encodeObject(responseResult));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  private JSONObject responseError(String responseText) {
+      HashMap<String,Object> response = new HashMap<String,Object>();
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", responseText);
+      JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+      return jsonResponse;
+  }
+  
+  public JSONObject removeUploadedFile(String userID, JSONObject jsonRoot){
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String uploadedFileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingFileUpload = uploadFileService.getStoredUploadedFile(uploadedFileID);
+    if (existingFileUpload != null && !existingFileUpload.getReadOnly()) {
+      uploadFileService.deleteUploadedFile(uploadedFileID, userID, (UploadedFile)existingFileUpload);
+    }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingFileUpload != null && ! existingFileUpload.getReadOnly()) {
+      responseCode = "ok";
+    }
+    else if (existingFileUpload != null) {
+      responseCode = "failedReadOnly";
+    }
+    else {
+      responseCode = "uploadedFileNotFound";
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -13211,6 +13695,40 @@ public class GUIManager
       handleAPI(api, exchange);
     }
   }
+  
+  private class APIFileHandler implements HttpHandler
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private API api;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    private APIFileHandler(API api)
+    {
+      this.api = api;
+    }
+
+    /*****************************************
+    *
+    *  handle -- HttpHandler
+    *
+    *****************************************/
+
+    public void handle(HttpExchange exchange) throws IOException
+    {
+      handleFileAPI(api, exchange);
+    }
+  }
+  
 
   /*****************************************
   *

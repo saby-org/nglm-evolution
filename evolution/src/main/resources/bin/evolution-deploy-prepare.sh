@@ -14,6 +14,7 @@ do
       rm -rf ${NGLM_STREAMS_RUNTIME}
       rm -rf ${NGLM_GUI_RUNTIME}
       rm -rf ${NGLM_REPORTS}
+      rm -rf ${NGLM_UPLOADED}
       rm -rf ${NGLM_MYSQL_RUNTIME}
    "
 done

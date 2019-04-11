@@ -137,6 +137,7 @@ public class Deployment
   private static JSONArray reportsConfigValues;
   private static CustomerMetaData customerMetaData = null;
   private static String APIresponseDateFormat;
+  private static String uploadedFileTopic;
 
   /*****************************************
   *
@@ -276,6 +277,7 @@ public class Deployment
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
+  public static String getUploadedFileTopic() { return uploadedFileTopic; }
 
   /*****************************************
   *
@@ -864,6 +866,19 @@ public class Deployment
     try
       {
         ucgStateTopic = JSONUtilities.decodeString(jsonRoot, "ucgStateTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  uploadFileTopic
+    //
+
+    try
+      {
+        uploadedFileTopic = JSONUtilities.decodeString(jsonRoot, "uploadedFileTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

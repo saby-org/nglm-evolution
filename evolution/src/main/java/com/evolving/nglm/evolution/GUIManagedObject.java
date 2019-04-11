@@ -160,6 +160,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Report.serde());
     guiManagedObjectSerdes.add(MailTemplate.serde());
     guiManagedObjectSerdes.add(SMSTemplate.serde());
+    guiManagedObjectSerdes.add(UploadedFile.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

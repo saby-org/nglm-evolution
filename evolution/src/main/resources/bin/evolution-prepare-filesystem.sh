@@ -31,6 +31,14 @@ ssh $MASTER_SWARM_HOST "
 "
 
 #
+#  nglm file upload
+#
+
+ssh $GUIMANAGER_HOST "
+   mkdir -p $NGLM_UPLOADED
+"
+
+#
 #  prometheus runtime volume(s)
 #
 
