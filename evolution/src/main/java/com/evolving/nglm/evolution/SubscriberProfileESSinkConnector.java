@@ -39,7 +39,6 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     *****************************************/
 
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-    private String sinkTaskKey = Integer.toHexString(getTaskNumber());
 
     /*****************************************
     *
@@ -50,7 +49,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     @Override public void start(Map<String, String> taskConfig)
     {
       super.start(taskConfig);
-      this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", sinkTaskKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+      this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", Integer.toHexString(getTaskNumber()), Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
     }
 
