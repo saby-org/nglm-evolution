@@ -80,6 +80,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Alarm;
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
@@ -288,6 +289,7 @@ public class GUIManager
     getUploadedFileList("getUploadedFileList"),
     getUploadedFileSummaryList("getUploadedFileSummaryList"),
     removeUploadedFile("removeUploadedFile"),
+    getCustomerAlternateIDs("getCustomerAlternateIDs"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -1172,6 +1174,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getUploadedFileList", new APIFileHandler(API.getUploadedFileList));
         restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APIFileHandler(API.getUploadedFileSummaryList));
         restServer.createContext("/nglm-guimanager/removeUploadedFile", new APIFileHandler(API.removeUploadedFile));
+        restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APIFileHandler(API.getCustomerAlternateIDs));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -2236,7 +2239,11 @@ public class GUIManager
             break;
 
           case removeUploadedFile:
-            jsonResponse = removeUploadedFile(userID, jsonRoot);
+            jsonResponse = processRemoveUploadedFile(userID, jsonRoot);
+            break;
+            
+          case getCustomerAlternateIDs:
+            jsonResponse = processGetCustomerAlternateIDs(userID, jsonRoot);
             break;
           }
         }
@@ -2523,7 +2530,48 @@ public class GUIManager
       return jsonResponse;
   }
   
-  public JSONObject removeUploadedFile(String userID, JSONObject jsonRoot){
+  /*****************************************
+  *
+  *  getAlternateIDs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerAlternateIDs(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve alternateIDs
+    *
+    *****************************************/
+
+    List<JSONObject> alternateIDs = new ArrayList<JSONObject>();
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        JSONObject json = new JSONObject();
+        json.put("id", alternateID.getID());
+        json.put("display", alternateID.getDisplay());
+        alternateIDs.add(json);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("alternateIDs", JSONUtilities.encodeArray(alternateIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  removeUploadedFile
+  *
+  *****************************************/
+  
+  public JSONObject processRemoveUploadedFile(String userID, JSONObject jsonRoot){
     
     /****************************************
     *

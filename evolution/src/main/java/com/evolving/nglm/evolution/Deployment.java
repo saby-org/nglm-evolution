@@ -16,6 +16,7 @@ import java.util.Objects;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -169,6 +170,7 @@ public class Deployment
   public static String getSuspenseTopic() { return com.evolving.nglm.core.Deployment.getSuspenseTopic(); }
   public static String getSuspenseAuditTopic() { return com.evolving.nglm.core.Deployment.getSuspenseAuditTopic(); }
   public static Map<String,SuspenseProcessEventConfiguration> getSuspenseProcessEventConfiguration() { return com.evolving.nglm.core.Deployment.getSuspenseProcessEventConfiguration(); }
+  public static Map<String, AlternateID> getAlternateIDs() { return com.evolving.nglm.core.Deployment.getAlternateIDs(); }
   
   //
   //  evolution accessors
