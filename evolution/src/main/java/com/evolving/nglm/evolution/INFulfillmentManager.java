@@ -662,10 +662,10 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      String paymentMeanID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.paymentmeanid");
-      int amount = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.amount");
-      Integer endValidityDuration = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.endvalidityduration");
-      String endValidityUnits = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.endvalidityunits");
+      String paymentMeanID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.paymentmeanid");
+      int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
+      Number endValidityDuration = (Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.endvalidityduration");
+      String endValidityUnits = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.endvalidityunits");
       
       /*****************************************
       *
@@ -676,7 +676,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       INFulfillmentOperation operation = this.operation;
       Date startValidityDate = subscriberEvaluationRequest.getEvaluationDate();
-      Date endValidityDate = (endValidityDuration != null && endValidityUnits != null) ? EvolutionUtilities.addTime(startValidityDate, endValidityDuration, TimeUnit.fromExternalRepresentation(endValidityUnits), Deployment.getBaseTimeZone(), false) : null;
+      Date endValidityDate = (endValidityDuration != null && endValidityUnits != null) ? EvolutionUtilities.addTime(startValidityDate, endValidityDuration.intValue(), TimeUnit.fromExternalRepresentation(endValidityUnits), Deployment.getBaseTimeZone(), false) : null;
 
       /*****************************************
       *

@@ -482,7 +482,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      EmailMessage emailMessage = (EmailMessage) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.message");
+      EmailMessage emailMessage = (EmailMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
 
       /*****************************************
       *

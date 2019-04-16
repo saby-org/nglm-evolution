@@ -115,7 +115,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 public class EvolutionEngine
 {
@@ -974,7 +973,7 @@ public class EvolutionEngine
       //  stop streams
       //
       
-      boolean streamsCloseSuccessful = kafkaStreams.close(60, TimeUnit.SECONDS);
+      boolean streamsCloseSuccessful = kafkaStreams.close(60, java.util.concurrent.TimeUnit.SECONDS);
       log.info("Stopped EvolutionEngine" + (streamsCloseSuccessful ? "" : " (timed out)"));
     }
   }
@@ -2924,7 +2923,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      String journeyID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.journey");
+      String journeyID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journey");
 
       /*****************************************
       *

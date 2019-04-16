@@ -75,11 +75,12 @@ public class CriterionField extends DeploymentManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_field");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldDataType", Schema.STRING_SCHEMA);
     schemaBuilder.field("esField", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("criterionFieldRetriever", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("expressionValuedParameter", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("internalOnly", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tagFormat", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tagMaxLength", Schema.OPTIONAL_INT32_SCHEMA);
@@ -108,6 +109,7 @@ public class CriterionField extends DeploymentManagedObject
   private CriterionDataType fieldDataType;
   private String esField;
   private String criterionFieldRetriever;
+  private boolean expressionValuedParameter;
   private boolean internalOnly;
   private String tagFormat;
   private Integer tagMaxLength;
@@ -127,6 +129,7 @@ public class CriterionField extends DeploymentManagedObject
   public CriterionDataType getFieldDataType() { return fieldDataType; }
   public String getESField() { return esField; }
   public String getCriterionFieldRetriever() { return criterionFieldRetriever; }
+  public boolean getExpressionValuedParameter() { return expressionValuedParameter; }
   public boolean getInternalOnly() { return internalOnly; }
   public String getTagFormat() { return tagFormat; }
   public Integer getTagMaxLength() { return tagMaxLength; }
@@ -161,9 +164,30 @@ public class CriterionField extends DeploymentManagedObject
     this.fieldDataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
     this.esField = JSONUtilities.decodeString(jsonRoot, "esField", false);
     this.criterionFieldRetriever = JSONUtilities.decodeString(jsonRoot, "retriever", false);
+    this.expressionValuedParameter = JSONUtilities.decodeBoolean(jsonRoot, "expressionValuedParameter", Boolean.FALSE);
     this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
     this.tagFormat = JSONUtilities.decodeString(jsonRoot, "tagFormat", false);
     this.tagMaxLength = JSONUtilities.decodeInteger(jsonRoot, "tagMaxLength", false);
+
+    //
+    //  expressionValuedParameter
+    //
+
+    if (this.expressionValuedParameter)
+      {
+        switch (this.fieldDataType)
+          {
+            case IntegerCriterion:
+            case DoubleCriterion:
+            case StringCriterion:
+            case BooleanCriterion:
+            case DateCriterion:
+              break;
+
+            default:
+              throw new GUIManagerException("unsupported parameter expression type", this.fieldDataType.getExternalRepresentation());
+          }
+      }
 
     //
     //  retriever
@@ -217,7 +241,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, String esField, String criterionFieldRetriever, boolean internalOnly, String tagFormat, Integer tagMaxLength)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, String tagFormat, Integer tagMaxLength)
   {
     //
     //  super
@@ -233,6 +257,7 @@ public class CriterionField extends DeploymentManagedObject
     this.fieldDataType = fieldDataType;
     this.esField = esField;
     this.criterionFieldRetriever = criterionFieldRetriever;
+    this.expressionValuedParameter = expressionValuedParameter;
     this.internalOnly = internalOnly;
     this.tagFormat = tagFormat;
     this.tagMaxLength = tagMaxLength;
@@ -270,6 +295,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("fieldDataType", criterionField.getFieldDataType().getExternalRepresentation());
     struct.put("esField", criterionField.getESField());
     struct.put("criterionFieldRetriever", criterionField.getCriterionFieldRetriever());
+    struct.put("expressionValuedParameter", criterionField.getExpressionValuedParameter());
     struct.put("internalOnly", criterionField.getInternalOnly());
     struct.put("tagFormat", criterionField.getTagFormat());
     struct.put("tagMaxLength", criterionField.getTagMaxLength());
@@ -301,6 +327,7 @@ public class CriterionField extends DeploymentManagedObject
     CriterionDataType fieldDataType = CriterionDataType.fromExternalRepresentation(valueStruct.getString("fieldDataType"));
     String esField = valueStruct.getString("esField");
     String criterionFieldRetriever = valueStruct.getString("criterionFieldRetriever");
+    boolean expressionValuedParameter = (schemaVersion >= 2) ? valueStruct.getBoolean("expressionValuedParameter") : false;
     boolean internalOnly = valueStruct.getBoolean("internalOnly");
     String tagFormat = valueStruct.getString("tagFormat");
     Integer tagMaxLength = valueStruct.getInt32("tagMaxLength");
@@ -309,7 +336,7 @@ public class CriterionField extends DeploymentManagedObject
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, esField, criterionFieldRetriever, internalOnly, tagFormat, tagMaxLength);
+    return new CriterionField(jsonRepresentation, fieldDataType, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, tagFormat, tagMaxLength);
   }
 
   /*****************************************
@@ -600,6 +627,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && Objects.equals(fieldDataType, criterionField.getFieldDataType());
         result = result && Objects.equals(esField, criterionField.getESField());
         result = result && Objects.equals(criterionFieldRetriever, criterionField.getCriterionFieldRetriever());
+        result = result && expressionValuedParameter == criterionField.getExpressionValuedParameter();
         result = result && internalOnly == criterionField.getInternalOnly();
         result = result && Objects.equals(tagFormat, criterionField.getTagFormat());
         result = result && Objects.equals(tagMaxLength, criterionField.getTagMaxLength());

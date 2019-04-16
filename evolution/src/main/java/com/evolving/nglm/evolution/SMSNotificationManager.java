@@ -477,7 +477,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      SMSMessage smsMessage = (SMSMessage) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.message");
+      SMSMessage smsMessage = (SMSMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
 
       /*****************************************
       *

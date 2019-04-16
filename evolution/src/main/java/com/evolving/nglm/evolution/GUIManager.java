@@ -4257,7 +4257,6 @@ public class GUIManager
                 result.add(JSONUtilities.encodeObject(availableValueJSON));
               }
           }
-        result = (result.size() > 0) ? result : null;
       }
     return result;
   }

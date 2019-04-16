@@ -1100,9 +1100,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
-      String providerID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.providerid");
-      String commodityID = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.pointid");
-      int amount = (Integer) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.amount");
+      String providerID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.providerid");
+      String commodityID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.pointid");
+      int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
       
       /*****************************************
       *

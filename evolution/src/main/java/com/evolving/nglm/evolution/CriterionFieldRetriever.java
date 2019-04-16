@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,31 +25,31 @@ public abstract class CriterionFieldRetriever
   //  system
   //
 
-  public static Object getEvaluationDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getEvaluationDate(); }
-  public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; } 
-  public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ThreadLocalRandom.current().nextInt(100); }
-  public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return null; }
+  public static Object getEvaluationDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getEvaluationDate(); }
+  public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; } 
+  public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return ThreadLocalRandom.current().nextInt(100); }
+  public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return null; }
 
   //
   //  journey
   //
 
-  public static Object getJourneyEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyState().getJourneyEntryDate(); }
-  public static Object getJourneyMetric(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyState().getJourneyMetrics().containsKey(fieldName) ? evaluationRequest.getJourneyState().getJourneyMetrics().get(fieldName) : new Integer(0); }
-  public static Object getJourneyParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyState().getJourneyParameters().get(fieldName); }
-  public static Object getJourneyNodeEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyState().getJourneyNodeEntryDate(); }
-  public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyNode().getNodeParameters().get(fieldName); }
-  public static Object getJourneyLinkParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getJourneyLink().getLinkParameters().get(fieldName); }
+  public static Object getJourneyEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyEntryDate(); }
+  public static Object getJourneyMetric(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyMetrics().containsKey(fieldName) ? evaluationRequest.getJourneyState().getJourneyMetrics().get(fieldName) : new Integer(0); }
+  public static Object getJourneyParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyState().getJourneyParameters().get(fieldName)); }
+  public static Object getJourneyNodeEntryDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getJourneyState().getJourneyNodeEntryDate(); }
+  public static Object getJourneyNodeParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyNode().getNodeParameters().get(fieldName)); }
+  public static Object getJourneyLinkParameter(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluateParameter(evaluationRequest, evaluationRequest.getJourneyLink().getLinkParameters().get(fieldName)); }
 
   //
   //  simple
   //
   
-  public static Object getEvolutionSubscriberStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return (evaluationRequest.getSubscriberProfile().getEvolutionSubscriberStatus() != null) ? evaluationRequest.getSubscriberProfile().getEvolutionSubscriberStatus().getExternalRepresentation() : null; }
-  public static Object getPreviousEvolutionSubscriberStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return (evaluationRequest.getSubscriberProfile().getPreviousEvolutionSubscriberStatus() != null) ? evaluationRequest.getSubscriberProfile().getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null; }
-  public static Object getEvolutionSubscriberStatusChangeDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getSubscriberProfile().getEvolutionSubscriberStatusChangeDate(); }
-  public static Object getUniversalControlGroup(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getSubscriberProfile().getUniversalControlGroup(); }
-  public static Object getLanguage(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return evaluationRequest.getSubscriberProfile().getLanguage() != null ? evaluationRequest.getSubscriberProfile().getLanguage() : Deployment.getBaseLanguage(); }
+  public static Object getEvolutionSubscriberStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return (evaluationRequest.getSubscriberProfile().getEvolutionSubscriberStatus() != null) ? evaluationRequest.getSubscriberProfile().getEvolutionSubscriberStatus().getExternalRepresentation() : null; }
+  public static Object getPreviousEvolutionSubscriberStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return (evaluationRequest.getSubscriberProfile().getPreviousEvolutionSubscriberStatus() != null) ? evaluationRequest.getSubscriberProfile().getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null; }
+  public static Object getEvolutionSubscriberStatusChangeDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getEvolutionSubscriberStatusChangeDate(); }
+  public static Object getUniversalControlGroup(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getUniversalControlGroup(); }
+  public static Object getLanguage(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getLanguage() != null ? evaluationRequest.getSubscriberProfile().getLanguage() : Deployment.getBaseLanguage(); }
 
   //
   //  subscriber group membership
@@ -142,5 +143,24 @@ public abstract class CriterionFieldRetriever
       return ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getJourneyStatus().getExternalRepresentation();
     else
       return null;
+  }
+
+  /*****************************************
+  *
+  *  evaluateParameter
+  *
+  *****************************************/
+
+  private static Object evaluateParameter(SubscriberEvaluationRequest evaluationRequest, Object parameterValue)
+  {
+    Object result = parameterValue;
+    if (parameterValue instanceof ParameterExpression)
+      {
+        ParameterExpression parameterExpression = (ParameterExpression) parameterValue;
+        Expression expression = parameterExpression.getExpression();
+        TimeUnit baseTimeUnit = parameterExpression.getBaseTimeUnit();
+        result = expression.evaluate(evaluationRequest, baseTimeUnit);
+      }
+    return result;
   }
 }
