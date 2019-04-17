@@ -59,13 +59,17 @@ public class ReportManager implements Watcher{
 	}
 	
 	public static String getTopDir() {
-		return Deployment.getReportManagerZookeeperDir();
+	    return Deployment.getReportManagerZookeeperDir();
+	}
+
+	public static String getLockDir() {
+	    return getTopDir() + File.separator + LOCK_SUBDIR;
 	}
 	
 	public ReportManager() throws Exception {
 		String topDir = getTopDir();
 		controlDir = getControlDir();
-		lockDir = topDir + File.separator + LOCK_SUBDIR;
+		lockDir = getLockDir();
 		log.debug("controlDir = "+controlDir+" , lockDir = "+lockDir);
 		reportsConfig = Deployment.getReportsConfiguration();
 		if (reportsConfig == null) {

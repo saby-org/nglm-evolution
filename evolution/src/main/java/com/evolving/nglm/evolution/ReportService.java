@@ -18,6 +18,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.Stat;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,6 +164,35 @@ public class ReportService extends GUIService
 
   private boolean isConnectionValid(ZooKeeper zookeeper) {
 	  return (zookeeper != null) && (zookeeper.getState() == States.CONNECTED);
+  }
+  
+  public boolean isReportRunning(String reportName) {
+    String znode = ReportManager.getLockDir() + File.separator + "launchReport-" + reportName + "-";
+    Stat stat = null;
+    // 
+    // return false if anything goes wrong
+    //
+    boolean result = false;
+    try
+      { 
+        if (getZKConnection()) {
+          stat = zk.exists(znode, null);
+          result = (stat != null);
+        }else {
+          log.info("There was a major issue connecting to zookeeper");
+        }
+        
+      } catch (KeeperException e)
+      {
+        e.printStackTrace();
+      } catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+    
+    return result;
+    
+    
   }
   
   private boolean getZKConnection()  {

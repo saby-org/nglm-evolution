@@ -37,3 +37,6 @@ guimanager:
     - type: bind
       source: <_NGLM_UPLOADED_>
       target: /app/uploaded
+    - type: bind
+      source: <_NGLM_REPORTS_>
+      target: /app/reports

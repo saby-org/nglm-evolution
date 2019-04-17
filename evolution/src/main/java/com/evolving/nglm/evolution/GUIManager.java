@@ -8,9 +8,14 @@ package com.evolving.nglm.evolution;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -190,6 +195,7 @@ public class GUIManager
     getReportList("getReportList"),
     putReport("putReport"),
     launchReport("launchReport"),
+    downloadReport("downloadReport"),
     getPresentationStrategyList("getPresentationStrategyList"),
     getPresentationStrategySummaryList("getPresentationStrategySummaryList"),
     getPresentationStrategy("getPresentationStrategy"),
@@ -365,7 +371,6 @@ public class GUIManager
   private UploadedFileService uploadFileService;
   
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
-  private static final String BOUNDARY_EQUALS = "boundary="; 
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
 
@@ -1016,165 +1021,166 @@ public class GUIManager
       {
         InetSocketAddress addr = new InetSocketAddress(apiRestPort);
         restServer = HttpServer.create(addr, 0);
-        restServer.createContext("/nglm-guimanager/getStaticConfiguration", new APIHandler(API.getStaticConfiguration));
-        restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APIHandler(API.getSupportedLanguages));
-        restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APIHandler(API.getSupportedCurrencies));
-        restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APIHandler(API.getSupportedTimeUnits));
-        restServer.createContext("/nglm-guimanager/getServiceTypes", new APIHandler(API.getServiceTypes));
-        restServer.createContext("/nglm-guimanager/getTouchPoints", new APIHandler(API.getTouchPoints));
-        restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APIHandler(API.getCallingChannelProperties));
-        restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APIHandler(API.getSupportedDataTypes));
-        restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APIHandler(API.getProfileCriterionFields));
-        restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APIHandler(API.getProfileCriterionFieldIDs));
-        restServer.createContext("/nglm-guimanager/getProfileCriterionField", new APIHandler(API.getProfileCriterionField));
-        restServer.createContext("/nglm-guimanager/getPresentationCriterionFields", new APIHandler(API.getPresentationCriterionFields));
-        restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APIHandler(API.getPresentationCriterionFieldIDs));
-        restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APIHandler(API.getPresentationCriterionField));
-        restServer.createContext("/nglm-guimanager/getJourneyCriterionFields", new APIHandler(API.getJourneyCriterionFields));
-        restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APIHandler(API.getJourneyCriterionFieldIDs));
-        restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APIHandler(API.getJourneyCriterionField));
-        restServer.createContext("/nglm-guimanager/getOfferCategories", new APIHandler(API.getOfferCategories));
-        restServer.createContext("/nglm-guimanager/getOfferTypes", new APIHandler(API.getOfferTypes));
-        restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APIHandler(API.getOfferOptimizationAlgorithms));
-        restServer.createContext("/nglm-guimanager/getNodeTypes", new APIHandler(API.getNodeTypes));
-        restServer.createContext("/nglm-guimanager/getJourneyToolbox", new APIHandler(API.getJourneyToolbox));
-        restServer.createContext("/nglm-guimanager/getJourneyList", new APIHandler(API.getJourneyList));
-        restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APIHandler(API.getJourneySummaryList));
-        restServer.createContext("/nglm-guimanager/getJourney", new APIHandler(API.getJourney));
-        restServer.createContext("/nglm-guimanager/putJourney", new APIHandler(API.putJourney));
-        restServer.createContext("/nglm-guimanager/removeJourney", new APIHandler(API.removeJourney));
-        restServer.createContext("/nglm-guimanager/startJourney", new APIHandler(API.startJourney));
-        restServer.createContext("/nglm-guimanager/stopJourney", new APIHandler(API.stopJourney));
-        restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APIHandler(API.getCampaignToolbox));
-        restServer.createContext("/nglm-guimanager/getCampaignList", new APIHandler(API.getCampaignList));
-        restServer.createContext("/nglm-guimanager/getCampaignSummaryList", new APIHandler(API.getCampaignSummaryList));
-        restServer.createContext("/nglm-guimanager/getCampaign", new APIHandler(API.getCampaign));
-        restServer.createContext("/nglm-guimanager/putCampaign", new APIHandler(API.putCampaign));
-        restServer.createContext("/nglm-guimanager/removeCampaign", new APIHandler(API.removeCampaign));
-        restServer.createContext("/nglm-guimanager/startCampaign", new APIHandler(API.startCampaign));
-        restServer.createContext("/nglm-guimanager/stopCampaign", new APIHandler(API.stopCampaign));
-        restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APIHandler(API.getSegmentationDimensionList));
-        restServer.createContext("/nglm-guimanager/getSegmentationDimensionSummaryList", new APIHandler(API.getSegmentationDimensionSummaryList));
-        restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APIHandler(API.getSegmentationDimension));
-        restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APIHandler(API.putSegmentationDimension));
-        restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APIHandler(API.removeSegmentationDimension));
-        restServer.createContext("/nglm-guimanager/countBySegmentationRanges", new APIHandler(API.countBySegmentationRanges));
-        restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APIHandler(API.evaluateProfileCriteria));
-        restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APIHandler(API.getUCGDimensionSummaryList));
-        restServer.createContext("/nglm-guimanager/getPointTypeList", new APIHandler(API.getPointTypeList));
-        restServer.createContext("/nglm-guimanager/getPointTypeSummaryList", new APIHandler(API.getPointTypeSummaryList));
-        restServer.createContext("/nglm-guimanager/getPointType", new APIHandler(API.getPointType));
-        restServer.createContext("/nglm-guimanager/putPointType", new APIHandler(API.putPointType));
-        restServer.createContext("/nglm-guimanager/removePointType", new APIHandler(API.removePointType));
-        restServer.createContext("/nglm-guimanager/getOfferList", new APIHandler(API.getOfferList));
-        restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APIHandler(API.getOfferSummaryList));
-        restServer.createContext("/nglm-guimanager/getOffer", new APIHandler(API.getOffer));
-        restServer.createContext("/nglm-guimanager/putOffer", new APIHandler(API.putOffer));
-        restServer.createContext("/nglm-guimanager/removeOffer", new APIHandler(API.removeOffer));
-        restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APIHandler(API.getPresentationStrategyList));
-        restServer.createContext("/nglm-guimanager/getReportGlobalConfiguration", new APIHandler(API.getReportGlobalConfiguration));
-        restServer.createContext("/nglm-guimanager/getReportList", new APIHandler(API.getReportList));
-        restServer.createContext("/nglm-guimanager/putReport", new APIHandler(API.putReport));
-        restServer.createContext("/nglm-guimanager/launchReport", new APIHandler(API.launchReport));
-        restServer.createContext("/nglm-guimanager/getPresentationStrategySummaryList", new APIHandler(API.getPresentationStrategySummaryList));
-        restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APIHandler(API.getPresentationStrategy));
-        restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APIHandler(API.putPresentationStrategy));
-        restServer.createContext("/nglm-guimanager/removePresentationStrategy", new APIHandler(API.removePresentationStrategy));
-        restServer.createContext("/nglm-guimanager/getScoringStrategyList", new APIHandler(API.getScoringStrategyList));
-        restServer.createContext("/nglm-guimanager/getScoringStrategySummaryList", new APIHandler(API.getScoringStrategySummaryList));
-        restServer.createContext("/nglm-guimanager/getScoringStrategy", new APIHandler(API.getScoringStrategy));
-        restServer.createContext("/nglm-guimanager/putScoringStrategy", new APIHandler(API.putScoringStrategy));
-        restServer.createContext("/nglm-guimanager/removeScoringStrategy", new APIHandler(API.removeScoringStrategy));
-        restServer.createContext("/nglm-guimanager/getCallingChannelList", new APIHandler(API.getCallingChannelList));
-        restServer.createContext("/nglm-guimanager/getCallingChannelSummaryList", new APIHandler(API.getCallingChannelSummaryList));
-        restServer.createContext("/nglm-guimanager/getCallingChannel", new APIHandler(API.getCallingChannel));
-        restServer.createContext("/nglm-guimanager/putCallingChannel", new APIHandler(API.putCallingChannel));
-        restServer.createContext("/nglm-guimanager/removeCallingChannel", new APIHandler(API.removeCallingChannel));
-        restServer.createContext("/nglm-guimanager/getSalesChannelList", new APIHandler(API.getSalesChannelList));
-        restServer.createContext("/nglm-guimanager/getSalesChannelSummaryList", new APIHandler(API.getSalesChannelSummaryList));
-        restServer.createContext("/nglm-guimanager/getSalesChannel", new APIHandler(API.getSalesChannel));
-        restServer.createContext("/nglm-guimanager/putSalesChannel", new APIHandler(API.putSalesChannel));
-        restServer.createContext("/nglm-guimanager/removeSalesChannel", new APIHandler(API.removeSalesChannel));
-        restServer.createContext("/nglm-guimanager/getSupplierList", new APIHandler(API.getSupplierList));
-        restServer.createContext("/nglm-guimanager/getSupplierSummaryList", new APIHandler(API.getSupplierSummaryList));
-        restServer.createContext("/nglm-guimanager/getSupplier", new APIHandler(API.getSupplier));
-        restServer.createContext("/nglm-guimanager/putSupplier", new APIHandler(API.putSupplier));
-        restServer.createContext("/nglm-guimanager/removeSupplier", new APIHandler(API.removeSupplier));
-        restServer.createContext("/nglm-guimanager/getProductList", new APIHandler(API.getProductList));
-        restServer.createContext("/nglm-guimanager/getProductSummaryList", new APIHandler(API.getProductSummaryList));
-        restServer.createContext("/nglm-guimanager/getProduct", new APIHandler(API.getProduct));
-        restServer.createContext("/nglm-guimanager/putProduct", new APIHandler(API.putProduct));
-        restServer.createContext("/nglm-guimanager/removeProduct", new APIHandler(API.removeProduct));
-        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicList", new APIHandler(API.getCatalogCharacteristicList));
-        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicSummaryList", new APIHandler(API.getCatalogCharacteristicSummaryList));
-        restServer.createContext("/nglm-guimanager/getCatalogCharacteristic", new APIHandler(API.getCatalogCharacteristic));
-        restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APIHandler(API.putCatalogCharacteristic));
-        restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APIHandler(API.removeCatalogCharacteristic));
-        restServer.createContext("/nglm-guimanager/getContactPolicyList", new APIHandler(API.getContactPolicyList));
-        restServer.createContext("/nglm-guimanager/getContactPolicySummaryList", new APIHandler(API.getContactPolicySummaryList));
-        restServer.createContext("/nglm-guimanager/getContactPolicy", new APIHandler(API.getContactPolicy));
-        restServer.createContext("/nglm-guimanager/putContactPolicy", new APIHandler(API.putContactPolicy));
-        restServer.createContext("/nglm-guimanager/removeContactPolicy", new APIHandler(API.removeContactPolicy));
-        restServer.createContext("/nglm-guimanager/getJourneyObjectiveList", new APIHandler(API.getJourneyObjectiveList));
-        restServer.createContext("/nglm-guimanager/getJourneyObjectiveSummaryList", new APIHandler(API.getJourneyObjectiveSummaryList));
-        restServer.createContext("/nglm-guimanager/getJourneyObjective", new APIHandler(API.getJourneyObjective));
-        restServer.createContext("/nglm-guimanager/putJourneyObjective", new APIHandler(API.putJourneyObjective));
-        restServer.createContext("/nglm-guimanager/removeJourneyObjective", new APIHandler(API.removeJourneyObjective));
-        restServer.createContext("/nglm-guimanager/getOfferObjectiveList", new APIHandler(API.getOfferObjectiveList));
-        restServer.createContext("/nglm-guimanager/getOfferObjectiveSummaryList", new APIHandler(API.getOfferObjectiveSummaryList));
-        restServer.createContext("/nglm-guimanager/getOfferObjective", new APIHandler(API.getOfferObjective));
-        restServer.createContext("/nglm-guimanager/putOfferObjective", new APIHandler(API.putOfferObjective));
-        restServer.createContext("/nglm-guimanager/removeOfferObjective", new APIHandler(API.removeOfferObjective));
-        restServer.createContext("/nglm-guimanager/getProductTypeList", new APIHandler(API.getProductTypeList));
-        restServer.createContext("/nglm-guimanager/getProductTypeSummaryList", new APIHandler(API.getProductTypeSummaryList));
-        restServer.createContext("/nglm-guimanager/getProductType", new APIHandler(API.getProductType));
-        restServer.createContext("/nglm-guimanager/putProductType", new APIHandler(API.putProductType));
-        restServer.createContext("/nglm-guimanager/removeProductType", new APIHandler(API.removeProductType));
-        restServer.createContext("/nglm-guimanager/getUCGRuleList", new APIHandler(API.getUCGRuleList));
-        restServer.createContext("/nglm-guimanager/getUCGRuleSummaryList",new APIHandler(API.getUCGRuleSummaryList));
-        restServer.createContext("/nglm-guimanager/getUCGRule", new APIHandler(API.getUCGRule));
-        restServer.createContext("/nglm-guimanager/putUCGRule", new APIHandler(API.putUCGRule));
-        restServer.createContext("/nglm-guimanager/removeUCGRule", new APIHandler(API.removeUCGRule));
-        restServer.createContext("/nglm-guimanager/getDeliverableList", new APIHandler(API.getDeliverableList));
-        restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APIHandler(API.getDeliverableSummaryList));
-        restServer.createContext("/nglm-guimanager/getDeliverable", new APIHandler(API.getDeliverable));
-        restServer.createContext("/nglm-guimanager/getTokenTypeList", new APIHandler(API.getTokenTypeList));
-        restServer.createContext("/nglm-guimanager/getTokenTypeSummaryList", new APIHandler(API.getTokenTypeSummaryList));
-        restServer.createContext("/nglm-guimanager/putTokenType", new APIHandler(API.putTokenType));
-        restServer.createContext("/nglm-guimanager/getTokenType", new APIHandler(API.getTokenType));
-        restServer.createContext("/nglm-guimanager/removeTokenType", new APIHandler(API.removeTokenType));
-        restServer.createContext("/nglm-guimanager/getMailTemplateList", new APIHandler(API.getMailTemplateList));
-        restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APIHandler(API.getMailTemplateSummaryList));
-        restServer.createContext("/nglm-guimanager/getMailTemplate", new APIHandler(API.getMailTemplate));
-        restServer.createContext("/nglm-guimanager/putMailTemplate", new APIHandler(API.putMailTemplate));
-        restServer.createContext("/nglm-guimanager/removeMailTemplate", new APIHandler(API.removeMailTemplate));
-        restServer.createContext("/nglm-guimanager/getSMSTemplateList", new APIHandler(API.getSMSTemplateList));
-        restServer.createContext("/nglm-guimanager/getSMSTemplateSummaryList", new APIHandler(API.getSMSTemplateSummaryList));
-        restServer.createContext("/nglm-guimanager/getSMSTemplate", new APIHandler(API.getSMSTemplate));
-        restServer.createContext("/nglm-guimanager/putSMSTemplate", new APIHandler(API.putSMSTemplate));
-        restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APIHandler(API.removeSMSTemplate));
-        restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APIHandler(API.getFulfillmentProviders));
-        restServer.createContext("/nglm-guimanager/getPaymentMeans", new APIHandler(API.getPaymentMeans));
-        restServer.createContext("/nglm-guimanager/getPaymentMeanList", new APIHandler(API.getPaymentMeanList));
-        restServer.createContext("/nglm-guimanager/getPaymentMeanSummaryList", new APIHandler(API.getPaymentMeanSummaryList));
-        restServer.createContext("/nglm-guimanager/getPaymentMean", new APIHandler(API.getPaymentMean));
-        restServer.createContext("/nglm-guimanager/putPaymentMean", new APIHandler(API.putPaymentMean));
-        restServer.createContext("/nglm-guimanager/removePaymentMean", new APIHandler(API.removePaymentMean));
-        restServer.createContext("/nglm-guimanager/getDashboardCounts", new APIHandler(API.getDashboardCounts));
-        restServer.createContext("/nglm-guimanager/getCustomer", new APIHandler(API.getCustomer));
-        restServer.createContext("/nglm-guimanager/getCustomerMetaData", new APIHandler(API.getCustomerMetaData));
-        restServer.createContext("/nglm-guimanager/getCustomerActivityByDateRange", new APIHandler(API.getCustomerActivityByDateRange));
-        restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
-        restServer.createContext("/nglm-guimanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
-        restServer.createContext("/nglm-guimanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
-        restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
-        restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
-        restServer.createContext("/nglm-guimanager/refreshUCG", new APIHandler(API.refreshUCG));
-        restServer.createContext("/nglm-guimanager/putUploadedFile", new APIFileHandler(API.putUploadedFile));
-        restServer.createContext("/nglm-guimanager/getUploadedFileList", new APIFileHandler(API.getUploadedFileList));
-        restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APIFileHandler(API.getUploadedFileSummaryList));
-        restServer.createContext("/nglm-guimanager/removeUploadedFile", new APIFileHandler(API.removeUploadedFile));
-        restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APIFileHandler(API.getCustomerAlternateIDs));
+        restServer.createContext("/nglm-guimanager/getStaticConfiguration", new APISimpleHandler(API.getStaticConfiguration));
+        restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APISimpleHandler(API.getSupportedLanguages));
+        restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APISimpleHandler(API.getSupportedCurrencies));
+        restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APISimpleHandler(API.getSupportedTimeUnits));
+        restServer.createContext("/nglm-guimanager/getServiceTypes", new APISimpleHandler(API.getServiceTypes));
+        restServer.createContext("/nglm-guimanager/getTouchPoints", new APISimpleHandler(API.getTouchPoints));
+        restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APISimpleHandler(API.getCallingChannelProperties));
+        restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APISimpleHandler(API.getSupportedDataTypes));
+        restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APISimpleHandler(API.getProfileCriterionFields));
+        restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APISimpleHandler(API.getProfileCriterionFieldIDs));
+        restServer.createContext("/nglm-guimanager/getProfileCriterionField", new APISimpleHandler(API.getProfileCriterionField));
+        restServer.createContext("/nglm-guimanager/getPresentationCriterionFields", new APISimpleHandler(API.getPresentationCriterionFields));
+        restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APISimpleHandler(API.getPresentationCriterionFieldIDs));
+        restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APISimpleHandler(API.getPresentationCriterionField));
+        restServer.createContext("/nglm-guimanager/getJourneyCriterionFields", new APISimpleHandler(API.getJourneyCriterionFields));
+        restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APISimpleHandler(API.getJourneyCriterionFieldIDs));
+        restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APISimpleHandler(API.getJourneyCriterionField));
+        restServer.createContext("/nglm-guimanager/getOfferCategories", new APISimpleHandler(API.getOfferCategories));
+        restServer.createContext("/nglm-guimanager/getOfferTypes", new APISimpleHandler(API.getOfferTypes));
+        restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APISimpleHandler(API.getOfferOptimizationAlgorithms));
+        restServer.createContext("/nglm-guimanager/getNodeTypes", new APISimpleHandler(API.getNodeTypes));
+        restServer.createContext("/nglm-guimanager/getJourneyToolbox", new APISimpleHandler(API.getJourneyToolbox));
+        restServer.createContext("/nglm-guimanager/getJourneyList", new APISimpleHandler(API.getJourneyList));
+        restServer.createContext("/nglm-guimanager/getJourneySummaryList", new APISimpleHandler(API.getJourneySummaryList));
+        restServer.createContext("/nglm-guimanager/getJourney", new APISimpleHandler(API.getJourney));
+        restServer.createContext("/nglm-guimanager/putJourney", new APISimpleHandler(API.putJourney));
+        restServer.createContext("/nglm-guimanager/removeJourney", new APISimpleHandler(API.removeJourney));
+        restServer.createContext("/nglm-guimanager/startJourney", new APISimpleHandler(API.startJourney));
+        restServer.createContext("/nglm-guimanager/stopJourney", new APISimpleHandler(API.stopJourney));
+        restServer.createContext("/nglm-guimanager/getCampaignToolbox", new APISimpleHandler(API.getCampaignToolbox));
+        restServer.createContext("/nglm-guimanager/getCampaignList", new APISimpleHandler(API.getCampaignList));
+        restServer.createContext("/nglm-guimanager/getCampaignSummaryList", new APISimpleHandler(API.getCampaignSummaryList));
+        restServer.createContext("/nglm-guimanager/getCampaign", new APISimpleHandler(API.getCampaign));
+        restServer.createContext("/nglm-guimanager/putCampaign", new APISimpleHandler(API.putCampaign));
+        restServer.createContext("/nglm-guimanager/removeCampaign", new APISimpleHandler(API.removeCampaign));
+        restServer.createContext("/nglm-guimanager/startCampaign", new APISimpleHandler(API.startCampaign));
+        restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
+        restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APISimpleHandler(API.getSegmentationDimensionList));
+        restServer.createContext("/nglm-guimanager/getSegmentationDimensionSummaryList", new APISimpleHandler(API.getSegmentationDimensionSummaryList));
+        restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APISimpleHandler(API.getSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APISimpleHandler(API.putSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APISimpleHandler(API.removeSegmentationDimension));
+        restServer.createContext("/nglm-guimanager/countBySegmentationRanges", new APISimpleHandler(API.countBySegmentationRanges));
+        restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
+        restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
+        restServer.createContext("/nglm-guimanager/getPointTypeList", new APISimpleHandler(API.getPointTypeList));
+        restServer.createContext("/nglm-guimanager/getPointTypeSummaryList", new APISimpleHandler(API.getPointTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/getPointType", new APISimpleHandler(API.getPointType));
+        restServer.createContext("/nglm-guimanager/putPointType", new APISimpleHandler(API.putPointType));
+        restServer.createContext("/nglm-guimanager/removePointType", new APISimpleHandler(API.removePointType));
+        restServer.createContext("/nglm-guimanager/getOfferList", new APISimpleHandler(API.getOfferList));
+        restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APISimpleHandler(API.getOfferSummaryList));
+        restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
+        restServer.createContext("/nglm-guimanager/putOffer", new APISimpleHandler(API.putOffer));
+        restServer.createContext("/nglm-guimanager/removeOffer", new APISimpleHandler(API.removeOffer));
+        restServer.createContext("/nglm-guimanager/getPresentationStrategyList", new APISimpleHandler(API.getPresentationStrategyList));
+        restServer.createContext("/nglm-guimanager/getReportGlobalConfiguration", new APISimpleHandler(API.getReportGlobalConfiguration));
+        restServer.createContext("/nglm-guimanager/getReportList", new APISimpleHandler(API.getReportList));
+        restServer.createContext("/nglm-guimanager/putReport", new APISimpleHandler(API.putReport));
+        restServer.createContext("/nglm-guimanager/launchReport", new APISimpleHandler(API.launchReport));
+        restServer.createContext("/nglm-guimanager/downloadReport", new APIComplexHandler(API.downloadReport));
+        restServer.createContext("/nglm-guimanager/getPresentationStrategySummaryList", new APISimpleHandler(API.getPresentationStrategySummaryList));
+        restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APISimpleHandler(API.getPresentationStrategy));
+        restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APISimpleHandler(API.putPresentationStrategy));
+        restServer.createContext("/nglm-guimanager/removePresentationStrategy", new APISimpleHandler(API.removePresentationStrategy));
+        restServer.createContext("/nglm-guimanager/getScoringStrategyList", new APISimpleHandler(API.getScoringStrategyList));
+        restServer.createContext("/nglm-guimanager/getScoringStrategySummaryList", new APISimpleHandler(API.getScoringStrategySummaryList));
+        restServer.createContext("/nglm-guimanager/getScoringStrategy", new APISimpleHandler(API.getScoringStrategy));
+        restServer.createContext("/nglm-guimanager/putScoringStrategy", new APISimpleHandler(API.putScoringStrategy));
+        restServer.createContext("/nglm-guimanager/removeScoringStrategy", new APISimpleHandler(API.removeScoringStrategy));
+        restServer.createContext("/nglm-guimanager/getCallingChannelList", new APISimpleHandler(API.getCallingChannelList));
+        restServer.createContext("/nglm-guimanager/getCallingChannelSummaryList", new APISimpleHandler(API.getCallingChannelSummaryList));
+        restServer.createContext("/nglm-guimanager/getCallingChannel", new APISimpleHandler(API.getCallingChannel));
+        restServer.createContext("/nglm-guimanager/putCallingChannel", new APISimpleHandler(API.putCallingChannel));
+        restServer.createContext("/nglm-guimanager/removeCallingChannel", new APISimpleHandler(API.removeCallingChannel));
+        restServer.createContext("/nglm-guimanager/getSalesChannelList", new APISimpleHandler(API.getSalesChannelList));
+        restServer.createContext("/nglm-guimanager/getSalesChannelSummaryList", new APISimpleHandler(API.getSalesChannelSummaryList));
+        restServer.createContext("/nglm-guimanager/getSalesChannel", new APISimpleHandler(API.getSalesChannel));
+        restServer.createContext("/nglm-guimanager/putSalesChannel", new APISimpleHandler(API.putSalesChannel));
+        restServer.createContext("/nglm-guimanager/removeSalesChannel", new APISimpleHandler(API.removeSalesChannel));
+        restServer.createContext("/nglm-guimanager/getSupplierList", new APISimpleHandler(API.getSupplierList));
+        restServer.createContext("/nglm-guimanager/getSupplierSummaryList", new APISimpleHandler(API.getSupplierSummaryList));
+        restServer.createContext("/nglm-guimanager/getSupplier", new APISimpleHandler(API.getSupplier));
+        restServer.createContext("/nglm-guimanager/putSupplier", new APISimpleHandler(API.putSupplier));
+        restServer.createContext("/nglm-guimanager/removeSupplier", new APISimpleHandler(API.removeSupplier));
+        restServer.createContext("/nglm-guimanager/getProductList", new APISimpleHandler(API.getProductList));
+        restServer.createContext("/nglm-guimanager/getProductSummaryList", new APISimpleHandler(API.getProductSummaryList));
+        restServer.createContext("/nglm-guimanager/getProduct", new APISimpleHandler(API.getProduct));
+        restServer.createContext("/nglm-guimanager/putProduct", new APISimpleHandler(API.putProduct));
+        restServer.createContext("/nglm-guimanager/removeProduct", new APISimpleHandler(API.removeProduct));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicList", new APISimpleHandler(API.getCatalogCharacteristicList));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicSummaryList", new APISimpleHandler(API.getCatalogCharacteristicSummaryList));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristic", new APISimpleHandler(API.getCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/putCatalogCharacteristic", new APISimpleHandler(API.putCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/removeCatalogCharacteristic", new APISimpleHandler(API.removeCatalogCharacteristic));
+        restServer.createContext("/nglm-guimanager/getContactPolicyList", new APISimpleHandler(API.getContactPolicyList));
+        restServer.createContext("/nglm-guimanager/getContactPolicySummaryList", new APISimpleHandler(API.getContactPolicySummaryList));
+        restServer.createContext("/nglm-guimanager/getContactPolicy", new APISimpleHandler(API.getContactPolicy));
+        restServer.createContext("/nglm-guimanager/putContactPolicy", new APISimpleHandler(API.putContactPolicy));
+        restServer.createContext("/nglm-guimanager/removeContactPolicy", new APISimpleHandler(API.removeContactPolicy));
+        restServer.createContext("/nglm-guimanager/getJourneyObjectiveList", new APISimpleHandler(API.getJourneyObjectiveList));
+        restServer.createContext("/nglm-guimanager/getJourneyObjectiveSummaryList", new APISimpleHandler(API.getJourneyObjectiveSummaryList));
+        restServer.createContext("/nglm-guimanager/getJourneyObjective", new APISimpleHandler(API.getJourneyObjective));
+        restServer.createContext("/nglm-guimanager/putJourneyObjective", new APISimpleHandler(API.putJourneyObjective));
+        restServer.createContext("/nglm-guimanager/removeJourneyObjective", new APISimpleHandler(API.removeJourneyObjective));
+        restServer.createContext("/nglm-guimanager/getOfferObjectiveList", new APISimpleHandler(API.getOfferObjectiveList));
+        restServer.createContext("/nglm-guimanager/getOfferObjectiveSummaryList", new APISimpleHandler(API.getOfferObjectiveSummaryList));
+        restServer.createContext("/nglm-guimanager/getOfferObjective", new APISimpleHandler(API.getOfferObjective));
+        restServer.createContext("/nglm-guimanager/putOfferObjective", new APISimpleHandler(API.putOfferObjective));
+        restServer.createContext("/nglm-guimanager/removeOfferObjective", new APISimpleHandler(API.removeOfferObjective));
+        restServer.createContext("/nglm-guimanager/getProductTypeList", new APISimpleHandler(API.getProductTypeList));
+        restServer.createContext("/nglm-guimanager/getProductTypeSummaryList", new APISimpleHandler(API.getProductTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/getProductType", new APISimpleHandler(API.getProductType));
+        restServer.createContext("/nglm-guimanager/putProductType", new APISimpleHandler(API.putProductType));
+        restServer.createContext("/nglm-guimanager/removeProductType", new APISimpleHandler(API.removeProductType));
+        restServer.createContext("/nglm-guimanager/getUCGRuleList", new APISimpleHandler(API.getUCGRuleList));
+        restServer.createContext("/nglm-guimanager/getUCGRuleSummaryList",new APISimpleHandler(API.getUCGRuleSummaryList));
+        restServer.createContext("/nglm-guimanager/getUCGRule", new APISimpleHandler(API.getUCGRule));
+        restServer.createContext("/nglm-guimanager/putUCGRule", new APISimpleHandler(API.putUCGRule));
+        restServer.createContext("/nglm-guimanager/removeUCGRule", new APISimpleHandler(API.removeUCGRule));
+        restServer.createContext("/nglm-guimanager/getDeliverableList", new APISimpleHandler(API.getDeliverableList));
+        restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APISimpleHandler(API.getDeliverableSummaryList));
+        restServer.createContext("/nglm-guimanager/getDeliverable", new APISimpleHandler(API.getDeliverable));
+        restServer.createContext("/nglm-guimanager/getTokenTypeList", new APISimpleHandler(API.getTokenTypeList));
+        restServer.createContext("/nglm-guimanager/getTokenTypeSummaryList", new APISimpleHandler(API.getTokenTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/putTokenType", new APISimpleHandler(API.putTokenType));
+        restServer.createContext("/nglm-guimanager/getTokenType", new APISimpleHandler(API.getTokenType));
+        restServer.createContext("/nglm-guimanager/removeTokenType", new APISimpleHandler(API.removeTokenType));
+        restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
+        restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APISimpleHandler(API.getMailTemplateSummaryList));
+        restServer.createContext("/nglm-guimanager/getMailTemplate", new APISimpleHandler(API.getMailTemplate));
+        restServer.createContext("/nglm-guimanager/putMailTemplate", new APISimpleHandler(API.putMailTemplate));
+        restServer.createContext("/nglm-guimanager/removeMailTemplate", new APISimpleHandler(API.removeMailTemplate));
+        restServer.createContext("/nglm-guimanager/getSMSTemplateList", new APISimpleHandler(API.getSMSTemplateList));
+        restServer.createContext("/nglm-guimanager/getSMSTemplateSummaryList", new APISimpleHandler(API.getSMSTemplateSummaryList));
+        restServer.createContext("/nglm-guimanager/getSMSTemplate", new APISimpleHandler(API.getSMSTemplate));
+        restServer.createContext("/nglm-guimanager/putSMSTemplate", new APISimpleHandler(API.putSMSTemplate));
+        restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APISimpleHandler(API.removeSMSTemplate));
+        restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APISimpleHandler(API.getFulfillmentProviders));
+        restServer.createContext("/nglm-guimanager/getPaymentMeans", new APISimpleHandler(API.getPaymentMeans));
+        restServer.createContext("/nglm-guimanager/getPaymentMeanList", new APISimpleHandler(API.getPaymentMeanList));
+        restServer.createContext("/nglm-guimanager/getPaymentMeanSummaryList", new APISimpleHandler(API.getPaymentMeanSummaryList));
+        restServer.createContext("/nglm-guimanager/getPaymentMean", new APISimpleHandler(API.getPaymentMean));
+        restServer.createContext("/nglm-guimanager/putPaymentMean", new APISimpleHandler(API.putPaymentMean));
+        restServer.createContext("/nglm-guimanager/removePaymentMean", new APISimpleHandler(API.removePaymentMean));
+        restServer.createContext("/nglm-guimanager/getDashboardCounts", new APISimpleHandler(API.getDashboardCounts));
+        restServer.createContext("/nglm-guimanager/getCustomer", new APISimpleHandler(API.getCustomer));
+        restServer.createContext("/nglm-guimanager/getCustomerMetaData", new APISimpleHandler(API.getCustomerMetaData));
+        restServer.createContext("/nglm-guimanager/getCustomerActivityByDateRange", new APISimpleHandler(API.getCustomerActivityByDateRange));
+        restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
+        restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
+        restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
+        restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
+        restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
+        restServer.createContext("/nglm-guimanager/refreshUCG", new APISimpleHandler(API.refreshUCG));
+        restServer.createContext("/nglm-guimanager/getUploadedFileList", new APISimpleHandler(API.getUploadedFileList));
+        restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APISimpleHandler(API.getUploadedFileSummaryList));
+        restServer.createContext("/nglm-guimanager/removeUploadedFile", new APISimpleHandler(API.removeUploadedFile));
+        restServer.createContext("/nglm-guimanager/putUploadedFile", new APIComplexHandler(API.putUploadedFile));
+        restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APISimpleHandler(API.getCustomerAlternateIDs));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1358,7 +1364,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private synchronized void handleAPI(API api, HttpExchange exchange) throws IOException
+  private synchronized void handleSimpleHandler(API api, HttpExchange exchange) throws IOException
   {
     try
       {
@@ -2059,6 +2065,22 @@ public class GUIManager
                 case refreshUCG:
                   jsonResponse = processRefreshUCG(userID, jsonRoot);
                   break;
+                  
+                case getUploadedFileList:
+                  jsonResponse = processGetFilesList(userID, jsonRoot, true);
+                  break;
+
+                case getUploadedFileSummaryList:
+                  jsonResponse = processGetFilesList(userID, jsonRoot, false);
+                  break;
+
+                case removeUploadedFile:
+                  jsonResponse = processRemoveUploadedFile(userID, jsonRoot);
+                  break;
+                  
+                case getCustomerAlternateIDs:
+                  jsonResponse = processGetCustomerAlternateIDs(userID, jsonRoot);
+                  break;
               }
           }
         else
@@ -2070,17 +2092,16 @@ public class GUIManager
         //
         //  validate
         //
-
         if (jsonResponse == null)
           {
             throw new ServerException("no handler for " + api);
           }
 
         /*****************************************
-        *
-        *  send response
-        *
-        *****************************************/
+         *
+         *  send response
+         *
+         *****************************************/
 
         //
         //  standard response fields
@@ -2137,7 +2158,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private synchronized void handleFileAPI(API api, HttpExchange exchange) throws IOException
+  private synchronized void handleComplexAPI(API api, HttpExchange exchange) throws IOException
   {
     try
     {
@@ -2220,30 +2241,22 @@ public class GUIManager
        *
        *****************************************/
 
-      JSONObject jsonResponse = null;
-      JSONObject logFile = null;
+     //
+     //  standard response fields
+     //
+     JSONObject jsonResponse = new JSONObject();
+     jsonResponse.put("apiVersion", RESTAPIVersion);
+     jsonResponse.put("licenseCheck", licenseAlarm.getJSONRepresentation());
+      
       if (licenseState.isValid() && allowAccess)
         { 
           switch (api)
           {
           case putUploadedFile:
-            jsonResponse = processPutFile(exchange);
+            processPutFile(jsonResponse, exchange);
             break;
-
-          case getUploadedFileList:
-            jsonResponse = processGetFilesList(userID, jsonRoot, true);
-            break;
-
-          case getUploadedFileSummaryList:
-            jsonResponse = processGetFilesList(userID, jsonRoot, false);
-            break;
-
-          case removeUploadedFile:
-            jsonResponse = processRemoveUploadedFile(userID, jsonRoot);
-            break;
-            
-          case getCustomerAlternateIDs:
-            jsonResponse = processGetCustomerAlternateIDs(userID, jsonRoot);
+          case downloadReport:
+            processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
             break;
           }
         }
@@ -2257,35 +2270,6 @@ public class GUIManager
           writer.close();
           exchange.close();
         }
-
-      /*****************************************
-       *
-       *  send response
-       *
-       *****************************************/
-
-      //
-      //  standard response fields
-      //
-
-      jsonResponse.put("apiVersion", RESTAPIVersion);
-      jsonResponse.put("licenseCheck", licenseAlarm.getJSONRepresentation());
-
-      //
-      //  log
-      //
-
-      log.debug("API (raw response): {}", jsonResponse.toString());
-
-      //
-      //  send
-      //
-
-      exchange.sendResponseHeaders(200, 0);
-      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-      writer.write(jsonResponse.toString());
-      writer.close();
-      exchange.close();
 
     }    catch (org.json.simple.parser.ParseException | IOException | RuntimeException e )
     {
@@ -2313,7 +2297,7 @@ public class GUIManager
     }
   }
   
-  private JSONObject processPutFile(HttpExchange exchange){
+  private void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException{
 
     /****************************************
      *
@@ -2321,11 +2305,10 @@ public class GUIManager
      *
      ****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    JSONObject jsonResponse = null;
     JSONObject jsonRoot = null;
     String fileID = null;
     String userID = null;
+    String responseText = null;
 
     /****************************************
     *
@@ -2335,16 +2318,16 @@ public class GUIManager
     
     final String contentType = exchange.getRequestHeaders().getFirst("Content-Type"); 
     if(contentType == null) { 
-      return responseError("Content-Type is null");    
+      responseText = "Content-Type is null";    
     } 
     
     if (!contentType.startsWith(MULTIPART_FORM_DATA)) { 
-      return responseError("Message is not multipart/form-data");
+      responseText = "Message is not multipart/form-data";
     } 
  
     String contentLengthString = exchange.getRequestHeaders().getFirst("Content-Length"); 
     if(contentLengthString == null) { 
-      return responseError("Content of message is null");  
+      responseText = "Content of message is null";  
     } 
 
     /****************************************
@@ -2377,113 +2360,127 @@ public class GUIManager
         }}); 
 
       if(!fileItemIterator.hasNext()) { 
-        return responseError("Body is empty");
+        responseText = "Body is empty";
       }
 
       //
       // here we will extract the meta data of the request and the file
       //
       
-      boolean uploadFile = false;
-      for(;fileItemIterator.hasNext();) {
-        FileItemStream fis = fileItemIterator.next();
-        if(fis.getFieldName().equals(FILE_UPLOAD_META_DATA)) {
-          InputStream streams = fis.openStream();
-          String jsonAsString = Streams.asString(streams, "UTF-8");
-          jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
-          userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
-          if(!jsonRoot.containsKey("id")) {
-            fileID = uploadFileService.generateFileID();
-          }else {
-            fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+      if(responseText == null) {
+        boolean uploadFile = false;
+        for(;fileItemIterator.hasNext();) {
+          FileItemStream fis = fileItemIterator.next();
+          if(fis.getFieldName().equals(FILE_UPLOAD_META_DATA)) {
+            InputStream streams = fis.openStream();
+            String jsonAsString = Streams.asString(streams, "UTF-8");
+            jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+            userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+            if(!jsonRoot.containsKey("id")) {
+              fileID = uploadFileService.generateFileID();
+            }else {
+              fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+            }
+            jsonRoot.put("id", fileID);
+            uploadFile = true;
           }
-          jsonRoot.put("id", fileID);
-          uploadFile = true;
-        }
-        if(fis.getFieldName().equals(FILE_REQUEST) && uploadFile){
-          
-          //
-          // converted the meta data and now attempting to save the file locally
-          //
-          
-          long epoch = epochServer.getKey();
+          if(fis.getFieldName().equals(FILE_REQUEST) && uploadFile){
 
-          /*****************************************
-           *
-           *  existing UploadedFile
-           *
-           *****************************************/
-          String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
-          GUIManagedObject existingFileUpload = uploadFileService.getStoredUploadedFile(fileID);
+            //
+            // converted the meta data and now attempting to save the file locally
+            //
 
-          try
-          {
-            /****************************************
-             *
-             *  instantiate new UploadedFile
-             *
-             ****************************************/
-
-            UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
+            long epoch = epochServer.getKey();
 
             /*****************************************
              *
-             *  store UploadedFile
+             *  existing UploadedFile
              *
              *****************************************/
+            String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
+            GUIManagedObject existingFileUpload = uploadFileService.getStoredUploadedFile(fileID);
 
-            uploadFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
-          }catch (JSONUtilitiesException|GUIManagerException e)
-          {
-            //
-            //  incompleteObject
-            //
+            try
+            {
+              /****************************************
+               *
+               *  instantiate new UploadedFile
+               *
+               ****************************************/
 
-            IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+              UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
 
-            //
-            //  store
-            //
+              /*****************************************
+               *
+               *  store UploadedFile
+               *
+               *****************************************/
 
-            uploadFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
+              uploadFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+              
+              //
+              // file has been added successfully, add fileID to response
+              //
+              
+              jsonResponse.put("fileID", fileID);
+            }catch (JSONUtilitiesException|GUIManagerException e)
+            {
+              //
+              //  incompleteObject
+              //
 
-            //
-            //  log
-            //
+              IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
 
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+              //
+              //  store
+              //
 
-            //
-            //  response
-            //
+              uploadFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
 
-            response.put("id", incompleteObject.getGUIManagedObjectID());
-            response.put("responseCode", "fileNotValid");
-            response.put("responseMessage", e.getMessage());
-            response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-            return JSONUtilities.encodeObject(response);
+              //
+              //  log
+              //
+
+              StringWriter stackTraceWriter = new StringWriter();
+              e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+              log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+              //
+              //  response
+              //
+
+              jsonResponse.put("id", incompleteObject.getGUIManagedObjectID());
+              jsonResponse.put("responseCode", "fileNotValid");
+              jsonResponse.put("responseMessage", e.getMessage());
+              jsonResponse.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+            }
           }
         }
+      }else {
+        jsonResponse.put("responseCode", "systemError");
+        jsonResponse.put("responseMessage", responseText);
       }
-
-      //
-      // file has been added successfully, return fileID
-      //
       
-      response.put("fileID", fileID);
-      jsonResponse = JSONUtilities.encodeObject(response);
       log.debug("API (raw response): {}", jsonResponse.toString());
 
+      exchange.sendResponseHeaders(200, 0);
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+      writer.write(jsonResponse.toString());
+      writer.close();
+      exchange.close();
+      
     } catch (Exception e) { 
       StringWriter stackTraceWriter = new StringWriter();
       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.error("Failed to write file REST api: {}", stackTraceWriter.toString());
-      jsonResponse = responseError("System error");
+      log.error("Failed to write file REST api: {}", stackTraceWriter.toString());   
+      jsonResponse.put("responseCode", "systemError");
+      jsonResponse.put("responseMessage", e.getMessage());
+      exchange.sendResponseHeaders(200, 0);
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+      writer.write(jsonResponse.toString());
+      writer.close();
+      exchange.close();
     } 
-
-    return jsonResponse;
   }
   
   private JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails){
@@ -2520,14 +2517,6 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("uploadedFiles", JSONUtilities.encodeObject(responseResult));
     return JSONUtilities.encodeObject(response);
-  }
-
-  private JSONObject responseError(String responseText) {
-      HashMap<String,Object> response = new HashMap<String,Object>();
-      response.put("responseCode", "systemError");
-      response.put("responseMessage", responseText);
-      JSONObject jsonResponse = JSONUtilities.encodeObject(response);
-      return jsonResponse;
   }
   
   /*****************************************
@@ -2567,7 +2556,7 @@ public class GUIManager
   
   /*****************************************
   *
-  *  removeUploadedFile
+  *  processRemoveUploadedFile
   *
   *****************************************/
   
@@ -6730,7 +6719,9 @@ public class GUIManager
     for (GUIManagedObject report : reportService.getStoredReports())
       {
         log.trace("In processGetReportList, adding : "+report);
-        reports.add(reportService.generateResponseJSON(report, true, now));
+        JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
+        reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName()));
+        reports.add(reportResponse);
       }
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
@@ -6763,9 +6754,13 @@ public class GUIManager
           {
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
             log.trace("Decoded JSON and got "+report);
-            responseCode = "ok";
             String reportName = report.getName();
-            reportService.launchReport(reportName);
+            if(!reportService.isReportRunning(reportName)) {
+              reportService.launchReport(reportName);
+              responseCode = "ok";
+            }else {
+              responseCode = "reportIsAlreadyRunning";
+            }
           }
         catch (GUIManagerException e)
           {
@@ -6775,6 +6770,103 @@ public class GUIManager
       }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processDownloadReport
+  *
+  *****************************************/
+
+  private void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  {
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    GUIManagedObject report1 = reportService.getStoredReport(reportID);
+    log.trace("Looking for "+reportID+" and got "+report1);
+    String responseCode = null;
+    
+    if (report1 == null)
+      {
+        responseCode = "reportNotFound";
+      }
+    else
+      {
+        try
+          {
+            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+            String reportName = report.getName();
+            
+            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
+            String fileExtension = Deployment.getReportManagerFileExtension();
+
+            File folder = new File(outputPath);
+            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension;
+            
+            File[] listOfFiles = folder.listFiles(new FileFilter(){
+              @Override
+              public boolean accept(File f) {
+                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+              }});
+
+            File reportFile = null;
+
+            long lastMod = Long.MIN_VALUE;
+            if(listOfFiles != null && listOfFiles.length != 0) {
+              for (int i = 0; i < listOfFiles.length; i++) {
+                if (listOfFiles[i].isFile()) {
+                  if(listOfFiles[i].lastModified() > lastMod) {
+                    reportFile = listOfFiles[i];
+                    lastMod = reportFile.lastModified();
+                  }
+                }
+              }
+            }else {
+              responseCode = "Cant find report with that name";
+            }
+
+            if(reportFile != null && reportFile.length() != 0) {
+              try {
+                FileInputStream fis = new FileInputStream(reportFile);
+                exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                exchange.sendResponseHeaders(200, reportFile.length());
+                OutputStream os = exchange.getResponseBody();
+                int c;
+                while ((c = fis.read()) != -1) {
+                  os.write(c);
+                }
+                fis.close();
+                os.flush();
+                os.close();
+              } catch (Exception excp) {
+                StringWriter stackTraceWriter = new StringWriter();
+                excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+              }
+            }else {
+              responseCode = "Report is empty";
+            }
+          }
+        catch (GUIManagerException e)
+          {
+            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+            responseCode = "internalError";
+          }
+      }
+    if(responseCode != null) {
+      try {
+        jsonResponse.put("responseCode", responseCode);
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }catch(Exception e) {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+      }
+    }
   }
 
   /*****************************************
@@ -13706,11 +13798,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  class APIHandler
+  *  class APISimpleHandler
   *
   *****************************************/
 
-  private class APIHandler implements HttpHandler
+  private class APISimpleHandler implements HttpHandler
   {
     /*****************************************
     *
@@ -13726,7 +13818,7 @@ public class GUIManager
     *
     *****************************************/
 
-    private APIHandler(API api)
+    private APISimpleHandler(API api)
     {
       this.api = api;
     }
@@ -13739,11 +13831,17 @@ public class GUIManager
 
     public void handle(HttpExchange exchange) throws IOException
     {
-      handleAPI(api, exchange);
+      handleSimpleHandler(api, exchange);
     }
   }
   
-  private class APIFileHandler implements HttpHandler
+  /*****************************************
+  *
+  *  class APIComplexHandler
+  *
+  *****************************************/
+  
+  private class APIComplexHandler implements HttpHandler
   {
     /*****************************************
     *
@@ -13759,7 +13857,7 @@ public class GUIManager
     *
     *****************************************/
 
-    private APIFileHandler(API api)
+    private APIComplexHandler(API api)
     {
       this.api = api;
     }
@@ -13772,7 +13870,7 @@ public class GUIManager
 
     public void handle(HttpExchange exchange) throws IOException
     {
-      handleFileAPI(api, exchange);
+      handleComplexAPI(api, exchange);
     }
   }
   
