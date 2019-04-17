@@ -118,13 +118,15 @@ public class Journey extends GUIManagedObject
 
   public enum TargetingType
   {
-    Criteria("criteria"),
-    Event("event"),
-    Manual("manual"),
-    Unknown("(unknown)");
+    Criteria("criteria", "Criteria"),
+    Event("event", "Event"),
+    Manual("manual", "Manual"),
+    Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
-    private TargetingType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private String display;
+    private TargetingType(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
     public String getExternalRepresentation() { return externalRepresentation; }
+    public String getDisplay() { return display; }
     public static TargetingType fromExternalRepresentation(String externalRepresentation) { for (TargetingType enumeratedValue : TargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 

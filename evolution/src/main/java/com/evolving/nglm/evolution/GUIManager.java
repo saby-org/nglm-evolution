@@ -110,6 +110,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -144,6 +145,8 @@ public class GUIManager
     getTouchPoints("getTouchPoints"),
     getCallingChannelProperties("getCallingChannelProperties"),
     getSupportedDataTypes("getSupportedDataTypes"),
+    getSupportedEvents("getSupportedEvents"),
+    getSupportedTargetingTypes("getSupportedTargetingTypes"),
     getProfileCriterionFields("getProfileCriterionFields"),
     getProfileCriterionFieldIDs("getProfileCriterionFieldIDs"),
     getProfileCriterionField("getProfileCriterionField"),
@@ -1029,6 +1032,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTouchPoints", new APISimpleHandler(API.getTouchPoints));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APISimpleHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APISimpleHandler(API.getSupportedDataTypes));
+        restServer.createContext("/nglm-guimanager/getSupportedEvents", new APISimpleHandler(API.getSupportedEvents));
+        restServer.createContext("/nglm-guimanager/getSupportedTargetingTypes", new APISimpleHandler(API.getSupportedTargetingTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APISimpleHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APISimpleHandler(API.getProfileCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getProfileCriterionField", new APISimpleHandler(API.getProfileCriterionField));
@@ -1480,6 +1485,14 @@ public class GUIManager
 
                 case getSupportedDataTypes:
                   jsonResponse = processGetSupportedDataTypes(userID, jsonRoot);
+                  break;
+
+                case getSupportedEvents:
+                  jsonResponse = processGetSupportedEvents(userID, jsonRoot);
+                  break;
+
+                case getSupportedTargetingTypes:
+                  jsonResponse = processGetSupportedTargetingTypes(userID, jsonRoot);
                   break;
 
                 case getProfileCriterionFields:
@@ -3084,6 +3097,69 @@ public class GUIManager
 
   /*****************************************
   *
+  *  getSupportedEvents
+  *
+  *****************************************/
+
+  private JSONObject processGetSupportedEvents(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve events
+    *
+    *****************************************/
+
+    List<JSONObject> events = evaluateEnumeratedValues("eventNames", SystemTime.getCurrentTime(), true);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("events", JSONUtilities.encodeArray(events));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getSupportedTargetingTypes
+  *
+  *****************************************/
+
+  private JSONObject processGetSupportedTargetingTypes(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve events
+    *
+    *****************************************/
+
+    List<JSONObject> targetingTypes = new ArrayList<JSONObject>();
+    for (TargetingType targetingType : TargetingType.values())
+      {
+        JSONObject json = new JSONObject();
+        json.put("id", targetingType.getExternalRepresentation());
+        json.put("display", targetingType.getDisplay());
+        targetingTypes.add(json);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("targetingTypes", JSONUtilities.encodeArray(targetingTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  getProfileCriterionFields
   *
   *****************************************/
@@ -4022,7 +4098,7 @@ public class GUIManager
   *
   ****************************************/
 
-  private List<JSONObject> evaluateComparableFields(String criterionFieldID, JSONObject criterionFieldJSON, List<CriterionField> allFields, boolean singleton)
+  private List<JSONObject> evaluateComparableFields(String criterionFieldID, JSONObject criterionFieldJSON, Collection<CriterionField> allFields, boolean singleton)
   {
     //
     //  all fields
@@ -4083,7 +4159,19 @@ public class GUIManager
     //
 
     List<String> includedComparableFieldIDs = requestedIncludedComparableFieldIDs != null ? requestedIncludedComparableFieldIDs : new ArrayList<String>(comparableFields.keySet());
-    Set<String> excludedComparableFieldIDs = requestedExcludedComparableFieldIDs != null ? new LinkedHashSet<String>(requestedExcludedComparableFieldIDs) : Collections.<String>emptySet();
+    Set<String> excludedComparableFieldIDs = requestedExcludedComparableFieldIDs != null ? new LinkedHashSet<String>(requestedExcludedComparableFieldIDs) : new HashSet<String>();
+
+    //
+    //  always exclude internal-only fields
+    //
+
+    for (CriterionField criterionField : comparableFields.values())
+      {
+        if (criterionField.getInternalOnly())
+          {
+            excludedComparableFieldIDs.add(criterionField.getID());
+          }
+      }
 
     //
     //  evaluate
@@ -4135,9 +4223,52 @@ public class GUIManager
         JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
         for (int i=0; i<parameters.size(); i++)
           {
+            //
+            //  clone (so we can modify the result)
+            //
+
             JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+            //
+            //  availableValues
+            //
+            
             List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
             parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
+
+            //
+            //  expressionFields
+            //
+
+            CriterionField parameter = nodeType.getParameters().get(JSONUtilities.decodeString(parameterJSON, "id", true));
+            if (parameter != null && parameter.getExpressionValuedParameter())
+              {
+                //
+                //  default list of fields for parameter data type
+                //
+
+                CriterionContext criterionContext = new CriterionContext(Collections.<CriterionField,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap(), nodeType, (EvolutionEngineEventDeclaration) null, false);
+                List<CriterionField> defaultFields = new ArrayList<CriterionField>();
+                for (CriterionField criterionField : criterionContext.getCriterionFields().values())
+                  {
+                    if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
+                      {
+                        defaultFields.add(criterionField);
+                      }
+                  }
+                
+                //
+                //  evaluate comparable fields
+                //
+
+                List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
+                parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
+              }
+
+            //
+            //  result
+            //
+
             resolvedParameters.add(parameterJSON);
           }
         resolvedNodeTypeJSON.put("parameters", JSONUtilities.encodeArray(resolvedParameters));
