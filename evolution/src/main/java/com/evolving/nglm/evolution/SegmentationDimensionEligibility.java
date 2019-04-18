@@ -262,8 +262,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getSegmentationDimensionID(), existingSegmentationDimension.getSegmentationDimensionID());
         epochChanged = epochChanged || ! Objects.equals(getSegmentationDimensionName(), existingSegmentationDimension.getSegmentationDimensionName());
-        epochChanged = epochChanged || ! Objects.equals(getDescription(), existingSegmentationDimension.getDescription());
-        epochChanged = epochChanged || ! Objects.equals(getDisplay(), existingSegmentationDimension.getDisplay());
         epochChanged = epochChanged || ! Objects.equals(getTargetingType(), existingSegmentationDimension.getTargetingType());
         epochChanged = epochChanged || ! Objects.equals(segments, existingSegmentationDimension.getSegments());
         return epochChanged;

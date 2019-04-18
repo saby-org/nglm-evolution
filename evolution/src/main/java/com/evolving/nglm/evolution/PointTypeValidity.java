@@ -27,20 +27,6 @@ public class PointTypeValidity
   *****************************************/
   
   //
-  //  ValidityType
-  //
-
-  public static enum ValidityType{
-    FIXED("fixed"),
-    VARIABLE("variable"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private ValidityType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static ValidityType fromExternalRepresentation(String externalRepresentation) { for (ValidityType enumeratedValue : ValidityType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-  
-  //
   //  TimeUnit
   //
 
@@ -61,20 +47,6 @@ public class PointTypeValidity
     public static PeriodType fromExternalRepresentation(String externalRepresentation) { for (PeriodType enumeratedValue : PeriodType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   
-  //
-  //  PeriodRoundUp
-  //
-  
-  public static enum PeriodRoundUp {
-    BEGINNING_OF_CURRENT_PERIOD("begining of current period"),
-    BEGINNING_OF_NEXT_PERIOD("begining of next period"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private PeriodRoundUp(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static PeriodRoundUp fromExternalRepresentation(String externalRepresentation) { for (PeriodRoundUp enumeratedValue : PeriodRoundUp.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
   /*****************************************
   *
   *  schema
@@ -95,10 +67,9 @@ public class PointTypeValidity
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("point_type_validity");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("type", Schema.STRING_SCHEMA);
     schemaBuilder.field("periodType", Schema.STRING_SCHEMA);
     schemaBuilder.field("periodQuantity", Schema.INT32_SCHEMA);
-    schemaBuilder.field("periodRoundUp", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("roundDown", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -114,10 +85,9 @@ public class PointTypeValidity
   *
   *****************************************/
 
-  private ValidityType type;
   private PeriodType periodType;
   private int periodQuantity;
-  private PeriodRoundUp periodRoundUp;
+  private boolean roundDown;
 
   /*****************************************
   *
@@ -125,12 +95,11 @@ public class PointTypeValidity
   *
   *****************************************/
 
-  private PointTypeValidity(ValidityType type, PeriodType periodType, int periodQuantity, PeriodRoundUp periodRoundUp)
+  private PointTypeValidity(PeriodType periodType, int periodQuantity, boolean roundDown)
   {
-    this.type = type;
     this.periodType = periodType;
     this.periodQuantity = periodQuantity;
-    this.periodRoundUp = periodRoundUp;
+    this.roundDown = roundDown;
   }
 
   /*****************************************
@@ -141,12 +110,9 @@ public class PointTypeValidity
 
   PointTypeValidity(JSONObject jsonRoot) throws GUIManagerException
   {
-    this.type = ValidityType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "type", true));
     this.periodType = PeriodType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
     this.periodQuantity = JSONUtilities.decodeInteger(jsonRoot, "periodQuantity", true);
-    if(JSONUtilities.decodeString(jsonRoot, "periodRoundUp", false) != null){
-      this.periodRoundUp = PeriodRoundUp.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodRoundUp", false));
-    }
+    this.roundDown = JSONUtilities.decodeBoolean(jsonRoot, "roundDown", true);
   }
 
   /*****************************************
@@ -155,10 +121,9 @@ public class PointTypeValidity
   *
   *****************************************/
 
-  public ValidityType getType() { return type; }
   public PeriodType getPeriodType() { return periodType; }
   public int getPeriodQuantity() { return periodQuantity; }
-  public PeriodRoundUp getPeriodRoundUp() { return periodRoundUp; }
+  public boolean getRoundDown() { return roundDown; }
 
   /*****************************************
   *
@@ -181,12 +146,9 @@ public class PointTypeValidity
   {
     PointTypeValidity segment = (PointTypeValidity) value;
     Struct struct = new Struct(schema);
-    struct.put("type", segment.getType().getExternalRepresentation());
     struct.put("periodType", segment.getPeriodType().getExternalRepresentation());
     struct.put("periodQuantity", segment.getPeriodQuantity());
-    if(segment.getPeriodRoundUp() != null){
-      struct.put("periodRoundUp", segment.getPeriodRoundUp().getExternalRepresentation());
-    }
+    struct.put("roundDown", segment.getRoundDown());
     return struct;
   }
 
@@ -211,19 +173,15 @@ public class PointTypeValidity
     //
 
     Struct valueStruct = (Struct) value;
-    ValidityType type = ValidityType.fromExternalRepresentation(valueStruct.getString("type"));
     PeriodType periodType = PeriodType.fromExternalRepresentation(valueStruct.getString("periodType"));
     int periodQuantity = valueStruct.getInt32("periodQuantity");
-    PeriodRoundUp periodRoundUp = null;
-    if(valueStruct.getString("periodRoundUp") != null){
-      periodRoundUp = PeriodRoundUp.fromExternalRepresentation(valueStruct.getString("periodRoundUp"));
-    }
+    boolean roundDown = valueStruct.getBoolean("roundDown");
 
     //
     //  return
     //
 
-    return new PointTypeValidity(type, periodType, periodQuantity, periodRoundUp);
+    return new PointTypeValidity(periodType, periodQuantity, roundDown);
   }
   
 }

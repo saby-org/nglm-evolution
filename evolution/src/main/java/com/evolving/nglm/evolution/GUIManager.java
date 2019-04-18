@@ -835,12 +835,12 @@ public class GUIManager
                 SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
                 if(dimension.getIsSimpleProfileDimension())
                   {
-                    log.debug("SimpleProfileDimension : removing dimension '" + dimension.getDisplay() + "'");
+                    log.debug("SimpleProfileDimension : removing dimension '" + dimension.getSegmentationDimensionName() + "'");
                     segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0");
                   }
                 else
                   {
-                    log.debug("SimpleProfileDimension : dimension '"+ dimension.getDisplay() + "' is not a simpleProfile dimension, do Not remove");
+                    log.debug("SimpleProfileDimension : dimension '"+ dimension.getSegmentationDimensionName() + "' is not a simpleProfile dimension, do Not remove");
                   }
               }
           }

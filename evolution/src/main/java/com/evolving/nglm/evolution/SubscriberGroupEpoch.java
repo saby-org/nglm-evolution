@@ -106,7 +106,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   {
     this.dimensionID = segmentationDimension.getSegmentationDimensionID();
     this.epoch = 0;
-    this.display = segmentationDimension.getDisplay();
+    this.display = segmentationDimension.getSegmentationDimensionName();
     this.active = segmentationDimension.getActive();
     this.zookeeperVersion = -1;
   }
@@ -121,7 +121,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   {
     this.dimensionID = segmentationDimension.getSegmentationDimensionID();
     this.epoch = currentSubscriberGroupEpoch.getEpoch() + 1;
-    this.display = segmentationDimension.getDisplay();
+    this.display = segmentationDimension.getSegmentationDimensionName();
     this.active = segmentationDimension.getActive();
     this.zookeeperVersion = -1;
   }

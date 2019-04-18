@@ -56,10 +56,8 @@ public abstract class SegmentationDimension extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segmentation_dimension");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),2));
     for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("description", Schema.STRING_SCHEMA);
-    schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("hasDefaultSegment", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isSimpleProfileDimension", Schema.OPTIONAL_BOOLEAN_SCHEMA);
@@ -79,8 +77,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
   *
   ****************************************/
 
-  private String description;
-  private String display;
   private SegmentationDimensionTargetingType targetingType;
   private boolean hasDefaultSegment;
   private boolean isSimpleProfileDimension;
@@ -98,8 +94,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
 
   public String getSegmentationDimensionID() { return getGUIManagedObjectID(); }
   public String getSegmentationDimensionName() { return getGUIManagedObjectName(); }
-  public String getDescription() { return description; }
-  public String getDisplay() { return display; }
   public SegmentationDimensionTargetingType getTargetingType() { return targetingType; }
   public boolean getHasDefaultSegment() { return hasDefaultSegment; }
   public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
@@ -144,8 +138,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    String description = valueStruct.getString("description");
-    String display = valueStruct.getString("display");
     SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     boolean hasDefaultSegment = valueStruct.getBoolean("hasDefaultSegment");
     boolean isSimpleProfileDimension = valueStruct.getBoolean("isSimpleProfileDimension");
@@ -155,8 +147,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
     //  return
     //
 
-    this.description = description;
-    this.display = display;
     this.targetingType = targetingType;
     this.hasDefaultSegment = hasDefaultSegment;
     this.isSimpleProfileDimension = isSimpleProfileDimension;
@@ -172,8 +162,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
   protected static void packCommon(Struct struct, SegmentationDimension segmentationDimension)
   {
     GUIManagedObject.packCommon(struct, segmentationDimension);
-    struct.put("description", segmentationDimension.getDescription());
-    struct.put("display", segmentationDimension.getDisplay());
     struct.put("targetingType", segmentationDimension.getTargetingType().getExternalRepresentation());
     struct.put("hasDefaultSegment", segmentationDimension.getHasDefaultSegment());
     struct.put("isSimpleProfileDimension", segmentationDimension.getIsSimpleProfileDimension());
@@ -202,8 +190,6 @@ public abstract class SegmentationDimension extends GUIManagedObject
     *
     *****************************************/
 
-    this.description = JSONUtilities.decodeString(jsonRoot, "description", true);
-    this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
     this.targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
     this.hasDefaultSegment = JSONUtilities.decodeBoolean(jsonRoot, "hasDefaultSegment", Boolean.FALSE);
     this.isSimpleProfileDimension = JSONUtilities.decodeBoolean(jsonRoot, "isSimpleProfileDimension", Boolean.FALSE);

@@ -826,6 +826,7 @@ public class GUIService
     JSONObject result = new JSONObject();
     result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
+    result.put("description", guiManagedObject.getJSONRepresentation().get("description"));
     result.put("active", guiManagedObject.getJSONRepresentation().get("active"));
     return result;
   }
