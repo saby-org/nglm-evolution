@@ -671,12 +671,21 @@ public abstract class DeliveryManager
     progressConsumer.assign(progressConsumerPartitions);
 
     //
+    //  initialize consumedOffsets
+    //
+        
+    boolean consumedAllAvailable = false;
+    Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
+    for (TopicPartition topicPartition : progressConsumer.assignment())
+      {
+        consumedOffsets.put(topicPartition, progressConsumer.position(topicPartition) - 1L);
+      }
+    
+    //
     //  read
     //
-
+        
     SortedMap<String,DeliveryRequest> restartRequests = new TreeMap<String,DeliveryRequest>();
-    Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-    boolean consumedAllAvailable = false;
     do
       {
         //
@@ -724,7 +733,12 @@ public abstract class DeliveryManager
         for (TopicPartition topicPartition : availableOffsets.keySet())
           {
             Long availableOffsetForPartition = availableOffsets.get(topicPartition);
-            Long consumedOffsetForPartition = (consumedOffsets.get(topicPartition) != null) ? consumedOffsets.get(topicPartition) : -1L;
+            Long consumedOffsetForPartition = consumedOffsets.get(topicPartition);
+            if (consumedOffsetForPartition == null)
+              {
+                consumedOffsetForPartition = progressConsumer.position(topicPartition) - 1L;
+                consumedOffsets.put(topicPartition, consumedOffsetForPartition);
+              }
             if (consumedOffsetForPartition < availableOffsetForPartition-1)
               {
                 consumedAllAvailable = false;

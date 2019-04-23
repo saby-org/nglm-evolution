@@ -616,9 +616,22 @@ public class GUIService
 
   private void readGUIManagedObjects(KafkaConsumer<byte[], byte[]> consumer, boolean readInitialTopicRecords)
   {
+    //
+    //  initialize consumedOffsets
+    //
+        
     Date readStartDate = SystemTime.getCurrentTime();
     boolean consumedAllAvailable = false;
     Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
+    for (TopicPartition topicPartition : consumer.assignment())
+      {
+        consumedOffsets.put(topicPartition, consumer.position(topicPartition) - 1L);
+      }
+    
+    //
+    //  read
+    //
+        
     do
       {
         //
@@ -692,7 +705,12 @@ public class GUIService
         for (TopicPartition partition : availableOffsets.keySet())
           {
             Long availableOffsetForPartition = availableOffsets.get(partition);
-            Long consumedOffsetForPartition = (consumedOffsets.get(partition) != null) ? consumedOffsets.get(partition) : -1L;
+            Long consumedOffsetForPartition = consumedOffsets.get(partition);
+            if (consumedOffsetForPartition == null)
+              {
+                consumedOffsetForPartition = consumer.position(partition) - 1L;
+                consumedOffsets.put(partition, consumedOffsetForPartition);
+              }
             if (consumedOffsetForPartition < availableOffsetForPartition-1)
               {
                 consumedAllAvailable = false;
