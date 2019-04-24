@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  ReportManagerStatisticsMBean.java
+*  ReportManagerStatistics.java
 *
 ****************************************************************************/
 
@@ -8,13 +8,6 @@ package com.evolving.nglm.evolution.reports;
 
 import com.evolving.nglm.core.NGLMMonitoringObject;
 import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 public class ReportManagerStatistics implements ReportManagerStatisticsMBean, NGLMMonitoringObject
 {

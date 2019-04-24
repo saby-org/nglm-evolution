@@ -250,25 +250,30 @@ docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-
 docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> get /evolving/nglm/stock/stocks/product-1001
 
 --
---  zookeeper - reports
+--  reports
 --
 
+-- request the generation of a journey report
 docker run --net=host --rm confluentinc/cp-kafka:${confluent.version} zookeeper-shell <_ZOOKEEPER_SERVERS_> create /evolving/nglm/reports/control/report-001 journeyReport
+
 docker service logs ev-reportmanager_reportmanager-001 --tail 100 -f
-docker service logs ev-reportmanager_reportmanager-002 --tail 100 -f
 docker service logs ev-reportscheduler_reportscheduler-001 --tail 100 -f
-docker service logs ev-guimanager_guimanager --tail 1000 -f
+
 -- putReport
-curl -X POST -H "Content-Type: application/json" -d '{"id":"101","apiVersion":1,"name":"standard","description":"standard (description)","effectiveStartDate":null,"effectiveEndDate":null,"readOnly":false,"reportName":"journeyReport","reportDisplayName":"Journey Report","reportDescription":"Description of the Journey Report","availableScheduling":"HOURLY | DAILY | WEEKLY | MONTHLY","effectiveScheduling":"NONE"}' http://localhost:7081/nglm-guimanager/putReport; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/report.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putReport
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/report.002.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putReport
+
 -- getReportList
-curl -X POST -H "Content-Type: application/json" -d '{"id":"101","apiVersion":1,"name":"standard","description":"standard (description)","effectiveStartDate":null,"effectiveEndDate":null,"readOnly":false,"reportName":"journeyReport","reportDisplayName":"Journey Report","reportDescription":"Description of the Journey Report","availableScheduling":"HOURLY | DAILY | WEEKLY | MONTHLY","effectiveScheduling":"NONE"}' http://localhost:7081/nglm-guimanager/getReportList; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportList | jq
+
 -- launchReport
-curl -X POST -H "Content-Type: application/json" -d '{"id":"101","apiVersion":1,"name":"standard","description":"standard (description)","effectiveStartDate":null,"effectiveEndDate":null,"readOnly":false,"reportName":"journeyReport","reportDisplayName":"Journey Report","reportDescription":"Description of the Journey Report","availableScheduling":"HOURLY | DAILY | WEEKLY | MONTHLY","effectiveScheduling":"NONE"}' http://localhost:7081/nglm-guimanager/launchReport; echo
+curl -X POST -H "Content-Type: application/json" -d '{"id":"001","apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchReport; echo
 
-
+--  test getReportGlobalConfiguration
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportGlobalConfiguration
 
 --
---  examples of mananging dimensions and segments  - new, add, remove, delete
+--  examples of managing dimensions and segments  - new, add, remove, delete
 --  * creating dimensions
 --  * associating subscribers with dimensions and segments
 --

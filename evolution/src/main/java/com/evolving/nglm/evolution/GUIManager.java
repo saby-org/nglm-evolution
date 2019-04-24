@@ -112,6 +112,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -664,6 +665,27 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
+    
+    //
+    //  reports
+    //
+
+    if (reportService.getStoredReports().size() == 0)
+      {
+        try
+          {
+            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+            for (int i=0; i<initialReportsJSONArray.size(); i++)
+              {
+                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+                processPutReport("0", reportJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+      }
 
     //
     //  calling channels
@@ -804,6 +826,28 @@ public class GUIManager
               {
                 JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
                 processPutOfferObjective("0", offerObjectiveJSON);
+              }
+          }
+        catch (JSONUtilitiesException e)
+          {
+            throw new ServerRuntimeException("deployment", e);
+          }
+
+      }
+
+    //
+    //  reports
+    //
+
+    if (reportService.getStoredReports().size() == 0)
+      {
+        try
+          {
+            JSONArray initialReportsJSONArray = Deployment.getInitialReportsJSONArray();
+            for (int i=0; i<initialReportsJSONArray.size(); i++)
+              {
+                JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+                processPutReport("0", reportJSON);
               }
           }
         catch (JSONUtilitiesException e)
@@ -6838,23 +6882,6 @@ public class GUIManager
     globalConfig.put("reportManagerFileExtension",  Deployment.getReportManagerFileExtension());
     globalConfig.put("reportManagerCsvSeparator",   Deployment.getReportManagerCsvSeparator());
     globalConfig.put("reportManagerStreamsTempDir", Deployment.getReportManagerStreamsTempDir());
-    JSONArray reportsConfiguration = Deployment.getReportsConfigJSon();
-    Map<String,JSONObject> reportsConfig = new HashMap<String,JSONObject>();
-    if (reportsConfiguration != null)
-      {
-        for (int i=0; i<reportsConfiguration.size(); i++)
-          {
-            JSONObject configJSon = (JSONObject) reportsConfiguration.get(i);
-            ReportConfiguration reportConfig = new ReportConfiguration(configJSon);
-            String reportName = reportConfig.getReportName();
-            if (reportsConfig.containsKey(reportName)) {
-              log.debug("GetReportConfig entry already exists for : {}, ignoring",reportName);
-            } else {
-              reportsConfig.put(reportName, configJSon);
-            }
-          }
-        globalConfig.put("reportsConfiguration", reportsConfig);
-      }
     response.put("reportGlobalConfiguration", JSONUtilities.encodeObject(globalConfig));
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
@@ -6896,32 +6923,21 @@ public class GUIManager
     log.trace("In processLaunchReport : "+jsonRoot);
     HashMap<String,Object> response = new HashMap<String,Object>();
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    GUIManagedObject report1 = reportService.getStoredReport(reportID);
-    log.trace("Looking for "+reportID+" and got "+report1);
+    Report report = (Report) reportService.getStoredReport(reportID);
+    log.trace("Looking for "+reportID+" and got "+report);
     String responseCode;
-    if (report1 == null)
+    if (report == null)
       {
         responseCode = "reportNotFound";
       }
     else
       {
-        try
-          {
-            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
-            log.trace("Decoded JSON and got "+report);
-            String reportName = report.getName();
-            if(!reportService.isReportRunning(reportName)) {
-              reportService.launchReport(reportName);
-              responseCode = "ok";
-            }else {
-              responseCode = "reportIsAlreadyRunning";
-            }
-          }
-        catch (GUIManagerException e)
-          {
-            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
-            responseCode = "internalError";
-          }
+        if(!reportService.isReportRunning(report.getName())) {
+          reportService.launchReport(report.getName());
+          responseCode = "ok";
+        }else {
+          responseCode = "reportIsAlreadyRunning";
+        }
       }
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
@@ -7043,16 +7059,44 @@ public class GUIManager
       }
     log.trace("ID : "+reportID);
     GUIManagedObject existingReport = reportService.getStoredReport(reportID);
-    if (existingReport != null)
-      {
-        log.trace("existingReport : "+existingReport);
-        response.put("id", existingReport.getGUIManagedObjectID());
-        response.put("accepted", existingReport.getAccepted());
-        response.put("valid", existingReport.getAccepted());
-        response.put("processing", reportService.isActiveReport(existingReport, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
+    if (existingReport != null && existingReport.getReadOnly())
+    {
+      log.trace("existingReport : "+existingReport);
+      response.put("id", existingReport.getGUIManagedObjectID());
+      response.put("accepted", existingReport.getAccepted());
+      response.put("valid", existingReport.getAccepted());
+      response.put("processing", reportService.isActiveReport(existingReport, now));
+      response.put("responseCode", "failedReadOnly");
+      return JSONUtilities.encodeObject(response);
+    }
+    if (existingReport != null) {
+      Report existingRept = (Report) existingReport;
+      // Is the new effective scheduling valid ?
+      List<SchedulingInterval> availableScheduling = existingRept.getAvailableScheduling();
+      if (availableScheduling != null) {
+        // Check if the effectiveScheduling is valid
+        JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
+        if (effectiveSchedulingJSONArray != null) { 
+          for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
+            String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
+            SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
+            log.trace("Checking that "+eSchedule+" is allowed");
+            if (! availableScheduling.contains(eSchedule)) {
+              response.put("id", jsonRoot.get("id"));
+              response.put("responseCode", "reportNotValid");
+              response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
+              StringBuffer respMsg = new StringBuffer("scheduling "+eSchedule+" should be part of [ ");
+              for (SchedulingInterval aSched : availableScheduling) {
+                respMsg.append(aSched+" ");
+              }
+              respMsg.append("]");
+              response.put("responseParameter", respMsg.toString());
+              return JSONUtilities.encodeObject(response);
+            }
+          }
+        }
       }
+    }
     long epoch = epochServer.getKey();
     try
       {

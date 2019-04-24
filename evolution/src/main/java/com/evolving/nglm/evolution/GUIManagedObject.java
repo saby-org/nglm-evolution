@@ -204,13 +204,13 @@ public abstract class GUIManagedObject
   public GUIManagedObjectType getGUIManagedObjectType() { return guiManagedObjectType; }
   public JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public long getEpoch() { return epoch; }
-
+  public Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
+  public Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
+  
   //
   //  package protected
   //
 
-  Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
-  Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
   boolean getReadOnly() { return readOnly; }
   boolean getActive() { return active; }
 

@@ -97,6 +97,7 @@ public class Deployment
   private static JSONArray initialSalesChannelsJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
   private static JSONArray initialProductsJSONArray = null;
+  private static JSONArray initialReportsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
   private static JSONArray initialContactPoliciesJSONArray = null;
   private static JSONArray initialJourneyObjectivesJSONArray = null;
@@ -128,14 +129,13 @@ public class Deployment
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
   private static String ucgEvaluationCronEntry;
-  private static Map<String,ReportConfiguration> reportsConfiguration = new LinkedHashMap<String,ReportConfiguration>();
+  private static Map<String,Report> initialReports = new LinkedHashMap<>();
   private static String reportManagerZookeeperDir;
   private static String reportManagerOutputPath;
   private static String reportManagerDateFormat;
   private static String reportManagerFileExtension;
   private static String reportManagerStreamsTempDir;
   private static String reportManagerCsvSeparator;
-  private static JSONArray reportsConfigValues;
   private static CustomerMetaData customerMetaData = null;
   private static String APIresponseDateFormat;
   private static String uploadedFileTopic;
@@ -238,6 +238,7 @@ public class Deployment
   public static JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
+  public static JSONArray getInitialReportsJSONArray() { return initialReportsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
   public static JSONArray getInitialContactPoliciesJSONArray() { return initialContactPoliciesJSONArray; }
   public static JSONArray getInitialJourneyObjectivesJSONArray() { return initialJourneyObjectivesJSONArray; }
@@ -269,8 +270,7 @@ public class Deployment
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; }
-  public static Map<String,ReportConfiguration> getReportsConfiguration() { return reportsConfiguration; }
-  public static JSONArray getReportsConfigJSon() { return reportsConfigValues; }
+  public static Map<String,Report> getInitialReports() { return initialReports; }
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
   public static String getReportManagerOutputPath() { return reportManagerOutputPath; }
   public static String getReportManagerDateFormat() { return reportManagerDateFormat; }
@@ -1222,6 +1222,12 @@ public class Deployment
     initialProductsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProducts", new JSONArray());
 
     //
+    //  initialReportsJSONArray
+    //
+
+    initialReportsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialReports", new JSONArray());
+    
+    //
     //  initialCatalogCharacteristicsJSONArray
     //
 
@@ -1613,25 +1619,15 @@ public class Deployment
         JSONObject reportManager = JSONUtilities.decodeJSONObject(jsonRoot, "reportManager", false);
         if (reportManager != null)
           {
-            JSONObject globalConfig = JSONUtilities.decodeJSONObject(reportManager, "globalConfiguration", true);
-            reportManagerZookeeperDir = JSONUtilities.decodeString(globalConfig, "reportManagerZookeeperDir", true);
-            reportManagerOutputPath = JSONUtilities.decodeString(globalConfig, "reportManagerOutputPath", false);
-            reportManagerDateFormat = JSONUtilities.decodeString(globalConfig, "reportManagerDateFormat", false);
-            reportManagerFileExtension = JSONUtilities.decodeString(globalConfig, "reportManagerFileExtension", false);
-            reportManagerCsvSeparator = JSONUtilities.decodeString(globalConfig, "reportManagerCsvSeparator", false);
-            reportManagerStreamsTempDir = JSONUtilities.decodeString(globalConfig, "reportManagerStreamsTempDir", false);
-            reportsConfigValues = JSONUtilities.decodeJSONArray(reportManager, "reportsConfiguration", true);
-            for (int i=0; i<reportsConfigValues.size(); i++)
-              {
-                ReportConfiguration reportConfig = new ReportConfiguration((JSONObject) reportsConfigValues.get(i));
-                String reportName = reportConfig.getReportName();
-                if (reportsConfiguration.containsKey(reportName)) throw new ServerRuntimeException("reportsConfiguration entry already exists for "+reportName);
-                reportsConfiguration.put(reportName, reportConfig);
-              }
+            reportManagerZookeeperDir = JSONUtilities.decodeString(reportManager, "reportManagerZookeeperDir", true);
+            reportManagerOutputPath = JSONUtilities.decodeString(reportManager, "reportManagerOutputPath", false);
+            reportManagerDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerDateFormat", false);
+            reportManagerFileExtension = JSONUtilities.decodeString(reportManager, "reportManagerFileExtension", false);
+            reportManagerCsvSeparator = JSONUtilities.decodeString(reportManager, "reportManagerCsvSeparator", false);
+            reportManagerStreamsTempDir = JSONUtilities.decodeString(reportManager, "reportManagerStreamsTempDir", false);
           }
         else
           {
-            reportsConfiguration = null;
             reportManagerZookeeperDir = Deployment.getZookeeperRoot() + File.separator + "reports";
             reportManagerOutputPath = "/app/reports";
             reportManagerDateFormat = "yyyy-MM-dd_HH-mm-ss_SSSS";
