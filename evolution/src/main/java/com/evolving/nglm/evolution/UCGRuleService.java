@@ -94,11 +94,7 @@ public class UCGRuleService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
-    result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
     result.put("status",guiManagedObject.getJSONRepresentation().get("status"));
-    result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
-    result.put("description",guiManagedObject.getJSONRepresentation().get("description"));
     result.put("calculatedSize",guiManagedObject.getJSONRepresentation().get("calculatedSize"));
     return result;
   }

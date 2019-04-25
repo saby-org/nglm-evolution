@@ -106,7 +106,6 @@ public class UploadedFileService extends GUIService
     result.put("fileType", guiManagedObject.getJSONRepresentation().get("fileType"));
     result.put("fileSize", guiManagedObject.getJSONRepresentation().get("fileSize"));
     result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));
-    
     return result;
   }
 

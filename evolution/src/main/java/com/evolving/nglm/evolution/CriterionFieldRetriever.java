@@ -9,7 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
-import com.evolving.nglm.evolution.Journey.JourneyStatus;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -136,11 +136,11 @@ public abstract class CriterionFieldRetriever
     *****************************************/
 
     if (awaitedJourneyEntry && ! ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
-      return JourneyStatus.NotEligible.getExternalRepresentation();
+      return SubscriberJourneyStatus.NotEligible.getExternalRepresentation();
     else if (awaitedJourneyEntry && ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
-      return JourneyStatus.Eligible.getExternalRepresentation();
+      return SubscriberJourneyStatus.Eligible.getExternalRepresentation();
     else if (awaitedJourneyTransition)
-      return ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getJourneyStatus().getExternalRepresentation();
+      return ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getSubscriberJourneyStatus().getExternalRepresentation();
     else
       return null;
   }

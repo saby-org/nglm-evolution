@@ -163,6 +163,7 @@ public class GUIManager
     getServiceTypes("getServiceTypes"),
     getTouchPoints("getTouchPoints"),
     getCallingChannelProperties("getCallingChannelProperties"),
+    getCatalogCharacteristicUnits("getCatalogCharacteristicUnits"),
     getSupportedDataTypes("getSupportedDataTypes"),
     getSupportedEvents("getSupportedEvents"),
     getSupportedTargetingTypes("getSupportedTargetingTypes"),
@@ -1094,6 +1095,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getServiceTypes", new APISimpleHandler(API.getServiceTypes));
         restServer.createContext("/nglm-guimanager/getTouchPoints", new APISimpleHandler(API.getTouchPoints));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APISimpleHandler(API.getCallingChannelProperties));
+        restServer.createContext("/nglm-guimanager/getCatalogCharacteristicUnits", new APISimpleHandler(API.getCatalogCharacteristicUnits));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APISimpleHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getSupportedEvents", new APISimpleHandler(API.getSupportedEvents));
         restServer.createContext("/nglm-guimanager/getSupportedTargetingTypes", new APISimpleHandler(API.getSupportedTargetingTypes));
@@ -1545,6 +1547,10 @@ public class GUIManager
 
                 case getCallingChannelProperties:
                   jsonResponse = processGetCallingChannelProperties(userID, jsonRoot);
+                  break;
+
+                case getCatalogCharacteristicUnits:
+                  jsonResponse = processGetCatalogCharacteristicUnits(userID, jsonRoot);
                   break;
 
                 case getSupportedDataTypes:
@@ -2809,6 +2815,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve catalogCharacteristicUnits
+    *
+    *****************************************/
+
+    List<JSONObject> catalogCharacteristicUnits = new ArrayList<JSONObject>();
+    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getCatalogCharacteristicUnits().values())
+      {
+        JSONObject catalogCharacteristicUnitJSON = catalogCharacteristicUnit.getJSONRepresentation();
+        catalogCharacteristicUnits.add(catalogCharacteristicUnitJSON);
+      }
+
+    /*****************************************
+    *
     *  retrieve supported data types
     *
     *****************************************/
@@ -3132,6 +3151,39 @@ public class GUIManager
 
   /*****************************************
   *
+  *  getCatalogCharacteristicUnits
+  *
+  *****************************************/
+
+  private JSONObject processGetCatalogCharacteristicUnits(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve catalogCharacteristicUnits
+    *
+    *****************************************/
+
+    List<JSONObject> catalogCharacteristicUnits = new ArrayList<JSONObject>();
+    for (CatalogCharacteristicUnit catalogCharacteristicUnit : Deployment.getCatalogCharacteristicUnits().values())
+      {
+        JSONObject catalogCharacteristicUnitJSON = catalogCharacteristicUnit.getJSONRepresentation();
+        catalogCharacteristicUnits.add(catalogCharacteristicUnitJSON);
+      }
+
+    /*****************************************et
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("catalogCharacteristicUnits", JSONUtilities.encodeArray(catalogCharacteristicUnits));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  getSupportedDataTypes
   *
   *****************************************/
@@ -3208,10 +3260,13 @@ public class GUIManager
     List<JSONObject> targetingTypes = new ArrayList<JSONObject>();
     for (TargetingType targetingType : TargetingType.values())
       {
-        JSONObject json = new JSONObject();
-        json.put("id", targetingType.getExternalRepresentation());
-        json.put("display", targetingType.getDisplay());
-        targetingTypes.add(json);
+        if (targetingType != TargetingType.Unknown)
+          {
+            JSONObject json = new JSONObject();
+            json.put("id", targetingType.getExternalRepresentation());
+            json.put("display", targetingType.getDisplay());
+            targetingTypes.add(json);
+          }
       }
 
     /*****************************************

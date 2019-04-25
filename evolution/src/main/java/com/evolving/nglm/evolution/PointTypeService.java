@@ -85,18 +85,6 @@ public class PointTypeService extends GUIService
   }
 
   /*****************************************
-   *
-   *  getSummaryJSONRepresentation
-   *
-   *****************************************/
-
-  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
-  {
-    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    return result;
-  }
-
-  /*****************************************
   *
   *  getPointTypes
   *

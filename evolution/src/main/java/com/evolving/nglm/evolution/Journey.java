@@ -60,6 +60,23 @@ public class Journey extends GUIManagedObject
   *****************************************/
 
   //
+  //  JourneyStatus
+  //
+
+  public enum JourneyStatus
+  {
+    NotValid("Not Valid"),
+    Pending("Pending"),
+    Active("Active"),
+    Complete("Complete"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private JourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static JourneyStatus fromExternalRepresentation(String externalRepresentation) { for (JourneyStatus enumeratedValue : JourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  //
   //  EvaluationPriority
   //
 
@@ -76,10 +93,10 @@ public class Journey extends GUIManagedObject
   }
 
   //
-  //  JourneyStatus
+  //  SubscriberJourneyStatus
   //
 
-  public enum JourneyStatus
+  public enum SubscriberJourneyStatus
   {
     NotEligible("notEligible"),
     Eligible("eligible"),
@@ -88,16 +105,16 @@ public class Journey extends GUIManagedObject
     NotConverted("notConverted"),
     Unknown("(unknown)");
     private String externalRepresentation;
-    private JourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private SubscriberJourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
-    public static JourneyStatus fromExternalRepresentation(String externalRepresentation) { for (JourneyStatus enumeratedValue : JourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static SubscriberJourneyStatus fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatus enumeratedValue : SubscriberJourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   //
-  //  JourneyStatusField
+  //  SubscriberJourneyStatusField
   //
 
-  public enum JourneyStatusField
+  public enum SubscriberJourneyStatusField
   {
     StatusNotified("statusNotified", "journey.status.notified"),
     StatusConverted("statusConverted", "journey.status.converted"),
@@ -106,10 +123,10 @@ public class Journey extends GUIManagedObject
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
     private String journeyParameterName;
-    private JourneyStatusField(String externalRepresentation, String journeyParameterName) { this.externalRepresentation = externalRepresentation; this.journeyParameterName = journeyParameterName; }
+    private SubscriberJourneyStatusField(String externalRepresentation, String journeyParameterName) { this.externalRepresentation = externalRepresentation; this.journeyParameterName = journeyParameterName; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getJourneyParameterName() { return journeyParameterName; }
-    public static JourneyStatusField fromExternalRepresentation(String externalRepresentation) { for (JourneyStatusField enumeratedValue : JourneyStatusField.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static SubscriberJourneyStatusField fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatusField enumeratedValue : SubscriberJourneyStatusField.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   //
@@ -118,8 +135,8 @@ public class Journey extends GUIManagedObject
 
   public enum TargetingType
   {
-    Criteria("criteria", "Criteria"),
-    Event("event", "Event"),
+    Criteria("criteria", "Target"),
+    Event("event", "Trigger"),
     Manual("manual", "Manual"),
     Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
@@ -1885,7 +1902,7 @@ public class Journey extends GUIManagedObject
 
     @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
-      JourneyStatusField statusField = JourneyStatusField.fromExternalRepresentation(subscriberEvaluationRequest.getJourneyNode().getNodeParameters().containsKey("node.parameter.journeystatus") ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journeystatus") : "(unknown)");
+      SubscriberJourneyStatusField statusField = SubscriberJourneyStatusField.fromExternalRepresentation(subscriberEvaluationRequest.getJourneyNode().getNodeParameters().containsKey("node.parameter.journeystatus") ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journeystatus") : "(unknown)");
       if (statusField == null) throw new ServerRuntimeException("unknown status field: " + CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journeystatus"));
       subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(statusField.getJourneyParameterName(), Boolean.TRUE);
       return null;
@@ -1922,10 +1939,10 @@ public class Journey extends GUIManagedObject
       switch (journeyLink.getLinkName())
         {
           case "controlGroup":
-            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(JourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
             break;
           case "universalControlGroup":
-            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
             break;
         }
     }

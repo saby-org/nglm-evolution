@@ -824,7 +824,7 @@ public class GUIService
     JSONObject responseJSON = new JSONObject();
     if (guiManagedObject != null)
       {
-        responseJSON.putAll(fullDetails ? guiManagedObject.getJSONRepresentation() : getSummaryJSONRepresentation(guiManagedObject));
+        responseJSON.putAll(fullDetails ? getJSONRepresentation(guiManagedObject) : getSummaryJSONRepresentation(guiManagedObject));
         responseJSON.put("accepted", guiManagedObject.getAccepted());
         responseJSON.put("valid", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
@@ -833,6 +833,19 @@ public class GUIService
     return responseJSON;
   }
 
+  /*****************************************
+  *
+  *  getJSONRepresentation
+  *
+  *****************************************/
+
+  protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = new JSONObject();
+    result.putAll(guiManagedObject.getJSONRepresentation());
+    return result;
+  }
+  
   /*****************************************
   *
   *  getSummaryJSONRepresentation
@@ -845,7 +858,11 @@ public class GUIService
     result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
     result.put("description", guiManagedObject.getJSONRepresentation().get("description"));
+    result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
+    result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
     result.put("active", guiManagedObject.getJSONRepresentation().get("active"));
+    result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
+    result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
     return result;
   }
   

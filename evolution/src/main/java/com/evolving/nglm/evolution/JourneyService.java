@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -15,6 +16,8 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 
 import com.evolving.nglm.core.SystemTime;
+
+import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -110,6 +113,32 @@ public class JourneyService extends GUIService
 
   /*****************************************
   *
+  *  getJSONRepresentation
+  *
+  *****************************************/
+
+  @Override protected JSONObject getJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getJSONRepresentation(guiManagedObject);
+    result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
+    return result;
+  }
+  
+  /*****************************************
+  *
   *  getJourneys
   *
   *****************************************/
@@ -176,6 +205,23 @@ public class JourneyService extends GUIService
   *****************************************/
 
   public void removeJourney(String journeyID, String userID) { removeGUIManagedObject(journeyID, SystemTime.getCurrentTime(), userID); }
+
+  /*****************************************
+  *
+  *  getJourneyStatus
+  *
+  *****************************************/
+
+  private JourneyStatus getJourneyStatus(GUIManagedObject guiManagedObject)
+  {
+    Date now = SystemTime.getCurrentTime();
+    JourneyStatus status = JourneyStatus.Unknown;
+    status = (status == JourneyStatus.Unknown && !guiManagedObject.getAccepted()) ? JourneyStatus.NotValid : status;
+    status = (status == JourneyStatus.Unknown && isActiveGUIManagedObject(guiManagedObject, now)) ? JourneyStatus.Active : status;
+    status = (status == JourneyStatus.Unknown && guiManagedObject.getEffectiveEndDate().before(now)) ? JourneyStatus.Complete : status;
+    status = (status == JourneyStatus.Unknown) ? JourneyStatus.Pending : status;
+    return status;
+  }
 
   /*****************************************
   *

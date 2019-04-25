@@ -120,8 +120,6 @@ public class PresentationStrategyService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("salesChannelIDs", guiManagedObject.getJSONRepresentation().get("salesChannelIDs"));
-    result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
-    result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
     return result;
   }
   

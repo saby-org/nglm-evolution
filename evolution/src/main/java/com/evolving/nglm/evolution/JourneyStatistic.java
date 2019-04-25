@@ -13,8 +13,8 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.Journey.JourneyStatus;
-import com.evolving.nglm.evolution.Journey.JourneyStatusField;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -129,19 +129,19 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public Date getEventDate() { return transitionDate; }
 
   //
-  //  getJourneyStatus
+  //  getSubscriberJourneyStatus
   //
 
-  public JourneyStatus getJourneyStatus()
+  public SubscriberJourneyStatus getSubscriberJourneyStatus()
   {
     if (journeyComplete && statusConverted)
-      return JourneyStatus.Converted;
+      return SubscriberJourneyStatus.Converted;
     else if (journeyComplete && ! statusConverted)
-      return JourneyStatus.NotConverted;
+      return SubscriberJourneyStatus.NotConverted;
     else if (statusNotified)
-      return JourneyStatus.Notified;
+      return SubscriberJourneyStatus.Notified;
     else
-      return JourneyStatus.Eligible;
+      return SubscriberJourneyStatus.Eligible;
   }
 
   /*****************************************
@@ -185,10 +185,10 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.fromNodeID = journeyLink.getSourceReference();
     this.toNodeID = journeyLink.getDestinationReference();
     this.deliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
-    this.statusNotified = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusConverted = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.journeyComplete = journeyLink.getDestination().getExitNode();
   }
 
@@ -209,10 +209,10 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.fromNodeID = journeyState.getJourneyNodeID();
     this.toNodeID = journeyState.getJourneyNodeID();
     this.deliveryRequestID = null;
-    this.statusNotified = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusConverted = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
-    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(JourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.journeyComplete = true;
   }
 

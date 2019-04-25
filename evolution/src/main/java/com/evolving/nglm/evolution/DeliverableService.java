@@ -111,20 +111,6 @@ public class DeliverableService extends GUIService
 
   /*****************************************
   *
-  *  getSummaryJSONRepresentation
-  *
-  *****************************************/
-
-  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
-  {
-    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
-    result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
-    return result;
-  }
-  
-  /*****************************************
-  *
   *  getDeliverables
   *
   *****************************************/

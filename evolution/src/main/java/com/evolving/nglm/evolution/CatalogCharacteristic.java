@@ -46,9 +46,10 @@ public class CatalogCharacteristic extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("catalogcharacteristic");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("dataType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("catalogCharacteristicUnitID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schema = schemaBuilder.build();
   };
 
@@ -72,6 +73,7 @@ public class CatalogCharacteristic extends GUIManagedObject
   *****************************************/
 
   private CriterionDataType dataType;
+  private String catalogCharacteristicUnitID;
 
   /*****************************************
   *
@@ -82,6 +84,13 @@ public class CatalogCharacteristic extends GUIManagedObject
   public String getCatalogCharacteristicID() { return getGUIManagedObjectID(); }
   public String getCatalogCharacteristicName() { return getGUIManagedObjectName(); }
   public CriterionDataType getDataType() { return dataType; }
+  public String getCatalogCharacteristicUnitID() { return catalogCharacteristicUnitID; }
+
+  //
+  //  setters
+  //
+
+  private void setCatalogCharacteristicUnitID(String catalogCharacteristicUnitID) { this.catalogCharacteristicUnitID = catalogCharacteristicUnitID; }
   
   /*****************************************
   *
@@ -89,10 +98,11 @@ public class CatalogCharacteristic extends GUIManagedObject
   *
   *****************************************/
 
-  public CatalogCharacteristic(SchemaAndValue schemaAndValue, CriterionDataType dataType)
+  public CatalogCharacteristic(SchemaAndValue schemaAndValue, CriterionDataType dataType, String catalogCharacteristicUnitID)
   {
     super(schemaAndValue);
     this.dataType = dataType;
+    this.catalogCharacteristicUnitID = catalogCharacteristicUnitID;
   }
                 
   /*****************************************
@@ -107,6 +117,7 @@ public class CatalogCharacteristic extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, catalogCharacteristic);
     struct.put("dataType", catalogCharacteristic.getDataType().getExternalRepresentation());
+    struct.put("catalogCharacteristicUnitID", catalogCharacteristic.getCatalogCharacteristicUnitID());
     return struct;
   }
   
@@ -118,26 +129,59 @@ public class CatalogCharacteristic extends GUIManagedObject
 
   public static CatalogCharacteristic unpack(SchemaAndValue schemaAndValue)
   {
-    //
-    //  data
-    //
+    /****************************************
+    *
+    *  data
+    *
+    ****************************************/
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
     Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
-    //
-    //  unpack
-    //
+    /****************************************
+    *
+    *  unpack
+    *
+    ****************************************/
 
     Struct valueStruct = (Struct) value;
     CriterionDataType dataType = CriterionDataType.fromExternalRepresentation((String) valueStruct.get("dataType"));
+    String catalogCharacteristicUnitID = (schemaVersion >= 2) ? (String) valueStruct.get("catalogCharacteristicUnitID") : null;
     
     //
-    //  return
+    //  result
     //
 
-    return new CatalogCharacteristic(schemaAndValue, dataType);
+    CatalogCharacteristic result = new CatalogCharacteristic(schemaAndValue, dataType, catalogCharacteristicUnitID);
+
+    //
+    //  version 1 compatibility
+    //
+    
+    if (schemaVersion < 2)
+      {
+        result.setCatalogCharacteristicUnitID(JSONUtilities.decodeString(result.getJSONRepresentation(), "unit", false));
+      }
+
+    /****************************************
+    *
+    *  validate
+    *
+    ****************************************/
+
+    if (result.getCatalogCharacteristicUnitID() != null && ! Deployment.getCatalogCharacteristicUnits().containsKey(result.getCatalogCharacteristicUnitID()))
+      {
+        throw new SerializationException("unknown unit for catalog characteristic " + result.getCatalogCharacteristicID());
+      }
+    
+    /****************************************
+    *
+    *  return
+    *
+    ****************************************/
+
+    return result;
   }
 
   /*****************************************
@@ -186,6 +230,7 @@ public class CatalogCharacteristic extends GUIManagedObject
           this.dataType = baseDataType;
           break;
       }
+    String catalogCharacteristicUnitID = JSONUtilities.decodeString(jsonRoot, "unit", false);
 
     /*****************************************
     *
@@ -195,6 +240,7 @@ public class CatalogCharacteristic extends GUIManagedObject
 
     if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
+    if (catalogCharacteristicUnitID != null && ! Deployment.getCatalogCharacteristicUnits().containsKey(catalogCharacteristicUnitID)) throw new GUIManagerException("unknown unit", catalogCharacteristicUnitID);
 
     /*****************************************
     *

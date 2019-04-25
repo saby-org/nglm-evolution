@@ -93,6 +93,7 @@ public class Deployment
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,TouchPoint> touchPoints = new LinkedHashMap<String,TouchPoint>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
+  private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
   private static JSONArray initialCallingChannelsJSONArray = null;
   private static JSONArray initialSalesChannelsJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
@@ -234,6 +235,7 @@ public class Deployment
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,TouchPoint> getTouchPoints() { return touchPoints; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
+  public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
   public static JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
@@ -1190,6 +1192,25 @@ public class Deployment
             JSONObject callingChannelPropertyJSON = (JSONObject) callingChannelPropertyValues.get(i);
             CallingChannelProperty callingChannelProperty = new CallingChannelProperty(callingChannelPropertyJSON);
             callingChannelProperties.put(callingChannelProperty.getID(), callingChannelProperty);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  catalogCharacteristicUnits
+    //
+
+    try
+      {
+        JSONArray catalogCharacteristicUnitValues = JSONUtilities.decodeJSONArray(jsonRoot, "catalogCharacteristicUnits", new JSONArray());
+        for (int i=0; i<catalogCharacteristicUnitValues.size(); i++)
+          {
+            JSONObject catalogCharacteristicUnitJSON = (JSONObject) catalogCharacteristicUnitValues.get(i);
+            CatalogCharacteristicUnit catalogCharacteristicUnit = new CatalogCharacteristicUnit(catalogCharacteristicUnitJSON);
+            catalogCharacteristicUnits.put(catalogCharacteristicUnit.getID(), catalogCharacteristicUnit);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
