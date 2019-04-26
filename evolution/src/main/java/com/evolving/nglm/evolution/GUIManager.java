@@ -282,6 +282,7 @@ public class GUIManager
     getDeliverableList("getDeliverableList"),
     getDeliverableSummaryList("getDeliverableSummaryList"),
     getDeliverable("getDeliverable"),
+    getDeliverableByName("getDeliverableByName"),
     getTokenTypeList("getTokenTypeList"),
     getTokenTypeSummaryList("getTokenTypeSummaryList"),
     putTokenType("putTokenType"),
@@ -1223,6 +1224,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APISimpleHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APISimpleHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APISimpleHandler(API.getDeliverable));
+        restServer.createContext("/nglm-guimanager/getDeliverableByName", new APISimpleHandler(API.getDeliverableByName));
         restServer.createContext("/nglm-guimanager/getTokenTypeList", new APISimpleHandler(API.getTokenTypeList));
         restServer.createContext("/nglm-guimanager/getTokenTypeSummaryList", new APISimpleHandler(API.getTokenTypeSummaryList));
         restServer.createContext("/nglm-guimanager/putTokenType", new APISimpleHandler(API.putTokenType));
@@ -2036,6 +2038,10 @@ public class GUIManager
 
                 case getDeliverable:
                   jsonResponse = processGetDeliverable(userID, jsonRoot);
+                  break;
+
+                case getDeliverableByName:
+                  jsonResponse = processGetDeliverableByName(userID, jsonRoot);
                   break;
 
                 case getTokenTypeList:
@@ -11306,6 +11312,50 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    if (deliverable != null) response.put("deliverable", deliverableJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetDeliverableByName
+  *
+  *****************************************/
+
+  private JSONObject processGetDeliverableByName(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String deliverableName = JSONUtilities.decodeString(jsonRoot, "name", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverableByName(deliverableName);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     /*****************************************
