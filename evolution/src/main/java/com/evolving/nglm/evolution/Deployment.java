@@ -140,6 +140,7 @@ public class Deployment
   private static CustomerMetaData customerMetaData = null;
   private static String APIresponseDateFormat;
   private static String uploadedFileTopic;
+  private static String uploadedTargetTopic;
 
   /*****************************************
   *
@@ -282,6 +283,7 @@ public class Deployment
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
   public static String getUploadedFileTopic() { return uploadedFileTopic; }
+  public static String getTargetTopic() { return uploadedTargetTopic; }
 
   /*****************************************
   *
@@ -889,6 +891,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  targetTopic
+    //
+
+    try
+      {
+        uploadedTargetTopic = JSONUtilities.decodeString(jsonRoot, "uploadedTargetTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  timedEvaluationTopic
     //

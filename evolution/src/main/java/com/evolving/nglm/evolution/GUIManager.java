@@ -320,6 +320,11 @@ public class GUIManager
     removeUploadedFile("removeUploadedFile"),
     getCustomerAlternateIDs("getCustomerAlternateIDs"),
     getCustomerAvailableCampaigns("getCustomerAvailableCampaigns"),
+    getUploadedTargetList("getUploadedTargetList"),
+    getUploadedTargetSummaryList("getUploadedTargetSummaryList"),
+    putUploadedTarget("putUploadedTarget"),
+    getUploadedTarget("getUploadedTarget"),
+    removeUploadedTarget("removeUploadedTarget"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -393,6 +398,7 @@ public class GUIManager
   private DeliverableSourceService deliverableSourceService;
   private String getCustomerAlternateID;
   private UploadedFileService uploadFileService;
+  private UploadedTargetService uploadedTargetService;
   
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -467,6 +473,7 @@ public class GUIManager
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     String uploadedFileTopic = Deployment.getUploadedFileTopic();
+    String targetTopic = Deployment.getTargetTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -540,6 +547,7 @@ public class GUIManager
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
+    uploadedTargetService = new UploadedTargetService(bootstrapServers, "guimanager-uploadedtargetservice-" + apiProcessKey, targetTopic, true);
     
     /*****************************************
     *
@@ -1077,6 +1085,7 @@ public class GUIManager
     subscriberProfileService.start();
     deliverableSourceService.start();
     uploadFileService.start();
+    uploadedTargetService.start();
 
     /*****************************************
     *
@@ -1252,6 +1261,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putUploadedFile", new APIComplexHandler(API.putUploadedFile));
         restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APISimpleHandler(API.getCustomerAlternateIDs));
         restServer.createContext("/nglm-guimanager/getCustomerAvailableCampaigns", new APISimpleHandler(API.getCustomerAvailableCampaigns));
+        restServer.createContext("/nglm-guimanager/getUploadedTargetList", new APISimpleHandler(API.getUploadedTargetList));
+        restServer.createContext("/nglm-guimanager/getUploadedTargetSummaryList", new APISimpleHandler(API.getUploadedTargetSummaryList));
+        restServer.createContext("/nglm-guimanager/putUploadedTarget", new APISimpleHandler(API.putUploadedTarget));
+        restServer.createContext("/nglm-guimanager/getUploadedTarget", new APISimpleHandler(API.getUploadedTarget));
+        restServer.createContext("/nglm-guimanager/removeUploadedTarget", new APISimpleHandler(API.removeUploadedTarget));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1266,7 +1280,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService, uploadFileService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService, uploadFileService, uploadedTargetService));
 
     /*****************************************
     *
@@ -1317,12 +1331,13 @@ public class GUIManager
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadFileService;
+    private UploadedTargetService targetService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointTypeService pointTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, UploadedFileService uploadFileService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointTypeService pointTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, UploadedFileService uploadFileService, UploadedTargetService targetService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1352,6 +1367,7 @@ public class GUIManager
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.deliverableSourceService = deliverableSourceService;
       this.uploadFileService = uploadFileService;
+      this.targetService = targetService;
     }
 
     //
@@ -1395,6 +1411,7 @@ public class GUIManager
       if (subscriberIDService != null) subscriberIDService.stop();
       if (deliverableSourceService != null) deliverableSourceService.stop();
       if (uploadFileService != null) uploadFileService.stop();
+      if (targetService != null) targetService.stop();
       //
       //  rest server
       //
@@ -2160,13 +2177,33 @@ public class GUIManager
                 case removeUploadedFile:
                   jsonResponse = processRemoveUploadedFile(userID, jsonRoot);
                   break;
-                  
+
                 case getCustomerAlternateIDs:
                   jsonResponse = processGetCustomerAlternateIDs(userID, jsonRoot);
                   break;
-                  
+
                 case getCustomerAvailableCampaigns:
                   jsonResponse = processGetCustomerAvailableCampaigns(userID, jsonRoot);
+                  break;
+
+                case getUploadedTargetList:
+                  jsonResponse = processGetUploadedTargetList(userID, jsonRoot, true);
+                  break;
+
+                case getUploadedTargetSummaryList:
+                  jsonResponse = processGetUploadedTargetList(userID, jsonRoot, false);
+                  break;
+
+                case putUploadedTarget:
+                  jsonResponse = processPutUploadedTarget(userID, jsonRoot);
+                  break;
+
+                case getUploadedTarget:
+                  jsonResponse = processGetUploadedTarget(userID, jsonRoot);
+                  break;
+
+                case removeUploadedTarget:
+                  jsonResponse = processRemoveUploadedTarget(userID, jsonRoot);
                   break;
               }
           }
@@ -2484,7 +2521,6 @@ public class GUIManager
              *  existing UploadedFile
              *
              *****************************************/
-            String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
             GUIManagedObject existingFileUpload = uploadFileService.getStoredUploadedFile(fileID);
 
             try
@@ -2657,14 +2693,6 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
     /****************************************
     *
     *  argument
@@ -2726,6 +2754,278 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetUploadedTarget
+  *
+  *****************************************/
+ 
+  private JSONObject processGetUploadedTarget(String userID, JSONObject jsonRoot)
+  {
+    log.info("GUIManager.processGetUploadedTarget("+userID+", "+jsonRoot+") called ...");
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate target
+    *
+    *****************************************/
+
+    GUIManagedObject target = uploadedTargetService.getStoredTarget(targetID);
+    JSONObject targetJSON = uploadedTargetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (target != null) ? "ok" : "uploadedTargetNotFound");
+    if (target != null) response.put("uploadedTarget", targetJSON);
+
+    log.info("GUIManager.processGetUploadedTarget("+userID+", "+jsonRoot+") DONE");
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processPutUploadedTarget
+   *
+   *****************************************/
+
+  private JSONObject processPutUploadedTarget (String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+     *
+     *  targetID
+     *
+     *****************************************/
+
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (targetID == null)
+      {
+        targetID = uploadedTargetService.generateTargetID();
+        jsonRoot.put("id", targetID);
+      }
+
+    /*****************************************
+     *
+     *  existing target
+     *
+     *****************************************/
+
+    GUIManagedObject existingTarget = uploadedTargetService.getStoredTarget(targetID);
+
+    /*****************************************
+     *
+     *  read-only
+     *
+     *****************************************/
+
+    if (existingTarget != null && existingTarget.getReadOnly())
+      {
+        response.put("id", existingTarget.getGUIManagedObjectID());
+        response.put("accepted", existingTarget.getAccepted());
+        response.put("valid", existingTarget.getAccepted());
+        response.put("processing", uploadedTargetService.isActiveTarget(existingTarget, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     *  process target
+     *
+     *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+    {
+      /****************************************
+       *
+       *  instantiate Target
+       *
+       ****************************************/
+
+      UploadedTarget target = new UploadedTarget(jsonRoot, epoch, existingTarget);
+
+      /*****************************************
+       *
+       *  store
+       *
+       *****************************************/
+
+      uploadedTargetService.putTarget(target, (existingTarget == null), userID);
+
+      /*****************************************
+       *
+       *  response
+       *
+       *****************************************/
+
+      response.put("id", target.getGUIManagedObjectID());
+      response.put("accepted", target.getAccepted());
+      response.put("valid", target.getAccepted());
+      response.put("processing", uploadedTargetService.isActiveTarget(target, now));
+      response.put("responseCode", "ok");
+      return JSONUtilities.encodeObject(response);
+    }
+    catch (JSONUtilitiesException|GUIManagerException e)
+    {
+      //
+      //  incompleteObject
+      //
+
+      IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+      //
+      //  store
+      //
+
+      uploadedTargetService.putTarget(incompleteObject, (existingTarget == null), userID);
+
+      //
+      //  log
+      //
+
+      StringWriter stackTraceWriter = new StringWriter();
+      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+      //
+      //  response
+      //
+
+      response.put("pointTypeID", incompleteObject.getGUIManagedObjectID());
+      response.put("responseCode", "targetNotValid");
+      response.put("responseMessage", e.getMessage());
+      response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
+  }
+  
+  /*****************************************
+  *
+  *  processGetUploadedTargetList
+  *
+  *****************************************/
+
+  private JSONObject processGetUploadedTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+
+    /*****************************************
+    *
+    *  retrieve target list
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> targetLists = new ArrayList<JSONObject>();
+    for (GUIManagedObject targetList : uploadedTargetService.getStoredTargets())
+      {
+        targetLists.add(uploadedTargetService.generateResponseJSON(targetList, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("uploadedTargets", JSONUtilities.encodeArray(targetLists));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  
+  /*****************************************
+  *
+  *  processRemoveUploadedTarget
+  *
+  *****************************************/
+  
+  public JSONObject processRemoveUploadedTarget(String userID, JSONObject jsonRoot){
+    
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingTarget = uploadedTargetService.getStoredTarget(targetID);
+    if (existingTarget != null && !existingTarget.getReadOnly()) {
+      uploadedTargetService.removeTarget(targetID, userID);
+    }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingTarget != null && !existingTarget.getReadOnly()) {
+      responseCode = "ok";
+    }
+    else if (existingTarget != null) {
+      responseCode = "failedReadOnly";
+    }
+    else {
+      responseCode = "targetNotFound";
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
 
   /*****************************************
   *

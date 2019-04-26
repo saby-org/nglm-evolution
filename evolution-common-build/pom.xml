@@ -139,6 +139,7 @@
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
     <topic.propensitylog>propensitylog</topic.propensitylog>
     <topic.uploadedfile>uploadedfile</topic.uploadedfile>
+    <topic.uploadedtarget>uploadedtarget</topic.uploadedtarget>
     <topic.pointtypefulfillment.request>pointtypefulfillment-request</topic.pointtypefulfillment.request>
     <topic.pointtypefulfillment.response>pointtypefulfillment-response</topic.pointtypefulfillment.response>
     <topic.pointtypefulfillment.internal>pointtypefulfillment-internal</topic.pointtypefulfillment.internal>
