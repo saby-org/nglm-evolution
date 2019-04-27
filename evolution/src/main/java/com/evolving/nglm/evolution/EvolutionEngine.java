@@ -74,6 +74,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
+import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 
 import org.slf4j.Logger;
@@ -236,6 +237,7 @@ public class EvolutionEngine
 
     String emptyTopic = Deployment.getEmptyTopic();
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
+    String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
     String journeyRequestTopic = Deployment.getJourneyRequestTopic();
     String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
@@ -387,6 +389,7 @@ public class EvolutionEngine
     final Serde<byte[]> byteArraySerde = new Serdes.ByteArraySerde();
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
+    final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
     final ConnectSerde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
@@ -408,6 +411,7 @@ public class EvolutionEngine
 
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
     evolutionEventSerdes.add(timedEvaluationSerde);
+    evolutionEventSerdes.add(subscriberProfileForceUpdateSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(journeyRequestSerde);
     evolutionEventSerdes.add(journeyStatisticSerde);
@@ -444,6 +448,7 @@ public class EvolutionEngine
     //
 
     KStream<StringKey, TimedEvaluation> timedEvaluationSourceStream = builder.stream(timedEvaluationTopic, Consumed.with(stringKeySerde, timedEvaluationSerde));
+    KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateSourceStream = builder.stream(subscriberProfileForceUpdateTopic, Consumed.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
     KStream<StringKey, JourneyRequest> journeyRequestSourceStream = builder.stream(journeyRequestTopic, Consumed.with(stringKeySerde, journeyRequestSerde));
     KStream<StringKey, JourneyStatistic> journeyStatisticSourceStream = builder.stream(journeyStatisticTopic, Consumed.with(stringKeySerde, journeyStatisticSerde));
@@ -476,6 +481,7 @@ public class EvolutionEngine
 
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) timedEvaluationSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberProfileForceUpdateSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyStatisticSourceStream);
@@ -1227,6 +1233,52 @@ public class EvolutionEngine
         throw new RuntimeException(e);
       }
     
+    /*****************************************
+    *
+    *  process subscriber profile force update
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof SubscriberProfileForceUpdate)
+      {
+        //
+        //  subscriberProfileForceUpdate
+        //
+
+        SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) evolutionEvent;
+        
+        //
+        //  evolutionSubscriberStatus
+        //
+
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("evolutionSubscriberStatus"))
+          {
+            EvolutionSubscriberStatus currentEvolutionSubscriberStatus = subscriberProfile.getEvolutionSubscriberStatus();
+            EvolutionSubscriberStatus updatedEvolutionSubscriberStatus = EvolutionSubscriberStatus.fromExternalRepresentation((String) subscriberProfileForceUpdate.getParameterMap().get("evolutionSubscriberStatus"));
+            if (currentEvolutionSubscriberStatus != updatedEvolutionSubscriberStatus)
+              {
+                subscriberProfile.setEvolutionSubscriberStatus(updatedEvolutionSubscriberStatus);
+                subscriberProfile.setEvolutionSubscriberStatusChangeDate(subscriberProfileForceUpdate.getEventDate());
+                subscriberProfile.setPreviousEvolutionSubscriberStatus(currentEvolutionSubscriberStatus);
+                subscriberProfileUpdated = true;
+              }
+          }
+
+        //
+        //  language
+        //
+
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("language"))
+          {
+            SupportedLanguage supportedLanguage = Deployment.getSupportedLanguages().get((String) subscriberProfileForceUpdate.getParameterMap().get("language"));
+            if (supportedLanguage != null)
+              {
+                subscriberProfile.setLanguage(supportedLanguage.getID());
+                subscriberProfileUpdated = true;
+              }
+          }
+      }
+
     /*****************************************
     *
     *  re-evaluate subscriberGroups for epoch changes and eligibility/range segmentation dimensions

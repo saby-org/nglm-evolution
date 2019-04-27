@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -39,6 +40,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -53,6 +56,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -93,6 +97,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
+  private KafkaProducer<byte[], byte[]> kafkaProducer;
   private OfferService offerService;
   private SubscriberProfileService subscriberProfileService;
   private SegmentationDimensionService segmentationDimensionService;
@@ -140,7 +145,8 @@ public class ThirdPartyManager
     getOffersList,
     getActiveOffer,
     getActiveOffers,
-    getCustomerAvailableCampaigns;
+    getCustomerAvailableCampaigns,
+    updateCustomer;
   }
   
   //
@@ -247,6 +253,19 @@ public class ThirdPartyManager
     
     /*****************************************
     *
+    *  kafka producer for the segmentationDimensionListener
+    *
+    *****************************************/
+
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", bootstrapServers);
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
+    /*****************************************
+    *
     *  services
     *
     *****************************************/
@@ -298,6 +317,7 @@ public class ThirdPartyManager
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
         restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
         restServer.createContext("/nglm-thirdpartymanager/getCustomerAvailableCampaigns", new APIHandler(API.getCustomerAvailableCampaigns));
+        restServer.createContext("/nglm-thirdpartymanager/updateCustomer", new APIHandler(API.updateCustomer));
         restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
         restServer.start();
       
@@ -313,7 +333,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, offerObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, offerObjectiveService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
     
     /*****************************************
     *
@@ -337,6 +357,7 @@ public class ThirdPartyManager
     //  data
     //
 
+    private KafkaProducer<byte[], byte[]> kafkaProducer;
     private HttpServer restServer;
     private OfferService offerService;
     private SubscriberProfileService subscriberProfileService;
@@ -352,8 +373,9 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
+      this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
       this.offerService = offerService;
       this.subscriberProfileService = subscriberProfileService;
@@ -396,6 +418,12 @@ public class ThirdPartyManager
       //
 
       if (restServer != null) restServer.stop(1);
+      
+      //
+      //  kafkaProducer
+      //
+
+      if (kafkaProducer != null) kafkaProducer.close();
     }
   }
   
@@ -535,6 +563,9 @@ public class ThirdPartyManager
                   break;
                 case getCustomerAvailableCampaigns:
                   jsonResponse = processGetCustomerAvailableCampaigns(jsonRoot);
+                  break;
+                case updateCustomer:
+                  jsonResponse = processUpdateCustomer(jsonRoot);
                   break;
               }
           }
@@ -2154,6 +2185,68 @@ public class ThirdPartyManager
           {
             log.error("SubscriberProfileServiceException ", e.getMessage());
             throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+      }
+
+    /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processUpdateCustomer
+  *
+  *****************************************/
+
+  private JSONObject processUpdateCustomer(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+    /*****************************************
+     *
+     * resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+      } 
+    else
+      {
+        try 
+          {
+            jsonRoot.put("subscriberID", subscriberID);
+            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            
+            //
+            //  submit to kafka
+            //
+
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+            
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+          }
+        catch (GUIManagerException e) 
+          {
+            log.error("unable to process request updateCustomer {} ", e.getMessage());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
           }
       }
 

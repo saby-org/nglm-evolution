@@ -53,6 +53,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.log4j.EnhancedThrowableRenderer;
@@ -326,6 +327,7 @@ public class GUIManager
     putUploadedTarget("putUploadedTarget"),
     getUploadedTarget("getUploadedTarget"),
     removeUploadedTarget("removeUploadedTarget"),
+    updateCustomer("updateCustomer"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -1268,6 +1270,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putUploadedTarget", new APISimpleHandler(API.putUploadedTarget));
         restServer.createContext("/nglm-guimanager/getUploadedTarget", new APISimpleHandler(API.getUploadedTarget));
         restServer.createContext("/nglm-guimanager/removeUploadedTarget", new APISimpleHandler(API.removeUploadedTarget));
+        restServer.createContext("/nglm-guimanager/updateCustomer", new APISimpleHandler(API.updateCustomer));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -2210,6 +2213,9 @@ public class GUIManager
 
                 case removeUploadedTarget:
                   jsonResponse = processRemoveUploadedTarget(userID, jsonRoot);
+                  
+                case updateCustomer:
+                  jsonResponse = processUpdateCustomer(userID, jsonRoot);
                   break;
               }
           }
@@ -13203,9 +13209,9 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> generalDetailsMetadataList = Deployment.getCustomerMetaData().getGeneralDetailsMetadata().stream().map(generalDetailsMetadata -> generalDetailsMetadata.getJSONRepresentation()).collect(Collectors.toList());
+    List<JSONObject> generalDetailsMetaDataList = Deployment.getCustomerMetaData().getGeneralDetailsMetaData().stream().map(generalDetailsMetaData -> generalDetailsMetaData.getJSONRepresentation()).collect(Collectors.toList());
     List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
-    response.put("generalDetailsMetadata", JSONUtilities.encodeArray(generalDetailsMetadataList));
+    response.put("generalDetailsMetaData", JSONUtilities.encodeArray(generalDetailsMetaDataList));
     response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
 
     /*****************************************
@@ -14494,6 +14500,58 @@ public class GUIManager
             log.error("SubscriberProfileServiceException ", e.getMessage());
             throw new GUIManagerException(e);
           }
+      }
+
+    /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processUpdateCustomer
+  *
+  *****************************************/
+
+  private JSONObject processUpdateCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+    /*****************************************
+     *
+     * resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else
+      {
+        jsonRoot.put("subscriberID", subscriberID);
+        SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+        
+        //
+        //  submit to kafka
+        //
+
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+        
+        response.put("responseCode", "ok");
       }
 
     /*****************************************

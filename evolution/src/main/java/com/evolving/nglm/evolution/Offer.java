@@ -23,7 +23,6 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;

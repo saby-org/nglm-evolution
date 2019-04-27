@@ -9,21 +9,23 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.DeploymentManagedObject;
 import com.evolving.nglm.core.JSONUtilities;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+
 public class CustomerMetaData
 {
   //
   //  data
   //
   
-  private List<Metadata> generalDetailsMetadataList = new ArrayList<Metadata>();
-  private List<Metadata> kpisMetaDataList = new ArrayList<Metadata>();
+  private List<MetaData> generalDetailsMetaDataList = new ArrayList<MetaData>();
+  private List<MetaData> kpisMetaDataList = new ArrayList<MetaData>();
   
   //
   // accessor
   //
   
-  public List<Metadata> getGeneralDetailsMetadata() { return generalDetailsMetadataList; }
-  public List<Metadata> getKpiMetaData() { return kpisMetaDataList; }
+  public List<MetaData> getGeneralDetailsMetaData() { return generalDetailsMetaDataList; }
+  public List<MetaData> getKpiMetaData() { return kpisMetaDataList; }
   
   /*****************************************
   *
@@ -33,43 +35,66 @@ public class CustomerMetaData
   
   public CustomerMetaData(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
   {
-    JSONArray generalDetailsMetadata = JSONUtilities.decodeJSONArray(jsonRoot, "generalDetailsMetadata", true);
-    for (int i=0; i<generalDetailsMetadata.size(); i++)
+    JSONArray generalDetailsMetaData = JSONUtilities.decodeJSONArray(jsonRoot, "generalDetailsMetaData", true);
+    for (int i=0; i<generalDetailsMetaData.size(); i++)
       {
-        JSONObject generalDetailsMetadataJson = (JSONObject) generalDetailsMetadata.get(i);
-        generalDetailsMetadataJson.put("guiPosition", i+1);
-        generalDetailsMetadataList.add(new Metadata(generalDetailsMetadataJson));
+        JSONObject generalDetailsMetaDataJson = (JSONObject) generalDetailsMetaData.get(i);
+        generalDetailsMetaDataJson.put("guiPosition", i+1);
+        generalDetailsMetaDataList.add(new MetaData(generalDetailsMetaDataJson));
       }
     
     JSONArray kpisMetaData = JSONUtilities.decodeJSONArray(jsonRoot, "kpisMetaData", true);
     for (int i=0; i<kpisMetaData.size(); i++)
       {
-        JSONObject kpiMetadataJson = (JSONObject) kpisMetaData.get(i);
-        kpiMetadataJson.put("guiPosition", i+1);
-        kpisMetaDataList.add(new Metadata(kpiMetadataJson));
+        JSONObject kpiMetaDataJson = (JSONObject) kpisMetaData.get(i);
+        kpiMetaDataJson.put("guiPosition", i+1);
+        kpisMetaDataList.add(new MetaData(kpiMetaDataJson));
       }
   }
   
   /********************************
-   * 
-   * class Metadata
-   *
-   ********************************/
+  * 
+  *  class MetaData
+  *
+  ********************************/
   
-  public class Metadata extends DeploymentManagedObject
+  public class MetaData extends DeploymentManagedObject
   {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
 
+    private String name;
+    private CriterionDataType dataType;
+    private boolean editable;
+    private boolean alternateID;
+
+    /*****************************************
+    *
+    *  accessors
+    *
+    *****************************************/
+
+    public String getName() { return name; }
+    public CriterionDataType getDataType() { return dataType; }
+    public boolean getEditable() { return editable; }
+    public boolean getAlternateID() { return alternateID; }
+    
     /*****************************************
     *
     *  constructor
     *
     *****************************************/
     
-    public Metadata(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
+    public MetaData(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
     {
       super(jsonRoot);
+      this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
+      this.dataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
+      this.editable = JSONUtilities.decodeBoolean(jsonRoot, "editable", Boolean.FALSE);
+      this.alternateID = JSONUtilities.decodeBoolean(jsonRoot, "alternateID", Boolean.FALSE);
     }
-    
   }
-
 }

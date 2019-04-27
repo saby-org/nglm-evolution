@@ -129,6 +129,7 @@
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
     <topic.ucgstate>ucgstate</topic.ucgstate>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
+    <topic.subscriberprofileforceupdate>subscriberprofileforceupdate</topic.subscriberprofileforceupdate>
     <topic.journeyrequest>journeyrequest</topic.journeyrequest>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
     <topic.deliverable.source>deliverable-source</topic.deliverable.source>

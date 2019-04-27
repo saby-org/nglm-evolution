@@ -73,6 +73,7 @@ public class Deployment
   private static String subscriberGroupEpochTopic;
   private static String ucgStateTopic;
   private static String timedEvaluationTopic;
+  private static String subscriberProfileForceUpdateTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
   private static String subscriberHistoryChangeLog;
@@ -216,6 +217,7 @@ public class Deployment
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
   public static String getUCGStateTopic() { return ucgStateTopic; }
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
+  public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
   public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
@@ -911,6 +913,19 @@ public class Deployment
     try
       {
         timedEvaluationTopic = JSONUtilities.decodeString(jsonRoot, "timedEvaluationTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  subscriberProfileForceUpdateTopic
+    //
+
+    try
+      {
+        subscriberProfileForceUpdateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
