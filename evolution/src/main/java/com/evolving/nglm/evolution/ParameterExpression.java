@@ -122,7 +122,6 @@ public class ParameterExpression
       {
         throw new GUIManagerException(e);
       }
-    
   }
 
   /*****************************************

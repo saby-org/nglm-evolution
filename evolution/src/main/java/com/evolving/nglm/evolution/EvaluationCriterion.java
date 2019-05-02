@@ -740,16 +740,7 @@ public class EvaluationCriterion
       {
         evaluatedArgument = (argument != null) ? argument.evaluate(evaluationRequest, argumentBaseTimeUnit) : null;
       }
-    catch (ArithmeticException e)
-      {
-        log.debug("invalid argument {}", argumentExpression);
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.debug(stackTraceWriter.toString());
-        evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
-        return false;
-      }
-    catch (ExpressionEvaluationException e)
+    catch (ExpressionEvaluationException|ArithmeticException e)
       {
         log.debug("invalid argument {}", argumentExpression);
         StringWriter stackTraceWriter = new StringWriter();

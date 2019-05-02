@@ -207,6 +207,32 @@ public class CriterionField extends DeploymentManagedObject
           }
       }
   }
+  
+  /*****************************************
+  *
+  *  constructor -- ContextVariable
+  *
+  *****************************************/
+
+  public CriterionField(ContextVariable contextVariable) throws GUIManagerException
+  {
+    this(generateCriterionField(contextVariable));
+  }
+
+  //
+  //  constructor -- context variable
+  //
+
+  private static JSONObject generateCriterionField(ContextVariable contextVariable)
+  {
+    Map<String,Object> criterionFieldJSON = new HashMap<String,Object>();
+    criterionFieldJSON.put("id", contextVariable.getID());
+    criterionFieldJSON.put("name", contextVariable.getName());
+    criterionFieldJSON.put("display", contextVariable.getName());
+    criterionFieldJSON.put("dataType", contextVariable.getType().getExternalRepresentation());
+    criterionFieldJSON.put("retriever", "getJourneyParameter");
+    return JSONUtilities.encodeObject(criterionFieldJSON);
+  }
 
   /*****************************************
   *

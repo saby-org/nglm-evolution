@@ -49,13 +49,14 @@ public class JourneyLink
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_link");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("linkID", Schema.STRING_SCHEMA);
     schemaBuilder.field("linkName", Schema.STRING_SCHEMA);
     schemaBuilder.field("linkParameters", ParameterMap.schema());
     schemaBuilder.field("sourceReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("destinationReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("evaluationPriority", Schema.STRING_SCHEMA);
+    schemaBuilder.field("evaluateContextVariables", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("transitionCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -90,6 +91,7 @@ public class JourneyLink
   private String sourceReference;
   private String destinationReference;
   private EvaluationPriority evaluationPriority;
+  private boolean evaluateContextVariables;
   private List<EvaluationCriterion> transitionCriteria;
 
   //
@@ -111,6 +113,7 @@ public class JourneyLink
   public String getSourceReference() { return sourceReference; }
   public String getDestinationReference() { return destinationReference; }
   public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
+  public boolean getEvaluateContextVariables() { return evaluateContextVariables; }
   public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
   public JourneyNode getSource() { return source; }
   public JourneyNode getDestination() { return destination; }
@@ -121,6 +124,7 @@ public class JourneyLink
 
   public void setSource(JourneyNode source) { this.source = source; }
   public void setDestination(JourneyNode destination) { this.destination = destination; }
+  public void setEvaluateContextVariables(boolean evaluateContextVariables) { this.evaluateContextVariables = evaluateContextVariables; }
 
   /*****************************************
   *
@@ -128,7 +132,7 @@ public class JourneyLink
   *
   *****************************************/
 
-  public JourneyLink(String linkID, String linkName, ParameterMap linkParameters, String sourceReference, String destinationReference, EvaluationPriority evaluationPriority, List<EvaluationCriterion> transitionCriteria)
+  public JourneyLink(String linkID, String linkName, ParameterMap linkParameters, String sourceReference, String destinationReference, EvaluationPriority evaluationPriority, boolean evaluateContextVariables, List<EvaluationCriterion> transitionCriteria)
   {
     this.linkID = linkID;
     this.linkName = linkName;
@@ -136,6 +140,7 @@ public class JourneyLink
     this.sourceReference = sourceReference;
     this.destinationReference = destinationReference;
     this.evaluationPriority = evaluationPriority;
+    this.evaluateContextVariables = evaluateContextVariables;
     this.transitionCriteria = transitionCriteria;
   }
 
@@ -155,6 +160,7 @@ public class JourneyLink
     struct.put("sourceReference", journeyLink.getSourceReference());
     struct.put("destinationReference", journeyLink.getDestinationReference());
     struct.put("evaluationPriority", journeyLink.getEvaluationPriority().getExternalRepresentation());
+    struct.put("evaluateContextVariables", journeyLink.getEvaluateContextVariables());
     struct.put("transitionCriteria", packTransitionCriteria(journeyLink.getTransitionCriteria()));
     return struct;
   }
@@ -202,13 +208,14 @@ public class JourneyLink
     String sourceReference = valueStruct.getString("sourceReference");
     String destinationReference = valueStruct.getString("destinationReference");
     EvaluationPriority evaluationPriority = EvaluationPriority.fromExternalRepresentation(valueStruct.getString("evaluationPriority"));
+    boolean evaluateContextVariables = (schemaVersion >= 2) ? valueStruct.getBoolean("evaluateContextVariables") : false;
     List<EvaluationCriterion> transitionCriteria = unpackTransitionCriteria(schema.field("transitionCriteria").schema(), valueStruct.get("transitionCriteria"));
 
     //
     //  return
     //
 
-    return new JourneyLink(linkID, linkName, linkParameters, sourceReference, destinationReference, evaluationPriority, transitionCriteria);
+    return new JourneyLink(linkID, linkName, linkParameters, sourceReference, destinationReference, evaluationPriority, evaluateContextVariables, transitionCriteria);
   }
 
   /*****************************************

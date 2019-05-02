@@ -72,6 +72,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
@@ -1786,7 +1787,7 @@ public class EvolutionEngine
             journeyState.setJourneyExitDate(now);
             subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
             inactiveJourneyStates.add(journeyState);
-            break;
+            continue;
           }
 
         /*****************************************
@@ -1878,6 +1879,56 @@ public class EvolutionEngine
               {
                 /*****************************************
                 *
+                *  set context variables when exiting node
+                *
+                *****************************************/
+                
+                if (firedLink.getEvaluateContextVariables())
+                  {
+                    for (ContextVariable contextVariable : journeyNode.getContextVariables())
+                      {
+                        try
+                          {
+                            SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
+                            Object contextVariableValue = contextVariable.getExpression().evaluate(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                            journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
+                            context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
+                          }
+                        catch (ExpressionEvaluationException|ArithmeticException e)
+                          {
+                            //
+                            //  log
+                            //
+
+                            log.debug("invalid context variable {}", contextVariable.getExpressionString());
+                            StringWriter stackTraceWriter = new StringWriter();
+                            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                            log.debug(stackTraceWriter.toString());
+                            context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
+
+                            //
+                            //  abort
+                            //
+
+                            journeyState.setJourneyExitDate(now);
+                            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
+                            inactiveJourneyStates.add(journeyState);
+                            break;
+                          }
+                      }
+
+                    //
+                    //  abort?
+                    //
+
+                    if (journeyState.getJourneyExitDate() != null)
+                      {
+                        continue;
+                      }
+                  }
+
+                /*****************************************
+                *
                 *  exit node action
                 *
                 *****************************************/
@@ -1924,6 +1975,56 @@ public class EvolutionEngine
 
                 /*****************************************
                 *
+                *  set context variables when entering node
+                *
+                *****************************************/
+                
+                if (journeyNode.getEvaluateContextVariables())
+                  {
+                    for (ContextVariable contextVariable : journeyNode.getContextVariables())
+                      {
+                        try
+                          {
+                            SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                            Object contextVariableValue = contextVariable.getExpression().evaluate(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                            journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
+                            context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
+                          }
+                        catch (ExpressionEvaluationException|ArithmeticException e)
+                          {
+                            //
+                            //  log
+                            //
+
+                            log.debug("invalid context variable {}", contextVariable.getExpressionString());
+                            StringWriter stackTraceWriter = new StringWriter();
+                            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                            log.debug(stackTraceWriter.toString());
+                            context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
+
+                            //
+                            //  abort
+                            //
+
+                            journeyState.setJourneyExitDate(now);
+                            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
+                            inactiveJourneyStates.add(journeyState);
+                            break;
+                          }
+                      }
+
+                    //
+                    //  abort?
+                    //
+
+                    if (journeyState.getJourneyExitDate() != null)
+                      {
+                        continue;
+                      }
+                  }
+
+                /*****************************************
+                *
                 *  enter node action
                 *
                 *****************************************/
@@ -1934,7 +2035,7 @@ public class EvolutionEngine
                     //  evaluate action
                     //
 
-                    SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
+                    SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
                     Action action = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
                     context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
 

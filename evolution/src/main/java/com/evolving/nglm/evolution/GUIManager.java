@@ -112,6 +112,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
@@ -3212,7 +3213,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes());
+    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap());
 
     /*****************************************
     *
@@ -3891,8 +3892,8 @@ public class GUIManager
     *
     *****************************************/
 
-    Map<CriterionField,CriterionField> journeyMetrics = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false) != null) ? Journey.decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false)) : Collections.<CriterionField,CriterionField>emptyMap();
-    Map<String,CriterionField> journeyParameters = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false) != null) ? Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false)) : Collections.<String,CriterionField>emptyMap();
+    Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -3906,7 +3907,7 @@ public class GUIManager
     List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyMetrics, journeyParameters, journeyNodeType, journeyNodeEvent, false);
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, false);
         journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly);
       }
 
@@ -3944,8 +3945,8 @@ public class GUIManager
     *
     *****************************************/
 
-    Map<CriterionField,CriterionField> journeyMetrics = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false) != null) ? Journey.decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false)) : Collections.<CriterionField,CriterionField>emptyMap();
-    Map<String,CriterionField> journeyParameters = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false) != null) ? Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false)) : Collections.<String,CriterionField>emptyMap();
+    Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -3959,9 +3960,10 @@ public class GUIManager
     List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
     if (journeyNodeType != null)
       {
-        CriterionContext criterionContext = new CriterionContext(journeyMetrics, journeyParameters, journeyNodeType, journeyNodeEvent, false);
+        CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, false);
         journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly);
       }
+    
     /*****************************************
     *
     *  strip out everything but id/display
@@ -4011,8 +4013,8 @@ public class GUIManager
     *
     *****************************************/
 
-    Map<CriterionField,CriterionField> journeyMetrics = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false) != null) ? Journey.decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot,"journeyMetrics", false)) : Collections.<CriterionField,CriterionField>emptyMap();
-    Map<String,CriterionField> journeyParameters = (JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false) != null) ? Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false)) : Collections.<String,CriterionField>emptyMap();
+    Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     String id = JSONUtilities.decodeString(jsonRoot, "id", true);
@@ -4036,7 +4038,7 @@ public class GUIManager
         List<JSONObject> journeyCriterionFields = Collections.<JSONObject>emptyList();
         if (journeyNodeType != null)
           {
-            CriterionContext criterionContext = new CriterionContext(journeyMetrics, journeyParameters, journeyNodeType, journeyNodeEvent, false);
+            CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, false);
             journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), false);
           }
 
@@ -4191,16 +4193,26 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetNodeTypes(String userID, JSONObject jsonRoot)
+  private JSONObject processGetNodeTypes(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
+    /*****************************************
+    *
+    *  arguments
+    *
+    *****************************************/
+
+    Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
+    Map<String,CriterionField> contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+
     /*****************************************
     *
     *  retrieve nodeTypes
     *
     *****************************************/
 
-    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes());
-
+    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes(), journeyParameters, contextVariables);
+    
     /*****************************************
     *
     *  response
@@ -4638,7 +4650,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes)
+  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
   {
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> result = new ArrayList<JSONObject>();
@@ -4682,7 +4694,7 @@ public class GUIManager
                 //  default list of fields for parameter data type
                 //
 
-                CriterionContext criterionContext = new CriterionContext(Collections.<CriterionField,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap(), nodeType, (EvolutionEngineEventDeclaration) null, false);
+                CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, false);
                 List<CriterionField> defaultFields = new ArrayList<CriterionField>();
                 for (CriterionField criterionField : criterionContext.getCriterionFields().values())
                   {

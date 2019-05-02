@@ -250,11 +250,24 @@ public class CriterionContext
   
   /*****************************************
   *
+  *  constructor -- journey working context
+  *
+  *****************************************/
+
+  public CriterionContext(CriterionContext baseCriterionContext, Map<String,CriterionField> additionalCriterionFields)
+  {
+    this.criterionContextType = CriterionContextType.JourneyNode;
+    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>(baseCriterionContext.getJourneyCriterionFields());
+    this.journeyCriterionFields.putAll(additionalCriterionFields);
+  }
+
+  /*****************************************
+  *
   *  constructor -- journey node
   *
   *****************************************/
 
-  public CriterionContext(Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, boolean includeLinkParameters)
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, boolean includeLinkParameters)
   {
     /*****************************************
     *
@@ -270,10 +283,9 @@ public class CriterionContext
     *
     *****************************************/
 
+    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
     if (! journeyNodeType.getStartNode())
       {
-        this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
-
         //
         //  standard journey top-level fields
         //
@@ -281,19 +293,19 @@ public class CriterionContext
         this.journeyCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
 
         //
-        //  journeyMetrics
-        //
-
-        for (CriterionField journeyMetric : journeyMetrics.keySet())
-          {
-            this.journeyCriterionFields.put(journeyMetric.getID(), journeyMetric);
-          }
-
-        //
         //  journey parameters
         //
 
         this.journeyCriterionFields.putAll(journeyParameters);
+
+        //
+        //  context variables
+        //
+
+        for (CriterionField contextVariable : contextVariables.values())
+          {
+            this.journeyCriterionFields.put(contextVariable.getID(), contextVariable);
+          }
 
         //
         //  standard journey node-level fields
@@ -310,48 +322,6 @@ public class CriterionContext
         //
 
         this.journeyCriterionFields.putAll(journeyNodeType.getParameters());
-
-        //
-        //  link-level  parameters
-        //
-
-        if (includeLinkParameters)
-          {
-            this.journeyCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
-          }
-
-        //
-        //  trigger-level fields
-        //
-
-        if (journeyEvent != null)
-          {
-            this.journeyCriterionFields.putAll(journeyEvent.getEventCriterionFields());
-          }
-      }
-
-    /*****************************************
-    *
-    *  journeyCriterionFields -- start node
-    *
-    *****************************************/
-
-    if (journeyNodeType.getStartNode())
-      {
-        this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
-
-        //
-        //  journey parameters
-        //
-
-        this.journeyCriterionFields.putAll(journeyParameters);
-
-        //
-        //  standard journey node-level fields
-        //
-
-        this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
-        this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
 
         //
         //  link-level  parameters

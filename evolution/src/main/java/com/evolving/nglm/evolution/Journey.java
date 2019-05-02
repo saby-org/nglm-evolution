@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -165,8 +166,8 @@ public class Journey extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("effectiveEntryPeriodEndDate", Timestamp.builder().optional().schema());
-    schemaBuilder.field("journeyMetrics", SchemaBuilder.map(CriterionField.schema(), Schema.STRING_SCHEMA).name("journey_journey_metrics").schema());
     schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_journey_parameters").schema());
+    schemaBuilder.field("contextVariables", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_context_variables").schema());
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("eligibilityCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
@@ -198,8 +199,8 @@ public class Journey extends GUIManagedObject
   ****************************************/
 
   private Date effectiveEntryPeriodEndDate;
-  private Map<CriterionField,CriterionField> journeyMetrics;            // TBD:  the value is currently hacked to be CriterionField (i.e., history.totalCharge.yesterday) 
   private Map<String,CriterionField> journeyParameters;
+  private Map<String,CriterionField> contextVariables;
   private TargetingType targetingType;
   private List<EvaluationCriterion> eligibilityCriteria;
   private List<EvaluationCriterion> targetingCriteria;
@@ -221,8 +222,8 @@ public class Journey extends GUIManagedObject
 
   public String getJourneyID() { return getGUIManagedObjectID(); }
   public String getJourneyName() { return getGUIManagedObjectName(); }
-  public Map<CriterionField,CriterionField> getJourneyMetrics() { return journeyMetrics; }
   public Map<String,CriterionField> getJourneyParameters() { return journeyParameters; }
+  public Map<String,CriterionField> getContextVariables() { return contextVariables; }
   public TargetingType getTargetingType() { return targetingType; }
   public List<EvaluationCriterion> getEligibilityCriteria() { return eligibilityCriteria; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
@@ -308,12 +309,12 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<CriterionField,CriterionField> journeyMetrics, Map<String,CriterionField> journeyParameters, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
-    this.journeyMetrics = journeyMetrics;
     this.journeyParameters = journeyParameters;
+    this.contextVariables = contextVariables;
     this.targetingType = targetingType;
     this.eligibilityCriteria = eligibilityCriteria;
     this.targetingCriteria = targetingCriteria;
@@ -336,8 +337,8 @@ public class Journey extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, journey);
     struct.put("effectiveEntryPeriodEndDate", journey.getRawEffectiveEntryPeriodEndDate());
-    struct.put("journeyMetrics", packJourneyMetrics(journey.getJourneyMetrics()));
     struct.put("journeyParameters", packJourneyParameters(journey.getJourneyParameters()));
+    struct.put("contextVariables", packContextVariables(journey.getContextVariables()));
     struct.put("targetingType", journey.getTargetingType().getExternalRepresentation());
     struct.put("eligibilityCriteria", packCriteria(journey.getEligibilityCriteria()));
     struct.put("targetingCriteria", packCriteria(journey.getTargetingCriteria()));
@@ -347,23 +348,6 @@ public class Journey extends GUIManagedObject
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
     struct.put("journeyLinks", packJourneyLinks(journey.getJourneyLinks()));
     return struct;
-  }
-
-  /****************************************
-  *
-  *  packJourneyMetrics
-  *
-  ****************************************/
-
-  private static Map<Object,String> packJourneyMetrics(Map<CriterionField,CriterionField> journeyMetrics)
-  {
-    Map<Object,String> result = new LinkedHashMap<Object,String>();
-    for (CriterionField criterionField : journeyMetrics.keySet())
-      {
-        CriterionField baseMetric = journeyMetrics.get(criterionField);
-        result.put(CriterionField.pack(criterionField), baseMetric.getID());
-      }
-    return result;
   }
 
   /****************************************
@@ -379,6 +363,23 @@ public class Journey extends GUIManagedObject
       {
         CriterionField journeyParameter = parameters.get(parameterName);
         result.put(parameterName,CriterionField.pack(journeyParameter));
+      }
+    return result;
+  }
+
+  /****************************************
+  *
+  *  packContextVariables
+  *
+  ****************************************/
+
+  private static Map<String,Object> packContextVariables(Map<String,CriterionField> contextVariables)
+  {
+    Map<String,Object> result = new LinkedHashMap<String,Object>();
+    for (String contextVariableName : contextVariables.keySet())
+      {
+        CriterionField contextVariable = contextVariables.get(contextVariableName);
+        result.put(contextVariableName,CriterionField.pack(contextVariable));
       }
     return result;
   }
@@ -473,8 +474,8 @@ public class Journey extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     Date effectiveEntryPeriodEndDate = (Date) valueStruct.get("effectiveEntryPeriodEndDate");
-    Map<CriterionField,CriterionField> journeyMetrics = unpackJourneyMetrics(schema.field("journeyMetrics").schema(), (Map<Object,String>) valueStruct.get("journeyMetrics"));
     Map<String,CriterionField> journeyParameters = unpackJourneyParameters(schema.field("journeyParameters").schema(), (Map<String,Object>) valueStruct.get("journeyParameters"));
+    Map<String,CriterionField> contextVariables = unpackContextVariables(schema.field("contextVariables").schema(), (Map<String,Object>) valueStruct.get("contextVariables"));
     TargetingType targetingType = TargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     List<EvaluationCriterion> eligibilityCriteria = unpackCriteria(schema.field("eligibilityCriteria").schema(), valueStruct.get("eligibilityCriteria"));
     List<EvaluationCriterion> targetingCriteria = unpackCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
@@ -544,29 +545,9 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyMetrics, journeyParameters, targetingType, eligibilityCriteria, targetingCriteria, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks);
   }
   
-  /*****************************************
-  *
-  *  unpackJourneyMetrics
-  *
-  *****************************************/
-
-  private static Map<CriterionField,CriterionField> unpackJourneyMetrics(Schema schema, Map<Object,String> journeyMetrics)
-  {
-    Map<CriterionField,CriterionField> result = new LinkedHashMap<CriterionField,CriterionField>();
-    for (Object packedJourneyMetric : journeyMetrics.keySet())
-      {
-        CriterionField journeyMetric = CriterionField.unpack(new SchemaAndValue(schema.keySchema(), packedJourneyMetric));
-        String baseMetricID = journeyMetrics.get(packedJourneyMetric);
-        CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(baseMetricID);
-        if (baseMetric == null) throw new SerializationException("unknown baseMetric: " + baseMetricID);
-        result.put(journeyMetric, baseMetric);
-      }
-    return result;
-  }
-
   /*****************************************
   *
   *  unpackJourneyParameters
@@ -580,6 +561,23 @@ public class Journey extends GUIManagedObject
       {
         CriterionField journeyParameter = CriterionField.unpack(new SchemaAndValue(schema.valueSchema(), parameters.get(parameterName)));
         result.put(parameterName, journeyParameter);
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackContextVariables
+  *
+  *****************************************/
+
+  private static Map<String,CriterionField> unpackContextVariables(Schema schema, Map<String,Object> contextVariables)
+  {
+    Map<String,CriterionField> result = new LinkedHashMap<String,CriterionField>();
+    for (String contextVariableName : contextVariables.keySet())
+      {
+        CriterionField contextVariable = CriterionField.unpack(new SchemaAndValue(schema.valueSchema(), contextVariables.get(contextVariableName)));
+        result.put(contextVariableName, contextVariable);
       }
     return result;
   }
@@ -745,15 +743,23 @@ public class Journey extends GUIManagedObject
     *****************************************/
 
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
-    this.journeyMetrics = decodeJourneyMetrics(JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", false));
     this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
     this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), Deployment.getJourneyUniversalEligibilityCriteria());
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
-    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this);
+    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
+    /*****************************************
+    *
+    *  jsonNodes
+    *
+    *****************************************/
+
+    this.contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false);
+    
     /*****************************************
     *
     *  validate
@@ -790,7 +796,7 @@ public class Journey extends GUIManagedObject
     this.journeyNodes = new LinkedHashMap<String,JourneyNode>();
     for (GUINode jsonNode : jsonNodes.values())
       {
-        journeyNodes.put(jsonNode.getNodeID(), new JourneyNode(jsonNode.getNodeID(), jsonNode.getNodeName(), jsonNode.getNodeType(), jsonNode.getNodeParameters(), new ArrayList<String>(), new ArrayList<String>()));
+        journeyNodes.put(jsonNode.getNodeID(), new JourneyNode(jsonNode.getNodeID(), jsonNode.getNodeName(), jsonNode.getNodeType(), jsonNode.getNodeParameters(), jsonNode.getContextVariables(), new ArrayList<String>(), new ArrayList<String>()));
       }
 
     /*****************************************
@@ -951,7 +957,7 @@ public class Journey extends GUIManagedObject
         *****************************************/
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
-        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), outgoingConnectionPoint.getOutputConnectorParameters(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), transitionCriteria);
+        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), outgoingConnectionPoint.getOutputConnectorParameters(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), outgoingConnectionPoint.getEvaluateContextVariables(), transitionCriteria);
         journeyLink.setSource(sourceJourneyNode);
         journeyLink.setDestination(destinationJourneyNode);
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
@@ -1098,6 +1104,24 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
+    *  set evaluateContextVariables
+    *
+    *****************************************/
+
+    for (JourneyNode journeyNode : journeyNodes.values())
+      {
+        boolean evaluateContextVariables = journeyNode.getNodeType().getAllowContextVariables() && journeyNode.getContextVariables().size() > 0;
+        boolean evaluateContextVariablesOnEntry = evaluateContextVariables;
+        for (JourneyLink outgoingLink : journeyNode.getOutgoingLinks().values())
+          {
+            evaluateContextVariablesOnEntry = evaluateContextVariablesOnEntry && ! outgoingLink.getEvaluateContextVariables();
+            outgoingLink.setEvaluateContextVariables(evaluateContextVariables && outgoingLink.getEvaluateContextVariables());
+          }
+        journeyNode.setEvaluateContextVariables(evaluateContextVariablesOnEntry);
+      }
+
+    /*****************************************
+    *
     *  epoch
     *
     *****************************************/
@@ -1106,59 +1130,6 @@ public class Journey extends GUIManagedObject
       {
         this.setEpoch(epoch);
       }
-  }
-
-  /*****************************************
-  *
-  *  decodeJourneyMetrics
-  *
-  *****************************************/
-
-  public static Map<CriterionField,CriterionField> decodeJourneyMetrics(JSONArray jsonArray) throws GUIManagerException
-  {
-    Map<CriterionField,CriterionField> journeyMetrics = new LinkedHashMap<CriterionField,CriterionField>();
-    if (jsonArray != null)
-      {
-        for (int i=0; i<jsonArray.size(); i++)
-          {
-            //
-            //  parse
-            //
-
-            JSONObject journeyMetricJSON = (JSONObject) jsonArray.get(i);
-            String journeyMetricName = JSONUtilities.decodeString(journeyMetricJSON, "criterionFieldID", true);
-            String baseMetricID = JSONUtilities.decodeString(journeyMetricJSON, "baseMetric", true);
-            CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(baseMetricID);
-
-            //
-            //  validate
-            //
-
-            if (baseMetric == null) throw new GUIManagerException("unknown baseMetric", baseMetricID);
-            switch (baseMetric.getFieldDataType())
-              {
-                case IntegerCriterion:
-                case DoubleCriterion:
-                  break;
-
-                default:
-                  throw new GUIManagerException("non-numeric baseMetric", baseMetricID);
-              }
-
-            //
-            //  journeyMetric
-            //
-
-            CriterionField journeyMetric = new CriterionField(baseMetric, journeyMetricName, "getJourneyMetric", false, baseMetric.getTagFormat(), baseMetric.getTagMaxLength());
-
-            //
-            //  result
-            //
-
-            journeyMetrics.put(journeyMetric, baseMetric);
-          }
-      }
-    return journeyMetrics;
   }
 
   /*****************************************
@@ -1243,14 +1214,38 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private Map<String,GUINode> decodeNodes(JSONArray jsonArray, Journey journey) throws GUIManagerException
+  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing) throws GUIManagerException
   {
     Map<String,GUINode> nodes = new LinkedHashMap<String,GUINode>();
-    for (int i=0; i<jsonArray.size(); i++)
+    if (jsonArray != null)
       {
-        JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
-        GUINode node = new GUINode(nodeJSON, journey);
-        nodes.put(node.getNodeID(), node);
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            //
+            //  node
+            //
+
+            JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
+            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing);
+
+            //
+            //  validate (if required)
+            //
+
+            if (! contextVariableProcessing)
+              {
+                for (ContextVariable contextVariable : node.getContextVariables())
+                  {
+                    contextVariable.validate(node.getNodeCriterionContext());
+                  }
+              }
+
+            //
+            //  nodes
+            //
+
+            nodes.put(node.getNodeID(), node);
+          }
       }
     return nodes;
   }
@@ -1261,7 +1256,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private List<GUILink> decodeLinks(JSONArray jsonArray) throws GUIManagerException
+  private static List<GUILink> decodeLinks(JSONArray jsonArray) throws GUIManagerException
   {
     List<GUILink> links = new ArrayList<GUILink>();
     for (int i=0; i<jsonArray.size(); i++)
@@ -1338,6 +1333,192 @@ public class Journey extends GUIManagedObject
       }
   }
 
+  /*****************************************
+  *
+  *  processContextVariableNodes
+  *
+  *****************************************/
+
+  public static Map<String, CriterionField> processContextVariableNodes(Map<String,GUINode> contextVariableNodes, Map<String,CriterionField> journeyParameters) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  preparation
+    *
+    *****************************************/
+
+    Map<ContextVariable,CriterionContext> contextVariables = new IdentityHashMap<ContextVariable,CriterionContext>();
+    for (GUINode guiNode : contextVariableNodes.values())
+      {
+        for (ContextVariable contextVariable : guiNode.getContextVariables())
+          {
+            contextVariables.put(contextVariable, guiNode.getNodeCriterionContext());
+          }
+      }
+
+    /*****************************************
+    *
+    *  process
+    *
+    *****************************************/
+
+    Map<String,CriterionField> contextVariableFields = new HashMap<String,CriterionField>();
+    Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>(contextVariables.keySet());
+    Set<ContextVariable> newlyValidatedContextVariables = new HashSet<ContextVariable>();
+    do
+      {
+        /*****************************************
+        *
+        *  validate as many contextVariables as possible using workingCriterionContext
+        *
+        *****************************************/
+
+        //
+        //  reset newlyValidatedContextVariables
+        //
+
+        newlyValidatedContextVariables.clear();
+
+        //
+        //  validate 
+        //
+
+        for (ContextVariable contextVariable : unvalidatedContextVariables)
+          {
+            try
+              {
+                //
+                //  workingCriterionContext
+                //
+
+                CriterionContext workingCriterionContext = new CriterionContext(contextVariables.get(contextVariable), contextVariableFields);
+
+                //
+                //  validate
+                //
+
+                contextVariable.validate(workingCriterionContext);
+
+                //
+                //  mark as validated
+                //
+
+                newlyValidatedContextVariables.add(contextVariable);
+              }
+            catch (GUIManagerException e)
+              {
+                //
+                //  ignore failure (remain in unvalidatedContextVariables)
+                //
+              }
+          }
+
+        //
+        //  update unvalidated context variables
+        //
+
+        unvalidatedContextVariables.removeAll(newlyValidatedContextVariables);
+
+        /*****************************************
+        *
+        *  find/resolve type conflicts with previously validated context variables
+        *
+        *****************************************/
+
+        boolean anyFieldTypeModified = false;
+        for (ContextVariable contextVariable : newlyValidatedContextVariables)
+          {
+            CriterionField criterionField = new CriterionField(contextVariable);
+            CriterionField existingCriterionField = contextVariableFields.get(criterionField.getID());
+            if (existingCriterionField != null)
+              {
+                //
+                //  process
+                //
+
+                switch (criterionField.getFieldDataType())
+                  {
+                    case IntegerCriterion:
+                      switch (existingCriterionField.getFieldDataType())
+                        {
+                          case IntegerCriterion:
+                          case DoubleCriterion:
+                            break;
+
+                          default:
+                            throw new GUIManagerException("inconsistent data types", criterionField.getID());
+                        }
+                      break;
+
+                    case DoubleCriterion:
+                      switch (existingCriterionField.getFieldDataType())
+                        {
+                          case IntegerCriterion:
+                            contextVariableFields.put(criterionField.getID(), criterionField);
+                            anyFieldTypeModified = true;
+                            break;
+
+                          case DoubleCriterion:
+                            break;
+
+                          default:
+                            throw new GUIManagerException("inconsistent data types", criterionField.getID());
+                        }
+                      break;
+
+                    case StringCriterion:
+                    case BooleanCriterion:
+                    case DateCriterion:
+                    case StringSetCriterion:
+                      if (contextVariableFields.get(criterionField.getID()).getFieldDataType() != criterionField.getFieldDataType())
+                        {
+                          throw new GUIManagerException("inconsistent data types", criterionField.getID());
+                        }
+                      break;
+
+                    default:
+                      throw new GUIManagerException("bad data type", criterionField.getFieldDataType().getExternalRepresentation());
+                  }
+              }
+            else
+              {
+                contextVariableFields.put(criterionField.getID(), criterionField);
+              }
+          }
+
+        /*****************************************
+        *
+        *  revalidate all context variables if any field type was modified
+        *
+        *****************************************/
+
+        if (anyFieldTypeModified)
+          {
+            unvalidatedContextVariables.addAll(contextVariables.keySet());
+          }
+      }
+    while (unvalidatedContextVariables.size() > 0 && newlyValidatedContextVariables.size() > 0);
+
+    /*****************************************
+    *
+    *  all context variables validated?
+    *
+    *****************************************/
+
+    if (unvalidatedContextVariables.size() > 0)
+      {
+        throw new GUIManagerException("unvalidatedContextVariables", Integer.toString(unvalidatedContextVariables.size()));
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+    
+    return contextVariableFields;
+  }
+  
   /*****************************************************************************
   *
   *  class GUINode
@@ -1357,6 +1538,9 @@ public class Journey extends GUIManagedObject
     private NodeType nodeType;
     private ParameterMap nodeParameters;
     private List<OutgoingConnectionPoint> outgoingConnectionPoints;
+    private List<ContextVariable> contextVariables;
+    private CriterionContext nodeCriterionContext;
+    private CriterionContext linkCriterionContext;
 
     /*****************************************
     *
@@ -1369,6 +1553,9 @@ public class Journey extends GUIManagedObject
     public NodeType getNodeType() { return nodeType; }
     public ParameterMap getNodeParameters() { return nodeParameters; }
     public List<OutgoingConnectionPoint> getOutgoingConnectionPoints() { return outgoingConnectionPoints; }
+    public List<ContextVariable> getContextVariables() { return contextVariables; }
+    public CriterionContext getNodeCriterionContext() { return nodeCriterionContext; }
+    public CriterionContext getLinkCriterionContext() { return linkCriterionContext; }
 
     /*****************************************
     *
@@ -1376,8 +1563,14 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public GUINode(JSONObject jsonRoot, Journey journey) throws GUIManagerException
+    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing) throws GUIManagerException
     {
+      /*****************************************
+      *
+      *  process these fields in all situations
+      *
+      *****************************************/
+
       //
       //  data
       //
@@ -1410,20 +1603,35 @@ public class Journey extends GUIManagedObject
       //  criterionContext
       //
 
-      CriterionContext nodeCriterionContext = new CriterionContext(journey.getJourneyMetrics(), journey.getJourneyParameters(), this.nodeType, nodeEvent, false);
-      CriterionContext linkCriterionContext = new CriterionContext(journey.getJourneyMetrics(), journey.getJourneyParameters(), this.nodeType, nodeEvent, true);
+      this.nodeCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, false);
+      this.linkCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, true);
 
       //
-      //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
+      //  contextVariables
       //
 
-      this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
+      this.contextVariables = nodeType.getAllowContextVariables() ? decodeContextVariables(JSONUtilities.decodeJSONArray(jsonRoot, "contextVariables", false)) : Collections.<ContextVariable>emptyList();
 
-      //
-      //  outputConnectors
-      //
+      /*****************************************
+      *
+      *  process these fields only if NOT doing contextVariableProcessing
+      *
+      *****************************************/
 
-      this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext);
+      if (! contextVariableProcessing)
+        {
+          //
+          //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
+          //
+
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
+
+          //
+          //  outputConnectors
+          //
+
+          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext);
+        }
     }
 
     /*****************************************
@@ -1641,6 +1849,26 @@ public class Journey extends GUIManagedObject
         }
       return outgoingConnectionPoints;
     }
+
+    /*****************************************
+    *
+    *  decodeContextVariables
+    *
+    *****************************************/
+
+    private static List<ContextVariable> decodeContextVariables(JSONArray jsonArray) throws GUIManagerException
+    {
+      List<ContextVariable> contextVariables = new ArrayList<ContextVariable>();
+      if (jsonArray != null)
+        {
+          for (int i=0; i<jsonArray.size(); i++)
+            {
+              JSONObject contextVariableJSON = (JSONObject) jsonArray.get(i);
+              contextVariables.add(new ContextVariable(contextVariableJSON));
+            }
+        }
+      return contextVariables;
+    }
   }
 
   /*****************************************************************************
@@ -1660,6 +1888,7 @@ public class Journey extends GUIManagedObject
     private String name;
     private ParameterMap outputConnectorParameters;
     private EvaluationPriority evaluationPriority;
+    private boolean evaluateContextVariables;
     private List<EvaluationCriterion> transitionCriteria;
     private String additionalCriteria;
     
@@ -1672,6 +1901,7 @@ public class Journey extends GUIManagedObject
     public String getName() { return name; }
     public ParameterMap getOutputConnectorParameters() { return outputConnectorParameters; }
     public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
+    public boolean getEvaluateContextVariables() { return evaluateContextVariables; }
     public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
     public String getAdditionalCriteria() { return additionalCriteria; }
 
@@ -1686,6 +1916,7 @@ public class Journey extends GUIManagedObject
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
       this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
+      this.evaluateContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "evaluateContextVariables", Boolean.FALSE);
       this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
       this.additionalCriteria = JSONUtilities.decodeString(jsonRoot, "additionalCriteria", false);
     }
@@ -1857,7 +2088,6 @@ public class Journey extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingJourney.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(effectiveEntryPeriodEndDate, existingJourney.getRawEffectiveEntryPeriodEndDate());
-        epochChanged = epochChanged || ! Objects.equals(journeyMetrics, existingJourney.getJourneyMetrics());
         epochChanged = epochChanged || ! Objects.equals(journeyParameters, existingJourney.getJourneyParameters());
         epochChanged = epochChanged || ! (targetingType == existingJourney.getTargetingType());
         epochChanged = epochChanged || ! Objects.equals(eligibilityCriteria, existingJourney.getEligibilityCriteria());
