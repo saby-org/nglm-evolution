@@ -112,20 +112,20 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
       if(inFulfillment != null){
         documentMap = new HashMap<String,Object>();
-        documentMap.put("customer_id", inFulfillment.getSubscriberID());
-        documentMap.put("delivery_request_id", inFulfillment.getDeliveryRequestID());
+        documentMap.put("subscriberID", inFulfillment.getSubscriberID());
+        documentMap.put("deliveryRequestID", inFulfillment.getDeliveryRequestID());
         documentMap.put("eventID", inFulfillment.getEventID());
-        documentMap.put("event_datetime", inFulfillment.getEventDate());
-        documentMap.put("provider_id", inFulfillment.getCorrelator());
-        documentMap.put("deliverable_id", inFulfillment.getPaymentMeanID());
-        documentMap.put("deliverable_qty", inFulfillment.getAmount());
+        documentMap.put("eventDatetime", inFulfillment.getEventDate());
+        documentMap.put("providerID", inFulfillment.getCorrelator());
+        documentMap.put("deliverableID", inFulfillment.getPaymentMeanID());
+        documentMap.put("deliverableQty", inFulfillment.getAmount());
         documentMap.put("operation", inFulfillment.getOperation().toString());
-        documentMap.put("module_id", inFulfillment.getModuleID());
-        documentMap.put("feature_id", inFulfillment.getFeatureID());
+        documentMap.put("moduleID", inFulfillment.getModuleID());
+        documentMap.put("featureID", inFulfillment.getFeatureID());
         documentMap.put("origin", "");
-        documentMap.put("return_code", inFulfillment.getReturnCode());
-        documentMap.put("delivery_status", inFulfillment.getDeliveryStatus());
-        documentMap.put("return_code_details", inFulfillment.getReturnCodeDetails());
+        documentMap.put("returnCode", inFulfillment.getReturnCode());
+        documentMap.put("deliveryStatus", inFulfillment.getDeliveryStatus());
+        documentMap.put("returnCodeDetails", inFulfillment.getReturnCodeDetails());
          
       }
       log.info("BDRSingConnector.getDocumentMap: map computed, contents are="+documentMap.toString());

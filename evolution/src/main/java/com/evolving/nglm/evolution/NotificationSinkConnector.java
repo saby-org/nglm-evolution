@@ -111,30 +111,30 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         MailNotificationManagerRequest mailNotification = MailNotificationManagerRequest.unpack(new SchemaAndValue(smsNotificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
-        documentMap.put("customer_id", mailNotification.getSubscriberID());
-        documentMap.put("delivery_request_id", mailNotification.getDeliveryRequestID());
-        documentMap.put("event_id", mailNotification.getEventID());
-        documentMap.put("event_datetime", mailNotification.getEventDate());
-        documentMap.put("module_id", mailNotification.getModuleID());
-        documentMap.put("feature_id", mailNotification.getFeatureID());
+        documentMap.put("subscriberID", mailNotification.getSubscriberID());
+        documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
+        documentMap.put("eventID", mailNotification.getEventID());
+        documentMap.put("eventDatetime", mailNotification.getEventDate());
+        documentMap.put("moduleID", mailNotification.getModuleID());
+        documentMap.put("featureID", mailNotification.getFeatureID());
         documentMap.put("origin", "");
-        documentMap.put("return_code", mailNotification.getReturnCode());
-        documentMap.put("delivery_status", mailNotification.getMessageStatus().toString());
-        documentMap.put("return_code_details", mailNotification.getReturnCodeDetails());
+        documentMap.put("returnCode", mailNotification.getReturnCode());
+        documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
+        documentMap.put("returnCodeDetails", mailNotification.getReturnCodeDetails());
       }else{
         documentMap = new HashMap<String,Object>();
         SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(smsNotificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
-        documentMap.put("customer_id", smsNotification.getSubscriberID());
-        documentMap.put("delivery_request_id", smsNotification.getDeliveryRequestID());
-        documentMap.put("event_id", smsNotification.getDeliveryRequestID());
-        documentMap.put("event_datetime", smsNotification.getEventDate());
-        documentMap.put("module_id", smsNotification.getModuleID());
-        documentMap.put("feature_id", smsNotification.getFeatureID());
+        documentMap.put("subscriberID", smsNotification.getSubscriberID());
+        documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
+        documentMap.put("eventID", smsNotification.getDeliveryRequestID());
+        documentMap.put("eventDatetime", smsNotification.getEventDate());
+        documentMap.put("moduleID", smsNotification.getModuleID());
+        documentMap.put("featureID", smsNotification.getFeatureID());
         documentMap.put("origin", "");
-        documentMap.put("return_code", smsNotification.getReturnCode());
-        documentMap.put("delivery_status", smsNotification.getMessageStatus().toString());
-        documentMap.put("return_code_details", smsNotification.getReturnCodeDetails());
+        documentMap.put("returnCode", smsNotification.getReturnCode());
+        documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
+        documentMap.put("returnCodeDetails", smsNotification.getReturnCodeDetails());
       }
       
       return documentMap;

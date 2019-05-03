@@ -133,19 +133,19 @@
             {
               "properties" :
                 {
-	          "customer_id" : { "type" : "keyword" },
-	          "event_id" : { "type" : "keyword" },
-	          "event_datetime" : { "type" : "date" },
-	          "provider_id" : { "type" : "keyword" },
-	          "deliverable_id" : { "type" : "keyword" },
-	          "deliverable_qty" : { "type" : "integer", "index" : "false" },
+	          "subscriberID" : { "type" : "keyword" },
+	          "eventID" : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date" },
+	          "providerID" : { "type" : "keyword" },
+	          "deliverableID" : { "type" : "keyword" },
+	          "deliverableQty" : { "type" : "integer", "index" : "false" },
 	          "operation" : { "type" : "keyword" },
-	          "module_id" : { "type" : "keyword" },
-	          "feature_id" : { "type" : "keyword" },
+	          "moduleID" : { "type" : "keyword" },
+	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "return_code" : { "type" : "keyword" },
-	          "delivery_status" : { "type" : "keyword" },
-	          "return_code_details" : { "type" : "text", "index" : "false" }
+	          "returnCode" : { "type" : "keyword" },
+	          "deliveryStatus" : { "type" : "keyword" },
+	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
                 }
             }
         }
@@ -187,24 +187,24 @@
             {
               "properties" :
                 {
-	          "customer_id" : { "type" : "keyword" },
-	          "event_id" : { "type" : "keyword" },
-	          "event_datetime" : { "type" : "date" },
-	          "purchase_id" : { "type" : "keyword" },
-	          "offer_id" : { "type" : "keyword" },
-	          "offer_qty" : { "type" : "integer", "index" : "false" },
-	          "sales_channel_id" : { "type" : "keyword" },
-	          "offer_price" : { "type" : "integer", "index" : "false" },
-	          "offer_stock" : { "type" : "integer", "index" : "false" },
-	          "offer_content" : { "type" : "text", "index" : "false" },
-	          "module_id" : { "type" : "keyword" },
-	          "feature_id" : { "type" : "keyword" },
+	          "subscriberID" : { "type" : "keyword" },
+	          "eventID" : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date" },
+	          "purchaseID" : { "type" : "keyword" },
+	          "offerID" : { "type" : "keyword" },
+	          "offerQty" : { "type" : "integer", "index" : "false" },
+	          "salesChannelID" : { "type" : "keyword" },
+	          "offerPrice" : { "type" : "integer", "index" : "false" },
+	          "offerStock" : { "type" : "integer", "index" : "false" },
+	          "offerContent" : { "type" : "text", "index" : "false" },
+	          "moduleID" : { "type" : "keyword" },
+	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "return_code" : { "type" : "keyword" },
-	          "delivery_status" : { "type" : "keyword" },
-	          "return_code_details" : { "type" : "text", "index" : "false" },
-	          "voucher_code" : { "type" : "keyword" },
-	          "voucher_partner_id" : { "type" : "keyword" }
+	          "returnCode" : { "type" : "keyword" },
+	          "deliveryStatus" : { "type" : "keyword" },
+	          "returnCodeDetails" : { "type" : "text", "index" : "false" },
+	          "voucherCode" : { "type" : "keyword" },
+	          "voucherPartnerID" : { "type" : "keyword" }
                 }
             }
         }
@@ -246,16 +246,16 @@
             {
               "properties" :
                 {
-	          "customer_id" : { "type" : "keyword" },
-	          "event_id" : { "type" : "keyword" },
-	          "event_datetime" : { "type" : "date" },
-	          "message_id" : { "type" : "keyword" },
-	          "module_id" : { "type" : "keyword" },
-	          "feature_id" : { "type" : "keyword" },
+	          "subscriberID" : { "type" : "keyword" },
+	          "eventID" : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date" },
+	          "messageID" : { "type" : "keyword" },
+	          "moduleID" : { "type" : "keyword" },
+	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "return_code" : { "type" : "keyword" },
-	          "delivery_status" : { "type" : "keyword" },
-	          "return_code_details" : { "type" : "text", "index" : "false" }
+	          "returnCode" : { "type" : "keyword" },
+	          "deliveryStatus" : { "type" : "keyword" },
+	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
                 }
             }
         }

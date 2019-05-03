@@ -5113,7 +5113,7 @@ public class GUIManager
     *
     *****************************************/
 
-    HashMap<String,Object> response = new HashMap<String,Object>();;
+    HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("journeys", JSONUtilities.encodeArray(journeys));
     return JSONUtilities.encodeObject(response);

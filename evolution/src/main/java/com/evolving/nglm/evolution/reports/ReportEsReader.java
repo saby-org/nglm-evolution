@@ -11,10 +11,11 @@ import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -37,15 +38,12 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.reports.ReportEsReader.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 /**
@@ -84,9 +82,8 @@ public class ReportEsReader {
 	private String kafkaNodeList;
 	private String kzHostList;
 	private String esNode;
-	private String[] esIndex;
+	private LinkedHashMap<String, QueryBuilder> esIndex;
 	private String elasticKey;
-	private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     /**
      * Create a {@code ReportEsReader} instance.
@@ -102,10 +99,10 @@ public class ReportEsReader {
      * @param kafkaNodeList the kafka cluster node list that will hold the topic.
      * @param kzHostList    the zookeeper cluster (required to create the topic).
      * @param esNode        the Elastic Search node to read from.
-     * @param esIndex       an array representing all Elastic Search indexes to read from.
+     * @param esIndex       a hashmap with each index to read and the associated query
      */
 	public ReportEsReader(String elasticKey, String topicName, String kafkaNodeList,
-			String kzHostList, String esNode, String[] esIndex) {
+			String kzHostList, String esNode, LinkedHashMap<String, QueryBuilder> esIndex) {
 		this.elasticKey = elasticKey;
 		this.topicName = topicName;
 		this.kafkaNodeList = kafkaNodeList;
@@ -130,40 +127,10 @@ public class ReportEsReader {
      * <p>
      * This creates the Kafka topic, if necessary. 
      */
-    public void start(){
-      start(null, 0);
-    }
-
-    /**
-     * Starts processing with a specified query. This is a synchronous call : when it returns, all messages have been sent to the Kafka topic.
-     * <p>
-     * This creates the Kafka topic, if necessary. 
-     */
-    public void start(String reportPeriodUnit, int reportPeriodQuantity) {
-      
-      QueryBuilder query = null;
-      if(reportPeriodUnit != null && !reportPeriodUnit.isEmpty()){
-        Calendar cal = SystemTime.getCalendar();
-        if(reportPeriodUnit.equalsIgnoreCase(PERIOD.DAYS.getExternalRepresentation())){
-          cal.set(Calendar.DAY_OF_MONTH, -reportPeriodQuantity);
-        }
-        else if(reportPeriodUnit.equalsIgnoreCase(PERIOD.WEEKS.getExternalRepresentation())){
-          cal.set(Calendar.WEEK_OF_YEAR, -reportPeriodQuantity);
-        }else if(reportPeriodUnit.equalsIgnoreCase(PERIOD.MONTHS.getExternalRepresentation())){
-          cal.set(Calendar.MONTH, -reportPeriodQuantity);
-        }
-        query = QueryBuilders.rangeQuery("event_datetime").format("yyyy-MM-dd||yyyy-MM-dd HH:mm:ss").gte(dateFormat.format(cal.getTime()));
-
-      }else{
-        query = QueryBuilders.matchAllQuery();
-      }
-
-      SearchRequest searchRequest = new SearchRequest()
-          .source(new SearchSourceBuilder()
-              .query(query));
+    public void start() {
 
       String indexes = "";
-      for (String s : esIndex)
+      for (String s : esIndex.keySet())
         indexes += s+" ";
       log.info("Reading data from ES in "+indexes+"indexes and writing to "+topicName+" topic.");
 
@@ -181,14 +148,20 @@ public class ReportEsReader {
       props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, reportElementSerializer.getClass().getName());
       final Producer<String, ReportElement> producerReportElement = new KafkaProducer<>(props);
 
-      log.info("Query="+searchRequest.source().query());
+//      log.info("Query="+searchRequest.source().query());
 
       final AtomicInteger count = new AtomicInteger(0);
       final AtomicInteger nbReallySent = new AtomicInteger(0);
       final AtomicLong before = new AtomicLong(new Date().getTime());
       final AtomicLong lastTS = new AtomicLong(0);
       final int traceInterval = 100_000;
-      for (int i=0; i<esIndex.length; i++) {
+      int i=0;
+      for (Entry<String, QueryBuilder> index : esIndex.entrySet()) {
+        
+        SearchRequest searchRequest = new SearchRequest()
+            .source(new SearchSourceBuilder()
+                .query(index.getValue()));
+        
         // Read all docs from ES, on esIndex[i]
         // Write to topic, one message per document
         try {
@@ -203,7 +176,7 @@ public class ReportEsReader {
           // Search for everyone
 
           Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
-          String indexToRead = esIndex[i];
+          String indexToRead = index.getKey();
           log.trace("Reading ES index "+indexToRead);
 
           searchRequest.indices(indexToRead);
@@ -216,7 +189,7 @@ public class ReportEsReader {
           SearchHit[] searchHits = searchResponse.getHits().getHits();
           log.trace("searchHits = "+searchHits);
           if (searchHits != null) {
-            log.info("searchResponse = " + searchResponse.toString());
+            //log.info("searchResponse = " + searchResponse.toString());
             log.info("getFailedShards = "+searchResponse.getFailedShards());
             log.info("getSkippedShards = "+searchResponse.getSkippedShards());
             log.info("getTotalShards = "+searchResponse.getTotalShards());
@@ -266,7 +239,7 @@ public class ReportEsReader {
             scrollId = searchResponse.getScrollId();
             searchHits = searchResponse.getHits().getHits();
           }
-          if (i == esIndex.length-1) {
+          if (i == esIndex.size()-1) {
             // send 1 marker per partition
             for (int partition=0; partition<ReportUtils.getNbPartitions(); partition++) {
               ReportElement re = new ReportElement();
@@ -290,6 +263,7 @@ public class ReportEsReader {
         } catch (IOException e) {
           e.printStackTrace();
         }
+        i++;
       }
 
       reportElementSerializer.close();

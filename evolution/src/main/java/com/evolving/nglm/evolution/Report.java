@@ -98,7 +98,7 @@ public class Report extends GUIManagedObject
   private List<SchedulingInterval> effectiveScheduling = null;
   private List<SchedulingInterval> availableScheduling = null;
   private String defaultReportPeriodUnit;
-  private int defaultReportPeriodQuantity;
+  private Integer defaultReportPeriodQuantity;
 
   /****************************************
    *
@@ -116,7 +116,7 @@ public class Report extends GUIManagedObject
   public List<SchedulingInterval> getEffectiveScheduling() { return effectiveScheduling; }
   public List<SchedulingInterval> getAvailableScheduling() { return availableScheduling; }
   public String getDefaultReportPeriodUnit() { return defaultReportPeriodUnit; }
-  public int getDefaultReportPeriodQuantity() { return defaultReportPeriodQuantity; }
+  public Integer getDefaultReportPeriodQuantity() { return defaultReportPeriodQuantity; }
 
   /*****************************************
    *
@@ -124,7 +124,7 @@ public class Report extends GUIManagedObject
    *
    *****************************************/
 
-  public Report(SchemaAndValue schemaAndValue, String reportClass, List<SchedulingInterval> effectiveScheduling, List<SchedulingInterval> availableScheduling, String defaultReportPeriodUnit, int defaultReportPeriodQuantity)
+  public Report(SchemaAndValue schemaAndValue, String reportClass, List<SchedulingInterval> effectiveScheduling, List<SchedulingInterval> availableScheduling, String defaultReportPeriodUnit, Integer defaultReportPeriodQuantity)
   {
     super(schemaAndValue);
     this.reportClass = reportClass;
@@ -165,8 +165,14 @@ public class Report extends GUIManagedObject
      *****************************************/
 
     this.reportClass = JSONUtilities.decodeString(jsonRoot, REPORT_CLASS, false);
-    this.defaultReportPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, DEFAULT_REPORT_PERIOD_QUANTITY, false);
-    this.defaultReportPeriodUnit = JSONUtilities.decodeString(jsonRoot, DEFAULT_REPORT_PERIOD_UNIT, false);
+    if(jsonRoot.containsKey(DEFAULT_REPORT_PERIOD_QUANTITY)) {
+      this.defaultReportPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, DEFAULT_REPORT_PERIOD_QUANTITY, false);
+    }else {
+      this.defaultReportPeriodQuantity = 0;
+    }
+    if(jsonRoot.containsKey(DEFAULT_REPORT_PERIOD_UNIT)) {
+      this.defaultReportPeriodUnit = JSONUtilities.decodeString(jsonRoot, DEFAULT_REPORT_PERIOD_UNIT, false);
+    }
     
     this.effectiveScheduling = new ArrayList<>();
     JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, EFFECTIVE_SCHEDULING, false);
@@ -240,7 +246,7 @@ public class Report extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     String reportClass = valueStruct.getString(REPORT_CLASS);
     String defaultReportPeriodUnit = valueStruct.getString(DEFAULT_REPORT_PERIOD_UNIT);
-    int defaultReportPeriodQuantity = valueStruct.getInt32(DEFAULT_REPORT_PERIOD_QUANTITY);
+    Integer defaultReportPeriodQuantity = valueStruct.getInt32(DEFAULT_REPORT_PERIOD_QUANTITY);
 
     List<String> effectiveSchedulingStr = (List<String>) valueStruct.get(EFFECTIVE_SCHEDULING);
     List<SchedulingInterval> effectiveScheduling = new ArrayList<>();

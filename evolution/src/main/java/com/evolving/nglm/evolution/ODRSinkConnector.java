@@ -134,30 +134,30 @@ public class ODRSinkConnector extends SimpleESSinkConnector
 
       if(purchaseManager != null){
         documentMap = new HashMap<String,Object>();
-        documentMap.put("customer_id", purchaseManager.getSubscriberID());
-        documentMap.put("event_id", purchaseManager.getEventID());
-        documentMap.put("event_datetime", purchaseManager.getEventDate());
-        documentMap.put("purchase_id", purchaseManager.getEventID());
-        documentMap.put("offer_id", purchaseManager.getOfferID());
-        documentMap.put("offer_qty", purchaseManager.getQuantity());
+        documentMap.put("subscriberID", purchaseManager.getSubscriberID());
+        documentMap.put("eventID", purchaseManager.getEventID());
+        documentMap.put("eventDatetime", purchaseManager.getEventDate());
+        documentMap.put("purchaseID", purchaseManager.getEventID());
+        documentMap.put("offerID", purchaseManager.getOfferID());
+        documentMap.put("offerQty", purchaseManager.getQuantity());
         if(offer != null){
           if(offer.getOfferSalesChannelsAndPrices() != null){
             for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-              documentMap.put("sales_channel_id", channel.getSalesChannelIDs());
-              documentMap.put("offer_price", channel.getPrice().getAmount());
+              documentMap.put("salesChannelID", channel.getSalesChannelIDs());
+              documentMap.put("offerPrice", channel.getPrice().getAmount());
             }
           }
-          documentMap.put("offer_stock", "");
-          documentMap.put("offer_content", offer.getOfferProducts().toString());
+          documentMap.put("offerStock", "");
+          documentMap.put("offerContent", offer.getOfferProducts().toString());
         }
-        documentMap.put("module_id", purchaseManager.getModuleID());
-        documentMap.put("feature_id", purchaseManager.getFeatureID());
+        documentMap.put("moduleID", purchaseManager.getModuleID());
+        documentMap.put("featureID", purchaseManager.getFeatureID());
         documentMap.put("origin", purchaseManager.getDeliveryRequestSource());
-        documentMap.put("return_code", purchaseManager.getReturnCode());
-        documentMap.put("delivery_status", purchaseManager.getDeliveryStatus());
-        documentMap.put("return_code_details", purchaseManager.getReturnCodeDetails());
-        documentMap.put("voucher_code", "");
-        documentMap.put("voucher_partner_id", "");
+        documentMap.put("returnCode", purchaseManager.getReturnCode());
+        documentMap.put("deliveryStatus", purchaseManager.getDeliveryStatus());
+        documentMap.put("returnCodeDetails", purchaseManager.getReturnCodeDetails());
+        documentMap.put("voucherCode", "");
+        documentMap.put("voucherPartnerID", "");
       }
       
       return documentMap;
