@@ -13123,6 +13123,8 @@ public class GUIManager
     response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
     response.put("mailTemplateCount", mailTemplateService.getStoredMailTemplates().size());
     response.put("smsTemplateCount", smsTemplateService.getStoredSMSTemplates().size());
+    response.put("reportsCount", reportService.getStoredReports().size());
+    response.put("walletsCount", new Integer(-1));
     return JSONUtilities.encodeObject(response);
   }
 

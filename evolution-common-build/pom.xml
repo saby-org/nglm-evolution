@@ -39,14 +39,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.5.1-build190503-SNAPSHOT</version>
+    <version>4.5.1-build190509-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.5.1-build190503-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.5.1-build190509-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -266,17 +266,20 @@
                 </concat>
                 <concat destfile="${project.build.directory}/assembled-resources/docker/prometheus-application.yml" force="yes">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="prometheus-application-preamble.yml"/>
+                  <fileset dir="${project.build.directory}/partially-assembled-resources/docker" includes="*-prometheus-application-environment.yml"/>
                   <fileset dir="${project.basedir}/src/assembly/resources/docker" includes="prometheus-application-environment.yml"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="prometheus-application-postamble.yml"/>
                 </concat>
                 <concat destfile="${project.build.directory}/assembled-resources/bin/upgrade-run.sh" force="yes">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="upgrade-run-preamble.sh"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="upgrade-run-flyway.sh"/>
+                  <fileset dir="${project.build.directory}/partially-assembled-resources/bin" includes="upgrade-run-*.sh"/>
                   <fileset dir="${project.basedir}/src/assembly/resources/bin" includes="upgrade-run-*.sh"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="upgrade-run-postamble.sh"/>
                 </concat>
                 <concat destfile="${project.build.directory}/assembled-resources/docker/upgrade.yml" force="yes">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="upgrade-preamble.yml"/>
+                  <fileset dir="${project.build.directory}/partially-assembled-resources/docker" includes="*-upgrade-environment.yml"/>
                   <fileset dir="${project.basedir}/src/assembly/resources/docker" includes="upgrade-environment.yml"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="upgrade-postamble.yml"/>
                 </concat>
@@ -313,6 +316,7 @@
                   <directory>src/assembly/resources</directory>
                   <includes>
                     <include>license/licenseToken.bin</include>
+                    <include>databases/*</include>
                   </includes>
                   <filtering>false</filtering>
                 </resource>
@@ -337,6 +341,9 @@
                     <include>docker/*.yml</include>
                     <include>support/*</include>
                   </includes>
+                  <excludes>
+                    <exclude>bin/upgrade-*.sh</exclude>
+                  </excludes>
                   <filtering>true</filtering>
                 </resource>
               </resources>              
@@ -1090,6 +1097,13 @@
                 </resource>
                 <resource>
                   <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>databases/</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>databases/</include>
                   </includes>

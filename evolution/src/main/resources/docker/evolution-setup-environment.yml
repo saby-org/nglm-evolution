@@ -1,5 +1,5 @@
     #
-    #  environment variables required by setup.sh
+    #  environment variables required by setup.sh (evolution)
     #
     ELASTICSEARCH_SHARDS_SMALL: <_ELASTICSEARCH_SHARDS_SMALL_>
     ELASTICSEARCH_SHARDS_LARGE: <_ELASTICSEARCH_SHARDS_LARGE_>

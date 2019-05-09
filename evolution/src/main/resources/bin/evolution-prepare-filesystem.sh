@@ -36,6 +36,7 @@ ssh $MASTER_SWARM_HOST "
 
 ssh $GUIMANAGER_HOST "
    mkdir -p $NGLM_UPLOADED
+   mkdir -p $NGLM_REPORTS
 "
 
 #
