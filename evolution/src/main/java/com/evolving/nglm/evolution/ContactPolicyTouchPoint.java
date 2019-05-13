@@ -7,61 +7,28 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
-
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
-
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.Objects;
 
 public class ContactPolicyTouchPoint
 {
-  /*****************************************
-  *
-  *  enum
-  *
-  *****************************************/
-
-  public enum ContactType
-  {
-    CallToAction("callToAction", "Call To Action"),
-    Reminder("reminder", "Reminder"),
-    Response("response", "Response"),
-    Unknown("(unknown)", "(unknown)");
-    private String externalRepresentation;
-    private String display;
-    private ContactType(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public String getDisplay() { return display; }
-    public static ContactType fromExternalRepresentation(String externalRepresentation) { for (ContactType enumeratedValue : ContactType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
   /*****************************************
   *
   *  schema
@@ -76,10 +43,13 @@ public class ContactPolicyTouchPoint
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("contactpolicy_touchpoint");
+    schemaBuilder.name("contact_policy_touchpoint");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("touchPointID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("contactTypes", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("touchPointName", Schema.STRING_SCHEMA);
+    schemaBuilder.field("timeWindows", TimeWindow.schema());
+    schemaBuilder.field("messageLimits", MessageLimits.schema());
+    schemaBuilder.field("contactPolicyBlackout", SchemaBuilder.array(ContactPolicyBlackout.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -103,7 +73,11 @@ public class ContactPolicyTouchPoint
   *****************************************/
 
   private String touchPointID;
-  private Set<ContactType> contactTypes;
+  private String touchPointName;
+  private TimeWindow timeWindows;
+  private MessageLimits messageLimits;
+  private Set<ContactPolicyBlackout> blackoutList;
+  
 
   /*****************************************
   *
@@ -112,20 +86,26 @@ public class ContactPolicyTouchPoint
   *****************************************/
 
   public String getTouchPointID() { return touchPointID; }
-  public Set<ContactType> getContactTypes() { return contactTypes; }
-
+  public String getTouchPointName() { return touchPointName; }
+  public TimeWindow getTimeWindows() { return timeWindows; }
+  public MessageLimits getMessageLimits() { return messageLimits; }
+  public Set<ContactPolicyBlackout> getContactPolicyBlackoutList(){ return blackoutList; }
+  
   /*****************************************
   *
-  *  constructor
+  *  constructor -- unpack
   *
   *****************************************/
 
-  public ContactPolicyTouchPoint(String touchPointID, Set<ContactType> contactTypes)
+  public ContactPolicyTouchPoint(String touchPointID, String touchPointName, TimeWindow timeWindows, MessageLimits messageLimits, Set<ContactPolicyBlackout> blackoutList)
   {
     this.touchPointID = touchPointID;
-    this.contactTypes = contactTypes;
+    this.touchPointName = touchPointName;
+    this.timeWindows = timeWindows;
+    this.messageLimits = messageLimits;
+    this.blackoutList = blackoutList;
   }
-
+  
   /*****************************************
   *
   *  pack
@@ -134,25 +114,28 @@ public class ContactPolicyTouchPoint
 
   public static Object pack(Object value)
   {
-    ContactPolicyTouchPoint contactPolicyTouchPoint = (ContactPolicyTouchPoint) value;
+    ContactPolicyTouchPoint contactPolicy = (ContactPolicyTouchPoint) value;
     Struct struct = new Struct(schema);
-    struct.put("touchPointID", contactPolicyTouchPoint.getTouchPointID());
-    struct.put("contactTypes", packContactTypes(contactPolicyTouchPoint.getContactTypes()));
+    struct.put("touchPointID", contactPolicy.getTouchPointID());
+    struct.put("touchPointName", contactPolicy.getTouchPointName());
+    struct.put("timeWindows", TimeWindow.pack(contactPolicy.getTimeWindows()));
+    struct.put("messageLimits", MessageLimits.pack(contactPolicy.getMessageLimits()));
+    struct.put("contactPolicyBlackout", packContactPolicyBlackout(contactPolicy.getContactPolicyBlackoutList()));
     return struct;
   }
-
-  /*****************************************
+  
+  /****************************************
   *
-  *  packContactTypes
+  *  packContactPolicyBlackout
   *
-  *****************************************/
+  ****************************************/
 
-  private static List<Object> packContactTypes(Set<ContactType> contactTypes)
+  private static List<Object> packContactPolicyBlackout(Set<ContactPolicyBlackout> blackoutPolicy)
   {
     List<Object> result = new ArrayList<Object>();
-    for (ContactType contactType : contactTypes)
+    for (ContactPolicyBlackout blackout : blackoutPolicy)
       {
-        result.add(contactType.getExternalRepresentation());
+        result.add(ContactPolicyBlackout.pack(blackout));
       }
     return result;
   }
@@ -171,7 +154,7 @@ public class ContactPolicyTouchPoint
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -179,28 +162,41 @@ public class ContactPolicyTouchPoint
 
     Struct valueStruct = (Struct) value;
     String touchPointID = valueStruct.getString("touchPointID");
-    Set<ContactType> contactTypes = unpackContactTypes(schema.field("contactTypes").schema(), valueStruct.get("contactTypes"));
-
+    String touchPointName = valueStruct.getString("touchPointName");
+    TimeWindow timeWindows = TimeWindow.unpack(new SchemaAndValue(schema.field("timeWindows").schema(), valueStruct.get("timeWindows")));
+    MessageLimits mesageLimits = MessageLimits.unpack(new SchemaAndValue(schema.field("messageLimits").schema(), valueStruct.get("messageLimits")));
+    Set<ContactPolicyBlackout> blackoutList = unpackContactPolicyBlackout(schema.field("contactPolicyBlackout").schema(), valueStruct.get("contactPolicyBlackout"));
+    
     //
     //  return
     //
 
-    return new ContactPolicyTouchPoint(touchPointID, contactTypes);
+    return new ContactPolicyTouchPoint(touchPointID, touchPointName, timeWindows, mesageLimits, blackoutList);
   }
-
+  
   /*****************************************
   *
-  *  unpackContactTypes
+  *  unpackContactPolicyBlackout
   *
   *****************************************/
 
-  private static Set<ContactType> unpackContactTypes(Schema schema, Object value)
+  private static Set<ContactPolicyBlackout> unpackContactPolicyBlackout(Schema schema, Object value)
   {
-    Set<ContactType> result = new HashSet<ContactType>();
-    List<String> valueArray = (List<String>) value;
-    for (String contactType : valueArray)
+    //
+    //  get schema for ContactPolicyBlackout
+    //
+
+    Schema blackoutSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<ContactPolicyBlackout> result = new HashSet<ContactPolicyBlackout>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object blackout : valueArray)
       {
-        result.add(ContactType.fromExternalRepresentation(contactType));
+        result.add(ContactPolicyBlackout.unpack(new SchemaAndValue(blackoutSchema, blackout)));
       }
 
     //
@@ -218,42 +214,210 @@ public class ContactPolicyTouchPoint
 
   public ContactPolicyTouchPoint(JSONObject jsonRoot) throws GUIManagerException
   {
+
     this.touchPointID = JSONUtilities.decodeString(jsonRoot, "touchPointID", true);
-    this.contactTypes = decodeContactTypes(JSONUtilities.decodeJSONArray(jsonRoot, "contactTypes", true));
+    this.touchPointName = JSONUtilities.decodeString(jsonRoot, "touchPointName", true);
+    this.timeWindows = new TimeWindow((JSONObject)(JSONUtilities.decodeJSONObject(jsonRoot, "timeWindows", false)));
+    this.messageLimits = new MessageLimits((JSONObject)(JSONUtilities.decodeJSONObject(jsonRoot, "messageLimits", false)));
+    this.blackoutList = decodeContactPolicyBlackout(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyBlackout", false));
   }
-
+  
   /*****************************************
   *
-  *  decodeContactTypes
+  *  decodeContactPolicyBlackout
   *
   *****************************************/
 
-  private Set<ContactType> decodeContactTypes(JSONArray jsonArray) throws GUIManagerException
+  private Set<ContactPolicyBlackout> decodeContactPolicyBlackout(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<ContactType> contactTypes = new HashSet<ContactType>();
-    for (int i=0; i<jsonArray.size(); i++)
+    Set<ContactPolicyBlackout> result = new HashSet<ContactPolicyBlackout>();
+    if (jsonArray != null)
       {
-        contactTypes.add(ContactType.fromExternalRepresentation((String) jsonArray.get(i)));
-      }
-    return contactTypes;
-  }
-
-  /*****************************************
-  *
-  *  equals
-  *
-  *****************************************/
-
-  public boolean equals(Object obj)
-  {
-    boolean result = false;
-    if (obj instanceof ContactPolicyTouchPoint)
-      {
-        ContactPolicyTouchPoint contactPolicyTouchPoint = (ContactPolicyTouchPoint) obj;
-        result = true;
-        result = result && Objects.equals(touchPointID, contactPolicyTouchPoint.getTouchPointID());
-        result = result && Objects.equals(contactTypes, contactPolicyTouchPoint.getContactTypes());
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new ContactPolicyBlackout((JSONObject) jsonArray.get(i)));
+          }
       }
     return result;
   }
+
+  /*****************************************
+  *
+  *  validate
+  *
+  *****************************************/
+
+  public void validate(Date date, String touchPointID) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  validate touch points exist
+    *
+    *****************************************/
+    TouchPoint touchPoint = Deployment.getTouchPoints().get(touchPointID);
+    if (touchPoint == null) throw new GUIManagerException("unknown touch point", touchPointID);
+  }
+
+  /*****************************************
+  *
+  *  schedule
+  *
+  *****************************************/
+
+  public Date schedule(String touchPointID, Date now)
+  {
+    return now;
+  }
+  
+  public static class ContactPolicyBlackout
+  {
+    
+    //
+    //  logger
+    //
+
+    private static final Logger log = LoggerFactory.getLogger(ContactPolicyBlackout.class);
+    
+    /*****************************************
+    *
+    *  schema
+    *
+    *****************************************/
+
+    //
+    //  schema
+    //
+
+    private static Schema schema = null;
+    static
+    {
+      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+      schemaBuilder.name("contact_policy_blackout");
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.field("from", Schema.INT64_SCHEMA);
+      schemaBuilder.field("until", Schema.INT64_SCHEMA);
+      schema = schemaBuilder.build();
+    };
+
+    //
+    //  serde
+    //
+
+    private static ConnectSerde<ContactPolicyBlackout> serde = new ConnectSerde<ContactPolicyBlackout>(schema, false, ContactPolicyBlackout.class, ContactPolicyBlackout::pack, ContactPolicyBlackout::unpack);
+
+    //
+    //  accessor
+    //
+
+    public static Schema schema() { return schema; }
+    public static ConnectSerde<ContactPolicyBlackout> serde() { return serde; }
+
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+    
+    private Date from;
+    private Date until;
+    
+    /*****************************************
+    *
+    *  accessors
+    *
+    *****************************************/
+
+    public Date getStartTime() { return from; }
+    public Date getEndTime() { return until; }
+    
+
+    /*****************************************
+    *
+    *  constructor -- unpack
+    *
+    *****************************************/
+
+    public ContactPolicyBlackout(Date from, Date until)
+    {
+      this.from = from;
+      this.until = until;
+    }
+    
+    /*****************************************
+    *
+    *  pack
+    *
+    *****************************************/
+
+    public static Object pack(Object value)
+    {
+      ContactPolicyBlackout contactPolicyBlackout = (ContactPolicyBlackout) value;
+      Struct struct = new Struct(schema);
+      struct.put("from", contactPolicyBlackout.getStartTime().getTime());
+      struct.put("until", contactPolicyBlackout.getEndTime().getTime());
+      return struct;
+    }
+    
+    /*****************************************
+    *
+    *  unpack
+    *
+    *****************************************/
+
+    public static ContactPolicyBlackout unpack(SchemaAndValue schemaAndValue)
+    {
+      //
+      //  data
+      //
+
+      Schema schema = schemaAndValue.schema();
+      Object value = schemaAndValue.value();
+      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
+
+      //
+      //  unpack
+      //
+
+      Struct valueStruct = (Struct) value;
+      
+      long stTime = valueStruct.getInt64("from");
+      long edTime = valueStruct.getInt64("until");
+      
+      Date from = new Date(stTime);
+      Date until = new Date(edTime);
+
+      //
+      //  return
+      //
+
+      return new ContactPolicyBlackout(from, until);
+    }
+    
+    /*****************************************
+    *
+    *  constructor -- JSON
+    *
+    *****************************************/
+
+    public ContactPolicyBlackout(JSONObject jsonRoot) throws GUIManagerException
+    {
+      
+      /*****************************************
+      *
+      *  attributes
+      *
+      *****************************************/
+      
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+      String stTime = JSONUtilities.decodeString(jsonRoot, "from", true);
+      String edTime = JSONUtilities.decodeString(jsonRoot, "until", true);
+      try {
+        this.from = sdf.parse(stTime);
+        this.until = sdf.parse(edTime);
+      }catch(Exception e) {
+        log.warn("ContactPolicyBlackout: parse exception ", e);
+      }
+    }
+  }
+  
 }

@@ -104,7 +104,6 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
-import com.evolving.nglm.evolution.ContactPolicyTouchPoint.ContactType;
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -5011,16 +5010,6 @@ public class GUIManager
                         }
                     }
                 }
-            }
-          break;
-
-        case "contactTypes":
-          for (ContactType contactType : ContactType.values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", contactType.getExternalRepresentation());
-              availableValue.put("display", contactType.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
 

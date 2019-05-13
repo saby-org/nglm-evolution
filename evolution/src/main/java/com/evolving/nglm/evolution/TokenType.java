@@ -246,4 +246,14 @@ public class TokenType extends GUIManagedObject
         return true;
       }
   }
+  
+  /*****************************************
+  *
+  *  getKind
+  *
+  *****************************************/
+  
+  public TokenTypeKind getKind() {
+    return TokenTypeKind.Unknown; // Should be overridden by subclasses
+  }
 }

@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -26,9 +25,7 @@ import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Objects;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ContactPolicy extends GUIManagedObject
 {
@@ -50,6 +47,7 @@ public class ContactPolicy extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("contactPolicyTouchPoints", SchemaBuilder.array(ContactPolicyTouchPoint.schema()).name("contact_policy_touchpoints").schema());
+    schemaBuilder.field("isDefault", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -73,6 +71,7 @@ public class ContactPolicy extends GUIManagedObject
   *****************************************/
 
   private List<ContactPolicyTouchPoint> contactPolicyTouchPoints;
+  private boolean isDefault;
 
   /*****************************************
   *
@@ -83,6 +82,7 @@ public class ContactPolicy extends GUIManagedObject
   public String getContactPolicyID() { return getGUIManagedObjectID(); }
   public String getContactPolicyName() { return getGUIManagedObjectName(); }
   public List<ContactPolicyTouchPoint> getContactPolicyTouchPoints() { return contactPolicyTouchPoints; }
+  public boolean isDefault() { return isDefault; }
 
   /*****************************************
   *
@@ -90,10 +90,11 @@ public class ContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public ContactPolicy(SchemaAndValue schemaAndValue, List<ContactPolicyTouchPoint> contactPolicyTouchPoints)
+  public ContactPolicy(SchemaAndValue schemaAndValue, List<ContactPolicyTouchPoint> contactPolicyTouchPoints, boolean isDefault)
   {
     super(schemaAndValue);
     this.contactPolicyTouchPoints = contactPolicyTouchPoints;
+    this.isDefault = isDefault;
   }
   
   /*****************************************
@@ -108,6 +109,7 @@ public class ContactPolicy extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, contactPolicy);
     struct.put("contactPolicyTouchPoints", packContactPolicyTouchPoints(contactPolicy.getContactPolicyTouchPoints()));
+    struct.put("isDefault", contactPolicy.isDefault());
     return struct;
   }
 
@@ -149,12 +151,13 @@ public class ContactPolicy extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     List<ContactPolicyTouchPoint> contactPolicyTouchPoints = unpackContactPolicyTouchPoints(schema.field("contactPolicyTouchPoints").schema(), valueStruct.get("contactPolicyTouchPoints"));
-
+    boolean isDefault = valueStruct.getBoolean("isDefault");
+    
     //
     //  return
     //
 
-    return new ContactPolicy(schemaAndValue, contactPolicyTouchPoints);
+    return new ContactPolicy(schemaAndValue, contactPolicyTouchPoints, isDefault);
   }
 
   /*****************************************
@@ -220,6 +223,7 @@ public class ContactPolicy extends GUIManagedObject
     *****************************************/
 
     this.contactPolicyTouchPoints = decodeContactPolicyTouchPoints(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyTouchPoints", true));
+    this.isDefault = JSONUtilities.decodeBoolean(jsonRoot, "isDefault", Boolean.TRUE);
 
     /*****************************************
     *

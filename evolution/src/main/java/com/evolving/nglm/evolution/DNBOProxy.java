@@ -6,44 +6,50 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.ServerException;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
+import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
+import com.evolving.nglm.evolution.offeroptimizer.OfferOptimizerAlgoManager;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 public class DNBOProxy
 {
+
   /*****************************************
   *
   *  ProductID
@@ -98,9 +104,14 @@ public class DNBOProxy
 
   private HttpServer restServer;
   private OfferService offerService;
+  private ProductService productService;
+  private ProductTypeService productTypeService;
+  private CatalogCharacteristicService catalogCharacteristicService;
   private ScoringStrategyService scoringStrategyService;
   private SalesChannelService salesChannelService;
   private SubscriberProfileService subscriberProfileService;
+  private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader = null;
+  private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = null;
 
   /*****************************************
   *
@@ -145,10 +156,17 @@ public class DNBOProxy
     *****************************************/
 
     offerService = new OfferService(Deployment.getBrokerServers(), "dnboproxy-offerservice-" + apiProcessKey, Deployment.getOfferTopic(), false);
+    productService = new ProductService(Deployment.getBrokerServers(), "dnboproxy-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
+    productTypeService = new ProductTypeService(Deployment.getBrokerServers(), "dnboproxy-producttypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);
+    catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "dnboproxy-catalogcharacteristicservice-" + apiProcessKey, Deployment.getCatalogCharacteristicTopic(), false);
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "dnboproxy-scoringstrategyservice-" + apiProcessKey, Deployment.getScoringStrategyTopic(), false);
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "dnboproxy-saleschannelservice-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
-
+    subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy", "dnboproxy-subscribergroupepochreader-"+apiProcessKey,
+        Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy", "dnboproxy-propensityreader-"+apiProcessKey,
+        Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
+    
     /*****************************************
     *
     *  services - start
@@ -156,6 +174,9 @@ public class DNBOProxy
     *****************************************/
 
     offerService.start();
+    productService.start();
+    productTypeService.start();
+    catalogCharacteristicService.start();
     scoringStrategyService.start();
     salesChannelService.start();
     subscriberProfileService.start();
@@ -185,7 +206,7 @@ public class DNBOProxy
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, scoringStrategyService, salesChannelService, subscriberProfileService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, productService, productTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService));
 
     /*****************************************
     *
@@ -210,6 +231,9 @@ public class DNBOProxy
 
     private HttpServer restServer;
     private OfferService offerService;
+    private ProductService productService;   
+    private ProductTypeService productTypeService;
+    private CatalogCharacteristicService catalogCharacteristicService;
     private ScoringStrategyService scoringStrategyService;
     private SalesChannelService salesChannelService;
     private SubscriberProfileService subscriberProfileService;
@@ -218,10 +242,16 @@ public class DNBOProxy
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService, SubscriberProfileService subscriberProfileService)
+    private ShutdownHook(HttpServer restServer, OfferService offerService, ProductService productService,
+        ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
+        ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService,
+        SubscriberProfileService subscriberProfileService)
     {
       this.restServer = restServer;
       this.offerService = offerService;
+      this.productService = productService;
+      this.productTypeService = productTypeService;
+      this.catalogCharacteristicService = catalogCharacteristicService;
       this.scoringStrategyService = scoringStrategyService;
       this.salesChannelService = salesChannelService;
       this.subscriberProfileService = subscriberProfileService;
@@ -238,6 +268,9 @@ public class DNBOProxy
       //
 
       if (offerService != null) offerService.stop();
+      if (productService != null) productService.stop();
+      if (productTypeService != null) productTypeService.stop();
+      if (catalogCharacteristicService != null) catalogCharacteristicService.stop();
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (salesChannelService != null) salesChannelService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
@@ -489,7 +522,7 @@ public class DNBOProxy
     *  evaluate arguments
     *
     *****************************************/
-
+    
     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
     ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
     SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
@@ -506,116 +539,138 @@ public class DNBOProxy
 
     /*****************************************
     *
-    *  score (replace this default section with real code)
+    *  score
     *
     *****************************************/
-
-    String log = "(dummy log)";
-    List<ScoredOffer> scoredOffers = new ArrayList<ScoredOffer>();
-    for (Offer offer : offerService.getActiveOffers(now))
-      {
-        scoredOffers.add(new ScoredOffer(offer, salesChannel, 7, 1));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    //
-    //  offers
-    //
-
-    List<JSONObject> scoredOffersJSON = new ArrayList<JSONObject>();
-    for (ScoredOffer scoredOffer : scoredOffers)
-      {
-        scoredOffersJSON.add(scoredOffer.getJSONRepresentation());
-      }
-
-    //
-    //  value
-    //
-
-    HashMap<String,Object> value = new HashMap<String,Object>();
-    value.put("subscriberID", subscriberID);
-    value.put("scoringStrategyID", scoringStrategyID);
-    value.put("msisdn", subscriberID);
-    value.put("strategy", scoringStrategyID);
-    value.put("offers", scoredOffersJSON);
-    value.put("log", log);
     
-    //
-    //  response
-    //
+    StringBuffer returnedLog = new StringBuffer();
+    String logFragment;
 
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("statusCode", 0);
-    response.put("status", "SUCCESS");
-    response.put("message", "GetOffer well executed");
-    response.put("value", JSONUtilities.encodeObject(value));
-    return JSONUtilities.encodeObject(response);
-  }
+    // ###################################### SCORING GROUP
+    // ####################################################################
 
-  /*****************************************
-  *
-  *  class ScoredOffer
-  *
-  *****************************************/
+    // String msisdn = subscriberProfile.getMSISDN();
+    String msisdn = subscriberID; // TODO : check this
 
-  private static class ScoredOffer
-  {
-    /*****************************************
-    *
-    *  data
-    *
-    *****************************************/
+    try {
+      ScoringGroup selectedScoringGroup = getScoringGroup(scoringStrategy, subscriberProfile);
+      logFragment = "DNBOProxy.processGetOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringGroup for " + msisdn + " " + selectedScoringGroup;
+      returnedLog.append(logFragment+", ");
+      if (log.isDebugEnabled())
+      {
+        log.debug(logFragment);
+      }
 
-    private Offer offer;
-    private SalesChannel salesChannel;
-    private int offerScore;
-    private int offerRank;
+      // ##############################" ScoringSplit
+      // ##############################
 
-    /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
+      ScoringSplit selectedScoringSplit = getScoringSplit(msisdn, selectedScoringGroup);
+      logFragment = "DNBOProxy.processGetOffers ScoringStrategy : " + selectedScoringSplit+ ", selectedScoringSplit : "+selectedScoringSplit.getOfferObjectiveIDs();
+      returnedLog.append(logFragment+", ");
+      if (log.isDebugEnabled())
+      {
+        log.debug(logFragment);
+      }
 
-    public ScoredOffer(Offer offer, SalesChannel salesChannel, int offerScore, int offerRank)
+      Set<Offer> offersForAlgo = getOffersToOptimize(msisdn, selectedScoringSplit.getOfferObjectiveIDs(), subscriberProfile);
+
+      OfferOptimizationAlgorithm algo = selectedScoringSplit.getOfferOptimizationAlgorithm();
+      if (algo == null)
+      {
+        log.warn("DNBOProxy.processGetOffers No Algo returned for selectedScoringSplit " + scoringStrategy.getScoringStrategyID());
+        throw new DNBOProxyException("No Algo returned for selectedScoringSplit ", scoringStrategy.getScoringStrategyID());
+      }
+
+      OfferOptimizationAlgorithmParameter thresholdParameter = new OfferOptimizationAlgorithmParameter("thresholdValue");
+
+      OfferOptimizationAlgorithmParameter valueModeParameter = new OfferOptimizationAlgorithmParameter("valueMode");
+
+      double threshold = 0;
+      String thresholdString = selectedScoringSplit.getParameters().get(thresholdParameter);
+      if (thresholdString != null)
+      {
+        threshold = Double.parseDouble(thresholdString);
+      }
+      logFragment = "DNBOProxy.processGetOffers Threshold value " + threshold;
+      returnedLog.append(logFragment+", ");
+      if (log.isDebugEnabled())
+      {
+        log.debug(logFragment);
+      }
+
+      String valueMode = selectedScoringSplit.getParameters().get(valueModeParameter);
+      logFragment = "DNBOProxy.processGetOffers no value mode";
+      returnedLog.append(logFragment+", ");
+      if (valueMode == null || valueMode.equals(""))
+      {
+        log.warn(logFragment);
+
+      }
+      
+      log.trace("Subscriber status : "+subscriberProfile.getEvolutionSubscriberStatus());
+
+      // This returns an ordered Collection (and sorted by offerScore)
+      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
+          OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
+              algo, valueMode, offersForAlgo, subscriberProfile, threshold, salesChannelID,
+              productService, productTypeService, catalogCharacteristicService,
+              propensityDataReader, returnedLog);
+
+      if(offerAvailabilityFromPropensityAlgo == null){
+        log.warn("DNBOProxy.processGetOffers Return empty list of offer");
+        throw new DNBOProxyException("No Offer available while executing getOffer ", scoringStrategy.getScoringStrategyID());
+      }
+
+      int index = 1;
+      for (ProposedOfferDetails current : offerAvailabilityFromPropensityAlgo)
+      {
+        current.setOfferRank(index);
+        index++;
+      }
+
+      /*****************************************
+       *
+       *  response
+       *
+       *****************************************/
+
+      //
+      //  offers
+      //
+
+      List<JSONObject> scoredOffersJSON = new ArrayList<JSONObject>();
+      for (ProposedOfferDetails proposedOffer : offerAvailabilityFromPropensityAlgo)
+      {
+        scoredOffersJSON.add(proposedOffer.getJSONRepresentation());
+      }
+
+      //
+      //  value
+      //
+
+      HashMap<String,Object> value = new HashMap<String,Object>();
+      value.put("subscriberID", subscriberID);
+      value.put("scoringStrategyID", scoringStrategyID);
+      value.put("msisdn", subscriberID);
+      value.put("strategy", scoringStrategyID);
+      value.put("offers", scoredOffersJSON);
+      value.put("log", returnedLog.toString());
+
+      //
+      //  response
+      //
+
+      HashMap<String,Object> response = new HashMap<String,Object>();
+      response.put("responseCode", "ok");
+      response.put("statusCode", 0);
+      response.put("status", "SUCCESS");
+      response.put("message", "getSubscriberOffers well executed");
+      response.put("value", JSONUtilities.encodeObject(value));
+      return JSONUtilities.encodeObject(response);
+    } catch (Exception e)
     {
-      this.offer = offer;
-      this.salesChannel = salesChannel;
-      this.offerScore = offerScore;
-      this.offerRank = offerRank;
-    }
-
-    /*****************************************
-    *
-    *  accessors
-    *
-    *****************************************/
-
-    public Offer getOffer() { return offer; }
-    public SalesChannel getSalesChannel() { return salesChannel; }
-    public int getOfferScore() { return offerScore; }
-    public int getOfferRank() { return offerRank; }
-
-    /*****************************************
-    *
-    *  getJSONRepresentation
-    *
-    *****************************************/
-
-    public JSONObject getJSONRepresentation()
-    {
-      HashMap<String,Object> jsonRepresentation = new HashMap<String,Object>();
-      jsonRepresentation.put("offerID", offer.getOfferID());
-      jsonRepresentation.put("salesChannelId", salesChannel.getSalesChannelID());
-      jsonRepresentation.put("offerScore", offerScore);
-      jsonRepresentation.put("offerRank", offerRank);
-      return JSONUtilities.encodeObject(jsonRepresentation);
+      log.warn("DNBOProxy.processGetOffers Exception " + e.getClass().getName() + " " + e.getMessage() + " while retrieving offers " + msisdn + " " + scoringStrategyID, e);
+      throw new DNBOProxyException("Exception while retrieving offers ", scoringStrategyID);
     }
   }
 
@@ -717,4 +772,93 @@ public class DNBOProxy
       return super.toString() + "(" + responseParameter + ")";
     }
   }
+  
+  private Set<Offer> getOffersToOptimize(String msisdn, Set<String> catalogObjectiveIDs, SubscriberProfile subscriberProfile)
+  {
+    // Browse all offers:
+    // - filter by offer objective coming from the split strategy
+    // - filter by profile of subscriber
+    // Return a set of offers that can be optimised
+    Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime());
+    Set<Offer> result = new HashSet<>();
+    for (String currentSplitObjectiveID : catalogObjectiveIDs)
+    {
+      log.trace("currentSplitObjectiveID : "+currentSplitObjectiveID);
+      for (Offer currentOffer : offers)
+      {
+        for (OfferObjectiveInstance currentOfferObjective : currentOffer.getOfferObjectives())
+        {
+          log.trace("    offerID : "+currentOffer.getOfferID()+" offerObjectiveID : "+currentOfferObjective.getOfferObjectiveID());
+          if (currentOfferObjective.getOfferObjectiveID().equals(currentSplitObjectiveID))
+          {
+            // this offer is a good candidate for the moment, let's check the profile
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(
+                subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+            if (currentOffer.evaluateProfileCriteria(evaluationRequest))
+            {
+              log.trace("        add offer : "+currentOffer.getOfferID());
+              result.add(currentOffer);
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  private ScoringSplit getScoringSplit(String msisdn, ScoringGroup selectedScoringGroup) throws GetOfferException
+  {
+    // now let evaluate the split testing...
+    // let compute the split bashed on hash...
+    int nbSamples = selectedScoringGroup.getScoringSplits().size();
+    // let get the same sample for the subscriber for the whole strategy
+    String hashed = msisdn + nbSamples;
+    int hash = hashed.hashCode();
+    if (hash < 0)
+      {
+        hash = hash * -1; // can happen because a hashcode is a SIGNED
+        // integer
+      }
+    int sampleId = hash % nbSamples; // modulo
+
+    // now retrieve the good split strategy for this user:
+    ScoringSplit selectedScoringSplit = selectedScoringGroup.getScoringSplits().get(sampleId);
+
+    if (selectedScoringSplit == null)
+      {
+        // should never happen since modulo plays on the number of samples
+        log.warn("DNBOProxy.getScoringSplit Split Testing modulo problem for " + msisdn + " and subStrategy " + selectedScoringGroup);
+        throw new GetOfferException("Split Testing modulo problem for " + msisdn + " and subStrategy " + selectedScoringGroup);
+      }
+    return selectedScoringSplit;
+  }
+
+  private ScoringGroup getScoringGroup(ScoringStrategy strategy, SubscriberProfile subscriberProfile) throws GetOfferException
+  {
+    // let retrieve the first sub strategy that maps this user:
+    Date now = SystemTime.getCurrentTime();
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(
+        subscriberProfile, subscriberGroupEpochReader, now);
+
+    ScoringGroup selectedScoringGroup = strategy.evaluateScoringGroups(evaluationRequest);
+    if (log.isDebugEnabled())
+      {
+        log.debug("DNBOProxy.getScoringGroup Retrieved matching scoringGroup " + (selectedScoringGroup != null ? display(selectedScoringGroup.getProfileCriteria()) : null));
+      }
+
+    if (selectedScoringGroup == null)
+      {
+        throw new GetOfferException("Can't retrieve ScoringGroup for strategy " + strategy.getScoringStrategyID() + " and msisdn " + subscriberProfile.getSubscriberID());
+      }
+    return selectedScoringGroup;
+  }
+
+  public static String display(List<EvaluationCriterion> profileCriteria) {
+    StringBuffer res = new StringBuffer();
+    for (EvaluationCriterion ec : profileCriteria) {
+      res.append("["+ec.getCriterionContext()+","+ec.getCriterionField()+","+ec.getCriterionOperator()+","+ec.getArgumentExpression()+","+ec.getStoryReference()+"]");
+    }
+    return res.toString();
+  }
+  
 }

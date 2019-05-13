@@ -327,4 +327,31 @@ public class ScoringGroup
       }
     return result;
   }
+
+  @Override
+  public String toString() {
+    String res = "";
+    res = "ScoringGroup [" + (name != null ? "name=" + name + ", " : "");
+    
+    if (profileCriteria != null) {
+      res += "profileCriteria= ["+DNBOProxy.display(profileCriteria) + "], ";
+    }
+    if (scoringSplits != null) {
+      res += "scoringSplits= [";
+      boolean first = true;
+      for (ScoringSplit ss : scoringSplits) {
+        if (first) {
+          res += ss.toString();
+          first = false;
+        } else {
+          res += ", "+ss.toString();
+        }
+      }
+      res += "]";
+    }
+    res += "]";
+    return res;
+  }
+  
+  
 }

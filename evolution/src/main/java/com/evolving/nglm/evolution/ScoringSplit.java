@@ -318,4 +318,33 @@ public class ScoringSplit
       }
     return result;
   }
+  
+  /* (non-Javadoc)
+   * @see java.lang.Object#toString()
+   */
+  @Override
+  public String toString() {
+    String res = "";
+    res = "ScoringSplit ["
+        + (offerOptimizationAlgorithm != null
+            ? "offerOptimizationAlgorithm=" + offerOptimizationAlgorithm + ", " : "")
+        + (parameters != null ? "parameters=" + parameters + ", " : "");
+    if (offerObjectiveIDs != null) {
+      res += "offerObjectiveIDs= [";
+      boolean first = true;
+      for (String s : offerObjectiveIDs) {
+        if (first) {
+          res += s;
+          first = false;
+        } else {
+          res += ", "+s;
+        }
+      }
+      res += "]";
+    }
+    res += "]";
+    return res;
+  }
+  
+  
 }

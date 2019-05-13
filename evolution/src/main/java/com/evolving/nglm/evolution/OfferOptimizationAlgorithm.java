@@ -7,20 +7,31 @@
 package com.evolving.nglm.evolution;
 
 
-import com.evolving.nglm.core.DeploymentManagedObject;
-
-import com.evolving.nglm.core.JSONUtilities;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import com.evolving.nglm.core.DeploymentManagedObject;
+import com.evolving.nglm.core.JSONUtilities;
+
 public class OfferOptimizationAlgorithm extends DeploymentManagedObject
 {
+  @Override
+  public String toString() {
+    String s1 = "", s2="";
+    for (OfferOptimizationAlgorithmParameter ooap : parameters)
+      s1+="{"+ooap+"}";
+    for (String jcp : javaClassParameters.keySet())
+      s2+="{"+jcp+", "+javaClassParameters.get(jcp)+"}";
+
+    return "OfferOptimizationAlgorithm [parameters=" + s1 + ", javaClass=" + javaClass
+        + ", javaClassParameters=" + s2 + "]";
+  }
+
   /*****************************************
   *
   *  data
@@ -97,6 +108,11 @@ public class OfferOptimizationAlgorithm extends DeploymentManagedObject
 
   public static class OfferOptimizationAlgorithmParameter
   {
+    @Override
+    public String toString() {
+      return "OfferOptimizationAlgorithmParameter [name=" + name + "]";
+    }
+
     /*****************************************
     *
     *  data
