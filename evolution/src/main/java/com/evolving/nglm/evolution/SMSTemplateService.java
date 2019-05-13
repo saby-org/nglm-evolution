@@ -6,13 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
@@ -89,6 +94,42 @@ public class SMSTemplateService extends GUIService
     return superListener;
   }
 
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    List<String> languages = new ArrayList<String>();
+    if(guiManagedObject.getJSONRepresentation().get("message") != null){
+
+      Map<String, SupportedLanguage> supportedLanguages = Deployment.getSupportedLanguages();
+      try
+      {
+        SMSMessage smsMessage = new SMSMessage(JSONUtilities.decodeJSONArray(guiManagedObject.getJSONRepresentation(), "message"), CriterionContext.Profile);
+        DialogMessage messages = smsMessage.getMessageText();
+        if(messages.getMessageTextByLanguage() != null){
+          for(String languageName : messages.getMessageTextByLanguage().keySet()){
+            for(SupportedLanguage supportedLanguage : supportedLanguages.values()){
+              if(supportedLanguage.getName().equals(languageName)){
+                languages.add(supportedLanguage.getID());
+                break;
+              }
+            }
+          }
+        }
+      } catch (JSONUtilitiesException | GUIManagerException e)
+      {
+        e.printStackTrace();
+      }
+      result.put("languageIDs", JSONUtilities.encodeArray(languages));
+    }
+    return result;
+  }
+  
   /*****************************************
   *
   *  getSMSTemplates
