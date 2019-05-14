@@ -152,6 +152,7 @@ public class UploadedFile extends GUIManagedObject
   {
     UploadedFile uploadFile = (UploadedFile) value;
     Struct struct = new Struct(schema);
+    packCommon(struct, uploadFile);
     struct.put("applicationID", uploadFile.getApplicationID());
     struct.put("customerAlternateID", uploadFile.getCustomerAlternateID());
     struct.put("sourceFilename", uploadFile.getSourceFilename());
