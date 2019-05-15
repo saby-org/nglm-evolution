@@ -130,6 +130,7 @@
     <topic.ucgstate>ucgstate</topic.ucgstate>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
     <topic.subscriberprofileforceupdate>subscriberprofileforceupdate</topic.subscriberprofileforceupdate>
+    <topic.subscriberprofileforceupdate_fileconnector>subscriberprofileforceupdate-fileconnector</topic.subscriberprofileforceupdate_fileconnector>
     <topic.journeyrequest>journeyrequest</topic.journeyrequest>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
     <topic.deliverable.source>deliverable-source</topic.deliverable.source>

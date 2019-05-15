@@ -117,6 +117,30 @@
   echo
 
   #
+  #  source connector -- SubscriberProfileForceUpdateFileSourceConnector
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "SubscriberProfileForceUpdateFileSourceConnector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.SubscriberProfileForceUpdateFileSourceConnector",
+        "tasks.max" : 1,
+        "directory" : "/app/data/subscriberprofileforceupdate",
+        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+        "pollMaxRecords" : 5,
+        "pollingInterval" : 10,
+        "verifySizeInterval" : 0,
+        "topic" : "${topic.subscriberprofileforceupdate}",
+        "bootstrapServers" : "'$BROKER_SERVERS'",
+        "internalTopic" : "${topic.subscriberprofileforceupdate_fileconnector}",
+        "archiveDirectory" : "/app/data/subscriberprofileforceupdatearchive"
+        }
+    }'
+  echo
+
+  #
   #  sink connector -- propensity (elasticsearch)
   #
 
