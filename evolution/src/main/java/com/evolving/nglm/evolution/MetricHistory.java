@@ -234,7 +234,7 @@ public class MetricHistory
     this.initialized = false;
     this.dailyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfDailyBuckets, MINIMUM_DAY_BUCKETS));
     this.monthlyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS));
-    this.allTimeBucket = 0L;
+    this.allTimeBucket = (metricHistoryMode == MetricHistoryMode.Standard) ? 0L : -1L;
     this.baseDay = EPOCH;
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, calendar);
@@ -544,7 +544,7 @@ public class MetricHistory
           buckets = new long[numberOfBuckets];
           for (int i = 0; i < numberOfBuckets; i++)
             {
-              buckets[i] = packedBuckets[i];
+              buckets[i] = (long) packedBuckets[i];
             }
           break;
           
@@ -553,10 +553,10 @@ public class MetricHistory
           buckets = new long[numberOfBuckets];
           for (int i = 0; i < numberOfBuckets; i++)
             {
-              long bucket = 0L;
-              bucket = bucket | (((long) packedBuckets[2*i])   & 0xFF) << 8;
-              bucket = bucket | (((long) packedBuckets[2*i+1]) & 0xFF) << 0;
-              buckets[i] = bucket;
+              short bucket = 0;
+              bucket = (short) (bucket | (((int) packedBuckets[2*i])   & 0xFF) << 8);
+              bucket = (short) (bucket | (((int) packedBuckets[2*i+1]) & 0xFF) << 0);
+              buckets[i] = (long) bucket;
             }
           break;
           
@@ -565,12 +565,12 @@ public class MetricHistory
           buckets = new long[numberOfBuckets];
           for (int i = 0; i < numberOfBuckets; i++)
             {
-              long bucket = 0L;
-              bucket = bucket | (((long) packedBuckets[4*i])   & 0xFF) << 24;
-              bucket = bucket | (((long) packedBuckets[4*i+1]) & 0xFF) << 16;
-              bucket = bucket | (((long) packedBuckets[4*i+2]) & 0xFF) <<  8;
-              bucket = bucket | (((long) packedBuckets[4*i+3]) & 0xFF) <<  0;
-              buckets[i] = bucket;
+              int bucket = 0;
+              bucket = bucket | (((int) packedBuckets[4*i])   & 0xFF) << 24;
+              bucket = bucket | (((int) packedBuckets[4*i+1]) & 0xFF) << 16;
+              bucket = bucket | (((int) packedBuckets[4*i+2]) & 0xFF) <<  8;
+              bucket = bucket | (((int) packedBuckets[4*i+3]) & 0xFF) <<  0;
+              buckets[i] = (long) bucket;
             }
           break;
           
@@ -743,7 +743,7 @@ public class MetricHistory
               break;
               
             case Min:
-              long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : Long.MAX_VALUE;
+              long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : 0;
               if (value >= threshold)
                 {
                   dailyBuckets[bucketIndex] = (dailyBuckets[bucketIndex] >= 0L) ? Math.min(dailyBuckets[bucketIndex], value) : value;
@@ -776,7 +776,7 @@ public class MetricHistory
               break;
               
             case Min:
-              long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : Long.MAX_VALUE;
+              long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : 0;
               if (value >= threshold)
                 {
                   monthlyBuckets[bucketIndex] = (monthlyBuckets[bucketIndex] >= 0L) ? Math.min(monthlyBuckets[bucketIndex], value) : value;
@@ -806,7 +806,7 @@ public class MetricHistory
           break;
 
         case Min:
-          long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : Long.MAX_VALUE;
+          long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : 0;
           if (value >= threshold)
             {
               allTimeBucket = (allTimeBucket >= 0L) ? Math.min(allTimeBucket, value) : value;
