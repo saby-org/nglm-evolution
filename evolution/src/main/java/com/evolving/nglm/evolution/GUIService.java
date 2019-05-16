@@ -19,6 +19,7 @@ import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -172,13 +173,13 @@ public class GUIService
     consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     guiManagedObjectsConsumer = new KafkaConsumer<>(consumerProperties);
-
+    
     //
     //  subscribe to topic
     //
 
-    guiManagedObjectsConsumer.subscribe(Arrays.asList(guiManagedObjectTopic));
-
+    guiManagedObjectsConsumer.subscribe(Arrays.asList(guiManagedObjectTopic), new GuiManagedObjectsConsumerRebalanceListener(serviceName, groupID));
+    
     //
     //  read initial guiManagedObjects
     //
@@ -226,6 +227,7 @@ public class GUIService
         guiManagedObjectReaderThread = new Thread(guiManagedObjectReader, "GUIManagedObjectReader");
         guiManagedObjectReaderThread.start();
       }
+    
   }
   
   /*****************************************
@@ -909,7 +911,43 @@ public class GUIService
       else return this.guiManagedObjectID.compareTo(other.guiManagedObjectID);
     }
   }
+  
+  /*****************************************
+  *
+  *  class GuiManagedObjectsConsumerRebalanceListener
+  *
+  *****************************************/
+  
+  private class GuiManagedObjectsConsumerRebalanceListener implements ConsumerRebalanceListener
+  {
+    //
+    //  data
+    //
+    
+    private String serviceName;
+    private String groupID;
+    
+    //
+    //  constructor
+    //
+    
+    public GuiManagedObjectsConsumerRebalanceListener(String serviceName, String groupId)
+    {
+      this.serviceName = serviceName;
+      this.groupID = groupId;
+    }
 
+    @Override public void onPartitionsRevoked(Collection<TopicPartition> lastAssignedPartitions) {}
+
+    @Override public void onPartitionsAssigned(Collection<TopicPartition> partitionsToBeAssigned) 
+    { 
+      if (partitionsToBeAssigned.size() == 0)
+        {
+          log.error("{} has multiple instacne with same key {}", serviceName, groupID);
+        }
+    }
+  }
+  
   /*****************************************
   *
   *  interface GUIManagedObjectListener
