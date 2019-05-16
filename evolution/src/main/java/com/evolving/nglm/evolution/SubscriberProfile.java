@@ -431,7 +431,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getYesterday
   //
   
-  protected long getYesterday(MetricHistory metricHistory, Date evaluationDate)
+  protected Long getYesterday(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
@@ -443,7 +443,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getPrevious7Days
   //
   
-  protected long getPrevious7Days(MetricHistory metricHistory, Date evaluationDate)
+  protected Long getPrevious7Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -7, Deployment.getBaseTimeZone());
@@ -455,7 +455,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getPrevious14Days
   //
   
-  protected long getPrevious14Days(MetricHistory metricHistory, Date evaluationDate)
+  protected Long getPrevious14Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -14, Deployment.getBaseTimeZone());
@@ -467,7 +467,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getPreviousMonth
   //
   
-  protected long getPreviousMonth(MetricHistory metricHistory, Date evaluationDate)
+  protected Long getPreviousMonth(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Calendar.SUNDAY, Deployment.getBaseTimeZone());
@@ -480,7 +480,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getPrevious90Days
   //
 
-  protected long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  protected Long getPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
@@ -492,8 +492,19 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getThreeMonthAverage
   //
 
-  protected long getThreeMonthAverage(MetricHistory metricHistory, Date evaluationDate)
+  protected Long getThreeMonthAverage(MetricHistory metricHistory, Date evaluationDate)
   {
+    //
+    //  undefined
+    //
+    
+    switch (metricHistory.getMetricHistoryMode())
+      {
+        case Min:
+        case Max:
+          return null;
+      }
+    
     //
     //  retrieve values by month
     //

@@ -65,6 +65,7 @@ public class MetricHistory
     ShortRepresentation(2, (long) Short.MIN_VALUE, (long) Short.MAX_VALUE),
     IntegerRepresentation(3, (long) Integer.MIN_VALUE, (long) Integer.MAX_VALUE),
     LongRepresentation(4, (long) Long.MIN_VALUE, (long) Long.MAX_VALUE),
+    UninitializedRepresentation(5, 0L, 0L),
     Unknown(-1, -1L, -1L);
     private int externalRepresentation;
     private long minValue;
@@ -89,6 +90,25 @@ public class MetricHistory
       BucketRepresentation result = (valueRepresentation.getMaxValue() > bucketRepresentation.getMaxValue()) ? valueRepresentation : bucketRepresentation;
       return result;
     }
+  }
+
+  //
+  //  MetricHistoryMode
+  //
+
+  public enum MetricHistoryMode
+  {
+    Standard("standard", 0),
+    Max("max", 1),
+    Min("min", 2),
+    Unknown("(unknown)", -1);
+    private String externalRepresentation;
+    private int internalRepresentation;
+    private MetricHistoryMode(String externalRepresentation, int internalRepresentation) { this.externalRepresentation = externalRepresentation; this.internalRepresentation = internalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public int getInternalRepresentation() { return internalRepresentation; }
+    public static MetricHistoryMode fromExternalRepresentation(String externalRepresentation) { for (MetricHistoryMode enumeratedValue : MetricHistoryMode.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static MetricHistoryMode fromInternalRepresentation(int internalRepresentation) { for (MetricHistoryMode enumeratedValue : MetricHistoryMode.values()) { if (enumeratedValue.getInternalRepresentation() == internalRepresentation) return enumeratedValue; } return Unknown; }
   }
 
   /****************************************
@@ -135,13 +155,14 @@ public class MetricHistory
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("metric_history");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("daysSinceEpoch", Schema.INT32_SCHEMA);
     schemaBuilder.field("dailyRepresentation", Schema.INT32_SCHEMA);
     schemaBuilder.field("dailyBuckets", Schema.OPTIONAL_BYTES_SCHEMA);
     schemaBuilder.field("monthlyRepresentation", Schema.INT32_SCHEMA);
     schemaBuilder.field("monthlyBuckets", Schema.OPTIONAL_BYTES_SCHEMA);
     schemaBuilder.field("allTimeBucket", Schema.INT64_SCHEMA);
+    schemaBuilder.field("metricHistoryMode", SchemaBuilder.int32().defaultValue(0).schema());
     schema = schemaBuilder.build();
   };
 
@@ -164,6 +185,7 @@ public class MetricHistory
   *
   ****************************************/
 
+  private boolean initialized;
   private Date baseDay;
   private Date beginningOfBaseMonth;
   private Date beginningOfDailyValues;
@@ -172,6 +194,7 @@ public class MetricHistory
   private long[] dailyBuckets;
   private long[] monthlyBuckets;
   private long allTimeBucket;
+  private MetricHistoryMode metricHistoryMode;
 
   /****************************************
   *
@@ -179,6 +202,7 @@ public class MetricHistory
   *
   ****************************************/
 
+  public boolean getInitialized() { return initialized; }
   public Date getBaseDay() { return baseDay; }
   public Date getBeginningOfBaseMonth() { return beginningOfBaseMonth; }
   public Date getBeginningOfDailyValues() { return beginningOfDailyValues; }
@@ -187,6 +211,7 @@ public class MetricHistory
   public long[] getDailyBuckets() { return dailyBuckets; }
   public long[] getMonthlyBuckets() { return monthlyBuckets; }
   public long getAllTimeBucket() { return allTimeBucket; }
+  public MetricHistoryMode getMetricHistoryMode() { return metricHistoryMode; }
 
   /*****************************************
   *
@@ -194,10 +219,21 @@ public class MetricHistory
   *
   *****************************************/
 
-  public MetricHistory(int numberOfDailyBuckets, int numberOfMonthlyBuckets)
+  //
+  //  convenience constructors
+  //
+
+  public MetricHistory(int numberOfDailyBuckets, int numberOfMonthlyBuckets) { this(numberOfDailyBuckets, numberOfMonthlyBuckets, MetricHistoryMode.Standard); }
+  
+  //
+  //  full
+  //
+  
+  public MetricHistory(int numberOfDailyBuckets, int numberOfMonthlyBuckets, MetricHistoryMode metricHistoryMode)
   {
-    this.dailyBuckets = new long[Math.max(numberOfDailyBuckets, MINIMUM_DAY_BUCKETS)];
-    this.monthlyBuckets = new long[Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS)];
+    this.initialized = false;
+    this.dailyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfDailyBuckets, MINIMUM_DAY_BUCKETS));
+    this.monthlyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS));
     this.allTimeBucket = 0L;
     this.baseDay = EPOCH;
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
@@ -205,6 +241,33 @@ public class MetricHistory
     this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), calendar);
     this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
     this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, calendar);
+    this.metricHistoryMode = metricHistoryMode;
+  }
+
+  /****************************************
+  *
+  *  allocateBuckets
+  *
+  ****************************************/
+
+  private static long[] allocateBuckets(MetricHistoryMode metricHistoryMode, int numberOfBuckets)
+  {
+    long[] newBuckets = new long[numberOfBuckets];
+    for (int i = 0; i < numberOfBuckets; i++)
+      {
+        switch (metricHistoryMode)
+          {
+            case Standard:
+              newBuckets[i] = 0L;
+              break;
+
+            case Max:
+            case Min:
+              newBuckets[i] = -1L;
+              break;
+          }
+      }
+    return newBuckets;
   }
   
   /*****************************************
@@ -213,8 +276,9 @@ public class MetricHistory
   *
   *****************************************/
 
-  private MetricHistory(Date baseDay, long[] dailyBuckets, long[] monthlyBuckets, long allTimeBucket)
+  private MetricHistory(boolean initialized, Date baseDay, long[] dailyBuckets, long[] monthlyBuckets, long allTimeBucket, MetricHistoryMode metricHistoryMode)
   {
+    this.initialized = initialized;
     this.dailyBuckets = dailyBuckets;
     this.monthlyBuckets = monthlyBuckets;
     this.allTimeBucket = allTimeBucket;
@@ -224,6 +288,7 @@ public class MetricHistory
     this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), calendar);
     this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
     this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, calendar);
+    this.metricHistoryMode = metricHistoryMode;
   }
 
   /*****************************************
@@ -234,6 +299,7 @@ public class MetricHistory
 
   public MetricHistory(MetricHistory metricHistory)
   {
+    this.initialized = metricHistory.getInitialized();
     this.dailyBuckets = Arrays.copyOf(metricHistory.getDailyBuckets(), metricHistory.getDailyBuckets().length);
     this.monthlyBuckets = Arrays.copyOf(metricHistory.getMonthlyBuckets(), metricHistory.getMonthlyBuckets().length);
     this.allTimeBucket = metricHistory.getAllTimeBucket();
@@ -242,6 +308,7 @@ public class MetricHistory
     this.beginningOfDailyValues = metricHistory.getBeginningOfDailyValues();
     this.beginningOfMonthlyValues = metricHistory.getBeginningOfMonthlyValues();
     this.endOfMonthlyValues = metricHistory.getEndOfMonthlyValues();
+    this.metricHistoryMode = metricHistory.getMetricHistoryMode();
   }
 
   /*****************************************
@@ -258,8 +325,8 @@ public class MetricHistory
     //  pack buckets
     //
 
-    Pair<BucketRepresentation, byte[]> daily = packBuckets(metricHistory.getDailyBuckets());
-    Pair<BucketRepresentation, byte[]> monthly = packBuckets(metricHistory.getMonthlyBuckets());
+    Pair<BucketRepresentation, byte[]> daily = metricHistory.getInitialized() ? packBuckets(metricHistory.getDailyBuckets()) : packUninitializedBuckets(metricHistory.getDailyBuckets());
+    Pair<BucketRepresentation, byte[]> monthly = metricHistory.getInitialized() ? packBuckets(metricHistory.getMonthlyBuckets()): packUninitializedBuckets(metricHistory.getMonthlyBuckets());
     
     //
     //  pack
@@ -272,6 +339,7 @@ public class MetricHistory
     struct.put("monthlyRepresentation", monthly.getFirstElement().getExternalRepresentation());
     struct.put("monthlyBuckets", monthly.getSecondElement());
     struct.put("allTimeBucket", metricHistory.getAllTimeBucket());
+    struct.put("metricHistoryMode", metricHistory.getMetricHistoryMode().getInternalRepresentation());
     return struct;
   }
 
@@ -359,6 +427,20 @@ public class MetricHistory
     return new Pair<BucketRepresentation, byte[]>(bucketRepresentation, packedBuckets);
   }
 
+  /****************************************
+  *
+  *  packUninitializedBuckets
+  *
+  ****************************************/
+
+  private static Pair<BucketRepresentation, byte[]> packUninitializedBuckets(long[] buckets)
+  {
+    BucketRepresentation bucketRepresentation = BucketRepresentation.UninitializedRepresentation;
+    byte[] packedBuckets = new byte[1];
+    packedBuckets[0] = (byte) buckets.length;
+    return new Pair<BucketRepresentation, byte[]>(bucketRepresentation, packedBuckets);
+  }
+  
   /*****************************************
   *
   *  unpack
@@ -386,19 +468,26 @@ public class MetricHistory
     BucketRepresentation monthlyRepresentation = BucketRepresentation.fromExternalRepresentation(valueStruct.getInt32("monthlyRepresentation"));
     byte[] packedMonthlyBuckets = valueStruct.getBytes("monthlyBuckets");
     long allTimeBucket = valueStruct.getInt64("allTimeBucket");
+    MetricHistoryMode metricHistoryMode = (schemaVersion >= 2) ? MetricHistoryMode.fromInternalRepresentation(valueStruct.getInt32("metricHistoryMode")) : MetricHistoryMode.Standard;
 
     //
     //  unpack buckets
     //
 
-    long[] dailyBuckets = unpackBuckets(dailyRepresentation, packedDailyBuckets);
-    long[] monthlyBuckets = unpackBuckets(monthlyRepresentation, packedMonthlyBuckets);
+    long[] dailyBuckets = (dailyRepresentation != BucketRepresentation.UninitializedRepresentation) ? unpackBuckets(dailyRepresentation, packedDailyBuckets) : unpackUninitializedBuckets(metricHistoryMode, packedDailyBuckets);
+    long[] monthlyBuckets = (monthlyRepresentation != BucketRepresentation.UninitializedRepresentation) ? unpackBuckets(monthlyRepresentation, packedMonthlyBuckets) : unpackUninitializedBuckets(metricHistoryMode, packedMonthlyBuckets);
+
+    //
+    //  initialized?
+    //
+    
+    boolean initialized = (dailyRepresentation != BucketRepresentation.UninitializedRepresentation) || (monthlyRepresentation != BucketRepresentation.UninitializedRepresentation);
     
     //
     //  return
     //
 
-    return new MetricHistory(RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getBaseTimeZone()), dailyBuckets, monthlyBuckets, allTimeBucket);
+    return new MetricHistory(initialized, RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getBaseTimeZone()), dailyBuckets, monthlyBuckets, allTimeBucket, metricHistoryMode);
   }
   
   /*****************************************
@@ -512,11 +601,37 @@ public class MetricHistory
 
   /****************************************
   *
+  *  unpackUninitializedBuckets
+  *
+  ****************************************/
+
+  private static long[] unpackUninitializedBuckets(MetricHistoryMode metricHistoryMode, byte[] packedBuckets)
+  {
+    int numberOfBuckets = packedBuckets[0];
+    long[] buckets = allocateBuckets(metricHistoryMode, numberOfBuckets);
+    return buckets;
+  }
+  
+  /****************************************
+  *
   *  update
   *
   ****************************************/
 
-  public synchronized void update(Date date, long increment)
+  //
+  //  update (simple)
+  //
+      
+  public synchronized void update(Date date, long value)
+  {
+    update(date, value, null);
+  }
+  
+  //
+  //  update (full)
+  //
+      
+  public synchronized void update(Date date, long value, Object briefcase)
   {
     /****************************************
     *
@@ -531,6 +646,26 @@ public class MetricHistory
 
     /****************************************
     *
+    *  validate
+    *
+    ****************************************/
+
+    switch (metricHistoryMode)
+      {
+        case Standard:
+          break;
+
+        case Max:
+        case Min:
+          if (value < 0)
+            {
+              return;
+            }
+          break;
+      }
+    
+    /****************************************
+    *
     *  update data structures (as necessary)
     *
     ****************************************/
@@ -541,7 +676,7 @@ public class MetricHistory
         //  create newDailyBuckets
         //
         
-        long[] newDailyBuckets = new long[dailyBuckets.length];
+        long[] newDailyBuckets = allocateBuckets(metricHistoryMode, dailyBuckets.length);
         int dayOffset = RLMDateUtils.daysBetween(baseDay, day, Deployment.getBaseTimeZone());
         for (int i = 0; i < dailyBuckets.length - dayOffset; i++)
           {
@@ -552,7 +687,7 @@ public class MetricHistory
         //  create newMonthlyBuckets
         //
 
-        long[] newMonthlyBuckets = new long[monthlyBuckets.length];
+        long[] newMonthlyBuckets = allocateBuckets(metricHistoryMode, monthlyBuckets.length);
         int monthOffset = RLMDateUtils.monthsBetween(beginningOfBaseMonth, beginningOfCurrentMonth, Deployment.getBaseTimeZone());
         for (int i = 0; i < monthlyBuckets.length - monthOffset; i++)
           {
@@ -595,7 +730,30 @@ public class MetricHistory
     if (day.compareTo(beginningOfDailyValues) >= 0)
       {
         int bucketIndex = dailyBuckets.length - RLMDateUtils.daysBetween(day, baseDay, Deployment.getBaseTimeZone()) - 1;
-        dailyBuckets[bucketIndex] += increment;
+        switch (metricHistoryMode)
+          {
+            case Standard:
+              dailyBuckets[bucketIndex] += value;
+              initialized = true;
+              break;
+
+            case Max:
+              dailyBuckets[bucketIndex] = (dailyBuckets[bucketIndex] >= 0L) ? Math.max(dailyBuckets[bucketIndex], value) : value;
+              initialized = true;
+              break;
+              
+            case Min:
+              long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : Long.MAX_VALUE;
+              if (value >= threshold)
+                {
+                  dailyBuckets[bucketIndex] = (dailyBuckets[bucketIndex] >= 0L) ? Math.min(dailyBuckets[bucketIndex], value) : value;
+                  initialized = true;
+                }              
+              break;
+              
+            default:
+              throw new RuntimeException();
+          }
       }
     
     //
@@ -605,14 +763,60 @@ public class MetricHistory
     if (beginningOfCurrentMonth.compareTo(beginningOfMonthlyValues) >= 0 && beginningOfCurrentMonth.compareTo(beginningOfBaseMonth) < 0)
       {
         int bucketIndex = monthlyBuckets.length - RLMDateUtils.monthsBetween(beginningOfCurrentMonth, beginningOfBaseMonth, Deployment.getBaseTimeZone());
-        monthlyBuckets[bucketIndex] += increment;
+        switch (metricHistoryMode)
+          {
+            case Standard:
+              monthlyBuckets[bucketIndex] += value;
+              initialized = true;
+              break;
+
+            case Max:
+              monthlyBuckets[bucketIndex] = (monthlyBuckets[bucketIndex] >= 0L) ? Math.max(monthlyBuckets[bucketIndex], value) : value;
+              initialized = true;
+              break;
+              
+            case Min:
+              long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : Long.MAX_VALUE;
+              if (value >= threshold)
+                {
+                  monthlyBuckets[bucketIndex] = (monthlyBuckets[bucketIndex] >= 0L) ? Math.min(monthlyBuckets[bucketIndex], value) : value;
+                  initialized = true;
+                }              
+              break;
+              
+            default:
+              throw new RuntimeException();
+          }
       }
     
     //
     //  allTimeBucket
     //
 
-    allTimeBucket += increment;
+    switch (metricHistoryMode)
+      {
+        case Standard:
+          allTimeBucket += value;
+          initialized = true;
+          break;
+
+        case Max:
+          allTimeBucket = (allTimeBucket >= 0L) ? Math.max(allTimeBucket, value) : value;
+          initialized = true;
+          break;
+
+        case Min:
+          long threshold = (briefcase != null) ? ((Long) briefcase).longValue() : Long.MAX_VALUE;
+          if (value >= threshold)
+            {
+              allTimeBucket = (allTimeBucket >= 0L) ? Math.min(allTimeBucket, value) : value;
+              initialized = true;
+            }              
+          break;
+
+        default:
+            throw new RuntimeException();
+      }
   }
 
   /*****************************************
@@ -659,7 +863,7 @@ public class MetricHistory
 
   private enum DateCase { A, B, C, D }
 
-  public synchronized long getValue(Date startDay, Date endDay) throws IllegalArgumentException
+  public synchronized Long getValue(Date startDay, Date endDay) throws IllegalArgumentException
   {
     /****************************************
     *
@@ -762,82 +966,233 @@ public class MetricHistory
     *
     *****************************************/
 
-    //
-    //  calculate result
-    //
-
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-    long result = 0;
-    switch (startDayCase)
+    Long result = null;
+    switch (metricHistoryMode)
       {
-        case A:
-          switch (endDayCase)
-            {
-              case A:
-                result = allTimeBucket - sumMonthlyValues(RLMDateUtils.addDays(endDay, 1, calendar), endOfMonthlyValues) - sumDailyValues(beginningOfBaseMonth,baseDay);
-                break;
-              case B:
-                result = allTimeBucket - sumDailyValues(RLMDateUtils.addDays(endDay, 1, calendar), baseDay);
-                break;
-              case C:
-                result = allTimeBucket;
-                break;
-              case D:
-                result = allTimeBucket;
-                break;
-            }
+        case Standard:
+          {
+            result = 0L;
+            switch (startDayCase)
+              {
+                case A:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = allTimeBucket - aggregateMonthlyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getBaseTimeZone()), endOfMonthlyValues) - aggregateDailyValues(beginningOfBaseMonth,baseDay);
+                        break;
+                      case B:
+                        result = allTimeBucket - aggregateDailyValues(RLMDateUtils.addDays(endDay, 1, Deployment.getBaseTimeZone()), baseDay);
+                        break;
+                      case C:
+                        result = allTimeBucket;
+                        break;
+                      case D:
+                        result = allTimeBucket;
+                        break;
+                    }
+                  break;
+
+                case B:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = aggregateMonthlyValues(startDay,endDay);
+                        break;
+                      case B:
+                        result = aggregateMonthlyValues(startDay,endOfMonthlyValues) + aggregateDailyValues(beginningOfBaseMonth,endDay);
+                        break;
+                      case C:
+                        result = aggregateMonthlyValues(startDay,endOfMonthlyValues) + aggregateDailyValues(beginningOfBaseMonth,baseDay);
+                        break;
+                      case D:
+                        result = aggregateMonthlyValues(startDay,endOfMonthlyValues) + aggregateDailyValues(beginningOfBaseMonth,baseDay);
+                        break;
+                    }
+                  break;
+
+                case C:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = aggregateDailyValues(startDay, endDay);
+                        break;
+                      case B:
+                        result = aggregateDailyValues(startDay, endDay);
+                        break;
+                      case C:
+                        result = aggregateDailyValues(startDay, baseDay);
+                        break;
+                      case D:
+                        result = aggregateDailyValues(startDay, baseDay);
+                        break;
+                    }
+                  break;
+
+                case D:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        throw new ServerRuntimeException("Start/End case D/A can't happen");
+                      case B:
+                        throw new ServerRuntimeException("Start/End case D/B can't happen");
+                      case C:
+                        result = 0L;
+                        break;
+                      case D:
+                        result = 0L;
+                        break;
+                    }
+                  break;
+              }
+          }
           break;
 
-        case B:
-          switch (endDayCase)
-            {
-              case A:
-                result = sumMonthlyValues(startDay,endDay);
-                break;
-              case B:
-                result = sumMonthlyValues(startDay,endOfMonthlyValues) + sumDailyValues(beginningOfBaseMonth,endDay);
-                break;
-              case C:
-                result = sumMonthlyValues(startDay,endOfMonthlyValues) + sumDailyValues(beginningOfBaseMonth,baseDay);
-                break;
-              case D:
-                result = sumMonthlyValues(startDay,endOfMonthlyValues) + sumDailyValues(beginningOfBaseMonth,baseDay);
-                break;
-            }
+        case Max:
+          {
+            result = Long.MIN_VALUE;
+            switch (startDayCase)
+              {
+                case A:
+                  switch (endDayCase)
+                    {
+                      case A:
+                      case B:
+                      case C:
+                        throw new IllegalArgumentException("unavailable Start/End combination");
+                      case D:
+                        result = (allTimeBucket >= 0) ? allTimeBucket : Long.MIN_VALUE;
+                        break;
+                    }
+                  break;
+
+                case B:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = aggregateMonthlyValues(startDay,endDay);
+                        break;
+                      case B:
+                        result = Math.max(aggregateMonthlyValues(startDay,endOfMonthlyValues), aggregateDailyValues(beginningOfBaseMonth,endDay));
+                        break;
+                      case C:
+                        result = Math.max(aggregateMonthlyValues(startDay,endOfMonthlyValues), aggregateDailyValues(beginningOfBaseMonth,baseDay));
+                        break;
+                      case D:
+                        result = Math.max(aggregateMonthlyValues(startDay,endOfMonthlyValues), aggregateDailyValues(beginningOfBaseMonth,baseDay));
+                        break;
+                    }
+                  break;
+
+                case C:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = aggregateDailyValues(startDay, endDay);
+                        break;
+                      case B:
+                        result = aggregateDailyValues(startDay, endDay);
+                        break;
+                      case C:
+                        result = aggregateDailyValues(startDay, baseDay);
+                        break;
+                      case D:
+                        result = aggregateDailyValues(startDay, baseDay);
+                        break;
+                    }
+                  break;
+
+                case D:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        throw new ServerRuntimeException("Start/End case D/A can't happen");
+                      case B:
+                        throw new ServerRuntimeException("Start/End case D/B can't happen");
+                      case C:
+                        result = Long.MIN_VALUE;
+                        break;
+                      case D:
+                        result = Long.MIN_VALUE;
+                        break;
+                    }
+                  break;
+              }
+            result = (result > Long.MIN_VALUE) ? result : null;
+          }
           break;
 
-        case C:
-          switch (endDayCase)
-            {
-              case A:
-                result = sumDailyValues(startDay, endDay);
-                break;
-              case B:
-                result = sumDailyValues(startDay, endDay);
-                break;
-              case C:
-                result = sumDailyValues(startDay, baseDay);
-                break;
-              case D:
-                result = sumDailyValues(startDay, baseDay);
-                break;
-            }
-          break;
+        case Min:
+          {
+            result = Long.MAX_VALUE;
+            switch (startDayCase)
+              {
+                case A:
+                  switch (endDayCase)
+                    {
+                      case A:
+                      case B:
+                      case C:
+                        throw new IllegalArgumentException("unavailable Start/End combination");
+                      case D:
+                        result = (allTimeBucket >= 0) ? allTimeBucket : Long.MAX_VALUE;
+                        break;
+                    }
+                  break;
 
-        case D:
-          switch (endDayCase)
-            {
-              case A:
-                throw new ServerRuntimeException("Start/End case D/A can't happen");
-              case B:
-                throw new ServerRuntimeException("Start/End case D/B can't happen");
-              case C:
-                result = 0;
-                break;
-              case D:
-                result = 0;
-                break;
-            }
+                case B:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = aggregateMonthlyValues(startDay,endDay);
+                        break;
+                      case B:
+                        result = Math.min(aggregateMonthlyValues(startDay,endOfMonthlyValues), aggregateDailyValues(beginningOfBaseMonth,endDay));
+                        break;
+                      case C:
+                        result = Math.min(aggregateMonthlyValues(startDay,endOfMonthlyValues), aggregateDailyValues(beginningOfBaseMonth,baseDay));
+                        break;
+                      case D:
+                        result = Math.min(aggregateMonthlyValues(startDay,endOfMonthlyValues), aggregateDailyValues(beginningOfBaseMonth,baseDay));
+                        break;
+                    }
+                  break;
+
+                case C:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        result = aggregateDailyValues(startDay, endDay);
+                        break;
+                      case B:
+                        result = aggregateDailyValues(startDay, endDay);
+                        break;
+                      case C:
+                        result = aggregateDailyValues(startDay, baseDay);
+                        break;
+                      case D:
+                        result = aggregateDailyValues(startDay, baseDay);
+                        break;
+                    }
+                  break;
+
+                case D:
+                  switch (endDayCase)
+                    {
+                      case A:
+                        throw new ServerRuntimeException("Start/End case D/A can't happen");
+                      case B:
+                        throw new ServerRuntimeException("Start/End case D/B can't happen");
+                      case C:
+                        result = Long.MAX_VALUE;
+                        break;
+                      case D:
+                        result = Long.MAX_VALUE;
+                        break;
+                    }
+                  break;
+              }
+            result = (result < Long.MAX_VALUE) ? result : null;
+          }
           break;
       }
 
@@ -898,13 +1253,39 @@ public class MetricHistory
   
   /****************************************
   *
-  *  sumDailyValues
+  *  aggregateDailyValues
   *
   ****************************************/
 
-  private long sumDailyValues(Date startDay, Date endDay)
+  private long aggregateDailyValues(Date startDay, Date endDay)
   {
-    long result = 0L;
+    //
+    //  initialize result
+    //
+    
+    long result;
+    switch (metricHistoryMode)
+      {
+        case Standard:
+          result = 0L;
+          break;
+
+        case Max:
+          result = Long.MIN_VALUE;
+          break;
+
+        case Min:
+          result = Long.MAX_VALUE;
+          break;
+
+        default:
+          throw new RuntimeException();
+      }
+
+    //
+    //  aggregate
+    //
+        
     int bucketIndex = 0;
     Date bucketDay = beginningOfDailyValues;
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
@@ -912,7 +1293,20 @@ public class MetricHistory
       {
         if (bucketDay.compareTo(startDay) >= 0)
           {
-            result += dailyBuckets[bucketIndex];
+            switch (metricHistoryMode)
+              {
+                case Standard:
+                  result += dailyBuckets[bucketIndex];
+                  break;
+
+                case Max:
+                  result = (dailyBuckets[bucketIndex] >= 0L) ? Math.max(dailyBuckets[bucketIndex], result) : result;
+                  break;
+
+                case Min:
+                  result = (dailyBuckets[bucketIndex] >= 0L) ? Math.min(dailyBuckets[bucketIndex], result) : result;
+                  break;
+              }
           }
         bucketIndex += 1;
         bucketDay = RLMDateUtils.addDays(bucketDay, 1, calendar);
@@ -922,13 +1316,39 @@ public class MetricHistory
   
   /****************************************
   *
-  *  sumMonthlyValues
+  *  aggregateMonthlyValues
   *
   ****************************************/
 
-  private long sumMonthlyValues(Date startDay, Date endDay)
+  private long aggregateMonthlyValues(Date startDay, Date endDay)
   {
-    long result = 0L;
+    //
+    //  initialize result
+    //
+    
+    long result;
+    switch (metricHistoryMode)
+      {
+        case Standard:
+          result = 0L;
+          break;
+
+        case Max:
+          result = Long.MIN_VALUE;
+          break;
+
+        case Min:
+          result = Long.MAX_VALUE;
+          break;
+
+        default:
+          throw new RuntimeException();
+      }
+
+    //
+    //  aggregate
+    //
+        
     int bucketIndex = 0;
     Date bucketMonth = beginningOfMonthlyValues;
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
@@ -936,14 +1356,27 @@ public class MetricHistory
       {
         if (bucketMonth.compareTo(startDay) >= 0)
           {
-            result += monthlyBuckets[bucketIndex];
+            switch (metricHistoryMode)
+              {
+                case Standard:
+                  result += monthlyBuckets[bucketIndex];
+                  break;
+
+                case Max:
+                  result = (monthlyBuckets[bucketIndex] >= 0L) ? Math.max(monthlyBuckets[bucketIndex], result) : result;
+                  break;
+
+                case Min:
+                  result = (monthlyBuckets[bucketIndex] >= 0L) ? Math.min(monthlyBuckets[bucketIndex], result) : result;
+                  break;
+              }
           }
         bucketIndex += 1;
         bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, calendar);
       }
     return result;
   }
-  
+
   /****************************************
   *
   *  resize
@@ -963,7 +1396,7 @@ public class MetricHistory
     //  create newDailyBuckets
     //
 
-    long[] newDailyBuckets = new long[numberOfDailyBuckets];
+    long[] newDailyBuckets = allocateBuckets(metricHistoryMode, numberOfDailyBuckets);
     for (int i = 0; i < Math.min(numberOfDailyBuckets, dailyBuckets.length); i++)
       {
         newDailyBuckets[numberOfDailyBuckets-i-1] = dailyBuckets[dailyBuckets.length-i-1];
@@ -974,7 +1407,7 @@ public class MetricHistory
     //  create newMonthlyBuckets
     //
 
-    long[] newMonthlyBuckets = new long[numberOfMonthlyBuckets];
+    long[] newMonthlyBuckets = allocateBuckets(metricHistoryMode, numberOfMonthlyBuckets);
     for (int i = 0; i < Math.min(numberOfMonthlyBuckets, monthlyBuckets.length); i++)
       {
         newMonthlyBuckets[numberOfMonthlyBuckets-i-1] = monthlyBuckets[monthlyBuckets.length-i-1];
