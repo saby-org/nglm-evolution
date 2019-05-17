@@ -57,6 +57,7 @@ public class SegmentRanges implements Segment
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("range_min", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("range_max", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("contactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -76,6 +77,7 @@ public class SegmentRanges implements Segment
   private String name;
   private Integer range_min;
   private Integer range_max;
+  private String contactPolicyID;
 
   /*****************************************
   *
@@ -83,12 +85,13 @@ public class SegmentRanges implements Segment
   *
   *****************************************/
 
-  private SegmentRanges(String id, String name, Integer range_min, Integer range_max)
+  private SegmentRanges(String id, String name, Integer range_min, Integer range_max, String contactPolicyID)
   {
     this.id = id;
     this.name = name;
     this.range_min = range_min;
     this.range_max = range_max;
+    this.contactPolicyID = contactPolicyID;
   }
 
   /*****************************************
@@ -103,6 +106,7 @@ public class SegmentRanges implements Segment
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
     this.range_min = JSONUtilities.decodeInteger(jsonRoot, "range_min", false);
     this.range_max = JSONUtilities.decodeInteger(jsonRoot, "range_max", false);
+    this.contactPolicyID = JSONUtilities.decodeString(jsonRoot, "contactPolicyID", false);
   }
 
   /*****************************************
@@ -115,6 +119,7 @@ public class SegmentRanges implements Segment
   public String getName() { return name; }
   public Integer getRangeMin() { return range_min; }
   public Integer getRangeMax() { return range_max; }
+  public String getContactPolicyID() { return contactPolicyID; }
 
   /*****************************************
   *
@@ -141,6 +146,7 @@ public class SegmentRanges implements Segment
     struct.put("name", segment.getName());
     struct.put("range_min", segment.getRangeMin());
     struct.put("range_max", segment.getRangeMax());
+    struct.put("contactPolicyID", segment.getContactPolicyID());
     return struct;
   }
 
@@ -172,12 +178,13 @@ public class SegmentRanges implements Segment
     String name = valueStruct.getString("name");
     Integer range_min = valueStruct.getInt32("range_min");
     Integer range_max = valueStruct.getInt32("range_max");
+    String contactPolicyID = valueStruct.getString("contactPolicyID");
 
     //
     //  construct
     //
 
-    SegmentRanges result = new SegmentRanges(id, name, range_min, range_max);
+    SegmentRanges result = new SegmentRanges(id, name, range_min, range_max, contactPolicyID);
 
     //
     //  return

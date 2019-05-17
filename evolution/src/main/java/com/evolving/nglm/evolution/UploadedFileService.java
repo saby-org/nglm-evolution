@@ -129,6 +129,15 @@ public class UploadedFileService extends GUIService
     try {
 
       //
+      //  validate
+      //
+
+      if (uploadedFile instanceof UploadedFile)
+        {
+          ((UploadedFile) uploadedFile).validate();
+        }
+      
+      //
       //  put
       //
 

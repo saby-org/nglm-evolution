@@ -62,6 +62,7 @@ public class SegmentEligibility implements Segment
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
+    schemaBuilder.field("contactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -80,6 +81,7 @@ public class SegmentEligibility implements Segment
   private String id;
   private String name;
   private List<EvaluationCriterion> profileCriteria;
+  private String contactPolicyID;
 
   /*****************************************
   *
@@ -87,11 +89,12 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  private SegmentEligibility(String id, String name, List<EvaluationCriterion> profileCriteria)
+  private SegmentEligibility(String id, String name, List<EvaluationCriterion> profileCriteria, String contactPolicyID)
   {
     this.id = id;
     this.name = name;
     this.profileCriteria = profileCriteria;
+    this.contactPolicyID = contactPolicyID;
   }
 
   /*****************************************
@@ -105,6 +108,7 @@ public class SegmentEligibility implements Segment
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false));
+    this.contactPolicyID = JSONUtilities.decodeString(jsonRoot, "contactPolicyID", false);
   }
 
   /*****************************************
@@ -135,7 +139,8 @@ public class SegmentEligibility implements Segment
   public String getID() { return id; }
   public String getName() { return name; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
-
+  public String getContactPolicyID() { return contactPolicyID; }
+  
   /*****************************************
   *
   *  serde
@@ -160,6 +165,7 @@ public class SegmentEligibility implements Segment
     struct.put("id", segment.getID());
     struct.put("name", segment.getName());
     struct.put("profileCriteria", packProfileCriteria(segment.getProfileCriteria()));
+    struct.put("contactPolicyID", segment.getContactPolicyID());
     return struct;
   }
 
@@ -209,12 +215,13 @@ public class SegmentEligibility implements Segment
     String id = valueStruct.getString("id");
     String name = valueStruct.getString("name");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
-
+    String contactPolicyID = valueStruct.getString("contactPolicyID");
+    
     //
     //  construct
     //
 
-    SegmentEligibility result = new SegmentEligibility(id, name, profileCriteria);
+    SegmentEligibility result = new SegmentEligibility(id, name, profileCriteria, contactPolicyID);
 
     //
     //  return

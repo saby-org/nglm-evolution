@@ -1,7 +1,6 @@
 package com.evolving.nglm.evolution;
 
 import java.util.Date;
-
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -10,6 +9,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -202,4 +202,11 @@ public class UploadedFile extends GUIManagedObject
 
     return new UploadedFile(schemaAndValue, applicationID, customerAlternateID, sourceFilename, destinationFilename, fileType, fileEncoding, fileSize, numberOfLines, uploadDate);
   }
+  
+  public void validate() throws GUIManagerException 
+  {
+    AlternateID alternateID = Deployment.getAlternateIDs().get(this.customerAlternateID);
+    if (alternateID == null) throw new GUIManagerException("unknown alternateid ", this.customerAlternateID);
+  }
+  
 }

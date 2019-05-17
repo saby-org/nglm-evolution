@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -197,5 +198,11 @@ public class UploadedTarget extends GUIManagedObject
       {
         return true;
       }
+  }
+  
+  public void validate(UploadedFileService uploadedFileService, Date now) throws GUIManagerException 
+  {
+    UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(targetFileID);
+    if (uploadedFile == null) throw new GUIManagerException("unknown uploaded file with id ", targetFileID);
   }
 }

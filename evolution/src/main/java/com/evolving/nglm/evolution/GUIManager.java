@@ -2892,7 +2892,7 @@ public class GUIManager
        *
        *****************************************/
 
-      uploadedTargetService.putTarget(target, (existingTarget == null), userID);
+      uploadedTargetService.putTarget(target, uploadFileService, (existingTarget == null), userID);
 
       /*****************************************
        *
@@ -2919,7 +2919,7 @@ public class GUIManager
       //  store
       //
 
-      uploadedTargetService.putTarget(incompleteObject, (existingTarget == null), userID);
+      uploadedTargetService.putTarget(incompleteObject, uploadFileService, (existingTarget == null), userID);
 
       //
       //  log
@@ -5916,6 +5916,24 @@ public class GUIManager
     List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
     for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
       {
+        
+//        SegmentationDimensionTargetingType targetingType = ((SegmentationDimension)segmentationDimension).getTargetingType();
+//        
+//        switch(targetingType) {
+//          case ELIGIBILITY:
+//
+//            break;
+//          case FILE_IMPORT:
+//            
+//            break;
+//          case RANGES:
+//            if(((SegmentationDimensionRanges)segmentationDimension).get != null) {
+//              ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(((SegmentationDimensionRanges)segmentationDimension).getContactPolicyID(), now);
+//              segmentationDimensions.add(contactPolicy.getJSONRepresentation());
+//            }
+//            break;
+//        }
+        
         segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
       }
 
@@ -9858,9 +9876,10 @@ public class GUIManager
     *  retrieve and decorate scoring strategy
     *
     *****************************************/
-
+    
+    Date now = SystemTime.getCurrentTime();
     GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
-    JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, SystemTime.getCurrentTime());
+    JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
 
     /*****************************************
     *

@@ -97,7 +97,7 @@ public class UploadedTargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(GUIManagedObject target, boolean newObject, String userID) throws GUIManagerException
+  public void putTarget(GUIManagedObject target, UploadedFileService uploadedFileService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -111,7 +111,7 @@ public class UploadedTargetService extends GUIService
 
     if (target instanceof UploadedTarget)
       {
-        
+        ((UploadedTarget) target).validate(uploadedFileService, now);
       }
 
     //
@@ -127,11 +127,11 @@ public class UploadedTargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(IncompleteObject target, boolean newObject, String userID)
+  public void putTarget(IncompleteObject target, UploadedFileService uploadedFileService, boolean newObject, String userID)
   {
     try
       {
-        putTarget((GUIManagedObject) target, newObject, userID);
+        putTarget((GUIManagedObject) target, uploadedFileService, newObject, userID);
       }
     catch (GUIManagerException e)
       {

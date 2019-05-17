@@ -98,7 +98,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
   public boolean getHasDefaultSegment() { return hasDefaultSegment; }
   public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
   public SubscriberGroupEpoch getSubscriberGroupEpoch() { return subscriberGroupEpoch; }
-
+  
   //
   //  abstract
   //
@@ -142,7 +142,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     boolean hasDefaultSegment = valueStruct.getBoolean("hasDefaultSegment");
     boolean isSimpleProfileDimension = valueStruct.getBoolean("isSimpleProfileDimension");
     SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpoch.unpack(new SchemaAndValue(schema.field("subscriberGroupEpoch").schema(), valueStruct.get("subscriberGroupEpoch")));
-
+    
     //
     //  return
     //
@@ -230,4 +230,5 @@ public abstract class SegmentationDimension extends GUIManagedObject
   //
 
   protected abstract boolean hasDefaultSegment();
+  
 }

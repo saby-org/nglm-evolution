@@ -267,8 +267,8 @@ public class TimeWindow
         SchemaBuilder schemaBuilder = SchemaBuilder.struct();
         schemaBuilder.name("daily_window");
         schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-        schemaBuilder.field("from", Schema.INT64_SCHEMA);
-        schemaBuilder.field("until", Schema.INT64_SCHEMA);
+        schemaBuilder.field("from", Schema.STRING_SCHEMA);
+        schemaBuilder.field("until", Schema.STRING_SCHEMA);
         schema = schemaBuilder.build();
       };
 
@@ -291,8 +291,8 @@ public class TimeWindow
       *
       *****************************************/
       
-      private Date from;
-      private Date until;
+      private String from;
+      private String until;
       
       /*****************************************
       *
@@ -300,8 +300,8 @@ public class TimeWindow
       *
       *****************************************/
 
-      public Date getStartTime() { return from; }
-      public Date getEndTime() { return until; }
+      public String getStartTime() { return from; }
+      public String getEndTime() { return until; }
       
 
       /*****************************************
@@ -310,7 +310,7 @@ public class TimeWindow
       *
       *****************************************/
 
-      public DailyWindow(Date from, Date until)
+      public DailyWindow(String from, String until)
       {
         this.from = from;
         this.until = until;
@@ -326,8 +326,8 @@ public class TimeWindow
       {
         DailyWindow dailyWindow = (DailyWindow) value;
         Struct struct = new Struct(schema);
-        struct.put("from", dailyWindow.getStartTime().getTime());
-        struct.put("until", dailyWindow.getEndTime().getTime());
+        struct.put("from", dailyWindow.getStartTime());
+        struct.put("until", dailyWindow.getEndTime());
         return struct;
       }
       
@@ -352,17 +352,14 @@ public class TimeWindow
         //
 
         Struct valueStruct = (Struct) value;
-        long stTime = valueStruct.getInt64("from");
-        long edTime = valueStruct.getInt64("until");
-        
-        Date from = new Date(stTime);
-        Date until = new Date(edTime);
+        String stTime = valueStruct.getString("from");
+        String edTime = valueStruct.getString("until");
 
         //
         //  return
         //
 
-        return new DailyWindow(from, until);
+        return new DailyWindow(stTime, edTime);
       }
       
       /*****************************************
@@ -379,22 +376,19 @@ public class TimeWindow
         *  attributes
         *
         *****************************************/
-        String stTime = JSONUtilities.decodeString(jsonRoot, "from", true);
-        String edTime = JSONUtilities.decodeString(jsonRoot, "until", true);
-        Calendar cal = SystemTime.getCalendar();
-        String[] splitStart = stTime.split(":");
-        String[] splitEnd = edTime.split(":");
-        if(splitStart.length == 2) {
-          cal.set(Calendar.HOUR, Integer.valueOf(splitStart[0]));
-          cal.set(Calendar.MINUTE, Integer.valueOf(splitStart[1]));
-        }
-        this.from = cal.getTime();
-        if(splitEnd.length == 2) {
-          cal.set(Calendar.HOUR, Integer.valueOf(splitEnd[0]));
-          cal.set(Calendar.MINUTE, Integer.valueOf(splitEnd[1]));
-        }
-        this.until = cal.getTime();
+        this.from = JSONUtilities.decodeString(jsonRoot, "from", true);
+        this.until = JSONUtilities.decodeString(jsonRoot, "until", true);
       }
     }
     
+    public Date convertToDate(String time)
+      {
+        String[] splitTime = time.split(":");
+        Calendar cal = SystemTime.getCalendar();
+        if(splitTime.length == 2) {
+          cal.set(Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]));
+          cal.set(Calendar.MINUTE, Integer.valueOf(splitTime[1]));
+        }
+        return cal.getTime();
+    }
 }

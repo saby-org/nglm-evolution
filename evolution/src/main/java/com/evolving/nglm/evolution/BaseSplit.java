@@ -63,6 +63,7 @@ public class BaseSplit
     schemaBuilder.field("variableName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("segments", SchemaBuilder.array(SegmentRanges.schema()).schema());
+    schemaBuilder.field("usingContactPolicy", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -82,6 +83,7 @@ public class BaseSplit
   private String variableName;
   private List<EvaluationCriterion> profileCriteria;
   private List<SegmentRanges> segments;
+  private boolean usingContactPolicy;
 
   /*****************************************
   *
@@ -89,12 +91,13 @@ public class BaseSplit
   *
   *****************************************/
 
-  private BaseSplit(String splitName, String variableName, List<EvaluationCriterion> profileCriteria, List<SegmentRanges> segments)
+  private BaseSplit(String splitName, String variableName, List<EvaluationCriterion> profileCriteria, List<SegmentRanges> segments, boolean usingContactPolicy)
   {
     this.splitName = splitName;
     this.variableName = variableName;
     this.profileCriteria = profileCriteria;
     this.segments = segments;
+    this.usingContactPolicy = usingContactPolicy;
   }
 
   /*****************************************
@@ -109,6 +112,7 @@ public class BaseSplit
     this.variableName = JSONUtilities.decodeString(jsonRoot, "variableName", false);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false));
     this.segments = decodeSegmentRanges(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", false));
+    this.usingContactPolicy = JSONUtilities.decodeBoolean(jsonRoot, "usingContactPolicy", Boolean.FALSE);
   }
 
   /*****************************************
@@ -166,6 +170,7 @@ public class BaseSplit
   public String getVariableName() { return variableName; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public List<SegmentRanges> getSegments() { return segments; }
+  public boolean isUsingContactPolicy() { return usingContactPolicy; }
 
   /*****************************************
   *
@@ -192,6 +197,7 @@ public class BaseSplit
     struct.put("variableName", segment.getVariableName());
     struct.put("profileCriteria", packProfileCriteria(segment.getProfileCriteria()));
     struct.put("segments", packSegmentRanges(segment.getSegments()));
+    struct.put("usingContactPolicy", segment.isUsingContactPolicy());
     return struct;
   }
 
@@ -261,12 +267,13 @@ public class BaseSplit
     String variableName = valueStruct.getString("variableName");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     List<SegmentRanges> segments = unpackSegmentRanges(schema.field("segments").schema(), valueStruct.get("segments"));
-
+    boolean usingContactPolicy = valueStruct.getBoolean("usingContactPolicy");
+    
     //
     //  construct
     //
 
-    BaseSplit result = new BaseSplit(splitName, variableName, profileCriteria, segments);
+    BaseSplit result = new BaseSplit(splitName, variableName, profileCriteria, segments, usingContactPolicy);
 
     //
     //  return
