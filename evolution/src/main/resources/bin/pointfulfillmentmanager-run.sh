@@ -2,7 +2,7 @@
 
 #################################################################################
 #
-#  pointtypefulfillmentmanager-run.sh
+#  pointfulfillmentmanager-run.sh
 #
 #################################################################################
 
@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name pointTypeFulfillmentManager -loggc com.evolving.nglm.evolution.PointTypeFulfillmentManager $KEY
+exec kafka-run-class -name pointFulfillmentManager -loggc com.evolving.nglm.evolution.PointFulfillmentManager $KEY

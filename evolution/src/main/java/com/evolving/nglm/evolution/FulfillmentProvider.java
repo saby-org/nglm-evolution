@@ -15,6 +15,7 @@ public class FulfillmentProvider extends DeploymentManagedObject
 {
 
   private static final String PROVIDER_TYPE = "providerType";
+  private static final String DELIVERY_TYPE = "deliveryType";
   private static final String URL = "url";
 
   /****************************************
@@ -24,6 +25,7 @@ public class FulfillmentProvider extends DeploymentManagedObject
   ****************************************/
 
   private String providerType = "";
+  private String deliveryType = "";
   private String url = "";
 
   /****************************************
@@ -39,6 +41,7 @@ public class FulfillmentProvider extends DeploymentManagedObject
   public String getProviderID() { return getID(); }
   public String getProviderName() { return getName(); }
   public String getProviderType() { return providerType; }
+  public String getDeliveryType() { return deliveryType; }
   public String getUrl() { return url; }
   
   /*****************************************
@@ -51,6 +54,7 @@ public class FulfillmentProvider extends DeploymentManagedObject
   {
     super(jsonRoot);
     this.providerType = JSONUtilities.decodeString(jsonRoot, PROVIDER_TYPE, false);
+    this.deliveryType = JSONUtilities.decodeString(jsonRoot, DELIVERY_TYPE, false);
     this.url = JSONUtilities.decodeString(jsonRoot, URL, false);
   }
   
@@ -66,6 +70,7 @@ public class FulfillmentProvider extends DeploymentManagedObject
         + "id=" + getProviderID() 
         + ", name=" + getProviderName()
         + ", providerType=" + getProviderType() 
+        + ", deliveryType=" + getDeliveryType() 
         + ", url=" + getUrl() 
         + "]";
   }

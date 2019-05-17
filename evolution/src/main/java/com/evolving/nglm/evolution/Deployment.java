@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class Deployment
   private static String emptyTopic;
   private static String journeyTopic;
   private static String segmentationDimensionTopic;
-  private static String pointTypeTopic;
+  private static String pointTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -105,9 +106,7 @@ public class Deployment
   private static JSONArray initialJourneyObjectivesJSONArray = null;
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
-  private static JSONArray initialDeliverablesJSONArray = null;
   private static JSONArray initialTokenTypesJSONArray = null;
-  private static JSONArray initialPaymentMeansJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
@@ -119,6 +118,7 @@ public class Deployment
   private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
   private static int journeyDefaultTargetingWindowDuration;
   private static TimeUnit journeyDefaultTargetingWindowUnit;
   private static boolean journeyDefaultTargetingWindowRoundUp;
@@ -191,7 +191,7 @@ public class Deployment
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
-  public static String getPointTypeTopic() { return pointTypeTopic; }
+  public static String getPointTopic() { return pointTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPaymentMeanTopic() { return paymentMeanTopic; }
@@ -249,9 +249,7 @@ public class Deployment
   public static JSONArray getInitialJourneyObjectivesJSONArray() { return initialJourneyObjectivesJSONArray; }
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
-  public static JSONArray getInitialDeliverablesJSONArray() { return initialDeliverablesJSONArray; }
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
-  public static JSONArray getInitialPaymentMeansJSONArray() { return initialPaymentMeansJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
@@ -263,6 +261,7 @@ public class Deployment
   public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
+  public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; }
   public static int getJourneyDefaultTargetingWindowDuration() { return journeyDefaultTargetingWindowDuration; }
   public static TimeUnit getJourneyDefaultTargetingWindowUnit() { return journeyDefaultTargetingWindowUnit; }
   public static boolean getJourneyDefaultTargetingWindowRoundUp() { return journeyDefaultTargetingWindowRoundUp; }
@@ -556,12 +555,12 @@ public class Deployment
       }
 
     //
-    //  pointTypeTopic
+    //  pointTopic
     //
 
     try
       {
-        pointTypeTopic = JSONUtilities.decodeString(jsonRoot, "pointTypeTopic", true);
+        pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1309,22 +1308,10 @@ public class Deployment
     initialProductTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialProductTypes", new JSONArray());
     
     //
-    //  initialDeliverablesJSONArray
-    //
-
-    initialDeliverablesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialDeliverables", new JSONArray());
-    
-    //
     //  initialTokenTypesJSONArray
     //
 
     initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
-    
-    //
-    //  initialPaymentMeansJSONArray
-    //
-
-    initialPaymentMeansJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialPaymentMeans", true);
     
     //
     //  initialSegmentationDimensionsJSONArray
@@ -1512,6 +1499,27 @@ public class Deployment
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  deliveryManagerAccounts
+    //
+
+    try
+      {
+        JSONArray deliveryManagerAccountValues = JSONUtilities.decodeJSONArray(jsonRoot, "deliveryManagerAccounts", new JSONArray());
+        for (int i=0; i<deliveryManagerAccountValues.size(); i++)
+          {
+            JSONObject deliveryManagerAccountJSON = (JSONObject) deliveryManagerAccountValues.get(i);
+            DeliveryManagerAccount deliveryManagerAccount = new DeliveryManagerAccount(deliveryManagerAccountJSON);
+            if(deliveryManagerAccount != null ){
+              deliveryManagerAccounts.put(deliveryManagerAccount.getProviderID(), deliveryManagerAccount);
+            }
+          }
+      }
+    catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

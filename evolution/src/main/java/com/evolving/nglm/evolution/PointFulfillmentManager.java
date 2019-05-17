@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PointTypeFulfillmentManager.java
+*  PointFulfillmentManager.java
 *
 *****************************************************************************/
 
@@ -28,7 +28,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
   
-public class PointTypeFulfillmentManager extends DeliveryManager implements Runnable
+public class PointFulfillmentManager extends DeliveryManager implements Runnable
 {
   /*****************************************
   *
@@ -37,25 +37,25 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   *****************************************/
 
   //
-  //  PointTypeOperation
+  //  PointOperation
   //
 
-  public enum PointTypeOperation
+  public enum PointOperation
   {
     Credit("credit"),
     Debit("debit"),
     Unknown("(unknown)");
     private String externalRepresentation;
-    private PointTypeOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private PointOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
-    public static PointTypeOperation fromExternalRepresentation(String externalRepresentation) { for (PointTypeOperation enumeratedValue : PointTypeOperation.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static PointOperation fromExternalRepresentation(String externalRepresentation) { for (PointOperation enumeratedValue : PointOperation.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   //
-  //  PointTypeFulfillmentStatus
+  //  PointFulfillmentStatus
   //
 
-  public enum PointTypeFulfillmentStatus
+  public enum PointFulfillmentStatus
   {
     PENDING(10),
     SUCCESS(0),
@@ -66,9 +66,9 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     BONUS_NOT_FOUND(101),
     UNKNOWN(999);
     private Integer externalRepresentation;
-    private PointTypeFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private PointFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getExternalRepresentation() { return externalRepresentation; }
-    public static PointTypeFulfillmentStatus fromReturnCode(Integer externalRepresentation) { for (PointTypeFulfillmentStatus enumeratedValue : PointTypeFulfillmentStatus.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
+    public static PointFulfillmentStatus fromReturnCode(Integer externalRepresentation) { for (PointFulfillmentStatus enumeratedValue : PointFulfillmentStatus.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
   }
 
   /*****************************************
@@ -77,7 +77,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   *
   *****************************************/
 
-  public DeliveryStatus getPointTypeFulfillmentStatus (PointTypeFulfillmentStatus status)
+  public DeliveryStatus getPointFulfillmentStatus (PointFulfillmentStatus status)
   {
     switch(status)
       {
@@ -107,7 +107,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(PointTypeFulfillmentManager.class);
+  private static final Logger log = LoggerFactory.getLogger(PointFulfillmentManager.class);
 
   //
   //  number of threads
@@ -130,22 +130,22 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   *
   *****************************************/
 
-  public PointTypeFulfillmentManager(String deliveryManagerKey)
+  public PointFulfillmentManager(String deliveryManagerKey)
   {
     //
     //  superclass
     //
     
-    super("deliverymanager-pointtypefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PointTypeFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get("pointTypeFulfillment"));
+    super("deliverymanager-pointfulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PointFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get("pointFulfillment"));
 
     //
     // statistics
     //
     try{
-      bdrStats = new BDRStatistics("pointTypeFulfillment");
+      bdrStats = new BDRStatistics("pointFulfillment");
     }catch(Exception e){
-      log.error("PointTypeFulfillmentManager: could not load statistics ", e);
-      throw new RuntimeException("PointTypeFulfillmentManager: could not load statistics  ", e);
+      log.error("PointFulfillmentManager: could not load statistics ", e);
+      throw new RuntimeException("PointFulfillmentManager: could not load statistics  ", e);
     }
     
     //
@@ -154,7 +154,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     
     for(int i = 0; i < threadNumber; i++)
       {
-        threads.add(new Thread(this, "PointTypeFulfillmentManagerThread_"+i));
+        threads.add(new Thread(this, "PointFulfillmentManagerThread_"+i));
       }
     
     //
@@ -225,11 +225,11 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   
   /*****************************************
   *
-  *  class PointTypeFulfillmentRequest
+  *  class PointFulfillmentRequest
   *
   *****************************************/
 
-  public static class PointTypeFulfillmentRequest extends DeliveryRequest
+  public static class PointFulfillmentRequest extends DeliveryRequest
   {
     /*****************************************
     *
@@ -245,11 +245,11 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("service_pointtypefulfillment_request");
+      schemaBuilder.name("service_pointfulfillment_request");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
 //      schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("pointTypeID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("pointID", Schema.STRING_SCHEMA);
       schemaBuilder.field("operation", Schema.STRING_SCHEMA);
       schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("startValidityDate", Timestamp.builder().optional().schema());
@@ -262,14 +262,14 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     //  serde
     //
         
-    private static ConnectSerde<PointTypeFulfillmentRequest> serde = new ConnectSerde<PointTypeFulfillmentRequest>(schema, false, PointTypeFulfillmentRequest.class, PointTypeFulfillmentRequest::pack, PointTypeFulfillmentRequest::unpack);
+    private static ConnectSerde<PointFulfillmentRequest> serde = new ConnectSerde<PointFulfillmentRequest>(schema, false, PointFulfillmentRequest.class, PointFulfillmentRequest::pack, PointFulfillmentRequest::unpack);
 
     //
     //  accessor
     //
 
     public static Schema schema() { return schema; }
-    public static ConnectSerde<PointTypeFulfillmentRequest> serde() { return serde; }
+    public static ConnectSerde<PointFulfillmentRequest> serde() { return serde; }
     public Schema subscriberStreamEventSchema() { return schema(); }
         
     /*****************************************
@@ -288,36 +288,33 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 //  private boolean control;
 
 //  public String providerID;
-    private String pointTypeID;
-    private PointTypeOperation operation;
+    private String pointID;
+    private PointOperation operation;
     private int amount;
     private Date startValidityDate;
     private Date endValidityDate;
     private int returnCode;
-    private PointTypeFulfillmentStatus status;
-    private String returnCodeDetails;
+    private PointFulfillmentStatus status;
 
     //
     //  accessors
     //
 
 //  public String getProviderID() { return providerID; }
-    public String getPointTypeID() { return pointTypeID; }
-    public PointTypeOperation getOperation() { return operation; }
+    public String getPointID() { return pointID; }
+    public PointOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public Date getStartValidityDate() { return startValidityDate; }
     public Date getEndValidityDate() { return endValidityDate; }
     public Integer getReturnCode() { return returnCode; }
-    public PointTypeFulfillmentStatus getStatus() { return status; }
-    public String getReturnCodeDetails() { return returnCodeDetails; }
+    public PointFulfillmentStatus getStatus() { return status; }
 
     //
     //  setters
     //  
 
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
-    public void setStatus(PointTypeFulfillmentStatus status) { this.status = status; }
-    public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+    public void setStatus(PointFulfillmentStatus status) { this.status = status; }
 
     /*****************************************
     *
@@ -325,18 +322,17 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     *
     *****************************************/
 
-    public PointTypeFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, /*String providerID,*/ String pointTypeID, PointTypeOperation operation, int amount, Date startValidityDate, Date endValidityDate)
+    public PointFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, /*String providerID,*/ String pointID, PointOperation operation, int amount, Date startValidityDate, Date endValidityDate)
     {
       super(context, deliveryType, deliveryRequestSource);
 //      this.providerID = providerID;
-      this.pointTypeID = pointTypeID;
+      this.pointID = pointID;
       this.operation = operation;
       this.amount = amount;
       this.startValidityDate = startValidityDate;
       this.endValidityDate = endValidityDate;
-      this.status = PointTypeFulfillmentStatus.PENDING;
-      this.returnCode = PointTypeFulfillmentStatus.PENDING.getExternalRepresentation();
-      this.returnCodeDetails = "";
+      this.status = PointFulfillmentStatus.PENDING;
+      this.returnCode = PointFulfillmentStatus.PENDING.getExternalRepresentation();
     }
 
     /*****************************************
@@ -345,19 +341,18 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     *
     *****************************************/
 
-    public PointTypeFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public PointFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
     {
       super(jsonRoot);
       String dateFormat = JSONUtilities.decodeString(deliveryManager.getJSONRepresentation(), "dateFormat", true);
 //      this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
-      this.pointTypeID = JSONUtilities.decodeString(jsonRoot, "pointTypeID", true);
-      this.operation = PointTypeOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
+      this.pointID = JSONUtilities.decodeString(jsonRoot, "pointID", true);
+      this.operation = PointOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
       this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
       this.startValidityDate = RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "startValidityDate", false), dateFormat, Deployment.getBaseTimeZone());
       this.endValidityDate = RLMDateUtils.parseDate(JSONUtilities.decodeString(jsonRoot, "endValidityDate", false), dateFormat, Deployment.getBaseTimeZone());
-      this.status = PointTypeFulfillmentStatus.PENDING;
-      this.returnCode = PointTypeFulfillmentStatus.PENDING.getExternalRepresentation();
-      this.returnCodeDetails = "";
+      this.status = PointFulfillmentStatus.PENDING;
+      this.returnCode = PointFulfillmentStatus.PENDING.getExternalRepresentation();
     }
 
     /*****************************************
@@ -366,11 +361,11 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     *
     *****************************************/
 
-    private PointTypeFulfillmentRequest(SchemaAndValue schemaAndValue, /*String providerID,*/ String pointTypeID, PointTypeOperation operation, int amount, Date startValidityDate, Date endValidityDate, PointTypeFulfillmentStatus status)
+    private PointFulfillmentRequest(SchemaAndValue schemaAndValue, /*String providerID,*/ String pointID, PointOperation operation, int amount, Date startValidityDate, Date endValidityDate, PointFulfillmentStatus status)
     {
       super(schemaAndValue);
 //      this.providerID = providerID;
-      this.pointTypeID = pointTypeID;
+      this.pointID = pointID;
       this.operation = operation;
       this.amount = amount;
       this.startValidityDate = startValidityDate;
@@ -385,18 +380,17 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     *
     *****************************************/
 
-    private PointTypeFulfillmentRequest(PointTypeFulfillmentRequest pointTypeFulfillmentRequest)
+    private PointFulfillmentRequest(PointFulfillmentRequest pointFulfillmentRequest)
     {
-      super(pointTypeFulfillmentRequest);
-//      this.providerID = pointTypeFulfillmentRequest.getProviderID();
-      this.pointTypeID = pointTypeFulfillmentRequest.getPointTypeID();
-      this.operation = pointTypeFulfillmentRequest.getOperation();
-      this.amount = pointTypeFulfillmentRequest.getAmount();
-      this.startValidityDate = pointTypeFulfillmentRequest.getStartValidityDate();
-      this.endValidityDate = pointTypeFulfillmentRequest.getEndValidityDate();
-      this.status = pointTypeFulfillmentRequest.getStatus();
-      this.returnCode = pointTypeFulfillmentRequest.getReturnCode();
-      this.returnCodeDetails = pointTypeFulfillmentRequest.getReturnCodeDetails();
+      super(pointFulfillmentRequest);
+//      this.providerID = pointFulfillmentRequest.getProviderID();
+      this.pointID = pointFulfillmentRequest.getPointID();
+      this.operation = pointFulfillmentRequest.getOperation();
+      this.amount = pointFulfillmentRequest.getAmount();
+      this.startValidityDate = pointFulfillmentRequest.getStartValidityDate();
+      this.endValidityDate = pointFulfillmentRequest.getEndValidityDate();
+      this.status = pointFulfillmentRequest.getStatus();
+      this.returnCode = pointFulfillmentRequest.getReturnCode();
     }
 
     /*****************************************
@@ -405,9 +399,9 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     *
     *****************************************/
 
-    public PointTypeFulfillmentRequest copy()
+    public PointFulfillmentRequest copy()
     {
-      return new PointTypeFulfillmentRequest(this);
+      return new PointFulfillmentRequest(this);
     }
 
     /*****************************************
@@ -418,16 +412,16 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 
     public static Object pack(Object value)
     {
-      PointTypeFulfillmentRequest pointTypeFulfillmentRequest = (PointTypeFulfillmentRequest) value;
+      PointFulfillmentRequest pointFulfillmentRequest = (PointFulfillmentRequest) value;
       Struct struct = new Struct(schema);
-      packCommon(struct, pointTypeFulfillmentRequest);
-//      struct.put("providerID", pointTypeFulfillmentRequest.getProviderID());
-      struct.put("pointTypeID", pointTypeFulfillmentRequest.getPointTypeID());
-      struct.put("operation", pointTypeFulfillmentRequest.getOperation().getExternalRepresentation());
-      struct.put("amount", pointTypeFulfillmentRequest.getAmount());
-      struct.put("startValidityDate", pointTypeFulfillmentRequest.getStartValidityDate());
-      struct.put("endValidityDate", pointTypeFulfillmentRequest.getEndValidityDate());
-      struct.put("return_code", pointTypeFulfillmentRequest.getReturnCode());
+      packCommon(struct, pointFulfillmentRequest);
+//      struct.put("providerID", pointFulfillmentRequest.getProviderID());
+      struct.put("pointID", pointFulfillmentRequest.getPointID());
+      struct.put("operation", pointFulfillmentRequest.getOperation().getExternalRepresentation());
+      struct.put("amount", pointFulfillmentRequest.getAmount());
+      struct.put("startValidityDate", pointFulfillmentRequest.getStartValidityDate());
+      struct.put("endValidityDate", pointFulfillmentRequest.getEndValidityDate());
+      struct.put("return_code", pointFulfillmentRequest.getReturnCode());
       return struct;
     }
 
@@ -443,7 +437,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     *
     *****************************************/
 
-    public static PointTypeFulfillmentRequest unpack(SchemaAndValue schemaAndValue)
+    public static PointFulfillmentRequest unpack(SchemaAndValue schemaAndValue)
     {
       //
       //  data
@@ -458,19 +452,19 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 
       Struct valueStruct = (Struct) value;
 //      String providerID = valueStruct.getString("providerID");
-      String pointTypeID = valueStruct.getString("pointTypeID");
-      PointTypeOperation operation = PointTypeOperation.fromExternalRepresentation(valueStruct.getString("operation"));
+      String pointID = valueStruct.getString("pointID");
+      PointOperation operation = PointOperation.fromExternalRepresentation(valueStruct.getString("operation"));
       int amount = valueStruct.getInt32("amount");
       Date startValidityDate = (Date) valueStruct.get("startValidityDate");
       Date endValidityDate = (Date) valueStruct.get("endValidityDate");
       Integer returnCode = valueStruct.getInt32("return_code");
-      PointTypeFulfillmentStatus status = PointTypeFulfillmentStatus.fromReturnCode(returnCode);
+      PointFulfillmentStatus status = PointFulfillmentStatus.fromReturnCode(returnCode);
 
       //
       //  return
       //
 
-      return new PointTypeFulfillmentRequest(schemaAndValue, /*providerID,*/ pointTypeID, operation, amount, startValidityDate, endValidityDate, status);
+      return new PointFulfillmentRequest(schemaAndValue, /*providerID,*/ pointID, operation, amount, startValidityDate, endValidityDate, status);
     }
 
     /*****************************************
@@ -482,11 +476,11 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     public String toString()
     {
       StringBuilder b = new StringBuilder();
-      b.append("PointTypeFulfillmentRequest:{");
+      b.append("PointFulfillmentRequest:{");
       b.append(super.toStringFields());
       b.append("," + getSubscriberID());
 //      b.append("," + providerID);
-      b.append("," + pointTypeID);
+      b.append("," + pointID);
       b.append("," + operation);
       b.append("," + amount);
       b.append("," + startValidityDate);
@@ -509,7 +503,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
 //      guiPresentationMap.put(PROVIDERID, getProviderID());
-      guiPresentationMap.put(DELIVERABLEID, getPointTypeID());
+      guiPresentationMap.put(DELIVERABLEID, getPointID());
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().toString());
       guiPresentationMap.put(MODULEID, getModuleID());
@@ -517,14 +511,13 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, "");
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
     
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
 //      thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
-      thirdPartyPresentationMap.put(DELIVERABLEID, getPointTypeID());
+      thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
@@ -532,7 +525,6 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, "");
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
   }
 
@@ -552,7 +544,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 
     private String deliveryType;
 //    private String providerID;
-    private PointTypeOperation operation;
+    private PointOperation operation;
     
     /*****************************************
     *
@@ -565,7 +557,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
       super(configuration);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
 //      this.providerID = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(this.deliveryType).getJSONRepresentation(), "providerID", true);
-      this.operation = PointTypeOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+      this.operation = PointOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
     }
 
     /*****************************************
@@ -582,7 +574,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
       *
       *****************************************/
 
-      String pointTypeID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.pointTypeid");
+      String pointID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.pointid");
       int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
       Number endValidityDuration = (Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.endvalidityduration");
       String endValidityUnits = (String) subscriberEvaluationRequest.getJourneyNode().getNodeParameters().get("node.parameter.endvalidityunits");
@@ -594,7 +586,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      PointTypeOperation operation = this.operation;
+      PointOperation operation = this.operation;
       Date startValidityDate = subscriberEvaluationRequest.getEvaluationDate();
       Date endValidityDate = (endValidityDuration != null && endValidityUnits != null) ? EvolutionUtilities.addTime(startValidityDate, endValidityDuration.intValue(), TimeUnit.fromExternalRepresentation(endValidityUnits), Deployment.getBaseTimeZone(), false) : null;
 
@@ -604,7 +596,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
       *
       *****************************************/
 
-      PointTypeFulfillmentRequest request = new PointTypeFulfillmentRequest(evolutionEventContext, deliveryType, deliveryRequestSource, /*providerID,*/ pointTypeID, operation, amount, startValidityDate, endValidityDate);
+      PointFulfillmentRequest request = new PointFulfillmentRequest(evolutionEventContext, deliveryType, deliveryRequestSource, /*providerID,*/ pointID, operation, amount, startValidityDate, endValidityDate);
 
       /*****************************************
       *
@@ -641,14 +633,14 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
         *
         *****************************************/
         
-        PointTypeFulfillmentStatus status = null;
-        PointTypeOperation operation = ((PointTypeFulfillmentRequest)deliveryRequest).getOperation();
+        PointFulfillmentStatus status = null;
+        PointOperation operation = ((PointFulfillmentRequest)deliveryRequest).getOperation();
         switch (operation) {
         case Credit:
-          status = credit((PointTypeFulfillmentRequest)deliveryRequest);
+          status = credit((PointFulfillmentRequest)deliveryRequest);
           break;
         case Debit:
-          status = debit((PointTypeFulfillmentRequest)deliveryRequest);
+          status = debit((PointFulfillmentRequest)deliveryRequest);
           break;
         default:
           break;
@@ -660,12 +652,12 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
         *
         *****************************************/
 
-        ((PointTypeFulfillmentRequest)deliveryRequest).setStatus(status);
-        ((PointTypeFulfillmentRequest)deliveryRequest).setReturnCode(status.getExternalRepresentation());
-        deliveryRequest.setDeliveryStatus(getPointTypeFulfillmentStatus(status));
+        ((PointFulfillmentRequest)deliveryRequest).setStatus(status);
+        ((PointFulfillmentRequest)deliveryRequest).setReturnCode(status.getExternalRepresentation());
+        deliveryRequest.setDeliveryStatus(getPointFulfillmentStatus(status));
         deliveryRequest.setDeliveryDate(SystemTime.getActualCurrentTime());
         completeRequest(deliveryRequest);
-        bdrStats.updateBDREventCount(1, getPointTypeFulfillmentStatus(status));
+        bdrStats.updateBDREventCount(1, getPointFulfillmentStatus(status));
 
       }
   }
@@ -676,11 +668,11 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   *
   *****************************************/
 
-  private PointTypeFulfillmentStatus credit(PointTypeFulfillmentRequest pointTypeFulfillmentRequest)
+  private PointFulfillmentStatus credit(PointFulfillmentRequest pointFulfillmentRequest)
   {
     //TODO SCH : TBD
-    log.info("PointTypeFulfillmentManager.credit("+pointTypeFulfillmentRequest+") : called ...");
-    return PointTypeFulfillmentStatus.SUCCESS;
+    log.info("PointFulfillmentManager.credit("+pointFulfillmentRequest+") : called ...");
+    return PointFulfillmentStatus.SUCCESS;
   }
   
   /*****************************************
@@ -689,11 +681,11 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
   *
   *****************************************/
 
-  private PointTypeFulfillmentStatus debit(PointTypeFulfillmentRequest pointTypeFulfillmentRequest)
+  private PointFulfillmentStatus debit(PointFulfillmentRequest pointFulfillmentRequest)
   {
     //TODO SCH : TBD
-    log.info("PointTypeFulfillmentManager.debit("+pointTypeFulfillmentRequest+") : called ...");
-    return PointTypeFulfillmentStatus.SUCCESS;
+    log.info("PointFulfillmentManager.debit("+pointFulfillmentRequest+") : called ...");
+    return PointFulfillmentStatus.SUCCESS;
   }
   
   /*****************************************
@@ -704,19 +696,19 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 
   @Override protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
   {
-    log.info("PointTypeFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
+    log.info("PointFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
 
     int result = JSONUtilities.decodeInteger(correlatorUpdate, "result", true);
-    PointTypeFulfillmentRequest pointTypeFulfillmentRequest = (PointTypeFulfillmentRequest) deliveryRequest;
-    if (pointTypeFulfillmentRequest != null)
+    PointFulfillmentRequest pointFulfillmentRequest = (PointFulfillmentRequest) deliveryRequest;
+    if (pointFulfillmentRequest != null)
       {
-        pointTypeFulfillmentRequest.setStatus(PointTypeFulfillmentStatus.fromReturnCode(result));
-        pointTypeFulfillmentRequest.setDeliveryStatus(getPointTypeFulfillmentStatus(pointTypeFulfillmentRequest.getStatus()));
-        pointTypeFulfillmentRequest.setDeliveryDate(SystemTime.getCurrentTime());
-        completeRequest(pointTypeFulfillmentRequest);
+        pointFulfillmentRequest.setStatus(PointFulfillmentStatus.fromReturnCode(result));
+        pointFulfillmentRequest.setDeliveryStatus(getPointFulfillmentStatus(pointFulfillmentRequest.getStatus()));
+        pointFulfillmentRequest.setDeliveryDate(SystemTime.getCurrentTime());
+        completeRequest(pointFulfillmentRequest);
       }
   
-    log.debug("PointTypeFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
+    log.debug("PointFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
   }
 
   
@@ -728,7 +720,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 
   @Override protected void shutdown()
   {
-    log.info("PointTypeFulfillmentManager:  shutdown");
+    log.info("PointFulfillmentManager:  shutdown");
   }
   
   /*****************************************
@@ -739,9 +731,9 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
 
   public static void main(String[] args)
   {
-    log.info("PointTypeFulfillmentManager: recieved " + args.length + " args");
+    log.info("PointFulfillmentManager: recieved " + args.length + " args");
     for(String arg : args){
-      log.info("PointTypeFulfillmentManager: arg " + arg);
+      log.info("PointFulfillmentManager: arg " + arg);
     }
     
     //
@@ -757,7 +749,7 @@ public class PointTypeFulfillmentManager extends DeliveryManager implements Runn
     log.info("Configuration " + Deployment.getDeliveryManagers());
 
     
-    PointTypeFulfillmentManager manager = new PointTypeFulfillmentManager(deliveryManagerKey);
+    PointFulfillmentManager manager = new PointFulfillmentManager(deliveryManagerKey);
 
     //
     //  run

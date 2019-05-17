@@ -9,8 +9,6 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -18,7 +16,6 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,13 +25,9 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryManager;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.EvolutionUtilities;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
   
 public class INFulfillmentManager extends DeliveryManager implements Runnable
 {
@@ -68,13 +61,13 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   public enum INFulfillmentStatus
   {
-    PENDING(10),
     SUCCESS(0),
+    PENDING(10),
+    CUSTOMER_NOT_FOUND(20),
     SYSTEM_ERROR(21),
     TIMEOUT(22),
     THROTTLING(23),
     THIRD_PARTY_ERROR(24),
-    CUSTOMER_NOT_FOUND(20),
     BONUS_NOT_FOUND(101),
     UNKNOWN(999);
     private Integer externalRepresentation;
@@ -134,18 +127,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  private Set<Account> availableAccounts;
   private INPluginInterface inPlugin;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   private BDRStatistics bdrStats = null;
-  
-  /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/
-
-  public Set<Account> getAvailableAccounts() { return availableAccounts; }
   
   /*****************************************
   *
@@ -160,20 +144,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //
     
     super("deliverymanager-infulfillment", deliveryManagerKey, Deployment.getBrokerServers(), INFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
-
-    //
-    //  manager
-    //
-
-    log.info("INFufillmentManager: getting the list of available accounts for IN "+pluginName);
-    availableAccounts = new HashSet<Account>();
-    JSONArray availableAccountsArray = JSONUtilities.decodeJSONArray(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "availableAccounts", true);
-    for (int i=0; i<availableAccountsArray.size(); i++)
-      {
-        Account newAccount = new Account((JSONObject) availableAccountsArray.get(i));
-        availableAccounts.add(newAccount);
-        log.info("INFufillmentManager: new availableAccount added : "+newAccount.getName()+" (with ID "+newAccount.getAccountID()+")");
-      }
 
     //
     //  plugin instanciation
@@ -229,64 +199,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
   }
 
-  /*****************************************
-  *
-  *  class Account
-  *
-  *****************************************/
-  
-  public static class Account 
-  {
-    /*****************************************
-    *
-    *  data
-    *
-    *****************************************/
-
-    private String accountID;
-    private String name;
-    private boolean creditable;
-    private boolean debitable;
-    
-    //
-    //  accessors
-    //
-
-    public String getAccountID() { return accountID; }
-    public String getName() { return name; }
-    public boolean getCreditable() { return creditable; }
-    public boolean getDebitable() { return debitable; }
-    
-    /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
-
-    public Account(String accountID, String name, boolean creditable, boolean debitable)
-    {
-      this.accountID = accountID;
-      this.name = name;
-      this.creditable = creditable;
-      this.debitable = debitable;
-    }
-
-    /*****************************************
-    *
-    *  constructor -- external
-    *
-    *****************************************/
-
-    public Account(JSONObject jsonRoot)
-    {
-      this.accountID = JSONUtilities.decodeString(jsonRoot, "accountID", true);
-      this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-      this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
-      this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
-    }
-    
-  }
-  
   /*****************************************
   *
   *  class INFulfillmentRequest
@@ -630,9 +542,10 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
+    private String moduleID;
     private String deliveryType;
     private String providerID;
-    private INFulfillmentOperation operation;
+    private CommodityDeliveryOperation operation;
     
     /*****************************************
     *
@@ -643,9 +556,10 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     public ActionManager(JSONObject configuration)
     {
       super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
       this.providerID = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(this.deliveryType).getJSONRepresentation(), "providerID", true);
-      this.operation = INFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
     }
 
     /*****************************************
@@ -662,10 +576,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      String paymentMeanID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.paymentmeanid");
+      String accountID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.deliverableid");
       int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
-      Number endValidityDuration = (Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.endvalidityduration");
-      String endValidityUnits = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.endvalidityunits");
       
       /*****************************************
       *
@@ -674,9 +586,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *****************************************/
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      INFulfillmentOperation operation = this.operation;
-      Date startValidityDate = subscriberEvaluationRequest.getEvaluationDate();
-      Date endValidityDate = (endValidityDuration != null && endValidityUnits != null) ? EvolutionUtilities.addTime(startValidityDate, endValidityDuration.intValue(), TimeUnit.fromExternalRepresentation(endValidityUnits), Deployment.getBaseTimeZone(), false) : null;
 
       /*****************************************
       *
@@ -684,7 +593,9 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      INFulfillmentRequest request = new INFulfillmentRequest(evolutionEventContext, deliveryType, deliveryRequestSource, providerID, paymentMeanID, operation, amount, startValidityDate, endValidityDate);
+      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null/*diplomaticBriefcase*/, providerID, accountID, operation, amount);
+      request.setModuleID(moduleID);
+      request.setFeatureID(deliveryRequestSource);
 
       /*****************************************
       *

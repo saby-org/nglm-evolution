@@ -40,8 +40,8 @@ if [ "${EMPTYFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-emptyfulfillmentmanager.yml ${DOCKER_STACK}-emptyfulfillmentmanager
 fi
 
-if [ "${POINTTYPEFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
-  docker stack deploy -c $DEPLOY_ROOT/stack/stack-pointtypefulfillmentmanager.yml ${DOCKER_STACK}-pointtypefulfillmentmanager
+if [ "${POINTFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-pointfulfillmentmanager.yml ${DOCKER_STACK}-pointfulfillmentmanager
 fi
 
 if [ "${COMMODITYDELIVERYMANAGER_ENABLED}" = "true" ]; then

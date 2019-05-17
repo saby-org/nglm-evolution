@@ -9,7 +9,7 @@
 --  private String subscriberID;
 --  private String providerID;
 --  private String commodityID;
---  private PointTypeOperation operation;
+--  private CommodityOperation operation;
 --  private int amount;
 
 

@@ -8,16 +8,11 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
-import com.evolving.nglm.evolution.purchase.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.purchase.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferSalesChannelsAndPrice;
-import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.OfferService.OfferListener;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
 public class ODRSinkConnector extends SimpleESSinkConnector
 {

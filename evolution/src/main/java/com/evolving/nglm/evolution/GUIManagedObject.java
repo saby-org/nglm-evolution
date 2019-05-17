@@ -139,7 +139,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(SegmentationDimensionEligibility.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionFileImport.serde());
     guiManagedObjectSerdes.add(SegmentationDimensionRanges.serde());
-    guiManagedObjectSerdes.add(PointType.serde());
+    guiManagedObjectSerdes.add(Point.serde());
     guiManagedObjectSerdes.add(Offer.serde());
     guiManagedObjectSerdes.add(PresentationStrategy.serde());
     guiManagedObjectSerdes.add(ScoringStrategy.serde());

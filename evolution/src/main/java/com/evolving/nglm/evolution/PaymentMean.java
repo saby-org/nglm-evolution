@@ -31,6 +31,7 @@ public class PaymentMean extends GUIManagedObject
   *****************************************/
 
   private static final String FULFILLMENT_PROVIDER_ID = "fulfillmentProviderID";
+  private static final String COMMODITY_ID = "commodityID";
   private static final String DISPLAY = "display";
   private static final String ACTION_MANAGER_CLASS = "actionManagerClass";
   private static final String OTHERCONFIG = "otherconfig";
@@ -53,6 +54,7 @@ public class PaymentMean extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field(FULFILLMENT_PROVIDER_ID, Schema.STRING_SCHEMA);
+    schemaBuilder.field(COMMODITY_ID, Schema.STRING_SCHEMA);
     schemaBuilder.field(DISPLAY, Schema.STRING_SCHEMA);
     schemaBuilder.field(ACTION_MANAGER_CLASS, Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field(OTHERCONFIG, Schema.OPTIONAL_STRING_SCHEMA);
@@ -79,16 +81,18 @@ public class PaymentMean extends GUIManagedObject
   ****************************************/
   /*
    *  { 
-   *    "id" : "1", 
-   *    "fulfillmentProviderID" : "1", 
-   *    "name" : "na", 
-   *    "display" : "(not used)", 
-   *    "actionManagerClass" : "", 
-   *    "otherconfig" : ""
+   *    "id"                    : "1", 
+   *    "fulfillmentProviderID" : "3", 
+   *    "commodityID"           : "6", 
+   *    "name"                  : "na", 
+   *    "display"               : "(not used)", 
+   *    "actionManagerClass"    : "", 
+   *    "otherconfig"           : ""
    *  }
    */
 
   private String fulfillmentProviderID = "";
+  private String commodityID = "";
   private String display = "";
   private String actionManagerClass = "";
   private String otherconfig = "";
@@ -106,6 +110,7 @@ public class PaymentMean extends GUIManagedObject
   public String getPaymentMeanID() { return getGUIManagedObjectID(); }
   public String getPaymentMeanName() { return getGUIManagedObjectName(); }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
+  public String getCommodityID() { return commodityID; }
   public String getDisplay() { return display; }
   public String getActionManagerClass() { return actionManagerClass; }
   public String getOtherconfig() { return otherconfig; }
@@ -116,9 +121,10 @@ public class PaymentMean extends GUIManagedObject
   *
   *****************************************/
   
-  public PaymentMean(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String display, String actionManagerClass, String otherconfig) {
+  public PaymentMean(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String commodityID, String display, String actionManagerClass, String otherconfig) {
     super(schemaAndValue);
     this.fulfillmentProviderID = fulfillmentProviderID;
+    this.commodityID = commodityID;
     this.display = display;
     this.actionManagerClass = actionManagerClass;
     this.otherconfig = otherconfig;
@@ -155,6 +161,7 @@ public class PaymentMean extends GUIManagedObject
     *****************************************/
 
     this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, FULFILLMENT_PROVIDER_ID, true);
+    this.commodityID = JSONUtilities.decodeString(jsonRoot, COMMODITY_ID, true);
     this.display = JSONUtilities.decodeString(jsonRoot, DISPLAY, false);
     this.actionManagerClass = JSONUtilities.decodeString(jsonRoot, ACTION_MANAGER_CLASS, false);
     this.otherconfig = JSONUtilities.decodeString(jsonRoot, OTHERCONFIG, false);
@@ -182,6 +189,7 @@ public class PaymentMean extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, paymentMean);
     struct.put(FULFILLMENT_PROVIDER_ID, paymentMean.getFulfillmentProviderID());
+    struct.put(COMMODITY_ID, paymentMean.getCommodityID());
     struct.put(DISPLAY, paymentMean.getDisplay());
     struct.put(ACTION_MANAGER_CLASS, paymentMean.getActionManagerClass());
     struct.put(OTHERCONFIG, paymentMean.getOtherconfig());
@@ -210,6 +218,7 @@ public class PaymentMean extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String fulfillmentProviderID = valueStruct.getString(FULFILLMENT_PROVIDER_ID);
+    String commodityID = valueStruct.getString(COMMODITY_ID);
     String display = valueStruct.getString(DISPLAY);
     String actionManagerClass = valueStruct.getString(ACTION_MANAGER_CLASS);
     String otherconfig = valueStruct.getString(OTHERCONFIG);
@@ -218,7 +227,7 @@ public class PaymentMean extends GUIManagedObject
     //  return
     //
 
-    return new PaymentMean(schemaAndValue, fulfillmentProviderID, display, actionManagerClass, otherconfig);
+    return new PaymentMean(schemaAndValue, fulfillmentProviderID, commodityID, display, actionManagerClass, otherconfig);
   }
 
 
@@ -236,6 +245,7 @@ public class PaymentMean extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getPaymentMeanID(), existingPaymentMean.getPaymentMeanID());
         epochChanged = epochChanged || ! Objects.equals(getPaymentMeanName(), existingPaymentMean.getPaymentMeanName());
         epochChanged = epochChanged || ! Objects.equals(getFulfillmentProviderID(), existingPaymentMean.getFulfillmentProviderID());
+        epochChanged = epochChanged || ! Objects.equals(getCommodityID(), existingPaymentMean.getCommodityID());
         epochChanged = epochChanged || ! Objects.equals(getDisplay(), existingPaymentMean.getDisplay());
         epochChanged = epochChanged || ! Objects.equals(getActionManagerClass(), existingPaymentMean.getActionManagerClass());
         epochChanged = epochChanged || ! Objects.equals(getOtherconfig(), existingPaymentMean.getOtherconfig());
@@ -259,6 +269,7 @@ public class PaymentMean extends GUIManagedObject
         + "id=" + getPaymentMeanID()
         + ", name=" + getPaymentMeanName()
         + ", fulfillmentProviderID=" + getFulfillmentProviderID() 
+        + ", commodityID=" + getCommodityID() 
         + ", display=" + getDisplay()
         + ", actionManagerClass=" + getActionManagerClass() 
         + ", otherconfig=" + getOtherconfig()

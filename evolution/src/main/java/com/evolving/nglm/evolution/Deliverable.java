@@ -6,26 +6,19 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.SchemaUtilities;
-
-import com.evolving.nglm.core.JSONUtilities;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class Deliverable extends GUIManagedObject
 {
@@ -48,6 +41,7 @@ public class Deliverable extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -72,6 +66,7 @@ public class Deliverable extends GUIManagedObject
   *****************************************/
 
   private String fulfillmentProviderID;
+  private String commodityID;
   private int unitaryCost;
 
   /*****************************************
@@ -81,7 +76,9 @@ public class Deliverable extends GUIManagedObject
   *****************************************/
 
   public String getDeliverableID() { return getGUIManagedObjectID(); }
+  public String getDeliverableName() { return getGUIManagedObjectName(); }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
+  public String getCommodityID() { return commodityID; }
   public int getUnitaryCost() { return unitaryCost; }
   
   /*****************************************
@@ -90,10 +87,11 @@ public class Deliverable extends GUIManagedObject
   *
   *****************************************/
 
-  public Deliverable(SchemaAndValue schemaAndValue, String fulfillmentProviderID, int unitaryCost)
+  public Deliverable(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String commodityID, int unitaryCost)
   {
     super(schemaAndValue);
     this.fulfillmentProviderID = fulfillmentProviderID;
+    this.commodityID = commodityID;
     this.unitaryCost = unitaryCost;
   }
   
@@ -109,6 +107,7 @@ public class Deliverable extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, deliverable);
     struct.put("fulfillmentProviderID", deliverable.getFulfillmentProviderID());
+    struct.put("commodityID", deliverable.getCommodityID());
     struct.put("unitaryCost", deliverable.getUnitaryCost());
     return struct;
   }
@@ -135,13 +134,14 @@ public class Deliverable extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String fulfillmentProviderID = valueStruct.getString("fulfillmentProviderID");
+    String commodityID = valueStruct.getString("commodityID");
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     
     //
     //  return
     //
 
-    return new Deliverable(schemaAndValue, fulfillmentProviderID, unitaryCost);
+    return new Deliverable(schemaAndValue, fulfillmentProviderID, commodityID, unitaryCost);
   }
 
   /*****************************************
@@ -175,6 +175,7 @@ public class Deliverable extends GUIManagedObject
     *****************************************/
 
     this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, "fulfillmentProviderID", true);
+    this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
 
     /*****************************************
@@ -214,6 +215,7 @@ public class Deliverable extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingDeliverable.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(fulfillmentProviderID, existingDeliverable.getFulfillmentProviderID());
+        epochChanged = epochChanged || ! Objects.equals(commodityID, existingDeliverable.getCommodityID());
         epochChanged = epochChanged || ! (unitaryCost == existingDeliverable.getUnitaryCost());
         return epochChanged;
       }

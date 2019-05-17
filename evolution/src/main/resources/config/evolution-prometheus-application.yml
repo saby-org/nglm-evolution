@@ -68,12 +68,12 @@ scrape_configs:
     static_configs:
       - targets: [<_EMPTYFULFILLMENTMANAGER_PROMETHEUS_>]
       
-  # pointtypefulfillmentmanager job
-  - job_name: 'pointtypefulfillmentmanager'
+  # pointfulfillmentmanager job
+  - job_name: 'pointfulfillmentmanager'
 
     # main config
     static_configs:
-      - targets: [<_POINTTYPEFULFILLMENTMANAGER_PROMETHEUS_>]
+      - targets: [<_POINTFULFILLMENTMANAGER_PROMETHEUS_>]
       
   # commoditydeliverymanager job
   - job_name: 'commoditydeliverymanager'

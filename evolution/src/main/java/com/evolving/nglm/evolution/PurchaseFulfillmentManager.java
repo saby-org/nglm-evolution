@@ -4,7 +4,7 @@
 *
 *****************************************************************************/
 
-package com.evolving.nglm.evolution.purchase;
+package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,30 +29,12 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryManager;
-import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
-import com.evolving.nglm.evolution.DeliveryRequest;
-import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.ODRStatistics;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferPrice;
-import com.evolving.nglm.evolution.OfferProduct;
-import com.evolving.nglm.evolution.OfferSalesChannelsAndPrice;
-import com.evolving.nglm.evolution.OfferService;
-import com.evolving.nglm.evolution.Product;
-import com.evolving.nglm.evolution.ProductService;
-import com.evolving.nglm.evolution.SalesChannel;
-import com.evolving.nglm.evolution.SalesChannelService;
-import com.evolving.nglm.evolution.StockMonitor;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
-import com.evolving.nglm.evolution.SubscriberGroupEpoch;
-import com.evolving.nglm.evolution.SubscriberProfile;
-import com.evolving.nglm.evolution.SubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.RedisSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
-public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable, IDRCallback
+public class PurchaseFulfillmentManager extends DeliveryManager implements Runnable, CommodityDeliveryResponseHandler
 {
   /*****************************************
   *
@@ -62,8 +44,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   public enum PurchaseFulfillmentStatus
   {
-    PENDING(10),
     PURCHASED(0),
+    MISSING_PARAMETERS(4),
+    BAD_FIELD_VALUE(5),
+    PENDING(10),
+    CUSTOMER_NOT_FOUND(20),
     SYSTEM_ERROR(21),
     THIRD_PARTY_ERROR(24),
     BONUS_NOT_FOUND(101),
@@ -75,10 +60,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     INSUFFICIENT_BALANCE(405),
     BAD_OFFER_STATUS(406),
     PRICE_NOT_APPLICABLE(407),
-    CHANNEL_DEACTIVATED(409),
-    BAD_OFFER_DATES(411),
-    CUSTOMER_OFFER_LIMIT_REACHED(410),
     NO_VOUCHER_CODE_AVAILABLE(408),
+    CHANNEL_DEACTIVATED(409),
+    CUSTOMER_OFFER_LIMIT_REACHED(410),
+    BAD_OFFER_DATES(411),
     UNKNOWN(999);
     private Integer externalRepresentation;
     private PurchaseFulfillmentStatus(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -101,6 +86,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           return DeliveryStatus.Pending;
         case PURCHASED:
           return DeliveryStatus.Delivered;
+        case MISSING_PARAMETERS:
+        case BAD_FIELD_VALUE:
         case SYSTEM_ERROR:
         case THIRD_PARTY_ERROR:
         case BONUS_NOT_FOUND:
@@ -112,10 +99,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         case INSUFFICIENT_BALANCE:
         case BAD_OFFER_STATUS:
         case PRICE_NOT_APPLICABLE:
-        case CHANNEL_DEACTIVATED:
-        case BAD_OFFER_DATES:
-        case CUSTOMER_OFFER_LIMIT_REACHED:
         case NO_VOUCHER_CODE_AVAILABLE:
+        case CHANNEL_DEACTIVATED:
+        case CUSTOMER_OFFER_LIMIT_REACHED:
+        case BAD_OFFER_DATES:
         default:
           return DeliveryStatus.Failed;
       }
@@ -138,7 +125,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   //
   
   private int threadNumber = 5;   //TODO : make this configurable
-  private final String purchase_status = "purchase_status";
   
   /*****************************************
   *
@@ -153,9 +139,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private ProductService productService;
   private SalesChannelService salesChannelService;
   private StockMonitor stockService;
+  private DeliverableService deliverableService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
-  private CommodityActionManager commodityActionManager;
   private ODRStatistics odrStats = null;
+  
+  private String application_ID;
   
   /*****************************************
   *
@@ -171,6 +159,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     super("deliverymanager-purchasefulfillment", deliveryManagerKey, Deployment.getBrokerServers(), PurchaseFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get("purchaseFulfillment"));
 
+    //
+    // variables
+    //
+    
+    application_ID = "application-deliverymanager-purchasefulfillment-" + deliveryManagerKey;
+    
     //
     //  plugin instanciation
     //
@@ -190,10 +184,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     stockService = new StockMonitor("PurchaseMgr-stockService-"+deliveryManagerKey, offerService, productService);
     stockService.start();
 
+    deliverableService = new DeliverableService(Deployment.getBrokerServers(), "PurchaseMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
+    deliverableService.start();
+
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("example", "PurchaseMgr-subscriberGroupReader-"+deliveryManagerKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
 
-    commodityActionManager = new CommodityActionManager(this);
-
+    //
+    // define as commodityDelivery response consumer
+    //
+    
+    CommodityDeliveryManager.addCommodityDeliveryResponseConsumer(application_ID, this);
+    
     //
     // statistics
     //
@@ -274,12 +275,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    //private String deliveryRequestID;
-    //private String deliveryRequestSource;
-    //private String subscriberID;
-    //private String deliveryType;
-    //private boolean control;
-  
     private String offerID;
     private int quantity;
     private String salesChannelID;
@@ -576,7 +571,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         if(quantity < 1){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "bad field value for quantity"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
           return;
         }
         
@@ -586,7 +581,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         if(subscriberID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "bad field value for subscriberID"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
           return;
         }
         SubscriberProfile subscriberProfile = null;
@@ -594,14 +589,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
           if(subscriberProfile == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
-            submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "subscriber " + subscriberID + " not found"/* TODO : use right message here */);
+            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
             return;
           }else{
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
           }
         }catch (SubscriberProfileServiceException e) {
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "subscriberService not available"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
           return;
         }
 
@@ -611,13 +606,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         if(offerID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "bad field value for offerID"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
           return;
         }
         Offer offer = offerService.getActiveOffer(offerID, now);
         if(offer == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "offer " + offerID + " not found"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
           return;
         }else{
           log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
@@ -630,7 +625,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
         if(salesChannel == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "salesChannel " + salesChannelID + " not found"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
           return;
         }else{
           log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
@@ -652,7 +647,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
         if(!priceFound){ //need this boolean since price can be null (if offer is free)
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "offer price for sales channel " + salesChannelID + " not found"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
           return;
         }
         purchaseStatus.addPaymentToBeDebited(offerPrice);
@@ -669,7 +664,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
         if(!offerService.isActiveOffer(offer, now)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+now+")");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "offer " + offer.getOfferID() + " not active (date = "+now+")"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+now+")");
           return;
         }
         purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
@@ -682,10 +677,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
           if(product == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
-            submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")"/* TODO : use right message here */);
+            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
             return;
           }else{
             purchaseStatus.addProductStockToBeDebited(offerProduct);
+            purchaseStatus.addProductToBeCredited(offerProduct);
           }
         }
         
@@ -696,12 +692,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
         if(!offer.evaluateProfileCriteria(evaluationRequest)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-          submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")"/* TODO : use right message here */);
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           return;
         }
         
         //TODO : still to be done :
-        //    - sales channel validity
         //    - checkSubscriberLimit (decrement subscriber offer remaining counter)
 
         /*****************************************
@@ -721,9 +716,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus, DeliveryStatus deliveryStatus, int statusCode, String statusMessage){
-    purchaseStatus.setDeliveryStatus(deliveryStatus);
-    purchaseStatus.setDeliveryStatusCode(statusCode);
+  private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus, PurchaseFulfillmentStatus status, String statusMessage){
+    purchaseStatus.setDeliveryStatus(getPurchaseFulfillmentStatus(status));
+    purchaseStatus.setDeliveryStatusCode(status.getReturnCode());
     purchaseStatus.setDeliveryStatusMessage(statusMessage);
     submitCorrelatorUpdate(purchaseStatus);
   }
@@ -738,8 +733,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlatorUpdate);
     deliveryRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
-    //purchaseStatus.getDeliveryStatusCode();
-    //purchaseStatus.getDeliveryStatusMessage();
     deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
     completeRequest(deliveryRequest);
     odrStats.updatePurchasesCount(1, deliveryRequest.getDeliveryStatus());
@@ -806,31 +799,31 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //Change to return PurchaseManagerStatus? 
     
     //
-    // debit all product stocks
+    // reserve all products (manage stock)
     //
     
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
       boolean debitOK = debitProductStock(purchaseStatus);
       if(!debitOK){
-        proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "proceedPurchase : could not debit stock of product "+purchaseStatus.getProductStockDebitFailed().getProductID()/* TODO : use right message here */);
+        proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of product "+purchaseStatus.getProductStockDebitFailed().getProductID());
         return;
       }
     }
 
     //
-    // debit all offer stocks
+    // reserve offer (manage stock)
     //
     
     if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
       boolean debitOK = debitOfferStock(purchaseStatus);
       if(!debitOK){
-        proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "proceedPurchase : could not debit stock of offer "+purchaseStatus.getOfferStockDebitFailed()/* TODO : use right message here */);
+        proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of offer "+purchaseStatus.getOfferStockDebitFailed());
         return;
       }
     }
 
     //
-    // make all payments
+    // make payments
     //
     
     if(purchaseStatus.getPaymentToBeDebited() != null && !purchaseStatus.getPaymentToBeDebited().isEmpty()){
@@ -839,41 +832,31 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         purchaseStatus.addPaymentDebited(offerPrice);
       }else{
         purchaseStatus.setPaymentBeingDebited(offerPrice);
-        if(!makePayment(purchaseStatus)){
-          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not make payment of price "+offerPrice.getPaymentMeanID()+" => initiate ROLLBACK");
-          purchaseStatus.setPaymentDebitFailed(offerPrice);
-          purchaseStatus.setPaymentBeingDebited(null);
-          proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "proceedPurchase : could not make payment of price "+offerPrice.getPaymentMeanID()/* TODO : use right message here */);
-        }
+        requestCommodityDelivery(purchaseStatus);
         return;
       }
     }
 
-    //TODO SCH : uncomment when CreditCommodities will be implemented ...
-    //if(purchaseStatus.getCommoditiesToBeCredited() != null && !purchaseStatus.getCommoditiesToBeCredited().isEmpty()){
-    //  String commodityID = purchaseStatus.getCommoditiesToBeCredited().remove(0);
-    //  purchaseStatus.setCommodityBeingCredited(commodityID);
-    //  creditCommodities(purchaseStatus);
-    //  return;
-    //}
+    //
+    // credit products
+    //
 
-    //TODO SCH : uncomment when NotifyProductProvider will be implemented ...
-    //if(purchaseStatus.getProviderToBeNotifyed() != null && !purchaseStatus.getProviderToBeNotifyed().isEmpty()){
-    //  String providerID = purchaseStatus.getProviderToBeNotifyed().remove(0);
-    //  purchaseStatus.setProviderBeingNotifyed(providerID);
-    //  notifyProductProvider(purchaseStatus);
-    //  return;
-    //}
+    if(purchaseStatus.getProductToBeCredited() != null && !purchaseStatus.getProductToBeCredited().isEmpty()){
+      OfferProduct productToBeCredited = purchaseStatus.getProductToBeCredited().remove(0);
+      purchaseStatus.setProductBeingCredited(productToBeCredited);
+      requestCommodityDelivery(purchaseStatus);
+      return;
+    }
 
     //
-    // everything is OK => confirm products and offers reservations
+    // confirm products and offers reservations
     //
     
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
       for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
         Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
         if(product == null){
-          //TODO SCH : log warn
+          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of product "+offerProduct.getProductID());
         }else{
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           stockService.confirmReservation(product, quantity);
@@ -884,7 +867,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       for(String offerID : purchaseStatus.getOfferStockDebited()){
         Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
         if(offer == null){
-          //TODO SCH : log warn
+          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of offer "+offerID);
         }else{
           int quantity = purchaseStatus.getQuantity();
           stockService.confirmReservation(offer, quantity);
@@ -892,11 +875,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
     }
     
+    //TODO : still to be done :
+    //    - subscriber stats and/or limits (?) 
+
     //
     // everything is OK => update and return response (succeed)
     //
     
-    submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Delivered, 0/* TODO : use right code here */, "Success"/* TODO : use right message here */);
+    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED, "Success");
     
   }
 
@@ -969,74 +955,23 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     return allGood;
   }
 
-  private boolean makePayment(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
-    boolean paymentDone =  commodityActionManager.makePayment(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity());
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.makePayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
-    return paymentDone;
-  }
-  
-  private void creditCommodities(PurchaseRequestStatus purchaseStatus){
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditCommodities (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    Date now = SystemTime.getCurrentTime();
-    
-    //GET OFFER
-    Offer offer = offerService.getActiveOffer(purchaseStatus.getOfferID(), now);
-    if(offer == null){ //should not happen
-      log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditCommodities (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not get offer content => initiate ROLLBACK");
-      proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "could not get offer with ID "+purchaseStatus.getOfferID() /* TODO : use right message here */);
-      return;
-    }
-
-    //GET PRODUCTS
-    List<Product> products = new ArrayList<Product>();
-    for(OfferProduct offerProduct : offer.getOfferProducts()){
-      Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
-      if(product != null){
-        products.add(product);
-      }else{ //should not happen
-        log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditCommodities (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not get product with ID '"+offerProduct.getProductID()+"' => initiate ROLLBACK");
-        proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "could not get product with ID "+offerProduct.getProductID() /* TODO : use right message here */);
-        return;
-      }
-    }
-    
-    for(Product product : products){
-      String supplierID = product.getSupplierID();
-      String productID = product.getProductID();
-      //==================================================================
-      // TODO SCH : make real call to credit commodities
-      //    / \     
-      //   / | \     ATTENTION : x purchaseRequest.getQuantity()
-      //  /_____\
-      //==================================================================
-    }
-    
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditCommodities (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
-  }
-
-  private void notifyProductProvider(PurchaseRequestStatus purchaseStatus){
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.notifyProductProvider (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    //TODO SCH : make real call to notify providers
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.notifyProductProvider (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
-  }
-  
   /*****************************************
   *
   *  proceed with rollback
   *
   *****************************************/
 
-  private void proceedRollback(PurchaseRequestStatus purchaseStatus, DeliveryStatus deliveryStatus, Integer statusCode, String statusMessage){
+  private void proceedRollback(PurchaseRequestStatus purchaseStatus, PurchaseFulfillmentStatus deliveryStatus, String statusMessage){
 
     //
     // update purchaseStatus
     //
     
     purchaseStatus.setRollbackInProgress(true);
-    if(deliveryStatus != null){purchaseStatus.setDeliveryStatus(deliveryStatus);}
-    if(statusCode != null){purchaseStatus.setDeliveryStatusCode(statusCode);}
+    if(deliveryStatus != null){
+      purchaseStatus.setDeliveryStatus(getPurchaseFulfillmentStatus(deliveryStatus));
+      purchaseStatus.setDeliveryStatusCode(deliveryStatus.getReturnCode());
+    }
     if(statusMessage != null){purchaseStatus.setDeliveryStatusMessage(statusMessage);}
 
     //
@@ -1044,13 +979,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
-      for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
+      while(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
+        OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
         Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
         if(product == null){
-          //TODO SCH : log warn
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of product "+offerProduct.getProductID());
+          purchaseStatus.addProductStockRollbackFailed(offerProduct);
         }else{
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           stockService.voidReservation(product, quantity);
+          purchaseStatus.addProductStockRollbacked(offerProduct);
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation product " + product.getProductID() + " canceled");
         }
       }
     }
@@ -1060,13 +999,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
-      for(String offerID : purchaseStatus.getOfferStockDebited()){
+      while(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
+        String offerID = purchaseStatus.getOfferStockDebited().remove(0);
         Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
         if(offer == null){
-          //TODO SCH : log warn
+          purchaseStatus.addOfferStockRollbackFailed(offerID);
+          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of offer "+offerID);
         }else{
           int quantity = purchaseStatus.getQuantity();
           stockService.voidReservation(offer, quantity);
+          purchaseStatus.addOfferStockRollbacked(offerID);
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation offer " + offer.getOfferID() + " canceled");
         }
       }
     }
@@ -1081,33 +1024,28 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         purchaseStatus.addPaymentRollbacked(offerPrice);
       }else{
         purchaseStatus.setPaymentBeingRollbacked(offerPrice);
-        if(!rollbackPayment(purchaseStatus)){
-          log.warn("PurchaseFulfillmentManager.proceedRollback(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not rollback payment of price "+offerPrice.getPaymentMeanID());
-          purchaseStatus.addPaymentRollbackFailed(offerPrice);
-          purchaseStatus.setPaymentBeingRollbacked(null);
-        }else{
-          return;
-        }
+        requestCommodityDelivery(purchaseStatus);
+        return;
       }
-      proceedRollback(purchaseStatus, null, null, null);
+      proceedRollback(purchaseStatus, null, null);
       return;
     }
 
-    //TODO SCH : uncomment when RollbackCommodities will be implemented ...
-    //if(purchaseStatus.getCommoditiesToRollback() != null && !purchaseStatus.getCommoditiesToRollback().isEmpty()){
-    //  String commodityID = purchaseStatus.getCommoditiesToRollback().remove(0);
-    //  purchaseStatus.setCommodityBeingRollbacked(commodityID);
-    //  rollbackCommodities(purchaseStatus);
-    //  return;
-    //}
+    //
+    // cancel all product deliveries
+    //
 
-    //TODO SCH : uncomment when RollbackNotifyProductProvider will be implemented ...
-    //if(purchaseStatus.getProviderToBeCancelled() != null && !purchaseStatus.getProviderToBeCancelled().isEmpty()){
-    //  String providerID = purchaseStatus.getProviderToBeCancelled().remove(0);
-    //  purchaseStatus.setProviderBeingCancelled(providerID);
-    //  cancelNotifyProductProvider(purchaseStatus);
-    //  return;
-    //}
+    if(purchaseStatus.getProductCredited() != null && !purchaseStatus.getProductCredited().isEmpty()){
+      OfferProduct offerProduct = purchaseStatus.getProductCredited().remove(0);
+      if(offerProduct != null){
+        purchaseStatus.setProductBeingRollbacked(offerProduct);
+        requestCommodityDelivery(purchaseStatus);
+        return;
+      }else{
+        proceedRollback(purchaseStatus, null, null);
+        return;
+      }
+    }
 
     //
     // rollback completed => update and return response (failed)
@@ -1119,86 +1057,127 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   /*****************************************
   *
-  *  steps of the rollback
+  *  requestCommodityDelivery (paymentMean or product)
   *
   *****************************************/
-
-  private void creditProductStock(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditProductStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    //==================================================================
-    //TODO SCH : make real call to credit product stock
-    //    / \     
-    //   / | \     ATTENTION : purchaseRequest.getProductID() x purchaseRequest.getQuantity()
-    //  /_____\
-    //==================================================================
-    purchaseStatus.addProductStockRollbacked(purchaseStatus.getProductStockBeingRollbacked());
-    purchaseStatus.setProductStockBeingRollbacked(null);
-    proceedRollback(purchaseStatus, null, null, null);
-    //==================================================================
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditProductStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
-  }
-
-  private void creditOfferStock(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    //==================================================================
-    // TODO SCH : make real call to debit offer stock
-    //    / \     
-    //   / | \     ATTENTION : purchaseRequest.getOfferID() x purchaseRequest.getQuantity()
-    //  /_____\
-    //==================================================================
-    purchaseStatus.addOfferStockRollbacked(purchaseStatus.getOfferStockBeingRollbacked());
-    purchaseStatus.setOfferStockBeingRollbacked(null);
-    proceedRollback(purchaseStatus, null, null, null);
-    //==================================================================
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.creditOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
-  }
-
-  private boolean rollbackPayment(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    OfferPrice offerPrice = purchaseStatus.getPaymentBeingRollbacked();
-    boolean paymentDone =  commodityActionManager.creditCommodity(purchaseStatus.getJSONRepresentation(), purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), offerPrice.getAmount() * purchaseStatus.getQuantity());
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.rollbackPayment (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
-    return paymentDone;
-  }
   
-//  - rollbackBonus (rolling back offer content)
-//  - rollbackProductProviderAPI
-//  - rollbackVoucher ( OUT OF SCOPE !!! !!! !!! )
-//  - rollbackPurchase (decrement purchase counters & stats)
-  
+  private void requestCommodityDelivery(PurchaseRequestStatus purchaseStatus){
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+    Date now = SystemTime.getCurrentTime();
+    
+    //
+    // debit price
+    //
+    
+    OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
+    if(offerPrice != null){
+      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity());
+      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
+    }
+    
+    //
+    // deliver product
+    //
+    
+    OfferProduct offerProduct = purchaseStatus.getProductBeingCredited();
+    if(offerProduct != null){
+      Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
+      if(product != null){
+        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        if(deliverable != null){
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
+          CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity());
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
+        }else{
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
+          purchaseStatus.setProductCreditFailed(offerProduct);
+          purchaseStatus.setProductBeingCredited(null);
+          proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID());
+        }
+      }else{
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") FAILED => rollback");
+        purchaseStatus.setProductCreditFailed(offerProduct);
+        purchaseStatus.setProductBeingCredited(null);
+        proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "could not credit product "+offerProduct.getProductID());
+      }
+    }
+    
+    //
+    // rollback debited price
+    //
+    
+    OfferPrice offerPriceRollback = purchaseStatus.getPaymentBeingRollbacked();
+    if(offerPriceRollback != null){
+      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
+      CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity());
+      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
+    }
+    
+    //
+    // rollback product delivery
+    //
+    
+    OfferProduct offerProductRollback = purchaseStatus.getProductBeingRollbacked();
+    if(offerProductRollback != null){
+      Product product = productService.getActiveProduct(offerProductRollback.getProductID(), now);
+      if(product != null){
+        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        if(deliverable != null){
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
+          CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, purchaseStatus.getCorrelator(), purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity());
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
+        }else{
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
+          purchaseStatus.addProductRollbackFailed(offerProductRollback);
+          purchaseStatus.setProductBeingRollbacked(null);
+          proceedRollback(purchaseStatus, null, null);
+        }
+      }else{
+        log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery failed (product id "+offerProductRollback.getProductID()+")");
+        purchaseStatus.addProductRollbackFailed(offerProductRollback);
+        purchaseStatus.setProductBeingRollbacked(null);
+        proceedRollback(purchaseStatus, null, null);
+      }
+      
+    }
+
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+  }
+    
   /*****************************************
   *
-  *  IDRCallback.onDRResponse(...)
+  *  CommodityDeliveryResponseHandler.handleCommodityDeliveryResponse(...)
   *
   *****************************************/
 
   @Override
-  public void onDRResponse(DeliveryRequest response)
+  public void handleCommodityDeliveryResponse(DeliveryRequest response)
   {
     
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...)");
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) called ...");
 
     // ------------------------------------
     // Getting initial request status
     // ------------------------------------
     
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : getting purchase status ");
-    if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(originalRequest) == null || response.getDiplomaticBriefcase().get(originalRequest).isEmpty()){
-      log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(response) : can not get purchase status => ignore this response");
+    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status ");
+    if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE) == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE).isEmpty()){
+      log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(response) : can not get purchase status => ignore this response");
       return;
     }
     JSONParser parser = new JSONParser();
     PurchaseRequestStatus purchaseStatus = null;
     try
       {
-        JSONObject requestStatusJSON = (JSONObject) parser.parse(response.getDiplomaticBriefcase().get(originalRequest));
+        JSONObject requestStatusJSON = (JSONObject) parser.parse(response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE));
         purchaseStatus = new PurchaseRequestStatus(requestStatusJSON);
       } catch (ParseException e)
       {
-        log.error(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : ERROR whilme getting request status from '"+response.getDiplomaticBriefcase().get(originalRequest)+"' => IGNORED");
+        log.error(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : ERROR while getting purchase status from '"+response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE)+"' => IGNORED");
         return;
       }
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : getting purchase status DONE : "+purchaseStatus);
+    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status DONE : "+purchaseStatus);
     
     // ------------------------------------
     // Handling response
@@ -1211,68 +1190,40 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
       // processing rollback
       //
-      
-      //  ---  check product stocks  ---
-      if(purchaseStatus.getProductStockBeingRollbacked() != null){
-        OfferProduct productStockBeingRollbacked = purchaseStatus.getProductStockBeingRollbacked();
-        if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          purchaseStatus.addProductStockRollbacked(productStockBeingRollbacked);
-          purchaseStatus.setProductStockBeingRollbacked(null);
-          proceedRollback(purchaseStatus, null, null, null);
-          return;
-        }else{
-          //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          purchaseStatus.addProductStockRollbackFailed(productStockBeingRollbacked);
-          purchaseStatus.setProductStockBeingRollbacked(null);
-          proceedRollback(purchaseStatus, null, null, null);
-          return;
-        }
-      }
-
-      //  ---  check offer stock  ---
-      if(purchaseStatus.getOfferStockBeingRollbacked() != null && !purchaseStatus.getOfferStockBeingRollbacked().isEmpty()){
-        String offerStockBeingRollbacked = purchaseStatus.getOfferStockBeingRollbacked();
-        if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          purchaseStatus.addOfferStockRollbacked(offerStockBeingRollbacked);
-          purchaseStatus.setOfferStockBeingRollbacked(null);
-          proceedRollback(purchaseStatus, null, null, null);
-          return;
-        }else{
-          //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          purchaseStatus.addOfferStockRollbackFailed(offerStockBeingRollbacked);
-          purchaseStatus.setOfferStockBeingRollbacked(null);
-          proceedRollback(purchaseStatus, null, null, null);
-          return;
-        }
-      }
 
       //  ---  check payment  ---
       if(purchaseStatus.getPaymentBeingRollbacked() != null){
         OfferPrice offerPrice = purchaseStatus.getPaymentBeingRollbacked();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price rollbacked");
           purchaseStatus.addPaymentRollbacked(offerPrice);
           purchaseStatus.setPaymentBeingRollbacked(null);
-          proceedRollback(purchaseStatus, null, null, null);
-          return;
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price rollback failed");
           purchaseStatus.addPaymentRollbackFailed(offerPrice);
           purchaseStatus.setPaymentBeingRollbacked(null);
-          proceedRollback(purchaseStatus, null, null, null);
-          return;
         }
       }
-      
-      //  ---  check credit offer content  ---
-      //TODO : complete when CreditCommodities will be implemented ...
 
-      //  ---  check provider notifications  ---
-      //TODO : complete when NotifyProductProvider will be implemented ...
+      //  ---  check products  ---
+      if(purchaseStatus.getProductBeingRollbacked() != null){
+        OfferProduct offerProduct = purchaseStatus.getProductBeingRollbacked();
+        if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product delivery rollbacked (product id "+offerProduct.getProductID()+")");
+          purchaseStatus.addProductRollbacked(offerProduct);
+          purchaseStatus.setProductBeingRollbacked(null);
+        }else{
+          //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product delivery rollback failed (product id "+offerProduct.getProductID()+")");
+          purchaseStatus.addProductRollbackFailed(offerProduct);
+          purchaseStatus.setProductBeingRollbacked(null);
+        }
+      }
 
-      // ROLLBACK IS COMPLETE => update and return failed response
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : ROLLBACK is complete => calling submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", "+purchaseStatus.getDeliveryStatus()+", "+purchaseStatus.getDeliveryStatusCode()+", "+purchaseStatus.getDeliveryStatusMessage()+") ...");
-      submitCorrelatorUpdate(purchaseStatus);
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : ROLLBACK is complete => calling submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", "+purchaseStatus.getDeliveryStatus()+", "+purchaseStatus.getDeliveryStatusCode()+", "+purchaseStatus.getDeliveryStatusMessage()+") DONE");
+      // continue rollback process
+      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue rollback process ...");
+      proceedRollback(purchaseStatus, null, null);
 
     }else{
       
@@ -1280,104 +1231,57 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       // processing purchase
       //
       
-      //  ---  check product stocks  ---
-      if(purchaseStatus.getProductStockBeingDebited() != null){
-        OfferProduct productStockBeingDebited = purchaseStatus.getProductStockBeingDebited();
-        if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          purchaseStatus.addProductStockDebited(productStockBeingDebited);
-          purchaseStatus.setProductStockBeingDebited(null);
-          proceedPurchase(purchaseStatus);
-          return;
-        }else{
-          //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          purchaseStatus.setProductStockDebitFailed(productStockBeingDebited);
-          purchaseStatus.setProductStockBeingDebited(null);
-          proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "could not debit stock of product "+productStockBeingDebited /* TODO : use right message here */);
-          return;
-        }
-      }
-
-      //  ---  check offer stock  ---
-      if(purchaseStatus.getOfferStockBeingDebited() != null && !purchaseStatus.getOfferStockBeingDebited().isEmpty()){
-        String offerStockBeingDebited = purchaseStatus.getOfferStockBeingDebited();
-        if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          purchaseStatus.addOfferStockDebited(offerStockBeingDebited);
-          purchaseStatus.setOfferStockBeingDebited(null);
-          proceedPurchase(purchaseStatus);
-          return;
-        }else{
-          //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          purchaseStatus.setOfferStockDebitFailed(offerStockBeingDebited);
-          purchaseStatus.setOfferStockBeingDebited(null);
-          proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "could not debit stock of offer "+offerStockBeingDebited /* TODO : use right message here */);
-          return;
-        }
-      }
-
       //  ---  check payment  ---
       if(purchaseStatus.getPaymentBeingDebited() != null){
         OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price debited");
           purchaseStatus.addPaymentDebited(offerPrice);
           purchaseStatus.setPaymentBeingDebited(null);
-          proceedPurchase(purchaseStatus);
-          return;
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price debit failed => initiate rollback ...");
           purchaseStatus.setPaymentDebitFailed(offerPrice);
           purchaseStatus.setPaymentBeingDebited(null);
-          proceedRollback(purchaseStatus, DeliveryStatus.Failed, -1/* TODO : use right code here */, "onDRResponse : could not make payment of price "+offerPrice /* TODO : use right message here */);
+          proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_BALANCE, "handleCommodityDeliveryResponse : could not make payment of price "+offerPrice);
           return;
         }
       }
       
-      //  ---  check credit offer content  ---
-      //TODO SCH : uncomment and complete when CreditCommodities will be implemented ...
-      //if(purchaseStatus.getCommoditiesToBeCredited() != null && !purchaseStatus.getCommoditiesToBeCredited().isEmpty()){
-      //  String commodityID = purchaseStatus.getCommoditiesToBeCredited().remove(0);
-      //  purchaseStatus.setCommodityBeingCredited(commodityID);
-      //  creditCommodities(purchaseStatus);
-      //  return;
-      //}
+      //  ---  check products  ---
+      if(purchaseStatus.getProductBeingCredited() != null){
+        OfferProduct product = purchaseStatus.getProductBeingCredited();
+        if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product creadited (product id "+product.getProductID()+")");
+          purchaseStatus.addProductCredited(product);
+          purchaseStatus.setProductBeingCredited(null);
+        }else{
+          //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product creadit failed (product id "+product.getProductID()+") => initiate rollback ...");
+          purchaseStatus.setProductCreditFailed(product);
+          purchaseStatus.setProductBeingCredited(null);
+          proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.THIRD_PARTY_ERROR, "handleCommodityDeliveryResponse : could not credit product "+product.getProductID());
+          return;
+        }
+      }
 
-      //  ---  check provider notifications  ---
-      //TODO SCH : uncomment and complete when NotifyProductProvider will be implemented ...
-      //if(purchaseStatus.getProviderToBeNotifyed() != null && !purchaseStatus.getProviderToBeNotifyed().isEmpty()){
-      //  String providerID = purchaseStatus.getProviderToBeNotifyed().remove(0);
-      //  purchaseStatus.setProviderBeingNotifyed(providerID);
-      //  notifyProductProvider(purchaseStatus);
-      //  return;
-      //}
-
-      // EVERYTHING IS OK => update and return successful response (DeliveryStatus.Delivered)
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : purchase is complete => calling submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", DeliveryStatus.Delivered, 0, Success) ...");
-      submitCorrelatorUpdate(purchaseStatus, DeliveryStatus.Delivered, 0/* TODO : use right code here */, "Success" /* TODO : use right message here */);
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) : purchase is complete => calling submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", DeliveryStatus.Delivered, 0, Success) DONE");
+      // continue purchase process
+      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue purchase process ...");
+      proceedPurchase(purchaseStatus);
       
     }
 
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.onDRResponse(...) DONE");
+    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) DONE");
 
   }
   
-  /*****************************************
-  *
-  *  IDRCallback.getIdentifier()
-  *
-  *****************************************/
-
-  @Override
-  public String getIdentifier(){
-    return "PurchaseFulfillmentManager";
-  }
-
   /*****************************************
   *
   *  class PurchaseRequestStatus
   *
   *****************************************/
 
-  public static class PurchaseRequestStatus
+  private static class PurchaseRequestStatus
   {
 
     /*****************************************
@@ -1425,9 +1329,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private List<OfferPrice> paymentRollbacked = null;
     private List<OfferPrice> paymentRollbackFailed = null;
     
-    private List<String> commoditiesToBeCredited = null;
-    private List<String> commoditiesCredited = null;
-    
+    private List<OfferProduct> productToBeCredited = null;
+    private OfferProduct productBeingCredited = null;
+    private List<OfferProduct> productCredited = null;
+    private OfferProduct productCreditFailed = null;
+    private OfferProduct productBeingRollbacked = null;
+    private List<OfferProduct> productRollbacked = null;
+    private List<OfferProduct> productRollbackFailed = null;
+        
     private List<String> providerToBeNotifyed = null;
     private List<String> providerNotifyed = null;
     
@@ -1482,8 +1391,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public List<OfferPrice> getPaymentRollbacked(){return paymentRollbacked;}
     public List<OfferPrice> getPaymentRollbackFailed(){return paymentRollbackFailed;}
     
-    public List<String> getCommoditiesToBeCredited(){return commoditiesToBeCredited;}
-    public List<String> getCommoditiesCredited(){return commoditiesCredited;}
+    public List<OfferProduct> getProductToBeCredited(){return productToBeCredited;}
+    public OfferProduct getProductBeingCredited(){return productBeingCredited;}
+    public List<OfferProduct> getProductCredited(){return productCredited;}
+    public OfferProduct getProductCreditFailed(){return productCreditFailed;}
+    public OfferProduct getProductBeingRollbacked(){return productBeingRollbacked;}
+    public List<OfferProduct> getProductRollbacked(){return productRollbacked;}
+    public List<OfferProduct> getProductRollbackFailed(){return productRollbackFailed;}
     
     public List<String> getProviderToBeNotifyed(){return providerToBeNotifyed;}
     public List<String> getProviderNotifyed(){return providerNotifyed;}
@@ -1523,6 +1437,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setPaymentBeingRollbacked(OfferPrice offerPrice){this.paymentBeingRollbacked = offerPrice;}
     public void addPaymentRollbacked(OfferPrice offerPrice){if(paymentRollbacked == null){paymentRollbacked = new ArrayList<OfferPrice>();} paymentRollbacked.add(offerPrice);}
     public void addPaymentRollbackFailed(OfferPrice offerPrice){if(paymentRollbackFailed == null){paymentRollbackFailed = new ArrayList<OfferPrice>();} paymentRollbackFailed.add(offerPrice);}
+
+    public void addProductToBeCredited(OfferProduct product){if(productToBeCredited == null){productToBeCredited = new ArrayList<OfferProduct>();} productToBeCredited.add(product);}
+    public void setProductBeingCredited(OfferProduct product){this.productBeingCredited = product;}
+    public void addProductCredited(OfferProduct product){if(productCredited == null){productCredited = new ArrayList<OfferProduct>();} productCredited.add(product);}
+    public void setProductCreditFailed(OfferProduct product){this.productCreditFailed = product;}
+    public void setProductBeingRollbacked(OfferProduct product){this.productBeingRollbacked = product;}
+    public void addProductRollbacked(OfferProduct product){if(productRollbacked == null){productRollbacked = new ArrayList<OfferProduct>();} productRollbacked.add(product);}
+    public void addProductRollbackFailed(OfferProduct product){if(productRollbackFailed == null){productRollbackFailed = new ArrayList<OfferProduct>();} productRollbackFailed.add(product);}
     
     /*****************************************
     *
@@ -1563,6 +1485,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.deliveryStatus = DeliveryStatus.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryStatus", false));
       this.deliveryStatusCode = JSONUtilities.decodeInteger(jsonRoot, "deliveryStatusCode", false);
       this.deliveryStatusMessage = JSONUtilities.decodeString(jsonRoot, "deliveryStatusMessage", false);
+      
+      //
+      // product stock
+      //
       
       if(JSONUtilities.decodeJSONObject(jsonRoot, "productStockBeingDebited", false) != null){
         this.productStockBeingDebited = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productStockBeingDebited", false));
@@ -1606,6 +1532,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         this.productStockRollbackFailed = productStockRollbackFailedList;
       }
 
+      //
+      // offer stock
+      //
+      
       JSONArray offerStockToBeDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "offerStockToBeDebited", false);
       if (offerStockToBeDebitedJSON != null){
         List<String> offerStockToBeDebitedList = new ArrayList<String>();
@@ -1641,6 +1571,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
         this.offerStockRollbackFailed = offerStockRollbackFailedList;
       }
+      
+      //
+      // paymentMeans
+      //
       
       JSONArray paymentToBeDebitedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "paymentToBeDebited", false);
       if (paymentToBeDebitedJSON != null){
@@ -1684,6 +1618,52 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         this.paymentRollbackFailed = paymentRollbackFailedList;
       }
       
+      //
+      // product delivery
+      //
+      
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "productBeingCredited", false) != null){
+        this.productBeingCredited = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productBeingCredited", false));
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "productCreditFailed", false) != null){
+        this.productCreditFailed = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productCreditFailed", false));
+      }
+      if(JSONUtilities.decodeJSONObject(jsonRoot, "productBeingRollbacked", false) != null){
+        this.productBeingRollbacked = new OfferProduct(JSONUtilities.decodeJSONObject(jsonRoot, "productBeingRollbacked", false));
+      }
+      JSONArray productToBeCreditedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productToBeCredited", false);
+      if (productToBeCreditedJSON != null){
+        List<OfferProduct> productToBeCreditedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productToBeCreditedJSON.size(); i++){
+          productToBeCreditedList.add(new OfferProduct((JSONObject) productToBeCreditedJSON.get(i)));
+        }
+        this.productToBeCredited = productToBeCreditedList;
+      }
+      JSONArray productCreditedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productCredited", false);
+      if (productCreditedJSON != null){
+        List<OfferProduct> productCreditedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productCreditedJSON.size(); i++){
+          productCreditedList.add(new OfferProduct((JSONObject) productCreditedJSON.get(i)));
+        }
+        this.productCredited = productCreditedList;
+      }
+      JSONArray productRollbackedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productRollbacked", false);
+      if (productRollbackedJSON != null){
+        List<OfferProduct> productRollbackedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productRollbackedJSON.size(); i++){
+          productRollbackedList.add(new OfferProduct((JSONObject) productRollbackedJSON.get(i)));
+        }
+        this.productRollbacked = productRollbackedList;
+      }
+      JSONArray productRollbackFailedJSON = JSONUtilities.decodeJSONArray(jsonRoot, "productRollbackFailed", false);
+      if (productRollbackFailedJSON != null){
+        List<OfferProduct> productRollbackFailedList = new ArrayList<OfferProduct>();
+        for (int i=0; i<productRollbackFailedJSON.size(); i++){
+          productRollbackFailedList.add(new OfferProduct((JSONObject) productRollbackFailedJSON.get(i)));
+        }
+        this.productRollbackFailed = productRollbackFailedList;
+      }
+
     }
     
     /*****************************************
@@ -1691,9 +1671,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *  to JSONObject
     *
     *****************************************/
-//    private List<String> commoditiesToBeCredited = null;
-//    private List<String> commoditiesCredited = null;
-//    
+    
 //    private List<String> providerToBeNotifyed = null;
 //    private List<String> providerNotifyed = null;
     
@@ -1714,6 +1692,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       data.put("deliveryStatus", this.getDeliveryStatus().getExternalRepresentation());
       data.put("deliveryStatusCode", this.getDeliveryStatusCode());
       data.put("deliveryStatusMessage", this.getDeliveryStatusMessage());
+      
+      //
+      // product stock
+      //
       
       if(this.getProductStockBeingDebited() != null){
         data.put("productStockBeingDebited", this.getProductStockBeingDebited().getJSONRepresentation());
@@ -1753,6 +1735,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         data.put("productStockRollbackFailed", productStockRollbackFailedList);
       }
 
+      //
+      // offer stock
+      //
+      
       data.put("offerStockToBeDebited", this.getOfferStockToBeDebited());
       data.put("offerStockBeingDebited", this.getOfferStockBeingDebited());
       data.put("offerStockDebited", this.getOfferStockDebited());
@@ -1760,6 +1746,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       data.put("offerStockBeingRollbacked", this.getOfferStockBeingRollbacked());
       data.put("offerStockRollbacked", this.getOfferStockRollbacked());
       data.put("offerStockRollbackFailed", this.getOfferStockRollbackFailed());
+
+      //
+      // paymentMeans
+      //
 
       if(this.getPaymentBeingDebited() != null){
         data.put("paymentBeingDebited", this.getPaymentBeingDebited().getJSONRepresentation());
@@ -1799,6 +1789,52 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         data.put("paymentRollbackFailed", paymentRollbackFailedList);
       }
 
+      //
+      // product delivery
+      //
+
+      if(this.getProductBeingCredited() != null){
+        data.put("productBeingCredited", this.getProductBeingCredited().getJSONRepresentation());
+      }
+      if(this.getProductCreditFailed() != null){
+        data.put("productCreditFailed", this.getProductCreditFailed().getJSONRepresentation());
+      }
+      if(this.getProductBeingRollbacked() != null){
+        data.put("productBeingRollbacked", this.getProductBeingRollbacked().getJSONRepresentation());
+      }
+      if(this.getProductToBeCredited() != null){
+        List<JSONObject> productToBeCreditedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductToBeCredited()){
+          productToBeCreditedList.add(product.getJSONRepresentation());
+        }
+        data.put("productToBeCredited", productToBeCreditedList);
+      }
+      if(this.getProductCredited() != null){
+        List<JSONObject> productCreditedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductCredited()){
+          productCreditedList.add(product.getJSONRepresentation());
+        }
+        data.put("productCredited", productCreditedList);
+      }
+      if(this.getProductRollbacked() != null){
+        List<JSONObject> productRollbackedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductRollbacked()){
+          productRollbackedList.add(product.getJSONRepresentation());
+        }
+        data.put("productRollbacked", productRollbackedList);
+      }
+      if(this.getProductRollbackFailed() != null){
+        List<JSONObject> productRollbackFailedList = new ArrayList<JSONObject>();
+        for(OfferProduct product : this.getProductRollbackFailed()){
+          productRollbackFailedList.add(product.getJSONRepresentation());
+        }
+        data.put("productRollbackFailed", productRollbackFailedList);
+      }
+      
+      //
+      // return 
+      //
+
       return JSONUtilities.encodeObject(data);
     }
 
@@ -1818,6 +1854,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
+    private String moduleID;
     private String salesChannelID;
     
     /*****************************************
@@ -1829,6 +1866,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public ActionManager(JSONObject configuration)
     {
       super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.salesChannelID = JSONUtilities.decodeString(configuration, "salesChannel", true);
     }
 
@@ -1872,6 +1910,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
+      request.setModuleID(moduleID);
+      request.setFeatureID(deliveryRequestSource);
 
       /*****************************************
       *

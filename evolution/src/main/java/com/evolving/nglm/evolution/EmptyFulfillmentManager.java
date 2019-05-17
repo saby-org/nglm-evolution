@@ -8,12 +8,15 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +136,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     //
     
     super("deliverymanager-emptyfulfillment", deliveryManagerKey, Deployment.getBrokerServers(), EmptyFulfillmentRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
-
+    
     //
     // statistics
     //

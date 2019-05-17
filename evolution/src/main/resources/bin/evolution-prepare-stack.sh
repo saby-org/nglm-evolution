@@ -332,24 +332,24 @@ fi
 
 #########################################
 #
-#  construct stack -- pointtypefulfillmentmanager
+#  construct stack -- pointfulfillmentmanager
 #
 #########################################
 
-if [ "$POINTTYPEFULFILLMENTMANAGER_ENABLED" = "true" ]; then
+if [ "$POINTFULFILLMENTMANAGER_ENABLED" = "true" ]; then
 
   #
   #  preamble
   #
 
   mkdir -p $DEPLOY_ROOT/stack
-  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-pointtypefulfillmentmanager.yml
+  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-pointfulfillmentmanager.yml
 
   #
-  #  pointtypefulfillmentmanager
+  #  pointfulfillmentmanager
   #
 
-  for TUPLE in $POINTTYPEFULFILLMENTMANAGER_CONFIGURATION
+  for TUPLE in $POINTFULFILLMENTMANAGER_CONFIGURATION
   do
      export KEY=`echo $TUPLE | cut -d: -f1`
      export HOST=`echo $TUPLE | cut -d: -f2`
@@ -357,15 +357,15 @@ if [ "$POINTTYPEFULFILLMENTMANAGER_ENABLED" = "true" ]; then
      export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
      export PLUGIN_NAME=`echo $TUPLE | cut -d: -f5`
      export PLUGIN_CONFIGURATION=`echo $TUPLE | cut -d: -f6-`
-     cat $DEPLOY_ROOT/docker/pointtypefulfillmentmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-pointtypefulfillmentmanager.yml
-     echo >> $DEPLOY_ROOT/stack/stack-pointtypefulfillmentmanager.yml
+     cat $DEPLOY_ROOT/docker/pointfulfillmentmanager.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-pointfulfillmentmanager.yml
+     echo >> $DEPLOY_ROOT/stack/stack-pointfulfillmentmanager.yml
   done
 
   #
   #  postamble
   #
 
-  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-pointtypefulfillmentmanager.yml
+  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-pointfulfillmentmanager.yml
 
 fi  
 

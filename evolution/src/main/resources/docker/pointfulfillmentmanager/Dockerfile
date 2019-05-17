@@ -39,17 +39,17 @@ ENV CLASSPATH=/app/jars/log4j-1.2.17.jar:/app/jars/${project.artifactId}-${proje
 #  run.sh
 #
 
-COPY bin/pointtypefulfillmentmanager-run.sh /app/bin/pointtypefulfillmentmanager-run.sh
-RUN chmod 0755 /app/bin/pointtypefulfillmentmanager-run.sh
+COPY bin/pointfulfillmentmanager-run.sh /app/bin/pointfulfillmentmanager-run.sh
+RUN chmod 0755 /app/bin/pointfulfillmentmanager-run.sh
 
 #
 #  configuration
 #
 
-COPY config/pointtypefulfillmentmanager_jmx.yml /app/config/pointtypefulfillmentmanager_jmx.yml
+COPY config/pointfulfillmentmanager_jmx.yml /app/config/pointfulfillmentmanager_jmx.yml
 
 #
 #  run
 #
 
-CMD [ "/app/bin/pointtypefulfillmentmanager-run.sh" ]
+CMD [ "/app/bin/pointfulfillmentmanager-run.sh" ]

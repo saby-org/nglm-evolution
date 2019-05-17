@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PointType.java
+*  Point.java
 *
 *****************************************************************************/
 
@@ -20,7 +20,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class PointType extends GUIManagedObject
+public class Point extends GUIManagedObject
 {
   
   /*****************************************
@@ -37,13 +37,13 @@ public class PointType extends GUIManagedObject
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("pointType");
+    schemaBuilder.name("point");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("debitable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("creditable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("setable", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("validity", PointTypeValidity.schema());
+    schemaBuilder.field("validity", PointValidity.schema());
     schema = schemaBuilder.build();
   };
 
@@ -51,14 +51,14 @@ public class PointType extends GUIManagedObject
   //  serde
   //
 
-  private static ConnectSerde<PointType> serde = new ConnectSerde<PointType>(schema, false, PointType.class, PointType::pack, PointType::unpack);
+  private static ConnectSerde<Point> serde = new ConnectSerde<Point>(schema, false, Point.class, Point::pack, Point::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<PointType> serde() { return serde; }
+  public static ConnectSerde<Point> serde() { return serde; }
 
   /****************************************
   *
@@ -69,7 +69,7 @@ public class PointType extends GUIManagedObject
   private boolean debitable;
   private boolean creditable;
   private boolean setable;
-  private PointTypeValidity validity;
+  private PointValidity validity;
 
   /****************************************
   *
@@ -81,13 +81,13 @@ public class PointType extends GUIManagedObject
   //  public
   //
 
-  public String getPointTypeID() { return getGUIManagedObjectID(); }
-  public String getPointTypeName() { return getGUIManagedObjectName(); }
+  public String getPointID() { return getGUIManagedObjectID(); }
+  public String getPointName() { return getGUIManagedObjectName(); }
   public String getDisplay() { return getGUIManagedObjectName(); }
   public boolean getDebitable() { return debitable; }
   public boolean getCreditable() { return creditable; }
   public boolean getSetable() { return setable; }
-  public PointTypeValidity getValidity(){ return validity; }
+  public PointValidity getValidity(){ return validity; }
   
   /*****************************************
   *
@@ -95,7 +95,7 @@ public class PointType extends GUIManagedObject
   *
   *****************************************/
 
-  public PointType(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointTypeValidity validity)
+  public Point(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointValidity validity)
   {
     super(schemaAndValue);
     this.debitable = debitable;
@@ -112,13 +112,13 @@ public class PointType extends GUIManagedObject
 
   public static Object pack(Object value)
   {
-    PointType pointType = (PointType) value;
+    Point point = (Point) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, pointType);
-    struct.put("debitable", pointType.getDebitable());
-    struct.put("creditable", pointType.getCreditable());
-    struct.put("setable", pointType.getSetable());
-    struct.put("validity", PointTypeValidity.pack(pointType.getValidity()));
+    packCommon(struct, point);
+    struct.put("debitable", point.getDebitable());
+    struct.put("creditable", point.getCreditable());
+    struct.put("setable", point.getSetable());
+    struct.put("validity", PointValidity.pack(point.getValidity()));
     return struct;
   }
   
@@ -128,7 +128,7 @@ public class PointType extends GUIManagedObject
   *
   *****************************************/
 
-  public static PointType unpack(SchemaAndValue schemaAndValue)
+  public static Point unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -146,13 +146,13 @@ public class PointType extends GUIManagedObject
     boolean debitable = valueStruct.getBoolean("debitable");
     boolean creditable = valueStruct.getBoolean("creditable");
     boolean setable = valueStruct.getBoolean("setable");
-    PointTypeValidity validity = PointTypeValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
+    PointValidity validity = PointValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
 
     //
     //  return
     //
 
-    return new PointType(schemaAndValue, debitable, creditable, setable, validity);
+    return new Point(schemaAndValue, debitable, creditable, setable, validity);
   }
   
   /*****************************************
@@ -161,7 +161,7 @@ public class PointType extends GUIManagedObject
   *
   *****************************************/
 
-  public PointType(JSONObject jsonRoot, long epoch, GUIManagedObject existingPointTypeUnchecked) throws GUIManagerException
+  public Point(JSONObject jsonRoot, long epoch, GUIManagedObject existingPointUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -169,15 +169,15 @@ public class PointType extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingPointTypeUnchecked != null) ? existingPointTypeUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingPointUnchecked != null) ? existingPointUnchecked.getEpoch() : epoch);
 
     /*****************************************
     *
-    *  existingPointType
+    *  existingPoint
     *
     *****************************************/
 
-    PointType existingPointType = (existingPointTypeUnchecked != null && existingPointTypeUnchecked instanceof PointType) ? (PointType) existingPointTypeUnchecked : null;
+    Point existingPoint = (existingPointUnchecked != null && existingPointUnchecked instanceof Point) ? (Point) existingPointUnchecked : null;
 
     /*****************************************
     *
@@ -188,7 +188,7 @@ public class PointType extends GUIManagedObject
     this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
     this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
     this.setable = JSONUtilities.decodeBoolean(jsonRoot, "setable", true);
-    this.validity = new PointTypeValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity"));
+    this.validity = new PointValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity"));
 
     /*****************************************
     *
@@ -196,7 +196,7 @@ public class PointType extends GUIManagedObject
     *
     *****************************************/
 
-    if (epochChanged(existingPointType))
+    if (epochChanged(existingPoint))
       {
         this.setEpoch(epoch);
       }
@@ -208,15 +208,15 @@ public class PointType extends GUIManagedObject
   *
   *****************************************/
 
-  private boolean epochChanged(PointType pointType)
+  private boolean epochChanged(Point point)
   {
-    if (pointType != null && pointType.getAccepted())
+    if (point != null && point.getAccepted())
       {
         boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getDebitable(), pointType.getDebitable());
-        epochChanged = epochChanged || ! Objects.equals(getCreditable(), pointType.getCreditable());
-        epochChanged = epochChanged || ! Objects.equals(getSetable(), pointType.getSetable());
-        epochChanged = epochChanged || ! Objects.equals(getValidity(), pointType.getValidity());
+        epochChanged = epochChanged || ! Objects.equals(getDebitable(), point.getDebitable());
+        epochChanged = epochChanged || ! Objects.equals(getCreditable(), point.getCreditable());
+        epochChanged = epochChanged || ! Objects.equals(getSetable(), point.getSetable());
+        epochChanged = epochChanged || ! Objects.equals(getValidity(), point.getValidity());
         return epochChanged;
       }
     else

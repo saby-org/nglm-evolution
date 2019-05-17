@@ -1,5 +1,5 @@
 --
---  pointtypefulfillment.001.json
+--  pointfulfillment.001.json
 --    
 
 --  private String deliveryType;
@@ -7,20 +7,20 @@
 --  private String moduleID;
 --  private String featureID;
 --  private String subscriberID;
---  private String pointTypeID;
---  private PointTypeOperation operation;
+--  private String pointID;
+--  private PointOperation operation;
 --  private int amount;
 --  private Date startValidityDate;
 --  private Date endValidityDate;
 
 
 {
-  "deliveryType"                   : "pointTypeFulfillment",
+  "deliveryType"                   : "pointFulfillment",
   "eventID"                        : "557722",
   "moduleID"                       : "module-45",
   "featureID"                      : "feature-22",
   "subscriberID"                   : "001",
-  "pointTypeID"                     : "1",
+  "pointID"                        : "1",
   "operation"                      : "credit",
   "amount"                         : 55
 }
