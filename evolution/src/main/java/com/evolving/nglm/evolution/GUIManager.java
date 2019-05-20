@@ -290,6 +290,7 @@ public class GUIManager
     putTokenType("putTokenType"),
     getTokenType("getTokenType"),
     removeTokenType("removeTokenType"),
+    getTokenCodesFormats("getTokenCodesFormats"),
     getMailTemplateList("getMailTemplateList"),
     getMailTemplateSummaryList("getMailTemplateSummaryList"),
     getMailTemplate("getMailTemplate"),
@@ -1294,6 +1295,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putTokenType", new APISimpleHandler(API.putTokenType));
         restServer.createContext("/nglm-guimanager/getTokenType", new APISimpleHandler(API.getTokenType));
         restServer.createContext("/nglm-guimanager/removeTokenType", new APISimpleHandler(API.removeTokenType));
+        restServer.createContext("/nglm-guimanager/getTokenCodesFormats", new APISimpleHandler(API.getTokenCodesFormats));
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APISimpleHandler(API.getMailTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getMailTemplate", new APISimpleHandler(API.getMailTemplate));
@@ -2129,6 +2131,10 @@ public class GUIManager
                   jsonResponse = processRemoveTokenType(userID, jsonRoot);
                   break;
 
+                case getTokenCodesFormats:
+                  jsonResponse = processGetTokenCodesFormats(userID, jsonRoot);
+                  break;
+                  
                case getMailTemplateList:
                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true);
                  break;
@@ -12049,7 +12055,42 @@ public class GUIManager
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetTokenCodesFormats
+  *
+  *****************************************/
+  private JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot)
+  {
 
+    /*****************************************
+     *
+     *  retrieve tokenCodesFormats
+     *
+     *****************************************/
+    
+    List<JSONObject> supportedTokenCodesFormats = new ArrayList<JSONObject>();
+    for (SupportedTokenCodesFormat supportedTokenCodesFormat : Deployment.getSupportedTokenCodesFormats().values())
+      {
+        JSONObject supportedTokenCodesFormatJSON = supportedTokenCodesFormat.getJSONRepresentation();
+        supportedTokenCodesFormats.add(supportedTokenCodesFormatJSON);
+      }
+
+    /*****************************************
+     *
+     *  response
+     *
+     *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("supportedTokenCodesFormats", JSONUtilities.encodeArray(supportedTokenCodesFormats));
+    return JSONUtilities.encodeObject(response);
+  }
+
+
+  
   /*****************************************
   *
   *  processGetMailTemplateList

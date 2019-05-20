@@ -18,7 +18,6 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class TokenType extends GUIManagedObject
@@ -57,13 +56,12 @@ public class TokenType extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("tokenTypeKind", Schema.STRING_SCHEMA);
-    schemaBuilder.field("validityDuration", Schema.INT32_SCHEMA);
-    schemaBuilder.field("validityUnit", Schema.STRING_SCHEMA);
-    schemaBuilder.field("validityRoundUp", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("validity", TokenTypeValidity.schema());
     schemaBuilder.field("codeFormat", Schema.STRING_SCHEMA);
+    schemaBuilder.field("maxNumberOfPlays", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
-  };
-
+  }; 
+  
   //
   //  serde
   //
@@ -84,10 +82,9 @@ public class TokenType extends GUIManagedObject
   *****************************************/
 
   private TokenTypeKind tokenTypeKind;
-  private int validityDuration;
-  private TimeUnit validityUnit;
-  private boolean validityRoundUp;
+  private TokenTypeValidity validity;
   private String codeFormat;
+  private Integer maxNumberOfPlays;
 
   /*****************************************
   *
@@ -98,11 +95,10 @@ public class TokenType extends GUIManagedObject
   public String getTokenTypeID() { return getGUIManagedObjectID(); }
   public String getTokenTypeName() { return getGUIManagedObjectName(); }
   public TokenTypeKind getTokenTypeKind() { return tokenTypeKind; }
-  public int getValidityDuration() { return validityDuration; }
-  public TimeUnit getValidityUnit() { return validityUnit; }
-  public boolean getValidityRoundUp() { return validityRoundUp; }
+  public TokenTypeValidity getValidity() { return validity; }
   public String getCodeFormat() { return codeFormat; }
-
+  public Integer getMaxNumberOfPlays() { return maxNumberOfPlays; }
+  
   /*****************************************
   *
   *  constructor -- unpack
@@ -111,14 +107,13 @@ public class TokenType extends GUIManagedObject
 
 
 
-  public TokenType(SchemaAndValue schemaAndValue, TokenTypeKind tokenTypeKind, int validityDuration, TimeUnit validityUnit, boolean validityRoundUp, String codeFormat)
+  public TokenType(SchemaAndValue schemaAndValue, TokenTypeKind tokenTypeKind, TokenTypeValidity validity, String codeFormat, Integer maxNumberOfPlays)
   {
     super(schemaAndValue);
     this.tokenTypeKind = tokenTypeKind;
-    this.validityDuration = validityDuration;
-    this.validityUnit = validityUnit;
-    this.validityRoundUp = validityRoundUp;
+    this.validity = validity;
     this.codeFormat = codeFormat;
+    this.maxNumberOfPlays = maxNumberOfPlays;
   }
   
   /*****************************************
@@ -133,10 +128,9 @@ public class TokenType extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, tokenType);
     struct.put("tokenTypeKind", tokenType.getTokenTypeKind().getExternalRepresentation());
-    struct.put("validityDuration", tokenType.getValidityDuration());
-    struct.put("validityUnit", tokenType.getValidityUnit().getExternalRepresentation());
-    struct.put("validityRoundUp", tokenType.getValidityRoundUp());
+    struct.put("validity", TokenTypeValidity.pack(tokenType.getValidity()));
     struct.put("codeFormat", tokenType.getCodeFormat());
+    struct.put("maxNumberOfPlays", tokenType.getMaxNumberOfPlays());
     return struct;
 }
 
@@ -162,16 +156,15 @@ public class TokenType extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     TokenTypeKind tokenTypeKind = TokenTypeKind.fromExternalRepresentation(valueStruct.getString("tokenTypeKind"));
-    int validityDuration = valueStruct.getInt32("validityDuration");
-    TimeUnit validityUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("validityUnit"));
-    boolean validityRoundUp = valueStruct.getBoolean("validityRoundUp");
+    TokenTypeValidity validity = TokenTypeValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
     String codeFormat = valueStruct.getString("codeFormat");
-
+    Integer maxNumberOfPlays = valueStruct.getInt32("maxNumberOfPlays");
+    
     //
     //  return
     //
 
-    return new TokenType(schemaAndValue, tokenTypeKind, validityDuration, validityUnit, validityRoundUp, codeFormat);
+    return new TokenType(schemaAndValue, tokenTypeKind, validity, codeFormat, maxNumberOfPlays);
   }
 
   /*****************************************
@@ -205,10 +198,9 @@ public class TokenType extends GUIManagedObject
     *****************************************/
 
     this.tokenTypeKind = TokenTypeKind.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "tokenTypeKind", true));
-    this.validityDuration = JSONUtilities.decodeInteger(jsonRoot, "validityDuration", true);
-    this.validityUnit = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityUnit", true));
-    this.validityRoundUp = JSONUtilities.decodeBoolean(jsonRoot, "validityRoundUp", Boolean.FALSE);
+    this.validity = new TokenTypeValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity"));
     this.codeFormat = JSONUtilities.decodeString(jsonRoot, "codeFormat", true);
+    this.maxNumberOfPlays = JSONUtilities.decodeInteger(jsonRoot, "maxNumberOfPlays", false);
 
     /*****************************************
     *
@@ -235,10 +227,9 @@ public class TokenType extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingTokenType.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(tokenTypeKind, existingTokenType.getTokenTypeKind());
-        epochChanged = epochChanged || ! Objects.equals(validityDuration, existingTokenType.getValidityDuration());
-        epochChanged = epochChanged || ! Objects.equals(validityUnit, existingTokenType.getValidityUnit());
-        epochChanged = epochChanged || ! Objects.equals(validityRoundUp, existingTokenType.getValidityRoundUp());
+        epochChanged = epochChanged || ! Objects.equals(validity, existingTokenType.getValidity());
         epochChanged = epochChanged || ! Objects.equals(codeFormat, existingTokenType.getCodeFormat());
+        epochChanged = epochChanged || ! Objects.equals(maxNumberOfPlays, existingTokenType.getCodeFormat());
         return epochChanged;
       }
     else

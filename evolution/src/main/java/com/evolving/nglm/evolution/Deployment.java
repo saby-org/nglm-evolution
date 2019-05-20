@@ -92,6 +92,7 @@ public class Deployment
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
+  private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,TouchPoint> touchPoints = new LinkedHashMap<String,TouchPoint>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
@@ -235,6 +236,7 @@ public class Deployment
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
+  public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,TouchPoint> getTouchPoints() { return touchPoints; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
@@ -1164,6 +1166,25 @@ public class Deployment
             JSONObject supportedTimeUnitJSON = (JSONObject) supportedTimeUnitValues.get(i);
             SupportedTimeUnit supportedTimeUnit = new SupportedTimeUnit(supportedTimeUnitJSON);
             supportedTimeUnits.put(supportedTimeUnit.getID(), supportedTimeUnit);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  supportedTokenCodesFormats
+    //
+
+    try
+      {
+        JSONArray supportedTokenCodesFormatsValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTokenCodesFormats", true);
+        for (int i=0; i<supportedTokenCodesFormatsValues.size(); i++)
+          {
+            JSONObject supportedTokenCodesFormatJSON = (JSONObject) supportedTokenCodesFormatsValues.get(i);
+            SupportedTokenCodesFormat supportedTokenCodesFormat = new SupportedTokenCodesFormat(supportedTokenCodesFormatJSON);
+            supportedTokenCodesFormats.put(supportedTokenCodesFormat.getID(), supportedTokenCodesFormat);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
