@@ -10,7 +10,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class UploadedTargetService extends GUIService
+public class TargetService extends GUIService
 {
   /*****************************************
   *
@@ -22,7 +22,7 @@ public class UploadedTargetService extends GUIService
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(UploadedTargetService.class);
+  private static final Logger log = LoggerFactory.getLogger(TargetService.class);
 
   /*****************************************
   *
@@ -30,7 +30,7 @@ public class UploadedTargetService extends GUIService
   *
   *****************************************/
 
-  private UploadedTargetListener TargetListener = null;
+  private TargetListener TargetListener = null;
 
   /*****************************************
   *
@@ -38,16 +38,16 @@ public class UploadedTargetService extends GUIService
   *
   *****************************************/
 
-  public UploadedTargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService, UploadedTargetListener targetListener, boolean notifyOnSignificantChange)
+  public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService, TargetListener targetListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "UploadedTargetService", groupID, targetTopic, masterService, getSuperListener(targetListener), "putUploadedTarget", "removeUploadedTarget", notifyOnSignificantChange);
+    super(bootstrapServers, "TargetService", groupID, targetTopic, masterService, getSuperListener(targetListener), "putTarget", "removeTarget", notifyOnSignificantChange);
   }
 
   //
   //  constructor
   //
 
-  public UploadedTargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService, UploadedTargetListener targetListener)
+  public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService, TargetListener targetListener)
   {
     this(bootstrapServers, groupID, targetTopic, masterService, targetListener, true);
   }
@@ -56,23 +56,23 @@ public class UploadedTargetService extends GUIService
   //  constructor
   //
 
-  public UploadedTargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService)
+  public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, targetTopic, masterService, (UploadedTargetListener) null, true);
+    this(bootstrapServers, groupID, targetTopic, masterService, (TargetListener) null, true);
   }
 
   //
   //  getSuperListener
   //
 
-  private static GUIManagedObjectListener getSuperListener(UploadedTargetListener targetListener)
+  private static GUIManagedObjectListener getSuperListener(TargetListener targetListener)
   {
     GUIManagedObjectListener superListener = null;
     if (targetListener != null)
       {
         superListener = new GUIManagedObjectListener()
         {
-          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { targetListener.targetActivated((UploadedTarget) guiManagedObject); }
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { targetListener.targetActivated((Target) guiManagedObject); }
           @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { targetListener.targetDeactivated(guiManagedObjectID); }
         };
       }
@@ -89,7 +89,7 @@ public class UploadedTargetService extends GUIService
   public GUIManagedObject getStoredTarget(String targetID) { return getStoredGUIManagedObject(targetID); }
   public Collection<GUIManagedObject> getStoredTargets() { return getStoredGUIManagedObjects(); }
   public boolean isActiveTarget(GUIManagedObject targetUnchecked, Date date) { return isActiveGUIManagedObject(targetUnchecked, date); }
-  public UploadedTarget getActiveTarget(String targetID, Date date) { return (UploadedTarget) getActiveGUIManagedObject(targetID, date); }
+  public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
 
   /*****************************************
   *
@@ -109,9 +109,9 @@ public class UploadedTargetService extends GUIService
     //  validate
     //
 
-    if (target instanceof UploadedTarget)
+    if (target instanceof Target)
       {
-        ((UploadedTarget) target).validate(uploadedFileService, now);
+        ((Target) target).validate(uploadedFileService, now);
       }
 
     //
@@ -153,9 +153,9 @@ public class UploadedTargetService extends GUIService
   *
   *****************************************/
 
-  public interface UploadedTargetListener
+  public interface TargetListener
   {
-    public void targetActivated(UploadedTarget target);
+    public void targetActivated(Target target);
     public void targetDeactivated(String guiManagedObjectID);
   }
 
@@ -171,9 +171,9 @@ public class UploadedTargetService extends GUIService
     //  targetListener
     //
 
-    UploadedTargetListener targetListener = new UploadedTargetListener()
+    TargetListener targetListener = new TargetListener()
     {
-      @Override public void targetActivated(UploadedTarget target) { System.out.println("Target activated: " + target.getGUIManagedObjectID()); }
+      @Override public void targetActivated(Target target) { System.out.println("Target activated: " + target.getGUIManagedObjectID()); }
       @Override public void targetDeactivated(String guiManagedObjectID) { System.out.println("Target deactivated: " + guiManagedObjectID); }
     };
 
@@ -181,7 +181,7 @@ public class UploadedTargetService extends GUIService
     //  targetService
     //
 
-    UploadedTargetService targetService = new UploadedTargetService(Deployment.getBrokerServers(), "example-targetservice-001", Deployment.getTargetTopic(), false, targetListener);
+    TargetService targetService = new TargetService(Deployment.getBrokerServers(), "example-targetservice-001", Deployment.getTargetTopic(), false, targetListener);
     targetService.start();
 
     //

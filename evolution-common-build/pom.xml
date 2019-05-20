@@ -145,7 +145,7 @@
     <topic.pointfulfillment.response>pointfulfillment-response</topic.pointfulfillment.response>
     <topic.pointfulfillment.internal>pointfulfillment-internal</topic.pointfulfillment.internal>
     <topic.pointfulfillment.routing>pointfulfillment-routing</topic.pointfulfillment.routing>
-    <topic.uploadedtarget>uploadedtarget</topic.uploadedtarget>
+    <topic.target>target</topic.target>
     <topic.commoditydelivery.request>commoditydelivery-request</topic.commoditydelivery.request>
     <topic.commoditydelivery.response>commoditydelivery-response</topic.commoditydelivery.response>
     <topic.commoditydelivery.internal>commoditydelivery-internal</topic.commoditydelivery.internal>

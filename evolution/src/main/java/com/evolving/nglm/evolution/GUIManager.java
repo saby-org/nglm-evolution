@@ -324,11 +324,11 @@ public class GUIManager
     removeUploadedFile("removeUploadedFile"),
     getCustomerAlternateIDs("getCustomerAlternateIDs"),
     getCustomerAvailableCampaigns("getCustomerAvailableCampaigns"),
-    getUploadedTargetList("getUploadedTargetList"),
-    getUploadedTargetSummaryList("getUploadedTargetSummaryList"),
-    putUploadedTarget("putUploadedTarget"),
-    getUploadedTarget("getUploadedTarget"),
-    removeUploadedTarget("removeUploadedTarget"),
+    getTargetList("getTargetList"),
+    getTargetSummaryList("getTargetSummaryList"),
+    putTarget("putTarget"),
+    getTarget("getTarget"),
+    removeTarget("removeTarget"),
     updateCustomer("updateCustomer"),
     Unknown("(unknown)");
     private String externalRepresentation;
@@ -403,7 +403,7 @@ public class GUIManager
   private DeliverableSourceService deliverableSourceService;
   private String getCustomerAlternateID;
   private UploadedFileService uploadFileService;
-  private UploadedTargetService uploadedTargetService;
+  private TargetService targetService;
   
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -552,7 +552,7 @@ public class GUIManager
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
-    uploadedTargetService = new UploadedTargetService(bootstrapServers, "guimanager-uploadedtargetservice-" + apiProcessKey, targetTopic, true);
+    targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     
     /*****************************************
     *
@@ -1151,7 +1151,7 @@ public class GUIManager
     subscriberProfileService.start();
     deliverableSourceService.start();
     uploadFileService.start();
-    uploadedTargetService.start();
+    targetService.start();
 
     /*****************************************
     *
@@ -1329,11 +1329,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putUploadedFile", new APIComplexHandler(API.putUploadedFile));
         restServer.createContext("/nglm-guimanager/getCustomerAlternateIDs", new APISimpleHandler(API.getCustomerAlternateIDs));
         restServer.createContext("/nglm-guimanager/getCustomerAvailableCampaigns", new APISimpleHandler(API.getCustomerAvailableCampaigns));
-        restServer.createContext("/nglm-guimanager/getUploadedTargetList", new APISimpleHandler(API.getUploadedTargetList));
-        restServer.createContext("/nglm-guimanager/getUploadedTargetSummaryList", new APISimpleHandler(API.getUploadedTargetSummaryList));
-        restServer.createContext("/nglm-guimanager/putUploadedTarget", new APISimpleHandler(API.putUploadedTarget));
-        restServer.createContext("/nglm-guimanager/getUploadedTarget", new APISimpleHandler(API.getUploadedTarget));
-        restServer.createContext("/nglm-guimanager/removeUploadedTarget", new APISimpleHandler(API.removeUploadedTarget));
+        restServer.createContext("/nglm-guimanager/getTargetList", new APISimpleHandler(API.getTargetList));
+        restServer.createContext("/nglm-guimanager/getTargetSummaryList", new APISimpleHandler(API.getTargetSummaryList));
+        restServer.createContext("/nglm-guimanager/putTarget", new APISimpleHandler(API.putTarget));
+        restServer.createContext("/nglm-guimanager/getTarget", new APISimpleHandler(API.getTarget));
+        restServer.createContext("/nglm-guimanager/removeTarget", new APISimpleHandler(API.removeTarget));
         restServer.createContext("/nglm-guimanager/updateCustomer", new APISimpleHandler(API.updateCustomer));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -1349,7 +1349,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService, uploadFileService, uploadedTargetService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService, uploadFileService, targetService));
 
     /*****************************************
     *
@@ -1400,13 +1400,13 @@ public class GUIManager
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadFileService;
-    private UploadedTargetService targetService;
+    private TargetService targetService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, UploadedFileService uploadFileService, UploadedTargetService targetService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, UploadedFileService uploadFileService, TargetService targetService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2263,24 +2263,24 @@ public class GUIManager
                   jsonResponse = processGetCustomerAvailableCampaigns(userID, jsonRoot);
                   break;
 
-                case getUploadedTargetList:
-                  jsonResponse = processGetUploadedTargetList(userID, jsonRoot, true);
+                case getTargetList:
+                  jsonResponse = processGetTargetList(userID, jsonRoot, true);
                   break;
 
-                case getUploadedTargetSummaryList:
-                  jsonResponse = processGetUploadedTargetList(userID, jsonRoot, false);
+                case getTargetSummaryList:
+                  jsonResponse = processGetTargetList(userID, jsonRoot, false);
                   break;
 
-                case putUploadedTarget:
-                  jsonResponse = processPutUploadedTarget(userID, jsonRoot);
+                case putTarget:
+                  jsonResponse = processPutTarget(userID, jsonRoot);
                   break;
 
-                case getUploadedTarget:
-                  jsonResponse = processGetUploadedTarget(userID, jsonRoot);
+                case getTarget:
+                  jsonResponse = processGetTarget(userID, jsonRoot);
                   break;
 
-                case removeUploadedTarget:
-                  jsonResponse = processRemoveUploadedTarget(userID, jsonRoot);
+                case removeTarget:
+                  jsonResponse = processRemoveTarget(userID, jsonRoot);
                   
                 case updateCustomer:
                   jsonResponse = processUpdateCustomer(userID, jsonRoot);
@@ -2837,13 +2837,13 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processGetUploadedTarget
+  *  processGetTarget
   *
   *****************************************/
  
-  private JSONObject processGetUploadedTarget(String userID, JSONObject jsonRoot)
+  private JSONObject processGetTarget(String userID, JSONObject jsonRoot)
   {
-    log.info("GUIManager.processGetUploadedTarget("+userID+", "+jsonRoot+") called ...");
+    log.info("GUIManager.processGetTarget("+userID+", "+jsonRoot+") called ...");
     /****************************************
     *
     *  response
@@ -2866,8 +2866,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject target = uploadedTargetService.getStoredTarget(targetID);
-    JSONObject targetJSON = uploadedTargetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
+    GUIManagedObject target = targetService.getStoredTarget(targetID);
+    JSONObject targetJSON = targetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -2875,21 +2875,21 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (target != null) ? "ok" : "uploadedTargetNotFound");
-    if (target != null) response.put("uploadedTarget", targetJSON);
+    response.put("responseCode", (target != null) ? "ok" : "targetNotFound");
+    if (target != null) response.put("target", targetJSON);
 
-    log.info("GUIManager.processGetUploadedTarget("+userID+", "+jsonRoot+") DONE");
+    log.info("GUIManager.processGetTarget("+userID+", "+jsonRoot+") DONE");
 
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
    *
-   *  processPutUploadedTarget
+   *  processPutTarget
    *
    *****************************************/
 
-  private JSONObject processPutUploadedTarget (String userID, JSONObject jsonRoot)
+  private JSONObject processPutTarget (String userID, JSONObject jsonRoot)
   {
     /****************************************
      *
@@ -2909,7 +2909,7 @@ public class GUIManager
     String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (targetID == null)
       {
-        targetID = uploadedTargetService.generateTargetID();
+        targetID = targetService.generateTargetID();
         jsonRoot.put("id", targetID);
       }
 
@@ -2919,7 +2919,7 @@ public class GUIManager
      *
      *****************************************/
 
-    GUIManagedObject existingTarget = uploadedTargetService.getStoredTarget(targetID);
+    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
 
     /*****************************************
      *
@@ -2932,7 +2932,7 @@ public class GUIManager
         response.put("id", existingTarget.getGUIManagedObjectID());
         response.put("accepted", existingTarget.getAccepted());
         response.put("valid", existingTarget.getAccepted());
-        response.put("processing", uploadedTargetService.isActiveTarget(existingTarget, now));
+        response.put("processing", targetService.isActiveTarget(existingTarget, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
@@ -2952,7 +2952,7 @@ public class GUIManager
        *
        ****************************************/
 
-      UploadedTarget target = new UploadedTarget(jsonRoot, epoch, existingTarget);
+      Target target = new Target(jsonRoot, epoch, existingTarget);
 
       /*****************************************
        *
@@ -2960,7 +2960,7 @@ public class GUIManager
        *
        *****************************************/
 
-      uploadedTargetService.putTarget(target, uploadFileService, (existingTarget == null), userID);
+      targetService.putTarget(target, uploadFileService, (existingTarget == null), userID);
 
       /*****************************************
        *
@@ -2971,7 +2971,7 @@ public class GUIManager
       response.put("id", target.getGUIManagedObjectID());
       response.put("accepted", target.getAccepted());
       response.put("valid", target.getAccepted());
-      response.put("processing", uploadedTargetService.isActiveTarget(target, now));
+      response.put("processing", targetService.isActiveTarget(target, now));
       response.put("responseCode", "ok");
       return JSONUtilities.encodeObject(response);
     }
@@ -2987,7 +2987,7 @@ public class GUIManager
       //  store
       //
 
-      uploadedTargetService.putTarget(incompleteObject, uploadFileService, (existingTarget == null), userID);
+      targetService.putTarget(incompleteObject, uploadFileService, (existingTarget == null), userID);
 
       //
       //  log
@@ -3001,7 +3001,7 @@ public class GUIManager
       //  response
       //
 
-      response.put("pointTypeID", incompleteObject.getGUIManagedObjectID());
+      response.put("targetID", incompleteObject.getGUIManagedObjectID());
       response.put("responseCode", "targetNotValid");
       response.put("responseMessage", e.getMessage());
       response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
@@ -3011,11 +3011,11 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processGetUploadedTargetList
+  *  processGetTargetList
   *
   *****************************************/
 
-  private JSONObject processGetUploadedTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
 
     /*****************************************
@@ -3026,9 +3026,9 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> targetLists = new ArrayList<JSONObject>();
-    for (GUIManagedObject targetList : uploadedTargetService.getStoredTargets())
+    for (GUIManagedObject targetList : targetService.getStoredTargets())
       {
-        targetLists.add(uploadedTargetService.generateResponseJSON(targetList, fullDetails, now));
+        targetLists.add(targetService.generateResponseJSON(targetList, fullDetails, now));
       }
 
     /*****************************************
@@ -3039,18 +3039,18 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("uploadedTargets", JSONUtilities.encodeArray(targetLists));
+    response.put("targets", JSONUtilities.encodeArray(targetLists));
     return JSONUtilities.encodeObject(response);
   }
 
   
   /*****************************************
   *
-  *  processRemoveUploadedTarget
+  *  processRemoveTarget
   *
   *****************************************/
   
-  public JSONObject processRemoveUploadedTarget(String userID, JSONObject jsonRoot){
+  public JSONObject processRemoveTarget(String userID, JSONObject jsonRoot){
     
     /****************************************
     *
@@ -3074,9 +3074,9 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTarget = uploadedTargetService.getStoredTarget(targetID);
+    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
     if (existingTarget != null && !existingTarget.getReadOnly()) {
-      uploadedTargetService.removeTarget(targetID, userID);
+      targetService.removeTarget(targetID, userID);
     }
 
     /*****************************************

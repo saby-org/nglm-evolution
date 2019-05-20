@@ -48,7 +48,7 @@ public class ContactPolicyTouchPoint
     schemaBuilder.field("touchPointID", Schema.STRING_SCHEMA);
     schemaBuilder.field("touchPointName", Schema.STRING_SCHEMA);
     schemaBuilder.field("timeWindows", TimeWindow.schema());
-    schemaBuilder.field("messageLimits", MessageLimits.schema());
+    schemaBuilder.field("messageLimits", SchemaBuilder.array(MessageLimits.schema()).schema());
     schemaBuilder.field("contactPolicyBlackout", SchemaBuilder.array(ContactPolicyBlackout.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -75,7 +75,7 @@ public class ContactPolicyTouchPoint
   private String touchPointID;
   private String touchPointName;
   private TimeWindow timeWindows;
-  private MessageLimits messageLimits;
+  private Set<MessageLimits> messageLimits;
   private Set<ContactPolicyBlackout> blackoutList;
   
 
@@ -88,7 +88,7 @@ public class ContactPolicyTouchPoint
   public String getTouchPointID() { return touchPointID; }
   public String getTouchPointName() { return touchPointName; }
   public TimeWindow getTimeWindows() { return timeWindows; }
-  public MessageLimits getMessageLimits() { return messageLimits; }
+  public Set<MessageLimits> getMessageLimits() { return messageLimits; }
   public Set<ContactPolicyBlackout> getContactPolicyBlackoutList(){ return blackoutList; }
   
   /*****************************************
@@ -97,7 +97,7 @@ public class ContactPolicyTouchPoint
   *
   *****************************************/
 
-  public ContactPolicyTouchPoint(String touchPointID, String touchPointName, TimeWindow timeWindows, MessageLimits messageLimits, Set<ContactPolicyBlackout> blackoutList)
+  public ContactPolicyTouchPoint(String touchPointID, String touchPointName, TimeWindow timeWindows, Set<MessageLimits> messageLimits, Set<ContactPolicyBlackout> blackoutList)
   {
     this.touchPointID = touchPointID;
     this.touchPointName = touchPointName;
@@ -119,7 +119,7 @@ public class ContactPolicyTouchPoint
     struct.put("touchPointID", contactPolicy.getTouchPointID());
     struct.put("touchPointName", contactPolicy.getTouchPointName());
     struct.put("timeWindows", TimeWindow.pack(contactPolicy.getTimeWindows()));
-    struct.put("messageLimits", MessageLimits.pack(contactPolicy.getMessageLimits()));
+    struct.put("messageLimits", packMessageLimits(contactPolicy.getMessageLimits()));
     struct.put("contactPolicyBlackout", packContactPolicyBlackout(contactPolicy.getContactPolicyBlackoutList()));
     return struct;
   }
@@ -136,6 +136,22 @@ public class ContactPolicyTouchPoint
     for (ContactPolicyBlackout blackout : blackoutPolicy)
       {
         result.add(ContactPolicyBlackout.pack(blackout));
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  packMessageLimits
+  *
+  ****************************************/
+
+  private static List<Object> packMessageLimits(Set<MessageLimits> messageLimits)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (MessageLimits limit : messageLimits)
+      {
+        result.add(MessageLimits.pack(limit));
       }
     return result;
   }
@@ -164,7 +180,7 @@ public class ContactPolicyTouchPoint
     String touchPointID = valueStruct.getString("touchPointID");
     String touchPointName = valueStruct.getString("touchPointName");
     TimeWindow timeWindows = TimeWindow.unpack(new SchemaAndValue(schema.field("timeWindows").schema(), valueStruct.get("timeWindows")));
-    MessageLimits mesageLimits = MessageLimits.unpack(new SchemaAndValue(schema.field("messageLimits").schema(), valueStruct.get("messageLimits")));
+    Set<MessageLimits> mesageLimits = unpackMessageLimits(schema.field("messageLimits").schema(), valueStruct.get("messageLimits"));
     Set<ContactPolicyBlackout> blackoutList = unpackContactPolicyBlackout(schema.field("contactPolicyBlackout").schema(), valueStruct.get("contactPolicyBlackout"));
     
     //
@@ -205,6 +221,38 @@ public class ContactPolicyTouchPoint
 
     return result;
   }
+  
+  /*****************************************
+  *
+  *  unpackMessageLimits
+  *
+  *****************************************/
+
+  private static Set<MessageLimits> unpackMessageLimits(Schema schema, Object value)
+  {
+    //
+    //  get schema for MessageLimits
+    //
+
+    Schema messageLimitSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Set<MessageLimits> result = new HashSet<MessageLimits>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object limit : valueArray)
+      {
+        result.add(MessageLimits.unpack(new SchemaAndValue(messageLimitSchema, limit)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
 
   /*****************************************
   *
@@ -218,7 +266,7 @@ public class ContactPolicyTouchPoint
     this.touchPointID = JSONUtilities.decodeString(jsonRoot, "touchPointID", true);
     this.touchPointName = JSONUtilities.decodeString(jsonRoot, "touchPointName", true);
     this.timeWindows = new TimeWindow((JSONObject)(JSONUtilities.decodeJSONObject(jsonRoot, "timeWindows", false)));
-    this.messageLimits = new MessageLimits((JSONObject)(JSONUtilities.decodeJSONObject(jsonRoot, "messageLimits", false)));
+    this.messageLimits = decodeMessageLimits(JSONUtilities.decodeJSONArray(jsonRoot, "messageLimits", false));
     this.blackoutList = decodeContactPolicyBlackout(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyBlackout", false));
   }
   
@@ -236,6 +284,25 @@ public class ContactPolicyTouchPoint
         for (int i=0; i<jsonArray.size(); i++)
           {
             result.add(new ContactPolicyBlackout((JSONObject) jsonArray.get(i)));
+          }
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  decodeMessageLimits
+  *
+  *****************************************/
+
+  private Set<MessageLimits> decodeMessageLimits(JSONArray jsonArray) throws GUIManagerException
+  {
+    Set<MessageLimits> result = new HashSet<MessageLimits>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            result.add(new MessageLimits((JSONObject) jsonArray.get(i)));
           }
       }
     return result;

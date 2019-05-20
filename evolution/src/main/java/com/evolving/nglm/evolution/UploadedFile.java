@@ -205,8 +205,10 @@ public class UploadedFile extends GUIManagedObject
   
   public void validate() throws GUIManagerException 
   {
-    AlternateID alternateID = Deployment.getAlternateIDs().get(this.customerAlternateID);
-    if (alternateID == null) throw new GUIManagerException("unknown alternateid ", this.customerAlternateID);
+    if(this.customerAlternateID != null) {
+      AlternateID alternateID = Deployment.getAlternateIDs().get(this.customerAlternateID);
+      if (alternateID == null) throw new GUIManagerException("unknown alternateid ", this.customerAlternateID);
+    }
   }
   
 }

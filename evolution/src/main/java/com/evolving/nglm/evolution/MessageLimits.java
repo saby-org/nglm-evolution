@@ -29,10 +29,9 @@ public class MessageLimits
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("message_limits");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("maxMessagesPerDay", Schema.INT32_SCHEMA);
-    schemaBuilder.field("maxMessagesPerWeek", Schema.INT32_SCHEMA);
-    schemaBuilder.field("maxMessagesBiWeekly", Schema.INT32_SCHEMA);
-    schemaBuilder.field("maxMessagesPerMonth", Schema.INT32_SCHEMA);
+    schemaBuilder.field("maxMessages", Schema.INT32_SCHEMA);
+    schemaBuilder.field("duration", Schema.INT32_SCHEMA);
+    schemaBuilder.field("timeUnit", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -55,10 +54,9 @@ public class MessageLimits
   *
   *****************************************/
   
-  private Integer maxMessagesPerDay;
-  private Integer maxMessagesPerWeek;
-  private Integer maxMessagesBiWeekly;
-  private Integer maxMessagesPerMonth;
+  private Integer maxMessages;
+  private Integer duration;
+  private String timeUnit;
   
   /*****************************************
   *
@@ -66,10 +64,9 @@ public class MessageLimits
   *
   *****************************************/
   
-  public Integer getMaxMessagesPerDay() { return maxMessagesPerDay; }
-  public Integer getMaxMessagesPerWeek() { return maxMessagesPerWeek; }
-  public Integer getMaxMessagesBiWeekly() { return maxMessagesBiWeekly; }
-  public Integer getMaxMessagesPerMonth() { return maxMessagesPerMonth; }
+  public Integer getMaxMessages() { return maxMessages; }
+  public Integer getDuration() { return duration; }
+  public String getTimeUnit() { return timeUnit; }
   
 
   /*****************************************
@@ -78,12 +75,11 @@ public class MessageLimits
   *
   *****************************************/
 
-  public MessageLimits(Integer maxMessagesPerDay, Integer maxMessagesPerWeek, Integer maxMessagesBiWeekly, Integer maxMessagesPerMonth)
+  public MessageLimits(Integer maxMessages, Integer duration, String timeUnit)
   {
-    this.maxMessagesPerDay = maxMessagesPerDay;
-    this.maxMessagesPerWeek = maxMessagesPerWeek;
-    this.maxMessagesBiWeekly = maxMessagesBiWeekly;
-    this.maxMessagesPerMonth = maxMessagesPerMonth;
+    this.maxMessages = maxMessages;
+    this.duration = duration;
+    this.timeUnit = timeUnit;
   }
   
   /*****************************************
@@ -96,10 +92,9 @@ public class MessageLimits
   {
     MessageLimits messageLimit = (MessageLimits) value;
     Struct struct = new Struct(schema);
-    struct.put("maxMessagesPerDay", messageLimit.getMaxMessagesPerDay());
-    struct.put("maxMessagesPerWeek", messageLimit.getMaxMessagesPerWeek());
-    struct.put("maxMessagesBiWeekly", messageLimit.getMaxMessagesBiWeekly());
-    struct.put("maxMessagesPerMonth", messageLimit.getMaxMessagesPerMonth());
+    struct.put("maxMessages", messageLimit.getMaxMessages());
+    struct.put("duration", messageLimit.getDuration());
+    struct.put("timeUnit", messageLimit.getTimeUnit());
     return struct;
   }
   
@@ -124,16 +119,15 @@ public class MessageLimits
     //
 
     Struct valueStruct = (Struct) value;
-    Integer maxMessagesPerDay = valueStruct.getInt32("maxMessagesPerDay");
-    Integer maxMessagesPerWeek = valueStruct.getInt32("maxMessagesPerWeek");
-    Integer maxMessagesBiWeekly = valueStruct.getInt32("maxMessagesBiWeekly");
-    Integer maxMessagesPerMonth = valueStruct.getInt32("maxMessagesPerMonth");
+    Integer maxMessages = valueStruct.getInt32("maxMessages");
+    Integer duration = valueStruct.getInt32("duration");
+    String timeUnit = valueStruct.getString("timeUnit");
 
     //
     //  return
     //
 
-    return new MessageLimits(maxMessagesPerDay, maxMessagesPerWeek, maxMessagesBiWeekly, maxMessagesPerMonth);
+    return new MessageLimits(maxMessages, duration, timeUnit);
   }
   
   /*****************************************
@@ -151,9 +145,8 @@ public class MessageLimits
     *
     *****************************************/
     
-    this.maxMessagesPerDay = JSONUtilities.decodeInteger(jsonRoot, "maxMessagesPerDay", true);
-    this.maxMessagesPerWeek = JSONUtilities.decodeInteger(jsonRoot, "maxMessagesPerWeek", true);
-    this.maxMessagesBiWeekly = JSONUtilities.decodeInteger(jsonRoot, "maxMessagesBiWeekly", true);
-    this.maxMessagesPerMonth = JSONUtilities.decodeInteger(jsonRoot, "maxMessagesPerMonth", true);
+    this.maxMessages = JSONUtilities.decodeInteger(jsonRoot, "maxMessages", true);
+    this.duration = JSONUtilities.decodeInteger(jsonRoot, "duration", true);
+    this.timeUnit = JSONUtilities.decodeString(jsonRoot, "timeUnit", true);
   }
 }
