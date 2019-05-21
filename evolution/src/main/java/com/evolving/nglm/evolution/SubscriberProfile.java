@@ -489,6 +489,30 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   }
 
   //
+  //  getAggregateIfZeroPrevious90Days
+  //
+
+  protected Long getAggregateIfZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return metricHistory.aggregateIf(startDay, endDay, MetricHistory.Criteria.IsZero, criteriaMetricHistory);
+  }
+
+  //
+  //  getAggregateIfNonZeroPrevious90Days
+  //
+
+  protected Long getAggregateIfNonZeroPrevious90Days(MetricHistory metricHistory, MetricHistory criteriaMetricHistory, Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return metricHistory.aggregateIf(startDay, endDay, MetricHistory.Criteria.IsNonZero, criteriaMetricHistory);
+  }
+
+  //
   //  getThreeMonthAverage
   //
 

@@ -1179,7 +1179,7 @@ public class Deployment
 
     try
       {
-        JSONArray supportedTokenCodesFormatsValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTokenCodesFormats", true);
+        JSONArray supportedTokenCodesFormatsValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedTokenCodesFormats", new JSONArray());
         for (int i=0; i<supportedTokenCodesFormatsValues.size(); i++)
           {
             JSONObject supportedTokenCodesFormatJSON = (JSONObject) supportedTokenCodesFormatsValues.get(i);
@@ -1217,7 +1217,7 @@ public class Deployment
 
     try
       {
-        JSONArray touchPointValues = JSONUtilities.decodeJSONArray(jsonRoot, "touchPoints", true);
+        JSONArray touchPointValues = JSONUtilities.decodeJSONArray(jsonRoot, "touchPoints", new JSONArray());
         for (int i=0; i<touchPointValues.size(); i++)
           {
             JSONObject touchPointJSON = (JSONObject) touchPointValues.get(i);

@@ -111,6 +111,12 @@ public class MetricHistory
     public static MetricHistoryMode fromInternalRepresentation(int internalRepresentation) { for (MetricHistoryMode enumeratedValue : MetricHistoryMode.values()) { if (enumeratedValue.getInternalRepresentation() == internalRepresentation) return enumeratedValue; } return Unknown; }
   }
 
+  //
+  //  Criteria
+  //
+
+  public enum Criteria { IsNonZero, IsZero; }
+
   /****************************************
   *
   *  constants
@@ -236,11 +242,10 @@ public class MetricHistory
     this.monthlyBuckets = allocateBuckets(metricHistoryMode, Math.max(numberOfMonthlyBuckets, MINIMUM_MONTH_BUCKETS));
     this.allTimeBucket = (metricHistoryMode == MetricHistoryMode.Standard) ? 0L : -1L;
     this.baseDay = EPOCH;
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, calendar);
-    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), calendar);
-    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
-    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, calendar);
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
+    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
+    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
+    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
     this.metricHistoryMode = metricHistoryMode;
   }
 
@@ -283,11 +288,10 @@ public class MetricHistory
     this.monthlyBuckets = monthlyBuckets;
     this.allTimeBucket = allTimeBucket;
     this.baseDay = baseDay;
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, calendar);
-    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), calendar);
-    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
-    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, calendar);
+    this.beginningOfBaseMonth = RLMDateUtils.truncate(this.baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
+    this.beginningOfDailyValues = RLMDateUtils.addDays(this.baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
+    this.beginningOfMonthlyValues = RLMDateUtils.addMonths(this.beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
+    this.endOfMonthlyValues = RLMDateUtils.addDays(this.beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
     this.metricHistoryMode = metricHistoryMode;
   }
 
@@ -710,11 +714,10 @@ public class MetricHistory
         dailyBuckets = newDailyBuckets;
         monthlyBuckets = newMonthlyBuckets;
         baseDay = day;
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
-        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, calendar);
-        beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), calendar);
-        beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, calendar);
-        endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, calendar);
+        beginningOfBaseMonth = RLMDateUtils.truncate(baseDay, Calendar.MONTH, Deployment.getBaseTimeZone());
+        beginningOfDailyValues = RLMDateUtils.addDays(baseDay, -1*(dailyBuckets.length-1), Deployment.getBaseTimeZone());
+        beginningOfMonthlyValues = RLMDateUtils.addMonths(beginningOfBaseMonth, -1*monthlyBuckets.length, Deployment.getBaseTimeZone());
+        endOfMonthlyValues = RLMDateUtils.addDays(beginningOfBaseMonth, -1, Deployment.getBaseTimeZone());
       }
     
     /****************************************
@@ -1288,7 +1291,6 @@ public class MetricHistory
         
     int bucketIndex = 0;
     Date bucketDay = beginningOfDailyValues;
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     while (bucketDay.compareTo(endDay) <= 0)
       {
         if (bucketDay.compareTo(startDay) >= 0)
@@ -1309,7 +1311,7 @@ public class MetricHistory
               }
           }
         bucketIndex += 1;
-        bucketDay = RLMDateUtils.addDays(bucketDay, 1, calendar);
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getBaseTimeZone());
       }
     return result;
   }
@@ -1351,7 +1353,6 @@ public class MetricHistory
         
     int bucketIndex = 0;
     Date bucketMonth = beginningOfMonthlyValues;
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
     while (bucketMonth.before(endDay))
       {
         if (bucketMonth.compareTo(startDay) >= 0)
@@ -1372,14 +1373,149 @@ public class MetricHistory
               }
           }
         bucketIndex += 1;
-        bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, calendar);
+        bucketMonth = RLMDateUtils.addMonths(bucketMonth, 1, Deployment.getBaseTimeZone());
       }
     return result;
   }
 
   /****************************************
   *
-  *  resize
+  *  aggregateIf
+  *
+  ****************************************/
+
+  public synchronized Long aggregateIf(Date startDay, Date endDay, Criteria criteria, MetricHistory criteriaMetricHistory) throws IllegalArgumentException
+  {
+    /****************************************
+    *
+    *  validate input
+    *
+    ****************************************/
+
+    //
+    //  startDay
+    //
+
+    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+      {
+        throw new IllegalArgumentException("startDay must be on a day boundary");
+      }
+
+    //
+    //  endDay
+    //
+    
+    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+      {
+        throw new IllegalArgumentException("endDay must be on a day boundary");
+      }
+
+    //
+    //  startDay on/before endDay
+    //
+
+    if (startDay.after(endDay))
+      {
+        throw new IllegalArgumentException("startDay after endDay");
+      }
+
+    //
+    //  criteriaMetricHistory uses Standard mode
+    //
+
+    if (criteriaMetricHistory.getMetricHistoryMode() != MetricHistoryMode.Standard)
+      {
+        throw new IllegalArgumentException("criteria metric history mode must be standard");
+      }
+    
+    /*****************************************
+    *
+    *  initialize result
+    *
+    *****************************************/
+    
+    long result;
+    switch (metricHistoryMode)
+      {
+        case Standard:
+          result = 0L;
+          break;
+
+        case Max:
+          result = Long.MIN_VALUE;
+          break;
+
+        case Min:
+          result = Long.MAX_VALUE;
+          break;
+
+        default:
+          throw new RuntimeException();
+      }
+
+    /*****************************************
+    *
+    *  aggregate result
+    *
+    *****************************************/
+    
+    Date bucketDay = startDay;
+    while (bucketDay.compareTo(endDay) <= 0)
+      {
+        //
+        //  criteria passes on provided day?
+        //
+        
+        boolean passesCriteria = false;
+        switch (criteria)
+          {
+            case IsZero:
+              passesCriteria = criteriaMetricHistory.getValue(bucketDay, bucketDay) == 0;
+              break;
+              
+            case IsNonZero:
+              passesCriteria = criteriaMetricHistory.getValue(bucketDay, bucketDay) > 0;
+              break;
+          }
+        
+        //
+        //  aggregate (if necessary)
+        //
+        
+        if (passesCriteria)
+          {
+            switch (metricHistoryMode)
+              {
+                case Standard:
+                  result += getValue(bucketDay, bucketDay);
+                  break;
+
+                case Max:
+                  Long valueMax = getValue(bucketDay, bucketDay);
+                  result = (valueMax >= 0L) ? Math.max(valueMax, result) : result;
+                  break;
+
+                case Min:
+                  Long valueMin = getValue(bucketDay, bucketDay);
+                  result = (valueMin >= 0L) ? Math.min(valueMin, result) : result;
+                  break;
+              }
+          }
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getBaseTimeZone());
+      }
+    
+    /*****************************************
+    *
+    *  return result
+    *
+    *****************************************/
+    
+    return result;
+  }
+
+  /****************************************
+  *
+  *  Resize
   *
   ****************************************/
 
@@ -1413,5 +1549,30 @@ public class MetricHistory
         newMonthlyBuckets[numberOfMonthlyBuckets-i-1] = monthlyBuckets[monthlyBuckets.length-i-1];
       }
     monthlyBuckets = newMonthlyBuckets;
+  }
+  
+  /****************************************
+  *
+  *  toString
+  *
+  ****************************************/
+
+  public String toString()
+  {
+    StringBuilder builder = new StringBuilder();
+    builder.append("{ baseDay=" + baseDay + ", mode=" + metricHistoryMode + ", dailyBuckets=[");
+    for (int i = 0; i < dailyBuckets.length; i++)
+      {
+        if (i > 0) builder.append(",");
+        builder.append(dailyBuckets[i]);
+      }
+    builder.append("], monthlyBuckets=[");
+    for (int i = 0; i < monthlyBuckets.length; i++)
+      {
+        if (i > 0) builder.append(",");
+        builder.append(monthlyBuckets[i]);
+      }
+    builder.append("], allTime=" + allTimeBucket + " }");
+    return builder.toString();
   }
 }
