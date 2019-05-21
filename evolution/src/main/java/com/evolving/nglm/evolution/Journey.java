@@ -54,7 +54,9 @@ public class Journey extends GUIManagedObject
   {
     NotValid("Not Valid"),
     Pending("Pending"),
-    Active("Active"),
+    Started("Started"),
+    Running("Running"),
+    Suspended("Suspended"),
     Complete("Complete"),
     Unknown("(unknown)");
     private String externalRepresentation;

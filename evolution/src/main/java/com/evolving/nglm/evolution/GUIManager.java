@@ -409,6 +409,12 @@ public class GUIManager
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
 
+  //
+  //  context
+  //
+
+  private GUIManagerContext guiManagerContext;
+
   /*****************************************
   *
   *  epochServer
@@ -499,7 +505,7 @@ public class GUIManager
 
     try
       {
-        guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",String.class,Date.class,boolean.class) : null;
+        guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",GUIManagerContext.class,String.class,Date.class,boolean.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -553,7 +559,7 @@ public class GUIManager
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
-    
+
     /*****************************************
     *
     *  Elasticsearch -- client
@@ -1342,6 +1348,14 @@ public class GUIManager
       {
         throw new ServerRuntimeException("could not initialize REST server", e);
       }
+
+    /*****************************************
+    *
+    *  context
+    *
+    *****************************************/
+
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, mailTemplateService, smsTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadFileService, targetService);
 
     /*****************************************
     *
@@ -2889,7 +2903,7 @@ public class GUIManager
    *
    *****************************************/
 
-  private JSONObject processPutTarget (String userID, JSONObject jsonRoot)
+  private JSONObject processPutTarget(String userID, JSONObject jsonRoot)
   {
     /****************************************
      *
@@ -5131,7 +5145,7 @@ public class GUIManager
             {
               try
                 {
-                  result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, reference, now, includeDynamic));
+                  result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
                 }
               catch (IllegalAccessException|InvocationTargetException e)
                 {
@@ -15194,6 +15208,120 @@ public class GUIManager
           break;
       }
     return featureName;
+  }
+
+  /*****************************************
+  *
+  *  class GUIManagerContext
+  *
+  *****************************************/
+
+  public static class GUIManagerContext
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private JourneyService journeyService;
+    private SegmentationDimensionService segmentationDimensionService;
+    private PointService pointService;
+    private OfferService offerService;
+    private ReportService reportService;
+    private PaymentMeanService paymentMeanService;
+    private ScoringStrategyService scoringStrategyService;
+    private PresentationStrategyService presentationStrategyService;
+    private CallingChannelService callingChannelService;
+    private SalesChannelService salesChannelService;
+    private SupplierService supplierService;
+    private ProductService productService;
+    private CatalogCharacteristicService catalogCharacteristicService;
+    private ContactPolicyService contactPolicyService;
+    private JourneyObjectiveService journeyObjectiveService;
+    private OfferObjectiveService offerObjectiveService;
+    private ProductTypeService productTypeService;
+    private UCGRuleService ucgRuleService;
+    private DeliverableService deliverableService;
+    private TokenTypeService tokenTypeService;
+    private MailTemplateService mailTemplateService;
+    private SMSTemplateService smsTemplateService;
+    private SubscriberProfileService subscriberProfileService;
+    private SubscriberIDService subscriberIDService;
+    private DeliverableSourceService deliverableSourceService;
+    private UploadedFileService uploadFileService;
+    private TargetService targetService;
+
+    /*****************************************
+    *
+    *  accessors
+    *
+    *****************************************/
+
+    public JourneyService getJourneyService() { return journeyService; }
+    public SegmentationDimensionService getSegmentationDimensionService() { return segmentationDimensionService; }
+    public PointService getPointService() { return pointService; }
+    public OfferService getOfferService() { return offerService; }
+    public ReportService getReportService() { return reportService; }
+    public PaymentMeanService getPaymentMeanService() { return paymentMeanService; }
+    public ScoringStrategyService getScoringStrategyService() { return scoringStrategyService; }
+    public PresentationStrategyService getPresentationStrategyService() { return presentationStrategyService; }
+    public CallingChannelService getCallingChannelService() { return callingChannelService; }
+    public SalesChannelService getSalesChannelService() { return salesChannelService; }
+    public SupplierService getSupplierService() { return supplierService; }
+    public ProductService getProductService() { return productService; }
+    public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
+    public ContactPolicyService getContactPolicyService() { return contactPolicyService; }
+    public JourneyObjectiveService getJourneyObjectiveService() { return journeyObjectiveService; }
+    public OfferObjectiveService getOfferObjectiveService() { return offerObjectiveService; }
+    public ProductTypeService getProductTypeService() { return productTypeService; }
+    public UCGRuleService getUcgRuleService() { return ucgRuleService; }
+    public DeliverableService getDeliverableService() { return deliverableService; }
+    public TokenTypeService getTokenTypeService() { return tokenTypeService; }
+    public MailTemplateService getMailTemplateService() { return mailTemplateService; }
+    public SMSTemplateService getSmsTemplateService() { return smsTemplateService; }
+    public SubscriberProfileService getSubscriberProfileService() { return subscriberProfileService; }
+    public SubscriberIDService getSubscriberIDService() { return subscriberIDService; }
+    public DeliverableSourceService getDeliverableSourceService() { return deliverableSourceService; }
+    public UploadedFileService getUploadFileService() { return uploadFileService; }
+    public TargetService getTargetService() { return targetService; }
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadFileService, TargetService targetService)
+    {
+      this.journeyService = journeyService;
+      this.segmentationDimensionService = segmentationDimensionService;
+      this.pointService = pointService;
+      this.offerService = offerService;
+      this.reportService = reportService;
+      this.paymentMeanService = paymentMeanService;
+      this.scoringStrategyService = scoringStrategyService;
+      this.presentationStrategyService = presentationStrategyService;
+      this.callingChannelService = callingChannelService;
+      this.salesChannelService = salesChannelService;
+      this.supplierService = supplierService;
+      this.productService = productService;
+      this.catalogCharacteristicService = catalogCharacteristicService;
+      this.contactPolicyService = contactPolicyService;
+      this.journeyObjectiveService = journeyObjectiveService;
+      this.offerObjectiveService = offerObjectiveService;
+      this.productTypeService = productTypeService;
+      this.ucgRuleService = ucgRuleService;
+      this.deliverableService = deliverableService;
+      this.tokenTypeService = tokenTypeService;
+      this.mailTemplateService = mailTemplateService;
+      this.smsTemplateService = smsTemplateService;
+      this.subscriberProfileService = subscriberProfileService;
+      this.subscriberIDService = subscriberIDService;
+      this.deliverableSourceService = deliverableSourceService;
+      this.uploadFileService = uploadFileService;
+      this.targetService = targetService;
+    }
   }
 
   /*****************************************
