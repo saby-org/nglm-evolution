@@ -28,6 +28,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
@@ -163,9 +164,10 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
+    schemaBuilder.field("originatingRequest", SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -221,6 +223,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
   private String deliveryRequestID;
   private String deliveryRequestSource;
+  private boolean originatingRequest;
   private String subscriberID;
   private String eventID;
   private String moduleID;
@@ -243,6 +246,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
   public String getDeliveryRequestID() { return deliveryRequestID; }
   public String getDeliveryRequestSource() { return deliveryRequestSource; }
+  public boolean getOriginatingRequest() { return originatingRequest; }
   public String getSubscriberID() { return subscriberID; }
   public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
@@ -304,6 +308,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = context.getUniqueKey();
     this.deliveryRequestSource = deliveryRequestSource;
+    this.originatingRequest = true;
     this.subscriberID = context.getSubscriberState().getSubscriberID();
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
@@ -329,6 +334,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   {
     this.deliveryRequestID = deliveryRequest.getDeliveryRequestID();
     this.deliveryRequestSource = deliveryRequest.getDeliveryRequestSource();
+    this.originatingRequest = deliveryRequest.getOriginatingRequest();
     this.subscriberID = deliveryRequest.getSubscriberID();
     this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
@@ -360,6 +366,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
+    this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
@@ -375,17 +382,6 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
   }
 
-//private HashMap<String, Object> decodeDiplomaticBriefcase(JSONObject jsonRoot){
-//HashMap<String, Object> result = new HashMap<String, Object>();
-//for (Object keyObject : jsonRoot.keySet())
-//  {
-//    String key = (String)keyObject;
-//    Object value = (String)jsonRoot.get(key);
-//    result.put(key, value);
-//  }
-//return result;
-//}
-
   /*****************************************
   *
   *  packCommon
@@ -396,6 +392,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   {
     struct.put("deliveryRequestID", deliveryRequest.getDeliveryRequestID());
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
+    struct.put("originatingRequest", deliveryRequest.getOriginatingRequest());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
@@ -434,6 +431,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     Struct valueStruct = (Struct) value;
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
+    boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
     String subscriberID = valueStruct.getString("subscriberID");
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
@@ -454,6 +452,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = deliveryRequestID;
     this.deliveryRequestSource = deliveryRequestSource;
+    this.originatingRequest = originatingRequest;
     this.subscriberID = subscriberID;
     this.eventID = eventID;
     this.moduleID = moduleID;
@@ -469,40 +468,19 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.diplomaticBriefcase = diplomaticBriefcase;
   }
 
-//  /*****************************************
-//  *
-//  *  toJSONObject
-//  *
-//  *****************************************/
-//  
-//  public JSONObject getJSONRepresentation(){
-//    Map<String, Object> data = new HashMap<String, Object>();
-//    
-//    //DeliveryRequest fields
-//    data.put("deliveryRequestID", this.getDeliveryRequestID());
-//    data.put("deliveryRequestSource", this.getDeliveryRequestSource());
-//    data.put("subscriberID", this.getSubscriberID());
-//    data.put("deliveryPartition", this.getDeliveryPartition());
-//    data.put("retries", this.getRetries());
-//    data.put("timeout", this.getTimeout());
-//    data.put("correlator", this.getCorrelator());
-//    data.put("control", this.getControl());
-//    data.put("deliveryType", this.getDeliveryType());
-//    data.put("deliveryStatus", this.getDeliveryStatus().toString());
-//    data.put("deliveryDate", this.getDeliveryDate());
-//    data.put("diplomaticBriefcase", this.getDiplomaticBriefcase());
-//    
-//    return JSONUtilities.encodeObject(data);
-//  }
-  
   /****************************************
   *
   *  presentation utilities
   *
   ****************************************/
   
+  //
+  //  getGUIPresentationMap
+  //
+
   public Map<String, Object> getGUIPresentationMap(SalesChannelService salesChannelService)
   {
+    if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
     guiPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
     guiPresentationMap.put(EVENTID, getEventID());
@@ -513,8 +491,13 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     return guiPresentationMap;
   }
   
+  //
+  //  getThirdPartyPresentationMap
+  //
+
   public Map<String, Object> getThirdPartyPresentationMap(SalesChannelService salesChannelService)
   {
+    if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
     thirdPartyPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTID, getEventID());
@@ -554,6 +537,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     StringBuilder b = new StringBuilder();
     b.append(deliveryRequestID);
     b.append("," + deliveryRequestSource);
+    b.append("," + originatingRequest);
     b.append("," + subscriberID);
     b.append("," + eventID);
     b.append("," + moduleID);

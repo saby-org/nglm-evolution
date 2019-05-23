@@ -491,6 +491,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       
       data.put("deliveryRequestID", this.getDeliveryRequestID());
       data.put("deliveryRequestSource", this.getDeliveryRequestSource());
+      data.put("originatingRequest", this.getOriginatingRequest());
       data.put("deliveryType", this.getDeliveryType());
 
       data.put("correlator", this.getCorrelator());
@@ -689,7 +690,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   *
   *****************************************/
 
-  public static void sendCommodityDeliveryRequest(JSONObject briefcase, String applicationID, String deliveryRequestID, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount){
+  public static void sendCommodityDeliveryRequest(JSONObject briefcase, String applicationID, String deliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryOperation operation, long amount){
 
     log.info("CommodityDeliveryManager.sendCommodityDeliveryRequest(..., "+subscriberID+", "+providerID+", "+commodityID+", "+operation+", "+amount+", ...) : method called ...");
 
@@ -702,6 +703,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     HashMap<String,Object> requestData = new HashMap<String,Object>();
 
     requestData.put("deliveryRequestID", deliveryRequestID);
+    requestData.put("originatingRequest", originatingRequest);
     requestData.put("deliveryType", "commodityDelivery");
 
     requestData.put("eventID", eventID);
@@ -1146,6 +1148,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       HashMap<String,Object> inRequestData = new HashMap<String,Object>();
       
       inRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      inRequestData.put("originatingRequest", false);
       inRequestData.put("deliveryType", deliveryType);
 
       inRequestData.put("eventID", commodityDeliveryRequest.getEventID());
@@ -1180,6 +1183,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       HashMap<String,Object> pointRequestData = new HashMap<String,Object>();
       
       pointRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      pointRequestData.put("originatingRequest", false);
       pointRequestData.put("deliveryType", deliveryType);
 
       pointRequestData.put("eventID", commodityDeliveryRequest.getEventID());
