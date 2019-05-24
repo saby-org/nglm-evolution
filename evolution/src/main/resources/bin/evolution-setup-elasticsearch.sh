@@ -46,7 +46,7 @@
                   "evolutionSubscriberStatusChangeDate" : { "type" : "date" },
                   "universalControlGroup" : { "type" : "boolean" },
                   "language" : { "type" : "keyword" },
-                  "subscriberGroups" : { "type" : "keyword" }
+                  "segments" : { "type" : "keyword" }
                 }
             }
         }

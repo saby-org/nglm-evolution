@@ -193,7 +193,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
     this.hasDefaultSegment = JSONUtilities.decodeBoolean(jsonRoot, "hasDefaultSegment", Boolean.FALSE);
     this.isSimpleProfileDimension = JSONUtilities.decodeBoolean(jsonRoot, "isSimpleProfileDimension", Boolean.FALSE);
-    this.subscriberGroupEpoch = new SubscriberGroupEpoch(this);
+    this.subscriberGroupEpoch = new SubscriberGroupEpoch(this.getSegmentationDimensionID());
   }
 
   /*****************************************
@@ -216,7 +216,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
 
   public void updateSubscriberGroupEpoch()
   {
-    this.subscriberGroupEpoch = new SubscriberGroupEpoch(this, this.subscriberGroupEpoch);
+    this.subscriberGroupEpoch = new SubscriberGroupEpoch(this.subscriberGroupEpoch);
   }
 
   /*****************************************

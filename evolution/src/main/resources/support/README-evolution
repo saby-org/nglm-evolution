@@ -283,10 +283,10 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_
 
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE_IMPORT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 cp $DEPLOY_ROOT/support/subscribergroup-* <_NGLM_SUBSCRIBERGROUP_DATA_>
-$DEPLOY_ROOT/bin/update-subscribergroup.sh new churnRisk subscribergroup-churnrisk.001
-$DEPLOY_ROOT/bin/update-subscribergroup.sh add churnRisk subscribergroup-churnrisk.002
-$DEPLOY_ROOT/bin/update-subscribergroup.sh remove churnRisk subscribergroup-churnrisk.002
-$DEPLOY_ROOT/bin/update-subscribergroup.sh delete churnRisk
+$DEPLOY_ROOT/bin/update-subscribergroup.sh new segmentationDimension churnRisk subscribergroup-churnrisk.001
+$DEPLOY_ROOT/bin/update-subscribergroup.sh add segmentationDimension churnRisk subscribergroup-churnrisk.002
+$DEPLOY_ROOT/bin/update-subscribergroup.sh remove segmentationDimension churnRisk subscribergroup-churnrisk.002
+$DEPLOY_ROOT/bin/update-subscribergroup.sh delete segmentationDimension churnRisk
 
 --
 --  service example programs

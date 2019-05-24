@@ -6178,19 +6178,19 @@ public class GUIManager
         //  open zookeeper and lock dimension
         //
 
-        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockSegmentationDimension(segmentationDimension);
+        ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getSegmentationDimensionID());
 
         //
         //  create or ensure subscriberGroupEpoch exists
         //
 
-        SubscriberGroupEpoch existingSubscriberGroupEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension);
+        SubscriberGroupEpoch existingSubscriberGroupEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID());
 
         //
         //  submit new subscriberGroupEpoch
         //
 
-        SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, segmentationDimension, existingSubscriberGroupEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
+        SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID(), existingSubscriberGroupEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
 
         //
         //  update segmentationDimension
@@ -6202,7 +6202,7 @@ public class GUIManager
         //  close zookeeper and release dimension
         //
 
-        SubscriberGroupEpochService.closeZooKeeperAndReleaseSegmentationDimension(zookeeper, segmentationDimension);
+        SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
 
         /*****************************************
         *

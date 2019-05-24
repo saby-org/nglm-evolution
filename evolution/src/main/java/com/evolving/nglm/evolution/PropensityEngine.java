@@ -404,7 +404,7 @@ public class PropensityEngine
       {
         if (subscriberState != null)
           {
-            for (String segment : subscriberState.getSubscriberProfile().getSubscriberGroups(subscriberGroupEpochReader))
+            for (String segment : subscriberState.getSubscriberProfile().getSegments(subscriberGroupEpochReader))
               {
                 if (propensityEvent instanceof AcceptanceLog)
                   {

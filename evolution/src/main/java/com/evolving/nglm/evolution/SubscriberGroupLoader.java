@@ -12,6 +12,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -28,6 +29,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +90,6 @@ public class SubscriberGroupLoader
   *****************************************/
 
   private static SubscriberIDService subscriberIDService;
-  private static SegmentationDimensionService segmentationDimensionService;
   private static UniqueKeyServer uniqueKeyServer = new UniqueKeyServer();
   
   /*****************************************
@@ -119,8 +120,25 @@ public class SubscriberGroupLoader
     String inputDirectoryName = "/app/data";
     String consumerGroupID = args[1];
     String loadTypeArgument = args[2];
-    String dimensionName = args[3];
+    SubscriberGroupType subscriberGroupType = SubscriberGroupType.fromExternalRepresentation(args[3]);
+    String groupName = args[4];
     LoadType loadType = LoadType.fromExternalRepresentation(loadTypeArgument);
+
+    //
+    //  grouptype is valid
+    //
+
+    switch (subscriberGroupType)
+      {
+        case SegmentationDimension:
+        case Target:
+          break;
+
+        default:
+          log.error("unknown subscriber group type {}; must be one of {}, {}", args[3], SubscriberGroupType.SegmentationDimension.getExternalRepresentation(), SubscriberGroupType.Target.getExternalRepresentation());
+          System.exit(-1);
+      }
+        
 
     //
     //  setting fileName is dependent on loadType
@@ -134,12 +152,12 @@ public class SubscriberGroupLoader
         case New:
         case Add:
         case Remove:
-          if (args.length < 5)
+          if (args.length < 6)
             {
-              log.error("usage: SubscriberGroupLoader <new|delete|add|remove> <dimensionName> (<file>)");
+              log.error("usage: SubscriberGroupLoader <new|delete|add|remove> <segmentationDimension|target> <groupName> (<file>)");
               System.exit(-1);
             }
-          fileName = args[4];
+          fileName = args[5];
           break;
           
         case Delete:
@@ -157,7 +175,7 @@ public class SubscriberGroupLoader
     ****************************************/
     
     NGLMRuntime.initialize();
-    log.info("main START: {} {} {} {} {} {} {} {}", numThreadsArgument, subscriberGroupTopic, subscriberGroupAssignSubscriberIDTopic, subscriberGroupEpochTopic, bootstrapServers, consumerGroupID, loadTypeArgument, dimensionName, (fileName != null ? fileName : ""));
+    log.info("main START: {} {} {} {} {} {} {} {}", numThreadsArgument, subscriberGroupTopic, subscriberGroupAssignSubscriberIDTopic, subscriberGroupEpochTopic, bootstrapServers, consumerGroupID, loadTypeArgument, groupName, (fileName != null ? fileName : ""));
     
     /****************************************
     *
@@ -217,37 +235,55 @@ public class SubscriberGroupLoader
     *****************************************/
 
     subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels());
-    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "subscribergrouploader-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getSegmentationDimensionTopic(), false);
 
     /*****************************************
     *
-    *  retrieve dimension
+    *  retrieve dimension/target
     *
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
     SegmentationDimension dimension = null;
-    for (SegmentationDimension candidateDimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+    Target target = null;
+    String primaryID = null;
+    switch (subscriberGroupType)
       {
-        if (Objects.equals(candidateDimension.getSegmentationDimensionName(), dimensionName))
-          {
-            dimension = candidateDimension;
-            break;
-          }
+        case SegmentationDimension:
+          SegmentationDimensionService segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "subscribergrouploader-segmentationdimension-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getSegmentationDimensionTopic(), false);
+          for (SegmentationDimension candidateDimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+            {
+              if (Objects.equals(candidateDimension.getSegmentationDimensionName(), groupName))
+                {
+                  dimension = candidateDimension;
+                  break;
+                }
+            }
+          if (dimension == null)
+            {
+              log.error("dimension {} does not exist", groupName);
+              System.exit(-1);
+            }
+          primaryID = dimension.getSegmentationDimensionID();
+          break;
+
+        case Target:
+          TargetService targetService = new TargetService(bootstrapServers, "subscribergrouploader-target-" + Long.toString(uniqueKeyServer.getKey()), Deployment.getTargetTopic(), false);
+          for (Target candidateTarget : targetService.getActiveTargets(now))
+            {
+              if (Objects.equals(candidateTarget.getTargetName(), groupName))
+                {
+                  target = candidateTarget;
+                  break;
+                }
+            }
+          if (target == null)
+            {
+              log.error("target {} does not exist", groupName);
+              System.exit(-1);
+            }
+          primaryID = target.getTargetID();
+          break;
       }
-    if (dimension == null)
-      {
-        log.error("dimension {} does not exist", dimensionName);
-        System.exit(-1);
-      }
-    
-    /*****************************************
-    *
-    *  dimensionID
-    *
-    *****************************************/
-    
-    String dimensionID = dimension.getSegmentationDimensionID();
     
     /*****************************************
     *
@@ -255,7 +291,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockSegmentationDimension(dimension);
+    ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(primaryID);
     
     /*****************************************
     *
@@ -263,7 +299,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, dimension);
+    SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, primaryID);
 
     /*****************************************
     *
@@ -310,7 +346,7 @@ public class SubscriberGroupLoader
     SubscriberGroupEpoch subscriberGroupEpoch = existingEpoch;
     if (updateEpoch)
       {
-        subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, dimension, existingEpoch, kafkaProducer, subscriberGroupEpochTopic);
+        subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, primaryID, existingEpoch, kafkaProducer, subscriberGroupEpochTopic);
       }
 
     /*****************************************
@@ -329,11 +365,11 @@ public class SubscriberGroupLoader
         *
         *****************************************/
 
-        log.info("updating subscribers in dimension {}", dimensionName);
+        log.info("updating subscribers in group {}", groupName);
         if (useAlternateID)
           log.info("using alternate id {} {}", Deployment.getSubscriberGroupLoaderAlternateID(), (String) (subscriberGroupAssignSubscriberIDTopic != null ? "with autoprovision" : ""));
         else
-          log.info("using insternal subscriber ids");
+          log.info("using internal subscriber ids");
 
         /*****************************************
         *
@@ -342,9 +378,14 @@ public class SubscriberGroupLoader
         *****************************************/
 
         Map<String,String> segmentsByName = new HashMap<String,String>();
-        for (Segment segment : dimension.getSegments())
+        switch (subscriberGroupType)
           {
-            segmentsByName.put(segment.getName(), segment.getID());
+            case SegmentationDimension:
+              for (Segment segment : dimension.getSegments())
+                {
+                  segmentsByName.put(segment.getName(), segment.getID());
+                }
+              break;
           }
         
         /*****************************************
@@ -371,26 +412,33 @@ public class SubscriberGroupLoader
                 //  parse
                 //
 
-                String[] infos = line.split("[|]"); //TODO SCH : make the separator configurable
-                if (infos.length != 2)
+                String subscriberID = null;
+                String segmentName = null;
+                String segmentID = null;
+                switch (subscriberGroupType)
                   {
-                    log.warn("bad line {} - {} tokens - skipping", line, infos.length);
-                    continue;
+                    case SegmentationDimension:
+                      String[] infos = line.split("[|]"); //TODO SCH : make the separator configurable
+                      if (infos.length != 2)
+                        {
+                          log.warn("bad line {} - {} tokens - skipping", line, infos.length);
+                          continue;
+                        }
+                      subscriberID = infos[0].trim();
+                      segmentName = infos[1].trim();
+                      segmentID = (segmentName != null) ? segmentsByName.get(segmentName) : null;
+                      if (segmentID == null) 
+                        {
+                          log.warn("unknown segment {} specified for subscriber {} - skipping", segmentName, subscriberID);
+                          continue;
+                        }
+                      break;
+
+                    case Target:
+                      subscriberID = line.trim();
+                      break;
                   }
-                String subscriberID = infos[0];
-                String segmentName = infos[1];
-
-                //
-                //  normalize
-                //
-
-                String segmentID = (segmentName != null) ? segmentsByName.get(segmentName) : null;
-                if (segmentID == null) 
-                  {
-                    log.warn("unknown segment {} specified for subscriber {} - skipping", segmentName, subscriberID);
-                    continue;
-                  }
-
+                      
                 //
                 //  resolve subscriberID (if necessary)
                 //
@@ -445,7 +493,16 @@ public class SubscriberGroupLoader
                 if (effectiveSubscriberID != null)
                   {
                     String topic = autoProvision ? subscriberGroupAssignSubscriberIDTopic : subscriberGroupTopic;
-                    SubscriberGroup subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, dimensionID, segmentID, subscriberGroupEpoch.getEpoch(), loadType.getAddRecord());
+                    SubscriberGroup subscriberGroup = null;
+                    switch (subscriberGroupType)
+                      {
+                        case SegmentationDimension:
+                          subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, SubscriberGroupType.SegmentationDimension, Arrays.asList(primaryID, segmentID), subscriberGroupEpoch.getEpoch(), loadType.getAddRecord());
+                          break;
+                        case Target:
+                          subscriberGroup = new SubscriberGroup(effectiveSubscriberID, now, SubscriberGroupType.Target, Arrays.asList(primaryID), subscriberGroupEpoch.getEpoch(), loadType.getAddRecord());
+                          break;
+                      }
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, stringKeySerde.serializer().serialize(topic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(topic, subscriberGroup)));
                   }
                 else
@@ -456,7 +513,7 @@ public class SubscriberGroupLoader
           }
       }
     kafkaProducer.flush();
-    log.info("dimension {} with dimensionID {} updated", dimensionName, dimensionID);
+    log.info("group {} with ID {} updated", groupName, primaryID);
     
     /*****************************************
     *
@@ -464,7 +521,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    SubscriberGroupEpochService.closeZooKeeperAndReleaseSegmentationDimension(zookeeper, dimension);
+    SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, primaryID);
     subscriberIDService.close();
   }
 }

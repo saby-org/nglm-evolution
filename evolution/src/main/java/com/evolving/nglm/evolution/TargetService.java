@@ -90,6 +90,7 @@ public class TargetService extends GUIService
   public Collection<GUIManagedObject> getStoredTargets() { return getStoredGUIManagedObjects(); }
   public boolean isActiveTarget(GUIManagedObject targetUnchecked, Date date) { return isActiveGUIManagedObject(targetUnchecked, date); }
   public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
+  public Collection<Target> getActiveTargets(Date date) { return (Collection<Target>) getActiveGUIManagedObjects(date); }
 
   /*****************************************
   *

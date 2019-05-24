@@ -13,6 +13,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -126,9 +127,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
     SchemaBuilder groupIDSchemaBuilder = SchemaBuilder.struct();
     groupIDSchemaBuilder.name("subscribergroup_groupid");
-    groupIDSchemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    groupIDSchemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
-    groupIDSchemaBuilder.field("segmentID", Schema.STRING_SCHEMA);
+    groupIDSchemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    groupIDSchemaBuilder.field("subscriberGroupIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     groupIDSchema = groupIDSchemaBuilder.build();
     
     //
@@ -136,13 +136,13 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatusChangeDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("previousEvolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("subscriberGroups", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_subscribergroups").schema());
+    schemaBuilder.field("segments", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_segments").schema());
     schemaBuilder.field("universalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
@@ -207,7 +207,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private EvolutionSubscriberStatus evolutionSubscriberStatus;
   private Date evolutionSubscriberStatusChangeDate;
   private EvolutionSubscriberStatus previousEvolutionSubscriberStatus;
-  private Map<Pair<String,String>,Integer> subscriberGroups; // Map<Pair<dimensionID,segmentID> epoch>>
+  private Map<Pair<String,String>,Integer> segments; // Map<Pair<dimensionID,segmentID> epoch>>
   private boolean universalControlGroup;
   private String language;
   private SubscriberHistory subscriberHistory;
@@ -223,7 +223,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public EvolutionSubscriberStatus getEvolutionSubscriberStatus() { return evolutionSubscriberStatus; }
   public Date getEvolutionSubscriberStatusChangeDate() { return evolutionSubscriberStatusChangeDate; }
   public EvolutionSubscriberStatus getPreviousEvolutionSubscriberStatus() { return previousEvolutionSubscriberStatus; }
-  public Map<Pair<String, String>, Integer> getSubscriberGroups() { return subscriberGroups; }
+  public Map<Pair<String, String>, Integer> getSegments() { return segments; }
   public boolean getUniversalControlGroup() { return universalControlGroup; }
   public String getLanguage() { return language; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
@@ -264,22 +264,22 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   /****************************************
   *
-  *  accessors - subscriberGroups
+  *  accessors - segments
   *
   ****************************************/
 
   //
-  //  getSubscriberGroups (set of segmentID)
+  //  getSegments (set of segmentID)
   //
 
-  public Set<String> getSubscriberGroups(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Set<String> getSegments(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     Set<String> result = new HashSet<String>();
-    for (Pair<String,String> groupID : subscriberGroups.keySet())
+    for (Pair<String,String> groupID : segments.keySet())
       {
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
-        int epoch = subscriberGroups.get(groupID);
+        int epoch = segments.get(groupID);
         if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
           {
             result.add(segmentID);
@@ -289,17 +289,17 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   }
 
   //
-  //  getSubscriberGroupNames (set of segment name)
+  //  getSegmentNames (set of segment name)
   //
 
-  public Set<String> getSubscriberGroupNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Set<String> getSegmentNames(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     Set<String> result = new HashSet<String>();
-    for (Pair<String,String> groupID : subscriberGroups.keySet())
+    for (Pair<String,String> groupID : segments.keySet())
       {
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
-        int epoch = subscriberGroups.get(groupID);
+        int epoch = segments.get(groupID);
         if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
           {
             result.add(segmentationDimensionService.getSegment(segmentID).getName());
@@ -307,7 +307,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return result;
   }
-  
   
   /****************************************
   *
@@ -332,8 +331,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroupNames(segmentationDimensionService, subscriberGroupEpochReader));
-    generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
+    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(new ArrayList<String>(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader))));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
     
@@ -381,8 +379,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("evolutionSubscriberStatus", (getEvolutionSubscriberStatus() != null) ? getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     generalDetailsPresentation.put("evolutionSubscriberStatusChangeDate", getDateString(getEvolutionSubscriberStatusChangeDate()));
     generalDetailsPresentation.put("previousEvolutionSubscriberStatus", (getPreviousEvolutionSubscriberStatus() != null) ? getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    List<String> subscriberGroups = new ArrayList<String>(getSubscriberGroupNames(segmentationDimensionService, subscriberGroupEpochReader));
-    generalDetailsPresentation.put("subscriberGroups", JSONUtilities.encodeArray(subscriberGroups));
+    generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(new ArrayList<String>(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader))));
     generalDetailsPresentation.put("language", getLanguage());
     
     //
@@ -413,12 +410,12 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   }
   
   //
-  //  getInSubscriberGroup
+  //  getInSegment
   //
   
-  public boolean getInSubscriberGroup(String requestedSegmentID, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public boolean getInSegment(String requestedSegmentID, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    return getSubscriberGroups(subscriberGroupEpochReader).contains(requestedSegmentID);
+    return getSegments(subscriberGroupEpochReader).contains(requestedSegmentID);
   }
 
   /****************************************
@@ -578,19 +575,19 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
 
   //
-  //  setSubscriberGroup
+  //  setSegment
   //
   
-  public void setSubscriberGroup(String dimensionID, String segmentID, int epoch, boolean addSubscriber)
+  public void setSegment(String dimensionID, String segmentID, int epoch, boolean addSubscriber)
   {
     Pair<String,String> groupID = new Pair<String,String>(dimensionID, segmentID);
-    if (subscriberGroups.get(groupID) == null || subscriberGroups.get(groupID).intValue() <= epoch)
+    if (segments.get(groupID) == null || segments.get(groupID).intValue() <= epoch)
       {
         //
         //  unconditionally remove groupID (if present)
         //
 
-        subscriberGroups.remove(groupID);
+        segments.remove(groupID);
 
         //
         //  add (if necessary)
@@ -598,7 +595,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
         if (addSubscriber)
           {
-            subscriberGroups.put(groupID, epoch);
+            segments.put(groupID, epoch);
           }
       }
   }
@@ -616,7 +613,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatus = null;
     this.evolutionSubscriberStatusChangeDate = null;
     this.previousEvolutionSubscriberStatus = null;
-    this.subscriberGroups = new HashMap<Pair<String,String>, Integer>();
+    this.segments = new HashMap<Pair<String,String>, Integer>();
     this.universalControlGroup = false;
     this.language = null;
     this.subscriberHistory = null;
@@ -648,7 +645,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     EvolutionSubscriberStatus evolutionSubscriberStatus = (valueStruct.getString("evolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("evolutionSubscriberStatus")) : null;
     Date evolutionSubscriberStatusChangeDate = (Date) valueStruct.get("evolutionSubscriberStatusChangeDate");
     EvolutionSubscriberStatus previousEvolutionSubscriberStatus = (valueStruct.getString("previousEvolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("previousEvolutionSubscriberStatus")) : null;
-    Map<Pair<String,String>, Integer> subscriberGroups = unpackSubscriberGroups(valueStruct.get("subscriberGroups"));
+    Map<Pair<String,String>, Integer> segments = (schemaVersion >= 2) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
     boolean universalControlGroup = valueStruct.getBoolean("universalControlGroup");
     String language = valueStruct.getString("language");
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
@@ -662,7 +659,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatus = evolutionSubscriberStatus;
     this.evolutionSubscriberStatusChangeDate = evolutionSubscriberStatusChangeDate;
     this.previousEvolutionSubscriberStatus = previousEvolutionSubscriberStatus;
-    this.subscriberGroups = subscriberGroups;
+    this.segments = segments;
     this.universalControlGroup = universalControlGroup; 
     this.language = language;
     this.subscriberHistory = subscriberHistory;
@@ -670,11 +667,11 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   /*****************************************
   *
-  *  unpackSubscriberGroups
+  *  unpackSegments
   *
   *****************************************/
 
-  private static Map<Pair<String,String>, Integer> unpackSubscriberGroups(Object value)
+  private static Map<Pair<String,String>, Integer> unpackSegments(Object value)
   {
     Map<Pair<String,String>, Integer> result = new HashMap<Pair<String,String>, Integer>();
     if (value != null)
@@ -682,7 +679,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         Map<Object, Integer> valueMap = (Map<Object, Integer>) value;
         for (Object packedGroupID : valueMap.keySet())
           {
-            Pair<String,String> groupID = unpackGroupID(packedGroupID);
+            List<String> subscriberGroupIDs = (List<String>) ((Struct) packedGroupID).get("subscriberGroupIDs");
+            Pair<String,String> groupID = new Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
             Integer epoch = valueMap.get(packedGroupID);
             result.put(groupID, epoch);
           }
@@ -692,16 +690,24 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   /*****************************************
   *
-  *  unpackPair
+  *  unpackSegmentsV1
   *
   *****************************************/
 
-  private static Pair<String, String> unpackGroupID(Object value)
+  private static Map<Pair<String,String>, Integer> unpackSegmentsV1(Object value)
   {
-    Struct valueStruct = (Struct) value;
-    String dimensionID = valueStruct.getString("dimensionID");
-    String segmentID = valueStruct.getString("segmentID");
-    return new Pair<String,String>(dimensionID, segmentID);
+    Map<Pair<String,String>, Integer> result = new HashMap<Pair<String,String>, Integer>();
+    if (value != null)
+      {
+        Map<Object, Integer> valueMap = (Map<Object, Integer>) value;
+        for (Object packedGroupID : valueMap.keySet())
+          {
+            Pair<String,String> groupID = new Pair<String,String>(((Struct) packedGroupID).getString("dimensionID"), ((Struct) packedGroupID).getString("segmentID"));
+            Integer epoch = valueMap.get(packedGroupID);
+            result.put(groupID, epoch);
+          }
+      }
+    return result;
   }
 
   /*****************************************
@@ -717,7 +723,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatus = subscriberProfile.getEvolutionSubscriberStatus();
     this.evolutionSubscriberStatusChangeDate = subscriberProfile.getEvolutionSubscriberStatusChangeDate();
     this.previousEvolutionSubscriberStatus = subscriberProfile.getPreviousEvolutionSubscriberStatus();
-    this.subscriberGroups = new HashMap<Pair<String,String>, Integer>(subscriberProfile.getSubscriberGroups());
+    this.segments = new HashMap<Pair<String,String>, Integer>(subscriberProfile.getSegments());
     this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
     this.language = subscriberProfile.getLanguage();
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
@@ -736,7 +742,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("evolutionSubscriberStatus", (subscriberProfile.getEvolutionSubscriberStatus() != null) ? subscriberProfile.getEvolutionSubscriberStatus().getExternalRepresentation() : null);
     struct.put("evolutionSubscriberStatusChangeDate", subscriberProfile.getEvolutionSubscriberStatusChangeDate());
     struct.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
-    struct.put("subscriberGroups", packSubscriberGroups(subscriberProfile.getSubscriberGroups()));
+    struct.put("segments", packSegments(subscriberProfile.getSegments()));
     struct.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
     struct.put("language", subscriberProfile.getLanguage());
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
@@ -744,21 +750,20 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   
   /****************************************
   *
-  *  packSubscriberGroups
+  *  packSegments
   *
   ****************************************/
 
-  private static Object packSubscriberGroups(Map<Pair<String,String>, Integer> subscriberGroups)
+  private static Object packSegments(Map<Pair<String,String>, Integer> segments)
   {
     Map<Object, Object> result = new HashMap<Object, Object>();
-    for (Pair<String,String> groupID : subscriberGroups.keySet())
+    for (Pair<String,String> groupID : segments.keySet())
       {
         String dimensionID = groupID.getFirstElement();
         String segmentID = groupID.getSecondElement();
-        Integer epoch = subscriberGroups.get(groupID);
+        Integer epoch = segments.get(groupID);
         Struct packedGroupID = new Struct(groupIDSchema);
-        packedGroupID.put("dimensionID", dimensionID);
-        packedGroupID.put("segmentID", segmentID);
+        packedGroupID.put("subscriberGroupIDs", Arrays.asList(dimensionID, segmentID));
         result.put(packedGroupID, epoch);
       }
     return result;

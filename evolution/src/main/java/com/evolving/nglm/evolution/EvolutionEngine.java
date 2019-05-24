@@ -1304,7 +1304,7 @@ public class EvolutionEngine
                   for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
                     {
                       boolean addSegment = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
-                      subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
+                      subscriberProfile.setSegment(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
                       if (addSegment) inGroup = true;
                       subscriberProfileUpdated = true;
                     }
@@ -1365,7 +1365,7 @@ public class EvolutionEngine
                         //
 
                         boolean addSegment = !inGroup && minValueOK && maxValueOK && profileCriteriaEvaluation;
-                        subscriberProfile.setSubscriberGroup(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
+                        subscriberProfile.setSegment(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
                         if (addSegment) inGroup = true;
                         subscriberProfileUpdated = true;
                       }
@@ -1385,16 +1385,25 @@ public class EvolutionEngine
     if (evolutionEvent instanceof SubscriberGroup)
       {
         SubscriberGroup subscriberGroup = (SubscriberGroup) evolutionEvent;
-        SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(subscriberGroup.getDimensionID(), now);
-        if (segmentationDimension != null)
+        switch (subscriberGroup.getSubscriberGroupType())
           {
-            switch (segmentationDimension.getTargetingType())
+            case SegmentationDimension:
               {
-                case FILE_IMPORT:
-                  subscriberProfile.setSubscriberGroup(subscriberGroup.getDimensionID(), subscriberGroup.getSegmentID(), subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
-                  subscriberProfileUpdated = true;
-                  break;
+                String dimensionID = subscriberGroup.getSubscriberGroupIDs().get(0);
+                String segmentID = subscriberGroup.getSubscriberGroupIDs().get(1);
+                SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now);
+                if (segmentationDimension != null)
+                  {
+                    switch (segmentationDimension.getTargetingType())
+                      {
+                        case FILE_IMPORT:
+                          subscriberProfile.setSegment(dimensionID, segmentID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+                          subscriberProfileUpdated = true;
+                          break;
+                      }
+                  }
               }
+              break;
           }
       }
 

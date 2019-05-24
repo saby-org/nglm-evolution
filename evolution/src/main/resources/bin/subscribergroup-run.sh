@@ -30,6 +30,7 @@ export ARGUMENT_1=$9
 export ARGUMENT_2=${10}
 export ARGUMENT_3=${11}
 export ARGUMENT_4=${12}
+export ARGUMENT_5=${13}
 export KAFKA_OPTS="-Dbroker.servers=$BROKER_SERVERS -Dnglm.schemaRegistryURL=$REGISTRY_URL -Dredis.sentinels=$REDIS_SENTINELS -Dsubscriberprofile.endpoints=$EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINTS -Dnglm.converter=Avro -Dzookeeper.connect=$ZOOKEEPER_SERVERS -Dnglm.zookeeper.root=${zookeeper.root}"
 
 #
@@ -42,4 +43,4 @@ cat /etc/kafka/log4j-evol.properties | perl -e 'while ( $line=<STDIN> ) { $line=
 #  run
 #
 
-exec kafka-run-class -name subscriberGroupLoader -loggc com.evolving.nglm.evolution.SubscriberGroupLoader $NUM_THREADS $CONSUMER_GROUP_ID "$ARGUMENT_1" "$ARGUMENT_2" "$ARGUMENT_3" "$ARGUMENT_4"
+exec kafka-run-class -name subscriberGroupLoader -loggc com.evolving.nglm.evolution.SubscriberGroupLoader $NUM_THREADS $CONSUMER_GROUP_ID "$ARGUMENT_1" "$ARGUMENT_2" "$ARGUMENT_3" "$ARGUMENT_4" "$ARGUMENT_5"

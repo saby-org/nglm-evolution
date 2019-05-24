@@ -45,8 +45,8 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_group_epoch");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.field("primaryID", SchemaBuilder.string().defaultValue("").schema());
     schemaBuilder.field("epoch", Schema.INT32_SCHEMA);
     schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
@@ -72,7 +72,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   ****************************************/
 
-  private String dimensionID;
+  private String primaryID;
   private int epoch;
   private String display;
   private boolean active;
@@ -84,7 +84,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   ****************************************/
 
-  public String getDimensionID() { return dimensionID; }
+  public String getPrimaryID() { return primaryID; }
   public int getEpoch() { return epoch; }
   public String getDisplay() { return display; }
   public boolean getActive() { return active; }
@@ -94,7 +94,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   //  ReferenceDataValue
   //
   
-  @Override public String getKey() { return dimensionID; }
+  @Override public String getKey() { return primaryID; }
   
   /*****************************************
   *
@@ -102,12 +102,12 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  public SubscriberGroupEpoch(SegmentationDimension segmentationDimension)
+  public SubscriberGroupEpoch(String primaryID)
   {
-    this.dimensionID = segmentationDimension.getSegmentationDimensionID();
+    this.primaryID = primaryID;
     this.epoch = 0;
-    this.display = segmentationDimension.getSegmentationDimensionName();
-    this.active = segmentationDimension.getActive();
+    this.display = primaryID;
+    this.active = true;
     this.zookeeperVersion = -1;
   }
 
@@ -117,12 +117,12 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  public SubscriberGroupEpoch(SegmentationDimension segmentationDimension, SubscriberGroupEpoch currentSubscriberGroupEpoch)
+  public SubscriberGroupEpoch(SubscriberGroupEpoch currentSubscriberGroupEpoch)
   {
-    this.dimensionID = segmentationDimension.getSegmentationDimensionID();
+    this.primaryID = currentSubscriberGroupEpoch.getPrimaryID();
     this.epoch = currentSubscriberGroupEpoch.getEpoch() + 1;
-    this.display = segmentationDimension.getSegmentationDimensionName();
-    this.active = segmentationDimension.getActive();
+    this.display = currentSubscriberGroupEpoch.getDisplay();
+    this.active = currentSubscriberGroupEpoch.getActive();
     this.zookeeperVersion = -1;
   }
 
@@ -132,9 +132,9 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   *
   *****************************************/
 
-  private SubscriberGroupEpoch(String dimensionID, int epoch, String display, boolean active)
+  private SubscriberGroupEpoch(String primaryID, int epoch, String display, boolean active)
   {
-    this.dimensionID = dimensionID;
+    this.primaryID = primaryID;
     this.epoch = epoch;
     this.display = display;
     this.active = active;
@@ -150,7 +150,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
 
   public SubscriberGroupEpoch(JSONObject jsonRoot, int zookeeperVersion)
   {
-    this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", true);
+    this.primaryID = JSONUtilities.decodeString(jsonRoot, "primaryID", true);
     this.epoch = JSONUtilities.decodeInteger(jsonRoot, "epoch", true);
     this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", true);
@@ -166,7 +166,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   public JSONObject getJSONRepresentation()
   {
     HashMap<String,Object> resultMap = new HashMap<String,Object>();;
-    resultMap.put("dimensionID", dimensionID);
+    resultMap.put("primaryID", primaryID);
     resultMap.put("epoch", epoch);
     resultMap.put("display", display);
     resultMap.put("active", active);
@@ -183,7 +183,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
   {
     SubscriberGroupEpoch subscriberGroupEpoch = (SubscriberGroupEpoch) value;
     Struct struct = new Struct(schema);
-    struct.put("dimensionID", subscriberGroupEpoch.getDimensionID());
+    struct.put("primaryID", subscriberGroupEpoch.getPrimaryID());
     struct.put("epoch", subscriberGroupEpoch.getEpoch());
     struct.put("display", subscriberGroupEpoch.getDisplay());
     struct.put("active", subscriberGroupEpoch.getActive());
@@ -211,7 +211,7 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
     //
 
     Struct valueStruct = (Struct) value;
-    String dimensionID = valueStruct.getString("dimensionID");
+    String primaryID = (schemaVersion >= 2) ? valueStruct.getString("primaryID") : valueStruct.getString("dimensionID");
     int epoch = valueStruct.getInt32("epoch");
     String display = valueStruct.getString("display");
     boolean active = valueStruct.getBoolean("active");
@@ -220,6 +220,6 @@ public class SubscriberGroupEpoch implements ReferenceDataValue<String>
     //  return
     //
 
-    return new SubscriberGroupEpoch(dimensionID, epoch, display, active);
+    return new SubscriberGroupEpoch(primaryID, epoch, display, active);
   }
 }

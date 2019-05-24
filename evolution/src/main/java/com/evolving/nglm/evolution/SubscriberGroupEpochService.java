@@ -64,7 +64,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static ZooKeeper openZooKeeperAndLockSegmentationDimension(SegmentationDimension segmentationDimension)
+  public static ZooKeeper openZooKeeperAndLockGroup(String primaryID)
   {
     //
     //  open zookeeper
@@ -95,11 +95,11 @@ public class SubscriberGroupEpochService
 
     try
       {
-        zookeeper.create(Deployment.getZookeeperRoot() + SubscriberGroupLockNodes + segmentationDimension.getSegmentationDimensionID(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        zookeeper.create(Deployment.getZookeeperRoot() + SubscriberGroupLockNodes + primaryID, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
       }
     catch (KeeperException.NodeExistsException e)
       {
-        log.error("subscriber group {} currently being updated", segmentationDimension.getSegmentationDimensionID());
+        log.error("subscriber group {} currently being updated", primaryID);
         throw new ServerRuntimeException("zookeeper", e);
       }
     catch (KeeperException e)
@@ -122,11 +122,11 @@ public class SubscriberGroupEpochService
 
   /****************************************
   *
-  *  closeZooKeeperAndReleaseSegmentationDimension
+  *  closeZooKeeperAndReleaseGroup
   *
   ****************************************/
 
-  public static void closeZooKeeperAndReleaseSegmentationDimension(ZooKeeper zookeeper, SegmentationDimension segmentationDimension)
+  public static void closeZooKeeperAndReleaseGroup(ZooKeeper zookeeper, String primaryID)
   {
     //
     //  ensure connected
@@ -187,7 +187,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static SubscriberGroupEpoch retrieveSubscriberGroupEpoch(ZooKeeper zookeeper, SegmentationDimension segmentationDimension)
+  public static SubscriberGroupEpoch retrieveSubscriberGroupEpoch(ZooKeeper zookeeper, String primaryID)
   {
     /*****************************************
     *
@@ -206,7 +206,7 @@ public class SubscriberGroupEpochService
     //
 
     boolean subscriberGroupEpochNodeExists = false;
-    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + segmentationDimension.getSegmentationDimensionID();
+    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + primaryID;
     if (! subscriberGroupEpochNodeExists)
       {
         //
@@ -216,7 +216,7 @@ public class SubscriberGroupEpochService
         try
           {
             subscriberGroupEpochNodeExists = (zookeeper.exists(node, false) != null);
-            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node with ID {} does not exist", segmentationDimension.getSegmentationDimensionID());
+            if (!subscriberGroupEpochNodeExists) log.info("subscriberGroupEpoch node with ID {} does not exist", primaryID);
           }
         catch (KeeperException e)
           {
@@ -235,10 +235,10 @@ public class SubscriberGroupEpochService
 
         if (! subscriberGroupEpochNodeExists)
           {
-            log.info("retrieveSubscriberGroupEpoch() - creating node {}", segmentationDimension.getSegmentationDimensionID());
+            log.info("retrieveSubscriberGroupEpoch() - creating node {}", primaryID);
             try
               {
-                SubscriberGroupEpoch newSubscriberGroupEpoch = new SubscriberGroupEpoch(segmentationDimension);
+                SubscriberGroupEpoch newSubscriberGroupEpoch = new SubscriberGroupEpoch(primaryID);
                 JSONObject jsonNewSubscriberGroupEpoch = newSubscriberGroupEpoch.getJSONRepresentation();
                 String stringNewSubscriberGroupEpoch = jsonNewSubscriberGroupEpoch.toString();
                 byte[] rawNewSubscriberGroupEpoch = stringNewSubscriberGroupEpoch.getBytes(StandardCharsets.UTF_8);
@@ -299,7 +299,7 @@ public class SubscriberGroupEpochService
   *
   ****************************************/
 
-  public static SubscriberGroupEpoch updateSubscriberGroupEpoch(ZooKeeper zookeeper, SegmentationDimension segmentationDimension, SubscriberGroupEpoch existingSubscriberGroupEpoch, KafkaProducer<byte[], byte[]> kafkaProducer, String subscriberGroupEpochTopic)
+  public static SubscriberGroupEpoch updateSubscriberGroupEpoch(ZooKeeper zookeeper, String primaryID, SubscriberGroupEpoch existingSubscriberGroupEpoch, KafkaProducer<byte[], byte[]> kafkaProducer, String subscriberGroupEpochTopic)
   {
     /*****************************************
     *
@@ -317,8 +317,8 @@ public class SubscriberGroupEpochService
     //  update subscriberGroupEpoch node
     //
 
-    SubscriberGroupEpoch subscriberGroupEpoch = new SubscriberGroupEpoch(segmentationDimension, existingSubscriberGroupEpoch);
-    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + subscriberGroupEpoch.getDimensionID();
+    SubscriberGroupEpoch subscriberGroupEpoch = new SubscriberGroupEpoch(existingSubscriberGroupEpoch);
+    String node = Deployment.getZookeeperRoot() + SubscriberGroupEpochNodes + subscriberGroupEpoch.getPrimaryID();
     try
       {
         JSONObject jsonSubscriberGroupEpoch = subscriberGroupEpoch.getJSONRepresentation();
@@ -328,7 +328,7 @@ public class SubscriberGroupEpochService
       }
     catch (KeeperException.BadVersionException e)
       {
-        log.error("concurrent write aborted for subscriberGroupEpoch {}", subscriberGroupEpoch.getDimensionID());
+        log.error("concurrent write aborted for subscriberGroupEpoch {}", primaryID);
         throw new ServerRuntimeException("zookeeper", e);
       }
     catch (KeeperException e)
@@ -348,7 +348,7 @@ public class SubscriberGroupEpochService
     *
     *****************************************/
 
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupEpochTopic, stringKeySerde.serializer().serialize(subscriberGroupEpochTopic, new StringKey(subscriberGroupEpoch.getDimensionID())), subscriberGroupEpochSerde.serializer().serialize(subscriberGroupEpochTopic, subscriberGroupEpoch)));
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupEpochTopic, stringKeySerde.serializer().serialize(subscriberGroupEpochTopic, new StringKey(subscriberGroupEpoch.getPrimaryID())), subscriberGroupEpochSerde.serializer().serialize(subscriberGroupEpochTopic, subscriberGroupEpoch)));
     
     /*****************************************
     *
@@ -356,7 +356,7 @@ public class SubscriberGroupEpochService
     *
     *****************************************/
 
-    log.info("updateSubscriberGroupEpoch() - updated group {}", subscriberGroupEpoch.getDimensionID());
+    log.info("updateSubscriberGroupEpoch() - updated group {}", subscriberGroupEpoch.getPrimaryID());
 
     /*****************************************
     *

@@ -51,10 +51,10 @@ public abstract class CriterionFieldRetriever
   public static Object getLanguage(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getLanguage() != null ? evaluationRequest.getSubscriberProfile().getLanguage() : Deployment.getBaseLanguage(); }
 
   //
-  //  subscriber group membership
+  //  segments membership
   //
 
-  public static Object getSubscriberGroups(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getSubscriberGroups(evaluationRequest.getSubscriberGroupEpochReader()); }
+  public static Object getSegments(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getSegments(evaluationRequest.getSubscriberGroupEpochReader()); }
 
   /*****************************************
   *
