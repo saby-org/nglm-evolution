@@ -2974,7 +2974,7 @@ public class GUIManager
        *
        *****************************************/
 
-      targetService.putTarget(target, uploadFileService, (existingTarget == null), userID);
+      targetService.putTarget(target, uploadFileService, subscriberIDService, (existingTarget == null), userID);
 
       /*****************************************
        *
@@ -3001,7 +3001,7 @@ public class GUIManager
       //  store
       //
 
-      targetService.putTarget(incompleteObject, uploadFileService, (existingTarget == null), userID);
+      targetService.putTarget(incompleteObject, uploadFileService, subscriberIDService, (existingTarget == null), userID);
 
       //
       //  log
@@ -3042,7 +3042,9 @@ public class GUIManager
     List<JSONObject> targetLists = new ArrayList<JSONObject>();
     for (GUIManagedObject targetList : targetService.getStoredTargets())
       {
-        targetLists.add(targetService.generateResponseJSON(targetList, fullDetails, now));
+        JSONObject targetResponse = targetService.generateResponseJSON(targetList, fullDetails, now);
+        targetResponse.put("isRunning", targetService.isTargetFileBeingProcessed((Target) targetList));
+        targetLists.add(targetResponse);
       }
 
     /*****************************************

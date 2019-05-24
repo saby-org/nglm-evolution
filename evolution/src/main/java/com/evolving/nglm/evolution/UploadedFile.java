@@ -76,6 +76,8 @@ public class UploadedFile extends GUIManagedObject
   private int numberOfLines;
   private Date uploadDate;
   
+  public static final String OUTPUT_FOLDER = "/app/uploaded/";
+  
   /****************************************
   *
   *  accessors

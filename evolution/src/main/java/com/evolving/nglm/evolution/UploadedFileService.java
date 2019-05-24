@@ -44,7 +44,6 @@ public class UploadedFileService extends GUIService
   *****************************************/
 
   private UploadedFileListener uploadedFileListener = null;
-  private static final String OUTPUT_FOLDER = "/app/uploaded/";
 
   /*****************************************
   *
@@ -147,7 +146,7 @@ public class UploadedFileService extends GUIService
       // store file
       //
 
-      destFile = new FileOutputStream(new File(OUTPUT_FOLDER+filename));
+      destFile = new FileOutputStream(new File(UploadedFile.OUTPUT_FOLDER+filename));
       byte[] bytes = new byte[1024];
       int readSize = inputStrm.read(bytes);
       while(readSize > 0) {
@@ -189,7 +188,7 @@ public class UploadedFileService extends GUIService
     // remove file
     //
 
-    File file = new File(OUTPUT_FOLDER+uploadedFile.getDestinationFilename());
+    File file = new File(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename());
     if(file.exists()) {
       if(file.delete()) {
         log.debug("UploadedFileService.deleteUploadedFile: File has been deleted successfully");

@@ -1,14 +1,35 @@
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
+import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 
 public class TargetService extends GUIService
 {
@@ -23,6 +44,13 @@ public class TargetService extends GUIService
   //
 
   private static final Logger log = LoggerFactory.getLogger(TargetService.class);
+  
+  //
+  //  serdes
+  //
+  
+  private static ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+  private static ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
 
   /*****************************************
   *
@@ -31,6 +59,13 @@ public class TargetService extends GUIService
   *****************************************/
 
   private TargetListener TargetListener = null;
+  private volatile boolean stopRequested = false;
+  private BlockingQueue<Target> listenerQueue = new LinkedBlockingQueue<Target>();
+  private List<GUIManagedObjectListener> guiManagedObjectListeners = new ArrayList<GUIManagedObjectListener>();
+  private UploadedFileService uploadedFileService = null; 
+  private SubscriberIDService subscriberIDService = null;
+  private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
+  private KafkaProducer<byte[], byte[]> kafkaProducer = null;
 
   /*****************************************
   *
@@ -59,6 +94,27 @@ public class TargetService extends GUIService
   public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService)
   {
     this(bootstrapServers, groupID, targetTopic, masterService, (TargetListener) null, true);
+    
+    /*****************************************
+    *
+    *  kafka producer
+    *
+    *****************************************/
+
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
+    //
+    //  listener
+    //
+
+    Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
+    listenerThread = new Thread(listener, "TargetService");
+    listenerThread.start();
   }
 
   //
@@ -98,11 +154,14 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(GUIManagedObject target, UploadedFileService uploadedFileService, boolean newObject, String userID) throws GUIManagerException
+  public void putTarget(GUIManagedObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException
   {
+    this.uploadedFileService = uploadedFileService;
+    this.subscriberIDService = subscriberIDService;
+    
     //
     //  now
-    //
+    //            
 
     Date now = SystemTime.getCurrentTime();
 
@@ -114,12 +173,14 @@ public class TargetService extends GUIService
       {
         ((Target) target).validate(uploadedFileService, now);
       }
-
+    
     //
     //  put
     //
 
     putGUIManagedObject(target, now, newObject, userID);
+    notifyListenerOfTarget((Target) target);
+    
   }
   
   /*****************************************
@@ -128,11 +189,11 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(IncompleteObject target, UploadedFileService uploadedFileService, boolean newObject, String userID)
+  public void putTarget(IncompleteObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID)
   {
     try
       {
-        putTarget((GUIManagedObject) target, uploadedFileService, newObject, userID);
+        putTarget((GUIManagedObject) target, uploadedFileService, subscriberIDService, newObject, userID);
       }
     catch (GUIManagerException e)
       {
@@ -147,6 +208,20 @@ public class TargetService extends GUIService
   *****************************************/
 
   public void removeTarget(String targetID, String userID) { removeGUIManagedObject(targetID, SystemTime.getCurrentTime(), userID); }
+  
+  /*****************************************
+  *
+  *  isTargetFileBeingProcessed
+  *
+  *****************************************/
+  
+  public boolean isTargetFileBeingProcessed (Target target) {
+    if(listenerQueue != null) {
+      if(listenerQueue.contains(target))
+        return true;
+    }
+    return false;
+  }
 
   /*****************************************
   *
@@ -158,6 +233,132 @@ public class TargetService extends GUIService
   {
     public void targetActivated(Target target);
     public void targetDeactivated(String guiManagedObjectID);
+  }
+  
+  /*****************************************
+  *
+  *  notifyListener
+  *
+  *****************************************/
+
+  private void notifyListenerOfTarget(Target target)
+  {
+    listenerQueue.add(target);
+  }
+
+  /*****************************************
+  *
+  *  runListener
+  *
+  *****************************************/
+  
+  private void runListener()
+  {
+    while (!stopRequested)
+      {
+        try
+          {
+            
+            //
+            //  now
+            //            
+
+            Date now = SystemTime.getCurrentTime();
+            
+            //
+            //  get next 
+            //
+
+            Target target = listenerQueue.take();
+
+            //
+            //  listeners
+            //
+
+            List<GUIManagedObjectListener> guiManagedObjectListeners = new ArrayList<GUIManagedObjectListener>();
+            synchronized (this)
+              {
+                guiManagedObjectListeners.addAll(this.guiManagedObjectListeners);
+              }
+            
+            /*****************************************
+            *
+            *  open zookeeper and lock target
+            *
+            *****************************************/
+
+            ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(target.getTargetID());
+            
+            /*****************************************
+            *
+            *  retrieve existing epoch
+            *
+            *****************************************/
+
+            SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, target.getTargetID());
+
+            /*****************************************
+            *
+            *  submit new epoch (if necessary)
+            *
+            *****************************************/
+
+            SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, target.getTargetID(), existingEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
+            
+            //
+            // time to work
+            //
+            
+            if(target.getTargetFileID() != null) {
+              UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(target.getTargetFileID());
+              if (uploadedFile == null) { 
+                log.warn("TargetService.run(uploaded file not found, processing done)");
+                return;
+              }else {
+                //parse file
+                BufferedReader reader;
+                try {
+                  reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename()));
+                  for(String line; (line = reader.readLine()) != null && !line.isEmpty();) {
+                    AlternateID alternateID = Deployment.getAlternateIDs().get(uploadedFile.getCustomerAlternateID());
+                    String subscriberID = subscriberIDService.getSubscriberID(alternateID.getID(), line);
+                    if(subscriberID != null) {
+                      SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.Target, Arrays.asList(target.getTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
+                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
+                    }else {
+                      log.warn("TargetService.run(cant resolve subscriberID ID="+line+")");
+                    }
+                  }
+                  reader.close();
+                } catch (IOException | SubscriberIDServiceException e) {
+                  log.warn("TargetService.run(problem with file parsing)", e);
+                }
+              }
+            }
+            
+            
+            /*****************************************
+            *
+            *  close
+            *
+            *****************************************/
+
+            SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, target.getTargetID());
+            subscriberIDService.close();
+          }
+        catch (InterruptedException e)
+          {
+            //
+            // ignore
+            //
+          }
+        catch (Throwable e)
+          {
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing listener: {}", stackTraceWriter.toString());
+          }
+      }
   }
 
   /*****************************************

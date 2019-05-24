@@ -191,8 +191,6 @@ public class ReportService extends GUIService
       }
     
     return result;
-    
-    
   }
   
   private boolean getZKConnection()  {

@@ -1,5 +1,8 @@
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -298,7 +301,9 @@ public class Target extends GUIManagedObject
   {
     if(this.targetFileID != null) {
       UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(targetFileID);
-      if (uploadedFile == null) throw new GUIManagerException("unknown uploaded file with id ", targetFileID);
+      if (uploadedFile == null) { 
+        throw new GUIManagerException("unknown uploaded file with id ", targetFileID);
+      }
     }
   }
 }
