@@ -413,7 +413,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(ORIGIN, "");
+      guiPresentationMap.put(ORIGIN, getSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject());
@@ -429,7 +429,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(ORIGIN, "");
+      thirdPartyPresentationMap.put(ORIGIN, getSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject());
@@ -483,6 +483,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       EmailMessage emailMessage = (EmailMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
+      String fromAddress = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
 
       /*****************************************
       *
@@ -505,7 +506,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       MailNotificationManagerRequest request = null;
       if (email != null)
         {
-          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, "TBD", emailSubject, emailHTMLBody, emailTextBody);
+          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, emailSubject, emailHTMLBody, emailTextBody);
         }
       else
         {

@@ -504,7 +504,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     thirdPartyPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForGUIPresentation(thirdPartyPresentationMap, salesChannelService);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, salesChannelService);
     return thirdPartyPresentationMap;
   }
 

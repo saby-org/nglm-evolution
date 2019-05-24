@@ -407,7 +407,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(ORIGIN, "");
+      guiPresentationMap.put(ORIGIN, getSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       guiPresentationMap.put(NOTIFICATION_SUBJECT, null);
@@ -424,7 +424,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(ORIGIN, "");
+      thirdPartyPresentationMap.put(ORIGIN, getSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, null);
@@ -478,6 +478,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       SMSMessage smsMessage = (SMSMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
+      String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
 
       /*****************************************
       *
@@ -498,7 +499,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       SMSNotificationManagerRequest request = null;
       if (msisdn != null)
         {
-          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, "TBD", text);
+          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, text);
         }
       else
         {

@@ -95,6 +95,8 @@ public class Deployment
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,TouchPoint> touchPoints = new LinkedHashMap<String,TouchPoint>();
+  private static Map<String,SupportedShortCode> supportedShortCodes = new LinkedHashMap<String,SupportedShortCode>();
+  private static Map<String,SupportedEmailAddress> supportedEmailAddresses = new LinkedHashMap<String,SupportedEmailAddress>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
   private static JSONArray initialCallingChannelsJSONArray = null;
@@ -239,6 +241,8 @@ public class Deployment
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,TouchPoint> getTouchPoints() { return touchPoints; }
+  public static Map<String,SupportedShortCode> getSupportedShortCodes() { return supportedShortCodes; }
+  public static Map<String,SupportedEmailAddress> getSupportedEmailAddresses() { return supportedEmailAddresses; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
@@ -1230,6 +1234,44 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  supportedShortCodes
+    //
+
+    try
+      {
+        JSONArray supportedShortCodeValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedShortCodes", new JSONArray());
+        for (int i=0; i<supportedShortCodeValues.size(); i++)
+          {
+            JSONObject supportedShortCodeJSON = (JSONObject) supportedShortCodeValues.get(i);
+            SupportedShortCode supportedShortCode = new SupportedShortCode(supportedShortCodeJSON);
+            supportedShortCodes.put(supportedShortCode.getID(), supportedShortCode);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  supportedEmailAddresses
+    //
+
+    try
+      {
+        JSONArray supportedEmailAddressValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedEmailAddresses", new JSONArray());
+        for (int i=0; i<supportedEmailAddressValues.size(); i++)
+          {
+            JSONObject supportedEmailAddressJSON = (JSONObject) supportedEmailAddressValues.get(i);
+            SupportedEmailAddress supportedEmailAddress = new SupportedEmailAddress(supportedEmailAddressJSON);
+            supportedEmailAddresses.put(supportedEmailAddress.getID(), supportedEmailAddress);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  callingChannelProperties
     //

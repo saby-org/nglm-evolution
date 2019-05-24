@@ -5141,6 +5141,25 @@ public class GUIManager
             }
           break;
 
+        case "supportedShortCodes":
+          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedShortCode.getID());
+              availableValue.put("display", supportedShortCode.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "supportedEmailAddresses":
+          for (SupportedEmailAddress supportedEmailAddress : Deployment.getSupportedEmailAddresses().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedEmailAddress.getID());
+              availableValue.put("display", supportedEmailAddress.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
 
         default:
           if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null)
