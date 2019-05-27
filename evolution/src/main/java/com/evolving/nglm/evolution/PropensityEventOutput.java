@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PropensitySegmentOutput.java
+*  PropensityEventOutput.java
 *
 *****************************************************************************/
 
@@ -15,10 +15,11 @@ import org.apache.kafka.connect.data.Struct;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamOutput;
 
-public class PropensitySegmentOutput 
+public class PropensityEventOutput implements SubscriberStreamOutput
 {
-  
+
   /*****************************************
   *
   *  schema
@@ -33,35 +34,33 @@ public class PropensitySegmentOutput
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("propensitysegment_output");
+    schemaBuilder.name("propensityevent_output");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("segment", Schema.STRING_SCHEMA);
-    schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("propensityKey", PropensityKey.schema());
     schemaBuilder.field("accepted", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
-  
+
   //
   //  serde
   //
 
-  private static ConnectSerde<PropensitySegmentOutput> serde = new ConnectSerde<PropensitySegmentOutput>(schema, false, PropensitySegmentOutput.class, PropensitySegmentOutput::pack, PropensitySegmentOutput::unpack);
+  private static ConnectSerde<PropensityEventOutput> serde = new ConnectSerde<PropensityEventOutput>(schema, false, PropensityEventOutput.class, PropensityEventOutput::pack, PropensityEventOutput::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<PropensitySegmentOutput> serde() { return serde; }
-  
+  public static ConnectSerde<PropensityEventOutput> serde() { return serde; }
+
   /****************************************
   *
   *  data
   *
   ****************************************/
 
-  private String segment;
-  private String offerID;
+  private PropensityKey propensityKey;
   private boolean accepted;
 
   /****************************************
@@ -70,23 +69,21 @@ public class PropensitySegmentOutput
   *
   ****************************************/
 
-  public String getSegment() { return segment; }
-  public String getOfferID() { return offerID; }
+  public PropensityKey getPropensityKey() { return propensityKey; }
   public boolean isAccepted() { return accepted; }
-  
+
   /*****************************************
   *
   *  constructor
   *
   *****************************************/
 
-  public PropensitySegmentOutput(String offerID, String segment, boolean accepted)
+  public PropensityEventOutput(PropensityKey propensityKey, boolean accepted)
   {
-    this.offerID = offerID;
-    this.segment = segment;
+    this.propensityKey = propensityKey;
     this.accepted = accepted;
   }
-  
+
   /*****************************************
   *
   *  pack
@@ -95,21 +92,20 @@ public class PropensitySegmentOutput
 
   public static Object pack(Object value)
   {
-    PropensitySegmentOutput propensitySegmentOutput = (PropensitySegmentOutput) value;
+    PropensityEventOutput propensityEventOutput = (PropensityEventOutput) value;
     Struct struct = new Struct(schema);
-    struct.put("offerID", propensitySegmentOutput.getOfferID());
-    struct.put("segment", propensitySegmentOutput.getSegment());
-    struct.put("accepted", propensitySegmentOutput.isAccepted());
+    struct.put("propensityKey", PropensityKey.pack(propensityEventOutput.getPropensityKey()));
+    struct.put("accepted", propensityEventOutput.isAccepted());
     return struct;
   }
-  
+
   /*****************************************
   *
   *  unpack
   *
   *****************************************/
 
-  public static PropensitySegmentOutput unpack(SchemaAndValue schemaAndValue)
+  public static PropensityEventOutput unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -124,15 +120,14 @@ public class PropensitySegmentOutput
     //
 
     Struct valueStruct = (Struct) value;
-    String segment = valueStruct.getString("segment");
-    String offerID = valueStruct.getString("offerID");
+    PropensityKey propensityKey = PropensityKey.unpack(new SchemaAndValue(schema.field("propensityKey").schema(), valueStruct.get("propensityKey")));
     boolean accepted = valueStruct.getBoolean("accepted");
     
     //
     //  return
     //
 
-    return new PropensitySegmentOutput(segment, offerID, accepted);
+    return new PropensityEventOutput(propensityKey, accepted);
   }
 
 }

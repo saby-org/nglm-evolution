@@ -63,7 +63,6 @@
     <common.build.phase.generate-dnboproxy-image>none</common.build.phase.generate-dnboproxy-image>
     <common.build.phase.generate-evolutionengine-image>none</common.build.phase.generate-evolutionengine-image>
     <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
-    <common.build.phase.generate-propensityengine-image>none</common.build.phase.generate-propensityengine-image>
     <common.build.phase.generate-ucgengine-image>none</common.build.phase.generate-ucgengine-image>
     <common.build.phase.generate-infulfillmentmanager-image>none</common.build.phase.generate-infulfillmentmanager-image>
     <common.build.phase.generate-emptyfulfillmentmanager-image>none</common.build.phase.generate-emptyfulfillmentmanager-image>
@@ -81,7 +80,6 @@
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
     <common.build.skip.docker-evolutionengine-image>true</common.build.skip.docker-evolutionengine-image>
     <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
-    <common.build.skip.docker-propensityengine-image>true</common.build.skip.docker-propensityengine-image>
     <common.build.skip.docker-ucgengine-image>true</common.build.skip.docker-ucgengine-image>
     <common.build.skip.docker-infulfillmentmanager-image>true</common.build.skip.docker-infulfillmentmanager-image>
     <common.build.skip.docker-emptyfulfillmentmanager-image>true</common.build.skip.docker-emptyfulfillmentmanager-image>
@@ -96,7 +94,6 @@
     
     <!-- configuration -->
     <evolutionengine.streamthreads>2</evolutionengine.streamthreads>
-    <propensityengine.streamthreads>2</propensityengine.streamthreads>
 
     <!-- topics -->
     <topic.empty>empty</topic.empty>
@@ -172,10 +169,9 @@
     <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>
     <changelog.evolutionengine.subscriberhistory>subscriberhistory</changelog.evolutionengine.subscriberhistory>
     <changelog.evolutionengine.subscriberhistory.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberhistory}-changelog</changelog.evolutionengine.subscriberhistory.topic>
-
-    <!-- propensityengine -->
-    <changelog.propensityengine.propensitystate>propensitystate</changelog.propensityengine.propensitystate>
-    <changelog.propensityengine.propensitystate.topic>streams-propensityengine-${changelog.propensityengine.propensitystate}-changelog</changelog.propensityengine.propensitystate.topic>
+    <changelog.evolutionengine.propensitystate>propensitystate</changelog.evolutionengine.propensitystate>
+    <changelog.evolutionengine.propensitystate.topic>streams-evolutionengine-${changelog.evolutionengine.propensitystate}-changelog</changelog.evolutionengine.propensitystate.topic>
+    <topic.evolutionengine.propensityoutput.repartition>propensityoutput-repartition</topic.evolutionengine.propensityoutput.repartition>
 
     <!-- gui -->
     <gui.csr.display>true</gui.csr.display>
@@ -598,49 +594,6 @@
                 </resource>
               </resources>              
             </configuration>            
-          </execution>
-          
-          <execution>
-            <id>generate-propensityengine-docker-stack</id>
-            <phase>${common.build.phase.generate-propensityengine-image}</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/assembled-docker/propensityengine</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.build.directory}/nglm-evolution-resources/docker/propensityengine</directory>
-                  <includes>
-                    <include>Dockerfile</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
-                  <includes>
-                    <include>bin/propensityengine-run.sh</include>
-                    <include>config/propensityengine_jmx.yml</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}/assembled-resources</directory>
-                  <includes>
-                    <include>config/log4j-evol.properties</include>
-                  </includes>
-                  <filtering>true</filtering>
-                </resource>
-                <resource>
-                  <directory>${project.build.directory}</directory>
-                  <includes>
-                    <include>lib/*.jar</include>
-                    <include>${project.artifactId}-${project.version}.jar</include>
-                  </includes>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
           </execution>
 
           <execution>
@@ -1216,21 +1169,6 @@
               <contextDirectory>${project.build.directory}/assembled-docker/subscribergroup</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-subscribergroup</repository>
               <classifier>docker-info-subscribergroup</classifier>
-              <tag>${project.name}-${project.version}</tag>
-            </configuration>
-          </execution>
-
-          <execution>
-            <id>docker-propensityengine</id>
-            <goals>
-              <goal>build</goal>
-              <goal>push</goal>
-            </goals>
-            <configuration>
-              <skip>${common.build.skip.docker-propensityengine-image}</skip>
-              <contextDirectory>${project.build.directory}/assembled-docker/propensityengine</contextDirectory>
-              <repository>${env.DOCKER_REGISTRY}ev-propensityengine</repository>
-              <classifier>docker-info-propensityengine</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

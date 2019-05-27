@@ -236,7 +236,6 @@
                     <include>bin/prometheus-application-run-preamble.sh</include>
                     <include>bin/prometheus-application-run-postamble.sh</include>
                     <include>bin/evolutionengine-run.sh</include>
-                    <include>bin/propensityengine-run.sh</include>
                     <include>bin/ucgengine-run.sh</include>
                     <include>bin/infulfillmentmanager-run.sh</include>
                     <include>bin/emptyfulfillmentmanager-run.sh</include>
@@ -258,7 +257,6 @@
                     <include>bin/fakein-run.sh</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
-                    <include>config/propensityengine_jmx.yml</include>
                     <include>config/ucgengine_jmx.yml</include>
                     <include>config/infulfillmentmanager_jmx.yml</include>
                     <include>config/emptyfulfillmentmanager_jmx.yml</include>
@@ -285,8 +283,6 @@
                     <include>docker/dnboproxy.yml</include>
                     <include>docker/evolutionengine/*</include>
                     <include>docker/evolutionengine.yml</include>
-                    <include>docker/propensityengine/*</include>
-                    <include>docker/propensityengine.yml</include>
                     <include>docker/ucgengine/*</include>
                     <include>docker/ucgengine.yml</include>
                     <include>docker/infulfillmentmanager/*</include>
@@ -329,7 +325,6 @@
                     <exclude>docker/thirdpartymanager.yml</exclude>
                     <exclude>docker/dnboproxy.yml</exclude>
                     <exclude>docker/evolutionengine.yml</exclude>
-                    <exclude>docker/propensityengine.yml</exclude>
                     <exclude>docker/ucgengine.yml</exclude>
                     <exclude>docker/infulfillmentmanager.yml</exclude>
                     <exclude>docker/emptyfulfillmentmanager.yml</exclude>

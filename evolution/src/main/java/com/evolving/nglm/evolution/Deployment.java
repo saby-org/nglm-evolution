@@ -87,8 +87,10 @@ public class Deployment
   private static String propensityLogTopic;
   private static String propensityStateChangeLog;
   private static String propensityStateChangeLogTopic;
+  private static String propensityRepartitioningTopic;
   private static String subscriberProfileRegistrySubject;
   private static CompressionType subscriberProfileCompressionType;
+  private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
@@ -233,8 +235,10 @@ public class Deployment
   public static String getPropensityLogTopic() { return propensityLogTopic; }
   public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
   public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
+  public static String getPropensityRepartitioningTopic() { return propensityRepartitioningTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
+  public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
@@ -1094,6 +1098,19 @@ public class Deployment
       }
 
     //
+    //  propensityRepartitioningTopic
+    //
+
+    try
+      {
+        propensityRepartitioningTopic = JSONUtilities.decodeString(jsonRoot, "propensityRepartitioningTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  subscriberProfileRegistrySubject
     //
 
@@ -1119,6 +1136,20 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     if (subscriberProfileCompressionType == CompressionType.Unknown) throw new ServerRuntimeException("unsupported compression type");
+    
+    //
+    //  propensityRule
+    //
+    
+    try
+      {
+        JSONObject propensityRuleJSON = (JSONObject) jsonRoot.get("propensityRule");
+        propensityRule = new PropensityRule(propensityRuleJSON);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
     
     //
     //  supportedLanguages

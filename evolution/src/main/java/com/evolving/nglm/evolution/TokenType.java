@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -17,6 +18,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -60,8 +62,8 @@ public class TokenType extends GUIManagedObject
     schemaBuilder.field("codeFormat", Schema.STRING_SCHEMA);
     schemaBuilder.field("maxNumberOfPlays", Schema.OPTIONAL_INT32_SCHEMA);
     schema = schemaBuilder.build();
-  }; 
-  
+  };
+
   //
   //  serde
   //
@@ -98,14 +100,50 @@ public class TokenType extends GUIManagedObject
   public TokenTypeValidity getValidity() { return validity; }
   public String getCodeFormat() { return codeFormat; }
   public Integer getMaxNumberOfPlays() { return maxNumberOfPlays; }
-  
+
+  //
+  // getExpirationDate
+  //
+
+  // TODO: RoundUp has not been implemented yet.
+  public Date getExpirationDate(Date creationDate) {    
+    Date result = null;
+    switch(this.validity.getPeriodType()) {
+    case Minutes:
+      result = RLMDateUtils.addMinutes(creationDate, this.validity.getPeriodQuantity());
+      break;
+    case Hours:
+      result = RLMDateUtils.addHours(creationDate, this.validity.getPeriodQuantity());
+      break;
+    case Days:
+      result = RLMDateUtils.addDays(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      break;
+    case Weeks:
+      result = RLMDateUtils.addWeeks(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      break;
+    case Months:
+      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      break;
+    case Quarters:
+      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity() * 3, Deployment.getBaseTimeZone());
+      break;
+    case Semesters:
+      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity() * 6, Deployment.getBaseTimeZone());
+      break;
+    case Years:
+      result = RLMDateUtils.addYears(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
+      break;
+    default:
+    }
+
+    return result;
+  }
+
   /*****************************************
   *
   *  constructor -- unpack
   *
   *****************************************/
-
-
 
   public TokenType(SchemaAndValue schemaAndValue, TokenTypeKind tokenTypeKind, TokenTypeValidity validity, String codeFormat, Integer maxNumberOfPlays)
   {
@@ -115,7 +153,7 @@ public class TokenType extends GUIManagedObject
     this.codeFormat = codeFormat;
     this.maxNumberOfPlays = maxNumberOfPlays;
   }
-  
+
   /*****************************************
   *
   *  pack
@@ -132,7 +170,7 @@ public class TokenType extends GUIManagedObject
     struct.put("codeFormat", tokenType.getCodeFormat());
     struct.put("maxNumberOfPlays", tokenType.getMaxNumberOfPlays());
     return struct;
-}
+  }
 
   /*****************************************
   *
@@ -159,7 +197,7 @@ public class TokenType extends GUIManagedObject
     TokenTypeValidity validity = TokenTypeValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
     String codeFormat = valueStruct.getString("codeFormat");
     Integer maxNumberOfPlays = valueStruct.getInt32("maxNumberOfPlays");
-    
+
     //
     //  return
     //
@@ -190,7 +228,7 @@ public class TokenType extends GUIManagedObject
     *****************************************/
 
     TokenType existingTokenType = (existingTokenTypeUnchecked != null && existingTokenTypeUnchecked instanceof TokenType) ? (TokenType) existingTokenTypeUnchecked : null;
-    
+
     /*****************************************
     *
     *  attributes
@@ -229,7 +267,7 @@ public class TokenType extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(tokenTypeKind, existingTokenType.getTokenTypeKind());
         epochChanged = epochChanged || ! Objects.equals(validity, existingTokenType.getValidity());
         epochChanged = epochChanged || ! Objects.equals(codeFormat, existingTokenType.getCodeFormat());
-        epochChanged = epochChanged || ! Objects.equals(maxNumberOfPlays, existingTokenType.getCodeFormat());
+        epochChanged = epochChanged || ! Objects.equals(maxNumberOfPlays, existingTokenType.getMaxNumberOfPlays());
         return epochChanged;
       }
     else
@@ -237,14 +275,16 @@ public class TokenType extends GUIManagedObject
         return true;
       }
   }
-  
+
   /*****************************************
   *
   *  getKind
   *
+  *  TODO: getKind is redundant with getTokenTypeKind, plus it does not work ATM because token types from TokenTypeService are not ser/de in their specific implementation but as an abstract TokenType
+  *
   *****************************************/
-  
+  /*
   public TokenTypeKind getKind() {
     return TokenTypeKind.Unknown; // Should be overridden by subclasses
-  }
+  }*/
 }

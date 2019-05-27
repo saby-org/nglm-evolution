@@ -270,16 +270,6 @@ public class TargetService extends GUIService
             //
 
             Target target = listenerQueue.take();
-
-            //
-            //  listeners
-            //
-
-            List<GUIManagedObjectListener> guiManagedObjectListeners = new ArrayList<GUIManagedObjectListener>();
-            synchronized (this)
-              {
-                guiManagedObjectListeners.addAll(this.guiManagedObjectListeners);
-              }
             
             /*****************************************
             *

@@ -28,7 +28,6 @@ do
       docker pull ${env.DOCKER_REGISTRY}ev-prometheus-application:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-grafana:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-licensemanager:${project.name}-${project.version}
-      docker pull ${env.DOCKER_REGISTRY}ev-propensityengine:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-ucgengine:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-infulfillmentmanager:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-emptyfulfillmentmanager:${project.name}-${project.version}

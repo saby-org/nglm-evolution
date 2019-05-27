@@ -614,7 +614,7 @@ public class DNBOProxy
           OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
               algo, valueMode, offersForAlgo, subscriberProfile, threshold, salesChannelID,
               productService, productTypeService, catalogCharacteristicService,
-              propensityDataReader, returnedLog);
+              propensityDataReader, subscriberGroupEpochReader, returnedLog);
 
       if(offerAvailabilityFromPropensityAlgo == null){
         log.warn("DNBOProxy.processGetOffers Return empty list of offer");
@@ -651,7 +651,7 @@ public class DNBOProxy
       HashMap<String,Object> value = new HashMap<String,Object>();
       value.put("subscriberID", subscriberID);
       value.put("scoringStrategyID", scoringStrategyID);
-      value.put("msisdn", subscriberID);
+      value.put("msisdn", subscriberID); // subscriberID expected by caller here (for compatibility reasons)
       value.put("strategy", scoringStrategyID);
       value.put("offers", scoredOffersJSON);
       value.put("log", returnedLog.toString());

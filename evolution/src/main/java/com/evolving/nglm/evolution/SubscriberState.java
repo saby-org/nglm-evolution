@@ -33,6 +33,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,6 +82,7 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("journeyRequests", SchemaBuilder.array(JourneyRequest.schema()).schema());
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
+    schemaBuilder.field("propensityOutputs", SchemaBuilder.array(PropensityEventOutput.schema()).defaultValue(Collections.<PropensityEventOutput>emptyList()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -115,6 +118,7 @@ public class SubscriberState implements SubscriberStreamOutput
   private List<JourneyRequest> journeyRequests;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatistic> journeyStatistics;
+  private List<PropensityEventOutput> propensityOutputs;
   private SubscriberTrace subscriberTrace;
 
   /****************************************
@@ -135,6 +139,7 @@ public class SubscriberState implements SubscriberStreamOutput
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
+  public List<PropensityEventOutput> getPropensityOutputs() { return propensityOutputs; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
 
   /****************************************
@@ -145,7 +150,7 @@ public class SubscriberState implements SubscriberStreamOutput
 
   public void setLastEvaluationDate(Date lastEvaluationDate) { this.lastEvaluationDate = lastEvaluationDate; }
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
-
+  
   //
   //  setUCGState
   //
@@ -179,6 +184,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyRequests = new ArrayList<JourneyRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatistics = new ArrayList<JourneyStatistic>();
+        this.propensityOutputs = new ArrayList<PropensityEventOutput>();
         this.subscriberTrace = null;
       }
     catch (InvocationTargetException e)
@@ -197,7 +203,7 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -211,6 +217,7 @@ public class SubscriberState implements SubscriberStreamOutput
     this.journeyRequests = journeyRequests;
     this.deliveryRequests = deliveryRequests;
     this.journeyStatistics = journeyStatistics;
+    this.propensityOutputs = propensityOutputs;
     this.subscriberTrace = subscriberTrace;
   }
 
@@ -239,6 +246,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatistics());
+        this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
 
         //
@@ -283,6 +291,7 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("journeyRequests", packJourneyRequests(subscriberState.getJourneyRequests()));
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatistics", packJourneyStatistics(subscriberState.getJourneyStatistics()));
+    struct.put("propensityOutputs", packPropensityOutputs(subscriberState.getPropensityOutputs()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
     return struct;
   }
@@ -369,6 +378,22 @@ public class SubscriberState implements SubscriberStreamOutput
 
   /*****************************************
   *
+  *  packPropensityOutputs
+  *
+  *****************************************/
+
+  private static List<Object> packPropensityOutputs(List<PropensityEventOutput> propensityOutputs)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (PropensityEventOutput propensityOutput : propensityOutputs)
+      {
+        result.add(PropensityEventOutput.pack(propensityOutput));
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
   *  unpack
   *
   *****************************************/
@@ -400,13 +425,14 @@ public class SubscriberState implements SubscriberStreamOutput
     List<JourneyRequest> journeyRequests = unpackJourneyRequests(schema.field("journeyRequests").schema(), valueStruct.get("journeyRequests"));
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
+    List<PropensityEventOutput> propensityOutputs = (schemaVersion >= 2) ? unpackPropensityOutputs(schema.field("propensityOutputs").schema(), valueStruct.get("propensityOutputs")) : Collections.<PropensityEventOutput>emptyList();
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
 
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, deliveryRequests, journeyStatistics, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, deliveryRequests, journeyStatistics, propensityOutputs, subscriberTrace);
   }
 
   /*****************************************
@@ -564,6 +590,39 @@ public class SubscriberState implements SubscriberStreamOutput
       {
         JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticSchema, statistic));
         result.add(journeyStatistic);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackPropensityOutputs
+  *
+  *****************************************/
+
+  private static List<PropensityEventOutput> unpackPropensityOutputs(Schema schema, Object value)
+  {
+    //
+    //  get schema for PropensityEventOutput
+    //
+
+    Schema propensityOutputsSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    List<PropensityEventOutput> result = new ArrayList<PropensityEventOutput>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object output : valueArray)
+      {
+        PropensityEventOutput propensityOutput = PropensityEventOutput.unpack(new SchemaAndValue(propensityOutputsSchema, output));
+        result.add(propensityOutput);
       }
 
     //

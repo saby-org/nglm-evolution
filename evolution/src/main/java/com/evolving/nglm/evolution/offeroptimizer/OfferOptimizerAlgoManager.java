@@ -18,6 +18,7 @@ import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
 import com.evolving.nglm.evolution.PropensityKey;
 import com.evolving.nglm.evolution.PropensityState;
+import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;
 
 
@@ -51,7 +52,8 @@ public class OfferOptimizerAlgoManager {
       String valueMode, Set<Offer> offers, SubscriberProfile subscriberProfile, double minScoreThreshold,
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
-      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, StringBuffer returnedLog) {
+      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
+      ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, StringBuffer returnedLog) {
 
     if (offers == null || offers.size() == 0) {
       returnedLog.append("No offer to sort");
@@ -87,16 +89,19 @@ public class OfferOptimizerAlgoManager {
     List<ProposedOfferDetails> result = new ArrayList<>();
     for (Offer o : offers) {
       // retrieve the current propensity for this offer
-      String segment = subscriberProfile.getEvolutionSubscriberStatus().toString(); // TODO change to real code
-      PropensityKey pk = new PropensityKey(o.getOfferID(), segment);
+      // String segment = subscriberProfile.getEvolutionSubscriberStatus().toString(); // TODO change to real code
+      PropensityKey pk = new PropensityKey(o.getOfferID(), subscriberProfile, subscriberGroupEpochReader);
       PropensityState ps = propensityDataReader.get(pk);
-      int currentPropensity = 50;
+      int currentPropensity = 50; // TODO: In the future, use: o.getInitialPropensity();
       if (ps == null) {
-        // just log a warn and keep default 50
+        // just log a warn and keep initial propensity
         logger.warn("OfferOptimizerAlgoManager.applyScoreAndSort Could not retrieve propensity for offer "
             + o.getOfferID());
       } else {
-        currentPropensity = (int) (100.0 * ps.getPropensity());
+        Double p = ps.getPropensity();
+        if(p != null) {
+          currentPropensity = (int) (100.0 * p);
+        }
       }
       logger.trace("OfferOptimizerAlgoManager.applyScoreAndSort Propensity for offer "
           + o.getOfferID()+ " = " + currentPropensity);

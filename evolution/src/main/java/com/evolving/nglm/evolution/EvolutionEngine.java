@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  EvolutionEngine.java 
+*  EvolutionEngine.java
 *
 ****************************************************************************/
 
@@ -29,11 +29,13 @@ import org.apache.kafka.streams.state.StreamsMetadata;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.KeyValueMapper;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
+import org.apache.kafka.streams.kstream.TransformerSupplier;
 import org.apache.kafka.streams.processor.StateStoreSupplier;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
@@ -76,6 +78,9 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
+import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.TokenType.TokenTypeKind;
+import com.evolving.nglm.evolution.TokenTypeService.TokenTypeListener;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 
 import org.slf4j.Logger;
@@ -170,6 +175,7 @@ public class EvolutionEngine
   private static JourneyService journeyService;
   private static JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService;
+  private static TokenTypeService tokenTypeService;
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
@@ -177,6 +183,8 @@ public class EvolutionEngine
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberHistory> subscriberHistoryStore = null;
+  private static TokenType externalTokenType = null;
+  private static final String externalTokenTypeID = "external";
   private static final int RESTAPIVersion = 1;
   private static HttpServer subscriberProfileServer;
   private static HttpServer internalServer;
@@ -210,7 +218,7 @@ public class EvolutionEngine
     *****************************************/
 
     NGLMRuntime.initialize();
-    
+
     /*****************************************
     *
     *  configuration
@@ -233,7 +241,7 @@ public class EvolutionEngine
     Integer numberOfStreamThreads = Integer.parseInt(args[8]);
 
     //
-    //  source topics 
+    //  source topics
     //
 
     String emptyTopic = Deployment.getEmptyTopic();
@@ -244,21 +252,29 @@ public class EvolutionEngine
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
+    String presentationLogTopic = Deployment.getPresentationLogTopic();
+    String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
 
     //
     //  sink topics
     //
 
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
+    String propensityLogTopic = Deployment.getPropensityLogTopic();
 
     //
     //  changelogs
     //
 
     String subscriberStateChangeLog = Deployment.getSubscriberStateChangeLog();
-    String subscriberStateChangeLogTopic = Deployment.getSubscriberStateChangeLogTopic();
     String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
-    String subscriberHistoryChangeLogTopic = Deployment.getSubscriberHistoryChangeLogTopic();
+    String propensityStateChangeLog = Deployment.getPropensityStateChangeLog();
+    
+    // 
+    // Internal repartitioning topic (when rekeyed)
+    //
+    
+    String propensityRepartitioningTopic = Deployment.getPropensityRepartitioningTopic();
 
     //
     //  log
@@ -289,16 +305,23 @@ public class EvolutionEngine
     //
     //  segmentationDimensionService
     //
-    
+
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationdimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
+    
+    //
+    //  tokenTypeService
+    //
+
+    tokenTypeService = new TokenTypeService(bootstrapServers, "evolutionengine-tokentypeservice-" + evolutionEngineKey, Deployment.getTokenTypeTopic(), false);
+    tokenTypeService.start();
 
     //
     //  subscriberGroupEpochReader
     //
 
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("evolutionengine-subscribergroupepoch", evolutionEngineKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
-    
+
     //
     //  ucgStateReader
     //
@@ -314,7 +337,7 @@ public class EvolutionEngine
     //
     //  evolutionEngineExtensionUpdateSubscriberMethod
     //
-    
+
     try
       {
         evolutionEngineExtensionUpdateSubscriberMethod = Deployment.getEvolutionEngineExtensionClass().getMethod("updateSubscriberProfile",EvolutionEventContext.class,SubscriberStreamEvent.class);
@@ -323,13 +346,13 @@ public class EvolutionEngine
       {
         throw new RuntimeException(e);
       }
-    
+
     /*****************************************
     *
     *  stream properties
     *
     *****************************************/
-    
+
     Properties streamsProperties = new Properties();
     streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationID);
     streamsProperties.put(StreamsConfig.STATE_DIR_CONFIG, stateDirectory);
@@ -350,7 +373,7 @@ public class EvolutionEngine
     *****************************************/
 
     StreamsBuilder builder = new StreamsBuilder();
-    
+
     /*****************************************
     *
     *  evolution engine event topics/serdes
@@ -390,6 +413,8 @@ public class EvolutionEngine
     final Serde<byte[]> byteArraySerde = new Serdes.ByteArraySerde();
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
+    final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
+    final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
@@ -399,6 +424,9 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberState> subscriberStateSerde = SubscriberState.serde();
     final ConnectSerde<SubscriberHistory> subscriberHistorySerde = SubscriberHistory.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
+    final ConnectSerde<PropensityEventOutput> propensityEventOutputSerde = PropensityEventOutput.serde();
+    final ConnectSerde<PropensityKey> propensityKeySerde = PropensityKey.serde();
+    final ConnectSerde<PropensityState> propensityStateSerde = PropensityState.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
 
     /*****************************************
@@ -427,11 +455,11 @@ public class EvolutionEngine
     *  ensure copartitioned
     *
     ****************************************/
-    
+
     //
     //  no longer needed in streams 2.0
     //
-    
+
     /*****************************************
     *
     *  source streams
@@ -455,7 +483,9 @@ public class EvolutionEngine
     KStream<StringKey, JourneyStatistic> journeyStatisticSourceStream = builder.stream(journeyStatisticTopic, Consumed.with(stringKeySerde, journeyStatisticSerde));
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
-    
+    KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
+    KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
+
     //
     //  evolution engine event source streams
     //
@@ -488,6 +518,8 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyStatisticSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) presentationLogSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) acceptanceLogSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream evolutionEventCompositeStream = null;
@@ -496,7 +528,7 @@ public class EvolutionEngine
         evolutionEventCompositeStream = (evolutionEventCompositeStream == null) ? eventStream : evolutionEventCompositeStream.merge(eventStream);
       }
     KStream<StringKey, SubscriberStreamEvent> evolutionEventStream = (KStream<StringKey, SubscriberStreamEvent>) evolutionEventCompositeStream;
-    
+
     //
     //  merge source streams -- deliveryResponseStream
     //
@@ -523,7 +555,7 @@ public class EvolutionEngine
     *  convert to stream
     *
     *****************************************/
-    
+
     KStream<StringKey, SubscriberState> subscriberStateStream = evolutionEventStream.leftJoin(subscriberState, EvolutionEngine::getSubscriberState);
 
     /*****************************************
@@ -533,25 +565,26 @@ public class EvolutionEngine
     *****************************************/
 
     KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = subscriberStateStream.flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
-    
+
     /*****************************************
     *
     *  branch output streams
     *
     *****************************************/
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace));
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace), (key,value) -> (value instanceof PropensityEventOutput));
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[2];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
+    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[4];
 
     /*****************************************
     *
     *  branch delivery requests
     *
     *****************************************/
-    
+
     //
     //  build predicates for delivery requests
     //
@@ -584,6 +617,48 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  propensityState -- update
+    *
+    *****************************************/
+
+    //
+    //  propensity rekey
+    //
+    // We manually write the rekeyed KStream in an underlying intermediary topic (propensityoutput-repartition)
+    // 
+    // When going through a map operation, we change the key of the topic.
+    // Therefore the repartition done by Kafka between the different topic partitions will not be the same.
+    // For instance, a worker assigned to the treatment of a record may not be assigned to the treatment of its rekeyed record.
+    // That is why, we need to write the rekeyed KStream in an intermediary topic.
+    //
+    // Usually it's automatically done in the next operation applied on this KStream as it is mentioned in groupByKey or leftJoin javadoc:
+    //      "If a key changing operator was used before this operation and no data redistribution 
+    //      happened afterwards an internal repartitioning topic will be created in Kafka."
+    // But here, if we let this happen, it will create two different internal repartitioning topics (both containing the same records), one for the groupeByKey and one for the leftJoin.
+    // Firstly, it would be a waste of resources to duplicate those topics.
+    // But, more important, by doing this, we will introduce indeterminism, and therefore errors.
+    // Indeed, the groupByKey and leftJoin operations would not be done sequentially anymore but in parallel, and we could not ensure that groupByKey will be done before the leftJoin.
+    // 
+    // For those reasons, we manually create the intermediary topic just after the map operation and we applied groupeByKey and leftJoin on this "well-partioned" stream, thus no other redistribution intermediary topic will be needed.
+    //
+
+    KStream<PropensityKey, PropensityEventOutput> rekeyedPropensityStream = propensityOutputsStream.map(EvolutionEngine::rekeyPropensityStream).through(propensityRepartitioningTopic, Produced.with(propensityKeySerde, propensityEventOutputSerde));
+
+    //
+    //  propensity aggregate
+    //
+
+    KeyValueBytesStoreSupplier supplier = Stores.persistentKeyValueStore(propensityStateChangeLog);
+    Materialized propensityStateStore = Materialized.<PropensityKey, PropensityState>as(supplier).withKeySerde(propensityKeySerde).withValueSerde(propensityStateSerde.optionalSerde());
+    KTable<PropensityKey, PropensityState> propensityState = rekeyedPropensityStream.groupByKey(Serialized.with(propensityKeySerde, propensityEventOutputSerde)).aggregate(EvolutionEngine::nullPropensityState, EvolutionEngine::updatePropensityState, propensityStateStore);
+
+    //
+    //  convert to stream
+    //
+    KStream<PropensityKey, PropensityState> propensityStateStream = rekeyedPropensityStream.leftJoin(propensityState, EvolutionEngine::getPropensityState);
+    
+    /*****************************************
+    *
     *  sink
     *
     *****************************************/
@@ -595,7 +670,8 @@ public class EvolutionEngine
     journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
-    
+    propensityStateStream.to(propensityLogTopic, Produced.with(propensityKeySerde, propensityStateSerde));
+
     //
     //  sink - delivery request streams
     //
@@ -790,7 +866,7 @@ public class EvolutionEngine
     *  shutdown hook
     *
     *****************************************/
-    
+
     NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, journeyObjectiveService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
 
     /*****************************************
@@ -821,10 +897,23 @@ public class EvolutionEngine
 
   /*****************************************
   *
-  *  waitForStreams
+  *  getExternalTokenType
   *
   *****************************************/
   
+  public static TokenType getExternalTokenType() {
+    if(externalTokenType == null) {
+      externalTokenType = (TokenType) tokenTypeService.getStoredTokenType(externalTokenTypeID);
+    }
+    return externalTokenType;
+  }
+
+  /*****************************************
+  *
+  *  waitForStreams
+  *
+  *****************************************/
+
   public void waitForStreams(Date timeout)
   {
     boolean streamsInitialized = false;
@@ -880,7 +969,7 @@ public class EvolutionEngine
     //
     //  data
     //
-    
+
     private String deliveryType;
 
     //
@@ -959,16 +1048,16 @@ public class EvolutionEngine
 
       subscriberGroupEpochReader.close();
       ucgStateReader.close();
-      
+
       //
       //  stop services
       //
-      
+
       journeyService.stop();
       journeyObjectiveService.stop();
       segmentationDimensionService.stop();
       timerService.stop();
-      
+
       //
       //  rest server
       //
@@ -979,7 +1068,7 @@ public class EvolutionEngine
       //
       //  stop streams
       //
-      
+
       boolean streamsCloseSuccessful = kafkaStreams.close(60, java.util.concurrent.TimeUnit.SECONDS);
       log.info("Stopped EvolutionEngine" + (streamsCloseSuccessful ? "" : " (timed out)"));
     }
@@ -992,7 +1081,7 @@ public class EvolutionEngine
   *****************************************/
 
   public static SubscriberStreamEvent castToSubscriberStreamEvent(SubscriberStreamEvent subscriberStreamEvent) { return subscriberStreamEvent; }
-  
+
   /*****************************************
   *
   *  nullSubscriberState
@@ -1099,6 +1188,16 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
+    //
+    //  propensityOutputs cleaning
+    //
+
+    if (subscriberState.getPropensityOutputs() != null)
+      {
+        subscriberState.getPropensityOutputs().clear();
+        subscriberStateUpdated = true;
+      }
+
     /*****************************************
     *
     *  update SubscriberProfile
@@ -1109,10 +1208,18 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  update PropensityOutputs
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updatePropensity(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
     *  update journeyStates
     *
     *****************************************/
-    
+
     subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
 
     /*****************************************
@@ -1218,7 +1325,7 @@ public class EvolutionEngine
         subscriberProfile.setSubscriberTraceEnabled(subscriberTraceControl.getSubscriberTraceEnabled());
         subscriberProfileUpdated = true;
       }
-    
+
     /*****************************************
     *
     *  invoke evolution engine extension
@@ -1233,7 +1340,7 @@ public class EvolutionEngine
       {
         throw new RuntimeException(e);
       }
-    
+
     /*****************************************
     *
     *  process subscriber profile force update
@@ -1247,7 +1354,7 @@ public class EvolutionEngine
         //
 
         SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) evolutionEvent;
-        
+
         //
         //  evolutionSubscriberStatus
         //
@@ -1315,17 +1422,17 @@ public class EvolutionEngine
                   List<BaseSplit> baseSplitList = segmentationDimensionRanges.getBaseSplit();
                   if(baseSplitList != null && !baseSplitList.isEmpty()){
                     for(BaseSplit baseSplit : baseSplitList){
-                      
+
                       //
                       // evaluate criteria defined in baseSplit
                       //
-                      
+
                       boolean profileCriteriaEvaluation = EvaluationCriterion.evaluateCriteria(evaluationRequest, baseSplit.getProfileCriteria());
-                          
+
                       //
-                      // get field value of criterion used for ranges 
+                      // get field value of criterion used for ranges
                       //
-                      
+
                       String variableName = baseSplit.getVariableName();
                       CriterionField baseMetric = CriterionContext.Profile.getCriterionFields().get(variableName);
                       Object normalized = baseMetric == null ? null : baseMetric.retrieveNormalized(evaluationRequest);
@@ -1333,7 +1440,7 @@ public class EvolutionEngine
                       //
                       // check if the subscriber belongs to the segment
                       //
-                      
+
                       List<SegmentRanges> segmentList = baseSplit.getSegments();
                       for(SegmentRanges segment : segmentList){
                         boolean minValueOK =true;
@@ -1343,10 +1450,10 @@ public class EvolutionEngine
                           switch (dataType) {
                           case IntegerCriterion:
                             if(segment.getRangeMin() != null){
-                              minValueOK = (normalized != null) && (Long)normalized >= segment.getRangeMin(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ... 
+                              minValueOK = (normalized != null) && (Long)normalized >= segment.getRangeMin(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
                             }
                             if(segment.getRangeMax() != null){
-                              minValueOK = (normalized == null) || (Long)normalized < segment.getRangeMax(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ... 
+                              minValueOK = (normalized == null) || (Long)normalized < segment.getRangeMax(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
                             }
                             break;
 
@@ -1467,7 +1574,7 @@ public class EvolutionEngine
     *****************************************/
 
     updateEvolutionEngineStatistics(evolutionEvent);
-    
+
     /*****************************************
     *
     *  return
@@ -1478,6 +1585,179 @@ public class EvolutionEngine
   }
 
   /*****************************************
+  *
+  *  updatePropensity
+  *
+  *****************************************/
+
+  private static boolean updatePropensity(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberStateUpdated = false;
+
+    /*****************************************
+    *
+    *  presentation and acceptance evaluation
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof PresentationLog || evolutionEvent instanceof AcceptanceLog)
+    {
+      String eventTokenCode = null;
+      List<Token> subscriberTokens = subscriberProfile.getTokens();
+      DNBOToken subscriberStoredToken = null;
+      TokenType defaultDNBOTokenType = getExternalTokenType();
+      if(defaultDNBOTokenType == null) {
+        log.error("Could not find any default token type for external token. Check your configuration.");
+        return false;
+      }
+
+      //
+      // Retrieve the token-code we are looking for, from the event log.
+      //
+
+      if(evolutionEvent instanceof PresentationLog) {
+        eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
+      } else if(evolutionEvent instanceof AcceptanceLog) {
+        eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
+      }
+      
+      //
+      // Subscriber token list cleaning.
+      // We will delete all already expired tokens before doing anything.
+      //
+      
+      List<Token> cleanedList = new ArrayList<Token>();
+      boolean changed = false;
+      Date now = SystemTime.getCurrentTime();
+      for(Token token : subscriberTokens) {
+        if(token.getTokenExpirationDate().before(now)) {
+          changed = true;
+          break;
+        }
+        cleanedList.add(token);
+      }
+      
+      if(changed) {
+        subscriberProfile.setTokens(cleanedList);
+        subscriberTokens = cleanedList;
+        subscriberStateUpdated = true;
+      }
+      
+      //
+      // Retrieving the corresponding token from the subscriber token list, if it already exists.
+      // We expect a DNBOToken, otherwise it means that there is a conflict with a token stored in the subscriber token list.
+      // Maybe we had already generated an other kind of token with the exact same token-code that this one (that has been created outside).
+      // If it happens, we ignore this new token and raise an error (that's the best we can do ATM but it could change later)
+      //
+
+      for(Token token : subscriberTokens) {
+        if(Objects.equals(eventTokenCode, token.getTokenCode())) {
+          if(token instanceof DNBOToken) {
+
+            subscriberStoredToken = (DNBOToken) token;
+          } else {
+            log.error("Unexpected type (" + token.getClass().getName() + ") for an already existing token " + token);
+            return subscriberStateUpdated;
+          }
+          break;
+        }
+      }
+
+      //
+      // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
+      //
+
+      if(subscriberStoredToken == null) {
+        subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+        subscriberTokens.add(subscriberStoredToken);
+        subscriberStateUpdated = true;
+      }
+
+      //
+      // Update the token with the incoming event
+      //
+
+      if(evolutionEvent instanceof PresentationLog) {
+
+        //
+        // Presentation event update
+        // Because we do not know the actual creation date of the token (it has been created outside Evolution)
+        // we assume it has been created at the same time it was bound with offers
+        //
+
+        PresentationLog presentationLog = (PresentationLog) evolutionEvent;
+        if(subscriberStoredToken.getTokenStatus() == TokenStatus.New) {
+          subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+        }
+        if(subscriberStoredToken.getCreationDate() == null) {
+          subscriberStoredToken.setCreationDate(presentationLog.getEventDate());
+          subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(presentationLog.getEventDate()));
+        }
+        if(subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(presentationLog.getEventDate())) {
+          subscriberStoredToken.setBoundDate(presentationLog.getEventDate());
+        }
+        subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount() + 1);
+        subscriberStoredToken.getPresentedOffersIDs().addAll(presentationLog.getOfferIDs());
+        subscriberStateUpdated = true;
+      } else if(evolutionEvent instanceof AcceptanceLog) {
+
+        //
+        // Acceptance event update
+        //
+
+        AcceptanceLog acceptanceLog = (AcceptanceLog) evolutionEvent;
+        
+        if(subscriberStoredToken.getAcceptedOfferID() != null) {
+          log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
+          return subscriberStateUpdated;
+        } else {
+          subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
+          subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
+          subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
+        }
+        subscriberStateUpdated = true;
+      }
+      
+      //
+      // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
+      //
+
+      if(subscriberStoredToken.getPresentedOffersIDs().size() > 0 &&
+          subscriberStoredToken.getAcceptedOfferID() != null) {
+        subscriberState.getPropensityOutputs().addAll(retrievePropensityOutputs(subscriberStoredToken, subscriberProfile));
+        subscriberStateUpdated = true;
+      }
+    }
+
+    return subscriberStateUpdated;
+  }
+
+  /*****************************************
+  *
+  *  retrievePropensityOutputs
+  *
+  *   once we have acknowledge both presentation & acceptance for a token, we can extract a list of propensity outputs.
+  *
+  ****************************************/
+
+  private static List<PropensityEventOutput> retrievePropensityOutputs(DNBOToken token, SubscriberProfile subscriberProfile)
+  {    
+    List<PropensityEventOutput> result = new ArrayList<PropensityEventOutput>();
+    for(String offerID: token.getPresentedOffersIDs())
+      {
+        result.add(new PropensityEventOutput(new PropensityKey(offerID, subscriberProfile, subscriberGroupEpochReader), offerID.equals(token.getAcceptedOfferID())));
+      }
+    return result;
+  }
+    /*****************************************
   *
   *  updateJourneys
   *
@@ -1511,7 +1791,7 @@ public class EvolutionEngine
     //
     //  permitted journeys by limiting criteria
     //
-        
+
     Map<JourneyObjective, Integer> permittedSimultaneousJourneys = new HashMap<JourneyObjective, Integer>();
     Map<JourneyObjective, Boolean> permittedWaitingPeriod = new HashMap<JourneyObjective, Boolean>();
     Map<JourneyObjective, Integer> permittedSlidingWindowJourneys = new HashMap<JourneyObjective, Integer>();
@@ -1520,7 +1800,7 @@ public class EvolutionEngine
         //
         //  candidate journey
         //
-        
+
         Journey candidateJourney = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
         if (candidateJourney == null) continue;
         boolean activeJourney = subscriberState.getJourneyStates().contains(journeyState);
@@ -1528,14 +1808,14 @@ public class EvolutionEngine
         //
         //  process journey objectives
         //
-        
+
         Set<JourneyObjective> journeyObjectives = candidateJourney.getAllObjectives(journeyObjectiveService, now);
         for (JourneyObjective journeyObjective : journeyObjectives)
           {
             //
             //  ensure data structures
             //
-            
+
             if (! permittedSimultaneousJourneys.containsKey(journeyObjective))
               {
                 permittedSimultaneousJourneys.put(journeyObjective, journeyObjective.getEffectiveTargetingLimitMaxSimultaneous());
@@ -1546,7 +1826,7 @@ public class EvolutionEngine
             //
             //  update
             //
-            
+
             if (activeJourney) permittedSimultaneousJourneys.put(journeyObjective, permittedSimultaneousJourneys.get(journeyObjective) - 1);
             if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveWaitingPeriodEndDate(now)) >= 0) permittedWaitingPeriod.put(journeyObjective, Boolean.FALSE);
             if (activeJourney || journeyState.getJourneyExitDate().compareTo(journeyObjective.getEffectiveSlidingWindowStartDate(now)) >= 0) permittedSlidingWindowJourneys.put(journeyObjective, permittedSlidingWindowJourneys.get(journeyObjective) - 1);
@@ -1556,14 +1836,14 @@ public class EvolutionEngine
     //
     //  permitted journeys
     //
-        
+
     Map<JourneyObjective, Integer> permittedJourneys = new HashMap<JourneyObjective, Integer>();
     for (JourneyObjective journeyObjective : permittedSimultaneousJourneys.keySet())
       {
         permittedJourneys.put(journeyObjective, Math.max(Math.min(permittedSimultaneousJourneys.get(journeyObjective), permittedSlidingWindowJourneys.get(journeyObjective)), 0));
         if (permittedWaitingPeriod.get(journeyObjective) == Boolean.FALSE) permittedJourneys.put(journeyObjective, 0);
       }
-         
+
     /*****************************************
     *
     *  update JourneyState(s) to enter new journeys
@@ -1582,7 +1862,7 @@ public class EvolutionEngine
           {
             continue;
           }
-          
+
         //
         //  called journey?
         //
@@ -1638,7 +1918,7 @@ public class EvolutionEngine
                       }
                   }
               }
-            
+
             /*****************************************
             *
             *  recently in journey?
@@ -1762,7 +2042,7 @@ public class EvolutionEngine
               }
           }
       }
-        
+
     /*****************************************
     *
     *  update JourneyState(s) for all current journeys
@@ -1787,7 +2067,7 @@ public class EvolutionEngine
 
         /*****************************************
         *
-        *  inactive journey  
+        *  inactive journey
         *
         *****************************************/
 
@@ -1841,7 +2121,7 @@ public class EvolutionEngine
 
                 nextEvaluationDates.addAll(evaluationRequest.getNextEvaluationDates());
                 context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                
+
                 //
                 //  break if this link has fired
                 //
@@ -1973,7 +2253,7 @@ public class EvolutionEngine
                   {
                     terminateCycle = true;
                   }
-                
+
                 /*****************************************
                 *
                 *  mark visited
@@ -2083,7 +2363,7 @@ public class EvolutionEngine
                     inactiveJourneyStates.add(journeyState);
                   }
               }
-            
+
             /*****************************************
             *
             *  subscriberTrace
@@ -2105,7 +2385,7 @@ public class EvolutionEngine
         subscriberState.getJourneyStates().remove(journeyState);
         subscriberStateUpdated = true;
       }
-    
+
     /*****************************************
     *
     *  return
@@ -2113,6 +2393,65 @@ public class EvolutionEngine
     *****************************************/
 
     return subscriberStateUpdated;
+  }
+
+  /*****************************************
+  *
+  *  nullPropensityState
+  *
+  ****************************************/
+
+  public static PropensityState nullPropensityState() { return (PropensityState) null; }
+
+  /*****************************************
+  *
+  *  updatePropensityState
+  *
+  ****************************************/
+
+  public static PropensityState updatePropensityState(PropensityKey aggKey, PropensityEventOutput propensityEvent, PropensityState currentPropensityState)
+  {
+    /****************************************
+    *
+    *  get (or create) entry
+    *
+    ****************************************/
+
+    PropensityState propensityState = (currentPropensityState != null) ? new PropensityState(currentPropensityState) : new PropensityState(aggKey);
+
+    /*****************************************
+    *
+    *  update PropensityState
+    *
+    *****************************************/
+
+    if (propensityEvent.isAccepted())
+    {
+      propensityState.setAcceptanceCount(propensityState.getAcceptanceCount() + 1L);
+      evolutionEngineStatistics.incrementAcceptanceCount();
+    }
+    
+    propensityState.setPresentationCount(propensityState.getPresentationCount() + 1L);
+    evolutionEngineStatistics.incrementPresentationCount();
+
+    /****************************************
+    *
+    *  return the updated PropensityState (it is always different than the current one)
+    *
+    ****************************************/
+
+    return propensityState;
+  }
+
+  /****************************************
+  *
+  *  rekeyPropensityStream
+  *
+  ****************************************/
+
+  private static KeyValue<PropensityKey, PropensityEventOutput> rekeyPropensityStream(StringKey key, PropensityEventOutput propensityEventOutput)
+  {
+    return new KeyValue<PropensityKey, PropensityEventOutput>(propensityEventOutput.getPropensityKey(), propensityEventOutput);
   }
 
   /*****************************************
@@ -2292,6 +2631,17 @@ public class EvolutionEngine
     return subscriberState;
   }
 
+  /*****************************************
+  *
+  *  getPropensityState
+  *
+  *****************************************/
+
+  private static PropensityState getPropensityState(PropensityEventOutput propensityEventOutput, PropensityState propensityState)
+  {
+    return propensityState;
+  }
+
   /****************************************
   *
   *  getEvolutionEngineOutputs
@@ -2305,9 +2655,10 @@ public class EvolutionEngine
     result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatistics());
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
+    result.addAll(subscriberState.getPropensityOutputs());
     return result;
   }
-  
+
   /****************************************
   *
   *  rekeyDeliveryRequestStream
@@ -2318,7 +2669,7 @@ public class EvolutionEngine
   {
     return new KeyValue<StringKey, DeliveryRequest>(new StringKey(value.getDeliveryRequestID()), value);
   }
-  
+
   /*****************************************
   *
   *  generateSubscriberTraceMessage
@@ -2443,7 +2794,7 @@ public class EvolutionEngine
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
     private List<String> subscriberTraceDetails;
-    
+
     /*****************************************
     *
     *  constructor
@@ -2685,7 +3036,7 @@ public class EvolutionEngine
         apiResponseHeader.putInt(apiResponse.length);
 
         //
-        //  response 
+        //  response
         //
 
         ByteBuffer response = ByteBuffer.allocate(apiResponseHeader.array().length + apiResponse.length);
@@ -2717,7 +3068,7 @@ public class EvolutionEngine
         ByteBuffer apiResponseHeader = ByteBuffer.allocate(6);
         apiResponseHeader.put((byte) 0x01);     // version:  1
         apiResponseHeader.put((byte) 0x02);     // return code: system error (2)
-        apiResponseHeader.putInt(0);     
+        apiResponseHeader.putInt(0);
 
         //
         //  send
@@ -2835,7 +3186,7 @@ public class EvolutionEngine
             totalBytesRead += bytesRead;
           }
         if (totalBytesRead < 6) throw new ServerException("retrieveSubscriberProfile failed (bad header)");
-      
+
         //
         //  parse response header
         //
@@ -2881,7 +3232,7 @@ public class EvolutionEngine
       {
         if (responseStream != null) try { responseStream.close(); } catch (IOException e) { }
       }
-    
+
     //
     //  result
     //
@@ -2904,7 +3255,7 @@ public class EvolutionEngine
 
     return result;
   }
-  
+
   /*****************************************
   *
   *  processRetrieveSubscriberProfile
@@ -3070,7 +3421,7 @@ public class EvolutionEngine
     {
       super(configuration);
     }
-        
+
     /*****************************************
     *
     *  execute

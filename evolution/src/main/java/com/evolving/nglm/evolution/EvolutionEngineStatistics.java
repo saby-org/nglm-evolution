@@ -31,6 +31,8 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   String name;
   String objectNameForManagement;
   int eventProcessedCount;
+  int presentationCount;
+  int acceptanceCount;
 
   //
   //  profile event counts, profile counts
@@ -43,6 +45,8 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   //
 
   public int getEventProcessedCount() { return eventProcessedCount; }
+  public int getPresentationCount() { return presentationCount; }
+  public int getAcceptanceCount() { return acceptanceCount; }
 
   //
   // Interface: NGLMMonitoringObject
@@ -65,6 +69,8 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
     this.name = name;
     this.eventProcessedCount = 0;
     this.evolutionEventCounts = new HashMap<String,EvolutionEventStatistics>();
+    this.presentationCount = 0;
+    this.acceptanceCount = 0;
     this.objectNameForManagement = BaseJMXObjectName + ",name=" + name;
 
     //
@@ -73,6 +79,15 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
 
     NGLMRuntime.registerMonitoringObject(this);
   }
+
+  /*****************************************
+  *
+  *  setters
+  *
+  *****************************************/
+
+  synchronized void incrementPresentationCount() { presentationCount += 1; }
+  synchronized void incrementAcceptanceCount() { acceptanceCount += 1; }
 
   /*****************************************
   *

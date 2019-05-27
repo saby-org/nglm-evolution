@@ -27,10 +27,6 @@ if [ "<_FAKEEMULATORS_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-fake
 fi
 
-if [ "<_PROPENSITYENGINE_ENABLED_>" = "true" ]; then
-  docker stack rm <_DOCKER_STACK_>-propensityengine
-fi
-
 if [ "<_THIRDPARTYMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-thirdpartymanager
 fi

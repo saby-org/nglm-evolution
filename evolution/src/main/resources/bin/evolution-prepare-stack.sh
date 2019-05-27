@@ -181,43 +181,6 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-evolutio
 
 #########################################
 #
-#  construct stack -- propensityengine
-#
-#########################################
-
-if [ "$PROPENSITYENGINE_ENABLED" = "true" ]; then
-
-  #
-  #  preamble
-  #
-
-  mkdir -p $DEPLOY_ROOT/stack
-  cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-propensityengine.yml
-
-  #
-  #  propensityengine
-  #
-
-  for TUPLE in $PROPENSITYENGINE_CONFIGURATION
-  do
-     export KEY=`echo $TUPLE | cut -d: -f1`
-     export HOST=`echo $TUPLE | cut -d: -f2`
-     export MONITORING_PORT=`echo $TUPLE | cut -d: -f3`
-     export DEBUG_PORT=`echo $TUPLE | cut -d: -f4`
-     cat $DEPLOY_ROOT/docker/propensityengine.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
-     echo >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
-  done
-
-  #
-  #  postamble
-  #
-
-  cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-propensityengine.yml
-
-fi
-
-#########################################
-#
 #  construct stack -- ucgengine
 #
 #########################################

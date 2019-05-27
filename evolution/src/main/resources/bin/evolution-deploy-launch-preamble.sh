@@ -20,10 +20,6 @@ if [ "${FAKEEMULATORS_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-fake.yml ${DOCKER_STACK}-fake
 fi
 
-if [ "${PROPENSITYENGINE_ENABLED}" = "true" ]; then
-  docker stack deploy -c $DEPLOY_ROOT/stack/stack-propensityengine.yml ${DOCKER_STACK}-propensityengine
-fi
-
 if [ "${THIRDPARTYMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml ${DOCKER_STACK}-thirdpartymanager
 fi

@@ -6,32 +6,35 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.List;
+
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.ReferenceDataValue;
 import com.evolving.nglm.core.SchemaUtilities;
 
 public class PropensityState implements ReferenceDataValue<PropensityKey>
 {
-  
+
   /*****************************************
   *
   *  static
   *
   *****************************************/
-  
+
   public static void forceClassLoad() {}
-  
+
   /*****************************************
   *
   *  schema
   *
   *****************************************/
-  
+
   //
   //  schema
   //
@@ -42,14 +45,12 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("propensity_state");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("offerid", Schema.STRING_SCHEMA);
-    schemaBuilder.field("segment", Schema.STRING_SCHEMA);
-    schemaBuilder.field("acceptanceCount", Schema.OPTIONAL_INT64_SCHEMA);
-    schemaBuilder.field("presentationCount", Schema.OPTIONAL_INT64_SCHEMA);
-    schemaBuilder.field("propensity", Schema.OPTIONAL_FLOAT64_SCHEMA);
+    schemaBuilder.field("propensityKey", PropensityKey.schema());
+    schemaBuilder.field("acceptanceCount", Schema.INT64_SCHEMA);
+    schemaBuilder.field("presentationCount", Schema.INT64_SCHEMA);
     schema = schemaBuilder.build();
   };
-  
+
   //
   //  serde
   //
@@ -62,74 +63,83 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<PropensityState> serde() { return serde; }
-  
+
   /****************************************
   *
   *  data
   *
   ****************************************/
 
-  private String offerid;
-  private String segment;
+  private PropensityKey propensityKey;
   private Long acceptanceCount;
   private Long presentationCount;
-  private Double propensity;
-  
+
   /****************************************
   *
   *  accessors - basic
   *
   ****************************************/
 
-  public String getOfferID() { return offerid; }
-  public String getSegment() { return segment; }
-  public Long getAcceptanceCount() { return null == acceptanceCount ? new Long(0) : acceptanceCount; }
-  public Long getPresentationCount() { return null == presentationCount ? new Long(0) : presentationCount; }
-  public Double getPropensity() 
-  { 
-    if (getPresentationCount().equals(0L)) return new Double(0.0);
+  //
+  //  Getters
+  //
+  
+  public PropensityKey getPropensityKey() { return propensityKey; }
+  public Long getAcceptanceCount() { return acceptanceCount; }
+  public Long getPresentationCount() { return presentationCount; }
+  
+  //
+  //  Setters
+  //
+  
+  public void setAcceptanceCount(long acceptanceCount) { this.acceptanceCount = new Long(acceptanceCount); }
+  public void setPresentationCount(long presentationCount) { this.presentationCount = new Long(presentationCount); }
+
+  //
+  //  Propensity computation
+  //
+  
+  public Double getPropensity()
+  {
+    if (getPresentationCount().equals(0L)) return null; // TODO return initial propensity for OfferID de pro
     return new Double(getAcceptanceCount() / getPresentationCount());
   }
-  
-  public void setAcceptanceCount(Long acceptanceCount) { this.acceptanceCount = acceptanceCount; }
-  public void setPresentationCount(Long presentationCount) { this.presentationCount = presentationCount; }
   
   //
   //  ReferenceDataValue
   //
 
-  @Override public PropensityKey getKey() 
+  @Override public PropensityKey getKey()
   {
-    return new PropensityKey(offerid, segment);
+    return propensityKey;
   }
-  
+
   /*****************************************
   *
   *  constructor (simple)
   *
   *****************************************/
 
-  public PropensityState(String offerid, String segment)
+  public PropensityState(PropensityKey propensityKey)
   {
-    this.offerid = offerid;
-    this.segment = segment;
+    this.propensityKey = propensityKey;
+    this.presentationCount = new Long(0L);
+    this.acceptanceCount = new Long(0L);
   }
-  
+
   /*****************************************
   *
   *  constructor (unpack)
   *
   *****************************************/
 
-  private PropensityState(String offerid, String segment, Long acceptanceCount, Long presentationCount, Double propensity)
+  private PropensityState(PropensityKey propensityKey, Long acceptanceCount, Long presentationCount)
   {
-    this.offerid = offerid;
-    this.segment = segment;
+    this.propensityKey = propensityKey;
     this.acceptanceCount = acceptanceCount;
     this.presentationCount = presentationCount;
-    this.propensity = propensity;
   }
-  
+
   /*****************************************
   *
   *  constructor (copy)
@@ -138,13 +148,11 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
 
   public PropensityState(PropensityState propensityState)
   {
-    this.offerid = propensityState.getOfferID();
-    this.segment = propensityState.getSegment();
+    this.propensityKey = propensityState.getPropensityKey();
     this.acceptanceCount = propensityState.getAcceptanceCount();
     this.presentationCount = propensityState.getPresentationCount();
-    this.propensity = propensityState.getPropensity();
   }
-  
+
   /*****************************************
   *
   *  pack
@@ -155,14 +163,12 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   {
     PropensityState propensityState = (PropensityState) value;
     Struct struct = new Struct(schema);
-    struct.put("offerid", propensityState.getOfferID());
-    struct.put("segment", propensityState.getSegment());
+    struct.put("propensityKey", PropensityKey.pack(propensityState.getPropensityKey()));
     struct.put("acceptanceCount", propensityState.getAcceptanceCount());
     struct.put("presentationCount", propensityState.getPresentationCount());
-    struct.put("propensity", propensityState.getPropensity());
     return struct;
   }
-  
+
   /*****************************************
   *
   *  unpack
@@ -184,16 +190,14 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
     //
 
     Struct valueStruct = (Struct) value;
-    String offerid = valueStruct.getString("offerid");
-    String segment = valueStruct.getString("segment");
+    PropensityKey propensityKey = PropensityKey.unpack(new SchemaAndValue(schema.field("propensityKey").schema(), valueStruct.get("propensityKey")));
     Long acceptanceCount = valueStruct.getInt64("acceptanceCount");
     Long presentationCount = valueStruct.getInt64("presentationCount");
-    Double propensity = valueStruct.getFloat64("propensity");
 
     //
     //  return
     //
 
-    return new PropensityState(offerid, segment, acceptanceCount, presentationCount, propensity);
+    return new PropensityState(propensityKey, acceptanceCount, presentationCount);
   }
 }
