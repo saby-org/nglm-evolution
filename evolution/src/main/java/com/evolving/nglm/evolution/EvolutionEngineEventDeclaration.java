@@ -36,6 +36,12 @@ public class EvolutionEngineEventDeclaration
   private String eventTopic;
   private Map<String,CriterionField> eventCriterionFields;
 
+  //
+  //  derived
+  //
+
+  private ConnectSerde<EvolutionEngineEvent> eventSerde;
+  
   /*****************************************
   *
   *  accessors
@@ -47,25 +53,7 @@ public class EvolutionEngineEventDeclaration
   public String getEventClassName() { return eventClassName; }
   public String getEventTopic() { return eventTopic; }
   public Map<String,CriterionField> getEventCriterionFields() { return eventCriterionFields; }
-
-  //
-  //  getEventSerde
-  //
-
-  public ConnectSerde<? extends EvolutionEngineEvent> getEventSerde()
-  {
-    try
-      {
-        Class<? extends EvolutionEngineEvent> eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
-        Method serdeMethod = eventClass.getMethod("serde");
-        ConnectSerde<? extends EvolutionEngineEvent> eventSerde = (ConnectSerde<? extends EvolutionEngineEvent>) serdeMethod.invoke(null);
-        return eventSerde;
-      }
-    catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException e)
-      {
-        throw new RuntimeException(e);
-      }
-  }
+  public ConnectSerde<EvolutionEngineEvent> getEventSerde() { return eventSerde; }
 
   /*****************************************
   *
@@ -84,6 +72,22 @@ public class EvolutionEngineEventDeclaration
     this.eventClassName = JSONUtilities.decodeString(jsonRoot, "eventClass", true);
     this.eventTopic = JSONUtilities.decodeString(jsonRoot, "eventTopic", true);
     this.eventCriterionFields = decodeEventCriterionFields(JSONUtilities.decodeJSONArray(jsonRoot, "eventCriterionFields", false));
+
+    //
+    //  validate
+    //
+
+    try
+      {
+        Class<? extends EvolutionEngineEvent> eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
+        if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", eventClassName);
+        Method serdeMethod = eventClass.getMethod("serde");
+        this.eventSerde = (ConnectSerde<EvolutionEngineEvent>) serdeMethod.invoke(null);
+      }
+    catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException e)
+      {
+        throw new GUIManagerException(e);
+      }
   }
 
   /*****************************************

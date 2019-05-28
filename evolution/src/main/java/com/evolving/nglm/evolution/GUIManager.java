@@ -13360,7 +13360,7 @@ public class GUIManager
     response.put("mailTemplateCount", mailTemplateService.getStoredMailTemplates().size());
     response.put("smsTemplateCount", smsTemplateService.getStoredSMSTemplates().size());
     response.put("reportsCount", reportService.getStoredReports().size());
-    response.put("walletsCount", new Integer(-1));
+    response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
     return JSONUtilities.encodeObject(response);
   }
 
