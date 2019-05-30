@@ -1074,6 +1074,24 @@ public class EvaluationCriterion
 
   public static boolean evaluateCriteria(SubscriberEvaluationRequest evaluationRequest, List<EvaluationCriterion> criteria)
   {
+    //
+    //  log
+    //
+
+    if (evaluationRequest.getSubscriberTraceEnabled())
+      {
+        boolean firstCriterion = true;
+        StringBuilder b = new StringBuilder();
+        b.append("evaluateCriteria [ ");
+        b.append(criteria.toString());
+        b.append(" ]");
+        evaluationRequest.subscriberTrace("{0}", b.toString());
+      }
+
+    //
+    //  evaluate
+    //
+
     boolean result = true;
     for (EvaluationCriterion criterion : criteria)
       {
@@ -1475,5 +1493,24 @@ public class EvaluationCriterion
           break;
       }
     return result;
+  }
+
+  /*****************************************
+  *
+  *  toString
+  *
+  *****************************************/
+
+  public String toString()
+  {
+    StringBuilder b = new StringBuilder();
+    b.append("EvaluationCriterion:{");
+    b.append(criterionField.getID());
+    b.append(" ");
+    b.append(criterionOperator);
+    b.append(" ");
+    b.append(argumentExpression);
+    b.append("}");
+    return b.toString();
   }
 }

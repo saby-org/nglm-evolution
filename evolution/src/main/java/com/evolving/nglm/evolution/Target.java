@@ -297,13 +297,25 @@ public class Target extends GUIManagedObject
       }
   }
   
+  /****************************************
+  *
+  *  validate
+  *
+  ****************************************/
+  
   public void validate(UploadedFileService uploadedFileService, Date now) throws GUIManagerException 
   {
-    if(this.targetFileID != null) {
-      UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(targetFileID);
-      if (uploadedFile == null) { 
-        throw new GUIManagerException("unknown uploaded file with id ", targetFileID);
+    //
+    //  ensure file exists if specified
+    //
+
+    if (targetFileID != null)
+      {
+        UploadedFile uploadedFile = uploadedFileService.getActiveUploadedFile(targetFileID, now);
+        if (uploadedFile == null)
+          { 
+            throw new GUIManagerException("unknown uploaded file with id ", targetFileID);
+          }
       }
-    }
   }
 }

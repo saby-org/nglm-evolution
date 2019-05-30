@@ -179,8 +179,15 @@ public class TargetService extends GUIService
     //
 
     putGUIManagedObject(target, now, newObject, userID);
-    notifyListenerOfTarget((Target) target);
-    
+
+    //
+    //  process file
+    //
+
+    if (isActiveTarget(target, now))
+      {
+        notifyListenerOfTarget((Target) target);
+      }
   }
   
   /*****************************************
@@ -299,33 +306,46 @@ public class TargetService extends GUIService
             // time to work
             //
             
-            if(target.getTargetFileID() != null) {
-              UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(target.getTargetFileID());
-              if (uploadedFile == null) { 
-                log.warn("TargetService.run(uploaded file not found, processing done)");
-                return;
-              }else {
-                //parse file
-                BufferedReader reader;
-                try {
-                  reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename()));
-                  for(String line; (line = reader.readLine()) != null && !line.isEmpty();) {
-                    AlternateID alternateID = Deployment.getAlternateIDs().get(uploadedFile.getCustomerAlternateID());
-                    String subscriberID = subscriberIDService.getSubscriberID(alternateID.getID(), line);
-                    if(subscriberID != null) {
-                      SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.Target, Arrays.asList(target.getTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
-                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
-                    }else {
-                      log.warn("TargetService.run(cant resolve subscriberID ID="+line+")");
-                    }
+            if(target.getTargetFileID() != null)
+              {
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(target.getTargetFileID());
+                if (uploadedFile == null)
+                  { 
+                    log.warn("TargetService.run(uploaded file not found, processing done)");
+                    return;
                   }
-                  reader.close();
-                } catch (IOException | SubscriberIDServiceException e) {
-                  log.warn("TargetService.run(problem with file parsing)", e);
-                }
+                else
+                  {
+                    //
+                    //  parse file
+                    //
+                    
+                    BufferedReader reader;
+                    try
+                      {
+                        AlternateID alternateID = Deployment.getAlternateIDs().get(uploadedFile.getCustomerAlternateID());
+                        reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename()));
+                        for (String line; (line = reader.readLine()) != null && !line.isEmpty();)
+                          {
+                            String subscriberID = (alternateID != null) ? subscriberIDService.getSubscriberID(alternateID.getID(), line) : line;
+                            if(subscriberID != null)
+                              {
+                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.Target, Arrays.asList(target.getTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
+                                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
+                              }
+                            else
+                              {
+                                log.warn("TargetService.run(cant resolve subscriberID ID="+line+")");
+                              }
+                          }
+                        reader.close();
+                      }
+                    catch (IOException | SubscriberIDServiceException e)
+                      {
+                        log.warn("TargetService.run(problem with file parsing)", e);
+                      }
+                  }
               }
-            }
-            
             
             /*****************************************
             *

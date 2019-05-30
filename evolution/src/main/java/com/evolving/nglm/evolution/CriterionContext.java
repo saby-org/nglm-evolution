@@ -61,12 +61,122 @@ public class CriterionContext
   *
   *****************************************/
   
+  //
+  //  internal
+  //
+
+  private static CriterionField evaluationDate;
+  private static CriterionField evaluationEventName;
+  private static CriterionField internalRandom100;
+  private static CriterionField internalFalse;
+  private static CriterionField internalTargets;
+  static
+  {
+    //
+    //  evaluationDate
+    //
+
+    try
+      {
+        Map<String,Object> evaluationDateJSON = new LinkedHashMap<String,Object>();
+        evaluationDateJSON.put("id", "evaluation.date");
+        evaluationDateJSON.put("display", "Evaluation Date");
+        evaluationDateJSON.put("dataType", "date");
+        evaluationDateJSON.put("retriever", "getEvaluationDate");
+        evaluationDateJSON.put("esField", "evaluationDate");
+        evaluationDateJSON.put("internalOnly", false);
+        evaluationDate  = new CriterionField(JSONUtilities.encodeObject(evaluationDateJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
+    //
+    //  evaluationEventName
+    //
+
+    try
+      {
+        Map<String,Object> evaluationEventNameJSON = new LinkedHashMap<String,Object>();
+        evaluationEventNameJSON.put("id", "evaluation.eventname");
+        evaluationEventNameJSON.put("display", "evaluation.eventname");
+        evaluationEventNameJSON.put("dataType", "string");
+        evaluationEventNameJSON.put("retriever", "getJourneyEvaluationEventName");
+        evaluationEventNameJSON.put("internalOnly", true);
+        evaluationEventName  = new CriterionField(JSONUtilities.encodeObject(evaluationEventNameJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
+    //
+    //  internalRandom100
+    //
+
+    try
+      {
+        Map<String,Object> internalRandom100JSON = new LinkedHashMap<String,Object>();
+        internalRandom100JSON.put("id", "internal.random100");
+        internalRandom100JSON.put("display", "internal.random100");
+        internalRandom100JSON.put("dataType", "integer");
+        internalRandom100JSON.put("retriever", "getRandom100");
+        internalRandom100JSON.put("internalOnly", true);
+        internalRandom100  = new CriterionField(JSONUtilities.encodeObject(internalRandom100JSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
+    //
+    //  internalFalse
+    //
+
+    try
+      {
+        Map<String,Object> internalFalseJSON = new LinkedHashMap<String,Object>();
+        internalFalseJSON.put("id", "internal.false");
+        internalFalseJSON.put("display", "internal.false");
+        internalFalseJSON.put("dataType", "boolean");
+        internalFalseJSON.put("retriever", "getFalse");
+        internalFalseJSON.put("internalOnly", true);
+        internalFalse  = new CriterionField(JSONUtilities.encodeObject(internalFalseJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
+    //
+    //  internalTargets
+    //
+
+    try
+      {
+        Map<String,Object> internalTargetsJSON = new LinkedHashMap<String,Object>();
+        internalTargetsJSON.put("id", "internal.targets");
+        internalTargetsJSON.put("display", "internal.targets");
+        internalTargetsJSON.put("dataType", "stringSet");
+        internalTargetsJSON.put("retriever", "getTargets");
+        internalTargetsJSON.put("internalOnly", true);
+        internalTargets  = new CriterionField(JSONUtilities.encodeObject(internalTargetsJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+  }
+
+  //
+  //  journey
+  //
+
   private static CriterionField journeyEntryDate;
   private static CriterionField nodeEntryDate;
-  private static CriterionField evaluationEventName;
   private static CriterionField journeyActionDeliveryStatus;
   private static CriterionField journeyActionJourneyStatus;
-  private static CriterionField internalRandom100;
   static
   {
     //
@@ -108,25 +218,6 @@ public class CriterionContext
       }
 
     //
-    //  evaluationEventName
-    //
-
-    try
-      {
-        Map<String,Object> evaluationEventNameJSON = new LinkedHashMap<String,Object>();
-        evaluationEventNameJSON.put("id", "evaluation.eventname");
-        evaluationEventNameJSON.put("display", "evaluation.eventname");
-        evaluationEventNameJSON.put("dataType", "string");
-        evaluationEventNameJSON.put("retriever", "getJourneyEvaluationEventName");
-        evaluationEventNameJSON.put("internalOnly", false);
-        evaluationEventName  = new CriterionField(JSONUtilities.encodeObject(evaluationEventNameJSON));
-      }
-    catch (GUIManagerException e)
-      {
-        throw new ServerRuntimeException(e);
-      }
-
-    //
     //  journeyActionDeliveryStatus
     //
 
@@ -158,25 +249,6 @@ public class CriterionContext
         journeyActionJourneyStatusJSON.put("retriever", "getJourneyActionJourneyStatus");
         journeyActionJourneyStatusJSON.put("internalOnly", true);
         journeyActionJourneyStatus  = new CriterionField(JSONUtilities.encodeObject(journeyActionJourneyStatusJSON));
-      }
-    catch (GUIManagerException e)
-      {
-        throw new ServerRuntimeException(e);
-      }
-
-    //
-    //  internalRandom100
-    //
-
-    try
-      {
-        Map<String,Object> internalRandom100JSON = new LinkedHashMap<String,Object>();
-        internalRandom100JSON.put("id", "internal.random100");
-        internalRandom100JSON.put("display", "internal.random100");
-        internalRandom100JSON.put("dataType", "integer");
-        internalRandom100JSON.put("retriever", "getRandom100");
-        internalRandom100JSON.put("internalOnly", true);
-        internalRandom100  = new CriterionField(JSONUtilities.encodeObject(internalRandom100JSON));
       }
     catch (GUIManagerException e)
       {
@@ -312,10 +384,8 @@ public class CriterionContext
         //
 
         this.journeyCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
-        this.journeyCriterionFields.put(evaluationEventName.getID(), evaluationEventName);
         this.journeyCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
         this.journeyCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
-        this.journeyCriterionFields.put(internalRandom100.getID(), internalRandom100);
 
         //
         //  node-level parameters
@@ -462,7 +532,13 @@ public class CriterionContext
     switch (criterionContextType)
       {
         case Profile:
-          result = Deployment.getProfileCriterionFields();
+          result = new LinkedHashMap<String,CriterionField>();
+          result.put(evaluationDate.getID(), evaluationDate);
+          result.put(evaluationEventName.getID(), evaluationEventName);
+          result.put(internalRandom100.getID(), internalRandom100);
+          result.put(internalFalse.getID(), internalFalse);
+          result.put(internalTargets.getID(), internalTargets);
+          result.putAll(Deployment.getProfileCriterionFields());
           break;
         case Presentation:
           result = Deployment.getPresentationCriterionFields();
@@ -470,7 +546,7 @@ public class CriterionContext
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(journeyCriterionFields);
-          result.putAll(Deployment.getProfileCriterionFields());
+          result.putAll(Profile.getCriterionFields());
           break;
         default:
           throw new ServerRuntimeException("unknown criterionContext: " + criterionContextType);

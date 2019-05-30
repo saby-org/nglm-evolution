@@ -204,13 +204,24 @@ public class UploadedFile extends GUIManagedObject
 
     return new UploadedFile(schemaAndValue, applicationID, customerAlternateID, sourceFilename, destinationFilename, fileType, fileEncoding, fileSize, numberOfLines, uploadDate);
   }
+
+  /****************************************
+  *
+  *  validate
+  *
+  ****************************************/
   
   public void validate() throws GUIManagerException 
   {
-    if(this.customerAlternateID != null) {
-      AlternateID alternateID = Deployment.getAlternateIDs().get(this.customerAlternateID);
-      if (alternateID == null) throw new GUIManagerException("unknown alternateid ", this.customerAlternateID);
-    }
+    //
+    //  ensure alternateID (if specified)
+    //
+    
+    if (customerAlternateID != null)
+      {
+        AlternateID alternateID = Deployment.getAlternateIDs().get(customerAlternateID);
+        if (alternateID == null) throw new GUIManagerException("unknown alternateid ", customerAlternateID);
+      }
   }
   
 }

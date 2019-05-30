@@ -173,6 +173,7 @@ public class EvolutionEngine
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static JourneyService journeyService;
+  private static TargetService targetService;
   private static JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService;
   private static TokenTypeService tokenTypeService;
@@ -288,6 +289,13 @@ public class EvolutionEngine
 
     journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), false);
     journeyService.start();
+
+    //
+    //  targetService
+    //
+
+    targetService = new TargetService(bootstrapServers, "evolutionengine-targetservice-" + evolutionEngineKey, Deployment.getTargetTopic(), false);
+    targetService.start();
 
     //
     //  journeyObjectiveService
@@ -867,7 +875,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, journeyObjectiveService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, targetService, journeyObjectiveService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1007,6 +1015,7 @@ public class EvolutionEngine
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ReferenceDataReader<String,UCGState> ucgStateReader;
     private JourneyService journeyService;
+    private TargetService targetService;
     private JourneyObjectiveService journeyObjectiveService;
     private SegmentationDimensionService segmentationDimensionService;
     private TimerService timerService;
@@ -1017,11 +1026,12 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.ucgStateReader = ucgStateReader;
+      this.targetService = targetService;
       this.journeyService = journeyService;
       this.journeyObjectiveService = journeyObjectiveService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -1054,6 +1064,7 @@ public class EvolutionEngine
       //
 
       journeyService.stop();
+      targetService.stop();
       journeyObjectiveService.stop();
       segmentationDimensionService.stop();
       timerService.stop();
@@ -1510,6 +1521,16 @@ public class EvolutionEngine
                       }
                   }
               }
+              break;
+
+            case Target:
+              String targetID = subscriberGroup.getSubscriberGroupIDs().get(0);
+              Target target = targetService.getActiveTarget(targetID, now);
+              if (target != null)
+                {
+                  subscriberProfile.setTarget(targetID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+                  subscriberProfileUpdated = true;
+                }
               break;
           }
       }
@@ -1969,7 +1990,7 @@ public class EvolutionEngine
             if (enterJourney)
               {
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria()))
+                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria(targetService, now)))
                   {
                     enterJourney = false;
                   }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Date;
 
 public class UploadedFileService extends GUIService
@@ -101,15 +102,25 @@ public class UploadedFileService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("destinationFileName", guiManagedObject.getJSONRepresentation().get("destinationFileName"));
+    result.put("destinationFilename", guiManagedObject.getJSONRepresentation().get("destinationFilename"));
     result.put("fileType", guiManagedObject.getJSONRepresentation().get("fileType"));
     result.put("fileSize", guiManagedObject.getJSONRepresentation().get("fileSize"));
     result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));
     return result;
   }
 
+  /*****************************************
+  *
+  *  getUploadedFiles
+  *
+  *****************************************/
+
   public String generateFileID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredUploadedFile(String fileID) { return getStoredGUIManagedObject(fileID); }
+  public Collection<GUIManagedObject> getStoredUploadedFiles() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveUploadedFile(GUIManagedObject uploadedFileUnchecked, Date date) { return isActiveGUIManagedObject(uploadedFileUnchecked, date); }
+  public UploadedFile getActiveUploadedFile(String uploadedFileID, Date date) { return (UploadedFile) getActiveGUIManagedObject(uploadedFileID, date); }
+  public Collection<UploadedFile> getActiveUploadedFiles(Date date) { return (Collection<UploadedFile>) getActiveGUIManagedObjects(date); }
 
   /*****************************************
   *
