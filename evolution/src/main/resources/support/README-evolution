@@ -200,7 +200,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "custo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileSummaryList; echo
-curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"id" : "001", "sourceFilename": "target.data.001.csv","destinationFilename": "target.data.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"application-1","customerAlternateID" : "msisdn"}' -F 'file=@target.data.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFile; echo
+curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"id" : "001", "sourceFilename": "target.data.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"application-1","customerAlternateID" : "msisdn"}' -F 'file=@target.data.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFile; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id":"001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeUploadedFile; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTargetList; echo
