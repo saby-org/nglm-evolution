@@ -64,7 +64,7 @@
         {
           "index" :
             {
-              "number_of_shards" : "'$ELASTICSEARCH_SHARDS__SMALL'",
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
               "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
               "refresh_interval" : "30s",
               "translog" :
