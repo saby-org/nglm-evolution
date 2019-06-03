@@ -1715,19 +1715,25 @@ public class EvolutionEngine
         //
 
         PresentationLog presentationLog = (PresentationLog) evolutionEvent;
-        if(subscriberStoredToken.getTokenStatus() == TokenStatus.New) {
-          subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+        
+        if(subscriberStoredToken.getPresentedOffersIDs().size() > 0) {
+          log.error("Unexpected presentation record ("+ presentationLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already bound by a previous presentation record");
+          return subscriberStateUpdated;
+        } else {
+          if(subscriberStoredToken.getTokenStatus() == TokenStatus.New) {
+            subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+          }
+          if(subscriberStoredToken.getCreationDate() == null) {
+            subscriberStoredToken.setCreationDate(presentationLog.getEventDate());
+            subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(presentationLog.getEventDate()));
+          }
+          if(subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(presentationLog.getEventDate())) {
+            subscriberStoredToken.setBoundDate(presentationLog.getEventDate());
+          }
+          subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount() + 1);
+          subscriberStoredToken.getPresentedOffersIDs().addAll(presentationLog.getOfferIDs());
+          subscriberStateUpdated = true;
         }
-        if(subscriberStoredToken.getCreationDate() == null) {
-          subscriberStoredToken.setCreationDate(presentationLog.getEventDate());
-          subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(presentationLog.getEventDate()));
-        }
-        if(subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(presentationLog.getEventDate())) {
-          subscriberStoredToken.setBoundDate(presentationLog.getEventDate());
-        }
-        subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount() + 1);
-        subscriberStoredToken.getPresentedOffersIDs().addAll(presentationLog.getOfferIDs());
-        subscriberStateUpdated = true;
       } else if(evolutionEvent instanceof AcceptanceLog) {
 
         //

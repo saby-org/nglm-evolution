@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.OfferSalesChannelsAndPrice;
@@ -89,19 +90,18 @@ public class OfferOptimizerAlgoManager {
     List<ProposedOfferDetails> result = new ArrayList<>();
     for (Offer o : offers) {
       // retrieve the current propensity for this offer
-      // String segment = subscriberProfile.getEvolutionSubscriberStatus().toString(); // TODO change to real code
       PropensityKey pk = new PropensityKey(o.getOfferID(), subscriberProfile, subscriberGroupEpochReader);
       PropensityState ps = propensityDataReader.get(pk);
+      int PRESENTATION_THRESHOLD = Deployment.getPropensityInitialisationPresentationThreshold();
+      int DAYS_THRESHOLD = Deployment.getPropensityInitialisationDurationInDaysThreshold();
       int currentPropensity = 50; // TODO: In the future, use: o.getInitialPropensity();
       if (ps == null) {
         // just log a warn and keep initial propensity
         logger.warn("OfferOptimizerAlgoManager.applyScoreAndSort Could not retrieve propensity for offer "
             + o.getOfferID());
       } else {
-        Double p = ps.getPropensity();
-        if(p != null) {
-          currentPropensity = (int) (100.0 * p);
-        }
+        double p = ps.getPropensity(0.50d, o.getEffectiveStartDate(), PRESENTATION_THRESHOLD, DAYS_THRESHOLD); // TODO: In the future, use: o.getInitialPropensity();
+        currentPropensity = (int) (100.0 * p);
       }
       logger.trace("OfferOptimizerAlgoManager.applyScoreAndSort Propensity for offer "
           + o.getOfferID()+ " = " + currentPropensity);

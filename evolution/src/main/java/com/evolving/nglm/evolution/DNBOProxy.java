@@ -162,9 +162,9 @@ public class DNBOProxy
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "dnboproxy-scoringstrategyservice-" + apiProcessKey, Deployment.getScoringStrategyTopic(), false);
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "dnboproxy-saleschannelservice-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
-    subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy", "dnboproxy-subscribergroupepochreader-"+apiProcessKey,
+    subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy-subscribergroupepoch", "dnboproxy-subscribergroupepochreader-"+apiProcessKey,
         Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
-    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy", "dnboproxy-propensityreader-"+apiProcessKey,
+    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey,
         Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
     
     /*****************************************

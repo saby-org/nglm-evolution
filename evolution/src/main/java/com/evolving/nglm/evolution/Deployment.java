@@ -88,6 +88,8 @@ public class Deployment
   private static String propensityStateChangeLog;
   private static String propensityStateChangeLogTopic;
   private static String propensityRepartitioningTopic;
+  private static int propensityInitialisationPresentationThreshold;
+  private static int propensityInitialisationDurationInDaysThreshold;
   private static String subscriberProfileRegistrySubject;
   private static CompressionType subscriberProfileCompressionType;
   private static PropensityRule propensityRule;
@@ -236,6 +238,8 @@ public class Deployment
   public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
   public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
   public static String getPropensityRepartitioningTopic() { return propensityRepartitioningTopic; }
+  public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
+  public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
@@ -1104,6 +1108,32 @@ public class Deployment
     try
       {
         propensityRepartitioningTopic = JSONUtilities.decodeString(jsonRoot, "propensityRepartitioningTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  propensityInitialisationPresentationThreshold
+    //
+
+    try
+      {
+        propensityInitialisationPresentationThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationPresentationThreshold", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  propensityInitialisationDurationInDaysThreshold
+    //
+
+    try
+      {
+        propensityInitialisationDurationInDaysThreshold = JSONUtilities.decodeInteger(jsonRoot, "propensityInitialisationDurationInDaysThreshold", true);
       }
     catch (JSONUtilitiesException e)
       {

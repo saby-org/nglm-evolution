@@ -132,6 +132,7 @@ if [ "$DNBOPROXY_ENABLED" = "true" ]; then
      export HOST=`echo $TUPLE | cut -d: -f2`
      export API_PORT=`echo $TUPLE | cut -d: -f3`
      export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
+     export DEBUG_PORT=`echo $TUPLE | cut -d: -f5`
      cat $DEPLOY_ROOT/docker/dnboproxy.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-dnboproxy.yml
      echo >> $DEPLOY_ROOT/stack/stack-dnboproxy.yml
   done

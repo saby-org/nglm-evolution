@@ -6,17 +6,22 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataValue;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 
 public class PropensityState implements ReferenceDataValue<PropensityKey>
 {
@@ -98,11 +103,26 @@ public class PropensityState implements ReferenceDataValue<PropensityKey>
   //
   //  Propensity computation
   //
+  // @param presentationThreshold: number of presentation needed to return the actual propensity (without using a weighted propensity with the initial one)
+  // @param daysThreshold: during this time window we will return a weighted propensity using the number of days since the effective start date 
+  //
   
-  public Double getPropensity()
+  public double getPropensity(double initialPropensity, Date effectiveStartDate, int presentationThreshold, int daysThreshold)
   {
-    if (getPresentationCount().equals(0L)) return null; // TODO return initial propensity for OfferID de pro
-    return new Double(getAcceptanceCount() / getPresentationCount());
+    double currentPropensity = initialPropensity;
+    if (!getPresentationCount().equals(0L)) {
+      currentPropensity = ((double) getAcceptanceCount()) / ((double) getPresentationCount());
+    }
+    
+    if(getPresentationCount() < presentationThreshold) {
+      double lambda = RLMDateUtils.daysBetween(effectiveStartDate, SystemTime.getCurrentTime(), Deployment.getBaseTimeZone()) / ((double) daysThreshold);
+      
+      if(lambda < 1) {
+        return currentPropensity * lambda + initialPropensity * (1 - lambda);
+      }
+    }
+    
+    return currentPropensity;
   }
   
   //
