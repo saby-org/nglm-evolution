@@ -5093,6 +5093,23 @@ public class GUIManager
             }
           break;
 
+          case "offerObjectives":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject offerObjectiveUnchecked : offerObjectiveService.getStoredOfferObjectives())
+                {
+                  if (offerObjectiveUnchecked.getAccepted())
+                    {
+                      OfferObjective offerObjective = (OfferObjective) offerObjectiveUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", offerObjective.getOfferObjectiveID());
+                      availableValue.put("display", offerObjective.getOfferObjectiveName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
         case "pointDeliverables":
           if (includeDynamic)
             {

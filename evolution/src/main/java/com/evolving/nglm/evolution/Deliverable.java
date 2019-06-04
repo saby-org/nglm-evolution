@@ -38,7 +38,7 @@ public class Deliverable extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("deliverable");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
     schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
@@ -134,7 +134,7 @@ public class Deliverable extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String fulfillmentProviderID = valueStruct.getString("fulfillmentProviderID");
-    String commodityID = valueStruct.getString("commodityID");
+    String commodityID = (schemaVersion >= 2) ? valueStruct.getString("commodityID") : fulfillmentProviderID;
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     
     //
