@@ -44,7 +44,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     schemaBuilder.name("segmentation_dimension_file_import");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(SegmentationDimension.commonSchema().version(),1));
     for (Field field : SegmentationDimension.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("fileName", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dimensonFileID", Schema.STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.array(SegmentFileImport.schema()).schema());
     schemaBuilder.field("usingContactPolicy", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
@@ -69,7 +69,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   ****************************************/
 
-  private String fileName;
+  private String dimensonFileID;
   private List<SegmentFileImport> segments;
   private boolean usingContactPolicy;
 
@@ -79,7 +79,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   ****************************************/
 
-  public String getFileName() { return fileName; }
+  public String getDimensonFileID() { return dimensonFileID; }
   @Override public List<SegmentFileImport> getSegments() { return segments; }
   public boolean isUsingContactPolicy() { return usingContactPolicy; }
 
@@ -89,10 +89,10 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionFileImport(SchemaAndValue schemaAndValue, String fileName, List<SegmentFileImport> segments, boolean usingContactPolicy)
+  public SegmentationDimensionFileImport(SchemaAndValue schemaAndValue, String dimensonFileID, List<SegmentFileImport> segments, boolean usingContactPolicy)
   {
     super(schemaAndValue);
-    this.fileName = fileName;
+    this.dimensonFileID = dimensonFileID;
     this.segments = segments;
     this.usingContactPolicy = usingContactPolicy;
   }
@@ -108,7 +108,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     SegmentationDimensionFileImport segmentationDimension = (SegmentationDimensionFileImport) value;
     Struct struct = new Struct(schema);
     SegmentationDimension.packCommon(struct, segmentationDimension);
-    struct.put("fileName", segmentationDimension.getFileName());
+    struct.put("dimensonFileID", segmentationDimension.getDimensonFileID());
     struct.put("segments", packSegments(segmentationDimension.getSegments()));
     struct.put("usingContactPolicy", segmentationDimension.isUsingContactPolicy());
     return struct;
@@ -151,7 +151,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     //
 
     Struct valueStruct = (Struct) value;
-    String fileName = valueStruct.getString("fileName");
+    String dimensonFileID = valueStruct.getString("dimensonFileID");
     List<SegmentFileImport> segments = unpackSegments(schema.field("segments").schema(), valueStruct.get("segments"));
     boolean usingContactPolicy = valueStruct.getBoolean("usingContactPolicy");
     
@@ -159,7 +159,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     //  return
     //
 
-    return new SegmentationDimensionFileImport(schemaAndValue, fileName, segments, usingContactPolicy);
+    return new SegmentationDimensionFileImport(schemaAndValue, dimensonFileID, segments, usingContactPolicy);
   }
   
   /*****************************************
@@ -224,7 +224,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     *
     *****************************************/
 
-    this.fileName = JSONUtilities.decodeString(jsonRoot, "fileName", true);
+    this.dimensonFileID = JSONUtilities.decodeString(jsonRoot, "dimensonFileID", true);
     this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true));
     this.usingContactPolicy = JSONUtilities.decodeBoolean(jsonRoot, "usingContactPolicy", Boolean.FALSE);
     
@@ -277,7 +277,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
         epochChanged = epochChanged || ! Objects.equals(getSegmentationDimensionID(), existingSegmentationDimension.getSegmentationDimensionID());
         epochChanged = epochChanged || ! Objects.equals(getSegmentationDimensionName(), existingSegmentationDimension.getSegmentationDimensionName());
         epochChanged = epochChanged || ! Objects.equals(getTargetingType(), existingSegmentationDimension.getTargetingType());
-        epochChanged = epochChanged || ! Objects.equals(fileName, existingSegmentationDimension.getFileName());
+        epochChanged = epochChanged || ! Objects.equals(dimensonFileID, existingSegmentationDimension.getDimensonFileID());
         epochChanged = epochChanged || ! Objects.equals(segments, existingSegmentationDimension.getSegments());
         epochChanged = epochChanged || ! Objects.equals(usingContactPolicy, existingSegmentationDimension.isUsingContactPolicy());
         return epochChanged;

@@ -6,19 +6,40 @@
 
 package com.evolving.nglm.evolution;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.zookeeper.ZooKeeper;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
+import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 import com.evolving.nglm.evolution.GUIService;
 
 public class SegmentationDimensionService extends GUIService
@@ -34,6 +55,13 @@ public class SegmentationDimensionService extends GUIService
   //
 
   private static final Logger log = LoggerFactory.getLogger(SegmentationDimensionService.class);
+  
+  //
+  //  serdes
+  //
+  
+  private static ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+  private static ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
 
   /*****************************************
   *
@@ -42,7 +70,14 @@ public class SegmentationDimensionService extends GUIService
   *****************************************/
 
   private Map<String,Segment> segmentsByID = new HashMap<String,Segment>();
-
+  private volatile boolean stopRequested = false;
+  private BlockingQueue<SegmentationDimensionFileImport> listenerQueue = new LinkedBlockingQueue<SegmentationDimensionFileImport>();
+  private Thread listenerThread = null;
+  private KafkaProducer<byte[], byte[]> kafkaProducer = null;
+  private UploadedFileService uploadedFileService = null; 
+  private SubscriberIDService subscriberIDService = null;
+  private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
+  
   /*****************************************
   *
   *  constructor
@@ -106,6 +141,27 @@ public class SegmentationDimensionService extends GUIService
             segmentsByID.put(segment.getID(), segment);
           }
       }
+    
+    /*****************************************
+    *
+    *  kafka producer
+    *
+    *****************************************/
+
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
+    //
+    //  listener
+    //
+
+    Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
+    listenerThread = new Thread(listener, "SegmentationDimensionService");
+    listenerThread.start();
   }
 
   //
@@ -185,7 +241,11 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  public void putSegmentationDimension(SegmentationDimension segmentationDimension, boolean newObject, String userID) throws GUIManagerException{
+  public void putSegmentationDimension(SegmentationDimension segmentationDimension, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException{
+    
+    this.uploadedFileService = uploadedFileService;
+    this.subscriberIDService = subscriberIDService;
+    
     //
     //  now
     //
@@ -203,6 +263,14 @@ public class SegmentationDimensionService extends GUIService
     //
 
     putGUIManagedObject(segmentationDimension, now, newObject, userID);
+    
+    //
+    // add to queue
+    //
+    
+    if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE_IMPORT)) {
+      notifyListenerOfSegmentationDimension((SegmentationDimensionFileImport) segmentationDimension);
+    }
   }
 
   /*****************************************
@@ -211,9 +279,9 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
 
-  public void putIncompleteSegmentationDimension(IncompleteObject offer, boolean newObject, String userID)
+  public void putIncompleteSegmentationDimension(IncompleteObject segmentationDimension, boolean newObject, String userID)
   {
-    putGUIManagedObject(offer, SystemTime.getCurrentTime(), newObject, userID);
+    putGUIManagedObject(segmentationDimension, SystemTime.getCurrentTime(), newObject, userID);
   }
 
   /*****************************************
@@ -221,6 +289,135 @@ public class SegmentationDimensionService extends GUIService
   *  removeSegmentationDimension
   *
   *****************************************/
+  
+  /*****************************************
+  *
+  *  notifyListener
+  *
+  *****************************************/
+
+  private void notifyListenerOfSegmentationDimension(SegmentationDimensionFileImport segmentationDimension)
+  {
+    listenerQueue.add(segmentationDimension);
+  }
+
+  /*****************************************
+  *
+  *  runListener
+  *
+  *****************************************/
+  
+  private void runListener()
+  {
+    while (!stopRequested)
+      {
+        try
+          {
+            
+            //
+            //  now
+            //            
+
+            Date now = SystemTime.getCurrentTime();
+            
+            //
+            //  get next 
+            //
+
+            SegmentationDimensionFileImport segmentationDimension = listenerQueue.take();
+            
+            /************************************************
+            *
+            *  open zookeeper and lock segmentationDimension
+            *
+            *************************************************/
+
+            ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getGUIManagedObjectID());
+            
+            //
+            // time to work
+            //
+            
+            if(segmentationDimension.getDimensonFileID() != null)
+              {
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensonFileID());
+                if (uploadedFile == null)
+                  { 
+                    log.warn("SegmentationDimensionService.run(uploaded file not found, processing done)");
+                    return;
+                  }
+                else
+                  {
+                    //
+                    //  parse file
+                    //
+
+                    BufferedReader reader;
+                    try
+                    {
+                      AlternateID alternateID = Deployment.getAlternateIDs().get(uploadedFile.getCustomerAlternateID());
+                      reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+uploadedFile.getDestinationFilename()));
+                      for (String line; (line = reader.readLine()) != null && !line.isEmpty();)
+                        {
+                          String split[] = line.split(Deployment.getUploadedFileSeparator());
+                          //Minimum two values (subscriberID;segment)
+                          if(split.length >=2)
+                            {   
+                              String subscriberIDFromFile = split[0];
+                              String segmentName = split[1];
+                              String subscriberID = (alternateID != null) ? subscriberIDService.getSubscriberID(alternateID.getID(), subscriberIDFromFile) : subscriberIDFromFile;
+                              if(subscriberID != null)
+                                {
+                                  if(segmentationDimension.getSegments() != null && !segmentationDimension.getSegments().isEmpty()) 
+                                    {
+                                      for(SegmentFileImport segment : segmentationDimension.getSegments()) 
+                                        {
+                                          if(segment.getName().equals(segmentName)) 
+                                            {
+                                              SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.SegmentationDimension, Arrays.asList(segmentationDimension.getGUIManagedObjectID(), segment.getID()), segmentationDimension.getSubscriberGroupEpoch().getEpoch(), LoadType.Add.getAddRecord());
+                                              kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
+                                            }
+                                        }
+                                    }
+                                }
+                              else
+                                {
+                                  log.warn("SegmentationDimensionService.run(cant resolve subscriberID ID="+line+")");
+                                }
+                            }
+                        }
+                      reader.close();
+                    }
+                    catch (IOException | SubscriberIDServiceException e)
+                    {
+                      log.warn("SegmentationDimensionService.run(problem with file parsing)", e);
+                    }
+                  }
+              }
+
+            /*****************************************
+            *
+            *  close
+            *
+            *****************************************/
+
+            SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getGUIManagedObjectID());
+            subscriberIDService.close();
+          }
+        catch (InterruptedException e)
+          {
+            //
+            // ignore
+            //
+          }
+        catch (Throwable e)
+          {
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.warn("Exception processing listener: {}", stackTraceWriter.toString());
+          }
+      }
+  }
 
   public void removeSegmentationDimension(String segmentationDimensionID, String userID) { removeGUIManagedObject(segmentationDimensionID, SystemTime.getCurrentTime(), userID); }
 

@@ -599,16 +599,16 @@ public class DNBOProxy
       }
 
       String valueMode = selectedScoringSplit.getParameters().get(valueModeParameter);
-      logFragment = "DNBOProxy.processGetOffers no value mode";
-      returnedLog.append(logFragment+", ");
       if (valueMode == null || valueMode.equals(""))
       {
-        log.warn(logFragment);
-
+        logFragment = "DNBOProxy.processGetOffers no value mode";
+        if (log.isDebugEnabled())
+          {
+            log.debug(logFragment);
+          }
+        returnedLog.append(logFragment+", ");
       }
       
-      log.trace("Subscriber status : "+subscriberProfile.getEvolutionSubscriberStatus());
-
       // This returns an ordered Collection (and sorted by offerScore)
       Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
           OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
@@ -616,11 +616,67 @@ public class DNBOProxy
               productService, productTypeService, catalogCharacteristicService,
               propensityDataReader, subscriberGroupEpochReader, returnedLog);
 
-      if(offerAvailabilityFromPropensityAlgo == null){
-        log.warn("DNBOProxy.processGetOffers Return empty list of offer");
-        throw new DNBOProxyException("No Offer available while executing getOffer ", scoringStrategy.getScoringStrategyID());
-      }
+      if (offerAvailabilityFromPropensityAlgo == null)
+        {
+          offerAvailabilityFromPropensityAlgo = new ArrayList<>();
+        }
 
+      //
+      // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
+      //
+      Set<String> offerObjectiveIds = selectedScoringSplit.getAlwaysAppendOfferObjectiveIDs();
+      for(Offer offer : offerService.getActiveOffers(now))
+        {
+          boolean inList = true;
+          for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives()) 
+            {
+              if (!offerObjectiveIds.contains(offerObjective.getOfferObjectiveID())) 
+                {
+                  inList = false;
+                  break;
+                }
+            }
+          if (!inList) 
+            {
+              //
+              // not a single objective of this offer is in the list of the scoringSplit -> skip it
+              //
+              continue;
+            }
+          for (OfferSalesChannelsAndPrice salesChannelAndPrice : offer.getOfferSalesChannelsAndPrices())
+            {
+              for (String loopSalesChannelID : salesChannelAndPrice.getSalesChannelIDs()) 
+                {
+                  if (loopSalesChannelID.equals(salesChannelID)) 
+                    {
+                      String offerId = offer.getOfferID();
+                      boolean offerIsAlreadyInList = false;
+                      for (ProposedOfferDetails offerAvail : offerAvailabilityFromPropensityAlgo)
+                        {
+                          if (offerAvail.getOfferId().equals(offerId))
+                            {
+                              offerIsAlreadyInList = true;
+                              if (log.isTraceEnabled()) log.trace("DNBOProxy.processGetOffers offer "+offerId+" already in list, skip it");
+                              break;
+                            }
+                        }
+                      if (!offerIsAlreadyInList)
+                        {
+                          if (log.isTraceEnabled()) log.trace("DNBOProxy.processGetOffers offer "+offerId+" added to the list because its objective is in alwaysAppendOfferObjectiveIDs of ScoringStrategy");
+                          ProposedOfferDetails additionalDetails = new ProposedOfferDetails(offerId, salesChannelID, 0);
+                          offerAvailabilityFromPropensityAlgo.add(additionalDetails);
+                        }
+                    }
+                }
+            }
+        }
+
+      if (offerAvailabilityFromPropensityAlgo.isEmpty())
+        {
+          log.warn("DNBOProxy.processGetOffers Return empty list of offers");
+          throw new DNBOProxyException("No Offer available while executing getOffer ", scoringStrategy.getScoringStrategyID());
+        }
+      
       int index = 1;
       for (ProposedOfferDetails current : offerAvailabilityFromPropensityAlgo)
       {

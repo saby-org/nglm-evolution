@@ -6356,7 +6356,7 @@ public class GUIManager
         *
         *****************************************/
 
-        segmentationDimensionService.putSegmentationDimension(segmentationDimension, (existingSegmentationDimension == null), userID);
+        segmentationDimensionService.putSegmentationDimension(segmentationDimension, uploadedFileService, subscriberIDService, (existingSegmentationDimension == null), userID);
 
         /*****************************************
         *

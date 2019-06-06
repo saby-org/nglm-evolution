@@ -61,11 +61,11 @@ public class TargetService extends GUIService
   private TargetListener TargetListener = null;
   private volatile boolean stopRequested = false;
   private BlockingQueue<Target> listenerQueue = new LinkedBlockingQueue<Target>();
-  private List<GUIManagedObjectListener> guiManagedObjectListeners = new ArrayList<GUIManagedObjectListener>();
   private UploadedFileService uploadedFileService = null; 
   private SubscriberIDService subscriberIDService = null;
   private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
   private KafkaProducer<byte[], byte[]> kafkaProducer = null;
+  private Thread listenerThread = null;
 
   /*****************************************
   *

@@ -145,6 +145,7 @@ public class Deployment
   private static String reportManagerFileExtension;
   private static String reportManagerStreamsTempDir;
   private static String reportManagerCsvSeparator;
+  private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData = null;
   private static String APIresponseDateFormat;
   private static String uploadedFileTopic;
@@ -294,6 +295,7 @@ public class Deployment
   public static String getReportManagerDateFormat() { return reportManagerDateFormat; }
   public static String getReportManagerFileExtension() { return reportManagerFileExtension; }
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; }
+  public static String getUploadedFileSeparator() { return uploadedFileSeparator; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
@@ -1833,6 +1835,22 @@ public class Deployment
         customerMetaData = new CustomerMetaData(JSONUtilities.decodeJSONObject(jsonRoot, "customerMetaData", true));
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  uploadedFileSeparator
+    //
+
+    try
+      {
+        uploadedFileSeparator = JSONUtilities.decodeString(jsonRoot, "uploadedFileSeparator", false);
+        if(uploadedFileSeparator == null) {
+          uploadedFileSeparator = ";";
+        }
+      }
+    catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

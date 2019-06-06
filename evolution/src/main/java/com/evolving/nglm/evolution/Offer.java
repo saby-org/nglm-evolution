@@ -806,4 +806,16 @@ public class Offer extends GUIManagedObject implements StockableItem
         if (! productService.isActiveProductThroughInterval(product, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid product (start/end dates)", offerProduct.getProductID());
       }
   }
+  
+  /*****************************************
+  *
+  *  toString
+  *
+  *****************************************/
+  @Override
+  public String toString()
+    {
+      return "Offer [initialPropensity=" + initialPropensity + ", "
+          + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() : "") + "]";
+    }
 }
