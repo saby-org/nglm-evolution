@@ -6,38 +6,45 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.CronFormat;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.*;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 import com.evolving.nglm.evolution.UCGRuleService.UCGRuleListener;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import com.google.common.collect.Sets;
 
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.filter.Filters;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import org.json.simple.JSONObject;
+
+import java.io.IOException;
 
 public class UCGEngine
 {
@@ -67,7 +74,30 @@ public class UCGEngine
   private BlockingQueue<UCGRule> evaluationRequests = new LinkedBlockingQueue<UCGRule>();
   private Thread ucgEvaluatorThread = null;
   private UCGEngineStatistics ucgEngineStatistics = null;
-  
+  private RestHighLevelClient elasticsearchRestClient;
+  private String subscriberGroupField = null;
+  private static final HashMap<String,String> bucketAggCounters = new HashMap<>();
+  private static final int connectTimeout = 500000;
+  private static final int socketTimeout = 600000;
+  private static final int maxRetryTimeout = 9000000;
+
+  /*****************************************
+  *
+  *  static initialization
+  *
+  *****************************************/
+
+  static
+  {
+    //
+    //  adding elements that will be used for sub bucket agg.
+    //  now will be only subscribers in control group
+    //  the key of hashSet is property name from UCG rule object.
+    //  When the UCGRule objects will contain more than one count, here will be added the new values
+
+    bucketAggCounters.put("ucgSubscribers","def left = doc.universalControlGroup.value; return left == true;");
+  }
+
   /*****************************************
   *
   *  constructor
@@ -153,6 +183,25 @@ public class UCGEngine
     Runnable ucgEvaluator = new Runnable() { @Override public void run() { runUCGEvaluator(); } };
     ucgEvaluatorThread = new Thread(ucgEvaluator, "UCGEvaluator");
     ucgEvaluatorThread.start();
+
+    /*****************************************
+    *
+    *  initialize elastic search rest client
+    *  args[2] elatic search host
+    *  args[3] elastic search port
+    *****************************************/
+
+    try
+      {
+        RestClientBuilder builder = RestClient.builder(new HttpHost(args[2], Integer.parseInt(args[3]), "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() { @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) { return builder.setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout); } } );
+        builder.setMaxRetryTimeoutMillis(maxRetryTimeout);
+        elasticsearchRestClient = new RestHighLevelClient(builder);
+        subscriberGroupField = CriterionContext.Profile.getCriterionFields().get("subscriber.segments").getESField();
+      }
+    catch (ElasticsearchException e)
+      {
+        throw new ServerRuntimeException("could not initialize elasticsearch client", e);
+      }
   }
 
   /*****************************************
@@ -392,21 +441,166 @@ public class UCGEngine
         *
         *****************************************/
 
-        Set<UCGGroup> ucgGroups = new HashSet<UCGGroup>();
-        for (List<String> stratum : strata)
+        try
           {
-            ucgGroups.add(new UCGGroup(new HashSet<String>(stratum), 100, 10));
+            //
+            //  record start time for latency logging
+            //
+
+            long startTime =  System.nanoTime();
+
+            //
+            //  calculate
+            //
+
+            UCGState ucgState = new UCGState(ucgRule, this.calculateUCGGroups(strata), now);
+
+            //
+            //  send result
+            //
+
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getUCGStateTopic(), stringKeySerde.serializer().serialize(Deployment.getUCGStateTopic(), new StringKey(UCGState.getSingletonKey())), ucgStateSerde.serializer().serialize(Deployment.getUCGStateTopic(), ucgState)));
+
+            //
+            //  log processing time
+            // 
+
+            long estimatedTime = System.nanoTime() - startTime;
+            double elapsedTimeInSecond = (double) estimatedTime / 1_000_000_000;
+            log.info("Method 2 time {}",String.valueOf(elapsedTimeInSecond));
           }
-
-        /*****************************************
-        *
-        *  ucgState
-        *
-        *****************************************/
-
-        UCGState ucgState = new UCGState(ucgRule, ucgGroups, now);
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getUCGStateTopic(), stringKeySerde.serializer().serialize(Deployment.getUCGStateTopic(), new StringKey(UCGState.getSingletonKey())), ucgStateSerde.serializer().serialize(Deployment.getUCGStateTopic(), ucgState)));
+        catch (Exception ex)
+          {
+            log.error("Error calculating stratum", ex.getMessage());
+          }
       }
+  }
+
+  /*****************************************
+  *
+  *  CalculateUCGStrata
+  *  calculate the count of subs and control group in each strata
+  *
+  *****************************************/
+
+  private UCGGroup calculateUCgStrata(List<String> sample) throws Exception
+  {
+    int segmentCount=0;
+    String buckeAggtName = "UCGCount";
+    int ucgCount=0;
+
+    BoolQueryBuilder query =QueryBuilders.boolQuery();
+    List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+    try {
+      for (String segmentId : sample) {
+        query = query.filter(QueryBuilders.termQuery(subscriberGroupField, segmentId));
+      }
+
+      for(Map.Entry<String,String> entry : bucketAggCounters.entrySet())
+        {
+          aggFilters.add(new FiltersAggregator.KeyedFilter(entry.getKey(),QueryBuilders.scriptQuery(new Script(entry.getValue()))));
+        }
+    }catch (Exception ex)
+      {
+        throw ex;
+      }
+    try
+      {
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0);
+
+        // add bucket aggregation. Current version support only one bucket aggregation (in bucket will be aggregation specified in bucketAggCriteria
+        AggregationBuilder aggregation = null;
+        FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+        filterArray = aggFilters.toArray(filterArray);
+        aggregation = AggregationBuilders.filters("SubscriberStateBucket",filterArray);
+        searchSourceBuilder.aggregation(aggregation);
+
+        //search in ES
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+        SearchResponse searchResponse = elasticsearchRestClient.search(searchRequest);
+
+        segmentCount = (int)searchResponse.getHits().getTotalHits();
+
+        Filters aggResultFilters = searchResponse.getAggregations().get("SubscriberStateBucket");
+        ucgCount = (int)aggResultFilters.getBucketByKey("ucgSubscribers").getDocCount();
+      }
+    catch (IOException e)
+      {
+        throw e;
+      }
+    return new UCGGroup(new HashSet<String>(sample), ucgCount, segmentCount);
+  }
+
+  /*****************************************
+  *
+  *  calculateUCGGroups
+  *  calculate in one ES query all ucg groups
+  *
+  *****************************************/
+
+  private Set<UCGGroup> calculateUCGGroups(Set<List<String>> strata) throws Exception
+  {
+    HashSet<UCGGroup> returnUcgGroup = new HashSet<>();
+    List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+    List<FiltersAggregator.KeyedFilter> subAggFilters = new ArrayList<>();
+    List<BoolQueryBuilder> queries = new ArrayList<BoolQueryBuilder>();
+    try {
+      //create subaggregation used for ucg count and other info in the future
+      for (Map.Entry<String, String> entry : bucketAggCounters.entrySet()) {
+        subAggFilters.add(new FiltersAggregator.KeyedFilter(entry.getKey(), QueryBuilders.scriptQuery(new Script(entry.getValue()))));
+      }
+      //create bucket agg foreach stratum
+      for (List<String> stratum : strata) {
+
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        for (String segmentId : stratum) {
+          query = query.filter(QueryBuilders.termQuery(subscriberGroupField, segmentId));
+        }
+        //the key foreach bucket will be stratum serialized. This will be deserialized at read
+        HashMap<String,List<String>> key = new HashMap<>();
+        key.put("stratum",stratum);
+        aggFilters.add(new FiltersAggregator.KeyedFilter(JSONUtilities.encodeObject(key).toJSONString(), query));
+
+      }
+      //create main aggregation
+      AggregationBuilder aggregation = null;
+      FiltersAggregator.KeyedFilter[] filterArray = new FiltersAggregator.KeyedFilter[aggFilters.size()];
+      filterArray = aggFilters.toArray(filterArray);
+      aggregation = AggregationBuilders.filters("SubscriberStateBucket", filterArray);
+
+      //create subagregation
+      AggregationBuilder subAggregation = null;
+      FiltersAggregator.KeyedFilter[] subFilterArray = new FiltersAggregator.KeyedFilter[subAggFilters.size()];
+      subFilterArray = subAggFilters.toArray(subFilterArray);
+      subAggregation = AggregationBuilders.filters("SubscriberState", subFilterArray);
+
+      //append subbagregation to main aggregation
+      aggregation.subAggregation(subAggregation);
+      //create search builder
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).aggregation(aggregation).size(0);
+      //search in ES
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearchRestClient.search(searchRequest);
+      Filters agg = searchResponse.getAggregations().get("SubscriberStateBucket");
+      agg.getBuckets().size();
+      //      Filters subAgg = agg.getBuckets().get(0).getAggregations().get("SubscriberState");
+      //      subAgg.getBucketByKey("ucgSubscribers").getDocCount();
+      for (Filters.Bucket element : agg.getBuckets())
+        {
+          Filters subAgg = element.getAggregations().get("SubscriberState");
+          //deserialize bucket key that contain stratum list
+          JSONObject jsonRoot = (JSONObject) (new org.json.simple.parser.JSONParser()).parse(element.getKey().toString());
+          List<String> stratum = JSONUtilities.decodeJSONArray(jsonRoot,"stratum",true);
+          //add UCGGroup object for each bucket aggregation item
+          returnUcgGroup.add(new UCGGroup(new HashSet<String>(stratum),(int)subAgg.getBucketByKey("ucgSubscribers").getDocCount(),(int)element.getDocCount()));
+        }
+    }
+    catch (Exception ex) {
+      throw ex;
+    }
+
+
+    return returnUcgGroup;
   }
 
   /*****************************************

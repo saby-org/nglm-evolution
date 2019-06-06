@@ -58,4 +58,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name ucgengine -loggc com.evolving.nglm.evolution.UCGEngine /app/runtime $BROKER_SERVERS
+exec kafka-run-class -name ucgengine -loggc com.evolving.nglm.evolution.UCGEngine /app/runtime $BROKER_SERVERS $ELASTICSEARCH_HOST $ELASTICSEARCH_PORT

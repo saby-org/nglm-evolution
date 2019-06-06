@@ -71,6 +71,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
 import org.elasticsearch.search.aggregations.bucket.filter.Filters;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
@@ -203,7 +204,8 @@ public class GUIManager
     getSegmentationDimension("getSegmentationDimension"),
     putSegmentationDimension("putSegmentationDimension"),
     removeSegmentationDimension("removeSegmentationDimension"),
-    countBySegmentationRanges("countBySegmentationRanges"),
+    getCountBySegmentationRanges("getCountBySegmentationRanges"),
+    getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
     getPointList("getPointList"),
@@ -1214,7 +1216,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APISimpleHandler(API.getSegmentationDimension));
         restServer.createContext("/nglm-guimanager/putSegmentationDimension", new APISimpleHandler(API.putSegmentationDimension));
         restServer.createContext("/nglm-guimanager/removeSegmentationDimension", new APISimpleHandler(API.removeSegmentationDimension));
-        restServer.createContext("/nglm-guimanager/countBySegmentationRanges", new APISimpleHandler(API.countBySegmentationRanges));
+        restServer.createContext("/nglm-guimanager/getCountBySegmentationRanges", new APISimpleHandler(API.getCountBySegmentationRanges));
+        restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getPointList", new APISimpleHandler(API.getPointList));
@@ -1801,8 +1804,12 @@ public class GUIManager
                   jsonResponse = processRemoveSegmentationDimension(userID, jsonRoot);
                   break;
 
-                case countBySegmentationRanges:
-                  jsonResponse = processCountBySegmentationRanges(userID, jsonRoot);
+                case getCountBySegmentationRanges:
+                  jsonResponse = processGetCountBySegmentationRanges(userID, jsonRoot);
+                  break;
+
+                case getCountBySegmentationEligibility:
+                  jsonResponse = processGetCountBySegmentationEligibility(userID, jsonRoot);
                   break;
 
                 case evaluateProfileCriteria:
@@ -6486,70 +6493,75 @@ public class GUIManager
   }
 
   /*****************************************
-   *
-   *  processCountBySegmentationRanges
-   *
-   *****************************************/
+  *
+  *  processGetCountBySegmentationRanges
+  *
+  *****************************************/
 
-  private JSONObject processCountBySegmentationRanges(String userID, JSONObject jsonRoot)
+  private JSONObject processGetCountBySegmentationRanges(String userID, JSONObject jsonRoot)
   {
     /****************************************
-     *
-     *  response
-     *
-     ****************************************/
+    *
+    *  response
+    *
+    ****************************************/
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
     /*****************************************
-     *
-     *  parse input (segmentationDimension)
-     *
-     *****************************************/
+    *
+    *  parse input (segmentationDimension)
+    *
+    *****************************************/
 
     jsonRoot.put("id", "fake-id"); // fill segmentationDimensionID with anything
     SegmentationDimensionRanges segmentationDimensionRanges = null;
     try
-    {
-      switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
       {
-      case RANGES:
-        segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
-        break;
+        switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
+          {
+            case RANGES:
+              segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+              break;
 
-      case Unknown:
-        throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+            case Unknown:
+              throw new GUIManagerException("unsupported dimension type", JSONUtilities.decodeString(jsonRoot, "targetingType", false));
+          }
       }
-    }
     catch (JSONUtilitiesException|GUIManagerException e)
-    {
-      //
-      //  log
-      //
+      {
+        //
+        //  log
+        //
 
-      StringWriter stackTraceWriter = new StringWriter();
-      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
 
-      //
-      //  response
-      //
+        //
+        //  response
+        //
 
-      response.put("responseCode", "segmentationDimensionNotValid");
-      response.put("responseMessage", e.getMessage());
-      response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-      return JSONUtilities.encodeObject(response);
-    }
+        response.put("responseCode", "segmentationDimensionNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    // Extract BaseSplits
+    /*****************************************
+    *
+    *  extract BaseSplits
+    *
+    *****************************************/
+
     List<BaseSplit> baseSplits = segmentationDimensionRanges.getBaseSplit();
     int nbBaseSplits = baseSplits.size();
 
     /*****************************************
-     *
-     *  construct query
-     *
-     *****************************************/
+    *
+    *  construct query
+    *
+    *****************************************/
 
     final String MAIN_AGG_NAME = "MAIN";
     final String RANGE_AGG_PREFIX = "RANGE-";
@@ -6560,235 +6572,426 @@ public class GUIManager
 
     List<BoolQueryBuilder> baseSplitQueries = new ArrayList<BoolQueryBuilder>();
     try
-    {
-      // BaseSplit query creation
-      for(int i = 0; i < nbBaseSplits; i++) {
-        baseSplitQueries.add(QueryBuilders.boolQuery());
-      }
-
-      for(int i = 0; i < nbBaseSplits; i++) {
-        BoolQueryBuilder query = baseSplitQueries.get(i);
-        BaseSplit baseSplit = baseSplits.get(i);
-
-        // Filter this bucket with this BaseSplit criteria
-        if(baseSplit.getProfileCriteria().isEmpty()) {
-          // If there is not any profile criteria, just filter with a match_all query.
-          query = query.filter(QueryBuilders.matchAllQuery());
-        } else {
-          for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+      {
+        //
+        // BaseSplit query creation
+        //
+        
+        for(int i = 0; i < nbBaseSplits; i++)
           {
-            query = query.filter(evaluationCriterion.esQuery());
+            baseSplitQueries.add(QueryBuilders.boolQuery());
           }
-        }
 
-        // Must_not for all following buckets (reminder : bucket must be disjointed, if not, some customer could be counted in several buckets)
-        for(int j = i+1; j < nbBaseSplits; j++) {
-          BoolQueryBuilder nextQuery = baseSplitQueries.get(j);
+        for(int i = 0; i < nbBaseSplits; i++)
+          {
+            BoolQueryBuilder query = baseSplitQueries.get(i);
+            BaseSplit baseSplit = baseSplits.get(i);
 
-          if(baseSplit.getProfileCriteria().isEmpty()) {
-            // If there is not any profile criteria, just filter with a match_all query.
-            nextQuery = nextQuery.mustNot(QueryBuilders.matchAllQuery());
-          } else {
-            for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
-            {
-              nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery());
-            }
+            //
+            // Filter this bucket with this BaseSplit criteria
+            //
+
+            if(baseSplit.getProfileCriteria().isEmpty())
+              {
+                //
+                // If there is not any profile criteria, just filter with a match_all query.
+                //
+
+                query = query.filter(QueryBuilders.matchAllQuery());
+              }
+            else
+              {
+                for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+                  {
+                    query = query.filter(evaluationCriterion.esQuery());
+                  }
+              }
+
+            //
+            //  Must_not for all following buckets (reminder : bucket must be disjointed, if not, some customer could be counted in several buckets)
+            //
+            
+            for(int j = i+1; j < nbBaseSplits; j++)
+              {
+                BoolQueryBuilder nextQuery = baseSplitQueries.get(j);
+                if(baseSplit.getProfileCriteria().isEmpty())
+                  {
+                    //
+                    // If there is not any profile criteria, just filter with a match_all query.
+                    //
+                    nextQuery = nextQuery.mustNot(QueryBuilders.matchAllQuery());
+                  }
+                else
+                  {
+                    for (EvaluationCriterion evaluationCriterion : baseSplit.getProfileCriteria())
+                      {
+                        nextQuery = nextQuery.mustNot(evaluationCriterion.esQuery());
+                      }
+                  }
+              }
           }
-        }
       }
-    }
     catch (CriterionException e)
-    {
-      //
-      //  log
-      //
+      {
+        //
+        //  log
+        //
 
-      StringWriter stackTraceWriter = new StringWriter();
-      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
 
-      //
-      //  response
-      //
+        //
+        //  response
+        //
 
-      response.put("responseCode", "argumentError");
-      response.put("responseMessage", e.getMessage());
-      response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-      return JSONUtilities.encodeObject(response);
-    }
+        response.put("responseCode", "argumentError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
 
-    // The main aggregation is a filter aggregation. Each filter query will constitute a bucket representing a BaseSplit.
+    /*****************************************
+    *
+    *  the main aggregation is a filter aggregation.Each filter query will constitute a bucket representing a BaseSplit.
+    *
+    *****************************************/
+
     List<KeyedFilter> queries = new ArrayList<KeyedFilter>();
-    for(int i = 0; i < nbBaseSplits; i++) {
-      BoolQueryBuilder query = baseSplitQueries.get(i);
-      String bucketName = baseSplits.get(i).getSplitName(); // Warning: input must ensure that all BaseSplit names are different. ( TODO )
-      queries.add(new FiltersAggregator.KeyedFilter(bucketName, query));
-    }
+    for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BoolQueryBuilder query = baseSplitQueries.get(i);
+        String bucketName = baseSplits.get(i).getSplitName(); // Warning: input must ensure that all BaseSplit names are different. ( TODO )
+        queries.add(new FiltersAggregator.KeyedFilter(bucketName, query));
+      }
+
+    //
+    // @DEBUG: *otherBucket* can be activated for debug purpose: .otherBucket(true).otherBucketKey("OTH_BUCK")
+    //
 
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    AggregationBuilder aggregation = AggregationBuilders
-        .filters(MAIN_AGG_NAME, queries.toArray(new KeyedFilter[queries.size()]));
-    // @DEBUG: *otherBucket* can be activated for debug purpose: .otherBucket(true).otherBucketKey("OTH_BUCK")
+    AggregationBuilder aggregation = AggregationBuilders.filters(MAIN_AGG_NAME, queries.toArray(new KeyedFilter[queries.size()]));
 
     //
     //  Sub-aggregation query: Segments
+    //    sub-aggregations corresponding to all ranges-aggregation are added to the query
     //
 
-    // Sub-aggregations corresponding to all ranges-aggregation are added to the query
-    for(int i = 0; i < nbBaseSplits; i++) {
-      BaseSplit baseSplit = baseSplits.get(i);
+    for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        if(baseSplit.getVariableName() == null)
+          {
+            //
+            // This means that it should be the default segment, ranges-aggregation does not make sense here.
+            //
 
-      if(baseSplit.getVariableName() == null) {
-        // This means that it should be the default segment, ranges-aggregation does not make sense here.
+            QueryBuilder match_all = QueryBuilders.matchAllQuery();
+            AggregationBuilder other = AggregationBuilders.filter(RANGE_AGG_PREFIX+baseSplit.getSplitName(), match_all);
+            aggregation.subAggregation(other);
+          }
+        else
+          {
+            //
+            // Warning: input must ensure that all BaseSplit names are different. ( TODO )
+            //
 
-        QueryBuilder match_all = QueryBuilders.matchAllQuery();
-        AggregationBuilder other = AggregationBuilders.filter(RANGE_AGG_PREFIX+baseSplit.getSplitName(), match_all);
-        aggregation.subAggregation(other);
-      } else {
-        // Warning: input must ensure that all BaseSplit names are different. ( TODO )
-        RangeAggregationBuilder range = AggregationBuilders.range(RANGE_AGG_PREFIX+baseSplit.getSplitName());
+            RangeAggregationBuilder range = AggregationBuilders.range(RANGE_AGG_PREFIX+baseSplit.getSplitName());
 
-        // Retrieving the ElasticSearch field from the Criterion field.
-        CriterionField criterionField = CriterionContext.Profile.getCriterionFields().get(baseSplit.getVariableName());
-        if(criterionField.getESField() == null) {
-          // If this Criterion field does not correspond to any field from Deployment.json, raise an error
+            //
+            // Retrieving the ElasticSearch field from the Criterion field.
+            //
 
-          log.warn("Unknown criterion field {}", baseSplit.getVariableName());
+            CriterionField criterionField = CriterionContext.Profile.getCriterionFields().get(baseSplit.getVariableName());
+            if(criterionField.getESField() == null)
+              {
+                //
+                // If this Criterion field does not correspond to any field from Deployment.json, raise an error
+                //
 
-          //
-          //  response
-          //
+                log.warn("Unknown criterion field {}", baseSplit.getVariableName());
 
-          response.put("responseCode", "systemError");
-          response.put("responseMessage", "Unknown criterion field "+baseSplit.getVariableName()); // TODO security issue ?
-          response.put("responseParameter", null);
-          return JSONUtilities.encodeObject(response);
-        }
+                //
+                //  response
+                //
 
-        range = range.field(criterionField.getESField());
+                response.put("responseCode", "systemError");
+                response.put("responseMessage", "Unknown criterion field "+baseSplit.getVariableName()); // TODO security issue ?
+                response.put("responseParameter", null);
+                return JSONUtilities.encodeObject(response);
+              }
 
-        for(SegmentRanges segment : baseSplit.getSegments()) {
-          // Warning: input must ensure that all segment names are different. ( TODO )
-          range = range.addRange(new Range(segment.getName(),
-              (segment.getRangeMin() != null)? new Double (segment.getRangeMin()) : null,
-              (segment.getRangeMax() != null)? new Double (segment.getRangeMax()) : null));
-        }
-        aggregation.subAggregation(range);
+            //
+            //
+            //
+
+            range = range.field(criterionField.getESField());
+            for(SegmentRanges segment : baseSplit.getSegments())
+              {
+                //
+                // Warning: input must ensure that all segment names are different. ( TODO )
+                //
+
+                range = range.addRange(new Range(segment.getName(), (segment.getRangeMin() != null)? new Double (segment.getRangeMin()) : null, (segment.getRangeMax() != null)? new Double (segment.getRangeMax()) : null));
+              }
+            aggregation.subAggregation(range);
+          }
       }
-    }
 
     searchSourceBuilder.aggregation(aggregation);
-    // @DEBUG log.info(searchSourceBuilder.toString());
 
     /*****************************************
-     *
-     *  construct response (JSON object)
-     *
-     *****************************************/
+    *
+    *  construct response (JSON object)
+    *
+    *****************************************/
 
     JSONObject responseJSON = new JSONObject();
     List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
-    for(int i = 0; i < nbBaseSplits; i++) {
-      BaseSplit baseSplit = baseSplits.get(i);
+    for(int i = 0; i < nbBaseSplits; i++)
+      {
+        BaseSplit baseSplit = baseSplits.get(i);
+        JSONObject responseBaseSplit = new JSONObject();
+        List<JSONObject> responseSegments = new ArrayList<JSONObject>();
+        responseBaseSplit.put("splitName", baseSplit.getSplitName());
 
-      JSONObject responseBaseSplit = new JSONObject();
-      List<JSONObject> responseSegments = new ArrayList<JSONObject>();
-      responseBaseSplit.put("splitName", baseSplit.getSplitName());
+        //
+        //  ranges
+        //   the "count" field will be filled with the result of the ElasticSearch query
+        //
 
-      // Ranges
-      for(SegmentRanges segment : baseSplit.getSegments()) {
-        JSONObject responseSegment = new JSONObject();
-        responseSegment.put("name", segment.getName());
-        responseSegments.add(responseSegment);
-        // The "count" field will be filled with the result of the ElasticSearch query
+        for(SegmentRanges segment : baseSplit.getSegments())
+          {
+            JSONObject responseSegment = new JSONObject();
+            responseSegment.put("name", segment.getName());
+            responseSegments.add(responseSegment);
+          }
+        responseBaseSplit.put("segments", responseSegments);
+        responseBaseSplits.add(responseBaseSplit);
       }
-      responseBaseSplit.put("segments", responseSegments);
-      responseBaseSplits.add(responseBaseSplit);
-    }
 
     /*****************************************
-     *
-     *  execute query
-     *
-     *****************************************/
+    *
+    *  execute query
+    *
+    *****************************************/
 
     SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).aggregation(aggregation).size(0));
     SearchResponse searchResponse = null;
-
     try
-    {
-      searchResponse = elasticsearch.search(searchRequest);
-      // @DEBUG log.info(searchResponse.toString());
-    }
+      {
+        searchResponse = elasticsearch.search(searchRequest);
+      }
     catch (IOException e)
-    {
-      //
-      //  log
-      //
+      {
+        //
+        //  log
+        //
 
-      StringWriter stackTraceWriter = new StringWriter();
-      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
 
-      //
-      //  response
-      //
+        //
+        //  response
+        //
 
-      response.put("responseCode", "systemError");
-      response.put("responseMessage", e.getMessage());
-      response.put("responseParameter", null);
-      return JSONUtilities.encodeObject(response);
-    }
+        response.put("responseCode", "systemError");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", null);
+        return JSONUtilities.encodeObject(response);
+      }
 
     /*****************************************
-     *
-     *  retrieve result and fill the response JSON object
-     *
-     *****************************************/
+    *
+    *  retrieve result and fill the response JSON object
+    *
+    *****************************************/
 
     Filters mainAggregationResult = searchResponse.getAggregations().get(MAIN_AGG_NAME);
-    // @DEBUG log.info(mainAggregationResult.toString());
 
-    // Fill response JSON object with counts for each segments from ElasticSearch result
-    for(JSONObject responseBaseSplit : responseBaseSplits) {
-      Filters.Bucket bucket = mainAggregationResult.getBucketByKey((String) responseBaseSplit.get("splitName"));
-      ParsedAggregation segmentAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString());
+    //
+    //  fill response JSON object with counts for each segments from ElasticSearch result
+    //
+    
+    for(JSONObject responseBaseSplit : responseBaseSplits)
+      {
+        Filters.Bucket bucket = mainAggregationResult.getBucketByKey((String) responseBaseSplit.get("splitName"));
+        ParsedAggregation segmentAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString());
+        if (segmentAggregationResult instanceof ParsedFilter)
+          {
+            //
+            // This specific segment aggregation is corresponding to the "default" BaseSplit (without any variableName)
+            //
+            
+            ParsedFilter other = (ParsedFilter) segmentAggregationResult;
 
-      if (segmentAggregationResult instanceof ParsedFilter) {
-        // This specific segment aggregation is corresponding to the "default" BaseSplit (without any variableName)
-        ParsedFilter other = (ParsedFilter) segmentAggregationResult;
+            //
+            //  fill the "count" field of the response JSON object (for each segments)
+            for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments"))
+              {
+                responseSegment.put("count", other.getDocCount());
+              }
+          }
+        else
+          {
+            //
+            // Segment aggregation is a range-aggregation.
+            //
 
-        // Fill the "count" field of the response JSON object (for each segments)
-        for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments")) {
-          responseSegment.put("count", other.getDocCount());
-        }
-      } else {
-        // Segment aggregation is a range-aggregation.
-        ParsedRange ranges = (ParsedRange) segmentAggregationResult;
-        List<ParsedRange.ParsedBucket> segmentBuckets = (List<ParsedRange.ParsedBucket>) ranges.getBuckets();
+            ParsedRange ranges = (ParsedRange) segmentAggregationResult;
+            List<ParsedRange.ParsedBucket> segmentBuckets = (List<ParsedRange.ParsedBucket>) ranges.getBuckets();
 
-        // bucketMap is an hash map for caching purpose
-        Map<String, ParsedRange.ParsedBucket> bucketMap = new HashMap<>(segmentBuckets.size());
-        for (ParsedRange.ParsedBucket segmentBucket : segmentBuckets) {
-          bucketMap.put(segmentBucket.getKey(), segmentBucket);
-        }
+            //
+            // bucketMap is an hash map for caching purpose
+            //
 
-        // Fill the "count" field of the response JSON object (for each segments)
-        for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments")) {
-          responseSegment.put("count", bucketMap.get(responseSegment.get("name")).getDocCount());
-        }
+            Map<String, ParsedRange.ParsedBucket> bucketMap = new HashMap<>(segmentBuckets.size());
+            for (ParsedRange.ParsedBucket segmentBucket : segmentBuckets)
+              {
+                bucketMap.put(segmentBucket.getKey(), segmentBucket);
+              }
+
+            //
+            //  fill the "count" field of the response JSON object (for each segments)
+            // 
+
+            for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments"))
+              {
+                responseSegment.put("count", bucketMap.get(responseSegment.get("name")).getDocCount());
+              }
+          }
       }
-    }
     responseJSON.put("baseSplit", responseBaseSplits);
-    // @DEBUG log.info(responseJSON.toJSONString());
 
     /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
+    *
+    *  response
+    *
+    *****************************************/
 
     response.put("result", responseJSON);
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCountBySegmentationEligibility
+  *
+  *****************************************/
+
+  private JSONObject processGetCountBySegmentationEligibility(String userID,JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  populate segmentationDimensionID with "nothing"
+    *
+    *****************************************/
+
+    jsonRoot.put("id", "(not used)"); 
+
+    /*****************************************
+    *
+    *  validate targetingType
+    *
+    *****************************************/
+
+    SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+    if(targetingType != SegmentationDimensionTargetingType.ELIGIBILITY)
+      {
+        //
+        //  log
+        //
+
+        log.warn("Invalid dimension targeting type for processGetCountBySegmentationEligibility. Targeting type: {}",targetingType.getExternalRepresentation());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "segmentationDimensionNotValid");
+        response.put("responseMessage", "Segmentation dimension not ELIGIBILITY");
+        response.put("responseParameter", null);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    List<JSONObject> aggregationResult = new ArrayList<>();
+    try
+      {
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+        List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+          {
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
+            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
+              {
+                query = query.filter(evaluationCriterion.esQuery());
+              }
+            //use name as key, even if normally should use id, to make simpler to use this count in chart
+            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
+          }
+        AggregationBuilder aggregation = null;
+        FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+        filterArray = aggFilters.toArray(filterArray);
+        aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
+        ((FiltersAggregationBuilder) aggregation).otherBucket(true);
+        ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+        searchSourceBuilder.aggregation(aggregation);
+
+        //
+        //  search in ES
+        //
+        
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+        SearchResponse searchResponse = elasticsearch.search(searchRequest);
+        Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
+        for (Filters.Bucket entry : aggResultFilters.getBuckets())
+          {
+            HashMap<String,Object> aggItem = new HashMap<String,Object>();
+            String key = entry.getKeyAsString();            // bucket key
+            long docCount = entry.getDocCount();            // Doc count
+            aggItem.put("name",key);
+            aggItem.put("count",docCount);
+            aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+          }
+      }
+    catch(Exception ex)
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "systemError");
+        response.put("responseMessage", ex.getMessage());
+        response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+    response.put("responseCode", "ok");
+    response.put("result",aggregationResult);
     return JSONUtilities.encodeObject(response);
   }
 
