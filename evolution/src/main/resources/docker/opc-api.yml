@@ -6,6 +6,7 @@ opc-api-<_KEY_>:
     GuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     DNBOSettings__DNBO_INSTALL: '${gui.opc.dnbo.display}'
+    DNBOSettings__DNBO_Scoring_AlwaysAppendOfferObjectiveIDs: 'true'
     DNBOSettings__DNBOEngineSettings__ApiBaseUrl: '<_IOM_SERVER_URL_>'
     DNBOSettings__DNBOEngineSettings__UseSubscriberId: 'true'
     DNBOSettings__DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
