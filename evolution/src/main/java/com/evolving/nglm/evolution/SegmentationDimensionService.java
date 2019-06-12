@@ -338,9 +338,9 @@ public class SegmentationDimensionService extends GUIService
             // time to work
             //
             
-            if(segmentationDimension.getDimensonFileID() != null)
+            if(segmentationDimension.getDimensionFileID() != null)
               {
-                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensonFileID());
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(segmentationDimension.getDimensionFileID());
                 if (uploadedFile == null)
                   { 
                     log.warn("SegmentationDimensionService.run(uploaded file not found, processing done)");

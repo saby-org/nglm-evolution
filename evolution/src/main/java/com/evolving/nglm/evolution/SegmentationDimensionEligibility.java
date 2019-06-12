@@ -247,7 +247,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
         if (segmentID == null)
           {
-            segmentID = segmentationDimensionService.generateSegmentationDimensionID();
+            segmentID = this.getSegmentationDimensionID() + "-" + Integer.toString(i);
             segment.put("id", segmentID);
           }
         result.add(new SegmentEligibility(segment));
