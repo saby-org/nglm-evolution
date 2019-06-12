@@ -81,6 +81,7 @@ import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.TokenType.TokenTypeKind;
 import com.evolving.nglm.evolution.TokenTypeService.TokenTypeListener;
+import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 
 import org.slf4j.Logger;
@@ -113,6 +114,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,6 +124,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class EvolutionEngine
 {
@@ -270,11 +273,11 @@ public class EvolutionEngine
     String subscriberStateChangeLog = Deployment.getSubscriberStateChangeLog();
     String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
     String propensityStateChangeLog = Deployment.getPropensityStateChangeLog();
-    
-    // 
+
+    //
     // Internal repartitioning topic (when rekeyed)
     //
-    
+
     String propensityRepartitioningTopic = Deployment.getPropensityRepartitioningTopic();
 
     //
@@ -316,7 +319,7 @@ public class EvolutionEngine
 
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationdimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
-    
+
     //
     //  tokenTypeService
     //
@@ -633,20 +636,20 @@ public class EvolutionEngine
     //  propensity rekey
     //
     // We manually write the rekeyed KStream in an underlying intermediary topic (propensityoutput-repartition)
-    // 
+    //
     // When going through a map operation, we change the key of the topic.
     // Therefore the repartition done by Kafka between the different topic partitions will not be the same.
     // For instance, a worker assigned to the treatment of a record may not be assigned to the treatment of its rekeyed record.
     // That is why, we need to write the rekeyed KStream in an intermediary topic.
     //
     // Usually it's automatically done in the next operation applied on this KStream as it is mentioned in groupByKey or leftJoin javadoc:
-    //      "If a key changing operator was used before this operation and no data redistribution 
+    //      "If a key changing operator was used before this operation and no data redistribution
     //      happened afterwards an internal repartitioning topic will be created in Kafka."
     // But here, if we let this happen, it will create two different internal repartitioning topics (both containing the same records), one for the groupeByKey and one for the leftJoin.
     // Firstly, it would be a waste of resources to duplicate those topics.
     // But, more important, by doing this, we will introduce indeterminism, and therefore errors.
     // Indeed, the groupByKey and leftJoin operations would not be done sequentially anymore but in parallel, and we could not ensure that groupByKey will be done before the leftJoin.
-    // 
+    //
     // For those reasons, we manually create the intermediary topic just after the map operation and we applied groupeByKey and leftJoin on this "well-partioned" stream, thus no other redistribution intermediary topic will be needed.
     //
 
@@ -664,7 +667,7 @@ public class EvolutionEngine
     //  convert to stream
     //
     KStream<PropensityKey, PropensityState> propensityStateStream = rekeyedPropensityStream.leftJoin(propensityState, EvolutionEngine::getPropensityState);
-    
+
     /*****************************************
     *
     *  sink
@@ -908,7 +911,7 @@ public class EvolutionEngine
   *  getExternalTokenType
   *
   *****************************************/
-  
+
   public static TokenType getExternalTokenType() {
     if(externalTokenType == null) {
       externalTokenType = (TokenType) tokenTypeService.getStoredTokenType(externalTokenTypeID);
@@ -1576,6 +1579,54 @@ public class EvolutionEngine
             boolean addToUCG = false;
             boolean removeFromUCG = false;
 
+            //
+            // Retrieve the user stratum for UCG dimensions only 
+            //
+            
+            boolean isInUCG = subscriberProfile.getUniversalControlGroup();
+            Set<String> userStratum = new HashSet<String>();
+            Map<String, String> userSegmentsMap = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
+            for (String dimensionID : ucgState.getUCGRule().getSelectedDimensions())
+              {
+                userStratum.add(userSegmentsMap.get(dimensionID));
+              }
+            
+            //
+            // Retrieve stratum probability for a customer to change its state
+            //  A positive number is the probability for a customer outside UCG to enter it.
+            //  A negative number is the (opposite) probability for a customer already inside UCG to leave it.
+            //  TODO This could be optimized with a map ?!
+            //
+            
+            double shiftProbability = 0.0d;
+            Iterator<UCGGroup> iterator = ucgState.getUCGGroups().iterator();
+            while(iterator.hasNext()) 
+              {
+                UCGGroup g = iterator.next();
+                if(g.getSegmentIDs().equals(userStratum)) 
+                  {
+                    if (g.getShiftProbability() != null) 
+                      {
+                        shiftProbability = g.getShiftProbability();
+                      }
+                    // TODO What if shift probability is null ? manually re-compute it ?
+                    break;
+                  }
+              }
+
+            if(shiftProbability < 0 && isInUCG) 
+              {
+                // If there is already too much customers in the Universal Control Group.
+                ThreadLocalRandom random = ThreadLocalRandom.current();
+                removeFromUCG = (random.nextDouble() < -shiftProbability);
+              }
+            else if(shiftProbability > 0 && !isInUCG) 
+              {
+                // If there is not enough customers in the Universal Control Group.
+                ThreadLocalRandom random = ThreadLocalRandom.current();
+                addToUCG = (random.nextDouble() < shiftProbability);
+              }
+
             /*****************************************
             *
             *  add/remove from UCG
@@ -1649,12 +1700,12 @@ public class EvolutionEngine
       } else if(evolutionEvent instanceof AcceptanceLog) {
         eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
       }
-      
+
       //
       // Subscriber token list cleaning.
       // We will delete all already expired tokens before doing anything.
       //
-      
+
       List<Token> cleanedList = new ArrayList<Token>();
       boolean changed = false;
       Date now = SystemTime.getCurrentTime();
@@ -1665,13 +1716,13 @@ public class EvolutionEngine
         }
         cleanedList.add(token);
       }
-      
+
       if(changed) {
         subscriberProfile.setTokens(cleanedList);
         subscriberTokens = cleanedList;
         subscriberStateUpdated = true;
       }
-      
+
       //
       // Retrieving the corresponding token from the subscriber token list, if it already exists.
       // We expect a DNBOToken, otherwise it means that there is a conflict with a token stored in the subscriber token list.
@@ -1741,7 +1792,7 @@ public class EvolutionEngine
         //
 
         AcceptanceLog acceptanceLog = (AcceptanceLog) evolutionEvent;
-        
+
         if(subscriberStoredToken.getAcceptedOfferID() != null) {
           log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
           return subscriberStateUpdated;
@@ -1752,7 +1803,7 @@ public class EvolutionEngine
         }
         subscriberStateUpdated = true;
       }
-      
+
       //
       // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
       //
@@ -1776,7 +1827,7 @@ public class EvolutionEngine
   ****************************************/
 
   private static List<PropensityEventOutput> retrievePropensityOutputs(DNBOToken token, SubscriberProfile subscriberProfile)
-  {    
+  {
     List<PropensityEventOutput> result = new ArrayList<PropensityEventOutput>();
     for(String offerID: token.getPresentedOffersIDs())
       {
@@ -2198,7 +2249,7 @@ public class EvolutionEngine
                 *  set context variables when exiting node
                 *
                 *****************************************/
-                
+
                 if (firedLink.getEvaluateContextVariables())
                   {
                     for (ContextVariable contextVariable : journeyNode.getContextVariables())
@@ -2294,7 +2345,7 @@ public class EvolutionEngine
                 *  set context variables when entering node
                 *
                 *****************************************/
-                
+
                 if (journeyNode.getEvaluateContextVariables())
                   {
                     for (ContextVariable contextVariable : journeyNode.getContextVariables())
@@ -2457,7 +2508,7 @@ public class EvolutionEngine
       propensityState.setAcceptanceCount(propensityState.getAcceptanceCount() + 1L);
       evolutionEngineStatistics.incrementAcceptanceCount();
     }
-    
+
     propensityState.setPresentationCount(propensityState.getPresentationCount() + 1L);
     evolutionEngineStatistics.incrementPresentationCount();
 

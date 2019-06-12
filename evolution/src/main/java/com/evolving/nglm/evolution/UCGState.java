@@ -13,9 +13,12 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.UCGRule.UCGRuleCalculationType;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
@@ -34,6 +37,18 @@ import java.util.Set;
 
 public class UCGState implements ReferenceDataValue<String>
 {
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(UCGState.class);
+
   /*****************************************
   *
   *  schema
@@ -115,6 +130,117 @@ public class UCGState implements ReferenceDataValue<String>
     this.ucgRule = ucgRule;
     this.ucgGroups = ucgGroups;
     this.evaluationDate = evaluationDate;
+
+    //
+    // Check if shift probability is well defined in UCG Groups
+    //
+
+    boolean skipShiftProbabilityEvaluation = true;
+    for (UCGGroup ucgGroup : ucgGroups)
+    {
+      if(ucgGroup.getShiftProbability() == null) {
+        skipShiftProbabilityEvaluation = false;
+        break;
+      }
+    }
+
+    //
+    // Shift probability evaluation
+    //
+
+    if(!skipShiftProbabilityEvaluation) {
+
+      //
+      // Retrieve the target ratio of customers that should be in the Universal Control Group (it is the same for each stratum).
+      //
+
+      Double targetRatio = null;
+      if(ucgRule.getCalculationType() == UCGRuleCalculationType.Percent) 
+        {
+          targetRatio = ucgRule.getSize() / 100.0d;
+          if(targetRatio < 0 || targetRatio > 1) 
+            {
+              log.error("Unallowed UCG target percentage.");
+              targetRatio = null;
+            }
+        } 
+      else if (ucgRule.getCalculationType() == UCGRuleCalculationType.Numeric) 
+        {
+          int totalCustomers = 0;
+          for (UCGGroup ucgGroup : ucgGroups)
+            {
+              totalCustomers += ucgGroup.getTotalSubscribers();
+            }
+
+          int targetSize = ucgRule.getSize();
+          if (targetSize < 0) 
+            {
+              log.error("NUMERIC number of customers wanted in UCG must not be a negative number.");
+              targetRatio = null;
+            } 
+          else if(targetSize >= totalCustomers) 
+            {
+              targetRatio = 1.0d;
+            } 
+          else  
+            {
+              targetRatio = targetSize / (double) totalCustomers;
+            }
+        } 
+      else if (ucgRule.getCalculationType() == UCGRuleCalculationType.File) 
+        {
+          log.warn("UCG engine will not have any impact in UCGRuleCalculationType.File mode.");
+          targetRatio = null;
+        } 
+      else 
+        {
+          log.error("Unable to retrieve UCG target ratio for this UCG calculation type.");
+          targetRatio = null;
+        }
+
+      //
+      // Compute the shift probability for each stratum
+      //    > shiftProbability is the probability for each customer in this stratum to be added in UCG (or removed if it is a negative probability).
+      // If we did not succeed to retrieve the target ratio, shift probability will be set to 0 (no change).
+      //    > userDelta is the number of customers that should move in (or out) the Universal Control Group to restore the target ratio for this stratum. 
+      //    > suitableCustomersNbr is the number of customers available for a state change (depending if we want to add or remove customers from the UCG)
+      // TODO The number of suitable customers is not the correct one, it should take into
+      // account the fact that some of customers are not available (outside of the refresh window) due to the
+      // *noOfDaysForStayOut* variable in UCGRule.
+      //
+
+      for (UCGGroup ucgGroup : this.ucgGroups)
+        {
+          if(ucgGroup.getShiftProbability() != null) 
+            {
+              continue;
+            }
+          
+          double shiftProbability = 0.0d;
+          if(targetRatio != null) 
+            {
+              int userDelta = 0;
+              int suitableCustomersNbr = 0;
+
+              userDelta = (int) (ucgGroup.getTotalSubscribers() * targetRatio) - ucgGroup.getUCGSubscribers();
+              if(userDelta >= 0) 
+                {
+                  suitableCustomersNbr = ucgGroup.getTotalSubscribers() - ucgGroup.getUCGSubscribers();
+                } 
+              else 
+                {
+                  suitableCustomersNbr = ucgGroup.getUCGSubscribers();
+                }
+              
+
+              if(suitableCustomersNbr != 0) 
+                {
+                  shiftProbability = userDelta / (double) suitableCustomersNbr;
+                }
+            }
+          ucgGroup.setShiftProbability(shiftProbability);
+        }
+    }
   }
 
   /*****************************************
@@ -240,6 +366,7 @@ public class UCGState implements ReferenceDataValue<String>
       schemaBuilder.field("segmentIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("ucgSubscribers", Schema.INT32_SCHEMA);
       schemaBuilder.field("totalSubscribers", Schema.INT32_SCHEMA);
+      schemaBuilder.field("shiftProbability", Schema.OPTIONAL_FLOAT64_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -264,7 +391,9 @@ public class UCGState implements ReferenceDataValue<String>
 
     private Set<String> segmentIDs;
     private int ucgSubscribers;
-    private Integer totalSubscribers;
+    private int totalSubscribers;
+    private Double shiftProbability;
+    
 
     /****************************************
     *
@@ -275,6 +404,13 @@ public class UCGState implements ReferenceDataValue<String>
     public Set<String> getSegmentIDs() { return segmentIDs; }
     public int getUCGSubscribers() { return ucgSubscribers; }
     public int getTotalSubscribers() { return totalSubscribers; }
+    public Double getShiftProbability() { return shiftProbability; }
+    
+    //
+    // setters
+    //
+    
+    public void setShiftProbability(Double p) { this.shiftProbability = p; }
 
     /*****************************************
     *
@@ -287,6 +423,21 @@ public class UCGState implements ReferenceDataValue<String>
       this.segmentIDs = segmentIDs;
       this.ucgSubscribers = ucgSubscribers;
       this.totalSubscribers = totalSubscribers;
+      this.shiftProbability = null;
+    }
+    
+    /*****************************************
+    *
+    *  constructor "unpack"
+    *
+    *****************************************/
+    
+    private UCGGroup(Set<String> segmentIDs, int ucgSubscribers, int totalSubscribers, Double shiftProbability)
+    {
+      this.segmentIDs = segmentIDs;
+      this.ucgSubscribers = ucgSubscribers;
+      this.totalSubscribers = totalSubscribers;
+      this.shiftProbability = shiftProbability;
     }
 
     /*****************************************
@@ -302,6 +453,7 @@ public class UCGState implements ReferenceDataValue<String>
       struct.put("segmentIDs", packSegmentIDs(ucgGroup.getSegmentIDs()));
       struct.put("ucgSubscribers", ucgGroup.getUCGSubscribers());
       struct.put("totalSubscribers" , ucgGroup.getTotalSubscribers());
+      struct.put("shiftProbability" , ucgGroup.getShiftProbability());
       return struct;
     }
 
@@ -345,12 +497,13 @@ public class UCGState implements ReferenceDataValue<String>
       Set<String> segmentIDs = unpackSegmentIDs((List<String>) valueStruct.get("segmentIDs"));
       int ucgSubscribers = valueStruct.getInt32("ucgSubscribers");
       int totalSubscribers = valueStruct.getInt32("totalSubscribers");
+      Double shiftProbability = valueStruct.getFloat64("shiftProbability");
 
       //
       //  return
       //
 
-      return new UCGGroup(segmentIDs, ucgSubscribers, totalSubscribers);
+      return new UCGGroup(segmentIDs, ucgSubscribers, totalSubscribers, shiftProbability);
     }
 
     /*****************************************
