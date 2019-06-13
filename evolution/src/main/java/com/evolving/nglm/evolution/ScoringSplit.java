@@ -334,15 +334,18 @@ public class ScoringSplit
    *****************************************/
 
   private Set<String> decodeAlwaysAppendOfferObjectiveIDs(JSONArray jsonArray) throws GUIManagerException
-    {
-      Set<String> alwaysAppendOfferObjectiveIDs = new LinkedHashSet<String>();
-      for (int i=0; i<jsonArray.size(); i++)
-        {
-          String offerObjectiveID = (String) jsonArray.get(i);
-          alwaysAppendOfferObjectiveIDs.add(offerObjectiveID);
-        }
-      return alwaysAppendOfferObjectiveIDs;
-    }
+  {
+    Set<String> alwaysAppendOfferObjectiveIDs = new LinkedHashSet<String>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            String offerObjectiveID = (String) jsonArray.get(i);
+            alwaysAppendOfferObjectiveIDs.add(offerObjectiveID);
+          }
+      }
+    return alwaysAppendOfferObjectiveIDs;
+  }
 
   /*****************************************
    *

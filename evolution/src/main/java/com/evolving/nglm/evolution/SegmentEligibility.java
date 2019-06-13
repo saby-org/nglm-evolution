@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.kafka.connect.data.Schema;
@@ -177,10 +178,8 @@ public class SegmentEligibility implements Segment
 
   private static List<Object> packProfileCriteria(List<EvaluationCriterion> profileCriteria)
   {
-    if(profileCriteria == null){
-      return null;
-    }
     List<Object> result = new ArrayList<Object>();
+    profileCriteria = (profileCriteria != null) ? profileCriteria : Collections.<EvaluationCriterion>emptyList();
     for (EvaluationCriterion criterion : profileCriteria)
       {
         result.add(EvaluationCriterion.pack(criterion));
