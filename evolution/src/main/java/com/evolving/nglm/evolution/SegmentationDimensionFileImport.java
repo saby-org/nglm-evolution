@@ -46,8 +46,6 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     for (Field field : SegmentationDimension.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("dimensionFileID", Schema.STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.array(SegmentFileImport.schema()).schema());
-
-
     schemaBuilder.field("usingContactPolicy", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
