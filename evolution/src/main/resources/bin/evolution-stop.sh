@@ -43,10 +43,6 @@ if [ "<_EMPTYFULFILLMENTMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-emptyfulfillmentmanager
 fi
 
-if [ "<_POINTFULFILLMENTMANAGER_ENABLED_>" = "true" ]; then
-  docker stack rm <_DOCKER_STACK_>-pointfulfillmentmanager
-fi
-
 if [ "<_COMMODITYDELIVERYMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-commoditydeliverymanager
 fi

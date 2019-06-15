@@ -16,37 +16,10 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 
 public class PointValidity 
 {
-
-  /*****************************************
-  *
-  *  configuration
-  *
-  *****************************************/
-  
-  //
-  //  TimeUnit
-  //
-
-  public enum PeriodType
-  {
-    Minutes("minutes"),
-    Hours("hours"),
-    Days("days"),
-    Weeks("weeks"),
-    Months("months"),
-    Quarters("quarters"),
-    Semesters("semesters"),
-    Years("years"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private PeriodType(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static PeriodType fromExternalRepresentation(String externalRepresentation) { for (PeriodType enumeratedValue : PeriodType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-  
   /*****************************************
   *
   *  schema
@@ -69,7 +42,8 @@ public class PointValidity
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("periodType", Schema.STRING_SCHEMA);
     schemaBuilder.field("periodQuantity", Schema.INT32_SCHEMA);
-    schemaBuilder.field("roundDown", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("roundUp", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("validityExtension", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -85,9 +59,10 @@ public class PointValidity
   *
   *****************************************/
 
-  private PeriodType periodType;
+  private TimeUnit periodType;
   private int periodQuantity;
-  private boolean roundDown;
+  private boolean roundUp;
+  private boolean validityExtension;
 
   /*****************************************
   *
@@ -95,11 +70,12 @@ public class PointValidity
   *
   *****************************************/
 
-  private PointValidity(PeriodType periodType, int periodQuantity, boolean roundDown)
+  private PointValidity(TimeUnit periodType, int periodQuantity, boolean roundUp, boolean validityExtension)
   {
     this.periodType = periodType;
     this.periodQuantity = periodQuantity;
-    this.roundDown = roundDown;
+    this.roundUp = roundUp;
+    this.validityExtension = validityExtension;
   }
 
   /*****************************************
@@ -110,9 +86,10 @@ public class PointValidity
 
   PointValidity(JSONObject jsonRoot) throws GUIManagerException
   {
-    this.periodType = PeriodType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
+    this.periodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
     this.periodQuantity = JSONUtilities.decodeInteger(jsonRoot, "periodQuantity", true);
-    this.roundDown = JSONUtilities.decodeBoolean(jsonRoot, "roundDown", true);
+    this.roundUp = JSONUtilities.decodeBoolean(jsonRoot, "roundUp", true);
+    this.validityExtension = JSONUtilities.decodeBoolean(jsonRoot, "validityExtension", true);
   }
 
   /*****************************************
@@ -121,9 +98,10 @@ public class PointValidity
   *
   *****************************************/
 
-  public PeriodType getPeriodType() { return periodType; }
+  public TimeUnit getPeriodType() { return periodType; }
   public int getPeriodQuantity() { return periodQuantity; }
-  public boolean getRoundDown() { return roundDown; }
+  public boolean getRoundUp() { return roundUp; }
+  public boolean getValidityExtension() { return validityExtension; }
 
   /*****************************************
   *
@@ -148,7 +126,8 @@ public class PointValidity
     Struct struct = new Struct(schema);
     struct.put("periodType", segment.getPeriodType().getExternalRepresentation());
     struct.put("periodQuantity", segment.getPeriodQuantity());
-    struct.put("roundDown", segment.getRoundDown());
+    struct.put("roundUp", segment.getRoundUp());
+    struct.put("validityExtension", segment.getValidityExtension());
     return struct;
   }
 
@@ -173,15 +152,15 @@ public class PointValidity
     //
 
     Struct valueStruct = (Struct) value;
-    PeriodType periodType = PeriodType.fromExternalRepresentation(valueStruct.getString("periodType"));
+    TimeUnit periodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("periodType"));
     int periodQuantity = valueStruct.getInt32("periodQuantity");
-    boolean roundDown = valueStruct.getBoolean("roundDown");
+    boolean roundUp = valueStruct.getBoolean("roundUp");
+    boolean validityExtension = valueStruct.getBoolean("validityExtension");
 
     //
     //  return
     //
 
-    return new PointValidity(periodType, periodQuantity, roundDown);
+    return new PointValidity(periodType, periodQuantity, roundUp, validityExtension);
   }
-  
 }

@@ -185,10 +185,10 @@ public class Point extends GUIManagedObject
     *
     *****************************************/
 
-    this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);
-    this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
-    this.setable = JSONUtilities.decodeBoolean(jsonRoot, "setable", true);
-    this.validity = new PointValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity"));
+    this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", Boolean.TRUE);
+    this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", Boolean.TRUE);
+    this.setable = JSONUtilities.decodeBoolean(jsonRoot, "setable", Boolean.FALSE);
+    this.validity = new PointValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity", true));
 
     /*****************************************
     *

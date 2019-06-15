@@ -7,13 +7,37 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 
 import java.util.Calendar;
 import java.util.Date;
 
 public class EvolutionUtilities
 {
+  /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+
+  public enum TimeUnit
+  {
+    Instant("instant", "MILLIS"),
+    Minute("minute", "MINUTES"),
+    Hour("hour", "HOURS"),
+    Day("day", "DAYS"),
+    Week("week", "WEEKS"),
+    Month("month", "MONTHS"),
+    Year("year", "YEARS"),
+    Unknown("(unknown)", "(unknown)");
+    private String externalRepresentation;
+    private String chronoUnit;
+    private TimeUnit(String externalRepresentation, String chronoUnit) { this.externalRepresentation = externalRepresentation; this.chronoUnit = chronoUnit; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public String getChronoUnit() { return chronoUnit; }
+    public static TimeUnit fromExternalRepresentation(String externalRepresentation) { for (TimeUnit enumeratedValue : TimeUnit.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
   /*****************************************
   *
   *  addTime

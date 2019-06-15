@@ -8,7 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 import java.util.concurrent.ThreadLocalRandom;

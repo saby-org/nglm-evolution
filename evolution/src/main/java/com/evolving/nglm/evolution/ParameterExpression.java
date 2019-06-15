@@ -11,7 +11,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;

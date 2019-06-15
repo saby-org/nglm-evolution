@@ -48,10 +48,6 @@ do
 	      docker pull ${env.DOCKER_REGISTRY}ev-emptyfulfillmentmanager:${project.name}-${project.version}
       fi
 
-      if [ "${POINTFULFILLMENTMANAGER_ENABLED}" = "true" ]; then
-	      docker pull ${env.DOCKER_REGISTRY}ev-pointfulfillmentmanager:${project.name}-${project.version}
-      fi
-
       if [ "${COMMODITYDELIVERYMANAGER_ENABLED}" = "true" ]; then
 	      docker pull ${env.DOCKER_REGISTRY}ev-commoditydeliverymanager:${project.name}-${project.version}
       fi

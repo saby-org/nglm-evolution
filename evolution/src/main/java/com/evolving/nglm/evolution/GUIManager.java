@@ -677,7 +677,6 @@ public class GUIManager
           }
         }
       }
-      
     }
     
     /*****************************************
@@ -6457,8 +6456,62 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
-    if (segmentationDimension != null && ! segmentationDimension.getReadOnly()) segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
+    GUIManagedObject segmentationDimensionUnchecked = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    if (segmentationDimensionUnchecked != null && ! segmentationDimensionUnchecked.getReadOnly())
+      {
+        /*****************************************
+        *
+        *  initialize/update subscriber group
+        *
+        *****************************************/
+
+        if (segmentationDimensionUnchecked.getAccepted())
+          {
+            //
+            //  segmentationDimension
+            //
+
+            SegmentationDimension segmentationDimension = (SegmentationDimension) segmentationDimensionUnchecked;
+
+            //
+            //  open zookeeper and lock dimension
+            //
+
+            ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(segmentationDimension.getSegmentationDimensionID());
+
+            //
+            //  create or ensure subscriberGroupEpoch exists
+            //
+
+            SubscriberGroupEpoch existingSubscriberGroupEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID());
+
+            //
+            //  submit new subscriberGroupEpoch
+            //
+
+            SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, segmentationDimension.getSegmentationDimensionID(), existingSubscriberGroupEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
+
+            //
+            //  update segmentationDimension
+            //
+
+            segmentationDimension.setSubscriberGroupEpoch(subscriberGroupEpoch);
+
+            //
+            //  close zookeeper and release dimension
+            //
+
+            SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
+
+            /*****************************************
+            *
+            *  remove
+            *
+            *****************************************/
+
+            segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
+          }
+      }
 
     /*****************************************
     *
@@ -6475,9 +6528,9 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (segmentationDimension != null && ! segmentationDimension.getReadOnly())
+    if (segmentationDimensionUnchecked != null && ! segmentationDimensionUnchecked.getReadOnly())
       responseCode = "ok";
-    else if (segmentationDimension != null)
+    else if (segmentationDimensionUnchecked != null)
       responseCode = "failedReadOnly";
     else
       responseCode = "segmentationDimensionNotFound";
@@ -13799,7 +13852,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, targetService, pointService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }

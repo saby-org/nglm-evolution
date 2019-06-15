@@ -24,7 +24,6 @@ sed -i "s/<_EVOLUTIONENGINE_PROMETHEUS_>/${EVOLUTIONENGINE_PROMETHEUS}/g" /etc/p
 sed -i "s/<_UCGENGINE_PROMETHEUS_>/${UCGENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_INFULFILLMENTMANAGER_PROMETHEUS_>/${INFULFILLMENTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_EMPTYFULFILLMENTMANAGER_PROMETHEUS_>/${EMPTYFULFILLMENTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
-sed -i "s/<_POINTFULFILLMENTMANAGER_PROMETHEUS_>/${POINTFULFILLMENTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_COMMODITYDELIVERYMANAGER_PROMETHEUS_>/${COMMODITYDELIVERYMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_PURCHASEFULFILLMENTMANAGER_PROMETHEUS_>/${PURCHASEFULFILLMENTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_NOTIFICATIONMANAGER_SMS_PROMETHEUS_>/${NOTIFICATIONMANAGER_SMS_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml

@@ -22,7 +22,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 import org.slf4j.Logger;
@@ -49,6 +49,9 @@ public class Deployment
   private static String journeyTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
+  private static String pointFulfillmentRequestTopic;
+  private static String pointFulfillmentResponseTopic;
+  private static String pointFufillmentRepartitioningTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -200,6 +203,9 @@ public class Deployment
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
+  public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
+  public static String getPointFulfillmentResponseTopic() { return pointFulfillmentResponseTopic; }
+  public static String getPointFufillmentRepartitioningTopic() { return pointFufillmentRepartitioningTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPaymentMeanTopic() { return paymentMeanTopic; }
@@ -577,6 +583,45 @@ public class Deployment
     try
       {
         pointTopic = JSONUtilities.decodeString(jsonRoot, "pointTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  pointFulfillmentRequestTopic
+    //
+
+    try
+      {
+        pointFulfillmentRequestTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRequestTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  pointFulfillmentResponseTopic
+    //
+
+    try
+      {
+        pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  pointFufillmentRepartitioningTopic
+    //
+
+    try
+      {
+        pointFufillmentRepartitioningTopic = JSONUtilities.decodeString(jsonRoot, "pointFufillmentRepartitioningTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

@@ -37,8 +37,7 @@ import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentReque
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentOperation;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
-import com.evolving.nglm.evolution.PointFulfillmentManager.PointFulfillmentRequest;
-import com.evolving.nglm.evolution.PointFulfillmentManager.PointOperation;
+import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 import com.evolving.nglm.evolution.SubscriberProfileService.RedisSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
@@ -1191,7 +1190,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       pointRequestData.put("featureID", commodityDeliveryRequest.getFeatureID());
 
       pointRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
-//      pointRequestData.put("providerID", commodityDeliveryRequest.getProviderID());
       pointRequestData.put("pointID", commodityDeliveryRequest.getCommodityID());
       
       //TODO SCH : remove PointOperation (only one list of operations -> keep CommodityDeliveryOperation)

@@ -7,7 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvaluationCriterion.TimeUnit;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;

@@ -54,8 +54,6 @@
   echo create_topic ${topic.propensitylog}                                            $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.pointfulfillment.request}                                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.pointfulfillment.response}                                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
-  echo create_topic ${topic.pointfulfillment.internal}                                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
-  echo create_topic ${topic.pointfulfillment.routing}                                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_HOURS"  >> /app/setup/topics-evolution
   echo create_topic ${topic.commoditydelivery.request}                                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.commoditydelivery.response}                               $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.commoditydelivery.internal}                               $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
@@ -77,6 +75,7 @@
   echo create_topic ${changelog.evolutionengine.subscriberstate.topic}                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${changelog.evolutionengine.subscriberhistory.topic}              $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${changelog.evolutionengine.propensitystate.topic}                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
+  echo create_topic ${topic.evolutionengine.pointfulfillment.repartition}             $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.evolutionengine.propensityoutput.repartition}             $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.externaldeliveryrequest_fileconnector}                    $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.presentationlog_fileconnector}                            $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution

@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
@@ -205,28 +206,6 @@ public class EvaluationCriterion
     private CriterionOperator(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public static CriterionOperator fromExternalRepresentation(String externalRepresentation) { for (CriterionOperator enumeratedValue : CriterionOperator.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-
-  //
-  //  TimeUnit
-  //
-
-  public enum TimeUnit
-  {
-    Instant("instant", "MILLIS"),
-    Minute("minute", "MINUTES"),
-    Hour("hour", "HOURS"),
-    Day("day", "DAYS"),
-    Week("week", "WEEKS"),
-    Month("month", "MONTHS"),
-    Year("year", "YEARS"),
-    Unknown("(unknown)", "(unknown)");
-    private String externalRepresentation;
-    private String chronoUnit;
-    private TimeUnit(String externalRepresentation, String chronoUnit) { this.externalRepresentation = externalRepresentation; this.chronoUnit = chronoUnit; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public String getChronoUnit() { return chronoUnit; }
-    public static TimeUnit fromExternalRepresentation(String externalRepresentation) { for (TimeUnit enumeratedValue : TimeUnit.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   /*****************************************

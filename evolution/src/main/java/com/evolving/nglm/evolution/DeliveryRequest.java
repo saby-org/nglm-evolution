@@ -29,6 +29,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
@@ -167,6 +168,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
+    schemaBuilder.field("creationDate", Timestamp.SCHEMA);
     schemaBuilder.field("originatingRequest", SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
@@ -224,6 +226,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private String deliveryRequestID;
   private String deliveryRequestSource;
   private boolean originatingRequest;
+  private Date creationDate;
   private String subscriberID;
   private String eventID;
   private String moduleID;
@@ -247,6 +250,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public String getDeliveryRequestID() { return deliveryRequestID; }
   public String getDeliveryRequestSource() { return deliveryRequestSource; }
   public boolean getOriginatingRequest() { return originatingRequest; }
+  public Date getCreationDate() { return creationDate; }
   public String getSubscriberID() { return subscriberID; }
   public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
@@ -259,7 +263,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public String getDeliveryType() { return deliveryType; }
   public DeliveryStatus getDeliveryStatus() { return deliveryStatus; }
   public Date getDeliveryDate() { return deliveryDate; }
-  public Date getEventDate() { return deliveryDate; }
+  public Date getEventDate() { return (deliveryDate != null) ? deliveryDate : creationDate; }
   public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
   public ActionType getActionType() { return ActionType.DeliveryRequest; }
 
@@ -309,6 +313,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = context.getUniqueKey();
     this.deliveryRequestSource = deliveryRequestSource;
     this.originatingRequest = true;
+    this.creationDate = context.now();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
@@ -335,6 +340,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = deliveryRequest.getDeliveryRequestID();
     this.deliveryRequestSource = deliveryRequest.getDeliveryRequestSource();
     this.originatingRequest = deliveryRequest.getOriginatingRequest();
+    this.creationDate = deliveryRequest.getCreationDate();
     this.subscriberID = deliveryRequest.getSubscriberID();
     this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
@@ -367,6 +373,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
     this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
+    this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
@@ -393,6 +400,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryRequestID", deliveryRequest.getDeliveryRequestID());
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
     struct.put("originatingRequest", deliveryRequest.getOriginatingRequest());
+    struct.put("creationDate", deliveryRequest.getCreationDate());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
@@ -432,6 +440,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
     boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
+    Date creationDate = (schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime();
     String subscriberID = valueStruct.getString("subscriberID");
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
@@ -453,6 +462,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = deliveryRequestID;
     this.deliveryRequestSource = deliveryRequestSource;
     this.originatingRequest = originatingRequest;
+    this.creationDate = creationDate;
     this.subscriberID = subscriberID;
     this.eventID = eventID;
     this.moduleID = moduleID;
@@ -521,6 +531,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
       {
         DeliveryRequest entry = (DeliveryRequest) obj;
         result = (deliveryDate != null && entry.getDeliveryDate() != null) ? deliveryDate.compareTo(entry.getDeliveryDate()) : 0;
+        if (result == 0) result = creationDate.compareTo(entry.getCreationDate());
         if (result == 0) result = deliveryRequestID.compareTo(entry.getDeliveryRequestID());
       }
     return result;
@@ -538,6 +549,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append(deliveryRequestID);
     b.append("," + deliveryRequestSource);
     b.append("," + originatingRequest);
+    b.append("," + creationDate);
     b.append("," + subscriberID);
     b.append("," + eventID);
     b.append("," + moduleID);

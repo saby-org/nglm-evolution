@@ -6,115 +6,23 @@
 
 package com.evolving.nglm.evolution;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.common.metrics.Sensor;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.connect.json.JsonConverter;
-import org.apache.kafka.connect.json.JsonDeserializer;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.state.StreamsMetadata;
-import org.apache.kafka.streams.errors.InvalidStateStoreException;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Predicate;
-import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.kstream.TransformerSupplier;
-import org.apache.kafka.streams.processor.StateStoreSupplier;
-import org.apache.kafka.streams.processor.TimestampExtractor;
-import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.apache.kafka.streams.state.StreamsMetadata;
-import org.apache.kafka.streams.state.Stores;
-import org.apache.zookeeper.ZooKeeper;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.KStreamsUniqueKeyServer;
-import com.evolving.nglm.core.NGLMKafkaClientSupplier;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.RecordSubscriberID;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SubscriberTrace;
-import com.evolving.nglm.core.SubscriberTraceControl;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.ActionManager.Action;
-import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
-import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
-import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
-import com.evolving.nglm.evolution.Token.TokenStatus;
-import com.evolving.nglm.evolution.TokenType.TokenTypeKind;
-import com.evolving.nglm.evolution.TokenTypeService.TokenTypeListener;
-import com.evolving.nglm.evolution.UCGState.UCGGroup;
-import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
-import com.google.common.collect.Sets;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -124,7 +32,76 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.metrics.Sensor;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.connect.json.JsonConverter;
+import org.apache.kafka.connect.json.JsonDeserializer;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Predicate;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.Serialized;
+import org.apache.kafka.streams.processor.TimestampExtractor;
+import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
+import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.state.Stores;
+import org.apache.kafka.streams.state.StreamsMetadata;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.KStreamsUniqueKeyServer;
+import com.evolving.nglm.core.NGLMKafkaClientSupplier;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.RecordSubscriberID;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.ServerException;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.core.SubscriberTrace;
+import com.evolving.nglm.core.SubscriberTraceControl;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
+import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.UCGState.UCGGroup;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Sets;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 public class EvolutionEngine
 {
@@ -184,6 +161,7 @@ public class EvolutionEngine
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
   private static TimerService timerService;
+  private static PointService pointService;
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberHistory> subscriberHistoryStore = null;
@@ -258,6 +236,7 @@ public class EvolutionEngine
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
     String presentationLogTopic = Deployment.getPresentationLogTopic();
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
+    String pointFulfillmentRequestTopic = Deployment.getPointFulfillmentRequestTopic();
 
     //
     //  sink topics
@@ -265,6 +244,7 @@ public class EvolutionEngine
 
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
     String propensityLogTopic = Deployment.getPropensityLogTopic();
+    String pointFulfillmentResponseTopic = Deployment.getPointFulfillmentResponseTopic();
 
     //
     //  changelogs
@@ -278,6 +258,7 @@ public class EvolutionEngine
     // Internal repartitioning topic (when rekeyed)
     //
 
+    String pointFufillmentRepartitioningTopic = Deployment.getPointFufillmentRepartitioningTopic();
     String propensityRepartitioningTopic = Deployment.getPropensityRepartitioningTopic();
 
     //
@@ -327,6 +308,13 @@ public class EvolutionEngine
     tokenTypeService = new TokenTypeService(bootstrapServers, "evolutionengine-tokentypeservice-" + evolutionEngineKey, Deployment.getTokenTypeTopic(), false);
     tokenTypeService.start();
 
+    //
+    // pointService
+    //
+    
+    pointService = new PointService(bootstrapServers, "evolutionengine-pointservice-" + evolutionEngineKey, Deployment.getPointTopic(), false);
+    pointService.start();
+    
     //
     //  subscriberGroupEpochReader
     //
@@ -405,12 +393,10 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    Map<DeliveryManagerDeclaration,String> deliveryManagerRequestTopics = new HashMap<DeliveryManagerDeclaration,String>();
     Map<DeliveryManagerDeclaration,String> deliveryManagerResponseTopics = new HashMap<DeliveryManagerDeclaration,String>();
     Map<DeliveryManagerDeclaration,ConnectSerde<? extends DeliveryRequest>> deliveryManagerResponseSerdes = new HashMap<DeliveryManagerDeclaration,ConnectSerde<? extends DeliveryRequest>>();
     for (DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values())
       {
-        deliveryManagerRequestTopics.put(deliveryManager, deliveryManager.getRequestTopic());
         deliveryManagerResponseTopics.put(deliveryManager, deliveryManager.getResponseTopic());
         deliveryManagerResponseSerdes.put(deliveryManager, deliveryManager.getRequestSerde());
       }
@@ -426,6 +412,7 @@ public class EvolutionEngine
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
+    final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
@@ -498,6 +485,13 @@ public class EvolutionEngine
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
 
     //
+    //  pointFulfillmentRequest streams (keyed by deliveryRequestID)
+    //
+
+    KStream<StringKey, PointFulfillmentRequest> pointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRequestTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
+    KStream<StringKey, PointFulfillmentRequest> rekeyedPointFulfillmentRequestSourceStream = pointFulfillmentRequestSourceStream.map(EvolutionEngine::rekeyPointFulfilmentRequestStream).through(pointFufillmentRepartitioningTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
+
+    //
     //  evolution engine event source streams
     //
 
@@ -531,6 +525,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) presentationLogSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) acceptanceLogSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) rekeyedPointFulfillmentRequestSourceStream);
     evolutionEventStreams.addAll(evolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream evolutionEventCompositeStream = null;
@@ -583,12 +578,13 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace), (key,value) -> (value instanceof PropensityEventOutput));
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof SubscriberTrace), (key,value) -> (value instanceof PropensityEventOutput));
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
-    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[1];
-    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[2];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[3];
-    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[1];
+    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[2];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[3];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[5];
 
     /*****************************************
     *
@@ -679,6 +675,7 @@ public class EvolutionEngine
     //
 
     journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
+    pointResponseStream.to(pointFulfillmentResponseTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     propensityStateStream.to(propensityLogTopic, Produced.with(propensityKeySerde, propensityStateSerde));
@@ -1173,6 +1170,16 @@ public class EvolutionEngine
       }
 
     //
+    //  pointFulfillmentResponses
+    //
+
+    if (subscriberState.getPointFulfillmentResponses().size() > 0)
+      {
+        subscriberState.getPointFulfillmentResponses().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
     //  deliveryRequests
     //
 
@@ -1401,6 +1408,95 @@ public class EvolutionEngine
           }
       }
 
+    /*****************************************
+    *
+    *  update point balance
+    *
+    *****************************************/
+    
+    if (evolutionEvent instanceof PointFulfillmentRequest && ((PointFulfillmentRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
+      {
+        //
+        //  pointFulfillmentRequest
+        //
+
+        PointFulfillmentRequest pointFulfillmentRequest = (PointFulfillmentRequest) evolutionEvent;
+        PointFulfillmentRequest pointFulfillmentResponse = pointFulfillmentRequest.copy();
+
+        //
+        //  point
+        //
+
+        Point point = pointService.getActivePoint(pointFulfillmentRequest.getPointID(), now);
+        if (point == null)
+          {
+            log.info("pointFulfillmentRequest failed (no such point): {}", pointFulfillmentRequest.getPointID());
+            pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Failed);
+          }
+
+        //
+        //  update
+        //
+
+        if (point != null)
+          {
+            //
+            //  get (or create) balance
+            //
+
+            PointBalance pointBalance = subscriberProfile.getPointBalances().get(pointFulfillmentRequest.getPointID());
+            if (pointBalance == null)
+              {
+                pointBalance = new PointBalance();
+              }
+
+            //
+            //  copy the point balance (note:  NOT deep-copied when the subscriberProfile was copied)
+            //
+
+            pointBalance = new PointBalance(pointBalance);
+
+            //
+            //  update
+            //
+            
+            boolean success = pointBalance.update(pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), point, now);
+
+            //
+            //  update balances
+            //
+
+            subscriberProfile.getPointBalances().put(pointFulfillmentRequest.getPointID(), pointBalance);
+
+            //
+            //  response
+            //
+
+            if (success)
+              {
+                pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+                pointFulfillmentResponse.setDeliveryDate(now);
+                pointFulfillmentResponse.setResultValidityDate(pointBalance.getFirstExpirationDate(now));
+              }
+            else
+              {
+                pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Failed);
+              }
+
+            //
+            //  return delivery response
+            //
+
+            context.getSubscriberState().getPointFulfillmentResponses().add(pointFulfillmentResponse);
+
+            //
+            //  subscriberProfileUpdated
+            //
+
+            subscriberProfileUpdated = true;
+          }
+      }
+    
     /*****************************************
     *
     *  re-evaluate subscriberGroups for epoch changes and eligibility/range segmentation dimensions
@@ -2473,6 +2569,17 @@ public class EvolutionEngine
     return subscriberStateUpdated;
   }
 
+  /****************************************
+  *
+  *  rekeyPointFulfilmentRequestStream
+  *
+  ****************************************/
+
+  private static KeyValue<StringKey, PointFulfillmentRequest> rekeyPointFulfilmentRequestStream(StringKey key, PointFulfillmentRequest pointFulfillmentRequest)
+  {
+    return new KeyValue<StringKey, PointFulfillmentRequest>(new StringKey(pointFulfillmentRequest.getSubscriberID()), pointFulfillmentRequest);
+  }
+
   /*****************************************
   *
   *  nullPropensityState
@@ -2730,6 +2837,7 @@ public class EvolutionEngine
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     result.addAll(subscriberState.getJourneyRequests());
+    result.addAll(subscriberState.getPointFulfillmentResponses());
     result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatistics());
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());

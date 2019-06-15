@@ -96,9 +96,9 @@ public class DeliveryManagerDeclaration
     this.requestClassName = JSONUtilities.decodeString(jsonRoot, "requestClass", true);
     this.requestTopic = JSONUtilities.decodeString(jsonRoot, "requestTopic", true);
     this.responseTopic = JSONUtilities.decodeString(jsonRoot, "responseTopic", true);
-    this.internalTopic = JSONUtilities.decodeString(jsonRoot, "internalTopic", true);
-    this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", true);
-    this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", true);
+    this.internalTopic = JSONUtilities.decodeString(jsonRoot, "internalTopic", false);
+    this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", false);
+    this.deliveryRatePerMinute = JSONUtilities.decodeInteger(jsonRoot, "deliveryRatePerMinute", 0);
     this.deliveryGuarantee = (JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", false) != null) ? DeliveryGuarantee.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryGuarantee", true)) : null;
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
     this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 60);
