@@ -909,6 +909,7 @@ do
    export API_PORT=`echo $TUPLE | cut -d: -f3`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
    export THREADPOOL_SIZE=`echo $TUPLE | cut -d: -f5`
+   export DEBUG_PORT=`echo $TUPLE | cut -d: -f6`
    if [ -n "$THIRDPARTYMANAGER_PROMETHEUS" ]; then
      THIRDPARTYMANAGER_PROMETHEUS="$THIRDPARTYMANAGER_PROMETHEUS,'$HOST:$MONITORING_PORT'"
    else

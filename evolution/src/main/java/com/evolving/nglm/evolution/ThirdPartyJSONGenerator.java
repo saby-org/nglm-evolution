@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
@@ -133,6 +135,39 @@ public class ThirdPartyJSONGenerator
     currencyMap.put("id", currency.getID());
     currencyMap.put("name", currency.getName());
     return JSONUtilities.encodeObject(currencyMap);
+  }
+  
+  /*****************************************
+  *
+  *  generateTokenJSONForThirdParty
+  *
+  *****************************************/
+  
+  protected static JSONObject generateTokenJSONForThirdParty(Token token) 
+  {
+    HashMap<String, Object> tokenMap = new HashMap<String, Object>();
+    if ( null == token ) return JSONUtilities.encodeObject(tokenMap);
+    tokenMap.put("tokenStatus", token.getTokenStatus().getExternalRepresentation());
+    tokenMap.put("creationDate", token.getCreationDate());
+    tokenMap.put("boundDate", token.getBoundDate());
+    tokenMap.put("redeemedDate", token.getRedeemedDate());
+    tokenMap.put("tokenExpirationDate", token.getTokenExpirationDate());
+    tokenMap.put("boundCount", token.getBoundCount());
+    tokenMap.put("eventID", token.getEventID());
+    tokenMap.put("subscriberID", token.getSubscriberID());
+    tokenMap.put("tokenTypeID", token.getTokenTypeID());
+    tokenMap.put("moduleID", token.getModuleID());
+    tokenMap.put("featureID", token.getFeatureID());
+    if (token instanceof DNBOToken)
+      {
+        DNBOToken dnboToken = (DNBOToken) token;
+        tokenMap.put("presentationStrategyID", dnboToken.getPresentationStrategyID());
+        tokenMap.put("isAutoBounded", dnboToken.isAutoBounded());
+        tokenMap.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
+        tokenMap.put("presentedOffersIDs", dnboToken.getPresentedOffersIDs());
+        tokenMap.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
+      }
+    return JSONUtilities.encodeObject(tokenMap);
   }
 
 }

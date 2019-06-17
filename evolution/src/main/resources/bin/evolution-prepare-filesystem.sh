@@ -77,6 +77,7 @@ do
    export API_PORT=`echo $TUPLE | cut -d: -f3`
    export MONITORING_PORT=`echo $TUPLE | cut -d: -f4`
    export THREADPOOL_SIZE=`echo $TUPLE | cut -d: -f5`
+   export DEBUG_PORT=`echo $TUPLE | cut -d: -f6`
    #
    # nothing to prepare
    #
