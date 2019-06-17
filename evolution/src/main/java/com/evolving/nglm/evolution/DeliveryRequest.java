@@ -129,7 +129,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     private Integer externalRepresentation;
     private Module(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public Integer getExternalRepresentation() { return externalRepresentation; }
-    public static Module fromExternalRepresentation(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static Module fromExternalRepresentation(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(Integer.valueOf(externalRepresentation))) return enumeratedValue; } return Unknown; }
   }
   
   /*****************************************

@@ -128,7 +128,7 @@ public class ReportManager implements Watcher{
         log.info("Got "+e.getLocalizedMessage());
       }
     } catch (InterruptedException e) {
-      log.info("Got "+e.getLocalizedMessage());
+      log.info("Got "+e.getLocalizedMessage(), e);
     }
   }
 
@@ -186,24 +186,24 @@ public class ReportManager implements Watcher{
                     reportManagerStatistics.incrementReportCount();
                   }
                 } catch (KeeperException | InterruptedException | NoSuchElementException e) {
-                  log.error("Issue while reading from control node "+e.getLocalizedMessage());
+                  log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
                   reportManagerStatistics.incrementFailureCount();
                 } catch (IllegalCharsetNameException e) {
-                  log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage());
+                  log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
                   reportManagerStatistics.incrementFailureCount();
                 } finally {
                   try {
                     log.trace("Deleting control file "+controlFile);
                     zk.delete(controlFile, -1);
                   } catch (KeeperException | InterruptedException e) {
-                    log.trace("Issue deleting control file : "+e.getLocalizedMessage());
+                    log.trace("Issue deleting control file : "+e.getLocalizedMessage(), e);
                   }
                   try {
                     log.trace("Deleting lock file "+lockFile);
                     zk.delete(lockFile, -1);
                     log.trace("Both files deleted");
                   } catch (KeeperException | InterruptedException e) {
-                    log.trace("Issue deleting lock file : "+e.getLocalizedMessage());
+                    log.trace("Issue deleting lock file : "+e.getLocalizedMessage(), e);
                   }
                 }
               } catch (KeeperException | InterruptedException ignore) {
@@ -211,7 +211,7 @@ public class ReportManager implements Watcher{
                 // it could have been created in the mean time
                 // making create fail. We catch and ignore it.
                 log.trace("Failed to create lock file, this is OK "
-                    +lockFile+ ":"+ignore.getLocalizedMessage());
+                    +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
               } 
             } else {
               log.trace("--> This report is already processed by another ReportManager instance");
@@ -247,7 +247,7 @@ public class ReportManager implements Watcher{
       try {
         sdf = new SimpleDateFormat(dateFormat);
       } catch (IllegalArgumentException e) {
-        log.error("Config error : date format "+dateFormat+" is invalid, using default"+e.getLocalizedMessage());
+        log.error("Config error : date format "+dateFormat+" is invalid, using default"+e.getLocalizedMessage(), e);
         sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
       }
       String fileSuffix = sdf.format(new Date());
@@ -267,14 +267,14 @@ public class ReportManager implements Watcher{
       ReportDriver rd = cons.newInstance((Object[]) null);
       rd.produceReport(report, zkHostList, brokerServers, esNode, csvFilename, params);
     } catch (ClassNotFoundException e) {
-      log.error("Undefined class name "+e.getLocalizedMessage());
+      log.error("Undefined class name "+e.getLocalizedMessage(), e);
       reportManagerStatistics.incrementFailureCount();
     } catch (NoSuchMethodException e) {
-      log.error("Undefined method "+e.getLocalizedMessage());
+      log.error("Undefined method "+e.getLocalizedMessage(), e);
       reportManagerStatistics.incrementFailureCount();
     } catch (SecurityException|InstantiationException|IllegalAccessException|
         IllegalArgumentException|InvocationTargetException e) {
-      log.error("Error : "+e.getLocalizedMessage());
+      log.error("Error : "+e.getLocalizedMessage(), e);
       reportManagerStatistics.incrementFailureCount();
     }
   }
@@ -301,7 +301,7 @@ public class ReportManager implements Watcher{
         } catch (InterruptedException ignore) {}
       }
     } catch (Exception e) {
-      log.info("Issue in Zookeeper : "+e.getLocalizedMessage());
+      log.info("Issue in Zookeeper : "+e.getLocalizedMessage(), e);
     }
   }
 

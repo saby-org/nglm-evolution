@@ -14141,7 +14141,7 @@ public class GUIManager
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
                             Map<String, Object> bdrMap = bdr.getGUIPresentationMap(salesChannelService);
-                            DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
+                            DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(bdrMap.get(DeliveryRequest.MODULEID).toString());
                             if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
                               {
                                 bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));

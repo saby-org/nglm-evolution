@@ -9,6 +9,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentStatus;
 import com.evolving.nglm.core.SimpleESSinkConnector;
@@ -104,28 +105,28 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       *
       *******************************************/
       log.info("BDRSingConnector.getDocumentMap: computing map to give to elastic search");
-      Object inFulfillmentValue = sinkRecord.value();
-      Schema inFulfillmentValueSchema = sinkRecord.valueSchema();
-      INFulfillmentRequest inFulfillment = INFulfillmentRequest.unpack(new SchemaAndValue(inFulfillmentValueSchema, inFulfillmentValue));
+      Object commodityRequestValue = sinkRecord.value();
+      Schema commodityRequestValueSchema = sinkRecord.valueSchema();
+      CommodityDeliveryRequest commodityRequest = CommodityDeliveryRequest.unpack(new SchemaAndValue(commodityRequestValueSchema, commodityRequestValue));
       
       Map<String,Object> documentMap = null;
 
-      if(inFulfillment != null){
+      if(commodityRequest != null){
         documentMap = new HashMap<String,Object>();
-        documentMap.put("subscriberID", inFulfillment.getSubscriberID());
-        documentMap.put("deliveryRequestID", inFulfillment.getDeliveryRequestID());
-        documentMap.put("eventID", inFulfillment.getEventID());
-        documentMap.put("eventDatetime", inFulfillment.getEventDate());
-        documentMap.put("providerID", inFulfillment.getCorrelator());
-        documentMap.put("deliverableID", inFulfillment.getPaymentMeanID());
-        documentMap.put("deliverableQty", inFulfillment.getAmount());
-        documentMap.put("operation", inFulfillment.getOperation().toString());
-        documentMap.put("moduleID", inFulfillment.getModuleID());
-        documentMap.put("featureID", inFulfillment.getFeatureID());
+        documentMap.put("subscriberID", commodityRequest.getSubscriberID());
+        documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
+        documentMap.put("eventID", commodityRequest.getEventID());
+        documentMap.put("eventDatetime", commodityRequest.getEventDate());
+        documentMap.put("providerID", commodityRequest.getCorrelator());
+        documentMap.put("deliverableID", commodityRequest.getDeliveryRequestID());
+        documentMap.put("deliverableQty", commodityRequest.getAmount());
+        documentMap.put("operation", commodityRequest.getOperation().toString());
+        documentMap.put("moduleID", commodityRequest.getModuleID());
+        documentMap.put("featureID", commodityRequest.getFeatureID());
         documentMap.put("origin", "");
-        documentMap.put("returnCode", inFulfillment.getReturnCode());
-        documentMap.put("deliveryStatus", inFulfillment.getDeliveryStatus());
-        documentMap.put("returnCodeDetails", inFulfillment.getReturnCodeDetails());
+        documentMap.put("returnCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
+        documentMap.put("deliveryStatus", commodityRequest.getDeliveryStatus());
+        documentMap.put("returnCodeDetails", commodityRequest.getCommodityDeliveryStatus().toString());
          
       }
       log.info("BDRSingConnector.getDocumentMap: map computed, contents are="+documentMap.toString());

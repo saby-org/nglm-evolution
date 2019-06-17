@@ -13,6 +13,7 @@ import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.OfferService.OfferListener;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 
 public class ODRSinkConnector extends SimpleESSinkConnector
 {
@@ -142,7 +143,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
               documentMap.put("offerPrice", channel.getPrice().getAmount());
             }
           }
-          documentMap.put("offerStock", "");
+          documentMap.put("offerStock", offer.getStock());
           documentMap.put("offerContent", offer.getOfferProducts().toString());
         }
         documentMap.put("moduleID", purchaseManager.getModuleID());
@@ -150,7 +151,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap.put("origin", purchaseManager.getDeliveryRequestSource());
         documentMap.put("returnCode", purchaseManager.getReturnCode());
         documentMap.put("deliveryStatus", purchaseManager.getDeliveryStatus());
-        documentMap.put("returnCodeDetails", purchaseManager.getReturnCodeDetails());
+        documentMap.put("returnCodeDetails", PurchaseFulfillmentStatus.fromReturnCode(purchaseManager.getReturnCode()));
         documentMap.put("voucherCode", "");
         documentMap.put("voucherPartnerID", "");
       }

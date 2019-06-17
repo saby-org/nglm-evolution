@@ -291,7 +291,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getSalesChannelID() { return salesChannelID; }
     public PurchaseFulfillmentStatus getStatus() { return status; }
     public int getReturnCode() { return returnCode; }
-    public String getReturnCodeDetails() { return returnCodeDetails; }
 
     //
     //  setters
@@ -315,7 +314,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.salesChannelID = salesChannelID;
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = "";
     }
 
     /*****************************************
@@ -365,7 +363,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
       this.returnCode = purchaseFulfillmentRequest.getReturnCode();
       this.status = purchaseFulfillmentRequest.getStatus();
-      this.returnCodeDetails = purchaseFulfillmentRequest.getReturnCodeDetails();
     }
 
     /*****************************************
@@ -488,7 +485,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
+      guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()));
       guiPresentationMap.put(VOUCHERCODE, "");
       guiPresentationMap.put(VOUCHERPARTNERID, "");
     }
@@ -516,7 +513,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()));
       thirdPartyPresentationMap.put(VOUCHERCODE, "");
       thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
     }

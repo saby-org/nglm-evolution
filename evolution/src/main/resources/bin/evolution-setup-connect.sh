@@ -177,6 +177,25 @@
          }
      }'
    echo
+   
+  #
+  #  sink connector -- BDR (elasticsearch)
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+     {
+       "name" : "bdr_es_sink_connector",
+       "config" :
+         {
+         "connector.class" : "com.evolving.nglm.evolution.BDRSinkConnector",
+         "tasks.max" : 1,
+         "topics" : "${topic.commoditydelivery.response}",
+         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+         "indexName" : "bdr"
+         }
+     }'
+   echo
   
   #
   #  sink connector -- Notification (elasticsearch)

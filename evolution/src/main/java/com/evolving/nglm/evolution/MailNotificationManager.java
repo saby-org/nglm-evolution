@@ -455,6 +455,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *****************************************/
 
     private String deliveryType;
+    private String moduleID;
 
     /*****************************************
     *
@@ -465,6 +466,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public ActionManager(JSONObject configuration)
     {
       super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
     }
 
@@ -507,6 +509,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       if (email != null)
         {
           request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, emailSubject, emailHTMLBody, emailTextBody);
+          request.setModuleID(moduleID);
+          request.setFeatureID(deliveryRequestSource);
         }
       else
         {

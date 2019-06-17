@@ -450,6 +450,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *****************************************/
 
     private String deliveryType;
+    private String moduleID;
 
     /*****************************************
     *
@@ -460,6 +461,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public ActionManager(JSONObject configuration)
     {
       super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
     }
 
@@ -500,6 +502,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       if (msisdn != null)
         {
           request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, text);
+          request.setModuleID(moduleID);
+          request.setFeatureID(deliveryRequestSource);
         }
       else
         {
