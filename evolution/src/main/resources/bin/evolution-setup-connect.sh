@@ -21,8 +21,7 @@
         "defaultDBIndex"   : "0",
         "pipelined" : "true"
         }
-    }'
-  echo
+    }' &
 
   #
   #  sink connector -- journeyStatistic (elasticsearch)
@@ -41,8 +40,7 @@
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "journeystatistic"
         }
-    }'
-  echo
+    }' &
 
   #
   #  source connector -- externalDeliveryRequest
@@ -65,8 +63,7 @@
           "internalTopic" : "${topic.externaldeliveryrequest_fileconnector}",
           "archiveDirectory" : "/app/data/externaldeliveryrequestsarchive"
         }
-      }'
-    echo
+    }' &
 
   #
   #  source connector -- presentationLog
@@ -89,8 +86,7 @@
         "internalTopic" : "${topic.presentationlog_fileconnector}",
         "archiveDirectory" : "/app/data/presentationlogarchive"
         }
-    }'
-  echo
+    }' &
 
   #
   #  source connector -- acceptanceLog
@@ -113,8 +109,7 @@
         "internalTopic" : "${topic.acceptancelog_fileconnector}",
         "archiveDirectory" : "/app/data/acceptancelogarchive"
         }
-    }'
-  echo
+    }' &
 
   #
   #  source connector -- SubscriberProfileForceUpdateFileSourceConnector
@@ -137,8 +132,7 @@
         "internalTopic" : "${topic.subscriberprofileforceupdate_fileconnector}",
         "archiveDirectory" : "/app/data/subscriberprofileforceupdatearchive"
         }
-    }'
-  echo
+    }' &
 
   #
   #  sink connector -- propensity (elasticsearch)
@@ -156,8 +150,7 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "indexName" : "propensity"
         }
-    }'
-  echo
+    }' &
 
   #
   #  sink connector -- ODR (elasticsearch)
@@ -175,8 +168,7 @@
          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
          "indexName" : "odr"
          }
-     }'
-   echo
+     }' &
    
   #
   #  sink connector -- BDR (elasticsearch)
@@ -194,8 +186,7 @@
          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
          "indexName" : "bdr"
          }
-     }'
-   echo
+     }' &
   
   #
   #  sink connector -- Notification (elasticsearch)
@@ -213,7 +204,6 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "indexName" : "notification"
         }
-    }'
-  echo
+    }' &
 
-    
+wait
