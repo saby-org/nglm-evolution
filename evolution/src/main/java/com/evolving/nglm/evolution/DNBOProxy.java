@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -26,12 +27,14 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
@@ -366,14 +369,32 @@ public class DNBOProxy
         //
         //  scoringStrategy
         //
-
-        if (JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", false) == null && exchange.getRequestURI().getQuery() != null)
+        
+        if (jsonRoot.get("scoringStrategyID") == null && exchange.getRequestURI().getQuery() != null)
           {
             Pattern pattern = Pattern.compile("^(.*\\&strategy|strategy)=(.*?)(\\&.*$|$)");
             Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
             if (matcher.matches())
               {
-                jsonRoot.put("scoringStrategyID", matcher.group(2));
+                String scoringStrategyID = matcher.group(2);
+                Object objectToAdd;
+                if (scoringStrategyID != null && scoringStrategyID.indexOf(",") == -1)
+                  {
+                    //
+                    // single value
+                    //
+                    objectToAdd = scoringStrategyID;
+                  }
+                else
+                  {
+                    //
+                    // We got a list : 21,22,23 -> convert it to a JSON array
+                    //
+                    List<String> items = Arrays.asList(scoringStrategyID.split("\\s*,\\s*"));
+                    objectToAdd = JSONUtilities.encodeArray(items);
+                    
+                  }
+                jsonRoot.put("scoringStrategyID", objectToAdd);
               }
           }
 
@@ -428,7 +449,7 @@ public class DNBOProxy
         switch (api)
           {
             case getSubscriberOffers:
-              jsonResponse = processGetOffers(userID, jsonRoot);
+              jsonResponse = processGetSubscriberOffers(userID, jsonRoot);
               break;
           }
 
@@ -500,11 +521,11 @@ public class DNBOProxy
 
   /*****************************************
   *
-  *  processGetOffers
+  *  processGetSubscriberOffers
   *
   *****************************************/
 
-  private JSONObject processGetOffers(String userID, JSONObject jsonRoot) throws DNBOProxyException, SubscriberProfileServiceException
+  private JSONObject processGetSubscriberOffers(String userID, JSONObject jsonRoot) throws DNBOProxyException, SubscriberProfileServiceException
   {
     /*****************************************
     *
@@ -514,7 +535,22 @@ public class DNBOProxy
 
     Date now = SystemTime.getCurrentTime();
     String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", true);
+    List<String> scoringStrategyIDList;
+    boolean multipleStrategies = true;
+    try
+    {
+      scoringStrategyIDList = JSONUtilities.decodeJSONArray(jsonRoot, "scoringStrategyID", true);
+    }
+    catch (JSONUtilitiesException e)
+    {
+      //
+      // We may have received a single parameter; In this case, we construct a list with one element
+      //
+      String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", true);
+      scoringStrategyIDList = new ArrayList<>();
+      scoringStrategyIDList.add(scoringStrategyID);
+      multipleStrategies = false;
+    }
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
     
     /*****************************************
@@ -524,9 +560,8 @@ public class DNBOProxy
     *****************************************/
     
     SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-    ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
-    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
-
+    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now); 
+    
     /*****************************************
     *
     *  validate arguments
@@ -534,8 +569,110 @@ public class DNBOProxy
     *****************************************/
 
     if (subscriberProfile == null) throw new DNBOProxyException("unknown subscriber", subscriberID);
-    if (scoringStrategy == null) throw new DNBOProxyException("unknown scoring strategy", scoringStrategyID);
     if (salesChannel == null) throw new DNBOProxyException("unknown sales channel", salesChannelID);
+
+    //
+    // Process list of ScoringStrategies
+    //
+    
+    List<JSONObject> resArray = new ArrayList<>();
+    boolean allScoringStrategiesBad = true;
+    boolean atLeastOneError = false;
+    DNBOProxyException lastException = null;
+    for (String scoringStrategyID : scoringStrategyIDList ) // process all scoringStrategies
+      {
+        if (log.isDebugEnabled())
+          {
+            log.debug("DNBOproxy.processGetSubscriberOffers Processing "+scoringStrategyID+" ...");
+          }
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
+        if (scoringStrategy == null)
+          {
+            log.info("DNBOproxy.processGetSubscriberOffers Unknown scoring strategy in list : " + scoringStrategyID);
+            atLeastOneError = true;
+            continue;
+          }
+        try
+        {
+          JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy, salesChannel);
+          resArray.add(valueRes);
+          allScoringStrategiesBad = false;
+        }
+        catch (DNBOProxyException e)
+        {
+          log.warn("DNBOProxy.processGetSubscriberOffers Exception " + e.getClass().getName() + " while processing " + scoringStrategyID, e);
+          lastException = e;
+          atLeastOneError = true;
+        }
+     
+      }
+    //
+    //  response
+    //
+
+    if (allScoringStrategiesBad)
+      {
+        StringBuilder res = new StringBuilder();
+        for (String scoringStrategyID : scoringStrategyIDList)
+          {
+            res.append(scoringStrategyID+" ");
+          }
+        log.info("DNBOproxy.processGetSubscriberOffers All scoring strategies are bad : " + res.toString());
+        if (lastException == null)
+          {
+            throw new DNBOProxyException("All scoring strategies are bad : "+ res.toString(), "");
+          }
+        else
+          {
+            throw lastException;
+          }
+      }
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("statusCode", 0);
+    response.put("status", "SUCCESS");
+    String msg = "getSubscriberOffers ";
+    if (atLeastOneError)
+      {
+        msg += "partially executed";
+      }
+    else
+      {
+        msg += "well executed";
+      }
+    response.put("message", msg);
+    if (multipleStrategies)
+      {
+        response.put("value", JSONUtilities.encodeArray(resArray));        
+      }
+    else if (resArray.size() == 1)
+      {
+        response.put("value", resArray.get(0));
+      }
+    else if (resArray.size() == 0)
+      {
+        log.info("DNBOproxy.processGetSubscriberOffers Internal error, list is empty");  
+        throw new DNBOProxyException("Unexpected error : list is empty", "");
+      }
+    else
+      {
+        log.warn("DNBOproxy.processGetSubscriberOffers Internal error, list should contain exactly 1 element, not " + resArray.size() + ", taking first one");
+        response.put("value", resArray.get(0));
+      }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getOffers
+  *
+  *****************************************/
+
+  private JSONObject getOffers(Date now, String subscriberID, String scoringStrategyID, String salesChannelID,
+      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy, SalesChannel salesChannel)
+      throws DNBOProxyException
+  {
 
     /*****************************************
     *
@@ -549,12 +686,13 @@ public class DNBOProxy
     // ###################################### SCORING GROUP
     // ####################################################################
 
-    // String msisdn = subscriberProfile.getMSISDN();
-    String msisdn = subscriberID; // TODO : check this
+    String msisdn = subscriberID;
 
+    JSONObject valueRes;
+    
     try {
       ScoringGroup selectedScoringGroup = getScoringGroup(scoringStrategy, subscriberProfile);
-      logFragment = "DNBOProxy.processGetOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringGroup for " + msisdn + " " + selectedScoringGroup;
+      logFragment = "DNBOProxy.getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringGroup for " + msisdn + " " + selectedScoringGroup;
       returnedLog.append(logFragment+", ");
       if (log.isDebugEnabled())
       {
@@ -565,7 +703,7 @@ public class DNBOProxy
       // ##############################
 
       ScoringSplit selectedScoringSplit = getScoringSplit(msisdn, selectedScoringGroup);
-      logFragment = "DNBOProxy.processGetOffers ScoringStrategy : " + selectedScoringSplit+ ", selectedScoringSplit : "+selectedScoringSplit.getOfferObjectiveIDs();
+      logFragment = "DNBOProxy.getOffers ScoringStrategy : " + selectedScoringSplit+ ", selectedScoringSplit : "+selectedScoringSplit.getOfferObjectiveIDs();
       returnedLog.append(logFragment+", ");
       if (log.isDebugEnabled())
       {
@@ -577,7 +715,7 @@ public class DNBOProxy
       OfferOptimizationAlgorithm algo = selectedScoringSplit.getOfferOptimizationAlgorithm();
       if (algo == null)
       {
-        log.warn("DNBOProxy.processGetOffers No Algo returned for selectedScoringSplit " + scoringStrategy.getScoringStrategyID());
+        log.warn("DNBOProxy.getOffers No Algo returned for selectedScoringSplit " + scoringStrategy.getScoringStrategyID());
         throw new DNBOProxyException("No Algo returned for selectedScoringSplit ", scoringStrategy.getScoringStrategyID());
       }
 
@@ -591,7 +729,7 @@ public class DNBOProxy
       {
         threshold = Double.parseDouble(thresholdString);
       }
-      logFragment = "DNBOProxy.processGetOffers Threshold value " + threshold;
+      logFragment = "DNBOProxy.getOffers Threshold value " + threshold;
       returnedLog.append(logFragment+", ");
       if (log.isDebugEnabled())
       {
@@ -601,7 +739,7 @@ public class DNBOProxy
       String valueMode = selectedScoringSplit.getParameters().get(valueModeParameter);
       if (valueMode == null || valueMode.equals(""))
       {
-        logFragment = "DNBOProxy.processGetOffers no value mode";
+        logFragment = "DNBOProxy.getOffers no value mode";
         if (log.isDebugEnabled())
           {
             log.debug(logFragment);
@@ -656,13 +794,13 @@ public class DNBOProxy
                           if (offerAvail.getOfferId().equals(offerId))
                             {
                               offerIsAlreadyInList = true;
-                              if (log.isTraceEnabled()) log.trace("DNBOProxy.processGetOffers offer "+offerId+" already in list, skip it");
+                              if (log.isTraceEnabled()) log.trace("DNBOProxy.getOffers offer "+offerId+" already in list, skip it");
                               break;
                             }
                         }
                       if (!offerIsAlreadyInList)
                         {
-                          if (log.isTraceEnabled()) log.trace("DNBOProxy.processGetOffers offer "+offerId+" added to the list because its objective is in alwaysAppendOfferObjectiveIDs of ScoringStrategy");
+                          if (log.isTraceEnabled()) log.trace("DNBOProxy.getOffers offer "+offerId+" added to the list because its objective is in alwaysAppendOfferObjectiveIDs of ScoringStrategy");
                           ProposedOfferDetails additionalDetails = new ProposedOfferDetails(offerId, salesChannelID, 0);
                           offerAvailabilityFromPropensityAlgo.add(additionalDetails);
                         }
@@ -673,7 +811,7 @@ public class DNBOProxy
 
       if (offerAvailabilityFromPropensityAlgo.isEmpty())
         {
-          log.warn("DNBOProxy.processGetOffers Return empty list of offers");
+          log.warn("DNBOProxy.getOffers Return empty list of offers");
           throw new DNBOProxyException("No Offer available while executing getOffer ", scoringStrategy.getScoringStrategyID());
         }
       
@@ -706,28 +844,19 @@ public class DNBOProxy
 
       HashMap<String,Object> value = new HashMap<String,Object>();
       value.put("subscriberID", subscriberID);
-      value.put("scoringStrategyID", scoringStrategyID);
       value.put("msisdn", subscriberID); // subscriberID expected by caller here (for compatibility reasons)
+      value.put("scoringStrategyID", scoringStrategyID);
       value.put("strategy", scoringStrategyID);
       value.put("offers", scoredOffersJSON);
       value.put("log", returnedLog.toString());
-
-      //
-      //  response
-      //
-
-      HashMap<String,Object> response = new HashMap<String,Object>();
-      response.put("responseCode", "ok");
-      response.put("statusCode", 0);
-      response.put("status", "SUCCESS");
-      response.put("message", "getSubscriberOffers well executed");
-      response.put("value", JSONUtilities.encodeObject(value));
-      return JSONUtilities.encodeObject(response);
-    } catch (Exception e)
+      valueRes = JSONUtilities.encodeObject(value);
+    }
+    catch (Exception e)
     {
-      log.warn("DNBOProxy.processGetOffers Exception " + e.getClass().getName() + " " + e.getMessage() + " while retrieving offers " + msisdn + " " + scoringStrategyID, e);
+      log.warn("DNBOProxy.getOffers Exception " + e.getClass().getName() + " " + e.getMessage() + " while retrieving offers " + msisdn + " " + scoringStrategyID, e);
       throw new DNBOProxyException("Exception while retrieving offers ", scoringStrategyID);
     }
+    return valueRes;
   }
 
   /*****************************************
