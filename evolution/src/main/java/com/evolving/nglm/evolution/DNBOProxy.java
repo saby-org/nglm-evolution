@@ -535,23 +535,30 @@ public class DNBOProxy
 
     Date now = SystemTime.getCurrentTime();
     String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
+
     List<String> scoringStrategyIDList;
     boolean multipleStrategies = true;
-    try
-    {
-      scoringStrategyIDList = JSONUtilities.decodeJSONArray(jsonRoot, "scoringStrategyID", true);
-    }
-    catch (JSONUtilitiesException e)
-    {
-      //
-      // We may have received a single parameter; In this case, we construct a list with one element
-      //
-      String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", true);
-      scoringStrategyIDList = new ArrayList<>();
-      scoringStrategyIDList.add(scoringStrategyID);
-      multipleStrategies = false;
-    }
-    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
+    Object scoringStrategyObject = jsonRoot.get("scoringStrategyID");
+    if (scoringStrategyObject == null)
+      {
+        throw new DNBOProxyException("Missing required 'scoringStrategyID' parameter", "");
+      }
+    if (scoringStrategyObject instanceof String) // Single parameter. In this case, we construct a list with one element
+      {
+        String scoringStrategyID = (String) scoringStrategyObject;
+        scoringStrategyIDList = new ArrayList<>();
+        scoringStrategyIDList.add(scoringStrategyID);
+        multipleStrategies = false;
+      }
+    else if (scoringStrategyObject instanceof JSONArray)
+      {
+        scoringStrategyIDList = (JSONArray) scoringStrategyObject;
+      }
+    else
+      {
+        throw new DNBOProxyException("Internal error, wrong type for 'scoringStrategyID' : "+scoringStrategyObject.getClass().getCanonicalName(), "");
+      }
     
     /*****************************************
     *
@@ -812,7 +819,6 @@ public class DNBOProxy
       if (offerAvailabilityFromPropensityAlgo.isEmpty())
         {
           log.warn("DNBOProxy.getOffers Return empty list of offers");
-          throw new DNBOProxyException("No Offer available while executing getOffer ", scoringStrategy.getScoringStrategyID());
         }
       
       int index = 1;
