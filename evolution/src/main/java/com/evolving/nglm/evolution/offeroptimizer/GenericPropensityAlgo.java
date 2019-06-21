@@ -9,6 +9,7 @@ import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
+import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberProfile;
 
 public class GenericPropensityAlgo implements IOfferOptimizerAlgorithm {
@@ -25,13 +26,13 @@ public class GenericPropensityAlgo implements IOfferOptimizerAlgorithm {
    */
   @Override
   public ProposedOfferDetails getOfferPropensityScore(String valueMode, Offer o, String salesChannelId,
-      int offerCurrentPropensity, long offerPrice, SubscriberProfile subscriberProfile,
+      int offerCurrentPropensity, long offerPrice, SubscriberEvaluationRequest subscriberEvaluationRequest,
       OfferOptimizationAlgorithm algoDefinition, ProductService productService, 
       ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService) {
     if (logger.isTraceEnabled()) {
       logger.trace("GenericPropensityAlgo.getOfferPropensityScore Entered "
           + valueMode + " " + o.getOfferID() + " " + salesChannelId + " "  + offerCurrentPropensity + " "
-          + offerPrice + " " + subscriberProfile + " " + algoDefinition);
+          + offerPrice + " " + subscriberEvaluationRequest.getSubscriberProfile() + " " + algoDefinition);
     }
     if (o.getOfferProducts().size() == 0) {
       // error, should have 1 product...

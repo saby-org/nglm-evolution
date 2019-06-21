@@ -513,8 +513,7 @@ public class CriterionField extends DeploymentManagedObject
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.info(stackTraceWriter.toString());
-        evaluationRequest.subscriberTrace("TrueCondition : criterionField {0} not supported", this.getID());
-        return true;
+        return null;
       }
 
     /*****************************************

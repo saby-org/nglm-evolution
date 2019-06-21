@@ -10,6 +10,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Offer;
@@ -19,6 +20,7 @@ import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
 import com.evolving.nglm.evolution.PropensityKey;
 import com.evolving.nglm.evolution.PropensityState;
+import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;
 
@@ -137,11 +139,12 @@ public class OfferOptimizerAlgoManager {
               {
                 if (salesChannelID.equals(requestedSalesChannelId)) 
                   {
+                    SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
                     ProposedOfferDetails scorePerChannel = algo.getOfferPropensityScore(valueMode, o,
                         salesChannelID,
                         currentPropensity, salesChannelAndPrice.getPrice() != null
                         ? salesChannelAndPrice.getPrice().getAmount() : 0,
-                            subscriberProfile, algoDefinitions, productService, productTypeService, catalogCharacteristicService);
+                            subscriberEvaluationRequest, algoDefinitions, productService, productTypeService, catalogCharacteristicService);
 
                     if (logger.isDebugEnabled()) 
                       {

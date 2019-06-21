@@ -255,15 +255,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   /****************************************
   *
-  *  abstract -- scoring
-  *
-  ****************************************/
-
-  public abstract MetricHistory getDataRevenueAmountMetricHistory();
-  public abstract MetricHistory getVoiceRevenueAmountMetricHistory();
-
-  /****************************************
-  *
   *  abstract -- identifiers (with default "null" implementations)a
   *
   ****************************************/

@@ -5,6 +5,7 @@ import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
+import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberProfile;
 
 public interface IOfferOptimizerAlgorithm
@@ -26,7 +27,7 @@ public interface IOfferOptimizerAlgorithm
 		String salesChannelId, 
 		int offerCurrentPropensity,
 		long offerPrice,
-		SubscriberProfile subscriberProfile,
+		SubscriberEvaluationRequest subscriberEvaluationRequest,
 		OfferOptimizationAlgorithm algoDefinition,
 		ProductService productService,
 	    ProductTypeService productTypeService,
