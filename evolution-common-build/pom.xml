@@ -129,6 +129,7 @@
     <topic.subscriberprofileforceupdate_fileconnector>subscriberprofileforceupdate-fileconnector</topic.subscriberprofileforceupdate_fileconnector>
     <topic.journeyrequest>journeyrequest</topic.journeyrequest>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
+    <topic.journeymetric>journeymetric</topic.journeymetric>
     <topic.deliverable.source>deliverable-source</topic.deliverable.source>
     <topic.externaldeliveryrequest_fileconnector>externaldeliveryrequest-fileconnector</topic.externaldeliveryrequest_fileconnector>
     <topic.presentationlog>presentationlog</topic.presentationlog>

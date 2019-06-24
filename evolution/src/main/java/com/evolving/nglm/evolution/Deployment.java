@@ -87,6 +87,7 @@ public class Deployment
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyRequestTopic;
   private static String journeyStatisticTopic;
+  private static String journeyMetricTopic;
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
@@ -123,6 +124,7 @@ public class Deployment
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
+  private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
@@ -246,6 +248,7 @@ public class Deployment
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyRequestTopic() { return journeyRequestTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
+  public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
@@ -282,6 +285,7 @@ public class Deployment
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
+  public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
@@ -389,7 +393,7 @@ public class Deployment
       }
     catch (ClassNotFoundException e)
       {
-        throw new RuntimeException(e);
+        throw new ServerRuntimeException(e);
       }
   }
 
@@ -1138,6 +1142,19 @@ public class Deployment
       }
 
     //
+    //  journeyMetricTopic
+    //
+
+    try
+      {
+        journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  deliverableSourceTopic
     //
 
@@ -1585,6 +1602,25 @@ public class Deployment
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  journeyMetricDeclarations
+    //
+
+    try
+      {
+        JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
+        for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
+          {
+            JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
+            JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
+            journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+          }
+      }
+    catch (JSONUtilitiesException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

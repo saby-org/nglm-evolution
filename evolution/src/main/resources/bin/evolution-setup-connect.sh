@@ -43,6 +43,25 @@
     }' &
 
   #
+  #  sink connector -- journeyMetric (elasticsearch)
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "journeymetric_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.JourneyMetricESSinkConnector",
+        "tasks.max" : 1,
+        "topics" : "${topic.journeymetric}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "journeymetric"
+        }
+    }' &
+
+  #
   #  source connector -- externalDeliveryRequest
   #
 
