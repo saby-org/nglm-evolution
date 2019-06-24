@@ -82,7 +82,7 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
     super(jsonRoot);
     this.subscriberProfileMetricHistoryAccessor = JSONUtilities.decodeString(jsonRoot, "subscriberProfileMetricHistoryAccessor", true); 
     this.priorPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "priorPeriodDays", true);
-    this.postPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "priorPeriodDays", true);
+    this.postPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "postPeriodDays", true);
     this.esFieldPrior = JSONUtilities.decodeString(jsonRoot, "esFieldPrior", true);
     this.esFieldDuring = JSONUtilities.decodeString(jsonRoot, "esFieldDuring", true);
     this.esFieldPost = JSONUtilities.decodeString(jsonRoot, "esFieldPost", true);
