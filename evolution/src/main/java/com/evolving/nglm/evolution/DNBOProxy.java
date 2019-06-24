@@ -983,8 +983,7 @@ public class DNBOProxy
           if (currentOfferObjective.getOfferObjectiveID().equals(currentSplitObjectiveID))
           {
             // this offer is a good candidate for the moment, let's check the profile
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(
-                subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
             if (currentOffer.evaluateProfileCriteria(evaluationRequest))
             {
               log.trace("        add offer : "+currentOffer.getOfferID());
@@ -1028,8 +1027,7 @@ public class DNBOProxy
   {
     // let retrieve the first sub strategy that maps this user:
     Date now = SystemTime.getCurrentTime();
-    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(
-        subscriberProfile, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
 
     ScoringGroup selectedScoringGroup = strategy.evaluateScoringGroups(evaluationRequest);
     if (log.isDebugEnabled())

@@ -24,6 +24,24 @@ import java.util.Objects;
 
 public class EvolutionEngineEventDeclaration
 {
+  /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+
+  public enum EventRule
+  {
+    Standard("standard"),
+    Extended("extended"),
+    All("all"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private EventRule(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static EventRule fromExternalRepresentation(String externalRepresentation) { for (EventRule enumeratedValue : EventRule.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
   /****************************************
   *
   *  data
@@ -34,6 +52,7 @@ public class EvolutionEngineEventDeclaration
   private String name;
   private String eventClassName;
   private String eventTopic;
+  private EventRule eventRule;
   private Map<String,CriterionField> eventCriterionFields;
 
   //
@@ -52,6 +71,7 @@ public class EvolutionEngineEventDeclaration
   public String getName() { return name; }
   public String getEventClassName() { return eventClassName; }
   public String getEventTopic() { return eventTopic; }
+  public EventRule getEventRule() { return eventRule; }
   public Map<String,CriterionField> getEventCriterionFields() { return eventCriterionFields; }
   public ConnectSerde<EvolutionEngineEvent> getEventSerde() { return eventSerde; }
 
@@ -71,6 +91,7 @@ public class EvolutionEngineEventDeclaration
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
     this.eventClassName = JSONUtilities.decodeString(jsonRoot, "eventClass", true);
     this.eventTopic = JSONUtilities.decodeString(jsonRoot, "eventTopic", true);
+    this.eventRule = EventRule.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "eventRule", "standard"));
     this.eventCriterionFields = decodeEventCriterionFields(JSONUtilities.decodeJSONArray(jsonRoot, "eventCriterionFields", false));
 
     //

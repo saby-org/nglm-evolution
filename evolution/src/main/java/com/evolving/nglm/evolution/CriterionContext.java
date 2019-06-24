@@ -37,6 +37,7 @@ public class CriterionContext
   public enum CriterionContextType
   {
     Profile("profile"),
+    FullProfile("fullProfile"),
     Presentation("presentation"),
     JourneyNode("journeyNode"),
     Unknown("(unknown)");
@@ -53,6 +54,7 @@ public class CriterionContext
   *****************************************/
 
   public static final CriterionContext Profile = new CriterionContext(CriterionContextType.Profile);
+  public static final CriterionContext FullProfile = new CriterionContext(CriterionContextType.FullProfile);
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
 
   /*****************************************
@@ -539,6 +541,16 @@ public class CriterionContext
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
           result.putAll(Deployment.getProfileCriterionFields());
+          break;
+        case FullProfile:
+          result = new LinkedHashMap<String,CriterionField>();
+          result.put(evaluationDate.getID(), evaluationDate);
+          result.put(evaluationEventName.getID(), evaluationEventName);
+          result.put(internalRandom100.getID(), internalRandom100);
+          result.put(internalFalse.getID(), internalFalse);
+          result.put(internalTargets.getID(), internalTargets);
+          result.putAll(Deployment.getProfileCriterionFields());
+          result.putAll(Deployment.getExtendedProfileCriterionFields());
           break;
         case Presentation:
           result = Deployment.getPresentationCriterionFields();

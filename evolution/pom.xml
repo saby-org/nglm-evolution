@@ -41,14 +41,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.5.1-build190618-SNAPSHOT</version>
+    <version>4.6.0</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.5.1-build190618-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.6.0</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.0.24</gui-fwk.version>

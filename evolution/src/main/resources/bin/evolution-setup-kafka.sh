@@ -59,7 +59,7 @@
   echo create_topic ${topic.commoditydelivery.internal}                               $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${topic.commoditydelivery.routing}                                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_HOURS"  >> /app/setup/topics-evolution
   echo create_topic ${topic.uploadedfile}                                             $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
-  echo create_topic ${topic.target} 		                                          $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
+  echo create_topic ${topic.target} 		                                      $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.fulfillment.purchasefulfillment.request}                  $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.fulfillment.purchasefulfillment.response}                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.fulfillment.purchasefulfillment.internal}                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
@@ -73,6 +73,7 @@
   echo create_topic ${topic.notificationmanagermail.internal}                         $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${topic.notificationmanagermail.routing}                          $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_HOURS"  >> /app/setup/topics-evolution
   echo create_topic ${changelog.evolutionengine.subscriberstate.topic}                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
+  echo create_topic ${changelog.evolutionengine.extendedsubscriberprofile.topic}      $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${changelog.evolutionengine.subscriberhistory.topic}              $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${changelog.evolutionengine.propensitystate.topic}                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"  >> /app/setup/topics-evolution
   echo create_topic ${topic.evolutionengine.pointfulfillment.repartition}             $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
@@ -81,6 +82,15 @@
   echo create_topic ${topic.presentationlog_fileconnector}                            $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.acceptancelog_fileconnector}                              $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   
+  #
+  #  regression topics	
+  #
+  
+  if [ "${env.USE_REGRESSION}" = "1" ]
+  then
+    echo create_topic ${topic.periodicevaluation_fileconnector}                         $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+  fi
+
   #
   #  create topics
   #

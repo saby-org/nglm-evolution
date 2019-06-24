@@ -59,10 +59,11 @@ public class SegmentEligibility implements Segment
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("segment_eligibility");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
+    schemaBuilder.field("dependentOnExtendedSubscriberProfile", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("contactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -82,6 +83,7 @@ public class SegmentEligibility implements Segment
   private String id;
   private String name;
   private List<EvaluationCriterion> profileCriteria;
+  private boolean dependentOnExtendedSubscriberProfile;
   private String contactPolicyID;
 
   /*****************************************
@@ -90,11 +92,12 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  private SegmentEligibility(String id, String name, List<EvaluationCriterion> profileCriteria, String contactPolicyID)
+  private SegmentEligibility(String id, String name, List<EvaluationCriterion> profileCriteria, boolean dependentOnExtendedSubscriberProfile, String contactPolicyID)
   {
     this.id = id;
     this.name = name;
     this.profileCriteria = profileCriteria;
+    this.dependentOnExtendedSubscriberProfile = dependentOnExtendedSubscriberProfile;
     this.contactPolicyID = contactPolicyID;
   }
 
@@ -108,8 +111,22 @@ public class SegmentEligibility implements Segment
   {
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false));
     this.contactPolicyID = JSONUtilities.decodeString(jsonRoot, "contactPolicyID", false);
+
+    //
+    //  profileCritera -- attempt to construct with standard SubscriberProfile
+    //
+
+    try
+      {
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.Profile);
+        this.dependentOnExtendedSubscriberProfile = false;
+      }
+    catch (GUIManagerException e)
+      {
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile);
+        this.dependentOnExtendedSubscriberProfile = true;
+      }
   }
 
   /*****************************************
@@ -118,15 +135,12 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, CriterionContext context) throws GUIManagerException
   {
-    if(jsonArray == null){
-      return null;
-    }
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile)); //TODO SCH : what is "CriterionContext.Profile" for ?
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context)); 
       }
     return result;
   }
@@ -141,6 +155,7 @@ public class SegmentEligibility implements Segment
   public String getName() { return name; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
   public String getContactPolicyID() { return contactPolicyID; }
+  public boolean getDependentOnExtendedSubscriberProfile() { return dependentOnExtendedSubscriberProfile; }
   
   /*****************************************
   *
@@ -166,6 +181,7 @@ public class SegmentEligibility implements Segment
     struct.put("id", segment.getID());
     struct.put("name", segment.getName());
     struct.put("profileCriteria", packProfileCriteria(segment.getProfileCriteria()));
+    struct.put("dependentOnExtendedSubscriberProfile", segment.getDependentOnExtendedSubscriberProfile());
     struct.put("contactPolicyID", segment.getContactPolicyID());
     return struct;
   }
@@ -207,20 +223,18 @@ public class SegmentEligibility implements Segment
     //  unpack all but argument
     //
 
-    if(value == null){
-      return null;
-    }
     Struct valueStruct = (Struct) value;
     String id = valueStruct.getString("id");
     String name = valueStruct.getString("name");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
+    boolean dependentOnExtendedSubscriberProfile = (schemaVersion >= 2) ? valueStruct.getBoolean("dependentOnExtendedSubscriberProfile") : false;
     String contactPolicyID = valueStruct.getString("contactPolicyID");
     
     //
     //  construct
     //
 
-    SegmentEligibility result = new SegmentEligibility(id, name, profileCriteria, contactPolicyID);
+    SegmentEligibility result = new SegmentEligibility(id, name, profileCriteria, dependentOnExtendedSubscriberProfile, contactPolicyID);
 
     //
     //  return
@@ -263,5 +277,4 @@ public class SegmentEligibility implements Segment
 
     return result;
   }
-
 }

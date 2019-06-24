@@ -44,6 +44,7 @@ public class Deployment
   private static String evolutionEngineExtensionClassName;
   private static String guiManagerExtensionClassName;
   private static String subscriberProfileClassName;
+  private static String extendedSubscriberProfileClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static String emptyTopic;
   private static String journeyTopic;
@@ -80,6 +81,8 @@ public class Deployment
   private static String subscriberProfileForceUpdateTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
+  private static String extendedSubscriberProfileChangeLog;
+  private static String extendedSubscriberProfileChangeLogTopic;
   private static String subscriberHistoryChangeLog;
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyRequestTopic;
@@ -121,6 +124,7 @@ public class Deployment
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
@@ -190,6 +194,7 @@ public class Deployment
   //  evolution accessors
   //
 
+  public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
   public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }
@@ -198,6 +203,7 @@ public class Deployment
   public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
   public static String getGUIManagerExtensionClassName() { return guiManagerExtensionClassName; }
   public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
+  public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
@@ -234,6 +240,8 @@ public class Deployment
   public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
+  public static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
+  public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
   public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyRequestTopic() { return journeyRequestTopic; }
@@ -275,6 +283,7 @@ public class Deployment
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
+  public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
@@ -377,6 +386,25 @@ public class Deployment
       {
         Class<SubscriberProfile> subscriberProfileClass = (Class<SubscriberProfile>) Class.forName(subscriberProfileClassName);
         return subscriberProfileClass;
+      }
+    catch (ClassNotFoundException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
+
+  /*****************************************
+  *
+  *  getExtendedSubscriberProfileClass
+  *
+  *****************************************/
+
+  public static Class<ExtendedSubscriberProfile> getExtendedSubscriberProfileClass()
+  {
+    try
+      {
+        Class<ExtendedSubscriberProfile> extendedSubscriberProfileClass = (Class<ExtendedSubscriberProfile>) Class.forName(extendedSubscriberProfileClassName);
+        return extendedSubscriberProfileClass;
       }
     catch (ClassNotFoundException e)
       {
@@ -518,6 +546,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  extendedSubscriberProfileClassName
+    //
+
+    try
+      {
+        extendedSubscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileClass", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  evolutionEngineEvents
     //
@@ -1018,6 +1059,32 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  extendedSubscriberProfileChangeLog
+    //
+
+    try
+      {
+        extendedSubscriberProfileChangeLog = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLog", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  extendedSubscriberProfileChangeLogTopic
+    //
+
+    try
+      {
+        extendedSubscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLogTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  subscriberHistoryChangeLog
     //
@@ -1534,6 +1601,25 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             profileCriterionFields.put(criterionField.getID(), criterionField);
+          }
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  extendedProfileCriterionFields
+    //
+
+    try
+      {
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "extendedProfileCriterionFields", new JSONArray());
+        for (int i=0; i<criterionFieldValues.size(); i++)
+          {
+            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+            CriterionField criterionField = new CriterionField(criterionFieldJSON);
+            extendedProfileCriterionFields.put(criterionField.getID(), criterionField);
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)

@@ -77,8 +77,13 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   ****************************************/
 
-  @Override public List<SegmentEligibility> getSegments() { return segments; }
   public boolean isUsingContactPolicy() { return usingContactPolicy; }
+
+  //
+  //  abstract
+  //
+
+  @Override public List<SegmentEligibility> getSegments() { return segments; }
   
   /*****************************************
   *
@@ -148,6 +153,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     Struct valueStruct = (Struct) value;
     List<SegmentEligibility> segments = unpackSegments(schema.field("segments").schema(), valueStruct.get("segments"));
     boolean usingContactPolicy = valueStruct.getBoolean("usingContactPolicy");
+
     //
     //  return
     //
@@ -285,28 +291,32 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
   
-  @Override
-  public boolean validate() throws GUIManagerException {
-    //TODO : check mandatory fields (if any ...)
-    //throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
+  @Override public boolean validate() throws GUIManagerException
+  {
+    //
+    //  TODO : check mandatory fields (if any ...)
+    //  throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
+
     return super.validate();
   }
 
   /*****************************************
   *
-  *  hasDefaultSegment
+  *  retrieveDefaultSegmentID
   *
   *****************************************/
   
-  @Override
-  public boolean hasDefaultSegment(){
-    boolean hasDefault = false;
-    //iterate over all segments to check if it is a default one 
-    for(SegmentEligibility segment : segments){
-      if(segment.getProfileCriteria() == null || segment.getProfileCriteria().isEmpty()){
-        hasDefault =true;
+  @Override public String retrieveDefaultSegmentID()
+  {
+    String defaultSegmentID = null;
+    for (SegmentEligibility segment : segments)
+      {
+        if(segment.getProfileCriteria() == null || segment.getProfileCriteria().isEmpty())
+          {
+            defaultSegmentID = segment.getID();
+            break;
+          }
       }
-    }
-    return hasDefault;
+    return defaultSegmentID;
   }
 }

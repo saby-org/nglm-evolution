@@ -173,6 +173,9 @@ public class GUIManager
     getProfileCriterionFields("getProfileCriterionFields"),
     getProfileCriterionFieldIDs("getProfileCriterionFieldIDs"),
     getProfileCriterionField("getProfileCriterionField"),
+    getFullProfileCriterionFields("getFullProfileCriterionFields"),
+    getFullProfileCriterionFieldIDs("getFullProfileCriterionFieldIDs"),
+    getFullProfileCriterionField("getFullProfileCriterionField"),
     getPresentationCriterionFields("getPresentationCriterionFields"),
     getPresentationCriterionFieldIDs("getPresentationCriterionFieldIDs"),
     getPresentationCriterionField("getPresentationCriterionField"),
@@ -994,7 +997,7 @@ public class GUIManager
         //
 
         Date now = SystemTime.getCurrentTime();
-        Map<String,CriterionField> profileCriterionFields = CriterionContext.Profile.getCriterionFields();
+        Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.getCriterionFields();
         for (CriterionField criterion : profileCriterionFields.values())
           {
             log.debug("SimpleProfileDimension : handling field '"+criterion.getName()+"' ...");
@@ -1184,6 +1187,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APISimpleHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APISimpleHandler(API.getProfileCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getProfileCriterionField", new APISimpleHandler(API.getProfileCriterionField));
+        restServer.createContext("/nglm-guimanager/getFullProfileCriterionFields", new APISimpleHandler(API.getFullProfileCriterionFields));
+        restServer.createContext("/nglm-guimanager/getFullProfileCriterionFieldIDs", new APISimpleHandler(API.getFullProfileCriterionFieldIDs));
+        restServer.createContext("/nglm-guimanager/getFullProfileCriterionField", new APISimpleHandler(API.getFullProfileCriterionField));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFields", new APISimpleHandler(API.getPresentationCriterionFields));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionFieldIDs", new APISimpleHandler(API.getPresentationCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getPresentationCriterionField", new APISimpleHandler(API.getPresentationCriterionField));
@@ -1668,15 +1674,27 @@ public class GUIManager
                   break;
 
                 case getProfileCriterionFields:
-                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot);
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, CriterionContext.Profile);
                   break;
 
                 case getProfileCriterionFieldIDs:
-                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot);
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, CriterionContext.Profile);
                   break;
 
                 case getProfileCriterionField:
-                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot);
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, CriterionContext.Profile);
+                  break;
+
+                case getFullProfileCriterionFields:
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, CriterionContext.FullProfile);
+                  break;
+
+                case getFullProfileCriterionFieldIDs:
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, CriterionContext.FullProfile);
+                  break;
+
+                case getFullProfileCriterionField:
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, CriterionContext.FullProfile);
                   break;
 
                 case getPresentationCriterionFields:
@@ -3790,7 +3808,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProfileCriterionFields(String userID, JSONObject jsonRoot)
+  private JSONObject processGetProfileCriterionFields(String userID, JSONObject jsonRoot, CriterionContext profileContext)
   {
     /*****************************************
     *
@@ -3798,7 +3816,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields(), false);
+    List<JSONObject> profileCriterionFields = processCriterionFields(profileContext.getCriterionFields(), false);
 
     /*****************************************
     *
@@ -3818,7 +3836,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProfileCriterionFieldIDs(String userID, JSONObject jsonRoot)
+  private JSONObject processGetProfileCriterionFieldIDs(String userID, JSONObject jsonRoot, CriterionContext profileContext)
   {
     /*****************************************
     *
@@ -3826,7 +3844,7 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields(), false);
+    List<JSONObject> profileCriterionFields = processCriterionFields(profileContext.getCriterionFields(), false);
 
     /*****************************************
     *
@@ -3861,7 +3879,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProfileCriterionField(String userID, JSONObject jsonRoot)
+  private JSONObject processGetProfileCriterionField(String userID, JSONObject jsonRoot, CriterionContext profileContext)
   {
     /*****************************************
     *
@@ -3885,7 +3903,7 @@ public class GUIManager
         //  retrieve profile criterion fields
         //
 
-        List<JSONObject> profileCriterionFields = processCriterionFields(CriterionContext.Profile.getCriterionFields(), false);
+        List<JSONObject> profileCriterionFields = processCriterionFields(profileContext.getCriterionFields(), false);
 
         //
         //  find requested field
@@ -6755,7 +6773,7 @@ public class GUIManager
             // Retrieving the ElasticSearch field from the Criterion field.
             //
 
-            CriterionField criterionField = CriterionContext.Profile.getCriterionFields().get(baseSplit.getVariableName());
+            CriterionField criterionField = CriterionContext.FullProfile.getCriterionFields().get(baseSplit.getVariableName());
             if(criterionField.getESField() == null)
               {
                 //
@@ -7076,7 +7094,7 @@ public class GUIManager
         JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
         for (int i=0; i<jsonCriteriaList.size(); i++)
           {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.Profile));
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullProfile));
           }
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -7196,9 +7214,10 @@ public class GUIManager
     for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
       {
         SegmentationDimension dimension = (SegmentationDimension) segmentationDimension;
-        if (dimension.getHasDefaultSegment()){
-          segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
-        }
+        if (dimension.getDefaultSegmentID() != null)
+          {
+            segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
+          }
       }
 
     /*****************************************
@@ -13845,7 +13864,7 @@ public class GUIManager
       {
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -13967,7 +13986,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -14095,7 +14114,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -14225,7 +14244,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -14364,7 +14383,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -14490,7 +14509,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -14785,7 +14804,7 @@ public class GUIManager
         *****************************************/
         try
           {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (baseSubscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");
@@ -15118,7 +15137,7 @@ public class GUIManager
          *****************************************/
         try
           {
-            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
             if (subscriberProfile == null)
               {
                 response.put("responseCode", "CustomerNotFound");

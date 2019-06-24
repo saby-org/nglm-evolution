@@ -459,6 +459,14 @@ public class TimerService
   {
     /*****************************************
     *
+    *  abort if regression mode
+    *
+    *****************************************/
+
+    if (Deployment.getRegressionMode()) return;
+
+    /*****************************************
+    *
     *  abort if periodic evaluation is not configured
     *
     *****************************************/
@@ -556,8 +564,8 @@ public class TimerService
                 SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
                 if (subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
                   {
-                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation);
-                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));                
+                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true);
+                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
                   }
               }
             subscriberStateStoreIterator.close();

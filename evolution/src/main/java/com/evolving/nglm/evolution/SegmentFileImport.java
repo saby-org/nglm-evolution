@@ -110,6 +110,7 @@ public class SegmentFileImport implements Segment
   public String getID() { return id; }
   public String getName() { return name; }
   public String getContactPolicyID() { return contactPolicyID; }
+  public boolean getDependentOnExtendedSubscriberProfile() { return false; }
 
   /*****************************************
   *
@@ -178,5 +179,4 @@ public class SegmentFileImport implements Segment
 
     return result;
   }
-  
 }

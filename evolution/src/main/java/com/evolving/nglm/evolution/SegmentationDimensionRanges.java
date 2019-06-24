@@ -302,19 +302,22 @@ public class SegmentationDimensionRanges extends SegmentationDimension
 
   /*****************************************
   *
-  *  hasDefaultSegment
+  *  retrieveDefaultSegmentID
   *
   *****************************************/
   
-  @Override
-  public boolean hasDefaultSegment(){
-    boolean hasDefault = false;
-    //iterate over all BaseSplit to check if it is a default one
-    for(BaseSplit split : baseSplit){
-      if((split.getProfileCriteria() == null || split.getProfileCriteria().isEmpty()) && (split.getVariableName() == null || split.getVariableName().isEmpty())){
-        hasDefault =true;
-      }
-    }
-    return hasDefault;
+  @Override public String retrieveDefaultSegmentID()
+  {
+    String defaultSegmentID = null;
+    for(BaseSplit split : baseSplit)
+      {
+        if ((split.getProfileCriteria() == null || split.getProfileCriteria().isEmpty()) && (split.getVariableName() == null || split.getVariableName().isEmpty()) && split.getSegments().size() == 1)
+          {
+            SegmentRanges segment = split.getSegments().get(0);
+            defaultSegmentID = segment.getID();
+            break;
+          }
+      }   
+    return defaultSegmentID;
   }
 }

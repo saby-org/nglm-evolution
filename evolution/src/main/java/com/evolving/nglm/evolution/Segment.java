@@ -10,5 +10,6 @@ public interface Segment
 {
   public String getID();
   public String getName();
+  public boolean getDependentOnExtendedSubscriberProfile();
 }
 

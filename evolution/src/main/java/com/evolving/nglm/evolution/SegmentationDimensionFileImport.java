@@ -80,8 +80,14 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   ****************************************/
 
   public String getDimensionFileID() { return dimensionFileID; }
-  @Override public List<SegmentFileImport> getSegments() { return segments; }
   public boolean isUsingContactPolicy() { return usingContactPolicy; }
+
+  //
+  //  abstract
+  //
+
+  @Override public List<SegmentFileImport> getSegments() { return segments; }
+  @Override public String retrieveDefaultSegmentID() { return null; }
 
   /*****************************************
   *
@@ -294,22 +300,12 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   *****************************************/
   
-  @Override
-  public boolean validate() throws GUIManagerException {
-    //TODO : check mandatory fields (if any ...)
-    //throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
-    return true;
-  }
+  @Override public boolean validate() throws GUIManagerException
+  {
+    //
+    //  TODO : check mandatory fields (if any ...)
+    //  throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
 
-  /*****************************************
-  *
-  *  hasDefaultSegment
-  *
-  *****************************************/
-  
-  @Override
-  public boolean hasDefaultSegment(){
-    //TODO : do the check
-    return false;
+    return true;
   }
 }
