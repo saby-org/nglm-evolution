@@ -936,6 +936,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         // Check commodity exists
         //
         
+        String realCommodityID = commodityID;
         CommodityType commodityType = null;
         String deliveryType = null;
         if(operation.equals(CommodityDeliveryOperation.Debit)){
@@ -950,6 +951,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "payment mean not found (providerID "+providerID+" - commodityID "+commodityID+")");
             return;
           }else{
+            realCommodityID = paymentMean.getCommodityID();
             FulfillmentProvider provider = getProviders().get(paymentMean.getFulfillmentProviderID());
             if(provider == null){
               log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
@@ -973,6 +975,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")");
             return;
           }else{
+            realCommodityID = deliverable.getCommodityID();
             FulfillmentProvider provider = getProviders().get(deliverable.getFulfillmentProviderID());
             if(provider == null){
               log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
@@ -1002,7 +1005,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
         *
         *****************************************/
 
-        proceedCommodityDeliveryRequest(commodityDeliveryRequest, commodityType, deliveryType);
+        proceedCommodityDeliveryRequest(commodityDeliveryRequest, commodityType, deliveryType, realCommodityID);
         
       }
   }
@@ -1119,7 +1122,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   *
   *****************************************/
 
-  private void proceedCommodityDeliveryRequest(CommodityDeliveryRequest commodityDeliveryRequest, CommodityType commodityType, String deliveryType){
+  private void proceedCommodityDeliveryRequest(CommodityDeliveryRequest commodityDeliveryRequest, CommodityType commodityType, String deliveryType, String realCommodityID){
     log.info(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(..., "+commodityType+", "+deliveryType+") : method called ...");
 
     //
@@ -1156,7 +1159,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       inRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
       inRequestData.put("providerID", commodityDeliveryRequest.getProviderID());
-      inRequestData.put("paymentMeanID", commodityDeliveryRequest.getCommodityID());
+      inRequestData.put("paymentMeanID", realCommodityID);
       
       //TODO SCH : remove INFulfillmentOperation (only one list of operations -> keep CommodityDeliveryOperation)
       inRequestData.put("operation", INFulfillmentOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
@@ -1190,7 +1193,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       pointRequestData.put("featureID", commodityDeliveryRequest.getFeatureID());
 
       pointRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
-      pointRequestData.put("pointID", commodityDeliveryRequest.getCommodityID());
+      pointRequestData.put("pointID", realCommodityID);
       
       //TODO SCH : remove PointOperation (only one list of operations -> keep CommodityDeliveryOperation)
       pointRequestData.put("operation", PointOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
@@ -1267,7 +1270,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
-      String pointID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.deliverableid");
+      String deliverableID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.deliverableid");
       int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
       
       /*****************************************
@@ -1284,7 +1287,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
-      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null/*diplomaticBriefcase*/, providerID, pointID, operation, amount);
+      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null/*diplomaticBriefcase*/, providerID, deliverableID, operation, amount);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

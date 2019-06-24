@@ -666,6 +666,14 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  rekey Points Responses
+    *
+    *****************************************/
+    
+    KStream<StringKey, PointFulfillmentRequest> rekeyedPointResponseStream = pointResponseStream.map(EvolutionEngine::rekeyPointResponseStream);
+    
+    /*****************************************
+    *
     *  sink
     *
     *****************************************/
@@ -675,7 +683,7 @@ public class EvolutionEngine
     //
 
     journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
-    pointResponseStream.to(pointFulfillmentResponseTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
+    rekeyedPointResponseStream.to(pointFulfillmentResponseTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     propensityStateStream.to(propensityLogTopic, Produced.with(propensityKeySerde, propensityStateSerde));
@@ -2854,6 +2862,18 @@ public class EvolutionEngine
   private static KeyValue<StringKey, DeliveryRequest> rekeyDeliveryRequestStream(StringKey key, DeliveryRequest value)
   {
     return new KeyValue<StringKey, DeliveryRequest>(new StringKey(value.getDeliveryRequestID()), value);
+  }
+  
+  /****************************************
+  *
+  *  rekeyPointResponseStream
+  *
+  ****************************************/
+
+  private static KeyValue<StringKey, PointFulfillmentRequest> rekeyPointResponseStream(StringKey key, PointFulfillmentRequest value)
+  {
+    StringKey rekey = value.getOriginatingRequest() ? new StringKey(value.getSubscriberID()) : new StringKey(value.getDeliveryRequestID());
+    return new KeyValue<StringKey, PointFulfillmentRequest>(rekey, value);
   }
 
   /*****************************************

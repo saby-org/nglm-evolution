@@ -7396,7 +7396,7 @@ public class GUIManager
         //
         if(point.getCreditable()){
           Map<String, Object> deliverableMap = new HashMap<String, Object>();
-          deliverableMap.put("id", point.getPointID());
+          deliverableMap.put("id", "point-" + point.getPointID());
           deliverableMap.put("fulfillmentProviderID", providerID);
           deliverableMap.put("commodityID", point.getPointID());
           deliverableMap.put("name", point.getPointName());
@@ -7413,7 +7413,7 @@ public class GUIManager
         
         if(point.getDebitable()){
           Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
-          paymentMeanMap.put("id", point.getPointID());
+          paymentMeanMap.put("id", "point-" + point.getPointID());
           paymentMeanMap.put("fulfillmentProviderID", providerID);
           paymentMeanMap.put("commodityID", point.getPointID());
           paymentMeanMap.put("name", point.getPointName());

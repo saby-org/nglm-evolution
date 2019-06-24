@@ -119,6 +119,7 @@ public class StockMonitor implements Runnable
           @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { monitorStockableItem((StockableItem) guiManagedObject); }
           @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { }
         };
+        guiService.registerListener(listener);
       }
 
     //
