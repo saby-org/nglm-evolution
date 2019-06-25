@@ -11,7 +11,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import org.apache.kafka.connect.data.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -77,6 +76,12 @@ public class PropensityRule
 
   private List<String> selectedDimensions;
   private Integer size;
+  
+  //
+  // internal
+  //
+  
+  private Boolean currentlyValid; // this internal variable is used to return an error only when the validiy change.
 
   /*****************************************
   *
@@ -97,6 +102,12 @@ public class PropensityRule
   {
     this.selectedDimensions = selectedDimensions;
     this.size = size;
+    
+    //
+    // internal
+    //
+    
+    this.currentlyValid = true;
   }
 
   /*****************************************
@@ -161,6 +172,12 @@ public class PropensityRule
 
     this.selectedDimensions = decodeSelectedDimensions(JSONUtilities.decodeJSONArray(jsonRoot, "selectedDimensions", true));
     this.size = JSONUtilities.decodeInteger(jsonRoot,"size",false);
+    
+    //
+    // internal
+    //
+    
+    this.currentlyValid = true;
   }
 
   /*****************************************
@@ -182,11 +199,29 @@ public class PropensityRule
 
   /*****************************************
   *
+  *  suspend / activate propensity
+  *
+  *****************************************/
+
+  private void suspendPropensityFeatures()
+  {
+    this.currentlyValid = false;
+    log.info("Propensity features are now suspended until propensity rules are valid.");
+  }
+  
+  private void activatePropensityFeatures()
+  {
+    this.currentlyValid = true;
+    log.info("Propensity features are now properly activated.");
+  }
+
+  /*****************************************
+  *
   *  validate
   *
   *****************************************/
 
-  public void validate(SegmentationDimensionService segmentationDimensionService) throws GUIManagerException
+  public boolean validate(SegmentationDimensionService segmentationDimensionService)
   {
     /*****************************************
     *
@@ -207,15 +242,36 @@ public class PropensityRule
         
         /*****************************************
         *
-        *  validate the segmentationDimenstion exists and is active
+        *  validate the segmentationDimenstion exists, is active and has a default segment
         *
         *****************************************/
 
         if (segmentationDimension == null)
           {
-            log.error("propensityRule uses unknown segmentation dimension: {}", segmentationDimensionID);
-            throw new GUIManagerException("unknown segmentation dimension", segmentationDimensionID);
+            if(this.currentlyValid)
+              {
+                log.error("Invalid propensityRule. It contains an unknown segmentation dimension: " + segmentationDimensionID);
+                suspendPropensityFeatures();
+              }
+            return false;
+          }
+        
+        if (segmentationDimension.getDefaultSegmentID() == null)
+          {
+            if(this.currentlyValid)
+              {
+                log.error("Invalid propensityRule. It contains a segmentation dimension without default segment: " + segmentationDimensionID);
+                suspendPropensityFeatures();
+              }
+            return false;
           }
       }
+    
+    if(!this.currentlyValid) {
+      activatePropensityFeatures();
+    }
+    return true;
   }
+  
+  
 }

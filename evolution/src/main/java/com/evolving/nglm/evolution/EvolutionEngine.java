@@ -2064,11 +2064,19 @@ public class EvolutionEngine
       //
       // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
       //
-
+      
       if(subscriberStoredToken.getPresentedOffersIDs().size() > 0 &&
           subscriberStoredToken.getAcceptedOfferID() != null) {
-        subscriberState.getPropensityOutputs().addAll(retrievePropensityOutputs(subscriberStoredToken, subscriberProfile));
-        subscriberStateUpdated = true;
+            
+        // 
+        // Validate propensity rule before using it (ignore any propensity outputs otherwise)
+        //
+        
+        if(Deployment.getPropensityRule().validate(segmentationDimensionService))
+          {
+            subscriberState.getPropensityOutputs().addAll(retrievePropensityOutputs(subscriberStoredToken, subscriberProfile));
+            subscriberStateUpdated = true;
+          }
       }
     }
 

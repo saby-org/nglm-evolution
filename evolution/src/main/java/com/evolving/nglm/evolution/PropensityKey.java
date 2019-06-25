@@ -108,18 +108,24 @@ public class PropensityKey
     // Segments will be arranged in the same order than the one specified in Propensity Rule
     //
     
-    List<String> dimensions = Deployment.getPropensityRule().getSelectedDimensions();
+    PropensityRule propensityRule = Deployment.getPropensityRule();
+    List<String> dimensions = propensityRule.getSelectedDimensions();
     Map<String, String> subscriberGroups = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
     
-    for(String dimensionID : dimensions) {
-      String segmentID = subscriberGroups.get(dimensionID);
-      if(segmentID == null) {
-        log.error("Requiered dimension for propensity could not be found in the subscriber profile. Propensity will not be relevant.");
+    for(String dimensionID : dimensions) 
+      {
+        String segmentID = subscriberGroups.get(dimensionID);
+        if(segmentID != null)
+          {
+            this.propensityStratum.add(segmentID);
+          }
+        else
+          {
+            // This should not happen
+            throw new IllegalStateException("Required dimension (dimensionID: " + dimensionID + ") for propensity could not be found in the subscriber profile (subscriberID: " + subscriberProfile.getSubscriberID() + ").");
+          }
       }
-      
-      this.propensityStratum.add(segmentID);
-    }
-    
+
   }
 
   /*****************************************

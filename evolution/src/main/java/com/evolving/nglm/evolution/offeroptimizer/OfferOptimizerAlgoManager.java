@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
+import com.evolving.nglm.evolution.DNBOProxy;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
@@ -21,6 +22,7 @@ import com.evolving.nglm.evolution.ProductTypeService;
 import com.evolving.nglm.evolution.PropensityKey;
 import com.evolving.nglm.evolution.PropensityState;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;
 
@@ -59,7 +61,8 @@ public class OfferOptimizerAlgoManager {
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
-      ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, StringBuffer returnedLog) {
+      ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, 
+      SegmentationDimensionService segmentationDimensionService, StringBuffer returnedLog) {
 
     if (offers == null || offers.size() == 0) 
       {
@@ -103,22 +106,32 @@ public class OfferOptimizerAlgoManager {
     List<ProposedOfferDetails> result = new ArrayList<>();
     for (Offer o : offers) 
       {
-        // retrieve the current propensity for this offer
-        PropensityKey pk = new PropensityKey(o.getOfferID(), subscriberProfile, subscriberGroupEpochReader);
-        PropensityState ps = propensityDataReader.get(pk);
-        int presentationThreshold = Deployment.getPropensityInitialisationPresentationThreshold();
-        int daysThreshold = Deployment.getPropensityInitialisationDurationInDaysThreshold();
+        // 
+        // Validate propensity rule before using it
+        //
+        
+        PropensityState propensityState = null;
+        
+        if(Deployment.getPropensityRule().validate(segmentationDimensionService))
+          {
+            // retrieve the current propensity for this offer
+            PropensityKey pk = new PropensityKey(o.getOfferID(), subscriberProfile, subscriberGroupEpochReader);
+            propensityState = propensityDataReader.get(pk);
+          }
+        
         int currentPropensity = 50; // TODO: In the future, use: o.getInitialPropensity();
-        if (ps == null) 
+        if (propensityState != null) 
+          {
+            int presentationThreshold = Deployment.getPropensityInitialisationPresentationThreshold();
+            int daysThreshold = Deployment.getPropensityInitialisationDurationInDaysThreshold();
+            double p = propensityState.getPropensity(0.50d, o.getEffectiveStartDate(), presentationThreshold, daysThreshold); // TODO: In the future, use: o.getInitialPropensity();
+            currentPropensity = (int) (100.0 * p);
+          } 
+        else 
           {
             // just log a warn and keep initial propensity
             logger.warn("OfferOptimizerAlgoManager.applyScoreAndSort Could not retrieve propensity for offer "
                 + o.getOfferID());
-          } 
-        else 
-          {
-            double p = ps.getPropensity(0.50d, o.getEffectiveStartDate(), presentationThreshold, daysThreshold); // TODO: In the future, use: o.getInitialPropensity();
-            currentPropensity = (int) (100.0 * p);
           }
         logger.trace("OfferOptimizerAlgoManager.applyScoreAndSort Propensity for offer "
             + o.getOfferID()+ " = " + currentPropensity);
