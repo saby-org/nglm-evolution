@@ -157,7 +157,8 @@
     <topic.notificationmanagermail.response>notificationmanagermail-response</topic.notificationmanagermail.response>
     <topic.notificationmanagermail.internal>notificationmanagermail-internal</topic.notificationmanagermail.internal>
     <topic.notificationmanagermail.routing>notificationmanagermail-routing</topic.notificationmanagermail.routing>
-    
+    <topic.communicationchannel>communicationchannel</topic.communicationchannel>
+    <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>

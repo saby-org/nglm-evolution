@@ -198,6 +198,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("htmlBody", Schema.STRING_SCHEMA);
       schemaBuilder.field("textBody", Schema.STRING_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
+      schemaBuilder.field("confirmation_expected", Schema.BOOLEAN_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -229,6 +230,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     private MAILMessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
+    private boolean confirmationExpected;
 
     //
     //  accessors
@@ -242,6 +244,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public MAILMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+    public boolean isConfirmationExpected() { return confirmationExpected; }
 
     //
     //  setters
@@ -250,7 +253,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public void setMessageStatus(MAILMessageStatus status) { this.status = status; }
     public void setReturnCode(int returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-
+    public void setIsConfirmationExpected(boolean expected) { this.confirmationExpected = expected; }
+    
     /*****************************************
     *
     *  constructor
@@ -295,7 +299,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String subject, String htmlBody, String textBody, MAILMessageStatus status)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String subject, String htmlBody, String textBody, MAILMessageStatus status, boolean confirmationExpected)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -305,6 +309,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.textBody = textBody;
       this.status = status;
       this.returnCode = status.getReturnCode();
+      this.confirmationExpected = confirmationExpected;
     }
 
     /*****************************************
@@ -324,6 +329,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.status = mailNotificationManagerRequest.getMessageStatus();
       this.returnCode = mailNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = mailNotificationManagerRequest.getReturnCodeDetails();
+      this.confirmationExpected = mailNotificationManagerRequest.isConfirmationExpected();
     }
 
     /*****************************************
@@ -354,6 +360,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       struct.put("htmlBody", notificationRequest.getHtmlBody());
       struct.put("textBody", notificationRequest.getTextBody());
       struct.put("return_code", notificationRequest.getReturnCode());
+      struct.put("confirmation_expected", notificationRequest.isConfirmationExpected());
       return struct;
     }
 
@@ -390,13 +397,14 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       String htmlBody = valueStruct.getString("htmlBody");
       String textBody = valueStruct.getString("textBody");
       Integer returnCode = valueStruct.getInt32("return_code");
+      boolean confirmationExpected = valueStruct.getBoolean("confirmation_expected");
       MAILMessageStatus status = MAILMessageStatus.fromReturnCode(returnCode);
 
       //
       //  return
       //
 
-      return new MailNotificationManagerRequest(schemaAndValue, destination, source, subject, htmlBody, textBody, status);
+      return new MailNotificationManagerRequest(schemaAndValue, destination, source, subject, htmlBody, textBody, status, confirmationExpected);
     }
     
     @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
@@ -498,7 +506,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       String emailSubject = emailMessage.resolveSubject(subscriberEvaluationRequest);
       String emailHTMLBody = emailMessage.resolveHTMLBody(subscriberEvaluationRequest);
       String emailTextBody = emailMessage.resolveTextBody(subscriberEvaluationRequest);
-
+      boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
+      
       /*****************************************
       *
       *  request
@@ -511,6 +520,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
           request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, emailSubject, emailHTMLBody, emailTextBody);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
+          request.setIsConfirmationExpected(confirmationExpected);
         }
       else
         {

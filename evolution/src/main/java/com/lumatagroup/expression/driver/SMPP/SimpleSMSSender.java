@@ -914,7 +914,11 @@ public class SimpleSMSSender extends SMSSenderListener {
                 }
                 logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
-                updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.DELIVERED, DeliveryStatus.Delivered);
+//                if(smsCorrelation.getDeliveryRequest().isConfirmationExpected()) {
+                  updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged); 
+//                }else {
+//                  completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
+//                }
                 
                 logger.info("Feedback Call for Accept Handler for messageId "+ messageId + " SimpleSMSSender " + this.hashCode());
 
@@ -931,13 +935,13 @@ public class SimpleSMSSender extends SMSSenderListener {
           if (logger.isWarnEnabled()) {
             logger.info("SimpleSMSSender.onSubmitSmResp: Message Queue Full for sms "+ packetSequenceNumber+" will try to resend in "+this.delay_on_queue_full+" sec");
           }
-          completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.QUEUE_FULL, DeliveryStatus.FailedRetry,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
+          completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.QUEUE_FULL, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
           break;
         case PacketStatus.THROTTLING_ERROR:
             if (logger.isWarnEnabled()) {
                         logger.info("SimpleSMSSender.onSubmitSmResp: Throttling Error for sms "+ packetSequenceNumber+" will try to resend in "+this.delay_on_queue_full+" sec");
             }
-            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.THROTTLING, DeliveryStatus.FailedRetry,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
+            completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), packet.getMessageId(), SMSMessageStatus.THROTTLING, DeliveryStatus.Failed,  PacketStatusUtils.getMessage(packet.getCommandStatus()));
 
             logger.info("Feedback Call for Accept Handler for messageId "+packet.getMessageId() + " SimpleSMSSender " + this.hashCode());
             break;

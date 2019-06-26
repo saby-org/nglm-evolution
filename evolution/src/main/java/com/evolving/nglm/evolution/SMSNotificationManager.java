@@ -8,12 +8,14 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,8 @@ import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.OutgoingConnectionPoint;
 import com.evolving.nglm.evolution.SMSMessage;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.core.JSONUtilities;
@@ -201,6 +205,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("source", Schema.STRING_SCHEMA);
       schemaBuilder.field("text", Schema.STRING_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
+      schemaBuilder.field("confirmation_expected", Schema.BOOLEAN_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -230,6 +235,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     private SMSMessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
+    private boolean confirmationExpected;
     
     //
     //  accessors
@@ -241,6 +247,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public SMSMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+    public boolean isConfirmationExpected() { return confirmationExpected; }
 
     //
     //   setters
@@ -249,6 +256,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public void setMessageStatus(SMSMessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+    public void setIsConfirmationExpected(boolean expected) { this.confirmationExpected = expected; }
     
     /*****************************************
     *
@@ -263,7 +271,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.source = source;
       this.text = text;
       this.status = SMSMessageStatus.PENDING;
-      this.returnCode = SMSMessageStatus.PENDING.getReturnCode();
+      this.returnCode = status.getReturnCode();
       this.returnCodeDetails = "";
     }
     
@@ -290,7 +298,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String text, SMSMessageStatus status)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String text, SMSMessageStatus status, boolean confirmationExpected)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -298,6 +306,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.text = text;
       this.status = status;
       this.returnCode = status.getReturnCode();
+      this.confirmationExpected = confirmationExpected;
     }
     
     /*****************************************
@@ -315,6 +324,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.status = smsNotificationManagerRequest.getMessageStatus();
       this.returnCode = smsNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = smsNotificationManagerRequest.getReturnCodeDetails();
+      this.confirmationExpected = smsNotificationManagerRequest.isConfirmationExpected();
     }
 
     /*****************************************
@@ -343,6 +353,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       struct.put("source", notificationRequest.getSource());
       struct.put("text", notificationRequest.getText());
       struct.put("return_code", notificationRequest.getReturnCode());
+      struct.put("confirmation_expected", notificationRequest.isConfirmationExpected());
       return struct;
     }
     
@@ -377,6 +388,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       String source = valueStruct.getString("source");
       String text = valueStruct.getString("text");
       Integer returnCode = valueStruct.getInt32("return_code");
+      boolean confirmationExpected = valueStruct.getBoolean("confirmation_expected");
       SMSMessageStatus status = SMSMessageStatus.fromReturnCode(returnCode);
       
       //
@@ -390,7 +402,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       //
 
       
-      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, text, status);
+      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, text, status, confirmationExpected);
     }
     
     @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
@@ -481,6 +493,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
       SMSMessage smsMessage = (SMSMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
       String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
+      boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
 
       /*****************************************
       *
@@ -504,6 +517,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, text);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
+          request.setIsConfirmationExpected(confirmationExpected);
         }
       else
         {

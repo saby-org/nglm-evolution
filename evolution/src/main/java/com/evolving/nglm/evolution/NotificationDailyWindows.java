@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.kafka.connect.data.Schema;
@@ -18,7 +19,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class TimeWindow
+public class NotificationDailyWindows
   {
     
     /*****************************************
@@ -35,15 +36,15 @@ public class TimeWindow
     static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("time_windows");
+      schemaBuilder.name("notification_daily_windows");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("monday", SchemaBuilder.array(DailyWindow.schema()).schema());
-      schemaBuilder.field("tuesday", SchemaBuilder.array(DailyWindow.schema()).schema());
-      schemaBuilder.field("wednesday", SchemaBuilder.array(DailyWindow.schema()).schema());
-      schemaBuilder.field("thursday", SchemaBuilder.array(DailyWindow.schema()).schema());
-      schemaBuilder.field("friday", SchemaBuilder.array(DailyWindow.schema()).schema());
-      schemaBuilder.field("saturday", SchemaBuilder.array(DailyWindow.schema()).schema());
-      schemaBuilder.field("sunday", SchemaBuilder.array(DailyWindow.schema()).schema());
+      schemaBuilder.field("monday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
+      schemaBuilder.field("tuesday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
+      schemaBuilder.field("wednesday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
+      schemaBuilder.field("thursday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
+      schemaBuilder.field("friday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
+      schemaBuilder.field("saturday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
+      schemaBuilder.field("sunday", SchemaBuilder.array(DailyWindow.schema()).optional().schema());
       schema = schemaBuilder.build();
     };
 
@@ -51,14 +52,14 @@ public class TimeWindow
     //  serde
     //
 
-    private static ConnectSerde<TimeWindow> serde = new ConnectSerde<TimeWindow>(schema, false, TimeWindow.class, TimeWindow::pack, TimeWindow::unpack);
+    private static ConnectSerde<NotificationDailyWindows> serde = new ConnectSerde<NotificationDailyWindows>(schema, false, NotificationDailyWindows.class, NotificationDailyWindows::pack, NotificationDailyWindows::unpack);
 
     //
     //  accessor
     //
 
     public static Schema schema() { return schema; }
-    public static ConnectSerde<TimeWindow> serde() { return serde; }
+    public static ConnectSerde<NotificationDailyWindows> serde() { return serde; }
 
     /*****************************************
     *
@@ -66,13 +67,13 @@ public class TimeWindow
     *
     *****************************************/
 
-    private List<DailyWindow> monday;
-    private List<DailyWindow> tuesday;
-    private List<DailyWindow> wednesday;
-    private List<DailyWindow> thursday;
-    private List<DailyWindow> friday;
-    private List<DailyWindow> saturday;
-    private List<DailyWindow> sunday;
+    private List<DailyWindow> monday = null;
+    private List<DailyWindow> tuesday = null;
+    private List<DailyWindow> wednesday = null;
+    private List<DailyWindow> thursday = null;
+    private List<DailyWindow> friday = null;
+    private List<DailyWindow> saturday = null;
+    private List<DailyWindow> sunday = null;
     
     /*****************************************
     *
@@ -94,7 +95,7 @@ public class TimeWindow
     *
     *****************************************/
 
-    public TimeWindow(List<DailyWindow> monday, List<DailyWindow> tuesday, List<DailyWindow> wednesday, List<DailyWindow> thursday, List<DailyWindow> friday, List<DailyWindow> saturday, List<DailyWindow> sunday)
+    public NotificationDailyWindows(List<DailyWindow> monday, List<DailyWindow> tuesday, List<DailyWindow> wednesday, List<DailyWindow> thursday, List<DailyWindow> friday, List<DailyWindow> saturday, List<DailyWindow> sunday)
     {
       this.monday = monday;
       this.tuesday = tuesday;
@@ -113,15 +114,15 @@ public class TimeWindow
 
     public static Object pack(Object value)
     {
-      TimeWindow timeWindow = (TimeWindow) value;
+      NotificationDailyWindows timeWindow = (NotificationDailyWindows) value;
       Struct struct = new Struct(schema);
-      struct.put("monday", packDailyWindows(timeWindow.getDailyWindowMonday()));
-      struct.put("tuesday", packDailyWindows(timeWindow.getDailyWindowMonday()));
-      struct.put("wednesday", packDailyWindows(timeWindow.getDailyWindowMonday()));
-      struct.put("thursday", packDailyWindows(timeWindow.getDailyWindowMonday()));
-      struct.put("friday", packDailyWindows(timeWindow.getDailyWindowMonday()));
-      struct.put("saturday", packDailyWindows(timeWindow.getDailyWindowMonday()));
-      struct.put("sunday", packDailyWindows(timeWindow.getDailyWindowMonday()));
+      if(timeWindow.getDailyWindowMonday() != null) struct.put("monday", packDailyWindows(timeWindow.getDailyWindowMonday()));
+      if(timeWindow.getDailyWindowTuesday() != null) struct.put("tuesday", packDailyWindows(timeWindow.getDailyWindowTuesday()));
+      if(timeWindow.getDailyWindowWednesday() != null) struct.put("wednesday", packDailyWindows(timeWindow.getDailyWindowWednesday()));
+      if(timeWindow.getDailyWindowThursday() != null) struct.put("thursday", packDailyWindows(timeWindow.getDailyWindowThursday()));
+      if(timeWindow.getDailyWindowFriday() != null) struct.put("friday", packDailyWindows(timeWindow.getDailyWindowFriday()));
+      if(timeWindow.getDailyWindowSaturday() != null) struct.put("saturday", packDailyWindows(timeWindow.getDailyWindowSaturday()));
+      if(timeWindow.getDailyWindowSunday() != null) struct.put("sunday", packDailyWindows(timeWindow.getDailyWindowSunday()));
       return struct;
     }
     
@@ -147,7 +148,7 @@ public class TimeWindow
     *
     *****************************************/
 
-    public static TimeWindow unpack(SchemaAndValue schemaAndValue)
+    public static NotificationDailyWindows unpack(SchemaAndValue schemaAndValue)
     {
       //
       //  data
@@ -162,20 +163,32 @@ public class TimeWindow
       //
 
       Struct valueStruct = (Struct) value;
-      
-      List<DailyWindow> dailyWindowsMonday = unpackDailyWindows(schema.field("monday").schema(), valueStruct.get("monday"));
-      List<DailyWindow> dailyWindowsTuesday = unpackDailyWindows(schema.field("tuesday").schema(), valueStruct.get("tuesday"));
-      List<DailyWindow> dailyWindowsWednesday = unpackDailyWindows(schema.field("wednesday").schema(), valueStruct.get("wednesday"));
-      List<DailyWindow> dailyWindowsThursday = unpackDailyWindows(schema.field("thursday").schema(), valueStruct.get("thursday"));
-      List<DailyWindow> dailyWindowsFriday = unpackDailyWindows(schema.field("friday").schema(), valueStruct.get("friday"));
-      List<DailyWindow> dailyWindowsSaturday = unpackDailyWindows(schema.field("saturday").schema(), valueStruct.get("saturday"));
-      List<DailyWindow> dailyWindowsSunday = unpackDailyWindows(schema.field("sunday").schema(), valueStruct.get("sunday"));
-
+      List<DailyWindow> dailyWindowsMonday = null;
+      if(valueStruct.get("monday") != null) dailyWindowsMonday = unpackDailyWindows(schema.field("monday").schema(), valueStruct.get("monday"));
+     
+      List<DailyWindow> dailyWindowsTuesday = null;
+      if(valueStruct.get("tuesday") != null) dailyWindowsTuesday = unpackDailyWindows(schema.field("tuesday").schema(), valueStruct.get("tuesday"));
+     
+      List<DailyWindow> dailyWindowsWednesday = null;
+      if(valueStruct.get("wednesday") != null) dailyWindowsWednesday =  unpackDailyWindows(schema.field("wednesday").schema(), valueStruct.get("wednesday"));
+     
+      List<DailyWindow> dailyWindowsThursday = null;
+      if(valueStruct.get("thursday") != null) dailyWindowsThursday = unpackDailyWindows(schema.field("thursday").schema(), valueStruct.get("thursday"));
+     
+      List<DailyWindow> dailyWindowsFriday = null;
+      if(valueStruct.get("friday") != null) dailyWindowsFriday = unpackDailyWindows(schema.field("friday").schema(), valueStruct.get("friday"));
+     
+      List<DailyWindow> dailyWindowsSaturday = null;
+      if(valueStruct.get("saturday") != null) dailyWindowsSaturday = unpackDailyWindows(schema.field("saturday").schema(), valueStruct.get("saturday"));
+     
+      List<DailyWindow> dailyWindowsSunday = null;
+      if(valueStruct.get("sunday") != null) dailyWindowsSunday = unpackDailyWindows(schema.field("sunday").schema(), valueStruct.get("sunday"));
+     
       //
       //  return
       //
 
-      return new TimeWindow(dailyWindowsMonday, dailyWindowsTuesday, dailyWindowsWednesday, dailyWindowsThursday, dailyWindowsFriday, dailyWindowsSaturday, dailyWindowsSunday);
+      return new NotificationDailyWindows(dailyWindowsMonday, dailyWindowsTuesday, dailyWindowsWednesday, dailyWindowsThursday, dailyWindowsFriday, dailyWindowsSaturday, dailyWindowsSunday);
     }
     
     /*****************************************
@@ -216,14 +229,13 @@ public class TimeWindow
     *
     *****************************************/
 
-    public TimeWindow(JSONObject jsonRoot) throws GUIManagerException
+    public NotificationDailyWindows(JSONObject jsonRoot) throws GUIManagerException
     {
-      
       /*****************************************
-      *
-      *  attributes
-      *
-      *****************************************/
+       *
+       *  attributes
+       *
+       *****************************************/
       this.monday = decodeDailyWindows(JSONUtilities.decodeJSONArray(jsonRoot, "monday", false));
       this.tuesday = decodeDailyWindows(JSONUtilities.decodeJSONArray(jsonRoot, "tuesday", false));
       this.wednesday = decodeDailyWindows(JSONUtilities.decodeJSONArray(jsonRoot, "wednesday", false));
@@ -241,12 +253,61 @@ public class TimeWindow
 
     private List<DailyWindow> decodeDailyWindows(JSONArray jsonArray) throws GUIManagerException
     {
-      List<DailyWindow> dailyWindows = new ArrayList<DailyWindow>();
-      for (int i=0; i<jsonArray.size(); i++)
-        {
-          dailyWindows.add(new DailyWindow((JSONObject) jsonArray.get(i)));
-        }
+      List<DailyWindow> dailyWindows = null;
+      if(jsonArray != null) {
+        dailyWindows = new ArrayList<DailyWindow>();
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            dailyWindows.add(new DailyWindow((JSONObject) jsonArray.get(i)));
+          }
+      }
       return dailyWindows;
+    }
+    
+    public boolean useDefault() {
+      if(monday.isEmpty() && tuesday.isEmpty() && wednesday.isEmpty() && thursday.isEmpty() && friday.isEmpty() && saturday.isEmpty() && sunday.isEmpty()) {
+        return true;
+      }else {
+        return false;
+      }
+    }
+    
+    /*****************************************
+    *
+    *  to JSONObject
+    *
+    *****************************************/
+    
+    public JSONObject getJSONRepresentation()
+    {
+      HashMap<String,Object> json = new HashMap<String,Object>();
+      
+      json.put("monday", translateDailyWindows(getDailyWindowMonday()));
+      json.put("tuesday", translateDailyWindows(getDailyWindowTuesday()));
+      json.put("wednesday", translateDailyWindows(getDailyWindowWednesday()));
+      json.put("thursday", translateDailyWindows(getDailyWindowThursday()));
+      json.put("friday", translateDailyWindows(getDailyWindowFriday()));
+      json.put("saturday", translateDailyWindows(getDailyWindowSaturday()));
+      json.put("sunday", translateDailyWindows(getDailyWindowSunday()));
+      return JSONUtilities.encodeObject(json);
+    }
+    
+    /*****************************************
+    *
+    *  Translate DailyWindows
+    *
+    *****************************************/
+
+    private static List<Object> translateDailyWindows(List<DailyWindow> dailyWindows)
+    {
+      List<Object> result = new ArrayList<Object>();
+      if(dailyWindows != null) {
+        for (DailyWindow dailyWindow : dailyWindows)
+          {
+            result.add(dailyWindow.getJSONRepresentation());
+          }
+      }
+      return result;
     }
 
     public static class DailyWindow
@@ -376,8 +437,22 @@ public class TimeWindow
         *  attributes
         *
         *****************************************/
-        this.from = JSONUtilities.decodeString(jsonRoot, "from", true);
-        this.until = JSONUtilities.decodeString(jsonRoot, "until", true);
+        this.from = JSONUtilities.decodeString(jsonRoot, "from", false);
+        this.until = JSONUtilities.decodeString(jsonRoot, "until", false);
+      }
+      
+      /*****************************************
+      *
+      *  to JSONObject
+      *
+      *****************************************/
+      
+      public JSONObject getJSONRepresentation()
+      {
+        HashMap<String,Object> json = new HashMap<String,Object>();
+        json.put("from", getStartTime());
+        json.put("until", getEndTime());
+        return JSONUtilities.encodeObject(json);
       }
     }
     

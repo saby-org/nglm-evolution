@@ -99,6 +99,7 @@ public abstract class DeliveryManager
     Indeterminate("indeterminate"),
     Failed("failed"),
     FailedTimeout("failedtimeout"),
+    Acknowledged("acknowledged"),
 
     /*****************************************
     *

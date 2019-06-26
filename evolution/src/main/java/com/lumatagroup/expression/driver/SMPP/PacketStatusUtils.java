@@ -8,11 +8,11 @@ public class PacketStatusUtils {
 	public static String getStatus(int messageStatus) {
 		switch (messageStatus) {
 			case SMPPPacket.SM_STATE_DELIVERED: return "DELIVERED";
-			case SMPPPacket.SM_STATE_ACCEPTED: return "ACCEPTED";
+			case SMPPPacket.SM_STATE_ACCEPTED: return "DELIVERED";
 			case SMPPPacket.SM_STATE_EXPIRED: return "EXPIRED";
-			case SMPPPacket.SM_STATE_DELETED: return "DELETED";
+			case SMPPPacket.SM_STATE_DELETED: return "EXPIRED";
 			case SMPPPacket.SM_STATE_UNDELIVERABLE: return "UNDELIVERABLE";
-			case SMPPPacket.SM_STATE_EN_ROUTE: return "ENROUTE";
+			case SMPPPacket.SM_STATE_EN_ROUTE: return "PENDING";
 			case SMPPPacket.SM_STATE_INVALID: return "INVALID";
 			case 8: return "REJECTED";
 			default: return "UNKNOWN";
