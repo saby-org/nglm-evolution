@@ -48,6 +48,7 @@ public class Deployment
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static String emptyTopic;
   private static String journeyTopic;
+  private static String journeyTemplateTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
   private static String pointFulfillmentRequestTopic;
@@ -212,6 +213,7 @@ public class Deployment
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
+  public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
   public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
@@ -622,6 +624,19 @@ public class Deployment
     try
       {
         journeyTopic = JSONUtilities.decodeString(jsonRoot, "journeyTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  journeyTemplateTopic
+    //
+
+    try
+      {
+        journeyTemplateTopic = JSONUtilities.decodeString(jsonRoot, "journeyTemplateTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

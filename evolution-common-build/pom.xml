@@ -96,6 +96,7 @@
     <!-- topics -->
     <topic.empty>empty</topic.empty>
     <topic.journey>journey</topic.journey>
+    <topic.journeytemplate>journeytemplate</topic.journeytemplate>
     <topic.segmentationdimension>segmentation-dimension</topic.segmentationdimension>
     <topic.point>point</topic.point>
     <topic.offer>offer</topic.offer>

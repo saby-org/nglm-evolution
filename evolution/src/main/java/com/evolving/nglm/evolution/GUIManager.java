@@ -198,6 +198,11 @@ public class GUIManager
     removeCampaign("removeCampaign"),
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
+    getJourneyTemplateList("getJourneyTemplateList"),
+    getJourneyTemplateSummaryList("getJourneyTemplateSummaryList"),
+    getJourneyTemplate("getJourneyTemplate"),
+    putJourneyTemplate("putJourneyTemplate"),
+    removeJourneyTemplate("removeJourneyTemplate"),
     getSegmentationDimensionList("getSegmentationDimensionList"),
     getSegmentationDimensionSummaryList("getSegmentationDimensionSummaryList"),
     getSegmentationDimension("getSegmentationDimension"),
@@ -387,6 +392,7 @@ public class GUIManager
   private HttpServer restServer;
   private RestHighLevelClient elasticsearch;
   private JourneyService journeyService;
+  private JourneyTemplateService journeyTemplateService;
   private SegmentationDimensionService segmentationDimensionService;
   private PointService pointService;
   private OfferService offerService;
@@ -471,6 +477,7 @@ public class GUIManager
     String nodeID = System.getProperty("nglm.license.nodeid");
 
     String journeyTopic = Deployment.getJourneyTopic();
+    String journeyTemplateTopic = Deployment.getJourneyTemplateTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
     String pointTopic = Deployment.getPointTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -547,6 +554,7 @@ public class GUIManager
     *****************************************/
 
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
+    journeyTemplateService = new JourneyTemplateService(bootstrapServers, "guimanager-journeytemplateservice-" + apiProcessKey, journeyTemplateTopic, true);
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
@@ -1247,6 +1255,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeCampaign", new APISimpleHandler(API.removeCampaign));
         restServer.createContext("/nglm-guimanager/startCampaign", new APISimpleHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
+        restServer.createContext("/nglm-guimanager/getJourneyTemplateList", new APISimpleHandler(API.getJourneyTemplateList));
+        restServer.createContext("/nglm-guimanager/getJourneyTemplateSummaryList", new APISimpleHandler(API.getJourneyTemplateSummaryList));
+        restServer.createContext("/nglm-guimanager/getJourneyTemplate", new APISimpleHandler(API.getJourneyTemplate));
+        restServer.createContext("/nglm-guimanager/putJourneyTemplate", new APISimpleHandler(API.putJourneyTemplate));
+        restServer.createContext("/nglm-guimanager/removeJourneyTemplate", new APISimpleHandler(API.removeJourneyTemplate));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APISimpleHandler(API.getSegmentationDimensionList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionSummaryList", new APISimpleHandler(API.getSegmentationDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APISimpleHandler(API.getSegmentationDimension));
@@ -1845,6 +1858,26 @@ public class GUIManager
                   jsonResponse = processCampaignSetActive(userID, jsonRoot, false);
                   break;
 
+                case getJourneyTemplateList:
+                  jsonResponse = processGetJourneyTemplateList(userID, jsonRoot, true);
+                  break;
+
+                case getJourneyTemplateSummaryList:
+                  jsonResponse = processGetJourneyTemplateList(userID, jsonRoot, false);
+                  break;
+
+                case getJourneyTemplate:
+                  jsonResponse = processGetJourneyTemplate(userID, jsonRoot);
+                  break;
+
+                case putJourneyTemplate:
+                  jsonResponse = processPutJourneyTemplate(userID, jsonRoot);
+                  break;
+
+                case removeJourneyTemplate:
+                  jsonResponse = processRemoveJourneyTemplate(userID, jsonRoot);
+                  break;
+                  
                 case getSegmentationDimensionList:
                   jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true);
                   break;
@@ -6735,6 +6768,282 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+
+  /*****************************************
+  *
+  *  processGetJourneyTemplateList
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert journeyTemplates
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> journeyTemplates = new ArrayList<JSONObject>();
+    for (GUIManagedObject journeyTemplate : journeyTemplateService.getStoredJourneyTemplates())
+      {
+        switch (journeyTemplate.getGUIManagedObjectType())
+          {
+            case Journey:
+              journeyTemplates.add(journeyTemplateService.generateResponseJSON(journeyTemplate, fullDetails, now));
+              break;
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("journeyTemplates", JSONUtilities.encodeArray(journeyTemplates));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetJourneyTemplate
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate journeyTemplate
+    *
+    *****************************************/
+
+    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
+    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journeyTemplate : null;
+    JSONObject journeyTemplateJSON = journeyTemplateService.generateResponseJSON(journeyTemplate, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (journeyTemplate != null) ? "ok" : "journeyTemplateNotFound");
+    if (journeyTemplate != null) response.put("journeyTemplate", journeyTemplateJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutJourneyTemplate
+  *
+  *****************************************/
+
+  private JSONObject processPutJourneyTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  journeyTemplateID
+    *
+    *****************************************/
+
+    String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (journeyTemplateID == null)
+      {
+        journeyTemplateID = journeyTemplateService.generateJourneyTemplateID();
+        jsonRoot.put("id", journeyTemplateID);
+      }
+
+    /*****************************************
+    *
+    *  existing journeyTemplate
+    *
+    *****************************************/
+
+    GUIManagedObject existingJourneyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
+    existingJourneyTemplate = (existingJourneyTemplate != null && existingJourneyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourneyTemplate : null;
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingJourneyTemplate != null && existingJourneyTemplate.getReadOnly())
+      {
+        response.put("id", existingJourneyTemplate.getGUIManagedObjectID());
+        response.put("accepted", existingJourneyTemplate.getAccepted());
+        response.put("valid", existingJourneyTemplate.getAccepted());
+        response.put("processing", journeyTemplateService.isActiveJourneyTemplate(existingJourneyTemplate, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process journeyTemplate
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate journeyTemplate
+        *
+        ****************************************/
+
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourneyTemplate, catalogCharacteristicService);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyTemplateService.putJourneyTemplate(journeyTemplate, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", journeyTemplate.getJourneyID());
+        response.put("accepted", journeyTemplate.getAccepted());
+        response.put("valid", journeyTemplate.getAccepted());
+        response.put("processing", journeyTemplateService.isActiveJourneyTemplate(journeyTemplate, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Journey, epoch);
+
+        //
+        //  store
+        //
+
+        journeyTemplateService.putJourneyTemplate(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourneyTemplate == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("journeyTemplateID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "journeyTemplateNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveJourneyTemplate
+  *
+  *****************************************/
+
+  private JSONObject processRemoveJourneyTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
+    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journeyTemplate: null;
+    if (journeyTemplate != null && ! journeyTemplate.getReadOnly()) journeyTemplateService.removeJourneyTemplate(journeyTemplateID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (journeyTemplate != null && ! journeyTemplate.getReadOnly())
+      responseCode = "ok";
+    else if (journeyTemplate != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "journeyTemplateNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
