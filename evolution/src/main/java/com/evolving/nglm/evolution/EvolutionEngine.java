@@ -2335,7 +2335,7 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
-                JourneyState journeyState = new JourneyState(context, journey, Collections.<String,Object>emptyMap(), now);
+                JourneyState journeyState = new JourneyState(context, journey, journey.getBoundParameters(), now);
                 subscriberState.getJourneyStates().add(journeyState);
                 subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState));
                 subscriberStateUpdated = true;

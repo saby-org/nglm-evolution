@@ -39,6 +39,7 @@ public class CriterionContext
     Profile("profile"),
     FullProfile("fullProfile"),
     Presentation("presentation"),
+    Journey("journey"),
     JourneyNode("journeyNode"),
     Unknown("(unknown)");
     private String externalRepresentation;
@@ -324,6 +325,24 @@ public class CriterionContext
   
   /*****************************************
   *
+  *  constructor -- top-level of journey
+  *
+  *****************************************/
+  
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
+  {
+    this.criterionContextType = CriterionContextType.Journey;
+    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
+    this.journeyCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+    this.journeyCriterionFields.putAll(journeyParameters);
+    for (CriterionField contextVariable : contextVariables.values())
+      {
+        this.journeyCriterionFields.put(contextVariable.getID(), contextVariable);
+      }
+  }
+
+  /*****************************************
+  *
   *  constructor -- journey working context
   *
   *****************************************/
@@ -555,6 +574,7 @@ public class CriterionContext
         case Presentation:
           result = Deployment.getPresentationCriterionFields();
           break;
+        case Journey:
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(journeyCriterionFields);

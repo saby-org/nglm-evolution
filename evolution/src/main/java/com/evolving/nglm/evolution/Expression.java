@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -136,6 +137,7 @@ public abstract class Expression
     IntegerSetExpression,
     StringSetExpression,
     EmptySetExpression,
+    OpaqueReferenceExpression,
     NoArgument;
   }
 
@@ -339,6 +341,9 @@ public abstract class Expression
           case EmptySetExpression:
             script.append("def right_" + getNodeID() + " = new ArrayList(); ");
             break;
+
+          default:
+            throw new CriterionException("invalid criterionField datatype for esQuery");
         }
     }
 
@@ -404,6 +409,13 @@ public abstract class Expression
           case StringSetCriterion:
             setType(ExpressionDataType.StringSetExpression);
             break;
+          case EvaluationCriteriaParameter:
+          case SMSMessageParameter:
+          case EmailMessageParameter:
+          case PushMessageParameter:
+            setType(ExpressionDataType.OpaqueReferenceExpression);
+            break;
+
           default:
             throw new ExpressionTypeCheckException("invariant violated");
         }
@@ -417,6 +429,14 @@ public abstract class Expression
           throw new ExpressionTypeCheckException("illegal reference to " + CriterionField.EvaluationDateField);
         }
     }
+
+    /*****************************************
+    *
+    *  getCriterionDataType
+    *
+    *****************************************/
+
+    public CriterionDataType getCriterionDataType() { return reference.getFieldDataType(); }
 
     /*****************************************
     *
@@ -539,6 +559,9 @@ public abstract class Expression
             script.append("def rightRaw_" + getNodeID() + " = LocalDateTime.ofInstant(rightInstant_" + getNodeID() + ", ZoneOffset.UTC); ");
             script.append(EvaluationCriterion.constructDateTruncateESScript(getNodeID(), "rightRaw", "right", baseTimeUnit));
             break;
+
+          default:
+            throw new CriterionException("invalid criterionField datatype for esQuery");
         }
     }
 

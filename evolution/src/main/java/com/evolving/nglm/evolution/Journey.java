@@ -35,6 +35,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -165,6 +166,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("journeyObjectives", SchemaBuilder.array(JourneyObjectiveInstance.schema()).schema());
     schemaBuilder.field("journeyNodes", SchemaBuilder.array(JourneyNode.schema()).schema());
     schemaBuilder.field("journeyLinks", SchemaBuilder.array(JourneyLink.schema()).schema());
+    schemaBuilder.field("boundParameters", ParameterMap.schema());
     schema = schemaBuilder.build();
   };
 
@@ -199,6 +201,7 @@ public class Journey extends GUIManagedObject
   private Set<JourneyObjectiveInstance> journeyObjectiveInstances; 
   private Map<String,JourneyNode> journeyNodes;
   private Map<String,JourneyLink> journeyLinks;
+  private ParameterMap boundParameters;
 
   /****************************************
   *
@@ -225,6 +228,7 @@ public class Journey extends GUIManagedObject
   public Map<String,JourneyLink> getJourneyLinks() { return journeyLinks; }
   public JourneyNode getJourneyNode(String nodeID) { return journeyNodes.get(nodeID); }
   public JourneyLink getJourneyLink(String linkID) { return journeyLinks.get(linkID); }
+  public ParameterMap getBoundParameters() { return boundParameters; }
 
   //
   //  package protected
@@ -389,7 +393,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, String targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, String targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -404,6 +408,7 @@ public class Journey extends GUIManagedObject
     this.journeyObjectiveInstances = journeyObjectiveInstances;
     this.journeyNodes = journeyNodes;
     this.journeyLinks = journeyLinks;
+    this.boundParameters = boundParameters;
   }
 
   /*****************************************
@@ -429,6 +434,7 @@ public class Journey extends GUIManagedObject
     struct.put("journeyObjectives", packJourneyObjectiveInstances(journey.getJourneyObjectiveInstances()));
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
     struct.put("journeyLinks", packJourneyLinks(journey.getJourneyLinks()));
+    struct.put("boundParameters", ParameterMap.pack(journey.getBoundParameters()));
     return struct;
   }
 
@@ -567,6 +573,7 @@ public class Journey extends GUIManagedObject
     Set<JourneyObjectiveInstance> journeyObjectiveInstances = unpackJourneyObjectiveInstances(schema.field("journeyObjectives").schema(), valueStruct.get("journeyObjectives"));
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
     Map<String,JourneyLink> journeyLinks = unpackJourneyLinks(schema.field("journeyLinks").schema(), valueStruct.get("journeyLinks"));
+    ParameterMap boundParameters = (schemaVersion >= 2) ? ParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new ParameterMap();
 
     /*****************************************
     *
@@ -628,7 +635,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters);
   }
   
   /*****************************************
@@ -837,11 +844,26 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
-    *  jsonNodes
+    *  contextVariables
     *
     *****************************************/
 
     this.contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+
+    /*****************************************
+    *
+    *  boundParameters
+    *
+    *****************************************/
+
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables);
+
+    /*****************************************
+    *
+    *  jsonNodes
+    *
+    *****************************************/
+
     Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false);
     
     /*****************************************
@@ -858,7 +880,7 @@ public class Journey extends GUIManagedObject
       {
         case Target:
         case Event:
-          if (this.journeyParameters.size() > 0) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+          if (this.journeyParameters.size() > 0 && this.journeyParameters.size() != this.boundParameters.size()) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
           break;
       }
 
@@ -1354,6 +1376,83 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
+  *  decodeBoundParameters
+  *
+  *****************************************/
+
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables) throws GUIManagerException
+  {
+    CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables);
+    ParameterMap boundParameters = new ParameterMap();
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+        String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+        CriterionField parameter = journeyParameters.get(parameterName);
+        if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+         switch (parameter.getFieldDataType())
+          {
+            case IntegerCriterion:
+              boundParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
+              break;
+
+            case DoubleCriterion:
+              boundParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
+              break;
+
+            case StringCriterion:
+              boundParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+              break;
+
+            case BooleanCriterion:
+              boundParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
+              break;
+
+            case DateCriterion:
+              boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
+              break;
+
+            case StringSetCriterion:
+              Set<String> stringSetValue = new HashSet<String>();
+              JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+              for (int j=0; j<stringSetArray.size(); j++)
+                {
+                  stringSetValue.add((String) stringSetArray.get(j));
+                }
+              boundParameters.put(parameterName, stringSetValue);
+              break;
+
+            case EvaluationCriteriaParameter:
+              List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
+              JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+              for (int j=0; j<evaluationCriteriaArray.size(); j++)
+                {
+                  evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                }
+              boundParameters.put(parameterName, evaluationCriteriaValue);
+              break;
+
+            case SMSMessageParameter:
+              SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+              boundParameters.put(parameterName, smsMessageValue);
+              break;
+
+            case EmailMessageParameter:
+              EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+              boundParameters.put(parameterName, emailMessageValue);
+              break;
+
+            case PushMessageParameter:
+              PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+              boundParameters.put(parameterName, pushMessageValue);
+              break;
+          }
+      }
+    return boundParameters;
+  }
+
+  /*****************************************
+  *
   *  validate
   *
   *****************************************/
@@ -1734,6 +1833,7 @@ public class Journey extends GUIManagedObject
           //
 
           this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
+          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
 
           //
           //  outputConnectors
@@ -1758,7 +1858,7 @@ public class Journey extends GUIManagedObject
           String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
           CriterionField parameter = nodeType.getParameters().get(parameterName);
           if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
-          if (parameter.getExpressionValuedParameter()) continue;
+          if (parameter.getExpressionValuedParameter() && isExpressionValuedParameterValue(parameterJSON)) continue;
           switch (parameter.getFieldDataType())
             {
               case IntegerCriterion:
@@ -1816,6 +1916,7 @@ public class Journey extends GUIManagedObject
           String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
           CriterionField parameter = nodeType.getParameters().get(parameterName);
           if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          if (parameter.getExpressionValuedParameter() && isExpressionValuedParameterValue(parameterJSON)) continue;
 
           /*****************************************
           *
@@ -1823,36 +1924,70 @@ public class Journey extends GUIManagedObject
           *
           *****************************************/
 
-          if (! parameter.getExpressionValuedParameter())
+          switch (parameter.getFieldDataType())
             {
-              switch (parameter.getFieldDataType())
-                {
-                  case EvaluationCriteriaParameter:
-                    List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
-                    JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
-                    for (int j=0; j<evaluationCriteriaArray.size(); j++)
-                      {
-                        evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
-                      }
-                    nodeParameters.put(parameterName, evaluationCriteriaValue);
-                    break;
+              case EvaluationCriteriaParameter:
+                List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
+                JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+                for (int j=0; j<evaluationCriteriaArray.size(); j++)
+                  {
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                  }
+                nodeParameters.put(parameterName, evaluationCriteriaValue);
+                break;
 
-                  case SMSMessageParameter:
-                    SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
-                    nodeParameters.put(parameterName, smsMessageValue);
-                    break;
+              case SMSMessageParameter:
+                SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                nodeParameters.put(parameterName, smsMessageValue);
+                break;
 
-                  case EmailMessageParameter:
-                    EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
-                    nodeParameters.put(parameterName, emailMessageValue);
-                    break;
+              case EmailMessageParameter:
+                EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                nodeParameters.put(parameterName, emailMessageValue);
+                break;
 
-                  case PushMessageParameter:
-                    PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
-                    nodeParameters.put(parameterName, pushMessageValue);
-                    break;
-                }
+              case PushMessageParameter:
+                PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                nodeParameters.put(parameterName, pushMessageValue);
+                break;
             }
+        }
+      return nodeParameters;
+    }
+
+    /*****************************************
+    *
+    *  isExpressionValuedParameterValue
+    *
+    *****************************************/
+
+    private boolean isExpressionValuedParameterValue(JSONObject parameterJSON)
+    {
+      return (parameterJSON.get("value") instanceof JSONObject) && (((JSONObject) parameterJSON.get("value")).get("expression") != null);
+    }
+
+    /*****************************************
+    *
+    *  decodeExpressionValuedParameters
+    *
+    *****************************************/
+
+    private ParameterMap decodeExpressionValuedParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    {
+      ParameterMap nodeParameters = new ParameterMap();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          /*****************************************
+          *
+          *  parameter
+          *
+          *****************************************/
+
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          if (! parameter.getExpressionValuedParameter() || ! isExpressionValuedParameterValue(parameterJSON)) continue;
 
           /*****************************************
           *
@@ -1860,83 +1995,96 @@ public class Journey extends GUIManagedObject
           *
           *****************************************/
 
-          if (parameter.getExpressionValuedParameter())
+          //
+          //  parse
+          //
+
+          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+          nodeParameters.put(parameterName, parameterExpressionValue);
+
+          //
+          //  valid combination
+          //
+
+          boolean validCombination = false;
+          switch (parameter.getFieldDataType())
             {
-              //
-              //  parse
-              //
+              case IntegerCriterion:
+              case DoubleCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case IntegerExpression:
+                    case DoubleExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
-              ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
-              nodeParameters.put(parameterName, parameterExpressionValue);
+              case StringCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case StringExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
-              //
-              //  valid combination
-              //
+              case BooleanCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case BooleanExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
-              boolean validCombination = false;
-              switch (parameter.getFieldDataType())
-                {
-                  case IntegerCriterion:
-                  case DoubleCriterion:
-                    switch (parameterExpressionValue.getType())
-                      {
-                        case IntegerExpression:
-                        case DoubleExpression:
-                          validCombination = true;
-                          break;
-                        default:
-                          validCombination = false;
-                          break;
-                      }
-                    break;
+              case DateCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
-                  case StringCriterion:
-                    switch (parameterExpressionValue.getType())
-                      {
-                        case StringExpression:
-                          validCombination = true;
-                          break;
-                        default:
-                          validCombination = false;
-                          break;
-                      }
-                    break;
 
-                  case BooleanCriterion:
-                    switch (parameterExpressionValue.getType())
-                      {
-                        case BooleanExpression:
-                          validCombination = true;
-                          break;
-                        default:
-                          validCombination = false;
-                          break;
-                      }
-                    break;
+              case EvaluationCriteriaParameter:
+              case SMSMessageParameter:
+              case EmailMessageParameter:
+              case PushMessageParameter:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case OpaqueReferenceExpression:
+                      validCombination = ((ReferenceExpression) (parameterExpressionValue.getExpression())).getCriterionDataType() == parameter.getFieldDataType();
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
 
-                  case DateCriterion:
-                    switch (parameterExpressionValue.getType())
-                      {
-                        case DateExpression:
-                          validCombination = true;
-                          break;
-                        default:
-                          validCombination = false;
-                          break;
-                      }
-                    break;
-
-                  default:
-                    validCombination = false;
-                    break;
-                }
-
-              //
-              //  validate
-              //
-
-              if (!validCombination) throw new GUIManagerException("dataType/expression combination", parameter.getFieldDataType().getExternalRepresentation() + "/" + parameterExpressionValue.getType());
+              default:
+                validCombination = false;
+                break;
             }
+
+          //
+          //  validate
+          //
+
+          if (!validCombination) throw new GUIManagerException("dataType/expression combination", parameter.getFieldDataType().getExternalRepresentation() + "/" + parameterExpressionValue.getType());
         }
       return nodeParameters;
     }
@@ -2207,6 +2355,7 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(journeyObjectiveInstances, existingJourney.getJourneyObjectiveInstances());
         epochChanged = epochChanged || ! Objects.equals(journeyNodes, existingJourney.getJourneyNodes());
         epochChanged = epochChanged || ! Objects.equals(journeyLinks, existingJourney.getJourneyLinks());
+        epochChanged = epochChanged || ! Objects.equals(boundParameters, existingJourney.getBoundParameters());
         return epochChanged;
       }
     else

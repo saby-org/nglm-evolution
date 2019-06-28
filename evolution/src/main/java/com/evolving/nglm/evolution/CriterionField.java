@@ -182,6 +182,10 @@ public class CriterionField extends DeploymentManagedObject
             case StringCriterion:
             case BooleanCriterion:
             case DateCriterion:
+            case EvaluationCriteriaParameter:
+            case SMSMessageParameter:
+            case EmailMessageParameter:
+            case PushMessageParameter:
               break;
 
             default:
