@@ -67,12 +67,7 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   @Override
   public int compareTo(ProposedOfferDetails o)
   {
-    if(this.getOfferScore() > o.getOfferScore()){
-      return 1;      
-    }
-    else {
-      return -1;
-    }
+    return (int) (o.getOfferScore() - this.getOfferScore());
   }  
   
   /*****************************************
