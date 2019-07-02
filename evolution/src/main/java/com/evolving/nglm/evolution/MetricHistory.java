@@ -924,7 +924,7 @@ public class MetricHistory
     DateCase startDayCase;
     if (startDay == null)
       startDayCase = DateCase.A;
-    else if (monthlyStartDays.contains(startDay))
+    else if (monthlyStartDays.contains(startDay) && (endDay == null || startDay.before(endDay)))
       startDayCase = DateCase.B;
     else if (! startDay.before(beginningOfDailyValues) && ! startDay.after(baseDay))
       startDayCase = DateCase.C;
@@ -945,7 +945,7 @@ public class MetricHistory
     DateCase endDayCase;
     if (endDay == null)
       endDayCase = DateCase.D;
-    else if (monthlyEndDays.contains(endDay))
+    else if (monthlyEndDays.contains(endDay) && (startDay == null || startDay.before(endDay)))
       endDayCase = DateCase.A;
     else if (! endDay.before(beginningOfDailyValues) && ! endDay.after(baseDay))
       endDayCase = DateCase.B;
@@ -1509,7 +1509,7 @@ public class MetricHistory
     *  return result
     *
     *****************************************/
-    
+
     return result;
   }
 
