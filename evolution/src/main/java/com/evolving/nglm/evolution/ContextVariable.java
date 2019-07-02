@@ -19,6 +19,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
+import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.apache.kafka.common.errors.SerializationException;
@@ -301,6 +302,9 @@ public class ContextVariable
               break;
             case StringSetExpression:
               this.type = CriterionDataType.StringSetCriterion;
+              break;
+            case OpaqueReferenceExpression:
+              this.type = ((ReferenceExpression) expression).getCriterionDataType();
               break;
             default:
               throw new GUIManagerException("unsupported context variable type", expression.getType().toString());

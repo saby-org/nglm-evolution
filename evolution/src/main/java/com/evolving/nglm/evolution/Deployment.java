@@ -44,9 +44,11 @@ public class Deployment
   private static String evolutionEngineExtensionClassName;
   private static String guiManagerExtensionClassName;
   private static String subscriberProfileClassName;
+  private static String extendedSubscriberProfileClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static String emptyTopic;
   private static String journeyTopic;
+  private static String journeyTemplateTopic;
   private static String segmentationDimensionTopic;
   private static String pointTopic;
   private static String pointFulfillmentRequestTopic;
@@ -80,10 +82,13 @@ public class Deployment
   private static String subscriberProfileForceUpdateTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
+  private static String extendedSubscriberProfileChangeLog;
+  private static String extendedSubscriberProfileChangeLogTopic;
   private static String subscriberHistoryChangeLog;
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyRequestTopic;
   private static String journeyStatisticTopic;
+  private static String journeyMetricTopic;
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
@@ -101,7 +106,6 @@ public class Deployment
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
-  private static Map<String,TouchPoint> touchPoints = new LinkedHashMap<String,TouchPoint>();
   private static Map<String,SupportedShortCode> supportedShortCodes = new LinkedHashMap<String,SupportedShortCode>();
   private static Map<String,SupportedEmailAddress> supportedEmailAddresses = new LinkedHashMap<String,SupportedEmailAddress>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
@@ -118,9 +122,12 @@ public class Deployment
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialTokenTypesJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
+  private static JSONArray initialCommunicationChannelsJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
   private static Map<String,SupportedDataType> supportedDataTypes = new LinkedHashMap<String,SupportedDataType>();
+  private static Map<String,JourneyMetricDeclaration> journeyMetricDeclarations = new LinkedHashMap<String,JourneyMetricDeclaration>();
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
@@ -137,6 +144,7 @@ public class Deployment
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private static Map<String,NotificationDailyWindows> notificationTimeWindowsMap = new LinkedHashMap<String,NotificationDailyWindows>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
@@ -153,6 +161,8 @@ public class Deployment
   private static String APIresponseDateFormat;
   private static String uploadedFileTopic;
   private static String targetTopic;
+  private static String communicationChannelTopic;
+  public static String communicationChannelBlackoutTopic;
 
   /*****************************************
   *
@@ -190,6 +200,7 @@ public class Deployment
   //  evolution accessors
   //
 
+  public static boolean getRegressionMode() { return System.getProperty("use.regression","0").equals("1"); }
   public static String getSubscriberProfileEndpoints() { return System.getProperty("subscriberprofile.endpoints",""); }
   public static String getSubscriberGroupLoaderAlternateID() { return subscriberGroupLoaderAlternateID; }
   public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }
@@ -198,9 +209,11 @@ public class Deployment
   public static String getEvolutionEngineExtensionClassName() { return evolutionEngineExtensionClassName; }
   public static String getGUIManagerExtensionClassName() { return guiManagerExtensionClassName; }
   public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
+  public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
+  public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
   public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
@@ -234,10 +247,13 @@ public class Deployment
   public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
+  public static String getExtendedSubscriberProfileChangeLog() { return extendedSubscriberProfileChangeLog; }
+  public static String getExtendedSubscriberProfileChangeLogTopic() { return extendedSubscriberProfileChangeLogTopic; }
   public static String getSubscriberHistoryChangeLog() { return subscriberHistoryChangeLog; }
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyRequestTopic() { return journeyRequestTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
+  public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
@@ -255,7 +271,6 @@ public class Deployment
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
-  public static Map<String,TouchPoint> getTouchPoints() { return touchPoints; }
   public static Map<String,SupportedShortCode> getSupportedShortCodes() { return supportedShortCodes; }
   public static Map<String,SupportedEmailAddress> getSupportedEmailAddresses() { return supportedEmailAddresses; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
@@ -272,9 +287,12 @@ public class Deployment
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
+  public static JSONArray getInitialCommunicationChannelsJSONArray() { return initialCommunicationChannelsJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
+  public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
+  public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
@@ -307,7 +325,10 @@ public class Deployment
   public static String getAPIresponseDateFormat() { return APIresponseDateFormat; }
   public static String getUploadedFileTopic() { return uploadedFileTopic; }
   public static String getTargetTopic() { return targetTopic; }
-
+  public static Map<String,NotificationDailyWindows> getNotificationDailyWindows() { return notificationTimeWindowsMap; }
+  public static String getCommunicationChannelTopic() { return communicationChannelTopic; }
+  public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; } 
+  
   /*****************************************
   *
   *  getCriterionFieldRetrieverClass
@@ -377,6 +398,25 @@ public class Deployment
       {
         Class<SubscriberProfile> subscriberProfileClass = (Class<SubscriberProfile>) Class.forName(subscriberProfileClassName);
         return subscriberProfileClass;
+      }
+    catch (ClassNotFoundException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+  }
+
+  /*****************************************
+  *
+  *  getExtendedSubscriberProfileClass
+  *
+  *****************************************/
+
+  public static Class<ExtendedSubscriberProfile> getExtendedSubscriberProfileClass()
+  {
+    try
+      {
+        Class<ExtendedSubscriberProfile> extendedSubscriberProfileClass = (Class<ExtendedSubscriberProfile>) Class.forName(extendedSubscriberProfileClassName);
+        return extendedSubscriberProfileClass;
       }
     catch (ClassNotFoundException e)
       {
@@ -519,6 +559,19 @@ public class Deployment
       }
     
     //
+    //  extendedSubscriberProfileClassName
+    //
+
+    try
+      {
+        extendedSubscriberProfileClassName = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileClass", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  evolutionEngineEvents
     //
 
@@ -536,7 +589,21 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+    
+    //
+    //  notificationDailyWindows
+    //
 
+    try
+      {
+        NotificationDailyWindows notificationDailyWindows = new NotificationDailyWindows(JSONUtilities.decodeJSONObject(jsonRoot, "notificationDailyWindows", true));
+        notificationTimeWindowsMap.put("0", notificationDailyWindows);
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  emptyTopic
     //
@@ -557,6 +624,19 @@ public class Deployment
     try
       {
         journeyTopic = JSONUtilities.decodeString(jsonRoot, "journeyTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  journeyTemplateTopic
+    //
+
+    try
+      {
+        journeyTemplateTopic = JSONUtilities.decodeString(jsonRoot, "journeyTemplateTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -967,6 +1047,32 @@ public class Deployment
       }
     
     //
+    //  communicationChannelBlackoutTopic
+    //
+
+    try
+      {
+        communicationChannelBlackoutTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelBlackoutTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  communicationChannelTopic
+    //
+
+    try
+      {
+        communicationChannelTopic = JSONUtilities.decodeString(jsonRoot, "communicationChannelTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
     //  timedEvaluationTopic
     //
 
@@ -1019,6 +1125,32 @@ public class Deployment
       }
     
     //
+    //  extendedSubscriberProfileChangeLog
+    //
+
+    try
+      {
+        extendedSubscriberProfileChangeLog = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLog", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  extendedSubscriberProfileChangeLogTopic
+    //
+
+    try
+      {
+        extendedSubscriberProfileChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "extendedSubscriberProfileChangeLogTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  subscriberHistoryChangeLog
     //
 
@@ -1064,6 +1196,19 @@ public class Deployment
     try
       {
         journeyStatisticTopic = JSONUtilities.decodeString(jsonRoot, "journeyStatisticTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  journeyMetricTopic
+    //
+
+    try
+      {
+        journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1324,25 +1469,6 @@ public class Deployment
       }
     
     //
-    //  touchPoints
-    //
-
-    try
-      {
-        JSONArray touchPointValues = JSONUtilities.decodeJSONArray(jsonRoot, "touchPoints", new JSONArray());
-        for (int i=0; i<touchPointValues.size(); i++)
-          {
-            JSONObject touchPointJSON = (JSONObject) touchPointValues.get(i);
-            TouchPoint touchPoint = new TouchPoint(touchPointJSON);
-            touchPoints.put(touchPoint.getID(), touchPoint);
-          }
-      }
-    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
     //  supportedShortCodes
     //
 
@@ -1489,6 +1615,11 @@ public class Deployment
     //
 
     initialSegmentationDimensionsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSegmentationDimensions", new JSONArray());
+    
+    //
+    // initialCommunicationChannelsJSONArray
+    // 
+    initialCommunicationChannelsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannels", new JSONArray());
 
     //
     //  generateSimpleProfileDimensions
@@ -1523,6 +1654,25 @@ public class Deployment
       }
 
     //
+    //  journeyMetricDeclarations
+    //
+
+    try
+      {
+        JSONArray journeyMetricDeclarationValues = JSONUtilities.decodeJSONArray(jsonRoot, "journeyMetrics", new JSONArray());
+        for (int i=0; i<journeyMetricDeclarationValues.size(); i++)
+          {
+            JSONObject journeyMetricDeclarationJSON = (JSONObject) journeyMetricDeclarationValues.get(i);
+            JourneyMetricDeclaration journeyMetricDeclaration = new JourneyMetricDeclaration(journeyMetricDeclarationJSON);
+            journeyMetricDeclarations.put(journeyMetricDeclaration.getID(), journeyMetricDeclaration);
+          }
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  profileCriterionFields
     //
 
@@ -1534,6 +1684,25 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             profileCriterionFields.put(criterionField.getID(), criterionField);
+          }
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  extendedProfileCriterionFields
+    //
+
+    try
+      {
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "extendedProfileCriterionFields", new JSONArray());
+        for (int i=0; i<criterionFieldValues.size(); i++)
+          {
+            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+            CriterionField criterionField = new CriterionField(criterionFieldJSON);
+            extendedProfileCriterionFields.put(criterionField.getID(), criterionField);
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)

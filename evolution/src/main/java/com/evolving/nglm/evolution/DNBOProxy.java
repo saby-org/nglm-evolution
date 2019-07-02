@@ -115,6 +115,7 @@ public class DNBOProxy
   private SubscriberProfileService subscriberProfileService;
   private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = null;
+  private SegmentationDimensionService segmentationDimensionService;
 
   /*****************************************
   *
@@ -169,6 +170,7 @@ public class DNBOProxy
         Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
     propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey,
         Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
+    segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
     
     /*****************************************
     *
@@ -183,6 +185,7 @@ public class DNBOProxy
     scoringStrategyService.start();
     salesChannelService.start();
     subscriberProfileService.start();
+    segmentationDimensionService.start();
 
     /*****************************************
     *
@@ -759,7 +762,8 @@ public class DNBOProxy
           OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
               algo, valueMode, offersForAlgo, subscriberProfile, threshold, salesChannelID,
               productService, productTypeService, catalogCharacteristicService,
-              propensityDataReader, subscriberGroupEpochReader, returnedLog);
+              propensityDataReader, subscriberGroupEpochReader,
+              segmentationDimensionService, returnedLog);
 
       if (offerAvailabilityFromPropensityAlgo == null)
         {
@@ -983,8 +987,7 @@ public class DNBOProxy
           if (currentOfferObjective.getOfferObjectiveID().equals(currentSplitObjectiveID))
           {
             // this offer is a good candidate for the moment, let's check the profile
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(
-                subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
             if (currentOffer.evaluateProfileCriteria(evaluationRequest))
             {
               log.trace("        add offer : "+currentOffer.getOfferID());
@@ -1028,8 +1031,7 @@ public class DNBOProxy
   {
     // let retrieve the first sub strategy that maps this user:
     Date now = SystemTime.getCurrentTime();
-    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(
-        subscriberProfile, subscriberGroupEpochReader, now);
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
 
     ScoringGroup selectedScoringGroup = strategy.evaluateScoringGroups(evaluationRequest);
     if (log.isDebugEnabled())

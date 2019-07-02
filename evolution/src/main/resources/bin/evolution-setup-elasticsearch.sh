@@ -305,11 +305,58 @@
                   "fromNodeID" : { "type" : "keyword" },
                   "toNodeID" : { "type" : "keyword" },
                   "deliveryRequestID" : { "type" : "keyword" },
+                  "markNotified" : { "type" : "boolean" },
+                  "markConverted" : { "type" : "boolean" },
                   "statusNotified" : { "type" : "boolean" },
                   "statusConverted" : { "type" : "boolean" },
                   "statusControlGroup" : { "type" : "boolean" },
                   "statusUniversalControlGroup" : { "type" : "boolean" },
                   "journeyComplete" : { "type" : "boolean" }
+                }
+            }
+        }
+    }'
+  echo
+
+  #
+  #  manually create journeymetric index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/journeymetric -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+          "doc" :
+            {
+              "properties" :
+                {
+                  "journeyInstanceID" : { "type" : "keyword" },
+                  "journeyID" : { "type" : "keyword" },
+                  "subscriberID" : { "type" : "keyword" },
+                  "journeyExitDate" : { "type" : "date" }
                 }
             }
         }

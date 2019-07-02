@@ -25,6 +25,7 @@ public class SubscriberEvaluationRequest
   *****************************************/
 
   private SubscriberProfile subscriberProfile;
+  private ExtendedSubscriberProfile extendedSubscriberProfile;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private JourneyState journeyState;
   private JourneyNode journeyNode;
@@ -44,9 +45,10 @@ public class SubscriberEvaluationRequest
   //  constructor -- complete
   //  
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate)
   {
     this.subscriberProfile = subscriberProfile;
+    this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     this.journeyState = journeyState;
     this.journeyNode = journeyNode;
@@ -61,9 +63,18 @@ public class SubscriberEvaluationRequest
   //  constructor -- standard
   //
 
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate)
+  {
+    this(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, null, null, null, null, evaluationDate);
+  }
+
+  //
+  //  constructor -- standard
+  //
+
   public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date evaluationDate)
   {
-    this(subscriberProfile, subscriberGroupEpochReader, null, null, null, null, evaluationDate);
+    this(subscriberProfile, (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, evaluationDate);
   }
 
   /*****************************************
@@ -83,6 +94,14 @@ public class SubscriberEvaluationRequest
   public SortedSet<Date> getNextEvaluationDates() { return nextEvaluationDates; }
   public boolean getSubscriberTraceEnabled() { return subscriberProfile.getSubscriberTraceEnabled(); }
   
+  /*****************************************
+  *
+  *  getExtendedSubscriberProfile
+  *
+  *****************************************/
+
+  public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
+
   /*****************************************
   *
   *  subscriberTrace

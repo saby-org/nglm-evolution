@@ -39,14 +39,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.5.1-build190618-SNAPSHOT</version>
+    <version>4.6.0</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.5.1-build190618-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.6.0</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -96,6 +96,7 @@
     <!-- topics -->
     <topic.empty>empty</topic.empty>
     <topic.journey>journey</topic.journey>
+    <topic.journeytemplate>journeytemplate</topic.journeytemplate>
     <topic.segmentationdimension>segmentation-dimension</topic.segmentationdimension>
     <topic.point>point</topic.point>
     <topic.offer>offer</topic.offer>
@@ -124,10 +125,12 @@
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
     <topic.ucgstate>ucgstate</topic.ucgstate>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
+    <topic.periodicevaluation_fileconnector>periodicevaluation-fileconnector</topic.periodicevaluation_fileconnector>
     <topic.subscriberprofileforceupdate>subscriberprofileforceupdate</topic.subscriberprofileforceupdate>
     <topic.subscriberprofileforceupdate_fileconnector>subscriberprofileforceupdate-fileconnector</topic.subscriberprofileforceupdate_fileconnector>
     <topic.journeyrequest>journeyrequest</topic.journeyrequest>
     <topic.journeystatistic>journeystatistic</topic.journeystatistic>
+    <topic.journeymetric>journeymetric</topic.journeymetric>
     <topic.deliverable.source>deliverable-source</topic.deliverable.source>
     <topic.externaldeliveryrequest_fileconnector>externaldeliveryrequest-fileconnector</topic.externaldeliveryrequest_fileconnector>
     <topic.presentationlog>presentationlog</topic.presentationlog>
@@ -155,7 +158,8 @@
     <topic.notificationmanagermail.response>notificationmanagermail-response</topic.notificationmanagermail.response>
     <topic.notificationmanagermail.internal>notificationmanagermail-internal</topic.notificationmanagermail.internal>
     <topic.notificationmanagermail.routing>notificationmanagermail-routing</topic.notificationmanagermail.routing>
-    
+    <topic.communicationchannel>communicationchannel</topic.communicationchannel>
+    <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
@@ -163,6 +167,8 @@
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
     <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>
+    <changelog.evolutionengine.extendedsubscriberprofile>extendedsubscriberprofile</changelog.evolutionengine.extendedsubscriberprofile>
+    <changelog.evolutionengine.extendedsubscriberprofile.topic>streams-evolutionengine-${changelog.evolutionengine.extendedsubscriberprofile}-changelog</changelog.evolutionengine.extendedsubscriberprofile.topic>
     <changelog.evolutionengine.subscriberhistory>subscriberhistory</changelog.evolutionengine.subscriberhistory>
     <changelog.evolutionengine.subscriberhistory.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberhistory}-changelog</changelog.evolutionengine.subscriberhistory.topic>
     <changelog.evolutionengine.propensitystate>propensitystate</changelog.evolutionengine.propensitystate>

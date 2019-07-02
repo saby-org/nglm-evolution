@@ -485,7 +485,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()));
+      guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(VOUCHERCODE, "");
       guiPresentationMap.put(VOUCHERPARTNERID, "");
     }
@@ -513,7 +513,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()));
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(VOUCHERCODE, "");
       thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
     }
@@ -714,6 +714,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *****************************************/
 
   private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus, PurchaseFulfillmentStatus status, String statusMessage){
+    purchaseStatus.setPurchaseFulfillmentStatus(status);
     purchaseStatus.setDeliveryStatus(getPurchaseFulfillmentStatus(status));
     purchaseStatus.setDeliveryStatusCode(status.getReturnCode());
     purchaseStatus.setDeliveryStatusMessage(statusMessage);
@@ -729,6 +730,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
 
     PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlatorUpdate);
+    ((PurchaseFulfillmentRequest)deliveryRequest).setReturnCode(purchaseStatus.getDeliveryStatusCode());
+    ((PurchaseFulfillmentRequest)deliveryRequest).setStatus(purchaseStatus.getPurchaseFulfillmentStatus());
     deliveryRequest.setDeliveryStatus(purchaseStatus.getDeliveryStatus());
     deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
     completeRequest(deliveryRequest);
@@ -1304,6 +1307,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     private boolean rollbackInProgress = false;
     
+    private PurchaseFulfillmentStatus purchaseFulfillmentStatus = PurchaseFulfillmentStatus.PENDING;
     private DeliveryStatus deliveryStatus = DeliveryStatus.Unknown;
     private int deliveryStatusCode = -1;
     private String deliveryStatusMessage = null;
@@ -1368,6 +1372,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     public boolean getRollbackInProgress(){return rollbackInProgress;}
     
+    public PurchaseFulfillmentStatus getPurchaseFulfillmentStatus(){return purchaseFulfillmentStatus;}
     public DeliveryStatus getDeliveryStatus(){return deliveryStatus;}
     public int getDeliveryStatusCode(){return deliveryStatusCode;}
     public String getDeliveryStatusMessage(){return deliveryStatusMessage;}
@@ -1417,6 +1422,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     public void setRollbackInProgress(boolean rollbackInProgress){this.rollbackInProgress = rollbackInProgress;}
 
+    public void setPurchaseFulfillmentStatus(PurchaseFulfillmentStatus purchaseFulfillmentStatus){this.purchaseFulfillmentStatus = purchaseFulfillmentStatus;}
     public void setDeliveryStatus(DeliveryStatus deliveryStatus){this.deliveryStatus = deliveryStatus;}
     public void setDeliveryStatusCode(int deliveryStatusCode){this.deliveryStatusCode = deliveryStatusCode;}
     public void setDeliveryStatusMessage(String deliveryStatusMessage){this.deliveryStatusMessage = deliveryStatusMessage;}
@@ -1491,6 +1497,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
       this.rollbackInProgress = JSONUtilities.decodeBoolean(jsonRoot, "rollbackInProgress", false);
       
+      this.purchaseFulfillmentStatus = PurchaseFulfillmentStatus.fromReturnCode(JSONUtilities.decodeInteger(jsonRoot, "purchaseFulfillmentStatus", false));
       this.deliveryStatus = DeliveryStatus.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryStatus", false));
       this.deliveryStatusCode = JSONUtilities.decodeInteger(jsonRoot, "deliveryStatusCode", false);
       this.deliveryStatusMessage = JSONUtilities.decodeString(jsonRoot, "deliveryStatusMessage", false);
@@ -1700,6 +1707,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
       data.put("rollbackInProgress", this.getRollbackInProgress());
       
+      data.put("purchaseFulfillmentStatus", this.getPurchaseFulfillmentStatus().getReturnCode());
       data.put("deliveryStatus", this.getDeliveryStatus().getExternalRepresentation());
       data.put("deliveryStatusCode", this.getDeliveryStatusCode());
       data.put("deliveryStatusMessage", this.getDeliveryStatusMessage());

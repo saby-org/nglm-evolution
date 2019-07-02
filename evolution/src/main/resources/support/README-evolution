@@ -59,6 +59,12 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startJourney; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopJourney; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplateList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplateSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/journey.template.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putJourneyTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJourneyTemplate; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeJourneyTemplate; echo
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/campaign.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
@@ -211,7 +217,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTarget; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeTarget; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true, "includeHistory" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.status", "criterionOperator" : "is in set", "argument" : { "valueType" : "multiple", "value" : [ "active", "inactive" ], "expression" : "[ '\''active'\'', '\''inactive'\'' ]" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo

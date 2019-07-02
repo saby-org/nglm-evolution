@@ -99,6 +99,7 @@ public abstract class DeliveryManager
     Indeterminate("indeterminate"),
     Failed("failed"),
     FailedTimeout("failedtimeout"),
+    Acknowledged("acknowledged"),
 
     /*****************************************
     *
@@ -1559,7 +1560,8 @@ public abstract class DeliveryManager
               {
                 try
                   {
-                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, new StringKey(deliveryRequest.getSubscriberID())), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
+                    StringKey key = deliveryRequest.getOriginatingRequest() ? new StringKey(deliveryRequest.getSubscriberID()) : new StringKey(deliveryRequest.getDeliveryRequestID());
+                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
                     break;
                   }
                 catch (InterruptedException e)

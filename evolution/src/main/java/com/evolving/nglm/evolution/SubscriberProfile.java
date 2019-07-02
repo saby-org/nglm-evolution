@@ -149,6 +149,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("tokens", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
     schemaBuilder.field("pointBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, PointBalance.schema()).name("subscriber_profile_balances").schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
     commonSchema = schemaBuilder.build();
   };
@@ -217,6 +218,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private List<Token> tokens;
   private Map<String,PointBalance> pointBalances;
   private String language;
+  private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
 
   /****************************************
@@ -236,6 +238,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public List<Token> getTokens(){ return tokens; }
   public Map<String,PointBalance> getPointBalances() { return pointBalances; }
   public String getLanguage() { return language; }
+  public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
 
   //
@@ -437,6 +440,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
 
     addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
+    if (extendedSubscriberProfile != null) extendedSubscriberProfile.addProfileFieldsForGUIPresentation(generalDetailsPresentation, kpiPresentation);
 
     //
     // prepare ProfilePresentation
@@ -485,6 +489,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
 
     addProfileFieldsForThirdPartyPresentation(generalDetailsPresentation, kpiPresentation);
+    if (extendedSubscriberProfile != null) extendedSubscriberProfile.addProfileFieldsForThirdPartyPresentation(generalDetailsPresentation, kpiPresentation);
 
     //
     // prepare ProfilePresentation
@@ -661,6 +666,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public void setUniversalControlGroup(boolean universalControlGroup) { this.universalControlGroup = universalControlGroup; }
   public void setTokens(List<Token> tokens){ this.tokens = tokens; }
   public void setLanguage(String language) { this.language = language; }
+  public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
   public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
 
   //
@@ -733,6 +739,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.tokens = new ArrayList<Token>();
     this.pointBalances = new HashMap<String,PointBalance>();
     this.language = null;
+    this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
   }
 
@@ -768,6 +775,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     List<Token> tokens = (schemaVersion >= 2) ? unpackTokens(schema.field("tokens").schema(), valueStruct.get("tokens")) : Collections.<Token>emptyList();
     Map<String,PointBalance> pointBalances = (schemaVersion >= 2) ? unpackPointBalances(schema.field("pointBalances").schema(), (Map<String,Object>) valueStruct.get("pointBalances")): Collections.<String,PointBalance>emptyMap();
     String language = valueStruct.getString("language");
+    ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
 
     //
@@ -785,6 +793,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.tokens = tokens;
     this.pointBalances = pointBalances;
     this.language = language;
+    this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberHistory = subscriberHistory;
   }
 
@@ -938,6 +947,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.tokens = new ArrayList<Token>(subscriberProfile.getTokens());
     this.pointBalances = new HashMap<String,PointBalance>(subscriberProfile.getPointBalances()); // WARNING:  NOT a deep copy, PointBalance must be copied before update
     this.language = subscriberProfile.getLanguage();
+    this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
   }
 
@@ -960,6 +970,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("tokens", packTokens(subscriberProfile.getTokens()));
     struct.put("pointBalances", packPointBalances(subscriberProfile.getPointBalances()));
     struct.put("language", subscriberProfile.getLanguage());
+    struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
   }
 
@@ -1091,6 +1102,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     b.append("," + previousEvolutionSubscriberStatus);
     b.append("," + universalControlGroup);
     b.append("," + language);
+    b.append("," + extendedSubscriberProfile);
     b.append("," + (subscriberHistory != null ? subscriberHistory.getDeliveryRequests().size() : null));
     return b.toString();
   }

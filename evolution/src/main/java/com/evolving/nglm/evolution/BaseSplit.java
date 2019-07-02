@@ -109,10 +109,64 @@ public class BaseSplit
   BaseSplit(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot) throws GUIManagerException
   {
     this.splitName = JSONUtilities.decodeString(jsonRoot, "splitName", true);
-    this.variableName = JSONUtilities.decodeString(jsonRoot, "variableName", false);
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false));
-    this.segments = decodeSegmentRanges(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", false));
     this.usingContactPolicy = JSONUtilities.decodeBoolean(jsonRoot, "usingContactPolicy", Boolean.FALSE);
+
+    //
+    //  range variable
+    //
+
+    this.variableName = JSONUtilities.decodeString(jsonRoot, "variableName", true);
+    CriterionField rangeVariable = null;
+    boolean rangeVariableDependentOnExtendedSubscriberProfile = false;
+    if (CriterionContext.Profile.getCriterionFields().get(variableName) != null)
+      {
+        rangeVariable = CriterionContext.Profile.getCriterionFields().get(variableName);
+        rangeVariableDependentOnExtendedSubscriberProfile = false;
+      }
+    else if (CriterionContext.FullProfile.getCriterionFields().get(variableName) != null)
+      {
+        rangeVariable = CriterionContext.FullProfile.getCriterionFields().get(variableName);
+        rangeVariableDependentOnExtendedSubscriberProfile = true;        
+      }
+    else
+      {
+        throw new GUIManagerException("unsupported range variable", this.variableName);
+      }
+
+    //
+    //  validate
+    //
+
+    switch (rangeVariable.getFieldDataType())
+      {
+        case IntegerCriterion:
+          break;
+
+        default:
+          throw new GUIManagerException("unsupported range variable type", this.variableName);
+      }
+
+    //
+    //  profileCriteria
+    //
+
+    boolean profileCriteriaDependentOnExtendedSubscriberProfile = false;
+    try
+      {
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.Profile);
+        profileCriteriaDependentOnExtendedSubscriberProfile = false;
+      }
+    catch (GUIManagerException e)
+      {
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile);
+        profileCriteriaDependentOnExtendedSubscriberProfile = true;
+      }
+
+    //
+    //  segments
+    //
+
+    this.segments = decodeSegmentRanges(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", false), rangeVariableDependentOnExtendedSubscriberProfile || profileCriteriaDependentOnExtendedSubscriberProfile);
   }
 
   /*****************************************
@@ -121,15 +175,13 @@ public class BaseSplit
   *
   *****************************************/
 
-  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray) throws GUIManagerException
+  private List<EvaluationCriterion> decodeProfileCriteria(JSONArray jsonArray, CriterionContext context) throws GUIManagerException
   {
-    if(jsonArray == null){
-      return null;
-    }
+    if(jsonArray == null) return null;
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile)); //TODO SCH : what is "CriterionContext.Profile" for ?
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), context));
       }
     return result;
   }
@@ -140,7 +192,7 @@ public class BaseSplit
   *
   *****************************************/
 
-  private List<SegmentRanges> decodeSegmentRanges(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray) throws GUIManagerException
+  private List<SegmentRanges> decodeSegmentRanges(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean dependentOnExtendedSubscriberProfile) throws GUIManagerException
   {
     if(jsonArray == null){
       return null;
@@ -155,7 +207,7 @@ public class BaseSplit
             segmentID = segmentationDimensionService.generateSegmentationDimensionID();
             segment.put("id", segmentID);
           }
-        result.add(new SegmentRanges(segment));
+        result.add(new SegmentRanges(segment, dependentOnExtendedSubscriberProfile));
       }
     return result;
   }

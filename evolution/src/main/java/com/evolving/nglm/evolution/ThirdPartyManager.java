@@ -818,7 +818,7 @@ public class ThirdPartyManager
       {
         try
         {
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
           if (baseSubscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -895,7 +895,7 @@ public class ThirdPartyManager
           // include history
           //
 
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
           if (baseSubscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -1027,7 +1027,7 @@ public class ThirdPartyManager
           // include history
           //
 
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
           if (baseSubscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -1168,7 +1168,7 @@ public class ThirdPartyManager
           // include history
           //
 
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
           if (baseSubscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -1292,7 +1292,7 @@ public class ThirdPartyManager
          *****************************************/
         try
         {
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
           if (baseSubscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -1595,7 +1595,7 @@ public class ThirdPartyManager
          *****************************************/
         try
         {
-          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
           if (baseSubscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -2130,7 +2130,7 @@ public class ThirdPartyManager
          *****************************************/
         try
         {
-          SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+          SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
           if (subscriberProfile == null)
             {
               response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
@@ -2446,7 +2446,7 @@ public class ThirdPartyManager
           {
             try
             {
-              SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+              SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
               if (baseSubscriberProfile == null)
                 {
                   response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());

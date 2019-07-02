@@ -117,13 +117,13 @@ public abstract class SubscriberProfileService
   //  getSubscriberProfile (optionally w/ history)
   //
 
-  public abstract SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeHistory) throws SubscriberProfileServiceException;
+  public abstract SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws SubscriberProfileServiceException;
 
   //
   //  getSubscriberProfile (no history)
   //
 
-  public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException { return getSubscriberProfile(subscriberID, false); }
+  public SubscriberProfile getSubscriberProfile(String subscriberID) throws SubscriberProfileServiceException { return getSubscriberProfile(subscriberID, false, false); }
   
   /*****************************************
   *
@@ -210,7 +210,7 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeHistory) throws SubscriberProfileServiceException
+    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws SubscriberProfileServiceException
     {
       synchronized (this)
         {
@@ -220,6 +220,7 @@ public abstract class SubscriberProfileService
           *
           *****************************************/
 
+          if (includeExtendedSubscriberProfile) throw new SubscriberProfileServiceException("extendedSubscriberProfile not supported");
           if (includeHistory) throw new SubscriberProfileServiceException("history not supported");
 
           /****************************************
@@ -381,7 +382,7 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeHistory) throws SubscriberProfileServiceException
+    @Override public SubscriberProfile getSubscriberProfile(String subscriberID, boolean includeExtendedSubscriberProfile, boolean includeHistory) throws SubscriberProfileServiceException
     {
       /****************************************
       *
@@ -409,6 +410,7 @@ public abstract class SubscriberProfileService
       HashMap<String,Object> request = new HashMap<String,Object>();
       request.put("apiVersion", 1);
       request.put("subscriberID", subscriberID);
+      request.put("includeExtendedSubscriberProfile", includeExtendedSubscriberProfile);
       request.put("includeHistory", includeHistory);
       JSONObject requestJSON = JSONUtilities.encodeObject(request);
 
@@ -677,7 +679,7 @@ public abstract class SubscriberProfileService
             Date now = SystemTime.getCurrentTime();
             for (String subscriberID : subscriberIDs)
               {
-                SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true);
+                SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, true);
                 if (subscriberProfile != null)
                   {
                     //

@@ -46,7 +46,7 @@ public class ContactPolicy extends GUIManagedObject
     schemaBuilder.name("contact_policy");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("contactPolicyTouchPoints", SchemaBuilder.array(ContactPolicyTouchPoint.schema()).name("contact_policy_touchpoints").schema());
+    schemaBuilder.field("contactPolicyCommunicationChannels", SchemaBuilder.array(ContactPolicyCommunicationChannels.schema()).name("contactPolicyCommunicationChannels").schema());
     schemaBuilder.field("isDefault", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -70,7 +70,7 @@ public class ContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  private List<ContactPolicyTouchPoint> contactPolicyTouchPoints;
+  private List<ContactPolicyCommunicationChannels> contactPolicyCommunicationChannels;
   private boolean isDefault;
 
   /*****************************************
@@ -81,7 +81,7 @@ public class ContactPolicy extends GUIManagedObject
 
   public String getContactPolicyID() { return getGUIManagedObjectID(); }
   public String getContactPolicyName() { return getGUIManagedObjectName(); }
-  public List<ContactPolicyTouchPoint> getContactPolicyTouchPoints() { return contactPolicyTouchPoints; }
+  public List<ContactPolicyCommunicationChannels> getContactPolicyCommunicationChannels() { return contactPolicyCommunicationChannels; }
   public boolean isDefault() { return isDefault; }
 
   /*****************************************
@@ -90,10 +90,10 @@ public class ContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public ContactPolicy(SchemaAndValue schemaAndValue, List<ContactPolicyTouchPoint> contactPolicyTouchPoints, boolean isDefault)
+  public ContactPolicy(SchemaAndValue schemaAndValue, List<ContactPolicyCommunicationChannels> contactPolicyCommunicationChannels, boolean isDefault)
   {
     super(schemaAndValue);
-    this.contactPolicyTouchPoints = contactPolicyTouchPoints;
+    this.contactPolicyCommunicationChannels = contactPolicyCommunicationChannels;
     this.isDefault = isDefault;
   }
   
@@ -108,23 +108,23 @@ public class ContactPolicy extends GUIManagedObject
     ContactPolicy contactPolicy = (ContactPolicy) value;
     Struct struct = new Struct(schema);
     packCommon(struct, contactPolicy);
-    struct.put("contactPolicyTouchPoints", packContactPolicyTouchPoints(contactPolicy.getContactPolicyTouchPoints()));
+    struct.put("contactPolicyCommunicationChannels", packContactPolicyCommunicationChannels(contactPolicy.getContactPolicyCommunicationChannels()));
     struct.put("isDefault", contactPolicy.isDefault());
     return struct;
   }
 
   /*****************************************
   *
-  *  packContactPolicyTouchPoints
+  *  packContactPolicyCommunicationChannels
   *
   *****************************************/
 
-  private static List<Object> packContactPolicyTouchPoints(List<ContactPolicyTouchPoint> contactPolicyTouchPoints)
+  private static List<Object> packContactPolicyCommunicationChannels(List<ContactPolicyCommunicationChannels> contactPolicyCommunicationChannels)
   {
     List<Object> result = new ArrayList<Object>();
-    for (ContactPolicyTouchPoint contactPolicyTouchPoint : contactPolicyTouchPoints)
+    for (ContactPolicyCommunicationChannels contactPolicyTouchPoint : contactPolicyCommunicationChannels)
       {
-        result.add(ContactPolicyTouchPoint.pack(contactPolicyTouchPoint));
+        result.add(ContactPolicyCommunicationChannels.pack(contactPolicyTouchPoint));
       }
     return result;
   }
@@ -150,26 +150,26 @@ public class ContactPolicy extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    List<ContactPolicyTouchPoint> contactPolicyTouchPoints = unpackContactPolicyTouchPoints(schema.field("contactPolicyTouchPoints").schema(), valueStruct.get("contactPolicyTouchPoints"));
+    List<ContactPolicyCommunicationChannels> contactPolicyCommunicationChannels = unpackContactPolicyCommunicationChannels(schema.field("contactPolicyCommunicationChannels").schema(), valueStruct.get("contactPolicyCommunicationChannels"));
     boolean isDefault = valueStruct.getBoolean("isDefault");
     
     //
     //  return
     //
 
-    return new ContactPolicy(schemaAndValue, contactPolicyTouchPoints, isDefault);
+    return new ContactPolicy(schemaAndValue, contactPolicyCommunicationChannels, isDefault);
   }
 
   /*****************************************
   *
-  *  unpackContactPolicyTouchPoints
+  *  unpackContactPolicyCommunicationChannels
   *
   *****************************************/
 
-  private static List<ContactPolicyTouchPoint> unpackContactPolicyTouchPoints(Schema schema, Object value)
+  private static List<ContactPolicyCommunicationChannels> unpackContactPolicyCommunicationChannels(Schema schema, Object value)
   {
     //
-    //  get schema for ContactPolicyTouchPoint
+    //  get schema for ContactPolicyCommunicationChannels
     //
 
     Schema contactPolicyTouchPointSchema = schema.valueSchema();
@@ -178,11 +178,11 @@ public class ContactPolicy extends GUIManagedObject
     //  unpack
     //
 
-    List<ContactPolicyTouchPoint> result = new ArrayList<ContactPolicyTouchPoint>();
+    List<ContactPolicyCommunicationChannels> result = new ArrayList<ContactPolicyCommunicationChannels>();
     List<Object> valueArray = (List<Object>) value;
     for (Object contactPolicyTouchPoint : valueArray)
       {
-        result.add(ContactPolicyTouchPoint.unpack(new SchemaAndValue(contactPolicyTouchPointSchema, contactPolicyTouchPoint)));
+        result.add(ContactPolicyCommunicationChannels.unpack(new SchemaAndValue(contactPolicyTouchPointSchema, contactPolicyTouchPoint)));
       }
 
     //
@@ -222,17 +222,8 @@ public class ContactPolicy extends GUIManagedObject
     *
     *****************************************/
 
-    this.contactPolicyTouchPoints = decodeContactPolicyTouchPoints(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyTouchPoints", true));
+    this.contactPolicyCommunicationChannels = decodeContactPolicyCommunicationChannels(JSONUtilities.decodeJSONArray(jsonRoot, "contactPolicyCommunicationChannels", true));
     this.isDefault = JSONUtilities.decodeBoolean(jsonRoot, "isDefault", Boolean.TRUE);
-
-    /*****************************************
-    *
-    *  validate
-    *
-    *****************************************/
-
-    if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
-    if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
 
     /*****************************************
     *
@@ -248,18 +239,18 @@ public class ContactPolicy extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeContactPolicyTouchPoints
+  *  decodeContactPolicyCommunicationChannels
   *
   *****************************************/
 
-  private List<ContactPolicyTouchPoint> decodeContactPolicyTouchPoints(JSONArray jsonArray) throws GUIManagerException
+  private List<ContactPolicyCommunicationChannels> decodeContactPolicyCommunicationChannels(JSONArray jsonArray) throws GUIManagerException
   {
-    List<ContactPolicyTouchPoint> contactPolicyTouchPoints = new ArrayList<ContactPolicyTouchPoint>();
+    List<ContactPolicyCommunicationChannels> contactPolicyCommunicationChannels = new ArrayList<ContactPolicyCommunicationChannels>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        contactPolicyTouchPoints.add(new ContactPolicyTouchPoint((JSONObject) jsonArray.get(i)));
+        contactPolicyCommunicationChannels.add(new ContactPolicyCommunicationChannels((JSONObject) jsonArray.get(i)));
       }
-    return contactPolicyTouchPoints;
+    return contactPolicyCommunicationChannels;
   }
 
   /*****************************************
@@ -268,18 +259,18 @@ public class ContactPolicy extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(Date date) throws GUIManagerException
+  public void validate(Date date, CommunicationChannelService communicationChannelService) throws GUIManagerException
   {
     /*****************************************
     *
-    *  validate touch points exist
+    *  validate communication channel exist
     *
     *****************************************/
 
-    for (ContactPolicyTouchPoint contactPolicyTouchPoint : contactPolicyTouchPoints)
+    for (ContactPolicyCommunicationChannels communicationChannel : contactPolicyCommunicationChannels)
       {
-        TouchPoint touchPoint = Deployment.getTouchPoints().get(contactPolicyTouchPoint.getTouchPointID());
-        if (touchPoint == null) throw new GUIManagerException("unknown touch point", contactPolicyTouchPoint.getTouchPointID());
+        CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getStoredCommunicationChannel(communicationChannel.getCommunicationChannelID());
+        if (channel == null) throw new GUIManagerException("unknown communication channel ", communicationChannel.getCommunicationChannelID());
       }
   }
 
@@ -306,7 +297,7 @@ public class ContactPolicy extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingContactPolicy.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(contactPolicyTouchPoints, existingContactPolicy.getContactPolicyTouchPoints());
+        epochChanged = epochChanged || ! Objects.equals(contactPolicyCommunicationChannels, existingContactPolicy.getContactPolicyCommunicationChannels());
         return epochChanged;
       }
     else

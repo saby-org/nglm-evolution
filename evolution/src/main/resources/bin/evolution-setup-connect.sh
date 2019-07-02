@@ -43,6 +43,25 @@
     }' &
 
   #
+  #  sink connector -- journeyMetric (elasticsearch)
+  #
+
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "journeymetric_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.JourneyMetricESSinkConnector",
+        "tasks.max" : 1,
+        "topics" : "${topic.journeymetric}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "journeymetric"
+        }
+    }' &
+
+  #
   #  source connector -- externalDeliveryRequest
   #
 
@@ -205,5 +224,31 @@
         "indexName" : "notification"
         }
     }' &
+
+  #
+  #  source connector -- periodicEvaluation
+  #
+
+  if [ "${env.USE_REGRESSION}" = "1" ]
+  then
+  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "periodicevaluation_file_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.PeriodicEvaluationFileSourceConnector",
+        "tasks.max" : 1,
+        "directory" : "/app/data/periodicevaluation",
+        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+        "pollMaxRecords" : 5,
+        "pollingInterval" : 10,
+        "verifySizeInterval" : 0,
+        "topic" : "${topic.timedevaluation}",
+        "bootstrapServers" : "'$BROKER_SERVERS'",
+        "internalTopic" : "${topic.periodicevaluation_fileconnector}",
+        "archiveDirectory" : "/app/data/periodicevaluationarchive"
+        }
+    }' &
+  fi
 
 wait

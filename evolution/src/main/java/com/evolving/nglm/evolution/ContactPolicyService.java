@@ -128,7 +128,7 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void putContactPolicy(GUIManagedObject contactPolicy, boolean newObject, String userID) throws GUIManagerException
+  public void putContactPolicy(GUIManagedObject contactPolicy, CommunicationChannelService communicationChannelService, boolean newObject, String userID) throws GUIManagerException
   {
     //
     //  now
@@ -142,7 +142,7 @@ public class ContactPolicyService extends GUIService
 
     if (contactPolicy instanceof ContactPolicy)
       {
-        ((ContactPolicy) contactPolicy).validate(now);
+        ((ContactPolicy) contactPolicy).validate(now, communicationChannelService);
       }
 
     //
@@ -158,11 +158,11 @@ public class ContactPolicyService extends GUIService
   *
   *****************************************/
 
-  public void putContactPolicy(IncompleteObject contactPolicy, boolean newObject, String userID)
+  public void putContactPolicy(IncompleteObject contactPolicy, CommunicationChannelService communicationChannelService, boolean newObject, String userID)
   {
     try
       {
-        putContactPolicy((GUIManagedObject) contactPolicy, newObject, userID);
+        putContactPolicy((GUIManagedObject) contactPolicy, communicationChannelService, newObject, userID);
       }
     catch (GUIManagerException e)
       {
