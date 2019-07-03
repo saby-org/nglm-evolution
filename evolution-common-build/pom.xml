@@ -160,6 +160,7 @@
     <topic.notificationmanagermail.routing>notificationmanagermail-routing</topic.notificationmanagermail.routing>
     <topic.communicationchannel>communicationchannel</topic.communicationchannel>
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
+    <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>

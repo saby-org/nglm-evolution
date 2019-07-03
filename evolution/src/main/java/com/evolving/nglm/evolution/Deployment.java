@@ -163,6 +163,8 @@ public class Deployment
   private static String targetTopic;
   private static String communicationChannelTopic;
   public static String communicationChannelBlackoutTopic;
+  public static String loyaltyProgramTopic;
+  private static Map<String,ProgramType> programTypes = new LinkedHashMap<String,ProgramType>();
 
   /*****************************************
   *
@@ -328,6 +330,8 @@ public class Deployment
   public static Map<String,NotificationDailyWindows> getNotificationDailyWindows() { return notificationTimeWindowsMap; }
   public static String getCommunicationChannelTopic() { return communicationChannelTopic; }
   public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; } 
+  public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; } 
+  public static Map<String,ProgramType> getProgramTypes() { return programTypes; }
   
   /*****************************************
   *
@@ -1073,6 +1077,19 @@ public class Deployment
       }
     
     //
+    //  loyaltyProgramTopic
+    //
+
+    try
+      {
+        loyaltyProgramTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
     //  timedEvaluationTopic
     //
 
@@ -1798,6 +1815,25 @@ public class Deployment
             JSONObject offerTypeJSON = (JSONObject) offerTypeValues.get(i);
             OfferType offerType = new OfferType(offerTypeJSON);
             offerTypes.put(offerType.getID(), offerType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  programTypes
+    //
+
+    try
+      {
+        JSONArray programTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "programTypes", new JSONArray());
+        for (int i=0; i<programTypeValues.size(); i++)
+          {
+            JSONObject programTypeJSON = (JSONObject) programTypeValues.get(i);
+            ProgramType programType = new ProgramType(programTypeJSON);
+            programTypes.put(programType.getID(), programType);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
