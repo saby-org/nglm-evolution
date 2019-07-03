@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -75,13 +76,13 @@ public class ODRSinkConnector extends SimpleESSinkConnector
           // TODO Auto-generated method stub
         }
       };
-      offerService = new OfferService(Deployment.getBrokerServers(), "example-offerservice-673", Deployment.getOfferTopic(), false, offerListener);
-      offerService.start();
-
+    
       //
       //  services
       //
-
+   
+      offerService = new OfferService(Deployment.getBrokerServers(), "ordsinkconnector-offerservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getOfferTopic(), false, offerListener);
+      offerService.start();
     }
 
     /*****************************************
