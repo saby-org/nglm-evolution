@@ -58,6 +58,8 @@ public enum RESTAPIGenericReturnCodes
   VOUCHER_EXPIRED(416, "VOUCHER_EXPIRED", "Voucher expired"),
   VOUCHER_NOT_ASSIGNED(417, "VOUCHER_NOT_ASSIGNED", "Voucher not assigned"),
   VOUCHER_NON_REDEEMABLE(418, "VOUCHER_NON_REDEEMABLE", "Voucher non redeemable"),
+  EVENT_NAME_UNKNOWN(419, "EVENT_NAME_UNKNOWN", "Event Name Unknown"),
+  BAD_3RD_PARTY_EVENT_CLASS_DEFINITION(420, "BAD_3RD_PARTY_EVENT_CLASS_DEFINiTION", "3rd Party event class does follow standard"),
   INVALID_TOKEN_CODE(500, "INVALID_TOKEN_CODE", "The token-code is not valid"),
   MSISDN_TOKEN_CODE_NOT_COMPATIBLE(501, "MSISDN_TOKEN_CODE_NOT_COMPATIBLE", "The token-code is not associated to the current MSISDN"),
   CONCURRENT_ALLOCATION(502, "CONCURRENT_ALLOCATION", "The pair <MSISDN, token-code> is already in allocation phase"),

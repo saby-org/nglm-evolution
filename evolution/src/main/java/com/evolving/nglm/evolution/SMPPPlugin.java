@@ -71,6 +71,8 @@ public class SMPPPlugin implements SMSNotificationInterface
     String service_type = JSONUtilities.decodeString(notificationPluginConfiguration, "service_type", false);
     String delivery_receipt_decoding_hex_dec = JSONUtilities.decodeString(notificationPluginConfiguration, "delivery_receipt_decoding_hex_dec", false);
     String is_send_to_payload = JSONUtilities.decodeString(notificationPluginConfiguration, "is_send_to_payload", false);
+    String sms_MO_event_name = JSONUtilities.decodeString(notificationPluginConfiguration, "sms_MO_event_name", false);
+    String sms_MO_channel_name = JSONUtilities.decodeString(notificationPluginConfiguration, "sms_MO_channel_name", false);
     
     
     log.info("SMPP Plugin init; smscHost="+smscHost+ ", username="+username+ ", password="+password + ", connectionType="+connection_type);
@@ -112,7 +114,7 @@ public class SMPPPlugin implements SMSNotificationInterface
     config.addProperty(SMPP_CONFIGS.encoding_charset.toString(), encoding_charset != null ? encoding_charset : "ISO8859_1");
     config.addProperty(SMPP_CONFIGS.expiration_period.toString(), expiration_period != null ? expiration_period : String.valueOf(2));
     config.addProperty(SMPP_CONFIGS.delay_on_queue_full.toString(), delay_on_queue_full != null ? delay_on_queue_full : String.valueOf(60));
-
+    
     if(smpp_receiver_thread_number!= null){
     	config.addProperty(SMPP_CONFIGS.smpp_receiver_thread_number.toString(), smpp_receiver_thread_number);
     }
@@ -146,19 +148,26 @@ public class SMPPPlugin implements SMSNotificationInterface
 	if(is_send_to_payload!= null){
 		config.addProperty(SMPP_CONFIGS.is_send_to_payload.toString(), is_send_to_payload);    
 	}
-    
-    smsSenderFactory = new SMSSenderFactory(config);
+	  
+  if(sms_MO_event_name != null) {
+	  config.addProperty(SMPP_CONFIGS.sms_MO_event_name.toString(), sms_MO_event_name);  
+	}
+  
+  if(sms_MO_channel_name != null) {
+    config.addProperty(SMPP_CONFIGS.sms_MO_channel_name.toString(), sms_MO_event_name);  
+  }
+  smsSenderFactory = new SMSSenderFactory(config);
 
-    smsSenderFactory.init(smsNotificationManager);
-    if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
-      {
-        log.info("SMPP Driver Load NOT Successfully: no sender created");
-      }
-    else
-      {
-        log.info("SMPP Driver Load Successfully");
-        sender = smsSenderFactory.getSMSSenders()[0];
-      }
+  smsSenderFactory.init(smsNotificationManager);
+  if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
+    {
+      log.info("SMPP Driver Load NOT Successfully: no sender created");
+    }
+  else
+    {
+      log.info("SMPP Driver Load Successfully");
+      sender = smsSenderFactory.getSMSSenders()[0];
+    }
   }
 
   /*****************************************

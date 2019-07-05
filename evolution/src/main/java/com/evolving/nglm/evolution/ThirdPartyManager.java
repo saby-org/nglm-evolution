@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -59,6 +60,9 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -107,6 +111,7 @@ public class ThirdPartyManager
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
+  private static Map<String, Constructor<? extends EvolutionEngineEvent>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
   private static final String GENERIC_RESPONSE_CODE = "responseCode";
   private static final String GENERIC_RESPONSE_MSG = "responseMessage";
@@ -147,7 +152,8 @@ public class ThirdPartyManager
     getCustomerNBOs,
     getCustomerNBOsTokens,
     getTokensCodesList,
-    acceptOffer;
+    acceptOffer,
+    triggerEvent;
   }
 
   //
@@ -323,6 +329,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOsTokens", new APIHandler(API.getCustomerNBOsTokens));
       restServer.createContext("/nglm-thirdpartymanager/getTokensCodesList", new APIHandler(API.getTokensCodesList));
       restServer.createContext("/nglm-thirdpartymanager/acceptOffer", new APIHandler(API.acceptOffer));
+      restServer.createContext("/nglm-thirdpartymanager/triggerEvent", new APIHandler(API.triggerEvent));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -583,6 +590,9 @@ public class ThirdPartyManager
               break;
             case acceptOffer:
               jsonResponse = processAcceptOffer(jsonRoot);
+              break;
+            case triggerEvent:
+              jsonResponse = processTriggerEvent(jsonRoot);
               break;
           }
         }
@@ -2498,6 +2508,120 @@ public class ThirdPartyManager
      *
      *****************************************/
 
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processTriggerEvent
+  *
+  *****************************************/
+
+  private JSONObject processTriggerEvent(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true);
+    JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
+
+    if (customerID == null || customerID.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{customerID is missing}");
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    if (eventName == null || eventName.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{eventName is missing}");
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    if (eventBody == null)
+      {
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{eventBody is missing}");
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     * resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    else
+      {
+        /*****************************************
+         *
+         * Create Event object and push it its topic
+         *
+         *****************************************/
+        EvolutionEngineEventDeclaration eventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
+        if (eventDeclaration == null)
+          {
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.EVENT_NAME_UNKNOWN.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.EVENT_NAME_UNKNOWN.getGenericResponseMessage() + "-{" + eventName + "}");
+            return JSONUtilities.encodeObject(response);
+          }
+        else
+          {
+            Constructor<? extends EvolutionEngineEvent> constructor = JSON3rdPartyEventsConstructor.get(eventName);
+            Class<? extends EvolutionEngineEvent> eventClass;
+            if (constructor == null)
+              {
+                try
+                  {
+                    eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
+                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+                    JSON3rdPartyEventsConstructor.put(eventName, constructor);
+                  }
+                catch (Exception e)
+                  {
+                    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseCode());
+                    response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseMessage() + "-{" + eventDeclaration.getEventClassName() + "(1) Exception " + e.getClass().getName() + "}");
+                    return JSONUtilities.encodeObject(response);
+                  }
+              }
+            EvolutionEngineEvent eev = null;
+            try
+              {
+                eev = (EvolutionEngineEvent) constructor.newInstance(new Object[]{subscriberID, new Date(), eventBody });
+              }
+            catch (Exception e)
+              {
+                response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseCode());
+                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseMessage() + "-{" + eventDeclaration.getEventClassName() + "(2) Exception " + e.getClass().getName() + "}");
+                return JSONUtilities.encodeObject(response);
+              }
+            
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), eev)));
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage() + "{event triggered}");
+          }
+      }
+
+    /*****************************************
+     *
+     * return
+     *
+     *****************************************/
     return JSONUtilities.encodeObject(response);
   }
 

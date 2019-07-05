@@ -18,6 +18,7 @@ import ie.omk.smpp.util.UTF16Encoding;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
@@ -28,16 +29,25 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.evolution.SMSNotificationManager;
+import com.evolving.nglm.evolution.SubscriberProfileForceUpdate;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.EvolutionEngineEvent;
+import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
+import com.evolving.nglm.evolution.MONotificationEvent;
 import com.lumatagroup.expression.driver.SMPP.SMPPConnection.SubmitSMCorrectionDeliveryRequest;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 
 /**
  * Recommended reading: http://www.developershome.com/sms/gsmAlphabet.asp
@@ -98,6 +108,10 @@ public class SimpleSMSSender extends SMSSenderListener {
 	protected final String handle_submit_sm_response_in_multi_part;
 	protected final Integer dest_addr_subunit;
 	protected final String service_type;
+	protected final String sms_MO_event_name;
+	protected final String sms_MO_channel_name;
+	protected Constructor<? extends MONotificationEvent> sms_MO_class_constructor = null;
+	
 
 	private final String DELIVERY_RECEIPT_DEC = "dec";
 	private final String MULTI_PART_SUBMIT_SM_HANDLE_ALL = "all";
@@ -141,7 +155,9 @@ public class SimpleSMSSender extends SMSSenderListener {
 	                       String service_type,
 	                       String deliveryReceiptDecodingDecimalHexa,
 	                       String isSendToPayload,
-	                       String midnight_expiry_smooth_hours // EFOGC-5387 defines the number of hours after midnight during which smoothing the exact 24:00:00 messages expiry
+	                       String midnight_expiry_smooth_hours, // EFOGC-5387 defines the number of hours after midnight during which smoothing the exact 24:00:00 messages expiry
+	                       String sms_MO_event_name,
+	                       String sms_MO_channel_name
 	                       ) throws NumberFormatException, UnsupportedEncodingException {
 	//@formatter:on
 
@@ -340,7 +356,9 @@ public class SimpleSMSSender extends SMSSenderListener {
 			catch(NumberFormatException e){
 				logger.warn("SimpleSMSSender.SimpleSMSSender Exception " + e.getClass().getName() + " while interpreting midnight_expiry_smooth_hours " + midnight_expiry_smooth_hours);
 			}
-		}
+		}		
+		this.sms_MO_event_name = sms_MO_event_name;
+		this.sms_MO_channel_name = sms_MO_channel_name;
 	}
 
 	public SMPPConnection getSMPPConnection() {
@@ -1080,17 +1098,68 @@ public class SimpleSMSSender extends SMSSenderListener {
                 if(packet.getEsmClass() == SMPPPacket.ESME_ROK){
                     logger.info("SimpleSMSSender.onDeliverSm: MO packet received via SMSC at driver.");
                     try {
-//                        SMSSender sender = new SMSSender(packet.getSource()!=null ? packet.getSource().getAddress() : null);
-//                        SMSReceiver receiver = new SMSReceiver(packet.getDestination()!=null ? packet.getDestination().getAddress() : null);
-//                        SMSMessageContentMO messageContent = new SMSMessageContentMO(packet.getMessageText());
-//                        driver.handleMO(
-//                                new IncomingMessage(
-//                                        ""+new Random().nextInt(),
-//                                        new Date(),
-//                                        receiver,
-//                                        sender,
-//                                        messageContent
-//                                        ,packet.getDestination()!=null ? packet.getDestination().getAddress() : null));
+                      // build a MO message and drop it into the good queue
+                      if(sms_MO_event_name != null) {
+                        EvolutionEngineEventDeclaration eventDeclaration = Deployment.getEvolutionEngineEvents().get(sms_MO_event_name);
+                        // the MO must be handled...
+                        if(sms_MO_class_constructor == null) {
+                          // must check the MO class and keep in memory its constructor
+                          if(eventDeclaration == null) {
+                            logger.warn("SimpleSMSSender.onDeliverSm No Event Declaration for eventName " + eventDeclaration);
+                            return;
+                          }
+                          else {
+                            Class<? extends MONotificationEvent> moClass = null;
+                            try {
+                              moClass = (Class<? extends MONotificationEvent>)Class.forName(eventDeclaration.getEventClassName());
+                            }
+                            catch(Exception e) {
+                              logger.warn("SimpleSMSSender.onDeliverSm Exception while retrieving class " + eventDeclaration.getEventClassName(), e);
+                              return;
+                            }
+                            if(!MONotificationEvent.class.isAssignableFrom(moClass) || !EvolutionEngineEvent.class.isAssignableFrom(moClass)) {
+                              // the given class does not respect the good interface
+                              logger.warn("SimpleSMSSender.onDeliverSm The class " + eventDeclaration.getEventClassName() + " does not implement interface " + MONotificationEvent.class.getName() + " and/or " + EvolutionEngineEvent.class.getName());
+                              return;
+                            }
+                            try {
+                              sms_MO_class_constructor = moClass.getConstructor(new Class[] {});
+                            }
+                            catch(Exception e) {
+                              logger.warn("SimpleSMSSender.onDeliverSm Exception while retrieving empty constructor of class " + eventDeclaration.getEventClassName(), e);
+                              return;
+                            }
+                          }
+                        }
+                        MONotificationEvent moEvent = null;
+                        try {
+                          moEvent = sms_MO_class_constructor.newInstance(new Object[] {});
+                        }
+                        catch(Exception e) {
+                          logger.warn("SimpleSMSSender.onDeliverSm Exception, Could not instanciate class " + eventDeclaration.getEventClassName(), e);
+                          return;
+                        }
+                        String subscriberID = resolveSubscriberID(packet.getSource().getAddress());
+                        if(subscriberID == null) {
+                          logger.warn("SimpleSMSSender.onDeliverSm SUBSCRIBER_NOT_FOUND " + packet.getSource().getAddress());
+                          return;
+                        }
+                        String destination = packet.getDestination()!=null ? packet.getDestination().getAddress() : null;
+                        if(destination == null || destination.trim().equals("")) {
+                          logger.warn("SimpleSMSSender.onDeliverSm DESTINATION_NOT_FOUND " + destination);
+                          return;
+                        }
+                        
+                        String body = packet.getMessageText();
+                        if(body == null) {
+                          logger.warn("SimpleSMSSender.onDeliverSm MO body is null " + body);
+                          return;
+                        }
+                        
+                        moEvent.fillWithMOInfos(subscriberID, new Date(), sms_MO_channel_name, packet.getSource()!=null ? packet.getSource().getAddress() : null, destination, body);
+                        // now drop it into the good topic
+                        SMSSenderFactory.kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), (EvolutionEngineEvent)moEvent)));
+                      }
                     } catch (Exception e) {
                         logger.warn("SMSSender.onDeliverSM MO handling failed due to "+e,e);
                     }
@@ -1130,5 +1199,25 @@ public class SimpleSMSSender extends SMSSenderListener {
   {
     logger.info("SimpleSMSSender.onSubmitSM() execution started..");
     logger.warn("SimpleSMSSender.onSubmitSM: should not happen");
+  }
+  
+  
+  /****************************************
+  *
+  *  resolveSubscriberID
+  *
+  ****************************************/
+  
+  private String resolveSubscriberID(String customerID)
+  {
+    String result = null;
+    try
+      {
+        result = SMSSenderFactory.subscriberIDService.getSubscriberID(Deployment.getGetCustomerAlternateID(), customerID);
+      } catch (SubscriberIDServiceException e)
+      {
+        logger.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", customerID, e.getMessage());
+      }
+    return result;
   }
 }

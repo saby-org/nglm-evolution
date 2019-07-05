@@ -1,9 +1,14 @@
 package com.lumatagroup.expression.driver.SMPP;
 
 import java.util.ArrayList;
+import java.util.Properties;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.SMSNotificationManager;
 import com.lumatagroup.expression.driver.SMPP.configuration.SMSC;
 import com.lumatagroup.expression.driver.SMPP.Util.SMPPUtil;
@@ -20,7 +25,9 @@ public class SMSSenderFactory {
     private static final Logger logger = LoggerFactory.getLogger(SMSSenderFactory.class);
     private final SMSC smppDriverConfigurationMap;
 	private final ArrayList<SimpleSMSSender> senders = new ArrayList<SimpleSMSSender>();
-	
+	 public static SubscriberIDService subscriberIDService;
+	 public static KafkaProducer<byte[], byte[]> kafkaProducer;
+	 	
     public SMSSenderFactory(SMSC smppDriverConfigurationMap) {
         this.smppDriverConfigurationMap = smppDriverConfigurationMap;
         if (logger.isInfoEnabled()) logger.info("SMSSenderFactory.ctor");
@@ -62,11 +69,23 @@ public class SMSSenderFactory {
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.service_type)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.delivery_receipt_decoding_hex_dec)),
 					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.is_send_to_payload)),
-					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.midnight_expiry_smooth_hours)));
+					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.midnight_expiry_smooth_hours)),
+					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.sms_MO_event_name)),
+					                                             SMPPUtil.convertString(smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.sms_MO_channel_name)));
 					
 					
 					//@formatter:on					
 					senders.add(sender);
+					String redisServer = Deployment.getRedisSentinels();
+			    subscriberIDService = new SubscriberIDService(redisServer);
+			    
+			    Properties producerProperties = new Properties();
+			    producerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+			    producerProperties.put("acks", "all");
+			    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+			    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+			    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+					
 					if (logger.isInfoEnabled()) logger.info("SMSSenderFactory.init successfuly initialized SMSSender for "+smppDriverConfigurationMap.getProperty(SMPP_CONFIGS.name));
 				} catch (Exception e) {
 					logger.error("SMSSenderFactory.init failed to initialize SMSSender from "+smppDriverConfigurationMap+" due to "+e,e);

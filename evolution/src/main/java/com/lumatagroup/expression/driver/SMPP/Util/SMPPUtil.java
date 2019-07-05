@@ -43,7 +43,9 @@ public class SMPPUtil {
 		delivery_receipt_decoding_hex_dec,
 		is_send_to_payload,
 		magic_number_configuration, 
-		midnight_expiry_smooth_hours;
+		midnight_expiry_smooth_hours,
+		sms_MO_event_name,
+		sms_MO_channel_name
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(SMPPConnection.class);
