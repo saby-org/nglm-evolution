@@ -165,6 +165,9 @@ public class Deployment
   public static String communicationChannelBlackoutTopic;
   public static String loyaltyProgramTopic;
   private static Map<String,ProgramType> programTypes = new LinkedHashMap<String,ProgramType>();
+  private static int ucgEngineESConnectTimeout;
+  private static int ucgEngineESSocketTimeout;
+  private static int ucgEngineESMasRetryTimeout;
 
   /*****************************************
   *
@@ -332,7 +335,10 @@ public class Deployment
   public static String getCommunicationChannelBlackoutTopic() { return communicationChannelBlackoutTopic; } 
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; } 
   public static Map<String,ProgramType> getProgramTypes() { return programTypes; }
-  
+  public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
+  public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
+  public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
+
   /*****************************************
   *
   *  getCriterionFieldRetrieverClass
@@ -2118,6 +2124,49 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+
+    //
+    //  ucgEngineESConnectTimeout
+    //
+
+    try
+      {
+        Integer ucgEngineESConnectTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESConnectTimeout",false);
+        ucgEngineESConnectTimeout = ucgEngineESConnectTimeoutJSON == null ? 30000:ucgEngineESConnectTimeoutJSON;
+      }
+    catch(JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment",e);
+      }
+
+    //
+    //  ucgEngineESSocketTimeout
+    //
+
+    try
+      {
+        Integer ucgEngineESSocketTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESSocketTimeout",false);
+        ucgEngineESSocketTimeout = ucgEngineESSocketTimeoutJSON == null ? 60000:ucgEngineESSocketTimeoutJSON;
+      }
+    catch(JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment",e);
+      }
+
+    //
+    //  ucgEngineESMasRetryTimeout
+    //
+
+    try
+      {
+        Integer ucgEngineESMasRetryTimeoutJSON = JSONUtilities.decodeInteger(jsonRoot,"ucgEngineESMasRetryTimeout",false);
+        ucgEngineESMasRetryTimeout = ucgEngineESMasRetryTimeoutJSON == null ? 60000:ucgEngineESMasRetryTimeoutJSON;
+      }
+    catch(JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment",e);
+      }
+
   }
 
   /*****************************************

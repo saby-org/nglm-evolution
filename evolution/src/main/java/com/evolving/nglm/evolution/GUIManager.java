@@ -8246,65 +8246,73 @@ public class GUIManager
     ****************************************/
 
     List<JSONObject> aggregationResult = new ArrayList<>();
+    List<QueryBuilder> processedQueries = new ArrayList<>();
     try
+    {
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+      List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+      SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+      for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
       {
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
-        List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
-        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
-          {
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
-              {
-                query = query.filter(evaluationCriterion.esQuery());
-              }
-            //use name as key, even if normally should use id, to make simpler to use this count in chart
-            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
-          }
-        AggregationBuilder aggregation = null;
-        FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
-        filterArray = aggFilters.toArray(filterArray);
-        aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
-        ((FiltersAggregationBuilder) aggregation).otherBucket(true);
-        ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
-        searchSourceBuilder.aggregation(aggregation);
-
-        //
-        //  search in ES
-        //
-        
-        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticsearch.search(searchRequest);
-        Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
-        for (Filters.Bucket entry : aggResultFilters.getBuckets())
-          {
-            HashMap<String,Object> aggItem = new HashMap<String,Object>();
-            String key = entry.getKeyAsString();            // bucket key
-            long docCount = entry.getDocCount();            // Doc count
-            aggItem.put("name",key);
-            aggItem.put("count",docCount);
-            aggregationResult.add(JSONUtilities.encodeObject(aggItem));
-          }
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        for(QueryBuilder processedQuery : processedQueries)
+        {
+          query = query.mustNot(processedQuery);
+        }
+        BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
+        for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
+        {
+          segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+          processedQueries.add(segmentQuery);
+        }
+        query = query.filter(segmentQuery);
+        //use name as key, even if normally should use id, to make simpler to use this count in chart
+        aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
       }
+      AggregationBuilder aggregation = null;
+      FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+      filterArray = aggFilters.toArray(filterArray);
+      aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
+      ((FiltersAggregationBuilder) aggregation).otherBucket(true);
+      ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+      searchSourceBuilder.aggregation(aggregation);
+
+      //
+      //  search in ES
+      //
+
+      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      SearchResponse searchResponse = elasticsearch.search(searchRequest);
+      Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
+      for (Filters.Bucket entry : aggResultFilters.getBuckets())
+      {
+        HashMap<String,Object> aggItem = new HashMap<String,Object>();
+        String key = entry.getKeyAsString();            // bucket key
+        long docCount = entry.getDocCount();            // Doc count
+        aggItem.put("name",key);
+        aggItem.put("count",docCount);
+        aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+      }
+    }
     catch(Exception ex)
-      {
-        //
-        //  log
-        //
+    {
+      //
+      //  log
+      //
 
-        StringWriter stackTraceWriter = new StringWriter();
-        ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+      StringWriter stackTraceWriter = new StringWriter();
+      ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
 
-        //
-        //  response
-        //
+      //
+      //  response
+      //
 
-        response.put("responseCode", "systemError");
-        response.put("responseMessage", ex.getMessage());
-        response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
+      response.put("responseCode", "systemError");
+      response.put("responseMessage", ex.getMessage());
+      response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
+      return JSONUtilities.encodeObject(response);
+    }
     response.put("responseCode", "ok");
     response.put("result",aggregationResult);
     return JSONUtilities.encodeObject(response);
@@ -12992,6 +13000,17 @@ public class GUIManager
         ucgRuleService.putUCGRule(ucgRule,segmentationDimensionService,(existingUCGRule == null), userID);
 
         /*****************************************
+         *
+         *  deactivate any active rules except current one active
+         *  this replace one UCGRule active sequence from UCGRule.validate()
+         *
+         *****************************************/
+
+        if(ucgRule.getActive()) {
+          deactivateOtherUCGRules(ucgRule, now);
+        }
+
+        /*****************************************
         *
         *  response
         *
@@ -13035,6 +13054,66 @@ public class GUIManager
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+   *
+   *  deactivateOtherUCGRules
+   *
+   *****************************************/
+
+  private void deactivateOtherUCGRules(UCGRule currentUCGRule,Date date)
+  {
+    /****************************************
+     *
+     *  identify
+     *
+     ****************************************/
+
+    Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+      {
+        //
+        //  modifiedUCGRule
+        //
+        if(currentUCGRule.getGUIManagedObjectID() != existingUCGRule.getGUIManagedObjectID() && existingUCGRule.getActive() == true)
+          {
+            long epoch = epochServer.getKey();
+            GUIManagedObject modifiedUCGRule;
+            try
+              {
+                JSONObject existingRuleJSON = existingUCGRule.getJSONRepresentation();
+                existingRuleJSON.replace("active", Boolean.FALSE);
+                UCGRule ucgRule = new UCGRule(existingRuleJSON, epoch, existingUCGRule);
+                //ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
+                modifiedUCGRule = ucgRule;
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
+              }
+
+        //
+        //  changed?
+        //
+
+        if (existingUCGRule.getAccepted() != modifiedUCGRule.getAccepted())
+          {
+            modifiedUCGRules.add(modifiedUCGRule);
+          }
+      }
+    }
+
+    /****************************************
+     *
+     *  update
+     *
+     ****************************************/
+
+    for (GUIManagedObject modifiedUCGRule : modifiedUCGRules)
+      {
+        ucgRuleService.putGUIManagedObject(modifiedUCGRule, date, false, null);
       }
   }
 
@@ -15062,6 +15141,7 @@ public class GUIManager
     response.put("smsTemplateCount", smsTemplateService.getStoredSMSTemplates().size());
     response.put("reportsCount", reportService.getStoredReports().size());
     response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
+    response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());
     return JSONUtilities.encodeObject(response);
   }
 

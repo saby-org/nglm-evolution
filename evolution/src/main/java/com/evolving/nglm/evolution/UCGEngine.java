@@ -77,9 +77,9 @@ public class UCGEngine
   private RestHighLevelClient elasticsearchRestClient;
   private String subscriberGroupField = null;
   private static final HashMap<String,String> bucketAggCounters = new HashMap<>();
-  private static final int connectTimeout = 500000;
-  private static final int socketTimeout = 600000;
-  private static final int maxRetryTimeout = 9000000;
+  private static final int connectTimeout = Deployment.getUcgEngineESConnectTimeout();
+  private static final int socketTimeout = Deployment.getUcgEngineESSocketTimeout();
+  private static final int maxRetryTimeout = Deployment.getUcgEngineESMasRetryTimeout();
 
   /*****************************************
   *

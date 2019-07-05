@@ -290,24 +290,6 @@ public class UCGRule extends GUIManagedObject
             throw new GUIManagerException("unknown segmentation dimension", segmentationDimensionID);
           }
       }
-
-    /*****************************************
-    *
-    *  single active UCGRule
-    *
-    *****************************************/
-
-    if (getActive())
-      {
-        for (UCGRule activeUCGRule : ucgRuleService.getActiveUCGRules(date))
-          {
-            if (! Objects.equals(activeUCGRule.getUCGRuleID(), getUCGRuleID()))
-              {
-                log.info("existing ucgRule is already active: {}", getUCGRuleID(), activeUCGRule.getUCGRuleID());
-                throw new GUIManagerException("existing active UCGRule", activeUCGRule.getUCGRuleID());
-              }
-          }
-      }
   }
 
   /*****************************************
