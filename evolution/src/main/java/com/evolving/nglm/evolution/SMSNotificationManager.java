@@ -204,8 +204,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("source", Schema.STRING_SCHEMA);
       schemaBuilder.field("text", Schema.STRING_SCHEMA);
+      schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
-      schemaBuilder.field("confirmation_expected", Schema.BOOLEAN_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -232,10 +232,10 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public String destination;
     public String source;
     public String text;
+    private boolean confirmationExpected;
     private SMSMessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
-    private boolean confirmationExpected;
     
     //
     //  accessors
@@ -244,19 +244,19 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public String getDestination() { return destination; }
     public String getSource() { return source; }
     public String getText() { return text; }
+    public boolean getConfirmationExpected() { return confirmationExpected; }
     public SMSMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
-    public boolean isConfirmationExpected() { return confirmationExpected; }
 
     //
     //   setters
     // 
 
+    public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setMessageStatus(SMSMessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-    public void setIsConfirmationExpected(boolean expected) { this.confirmationExpected = expected; }
     
     /*****************************************
     *
@@ -298,15 +298,15 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String text, SMSMessageStatus status, boolean confirmationExpected)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String text, boolean confirmationExpected, SMSMessageStatus status)
     {
       super(schemaAndValue);
       this.destination = destination;
       this.source = source;
       this.text = text;
+      this.confirmationExpected = confirmationExpected;
       this.status = status;
       this.returnCode = status.getReturnCode();
-      this.confirmationExpected = confirmationExpected;
     }
     
     /*****************************************
@@ -321,10 +321,10 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.destination = smsNotificationManagerRequest.getDestination();
       this.source = smsNotificationManagerRequest.getSource();
       this.text = smsNotificationManagerRequest.getText();
+      this.confirmationExpected = smsNotificationManagerRequest.getConfirmationExpected();
       this.status = smsNotificationManagerRequest.getMessageStatus();
       this.returnCode = smsNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = smsNotificationManagerRequest.getReturnCodeDetails();
-      this.confirmationExpected = smsNotificationManagerRequest.isConfirmationExpected();
     }
 
     /*****************************************
@@ -352,8 +352,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       struct.put("destination", notificationRequest.getDestination());
       struct.put("source", notificationRequest.getSource());
       struct.put("text", notificationRequest.getText());
+      struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
       struct.put("return_code", notificationRequest.getReturnCode());
-      struct.put("confirmation_expected", notificationRequest.isConfirmationExpected());
       return struct;
     }
     
@@ -387,8 +387,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       String destination = valueStruct.getString("destination");
       String source = valueStruct.getString("source");
       String text = valueStruct.getString("text");
+      boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
       Integer returnCode = valueStruct.getInt32("return_code");
-      boolean confirmationExpected = valueStruct.getBoolean("confirmation_expected");
       SMSMessageStatus status = SMSMessageStatus.fromReturnCode(returnCode);
       
       //
@@ -402,7 +402,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       //
 
       
-      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, text, status, confirmationExpected);
+      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, text, confirmationExpected, status);
     }
     
     @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
@@ -503,7 +503,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
-      String text = smsMessage.resolve(subscriberEvaluationRequest);
+      String text = smsMessage.resolve(evolutionEventContext, subscriberEvaluationRequest);
 
       /*****************************************
       *
@@ -517,7 +517,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, text);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
-          request.setIsConfirmationExpected(confirmationExpected);
+          request.setConfirmationExpected(confirmationExpected);
         }
       else
         {

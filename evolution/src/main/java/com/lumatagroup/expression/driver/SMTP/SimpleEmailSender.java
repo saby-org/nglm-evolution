@@ -101,7 +101,7 @@ public class SimpleEmailSender {
 					if (!isTimeout) {
 						trans.sendMessage(smtpMsg, smtpMsg.getAllRecipients());
 						//delivered
-                        if(mailNotificationRequest.isConfirmationExpected()) {
+                        if(mailNotificationRequest.getConfirmationExpected()) {
                           mailNotificationRequest.setDeliveryStatus(DeliveryStatus.Acknowledged);
                           mailNotificationRequest.setMessageStatus(MAILMessageStatus.DELIVERED);
                           mailNotificationRequest.setReturnCode(MAILMessageStatus.DELIVERED.getReturnCode());
@@ -120,7 +120,7 @@ public class SimpleEmailSender {
 							smtpConn.setTransportObject(trans);
 							//delivered
 							trans.sendMessage(smtpMsg, smtpMsg.getAllRecipients());	
-	                         if(mailNotificationRequest.isConfirmationExpected()) {
+	                         if(mailNotificationRequest.getConfirmationExpected()) {
                                mailNotificationRequest.setDeliveryStatus(DeliveryStatus.Acknowledged);
                                mailNotificationRequest.setMessageStatus(MAILMessageStatus.DELIVERED);
                                mailNotificationRequest.setReturnCode(MAILMessageStatus.DELIVERED.getReturnCode());

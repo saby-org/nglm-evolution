@@ -50,6 +50,9 @@ public abstract class GUIManagedObject
   {
     Journey("journey"),
     Campaign("campaign"),
+    SMSMessageTemplate("smsMessageTemplate"),
+    MailMessageTemplate("mailMessageTemplate"),
+    PushMessageTemplate("pushMessageTemplate"),
     Other("other"),
     Unknown("(unknown)");
     private String externalRepresentation;
@@ -113,7 +116,7 @@ public abstract class GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("guimanager_managed_object");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectID", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectName", Schema.OPTIONAL_STRING_SCHEMA);
@@ -122,6 +125,7 @@ public abstract class GUIManagedObject
     schemaBuilder.field("effectiveStartDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("effectiveEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("readOnly", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("internalOnly", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
@@ -160,6 +164,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(Report.serde());
     guiManagedObjectSerdes.add(MailTemplate.serde());
     guiManagedObjectSerdes.add(SMSTemplate.serde());
+    guiManagedObjectSerdes.add(PushTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
     guiManagedObjectSerdes.add(Target.serde());
     guiManagedObjectSerdes.add(CommunicationChannel.serde());
@@ -191,6 +196,7 @@ public abstract class GUIManagedObject
   private Date effectiveStartDate;
   private Date effectiveEndDate;
   private boolean readOnly;
+  private boolean internalOnly;
   private boolean active;
 
   /****************************************
@@ -216,6 +222,7 @@ public abstract class GUIManagedObject
   //
 
   boolean getReadOnly() { return readOnly; }
+  boolean getInternalOnly() { return internalOnly; }
   boolean getActive() { return active; }
 
   //
@@ -258,6 +265,7 @@ public abstract class GUIManagedObject
     struct.put("effectiveStartDate", guiManagedObject.getRawEffectiveStartDate());
     struct.put("effectiveEndDate", guiManagedObject.getRawEffectiveEndDate());
     struct.put("readOnly", guiManagedObject.getReadOnly());
+    struct.put("internalOnly", guiManagedObject.getInternalOnly());
     struct.put("active", guiManagedObject.getActive());
   }
 
@@ -277,6 +285,7 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = null;
     this.effectiveEndDate = null;
     this.readOnly = false;
+    this.internalOnly = false;
     this.active = false;
   }
                              
@@ -309,6 +318,7 @@ public abstract class GUIManagedObject
     Date effectiveStartDate = (Date) valueStruct.get("effectiveStartDate");
     Date effectiveEndDate = (Date) valueStruct.get("effectiveEndDate");
     boolean readOnly = valueStruct.getBoolean("readOnly");
+    boolean internalOnly = (schemaVersion >= 2) ? valueStruct.getBoolean("internalOnly") : false;
     boolean active = valueStruct.getBoolean("active");
 
     //
@@ -323,6 +333,7 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
     this.readOnly = readOnly;
+    this.internalOnly = internalOnly;
     this.active = active;
   }
 
@@ -342,6 +353,7 @@ public abstract class GUIManagedObject
     this.effectiveStartDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     this.effectiveEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
     this.readOnly = JSONUtilities.decodeBoolean(jsonRoot, "readOnly", Boolean.FALSE);
+    this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.TRUE);
   }
 

@@ -45,6 +45,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 public class CriterionField extends DeploymentManagedObject
 {
@@ -236,6 +239,65 @@ public class CriterionField extends DeploymentManagedObject
     criterionFieldJSON.put("dataType", contextVariable.getType().getExternalRepresentation());
     criterionFieldJSON.put("retriever", "getJourneyParameter");
     return JSONUtilities.encodeObject(criterionFieldJSON);
+  }
+
+  /*****************************************
+  *
+  *  constructor -- message tag
+  *
+  *****************************************/
+
+  public CriterionField(String tagName) throws GUIManagerException
+  {
+    this(generateCriterionField(tagName));
+  }
+
+  //
+  //  constructor -- tag name
+  //
+
+  private static JSONObject generateCriterionField(String tagName)
+  {
+    Map<String,Object> criterionFieldJSON = new HashMap<String,Object>();
+    criterionFieldJSON.put("id", generateTagID(tagName));
+    criterionFieldJSON.put("name", tagName);
+    criterionFieldJSON.put("display", tagName);
+    criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+    criterionFieldJSON.put("expressionValuedParameter", true);
+    criterionFieldJSON.put("retriever", "getSubscriberMessageParameterTag");
+    return JSONUtilities.encodeObject(criterionFieldJSON);
+  }
+
+  //
+  //  generateTagID
+  //
+
+  private static String generateTagID(String name)
+  {
+    //
+    //  initialize result
+    //
+    
+    StringBuilder result = new StringBuilder();
+    result.append("tag");
+
+    //
+    //  append words in name to result
+    //
+    
+    Pattern p = Pattern.compile("[a-zA-Z0-9]+");
+    Matcher m = p.matcher(name);
+    while (m.find())
+      {
+        result.append(".");
+        result.append(m.group(0).toLowerCase());
+      }
+
+    //
+    //  return
+    //
+
+    return result.toString();
   }
 
   /*****************************************
@@ -535,7 +597,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  public String resolveTagFormat()
+  public String resolveTagFormat(CriterionDataType formatDataType)
   {
     /*****************************************
     *
@@ -553,7 +615,7 @@ public class CriterionField extends DeploymentManagedObject
 
     if (tagFormat == null)
       {
-        switch (this.getFieldDataType())
+        switch (formatDataType)
           {
             case IntegerCriterion:
               tagFormat = "#0";
@@ -578,7 +640,7 @@ public class CriterionField extends DeploymentManagedObject
     String result = "";
     if (tagFormat != null)
       {
-        switch (this.getFieldDataType())
+        switch (formatDataType)
           {
             case IntegerCriterion:
             case DoubleCriterion:
@@ -599,7 +661,11 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  public int resolveTagMaxLength()
+  //
+  //  w/ effective type
+  //
+
+  public int resolveTagMaxLength(CriterionDataType formatDataType)
   {
     /*****************************************
     *
@@ -618,7 +684,7 @@ public class CriterionField extends DeploymentManagedObject
     *
     *****************************************/
 
-    switch (this.getFieldDataType())
+    switch (formatDataType)
       {
         case StringCriterion:
           return 20;
@@ -638,6 +704,15 @@ public class CriterionField extends DeploymentManagedObject
         default:
           return 20;
       }
+  }
+
+  //
+  //  w/ default type
+  //
+
+  public int resolveTagMaxLength()
+  {
+    return resolveTagMaxLength(this.getFieldDataType());
   }
 
   /*****************************************

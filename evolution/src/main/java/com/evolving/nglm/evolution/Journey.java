@@ -808,7 +808,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     /*****************************************
     *
@@ -839,7 +839,7 @@ public class Journey extends GUIManagedObject
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
     this.targetID = JSONUtilities.decodeString(jsonRoot, "targetID", false);
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
-    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true);
+    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
     /*****************************************
@@ -856,7 +856,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables);
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables, subscriberMessageTemplateService);
 
     /*****************************************
     *
@@ -864,7 +864,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false);
+    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, subscriberMessageTemplateService);
     
     /*****************************************
     *
@@ -1228,6 +1228,55 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
+    *  resolve hard-coded subscriber messages
+    *
+    *****************************************/
+
+    Set<SubscriberMessage> hardcodedSubscriberMessages = retrieveHardcodedSubscriberMessages(this);
+    Set<SubscriberMessage> existingHardcodedSubscriberMessages = (existingJourney != null) ? retrieveHardcodedSubscriberMessages(existingJourney) : new HashSet<SubscriberMessage>();
+    for (SubscriberMessage subscriberMessage : hardcodedSubscriberMessages)
+      {
+        //
+        //  validate -- no parameterTags  
+        //
+
+        if (SubscriberMessageTemplate.resolveParameterTags(subscriberMessage.getDialogMessages()).size() > 0)
+          {
+            throw new GUIManagerException("illegal subscriberMessage", "parameterTags not allowed here");
+          }
+
+        //
+        //  does this message already exist?
+        //
+
+        SubscriberMessage matchingSubscriberMessage = null;
+        for (SubscriberMessage existingSubscriberMessage : existingHardcodedSubscriberMessages)
+          {
+            if (Objects.equals(subscriberMessage.getDialogMessages(), existingSubscriberMessage.getDialogMessages()))
+              {
+                matchingSubscriberMessage = existingSubscriberMessage;
+                break;
+              }
+          }
+
+        //
+        //  resolve
+        //
+
+        if (matchingSubscriberMessage == null)
+          {
+            SubscriberMessageTemplate internalSubscriberMessageTemplate = SubscriberMessageTemplate.newInternalTemplate(subscriberMessage, subscriberMessageTemplateService);
+            subscriberMessage.setSubscriberMessageTemplateID(internalSubscriberMessageTemplate.getSubscriberMessageTemplateID());
+            subscriberMessageTemplateService.putSubscriberMessageTemplate(internalSubscriberMessageTemplate, true, null);
+          }
+        else
+          {
+            subscriberMessage.setSubscriberMessageTemplateID(matchingSubscriberMessage.getSubscriberMessageTemplateID());
+          }
+      }
+
+    /*****************************************
+    *
     *  epoch
     *
     *****************************************/
@@ -1320,7 +1369,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing) throws GUIManagerException
+  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     Map<String,GUINode> nodes = new LinkedHashMap<String,GUINode>();
     if (jsonArray != null)
@@ -1332,7 +1381,7 @@ public class Journey extends GUIManagedObject
             //
 
             JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
-            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing);
+            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, subscriberMessageTemplateService);
 
             //
             //  validate (if required)
@@ -1380,7 +1429,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private ParameterMap decodeBoundParameters(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables) throws GUIManagerException
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables);
     ParameterMap boundParameters = new ParameterMap();
@@ -1433,7 +1482,7 @@ public class Journey extends GUIManagedObject
               break;
 
             case SMSMessageParameter:
-              SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+              SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
               boundParameters.put(parameterName, smsMessageValue);
               break;
 
@@ -1449,6 +1498,86 @@ public class Journey extends GUIManagedObject
           }
       }
     return boundParameters;
+  }
+
+  /*****************************************
+  *
+  *  retrieve hard-coded subscriber messages (i.e., that do NOT directly reference a template)
+  *
+  *****************************************/
+
+  private static Set<SubscriberMessage> retrieveHardcodedSubscriberMessages(Journey journey)
+  {
+    /*****************************************
+    *
+    *  node/link parameters
+    *
+    *****************************************/
+
+    Set<SubscriberMessage> result = new HashSet<SubscriberMessage>();
+    for (JourneyNode journeyNode : journey.getJourneyNodes().values())
+      {
+        //
+        //  node parameters
+        //
+
+        for (Object parameterValue : journeyNode.getNodeParameters().values())
+          {
+            if (parameterValue instanceof SubscriberMessage)
+              {
+                SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
+                if (subscriberMessage.getDialogMessages().size() > 0)
+                  {
+                    result.add(subscriberMessage);
+                  }
+              }
+          }
+
+        //
+        //  outgoing link parameters
+        //
+
+        for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values())
+          {
+            for (Object parameterValue : journeyLink.getLinkParameters().values())
+              {
+                if (parameterValue instanceof SubscriberMessage)
+                  {
+                    SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
+                    if (subscriberMessage.getDialogMessages().size() > 0)
+                      {
+                        result.add(subscriberMessage);
+                      }
+                  }
+              }
+          }
+      }
+
+    /*****************************************
+    *
+    *  boundParameters
+    *
+    *****************************************/
+
+    for (Object parameterValue : journey.getBoundParameters().values())
+      {
+        if (parameterValue instanceof SubscriberMessage)
+          {
+            SubscriberMessage subscriberMessage = (SubscriberMessage) parameterValue;
+            if (subscriberMessage.getDialogMessages().size() > 0)
+              {
+                result.add(subscriberMessage);
+              }
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return result;
   }
 
   /*****************************************
@@ -1771,7 +1900,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing) throws GUIManagerException
+    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       /*****************************************
       *
@@ -1832,14 +1961,14 @@ public class Journey extends GUIManagedObject
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext, subscriberMessageTemplateService));
           this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
 
           //
           //  outputConnectors
           //
 
-          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext);
+          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext, subscriberMessageTemplateService);
         }
     }
 
@@ -1901,7 +2030,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -1937,7 +2066,7 @@ public class Journey extends GUIManagedObject
                 break;
 
               case SMSMessageParameter:
-                SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, smsMessageValue);
                 break;
 
@@ -2095,13 +2224,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       List<OutgoingConnectionPoint> outgoingConnectionPoints = new ArrayList<OutgoingConnectionPoint>();
       for (int i=0; i<jsonArray.size(); i++)
         {
           JSONObject connectionPointJSON = (JSONObject) jsonArray.get(i);
-          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext);
+          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, subscriberMessageTemplateService);
           outgoingConnectionPoints.add(outgoingConnectionPoint);
         }
       return outgoingConnectionPoints;
@@ -2168,10 +2297,10 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-      this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext);
+      this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext, subscriberMessageTemplateService);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
       this.evaluateContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "evaluateContextVariables", Boolean.FALSE);
       this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
@@ -2184,7 +2313,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private ParameterMap decodeOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    private ParameterMap decodeOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
       if (jsonArray != null)
@@ -2238,7 +2367,7 @@ public class Journey extends GUIManagedObject
                     break;
 
                   case SMSMessageParameter:
-                    SMSMessage smsMessageValue = new SMSMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                    SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                     outputConnectorParameters.put(parameterName, smsMessageValue);
                     break;
 

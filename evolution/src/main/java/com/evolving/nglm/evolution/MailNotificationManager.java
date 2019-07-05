@@ -197,8 +197,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("subject", Schema.STRING_SCHEMA);
       schemaBuilder.field("htmlBody", Schema.STRING_SCHEMA);
       schemaBuilder.field("textBody", Schema.STRING_SCHEMA);
+      schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
-      schemaBuilder.field("confirmation_expected", Schema.BOOLEAN_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -227,10 +227,10 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     private String subject;
     private String htmlBody;
     private String textBody;
+    private boolean confirmationExpected;
     private MAILMessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
-    private boolean confirmationExpected;
 
     //
     //  accessors
@@ -241,19 +241,19 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public String getSubject() { return subject; }
     public String getHtmlBody() { return htmlBody; }
     public String getTextBody() { return textBody; }
+    public boolean getConfirmationExpected() { return confirmationExpected; }
     public MAILMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
-    public boolean isConfirmationExpected() { return confirmationExpected; }
 
     //
     //  setters
     //
 
+    public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setMessageStatus(MAILMessageStatus status) { this.status = status; }
     public void setReturnCode(int returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-    public void setIsConfirmationExpected(boolean expected) { this.confirmationExpected = expected; }
     
     /*****************************************
     *
@@ -299,7 +299,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String subject, String htmlBody, String textBody, MAILMessageStatus status, boolean confirmationExpected)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String subject, String htmlBody, String textBody, boolean confirmationExpected, MAILMessageStatus status)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -307,9 +307,9 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.subject = subject;
       this.htmlBody = htmlBody;
       this.textBody = textBody;
+      this.confirmationExpected = confirmationExpected;
       this.status = status;
       this.returnCode = status.getReturnCode();
-      this.confirmationExpected = confirmationExpected;
     }
 
     /*****************************************
@@ -326,10 +326,10 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.subject = mailNotificationManagerRequest.getSubject();
       this.htmlBody = mailNotificationManagerRequest.getHtmlBody();
       this.textBody = mailNotificationManagerRequest.getTextBody();
+      this.confirmationExpected = mailNotificationManagerRequest.getConfirmationExpected();
       this.status = mailNotificationManagerRequest.getMessageStatus();
       this.returnCode = mailNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = mailNotificationManagerRequest.getReturnCodeDetails();
-      this.confirmationExpected = mailNotificationManagerRequest.isConfirmationExpected();
     }
 
     /*****************************************
@@ -359,8 +359,8 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       struct.put("subject", notificationRequest.getSubject());
       struct.put("htmlBody", notificationRequest.getHtmlBody());
       struct.put("textBody", notificationRequest.getTextBody());
+      struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
       struct.put("return_code", notificationRequest.getReturnCode());
-      struct.put("confirmation_expected", notificationRequest.isConfirmationExpected());
       return struct;
     }
 
@@ -396,15 +396,15 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       String subject = valueStruct.getString("subject");
       String htmlBody = valueStruct.getString("htmlBody");
       String textBody = valueStruct.getString("textBody");
+      boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
       Integer returnCode = valueStruct.getInt32("return_code");
-      boolean confirmationExpected = valueStruct.getBoolean("confirmation_expected");
       MAILMessageStatus status = MAILMessageStatus.fromReturnCode(returnCode);
 
       //
       //  return
       //
 
-      return new MailNotificationManagerRequest(schemaAndValue, destination, source, subject, htmlBody, textBody, status, confirmationExpected);
+      return new MailNotificationManagerRequest(schemaAndValue, destination, source, subject, htmlBody, textBody, confirmationExpected, status);
     }
     
     @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
@@ -520,7 +520,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
           request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, emailSubject, emailHTMLBody, emailTextBody);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
-          request.setIsConfirmationExpected(confirmationExpected);
+          request.setConfirmationExpected(confirmationExpected);
         }
       else
         {

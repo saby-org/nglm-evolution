@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  SMSMessage.java
+*  PushTemplate.java
 *
 *****************************************************************************/
 
@@ -11,7 +11,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.apache.kafka.connect.data.Schema;
@@ -35,7 +35,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SMSMessage extends SubscriberMessage
+public class PushTemplate extends SubscriberMessageTemplate
 {
   /*****************************************
   *
@@ -47,27 +47,37 @@ public class SMSMessage extends SubscriberMessage
   //  serde
   //
 
-  private static ConnectSerde<SMSMessage> serde = new ConnectSerde<SMSMessage>(SubscriberMessage.schema(), false, SMSMessage.class, SMSMessage::pack, SMSMessage::unpack);
-  public static Object pack(Object value) { return SubscriberMessage.pack(value); }
-  public static SMSMessage unpack(SchemaAndValue schemaAndValue) { return new SMSMessage(schemaAndValue); }
-  public SMSMessage(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
+  private static ConnectSerde<PushTemplate> serde = new ConnectSerde<PushTemplate>(SubscriberMessageTemplate.schema(), false, PushTemplate.class, PushTemplate::pack, PushTemplate::unpack);
+  public static Object pack(Object value) { return SubscriberMessageTemplate.pack(value); }
+  public static PushTemplate unpack(SchemaAndValue schemaAndValue) { return new PushTemplate(schemaAndValue); }
+  public PushTemplate(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
   //
   //  accessor
   //
 
-  public static Schema schema() { return SubscriberMessage.schema(); }
-  public static ConnectSerde<SMSMessage> serde() { return serde; }
+  public static Schema schema() { return SubscriberMessageTemplate.schema(); }
+  public static ConnectSerde<PushTemplate> serde() { return serde; }
 
+  /*****************************************
+  *
+  *  accessors
+  *
+  *****************************************/
+
+  public String getPushTemplateID() { return getGUIManagedObjectID(); }
+  public String getPushTemplateName() { return getGUIManagedObjectName(); }
+  public DialogMessage getMessageText() { return super.getDialogMessages().get(0); }
+  
   /*****************************************
   *
   *  constructor -- standard
   *
   *****************************************/
 
-  public SMSMessage(Object smsMessageJSON, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  public PushTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(smsMessageJSON, Arrays.asList("messageText"), subscriberMessageTemplateService, criterionContext);
+    super(jsonRoot, GUIManagedObjectType.PushMessageTemplate, Arrays.asList("messageText"), epoch, existingTemplateUnchecked);
   }
 
   /*****************************************
@@ -76,5 +86,5 @@ public class SMSMessage extends SubscriberMessage
   *
   *****************************************/
 
-  public String resolve(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest) { return super.resolve(evolutionEventContext, subscriberEvaluationRequest, 0); }
+  public String resolve(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getMessageText().resolve(subscriberEvaluationRequest); }
 }

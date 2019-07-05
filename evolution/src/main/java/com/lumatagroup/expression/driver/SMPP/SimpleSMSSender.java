@@ -932,7 +932,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                 }
                 logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
-//                if(smsCorrelation.getDeliveryRequest().isConfirmationExpected()) {
+//                if(smsCorrelation.getDeliveryRequest().getConfirmationExpected()) {
                   updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged); 
 //                }else {
 //                  completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 

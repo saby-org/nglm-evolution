@@ -25,6 +25,7 @@ import java.text.Format;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,9 +52,11 @@ public class DialogMessage
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dialog_message");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("messageTextByLanguage", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("dialog_message_text").schema());
-    schemaBuilder.field("tags", SchemaBuilder.array(CriterionField.schema()));
+    schemaBuilder.field("contextTags", SchemaBuilder.array(CriterionField.schema()).defaultValue(new ArrayList<CriterionField>()).schema());
+    schemaBuilder.field("parameterTags", SchemaBuilder.array(CriterionField.schema()).defaultValue(new ArrayList<CriterionField>()).schema());
+    schemaBuilder.field("allTags", SchemaBuilder.array(CriterionField.schema()).defaultValue(new ArrayList<CriterionField>()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -77,7 +80,9 @@ public class DialogMessage
   *****************************************/
 
   private Map<String,String> messageTextByLanguage = new HashMap<String,String>();
-  private List<CriterionField> tags = new ArrayList<CriterionField>();
+  private List<CriterionField> contextTags = new ArrayList<CriterionField>();
+  private List<CriterionField> parameterTags = new ArrayList<CriterionField>();
+  private List<CriterionField> allTags = new ArrayList<CriterionField>();
 
   /*****************************************
   *
@@ -86,8 +91,10 @@ public class DialogMessage
   *****************************************/
 
   public Map<String,String> getMessageTextByLanguage() { return messageTextByLanguage; }
-  public  List<CriterionField> getTags() { return tags; }
-  
+  public List<CriterionField> getContextTags() { return contextTags; }
+  public List<CriterionField> getParameterTags() { return parameterTags; }
+  public List<CriterionField> getAllTags() { return allTags; }
+
   /*****************************************
   *
   *  constructor -- standard
@@ -149,7 +156,12 @@ public class DialogMessage
             String rawTag = m.group();
             String criterionFieldName = m.group(1).trim();
             CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
-            if (criterionField == null) throw new GUIManagerException("unsupported tag", criterionFieldName);
+            boolean parameterTag = false;
+            if (criterionField == null)
+              {
+                criterionField = new CriterionField(criterionFieldName);
+                parameterTag = true;
+              }
 
             //
             //  valid data type
@@ -178,10 +190,14 @@ public class DialogMessage
               {
                 StringBuilder replacement = new StringBuilder();
                 replacement.append("{");
-                replacement.append(tags.size());
+                replacement.append(allTags.size());
                 replacement.append("}");
                 tagReplacements.put(criterionField, replacement.toString());
-                tags.add(criterionField);
+                allTags.add(criterionField);
+                if (parameterTag)
+                  parameterTags.add(criterionField);
+                else
+                  contextTags.add(criterionField);
               }
             rawTagReplacements.put(rawTag, tagReplacements.get(criterionField));
           }
@@ -214,10 +230,12 @@ public class DialogMessage
   *
   *****************************************/
 
-  private DialogMessage(Map<String,String> messageTextByLanguage, List<CriterionField> tags)
+  private DialogMessage(Map<String,String> messageTextByLanguage, List<CriterionField> contextTags, List<CriterionField> parameterTags, List<CriterionField> allTags)
   {
     this.messageTextByLanguage = messageTextByLanguage;
-    this.tags = tags;
+    this.contextTags = contextTags;
+    this.parameterTags = parameterTags;
+    this.allTags = allTags;
   }
 
   /*****************************************
@@ -229,7 +247,9 @@ public class DialogMessage
   public DialogMessage(DialogMessage dialogMessage)
   {
     this.messageTextByLanguage = new HashMap<String,String>(dialogMessage.getMessageTextByLanguage());
-    this.tags = new ArrayList<CriterionField>(dialogMessage.getTags());
+    this.contextTags = new ArrayList<CriterionField>(dialogMessage.getContextTags());
+    this.parameterTags = new ArrayList<CriterionField>(dialogMessage.getParameterTags());
+    this.allTags = new ArrayList<CriterionField>(dialogMessage.getAllTags());
   }
 
   /*****************************************
@@ -243,7 +263,9 @@ public class DialogMessage
     DialogMessage dialogMessage = (DialogMessage) value;
     Struct struct = new Struct(schema);
     struct.put("messageTextByLanguage", dialogMessage.getMessageTextByLanguage());
-    struct.put("tags", packTags(dialogMessage.getTags()));
+    struct.put("contextTags", packTags(dialogMessage.getContextTags()));
+    struct.put("parameterTags", packTags(dialogMessage.getParameterTags()));
+    struct.put("allTags", packTags(dialogMessage.getAllTags()));
     return struct;
   }
 
@@ -285,13 +307,15 @@ public class DialogMessage
 
     Struct valueStruct = (Struct) value;
     Map<String,String> messageTextByLanguage = (Map<String,String>) valueStruct.get("messageTextByLanguage");
-    List<CriterionField> tags = unpackTags(schema.field("tags").schema(), (List<Object>) valueStruct.get("tags"));
+    List<CriterionField> contextTags = (schemaVersion >= 2) ? unpackTags(schema.field("contextTags").schema(), (List<Object>) valueStruct.get("contextTags")) : unpackTags(schema.field("tags").schema(), (List<Object>) valueStruct.get("tags"));
+    List<CriterionField> parameterTags = (schemaVersion >= 2) ? unpackTags(schema.field("parameterTags").schema(), (List<Object>) valueStruct.get("parameterTags")) : new ArrayList<CriterionField>();
+    List<CriterionField> allTags = (schemaVersion >= 2) ? unpackTags(schema.field("allTags").schema(), (List<Object>) valueStruct.get("allTags")) : unpackTags(schema.field("tags").schema(), (List<Object>) valueStruct.get("tags"));
 
     //
     //  return
     //
 
-    return new DialogMessage(messageTextByLanguage, tags);
+    return new DialogMessage(messageTextByLanguage, contextTags, parameterTags, allTags);
   }
 
   /*****************************************
@@ -371,14 +395,14 @@ public class DialogMessage
 
     Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
     MessageFormat formatter = null;
-    Object[] messageTags = new Object[this.tags.size()];
-    for (int i=0; i<this.tags.size(); i++)
+    Object[] messageTags = new Object[this.allTags.size()];
+    for (int i=0; i<this.allTags.size(); i++)
       {
         //
         //  criterionField
         //
 
-        CriterionField tag = this.tags.get(i);
+        CriterionField tag = this.allTags.get(i);
 
         //
         //  retrieve value
@@ -387,10 +411,16 @@ public class DialogMessage
         Object tagValue = tag.retrieve(subscriberEvaluationRequest);
 
         //
+        //  resolve formatDataType
+        //
+
+        CriterionDataType formatDataType = resolveFormatDataType(tag.getFieldDataType(), tagValue);
+
+        //
         //  formatter for tag
         //
 
-        formatter = new MessageFormat("{0" + tag.resolveTagFormat() + "}", messageLocale);
+        formatter = new MessageFormat("{0" + tag.resolveTagFormat(formatDataType) + "}", messageLocale);
         for (Format format : formatter.getFormats())
           {
             if (format instanceof SimpleDateFormat)
@@ -411,11 +441,11 @@ public class DialogMessage
         //  truncate (if necessary)
         //
 
-        int maxLength = tag.resolveTagMaxLength();
+        int maxLength = tag.resolveTagMaxLength(formatDataType);
         String resolvedTag = formattedTag;
         if (formattedTag.length() > maxLength)
           {
-            switch (tag.getFieldDataType())
+            switch (formatDataType)
               {
                 case StringCriterion:
                   resolvedTag = formattedTag.substring(0, maxLength);
@@ -456,6 +486,26 @@ public class DialogMessage
 
   /*****************************************
   *
+  *  resolveFormatDataType
+  *
+  *****************************************/
+
+  private CriterionDataType resolveFormatDataType(CriterionDataType fieldDataType, Object tagValue)
+  {
+    CriterionDataType formatDataType = fieldDataType;
+    switch (formatDataType)
+      {
+        case StringCriterion:
+          if (tagValue instanceof Integer) formatDataType = CriterionDataType.IntegerCriterion;
+          if (tagValue instanceof Double) formatDataType = CriterionDataType.DoubleCriterion;
+          if (tagValue instanceof Date) formatDataType = CriterionDataType.DateCriterion;
+          break;
+      }
+    return formatDataType;
+  }
+
+  /*****************************************
+  *
   *  equals
   *
   *****************************************/
@@ -468,6 +518,8 @@ public class DialogMessage
         DialogMessage dialogMessage = (DialogMessage) obj;
         result = true;
         result = result && Objects.equals(messageTextByLanguage, dialogMessage.getMessageTextByLanguage());
+        result = result && Objects.equals(contextTags, dialogMessage.getContextTags());
+        result = result && Objects.equals(parameterTags, dialogMessage.getParameterTags());
       }
     return result;
   }

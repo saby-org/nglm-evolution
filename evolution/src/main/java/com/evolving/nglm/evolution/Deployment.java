@@ -71,8 +71,7 @@ public class Deployment
   private static String ucgRuleTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
-  private static String mailTemplateTopic;
-  private static String smsTemplateTopic;
+  private static String subscriberMessageTemplateTopic;
   private static String guiAuditTopic;
   private static String subscriberGroupTopic;
   private static String subscriberGroupAssignSubscriberIDTopic;
@@ -242,8 +241,7 @@ public class Deployment
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
-  public static String getMailTemplateTopic() { return mailTemplateTopic; }
-  public static String getSMSTemplateTopic() { return smsTemplateTopic; }
+  public static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
@@ -942,25 +940,12 @@ public class Deployment
       }
 
     //
-    //  mailTemplateTopic
+    //  subscriberMessageTemplateTopic
     //
 
     try
       {
-        mailTemplateTopic = JSONUtilities.decodeString(jsonRoot, "mailTemplateTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  smsTemplateTopic
-    //
-
-    try
-      {
-        smsTemplateTopic = JSONUtilities.decodeString(jsonRoot, "smsTemplateTopic", true);
+        subscriberMessageTemplateTopic = JSONUtilities.decodeString(jsonRoot, "subscriberMessageTemplateTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

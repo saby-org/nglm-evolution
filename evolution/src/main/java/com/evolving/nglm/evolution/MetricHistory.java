@@ -1289,8 +1289,8 @@ public class MetricHistory
     //  aggregate
     //
         
-    int bucketIndex = 0;
-    Date bucketDay = beginningOfDailyValues;
+    int bucketIndex = dailyBuckets.length - RLMDateUtils.daysBetween(startDay, baseDay, Deployment.getBaseTimeZone()) - 1;
+    Date bucketDay = startDay;
     while (bucketDay.compareTo(endDay) <= 0)
       {
         if (bucketDay.compareTo(startDay) >= 0)

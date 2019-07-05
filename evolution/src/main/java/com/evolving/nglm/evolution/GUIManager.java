@@ -418,8 +418,7 @@ public class GUIManager
   private UCGRuleService ucgRuleService;
   private DeliverableService deliverableService;
   private TokenTypeService tokenTypeService;
-  private MailTemplateService mailTemplateService;
-  private SMSTemplateService smsTemplateService;
+  private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private SubscriberProfileService subscriberProfileService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -504,8 +503,7 @@ public class GUIManager
     String ucgRuleTopic = Deployment.getUCGRuleTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
     String tokenTypeTopic = Deployment.getTokenTypeTopic();
-    String mailTemplateTopic = Deployment.getMailTemplateTopic();
-    String smsTemplateTopic = Deployment.getSMSTemplateTopic();
+    String subscriberMessageTemplateTopic = Deployment.getSubscriberMessageTemplateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
@@ -521,7 +519,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: {} {} {} {} {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, elasticsearchServerHost, elasticsearchServerPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic, mailTemplateTopic, smsTemplateTopic);
+    log.info("main START: {} {} {} {} {} {} {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, elasticsearchServerHost, elasticsearchServerPort, nodeID, journeyTopic, segmentationDimensionTopic, offerTopic, presentationStrategyTopic, scoringStrategyTopic, subscriberGroupEpochTopic, subscriberMessageTemplateTopic);
 
     //
     //  license
@@ -582,8 +580,7 @@ public class GUIManager
     ucgRuleService = new UCGRuleService(bootstrapServers,"guimanager-ucgruleservice-"+apiProcessKey,ucgRuleTopic,true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     tokenTypeService = new TokenTypeService(bootstrapServers, "guimanager-tokentypeservice-" + apiProcessKey, tokenTypeTopic, true);
-    mailTemplateService = new MailTemplateService(bootstrapServers, "guimanager-mailtemplateservice-" + apiProcessKey, mailTemplateTopic, true);
-    smsTemplateService = new SMSTemplateService(bootstrapServers, "guimanager-smstemplateservice-" + apiProcessKey, smsTemplateTopic, true);
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "guimanager-subscribermessagetemplateservice-" + apiProcessKey, subscriberMessageTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
@@ -1203,8 +1200,7 @@ public class GUIManager
     ucgRuleService.start();
     deliverableService.start();
     tokenTypeService.start();
-    mailTemplateService.start();
-    smsTemplateService.start();
+    subscriberMessageTemplateService.start();
     subscriberProfileService.start();
     deliverableSourceService.start();
     uploadedFileService.start();
@@ -1434,7 +1430,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, mailTemplateService, smsTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService);
 
     /*****************************************
     *
@@ -1442,7 +1438,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, mailTemplateService, smsTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService));
 
     /*****************************************
     *
@@ -1486,8 +1482,7 @@ public class GUIManager
     private UCGRuleService ucgRuleService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
-    private MailTemplateService mailTemplateService;
-    private SMSTemplateService smsTemplateService;
+    private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -1502,7 +1497,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1525,8 +1520,7 @@ public class GUIManager
       this.ucgRuleService = ucgRuleService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
-      this.mailTemplateService = mailTemplateService;
-      this.smsTemplateService = smsTemplateService;
+      this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1573,8 +1567,7 @@ public class GUIManager
       if (ucgRuleService != null) ucgRuleService.stop();
       if (deliverableService != null) deliverableService.stop();
       if (tokenTypeService != null) tokenTypeService.stop();
-      if (mailTemplateService != null) mailTemplateService.stop();
-      if (smsTemplateService != null) smsTemplateService.stop();
+      if (subscriberMessageTemplateService != null) subscriberMessageTemplateService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
       if (deliverableSourceService != null) deliverableSourceService.stop();
@@ -5069,7 +5062,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -5122,7 +5115,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -5190,7 +5183,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     String id = JSONUtilities.decodeString(jsonRoot, "id", true);
@@ -5378,7 +5371,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
     Map<String,CriterionField> contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
 
     /*****************************************
@@ -6441,7 +6434,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService);
+        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
 
         /*****************************************
         *
@@ -6645,7 +6638,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService);
+        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
 
         /*****************************************
         *
@@ -6855,7 +6848,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService);
+        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
 
         /*****************************************
         *
@@ -7137,7 +7130,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService);
+        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
 
         /*****************************************
         *
@@ -7347,7 +7340,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourneyTemplate, catalogCharacteristicService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService);
 
         /*****************************************
         *
@@ -13936,9 +13929,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : mailTemplateService.getStoredMailTemplates())
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSubscriberMessageTemplates())
       {
-        templates.add(mailTemplateService.generateResponseJSON(template, fullDetails, now));
+        switch (template.getGUIManagedObjectType())
+          {
+            case MailMessageTemplate:
+              if (! template.getInternalOnly())
+                {
+                  templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+                }
+              break;
+          }
       }
 
     /*****************************************
@@ -13983,8 +13984,9 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = mailTemplateService.getStoredMailTemplate(templateID);
-    JSONObject templateJSON = mailTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? template : null;
+    JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -14023,7 +14025,7 @@ public class GUIManager
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (templateID == null)
       {
-        templateID = mailTemplateService.generateMailTemplateID();
+        templateID = subscriberMessageTemplateService.generateSubscriberMessageTemplateID();
         jsonRoot.put("id", templateID);
       }
 
@@ -14033,7 +14035,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTemplate = mailTemplateService.getStoredMailTemplate(templateID);
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? existingTemplate : null;
 
     /*****************************************
     *
@@ -14045,7 +14048,7 @@ public class GUIManager
       {
         response.put("id", existingTemplate.getGUIManagedObjectID());
         response.put("accepted", existingTemplate.getAccepted());
-        response.put("processing", mailTemplateService.isActiveMailTemplate(existingTemplate, now));
+        response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(existingTemplate, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
@@ -14069,11 +14072,47 @@ public class GUIManager
 
         /*****************************************
         *
+        *  enhance with parameterTags
+        *
+        *****************************************/
+
+        if (mailTemplate.getParameterTags().size() > 0)
+          {
+            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
+            for (CriterionField parameterTag : mailTemplate.getParameterTags())
+              {
+                parameterTags.add(parameterTag.getJSONRepresentation());
+              }
+            mailTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
+          }
+
+        /*****************************************
+        *
+        *  store read-only copy
+        *
+        *****************************************/
+
+        if (existingTemplate == null || mailTemplate.getEpoch() != existingTemplate.getEpoch())
+          {
+            if (! mailTemplate.getReadOnly())
+              {
+                MailTemplate readOnlyCopy = (MailTemplate) SubscriberMessageTemplate.newReadOnlyCopy(mailTemplate, subscriberMessageTemplateService);
+                mailTemplate.setReadOnlyCopyID(readOnlyCopy.getMailTemplateID());
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
+              }
+          }
+        else if (existingTemplate.getAccepted())
+          {
+            mailTemplate.setReadOnlyCopyID(((MailTemplate) existingTemplate).getReadOnlyCopyID());
+          }
+
+        /*****************************************
+        *
         *  store
         *
         *****************************************/
 
-        mailTemplateService.putMailTemplate(mailTemplate, (existingTemplate == null), userID);
+        subscriberMessageTemplateService.putSubscriberMessageTemplate(mailTemplate, (existingTemplate == null), userID);
 
         /*****************************************
         *
@@ -14083,7 +14122,7 @@ public class GUIManager
 
         response.put("id", mailTemplate.getMailTemplateID());
         response.put("accepted", mailTemplate.getAccepted());
-        response.put("processing", mailTemplateService.isActiveMailTemplate(mailTemplate, now));
+        response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(mailTemplate, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -14099,7 +14138,7 @@ public class GUIManager
         //  store
         //
 
-        mailTemplateService.putIncompleteMailTemplate(incompleteObject, (existingTemplate == null), userID);
+        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
 
         //
         //  log
@@ -14151,8 +14190,9 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = mailTemplateService.getStoredMailTemplate(templateID);
-    if (template != null && ! template.getReadOnly()) mailTemplateService.removeMailTemplate(templateID, userID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? template : null;
+    if (template != null && ! template.getReadOnly()) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
     *
@@ -14186,8 +14226,6 @@ public class GUIManager
 
   private JSONObject processGetSMSTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
-    log.info("GUIManager.processGetSMSTemplateList("+userID+", "+jsonRoot+", "+fullDetails+") called ...");
-
     /*****************************************
     *
     *  retrieve and convert templates
@@ -14196,9 +14234,17 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : smsTemplateService.getStoredSMSTemplates())
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSubscriberMessageTemplates())
       {
-        templates.add(smsTemplateService.generateResponseJSON(template, fullDetails, now));
+        switch (template.getGUIManagedObjectType())
+          {
+            case SMSMessageTemplate:
+              if (! template.getInternalOnly())
+                {
+                  templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+                }
+              break;
+          }
       }
 
     /*****************************************
@@ -14210,9 +14256,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
     response.put("templates", JSONUtilities.encodeArray(templates));
-
-    log.info("GUIManager.processGetSMSTemplateList("+userID+", "+jsonRoot+", "+fullDetails+") Done");
-
     return JSONUtilities.encodeObject(response);
   }
 
@@ -14224,7 +14267,6 @@ public class GUIManager
 
   private JSONObject processGetSMSTemplate(String userID, JSONObject jsonRoot)
   {
-    log.info("GUIManager.processGetSMSTemplate("+userID+", "+jsonRoot+") called ...");
     /****************************************
     *
     *  response
@@ -14247,8 +14289,9 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = smsTemplateService.getStoredSMSTemplate(templateID);
-    JSONObject templateJSON = smsTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? template : null;
+    JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -14258,9 +14301,6 @@ public class GUIManager
 
     response.put("responseCode", (template != null) ? "ok" : "templateNotFound");
     if (template != null) response.put("template", templateJSON);
-
-    log.info("GUIManager.processGetSMSTemplate("+userID+", "+jsonRoot+") DONE");
-
     return JSONUtilities.encodeObject(response);
   }
 
@@ -14290,7 +14330,7 @@ public class GUIManager
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (templateID == null)
       {
-        templateID = smsTemplateService.generateSMSTemplateID();
+        templateID = subscriberMessageTemplateService.generateSubscriberMessageTemplateID();
         jsonRoot.put("id", templateID);
       }
 
@@ -14300,7 +14340,8 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingTemplate = smsTemplateService.getStoredSMSTemplate(templateID);
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? existingTemplate : null;
 
     /*****************************************
     *
@@ -14312,7 +14353,7 @@ public class GUIManager
       {
         response.put("id", existingTemplate.getGUIManagedObjectID());
         response.put("accepted", existingTemplate.getAccepted());
-        response.put("processing", smsTemplateService.isActiveSMSTemplate(existingTemplate, now));
+        response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(existingTemplate, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
@@ -14336,11 +14377,47 @@ public class GUIManager
 
         /*****************************************
         *
+        *  enhance with parameterTags
+        *
+        *****************************************/
+
+        if (smsTemplate.getParameterTags().size() > 0)
+          {
+            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
+            for (CriterionField parameterTag : smsTemplate.getParameterTags())
+              {
+                parameterTags.add(parameterTag.getJSONRepresentation());
+              }
+            smsTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
+          }
+
+        /*****************************************
+        *
+        *  store read-only copy
+        *
+        *****************************************/
+
+        if (existingTemplate == null || smsTemplate.getEpoch() != existingTemplate.getEpoch())
+          {
+            if (! smsTemplate.getReadOnly())
+              {
+                SMSTemplate readOnlyCopy = (SMSTemplate) SubscriberMessageTemplate.newReadOnlyCopy(smsTemplate, subscriberMessageTemplateService);
+                smsTemplate.setReadOnlyCopyID(readOnlyCopy.getSMSTemplateID());
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
+              }
+          }
+        else if (existingTemplate.getAccepted())
+          {
+            smsTemplate.setReadOnlyCopyID(((SMSTemplate) existingTemplate).getReadOnlyCopyID());
+          }
+
+        /*****************************************
+        *
         *  store
         *
         *****************************************/
 
-        smsTemplateService.putSMSTemplate(smsTemplate, (existingTemplate == null), userID);
+        subscriberMessageTemplateService.putSubscriberMessageTemplate(smsTemplate, (existingTemplate == null), userID);
 
         /*****************************************
         *
@@ -14350,7 +14427,7 @@ public class GUIManager
 
         response.put("id", smsTemplate.getSMSTemplateID());
         response.put("accepted", smsTemplate.getAccepted());
-        response.put("processing", smsTemplateService.isActiveSMSTemplate(smsTemplate, now));
+        response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(smsTemplate, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -14366,7 +14443,7 @@ public class GUIManager
         //  store
         //
 
-        smsTemplateService.putIncompleteSMSTemplate(incompleteObject, (existingTemplate == null), userID);
+        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
 
         //
         //  log
@@ -14418,8 +14495,9 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = smsTemplateService.getStoredSMSTemplate(templateID);
-    if (template != null && ! template.getReadOnly()) smsTemplateService.removeSMSTemplate(templateID, userID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? template : null;
+    if (template != null && ! template.getReadOnly()) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
     *
@@ -14654,7 +14732,7 @@ public class GUIManager
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
             modifiedJourney = journey;
           }
@@ -15215,8 +15293,8 @@ public class GUIManager
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
     response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
-    response.put("mailTemplateCount", mailTemplateService.getStoredMailTemplates().size());
-    response.put("smsTemplateCount", smsTemplateService.getStoredSMSTemplates().size());
+    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates().size());
+    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates().size());
     response.put("reportsCount", reportService.getStoredReports().size());
     response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
     response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());
@@ -17124,8 +17202,7 @@ public class GUIManager
     private UCGRuleService ucgRuleService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
-    private MailTemplateService mailTemplateService;
-    private SMSTemplateService smsTemplateService;
+    private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private DeliverableSourceService deliverableSourceService;
@@ -17161,8 +17238,7 @@ public class GUIManager
     public UCGRuleService getUcgRuleService() { return ucgRuleService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
     public TokenTypeService getTokenTypeService() { return tokenTypeService; }
-    public MailTemplateService getMailTemplateService() { return mailTemplateService; }
-    public SMSTemplateService getSmsTemplateService() { return smsTemplateService; }
+    public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public SubscriberProfileService getSubscriberProfileService() { return subscriberProfileService; }
     public SubscriberIDService getSubscriberIDService() { return subscriberIDService; }
     public DeliverableSourceService getDeliverableSourceService() { return deliverableSourceService; }
@@ -17178,7 +17254,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, MailTemplateService mailTemplateService, SMSTemplateService smsTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -17200,8 +17276,7 @@ public class GUIManager
       this.ucgRuleService = ucgRuleService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
-      this.mailTemplateService = mailTemplateService;
-      this.smsTemplateService = smsTemplateService;
+      this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.deliverableSourceService = deliverableSourceService;
