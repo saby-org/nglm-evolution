@@ -92,7 +92,6 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
@@ -251,6 +250,7 @@ public class EvolutionEngine
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
     String propensityLogTopic = Deployment.getPropensityLogTopic();
     String pointFulfillmentResponseTopic = Deployment.getPointFulfillmentResponseTopic();
+    String journeyResponseTopic = Deployment.getJourneyResponseTopic();
 
     //
     //  changelogs
@@ -680,14 +680,15 @@ public class EvolutionEngine
     //  branch output streams
     //
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof JourneyMetric), (key,value) -> (value instanceof SubscriberTrace), (key,value) -> (value instanceof PropensityEventOutput));
-    KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
-    KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[1];
-    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[2];
-    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[3];
-    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[4];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[5];
-    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[6];
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest && !((JourneyRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), (key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatistic), (key,value) -> (value instanceof JourneyMetric), (key,value) -> (value instanceof SubscriberTrace), (key,value) -> (value instanceof PropensityEventOutput));
+    KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
+    KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
+    KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[2];
+    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[3];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[5];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[6];
+    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[7];
 
     //
     //  build predicates for delivery requests
@@ -718,6 +719,12 @@ public class EvolutionEngine
       {
         deliveryRequestStreams.put(deliveryManagerDeliveryTypes[j], branchedDeliveryRequestStreams[j]);
       }
+
+    //
+    //  rekey journeys responses 
+    //
+
+    KStream<StringKey, JourneyRequest> rekeyedJourneyResponseStream = journeyResponseStream.map(EvolutionEngine::rekeyJourneyResponseStream);
 
     //
     //  rekey points responses 
@@ -804,6 +811,7 @@ public class EvolutionEngine
     //
 
     journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
+    rekeyedJourneyResponseStream.to(journeyResponseTopic, Produced.with(stringKeySerde, journeyRequestSerde));
     rekeyedPointResponseStream.to(pointFulfillmentResponseTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     journeyMetricStream.to(journeyMetricTopic, Produced.with(stringKeySerde, journeyMetricSerde));
@@ -1289,6 +1297,16 @@ public class EvolutionEngine
     if (subscriberState.getJourneyRequests().size() > 0)
       {
         subscriberState.getJourneyRequests().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  journeyResponses
+    //
+
+    if (subscriberState.getJourneyResponses().size() > 0)
+      {
+        subscriberState.getJourneyResponses().clear();
         subscriberStateUpdated = true;
       }
 
@@ -2417,6 +2435,40 @@ public class EvolutionEngine
                       }
                   }
               }
+            
+            /*****************************************
+            *
+            *  journey response  -- called journey
+            *
+            *****************************************/
+            
+            if(calledJourney)
+              {
+                
+                //
+                //  generate journey response
+                //
+
+                JourneyRequest journeyRequest = (JourneyRequest) evolutionEvent;
+                JourneyRequest journeyResponse = journeyRequest.copy();
+
+                if(enterJourney)
+                  {
+                    journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+                    journeyResponse.setDeliveryDate(now);
+                  }
+                else
+                  {
+                    journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
+                  }
+
+                //
+                //  return journey response
+                //
+
+                context.getSubscriberState().getJourneyResponses().add(journeyResponse);
+
+              }
           }
       }
 
@@ -3269,6 +3321,7 @@ public class EvolutionEngine
   private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberState subscriberState)
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
+    result.addAll(subscriberState.getJourneyResponses());
     result.addAll(subscriberState.getJourneyRequests());
     result.addAll(subscriberState.getPointFulfillmentResponses());
     result.addAll(subscriberState.getDeliveryRequests());
@@ -3303,6 +3356,18 @@ public class EvolutionEngine
     return new KeyValue<StringKey, DeliveryRequest>(new StringKey(value.getDeliveryRequestID()), value);
   }
   
+  /****************************************
+  *
+  *  rekeyJourneyResponseStream
+  *
+  ****************************************/
+
+  private static KeyValue<StringKey, JourneyRequest> rekeyJourneyResponseStream(StringKey key, JourneyRequest value)
+  {
+    StringKey rekey = value.getOriginatingRequest() ? new StringKey(value.getSubscriberID()) : new StringKey(value.getDeliveryRequestID());
+    return new KeyValue<StringKey, JourneyRequest>(rekey, value);
+  }
+
   /****************************************
   *
   *  rekeyPointResponseStream
@@ -4331,6 +4396,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String journeyID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journey");
 
       /*****************************************
@@ -4339,7 +4405,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, journeyID);
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, "journeyFulfillment", deliveryRequestSource, journeyID);
 
       /*****************************************
       *

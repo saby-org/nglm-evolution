@@ -244,7 +244,6 @@ public class PointFulfillmentRequest extends DeliveryRequest
     return new PointFulfillmentRequest(schemaAndValue, pointID, operation, amount, resultValidityDate);
   }
 
-  
   /****************************************
   *
   *  presentation utilities

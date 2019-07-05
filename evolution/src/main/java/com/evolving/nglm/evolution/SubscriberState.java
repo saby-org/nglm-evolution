@@ -80,6 +80,7 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("ucgRefreshDay", Timestamp.builder().optional().schema());
     schemaBuilder.field("lastEvaluationDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("journeyRequests", SchemaBuilder.array(JourneyRequest.schema()).schema());
+    schemaBuilder.field("journeyResponses", SchemaBuilder.array(JourneyRequest.schema()).schema());
     schemaBuilder.field("pointFulfillmentResponses", SchemaBuilder.array(PointFulfillmentRequest.schema()).schema());
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
@@ -118,6 +119,7 @@ public class SubscriberState implements SubscriberStreamOutput
   private Date ucgRefreshDay;
   private Date lastEvaluationDate;
   private List<JourneyRequest> journeyRequests;
+  private List<JourneyRequest> journeyResponses;
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatistic> journeyStatistics;
@@ -141,6 +143,7 @@ public class SubscriberState implements SubscriberStreamOutput
   public Date getUCGRefreshDay() { return ucgRefreshDay; }
   public Date getLastEvaluationDate() { return lastEvaluationDate; }
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
+  public List<JourneyRequest> getJourneyResponses() { return journeyResponses; }
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
@@ -188,6 +191,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.ucgRefreshDay = null;
         this.lastEvaluationDate = null;
         this.journeyRequests = new ArrayList<JourneyRequest>();
+        this.journeyResponses = new ArrayList<JourneyRequest>();
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatistics = new ArrayList<JourneyStatistic>();
@@ -211,7 +215,7 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -223,6 +227,7 @@ public class SubscriberState implements SubscriberStreamOutput
     this.ucgRefreshDay = ucgRefreshDay;
     this.lastEvaluationDate = lastEvaluationDate;
     this.journeyRequests = journeyRequests;
+    this.journeyResponses = journeyResponses;
     this.pointFulfillmentResponses = pointFulfillmentResponses;
     this.deliveryRequests = deliveryRequests;
     this.journeyStatistics = journeyStatistics;
@@ -254,6 +259,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.ucgRefreshDay = subscriberState.getUCGRefreshDay();
         this.lastEvaluationDate = subscriberState.getLastEvaluationDate();
         this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
+        this.journeyResponses = new ArrayList<JourneyRequest>(subscriberState.getJourneyResponses());
         this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatistics());
@@ -301,6 +307,7 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("ucgRefreshDay", subscriberState.getUCGRefreshDay());
     struct.put("lastEvaluationDate", subscriberState.getLastEvaluationDate());
     struct.put("journeyRequests", packJourneyRequests(subscriberState.getJourneyRequests()));
+    struct.put("journeyResponses", packJourneyRequests(subscriberState.getJourneyResponses()));
     struct.put("pointFulfillmentResponses", packPointFulfillmentResponses(subscriberState.getPointFulfillmentResponses()));
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatistics", packJourneyStatistics(subscriberState.getJourneyStatistics()));
@@ -469,6 +476,7 @@ public class SubscriberState implements SubscriberStreamOutput
     Date ucgRefreshDay = (Date) valueStruct.get("ucgRefreshDay");
     Date lastEvaluationDate = (Date) valueStruct.get("lastEvaluationDate");
     List<JourneyRequest> journeyRequests = unpackJourneyRequests(schema.field("journeyRequests").schema(), valueStruct.get("journeyRequests"));
+    List<JourneyRequest> journeyResponses = unpackJourneyRequests(schema.field("journeyResponses").schema(), valueStruct.get("journeyResponses"));
     List<PointFulfillmentRequest> pointFulfillmentResponses = (schemaVersion >= 2) ? unpackPointFulfillmentResponses(schema.field("pointFulfillmentResponses").schema(), valueStruct.get("pointFulfillmentResponses")) : Collections.<PointFulfillmentRequest>emptyList();
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
@@ -480,7 +488,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, pointFulfillmentResponses, deliveryRequests, journeyStatistics, journeyMetrics, propensityOutputs, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, pointFulfillmentResponses, deliveryRequests, journeyStatistics, journeyMetrics, propensityOutputs, subscriberTrace);
   }
 
   /*****************************************

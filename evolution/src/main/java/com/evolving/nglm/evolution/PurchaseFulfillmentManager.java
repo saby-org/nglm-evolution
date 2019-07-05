@@ -911,12 +911,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(approved){
             purchaseStatus.addProductStockDebited(purchaseStatus.getProductStockBeingDebited());
             purchaseStatus.setProductStockBeingDebited(null);
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : " + product.getProductID() + " reserved");
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reserved");
           }else{
             purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
             purchaseStatus.setProductStockBeingDebited(null);
             allGood = false;
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : " + product.getProductID() + " reservation FAILED");
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reservation FAILED");
           }
         }
       }
@@ -1256,12 +1256,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if(purchaseStatus.getProductBeingCredited() != null){
         OfferProduct product = purchaseStatus.getProductBeingCredited();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product creadited (product id "+product.getProductID()+")");
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product credited (product id "+product.getProductID()+")");
           purchaseStatus.addProductCredited(product);
           purchaseStatus.setProductBeingCredited(null);
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product creadit failed (product id "+product.getProductID()+") => initiate rollback ...");
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product credit failed (product id "+product.getProductID()+") => initiate rollback ...");
           purchaseStatus.setProductCreditFailed(product);
           purchaseStatus.setProductBeingCredited(null);
           proceedRollback(purchaseStatus, PurchaseFulfillmentStatus.THIRD_PARTY_ERROR, "handleCommodityDeliveryResponse : could not credit product "+product.getProductID());

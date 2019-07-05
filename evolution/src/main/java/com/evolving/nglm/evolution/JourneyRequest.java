@@ -6,26 +6,28 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.evolution.ActionManager.Action;
-import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import java.util.Date;
+import java.util.HashMap;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONObject;
 
-import java.util.Date;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
-public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action
+public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action
 {
   /*****************************************
   *
@@ -42,9 +44,9 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyRequestID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
@@ -71,7 +73,6 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
   *****************************************/
 
   private String journeyRequestID;
-  private String subscriberID;
   private Date eventDate;
   private String journeyID;
 
@@ -88,7 +89,6 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
   *****************************************/
 
   public String getJourneyRequestID() { return journeyRequestID; }
-  public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public String getJourneyID() { return journeyID; }
   public boolean getEligible() { return eligible; }
@@ -100,18 +100,48 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
 
   public void setEligible(boolean eligible) { this.eligible = eligible; }
 
+  //
+  //  structure
+  //
+
+  @Override public Integer getActivityType() { return ActivityType.BDR.getExternalRepresentation(); }
+  
   /*****************************************
   *
   *  constructor -- journey
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, String journeyID)
+  public JourneyRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String journeyID)
   {
+    super(context, deliveryType, deliveryRequestSource);
     this.journeyRequestID = context.getUniqueKey();
-    this.subscriberID = context.getSubscriberState().getSubscriberID();
     this.eventDate = context.now();
     this.journeyID = journeyID;
+    this.eligible = false;
+  }
+
+  /*****************************************
+  *
+  *  constructor -- external
+  *
+  *****************************************/
+
+//  public JourneyRequest(JSONObject jsonRoot, String journeyRequestID, String subscriberID, Date eventDate, String journeyID)
+//  {
+//    super(jsonRoot);
+//    this.journeyRequestID = journeyRequestID;
+//    this.subscriberID = subscriberID;
+//    this.eventDate = eventDate;
+//    this.journeyID = journeyID;
+//    this.eligible = false;
+//  }
+  public JourneyRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+  {
+    super(jsonRoot);
+    this.journeyRequestID = JSONUtilities.decodeString(jsonRoot, "journeyRequestID", true);
+    this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
+    this.journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
     this.eligible = false;
   }
 
@@ -121,13 +151,39 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
   *
   *****************************************/
 
-  public JourneyRequest(String journeyRequestID, String subscriberID, Date eventDate, String journeyID)
+  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID)
   {
+    super(schemaAndValue);
     this.journeyRequestID = journeyRequestID;
-    this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.journeyID = journeyID;
     this.eligible = false;
+  }
+
+  /*****************************************
+  *
+  *  constructor -- copy
+  *
+  *****************************************/
+
+  private JourneyRequest(JourneyRequest journeyRequest)
+  {
+    super(journeyRequest);
+    this.journeyRequestID = journeyRequest.getJourneyRequestID();
+    this.eventDate = journeyRequest.getEventDate();
+    this.journeyID = journeyRequest.getJourneyID();
+    this.eligible = journeyRequest.getEligible();
+  }
+
+  /*****************************************
+  *
+  *  copy
+  *
+  *****************************************/
+
+  public JourneyRequest copy()
+  {
+    return new JourneyRequest(this);
   }
 
   /*****************************************
@@ -140,8 +196,8 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
   {
     JourneyRequest journeyRequest = (JourneyRequest) value;
     Struct struct = new Struct(schema);
+    packCommon(struct, journeyRequest);
     struct.put("journeyRequestID", journeyRequest.getJourneyRequestID());
-    struct.put("subscriberID", journeyRequest.getSubscriberID());
     struct.put("eventDate", journeyRequest.getEventDate());
     struct.put("journeyID", journeyRequest.getJourneyID());
     return struct;
@@ -167,7 +223,7 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -175,7 +231,6 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
 
     Struct valueStruct = (Struct) value;
     String journeyRequestID = valueStruct.getString("journeyRequestID");
-    String subscriberID = valueStruct.getString("subscriberID");
     Date eventDate = (Date) valueStruct.get("eventDate");
     String journeyID = valueStruct.getString("journeyID");
 
@@ -184,6 +239,38 @@ public class JourneyRequest implements SubscriberStreamEvent, SubscriberStreamOu
     //  return
     //
 
-    return new JourneyRequest(journeyRequestID, subscriberID, eventDate, journeyID);
+    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID);
   }
+  
+  /****************************************
+  *
+  *  presentation utilities
+  *
+  ****************************************/
+  
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
+  {
+    guiPresentationMap.put(CUSTOMERID, getSubscriberID());
+    guiPresentationMap.put(DELIVERABLEID, getJourneyID());
+    guiPresentationMap.put(DELIVERABLEQTY, 1);
+    guiPresentationMap.put(OPERATION, CommodityDeliveryOperation.Credit.toString());
+    guiPresentationMap.put(MODULEID, getModuleID());
+    guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
+    guiPresentationMap.put(FEATUREID, getFeatureID());
+    guiPresentationMap.put(ORIGIN, "");
+  }
+  
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
+  {
+    thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
+    thirdPartyPresentationMap.put(DELIVERABLEID, getJourneyID());
+    thirdPartyPresentationMap.put(DELIVERABLEQTY, 1);
+    thirdPartyPresentationMap.put(OPERATION, CommodityDeliveryOperation.Credit.toString());
+    thirdPartyPresentationMap.put(MODULEID, getModuleID());
+    thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
+    thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
+    thirdPartyPresentationMap.put(ORIGIN, "");
+  }
+
+
 }

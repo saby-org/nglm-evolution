@@ -38,7 +38,7 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentOperation;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
-import com.evolving.nglm.evolution.SubscriberProfileService.RedisSubscriberProfileService;
+import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
 public class CommodityDeliveryManager extends DeliveryManager implements Runnable
@@ -70,6 +70,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   //
 
   public enum CommodityType {
+    JOURNEY(JourneyRequest.class.getName()),
     IN(INFulfillmentRequest.class.getName()),
     POINT(PointFulfillmentRequest.class.getName()),
     EMPTY(EmptyFulfillmentRequest.class.getName());
@@ -207,7 +208,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //  plugin instanciation
     //
     
-    subscriberProfileService = new RedisSubscriberProfileService(Deployment.getRedisSentinels());
+    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
     subscriberProfileService.start();
     
     paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "CommodityMgr-paymentmeanservice-"+deliveryManagerKey, Deployment.getPaymentMeanTopic(), false);
@@ -257,6 +258,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       if(commodityType != null){
         
         switch (commodityType) {
+        case JOURNEY:
         case IN:
         case POINT:
         case EMPTY:
@@ -1142,7 +1144,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
     switch (commodityType) {
     case IN:
-      log.info(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(..., "+commodityType+", "+deliveryType+") : sending "+CommodityType.IN+" request ...");
+      
+      log.info("=============   "+commodityType+"   -   "+deliveryType+ "   =============");
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request ...");
       
       DeliveryManagerDeclaration inManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
       String inRequestTopic = inManagerDeclaration.getRequestTopic();
@@ -1167,7 +1171,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       inRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       inRequestData.put("dateFormat", "yyyy-MM-dd'T'HH:mm:ss:XX");
 
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request DONE");
       log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.IN+" request ...");
+      
       INFulfillmentRequest inRequest = new INFulfillmentRequest(JSONUtilities.encodeObject(inRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer kafkaProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(kafkaProducer != null){
@@ -1175,10 +1181,17 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       }else{
         submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")");
       }
-      log.info(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.IN+" request DONE");
+      
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.IN+" request DONE");
+      log.info("=========================================================================");
+
       break;
 
     case POINT:
+
+      log.info("=============   "+commodityType+"   -   "+deliveryType+ "   =============");
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request ...");
+
       DeliveryManagerDeclaration pointManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
       String pointRequestTopic = pointManagerDeclaration.getRequestTopic();
 
@@ -1200,7 +1213,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       pointRequestData.put("amount", commodityDeliveryRequest.getAmount());
       pointRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       
-      log.info(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request ...");
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request ...");
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request ...");
+
       PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType));
       KafkaProducer pointProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
       if(pointProducer != null){
@@ -1208,7 +1223,67 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       }else{
         submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")");
       }
-      log.info(Thread.currentThread().getId()+"CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request DONE");
+      
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.POINT+" request DONE");
+      log.info("=========================================================================");
+
+      break;
+
+    case JOURNEY:
+
+      log.info("=============   "+commodityType+"   -   "+deliveryType+ "   =============");
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request ...");
+      
+      DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
+      String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic();
+
+      HashMap<String,Object> journeyRequestData = new HashMap<String,Object>();
+      
+      journeyRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      journeyRequestData.put("originatingRequest", false);
+      journeyRequestData.put("deliveryType", deliveryType);
+
+      journeyRequestData.put("eventID", commodityDeliveryRequest.getEventID());
+      journeyRequestData.put("moduleID", commodityDeliveryRequest.getModuleID());
+      journeyRequestData.put("featureID", commodityDeliveryRequest.getFeatureID());
+
+      
+
+      //================================================================================================================
+      //TODO SCH : ask Don if line below is ok (or need to find a way to generate a unique journeyRequestID) !!! !!! !!! 
+      //----------------------------------------------------------------------------------------------------------------
+      journeyRequestData.put("journeyRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      //================================================================================================================
+      
+      
+      
+      journeyRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
+      journeyRequestData.put("eventDate", SystemTime.getCurrentTime());
+      journeyRequestData.put("journeyID", realCommodityID);
+      
+      journeyRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
+      
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request ...");
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.JOURNEY+" request ...");
+
+      JourneyRequest journeyRequest = new JourneyRequest(JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType));
+      KafkaProducer journeyProducer = providerRequestProducers.get(commodityDeliveryRequest.getProviderID());
+      if(journeyProducer != null){
+        journeyProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest))); 
+      }else{
+        submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.SYSTEM_ERROR, "Could not send delivery request to provider (providerID = "+commodityDeliveryRequest.getProviderID()+")");
+      }
+
+      log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : sending "+CommodityType.JOURNEY+" request DONE");
+      log.info("=========================================================================");
+      
+      
+      
+      
+      
+      
+      
+      
       break;
 
     default:

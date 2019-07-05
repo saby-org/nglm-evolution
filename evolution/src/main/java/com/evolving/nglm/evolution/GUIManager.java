@@ -6865,6 +6865,58 @@ public class GUIManager
 
         journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
 
+        
+        
+        
+        
+        /*****************************************
+        *
+        *  handle related deliverable
+        *
+        *****************************************/
+
+        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+        String providerID = (String) deliveryManagerJSON.get("providerID");
+        if(campaign.getTargetingType().equals(TargetingType.Manual))
+          {
+            
+            //
+            // create deliverable  --  only if campaign has "manual provisioning"
+            //
+
+            Map<String, Object> deliverableMap = new HashMap<String, Object>();
+            deliverableMap.put("id", "journey-" + campaign.getJourneyID());
+            deliverableMap.put("fulfillmentProviderID", providerID);
+            deliverableMap.put("commodityID", campaign.getJourneyID());
+            deliverableMap.put("name", campaign.getJourneyName());
+            deliverableMap.put("display", campaign.getJourneyName());
+            deliverableMap.put("active", true);
+            deliverableMap.put("unitaryCost", 0);
+            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+            deliverableService.putDeliverable(deliverable, true, userID);
+          }
+        else
+          {
+            
+            //
+            // delete deliverable  --  only if campaign does NOT have "manual provisioning"
+            //
+            
+            // TODO SCH : may need to check that deliverable is not used in any offer
+            
+            for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+              {
+                Deliverable deliverable = (Deliverable)deliverableOgbject;
+                if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaign.getJourneyID()))
+                  {
+                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                  }
+              }
+            
+          }
+        
+        
         /*****************************************
         *
         *  response
@@ -6952,7 +7004,33 @@ public class GUIManager
 
     GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
     campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-    if (campaign != null && ! campaign.getReadOnly()) journeyService.removeJourney(campaignID, userID);
+    if (campaign != null && ! campaign.getReadOnly()) 
+      {
+        
+        //
+        // remove journey
+        //
+        
+        journeyService.removeJourney(campaignID, userID);
+
+        //
+        // remove related deliverable
+        //
+        
+        // TODO SCH : what if deliverable is used in an offer ?
+        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+        String providerID = (String) deliveryManagerJSON.get("providerID");
+        for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+          {
+            Deliverable deliverable = (Deliverable)deliverableOgbject;
+            if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaignID))
+              {
+                deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+              }
+          }
+
+      }
 
     /*****************************************
     *
