@@ -180,7 +180,7 @@ public class MOSMSDefaultEvent implements EvolutionEngineEvent, MONotificationEv
    Struct valueStruct = (Struct) value;
    String subscriberID = valueStruct.getString("subscriberID");
    Date originTimesTamp = (Date) valueStruct.get("eventDate");
-   String channelName = valueStruct.getString("ChannelName");
+   String channelName = valueStruct.getString("channelName");
    String sourceAddress = valueStruct.getString("sourceAddress");
    String destinationAddress = valueStruct.getString("destinationAddress");
    String messageText = valueStruct.getString("messageText");
