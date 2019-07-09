@@ -19,9 +19,9 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 
 public class PointFulfillmentRequest extends DeliveryRequest
 {
@@ -67,6 +67,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     schemaBuilder.field("pointID", Schema.STRING_SCHEMA);
     schemaBuilder.field("operation", Schema.STRING_SCHEMA);
     schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("validityPeriodType", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("validityPeriodQuantity", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("resultValidityDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
   };
@@ -94,6 +96,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
   private String pointID;
   private PointOperation operation;
   private int amount;
+  private TimeUnit validityPeriodType;
+  private int validityPeriodQuantity;
   private Date resultValidityDate;
 
   //
@@ -103,6 +107,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
   public String getPointID() { return pointID; }
   public PointOperation getOperation() { return operation; }
   public int getAmount() { return amount; }
+  public TimeUnit getValidityPeriodType() { return validityPeriodType; }
+  public int getValidityPeriodQuantity() { return validityPeriodQuantity; }
   public Date getResultValidityDate() { return resultValidityDate; }
 
   //
@@ -123,12 +129,14 @@ public class PointFulfillmentRequest extends DeliveryRequest
   *
   *****************************************/
 
-  public PointFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String pointID, PointOperation operation, int amount)
+  public PointFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String pointID, PointOperation operation, int amount, TimeUnit validityPeriodType, int validityPeriodQuantity)
   {
     super(context, deliveryType, deliveryRequestSource);
     this.pointID = pointID;
     this.operation = operation;
     this.amount = amount;
+    this.validityPeriodType = validityPeriodType;
+    this.validityPeriodQuantity = validityPeriodQuantity;
     this.resultValidityDate = null;
   }
 
@@ -144,6 +152,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     this.pointID = JSONUtilities.decodeString(jsonRoot, "pointID", true);
     this.operation = PointOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
     this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", true);
+    this.validityPeriodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityPeriodType", false));
+    this.validityPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, "validityPeriodQuantity", false);
     this.resultValidityDate = null;
   }
 
@@ -153,12 +163,14 @@ public class PointFulfillmentRequest extends DeliveryRequest
   *
   *****************************************/
 
-  private PointFulfillmentRequest(SchemaAndValue schemaAndValue, String pointID, PointOperation operation, int amount, Date resultValidityDate)
+  private PointFulfillmentRequest(SchemaAndValue schemaAndValue, String pointID, PointOperation operation, int amount, TimeUnit validityPeriodType, int validityPeriodQuantity, Date resultValidityDate)
   {
     super(schemaAndValue);
     this.pointID = pointID;
     this.operation = operation;
     this.amount = amount;
+    this.validityPeriodType = validityPeriodType;
+    this.validityPeriodQuantity = validityPeriodQuantity;
     this.resultValidityDate = resultValidityDate;
   }
 
@@ -174,6 +186,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     this.pointID = pointFulfillmentRequest.getPointID();
     this.operation = pointFulfillmentRequest.getOperation();
     this.amount = pointFulfillmentRequest.getAmount();
+    this.validityPeriodType = pointFulfillmentRequest.getValidityPeriodType();
+    this.validityPeriodQuantity = pointFulfillmentRequest.getValidityPeriodQuantity();
     this.resultValidityDate = pointFulfillmentRequest.getResultValidityDate();
   }
 
@@ -202,6 +216,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     struct.put("pointID", pointFulfillmentRequest.getPointID());
     struct.put("operation", pointFulfillmentRequest.getOperation().getExternalRepresentation());
     struct.put("amount", pointFulfillmentRequest.getAmount());
+    struct.put("validityPeriodType", pointFulfillmentRequest.getValidityPeriodType().getExternalRepresentation());
+    struct.put("validityPeriodQuantity", pointFulfillmentRequest.getValidityPeriodQuantity());
     struct.put("resultValidityDate", pointFulfillmentRequest.getResultValidityDate());
     return struct;
   }
@@ -235,13 +251,15 @@ public class PointFulfillmentRequest extends DeliveryRequest
     String pointID = valueStruct.getString("pointID");
     PointOperation operation = PointOperation.fromExternalRepresentation(valueStruct.getString("operation"));
     int amount = valueStruct.getInt32("amount");
+    TimeUnit validityPeriodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("validityPeriodType"));
+    int validityPeriodQuantity = valueStruct.getInt32("validityPeriodQuantity");
     Date resultValidityDate = (Date) valueStruct.get("resultValidityDate");
 
     //
     //  return
     //
 
-    return new PointFulfillmentRequest(schemaAndValue, pointID, operation, amount, resultValidityDate);
+    return new PointFulfillmentRequest(schemaAndValue, pointID, operation, amount, validityPeriodType, validityPeriodQuantity, resultValidityDate);
   }
 
   /****************************************
@@ -256,6 +274,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     guiPresentationMap.put(DELIVERABLEID, getPointID());
     guiPresentationMap.put(DELIVERABLEQTY, getAmount());
     guiPresentationMap.put(OPERATION, getOperation().toString());
+    guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType());
+    guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
     guiPresentationMap.put(MODULEID, getModuleID());
     guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
@@ -268,6 +288,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
     thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
+    thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType());
+    thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
     thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
@@ -289,6 +311,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     b.append("," + pointID);
     b.append("," + operation);
     b.append("," + amount);
+    b.append("," + validityPeriodType);
+    b.append("," + validityPeriodQuantity);
     b.append("," + resultValidityDate);
     b.append("}");
     return b.toString();

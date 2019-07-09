@@ -106,6 +106,32 @@ public class Point extends GUIManagedObject
 
   /*****************************************
   *
+  *  constructor -- copy
+  *
+  *****************************************/
+
+  private Point(Point point)
+  {
+    super(point.getJSONRepresentation(), point.getEpoch());
+    this.debitable = point.getDebitable();
+    this.creditable = point.getCreditable();
+    this.setable = point.getSetable();
+    this.validity = point.getValidity().copy();
+  }
+
+  /*****************************************
+  *
+  *  copy
+  *
+  *****************************************/
+
+  public Point copy()
+  {
+    return new Point(this);
+  }
+
+  /*****************************************
+  *
   *  pack
   *
   *****************************************/

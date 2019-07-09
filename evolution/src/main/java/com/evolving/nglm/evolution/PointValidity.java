@@ -94,7 +94,32 @@ public class PointValidity
 
   /*****************************************
   *
-  *  accessors
+  *  constructor -- copy
+  *
+  *****************************************/
+
+  private PointValidity(PointValidity pointValidity)
+  {
+    this.periodType = pointValidity.getPeriodType();
+    this.periodQuantity = pointValidity.getPeriodQuantity();
+    this.roundUp = pointValidity.getRoundUp();
+    this.validityExtension = pointValidity.getValidityExtension();
+  }
+
+  /*****************************************
+  *
+  *  copy
+  *
+  *****************************************/
+
+  public PointValidity copy()
+  {
+    return new PointValidity(this);
+  }
+
+  /*****************************************
+  *
+  *  getters
   *
   *****************************************/
 
@@ -102,6 +127,15 @@ public class PointValidity
   public int getPeriodQuantity() { return periodQuantity; }
   public boolean getRoundUp() { return roundUp; }
   public boolean getValidityExtension() { return validityExtension; }
+
+  /*****************************************
+  *
+  *  setters
+  *
+  *****************************************/
+
+  public void setPeriodType(TimeUnit periodType) { this.periodType = periodType; }
+  public void setPeriodQuantity(int periodQuantity) { this.periodQuantity = periodQuantity; }
 
   /*****************************************
   *

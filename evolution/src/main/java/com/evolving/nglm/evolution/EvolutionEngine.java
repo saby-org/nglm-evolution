@@ -90,6 +90,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -1600,6 +1601,17 @@ public class EvolutionEngine
 
         if (point != null)
           {
+            
+            //
+            // copy point and update point validity
+            //
+            
+            Point newPoint = point.copy();
+            if(pointFulfillmentRequest.getValidityPeriodType() != null && !pointFulfillmentRequest.getValidityPeriodType().equals(TimeUnit.Unknown) && pointFulfillmentRequest.getValidityPeriodQuantity() > 0){
+              newPoint.getValidity().setPeriodType(pointFulfillmentRequest.getValidityPeriodType());
+              newPoint.getValidity().setPeriodQuantity(pointFulfillmentRequest.getValidityPeriodQuantity());
+            }
+            
             //
             //  get (or create) balance
             //
@@ -1620,7 +1632,7 @@ public class EvolutionEngine
             //  update
             //
             
-            boolean success = pointBalance.update(pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), point, now);
+            boolean success = pointBalance.update(pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), newPoint, now);
 
             //
             //  update balances
