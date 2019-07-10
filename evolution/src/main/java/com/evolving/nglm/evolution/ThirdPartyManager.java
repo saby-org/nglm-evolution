@@ -2109,7 +2109,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
 
     if (customerID == null || customerID.isEmpty())
       {

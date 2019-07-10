@@ -2410,6 +2410,10 @@ public class GUIManager
                   jsonResponse = processRemoveTarget(userID, jsonRoot);
                   break;
                   
+                case updateCustomer:
+                  jsonResponse = processUpdateCustomer(userID, jsonRoot);
+                  break;
+                  
                 case getCommunicationChannelsList:
                   jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, true);
                   break;
