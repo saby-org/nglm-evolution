@@ -50,6 +50,7 @@ public abstract class GUIManagedObject
   {
     Journey("journey"),
     Campaign("campaign"),
+    BulkCampaign("bulkCampaign"),
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),
     PushMessageTemplate("pushMessageTemplate"),

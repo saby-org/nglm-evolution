@@ -522,7 +522,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       data.put("commodityID", this.getCommodityID());
       data.put("operation", this.getOperation().getExternalRepresentation());
       data.put("amount", this.getAmount());
-      data.put("validityPeriodType", this.getValidityPeriodType().getExternalRepresentation());
+      data.put("validityPeriodType", (this.getValidityPeriodType() != null ? this.getValidityPeriodType().getExternalRepresentation() : null));
       data.put("validityPeriodQuantity", this.getValidityPeriodQuantity());
       
       data.put("commodityDeliveryStatusCode", this.getCommodityDeliveryStatus().getReturnCode());
@@ -595,7 +595,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       struct.put("commodityID", commodityDeliveryRequest.getCommodityID());
       struct.put("operation", commodityDeliveryRequest.getOperation().getExternalRepresentation());
       struct.put("amount", commodityDeliveryRequest.getAmount());
-      struct.put("validityPeriodType", commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation());
+      struct.put("validityPeriodType", (commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null));
       struct.put("validityPeriodQuantity", commodityDeliveryRequest.getValidityPeriodQuantity());
       struct.put("commodityDeliveryStatusCode", commodityDeliveryRequest.getCommodityDeliveryStatus().getReturnCode());
       struct.put("statusMessage", commodityDeliveryRequest.getStatusMessage());
@@ -684,7 +684,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       guiPresentationMap.put(DELIVERABLEID, getCommodityID());
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType());
+      guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
@@ -701,7 +701,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(DELIVERABLEID, getCommodityID());
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
-      thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType());
+      thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
       thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
@@ -743,7 +743,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     requestData.put("commodityID", commodityID);
     requestData.put("operation", operation.getExternalRepresentation());
     requestData.put("amount", amount);
-    requestData.put("validityPeriodType", validityPeriodType.getExternalRepresentation());
+    requestData.put("validityPeriodType", (validityPeriodType != null ? validityPeriodType.getExternalRepresentation() : null));
     requestData.put("validityPeriodQuantity", validityPeriodQuantity);
 
     requestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.PENDING.getReturnCode());
@@ -1199,7 +1199,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       //TODO SCH : remove INFulfillmentOperation (only one list of operations -> keep CommodityDeliveryOperation)
       inRequestData.put("operation", INFulfillmentOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
       inRequestData.put("amount", commodityDeliveryRequest.getAmount());
-      inRequestData.put("validityPeriodType", commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation());
+      inRequestData.put("validityPeriodType", (commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null));
       inRequestData.put("validityPeriodQuantity", commodityDeliveryRequest.getValidityPeriodQuantity());
       inRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       inRequestData.put("dateFormat", "yyyy-MM-dd'T'HH:mm:ss:XX");
@@ -1244,7 +1244,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       //TODO SCH : remove PointOperation (only one list of operations -> keep CommodityDeliveryOperation)
       pointRequestData.put("operation", PointOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
       pointRequestData.put("amount", commodityDeliveryRequest.getAmount());
-      pointRequestData.put("validityPeriodType", commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation());
+      pointRequestData.put("validityPeriodType", (commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null));
       pointRequestData.put("validityPeriodQuantity", commodityDeliveryRequest.getValidityPeriodQuantity());
       pointRequestData.put("diplomaticBriefcase", diplomaticBriefcase);
       
@@ -1367,7 +1367,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       String deliverableID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.deliverableid");
       int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
       String validityPeriodType = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodType");
-      int validityPeriodQuantity = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodQuantity")).intValue();
+      int validityPeriodQuantity = 0;
+      Number validityPeriodQuantityNumber = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodQuantity"));
+      if(validityPeriodQuantityNumber != null){
+        validityPeriodQuantity = validityPeriodQuantityNumber.intValue();
+      }
       
       /*****************************************
       *

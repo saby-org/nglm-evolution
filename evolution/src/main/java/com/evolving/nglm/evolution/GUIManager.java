@@ -198,6 +198,11 @@ public class GUIManager
     removeCampaign("removeCampaign"),
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
+    getBulkCampaignList("getBulkCampaignList"),
+    getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
+    getBulkCampaign("getBulkCampaign"),
+    putBulkCampaign("putBulkCampaign"),
+    removeBulkCampaign("removeBulkCampaign"),
     getJourneyTemplateList("getJourneyTemplateList"),
     getJourneyTemplateSummaryList("getJourneyTemplateSummaryList"),
     getJourneyTemplate("getJourneyTemplate"),
@@ -1261,6 +1266,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeCampaign", new APISimpleHandler(API.removeCampaign));
         restServer.createContext("/nglm-guimanager/startCampaign", new APISimpleHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
+        restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
+        restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
+        restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
+        restServer.createContext("/nglm-guimanager/putBulkCampaign", new APISimpleHandler(API.putBulkCampaign));
+        restServer.createContext("/nglm-guimanager/removeBulkCampaign", new APISimpleHandler(API.removeBulkCampaign));
         restServer.createContext("/nglm-guimanager/getJourneyTemplateList", new APISimpleHandler(API.getJourneyTemplateList));
         restServer.createContext("/nglm-guimanager/getJourneyTemplateSummaryList", new APISimpleHandler(API.getJourneyTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getJourneyTemplate", new APISimpleHandler(API.getJourneyTemplate));
@@ -1811,23 +1821,23 @@ public class GUIManager
                   break;
 
                 case getJourneyList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, true);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, true);
                   break;
 
                 case getJourneySummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, false);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, false);
                   break;
 
                 case getJourney:
-                  jsonResponse = processGetJourney(userID, jsonRoot);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
 
                 case putJourney:
-                  jsonResponse = processPutJourney(userID, jsonRoot);
+                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
 
                 case removeJourney:
-                  jsonResponse = processRemoveJourney(userID, jsonRoot);
+                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
                   break;
 
                 case startJourney:
@@ -1843,23 +1853,23 @@ public class GUIManager
                   break;
 
                 case getCampaignList:
-                  jsonResponse = processGetCampaignList(userID, jsonRoot, true);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, true);
                   break;
 
                 case getCampaignSummaryList:
-                  jsonResponse = processGetCampaignList(userID, jsonRoot, false);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, false);
                   break;
 
                 case getCampaign:
-                  jsonResponse = processGetCampaign(userID, jsonRoot);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
 
                 case putCampaign:
-                  jsonResponse = processPutCampaign(userID, jsonRoot);
+                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
 
                 case removeCampaign:
-                  jsonResponse = processRemoveCampaign(userID, jsonRoot);
+                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
                   break;
 
                 case startCampaign:
@@ -1868,6 +1878,26 @@ public class GUIManager
 
                 case stopCampaign:
                   jsonResponse = processCampaignSetActive(userID, jsonRoot, false);
+                  break;
+
+                case getBulkCampaignList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true);
+                  break;
+
+                case getBulkCampaignSummaryList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, false);
+                  break;
+
+                case getBulkCampaign:
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  break;
+
+                case putBulkCampaign:
+                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  break;
+
+                case removeBulkCampaign:
+                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
                   break;
 
                 case getJourneyTemplateList:
@@ -6285,281 +6315,281 @@ public class GUIManager
     return result;
   }
 
-  /*****************************************
-  *
-  *  processGetJourneyList
-  *
-  *****************************************/
+//  /*****************************************
+//  *
+//  *  processGetJourneyList
+//  *
+//  *****************************************/
+//
+//  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+//  {
+//    /*****************************************
+//    *
+//    *  retrieve and convert journeys
+//    *
+//    *****************************************/
+//
+//    Date now = SystemTime.getCurrentTime();
+//    List<JSONObject> journeys = new ArrayList<JSONObject>();
+//    for (GUIManagedObject journey : journeyService.getStoredJourneys())
+//      {
+//        switch (journey.getGUIManagedObjectType())
+//          {
+//            case Journey:
+//              journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
+//              break;
+//          }
+//      }
+//
+//    /*****************************************
+//    *
+//    *  response
+//    *
+//    *****************************************/
+//
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//    response.put("responseCode", "ok");
+//    response.put("journeys", JSONUtilities.encodeArray(journeys));
+//    return JSONUtilities.encodeObject(response);
+//  }
 
-  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert journeys
-    *
-    *****************************************/
+//  /*****************************************
+//  *
+//  *  processGetJourney
+//  *
+//  *****************************************/
+//
+//  private JSONObject processGetJourney(String userID, JSONObject jsonRoot)
+//  {
+//    /****************************************
+//    *
+//    *  response
+//    *
+//    ****************************************/
+//
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//
+//    /****************************************
+//    *
+//    *  argument
+//    *
+//    ****************************************/
+//
+//    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+//
+//    /*****************************************
+//    *
+//    *  retrieve and decorate journey
+//    *
+//    *****************************************/
+//
+//    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+//    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
+//    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
+//
+//    /*****************************************
+//    *
+//    *  response
+//    *
+//    *****************************************/
+//
+//    response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
+//    if (journey != null) response.put("journey", journeyJSON);
+//    return JSONUtilities.encodeObject(response);
+//  }
 
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> journeys = new ArrayList<JSONObject>();
-    for (GUIManagedObject journey : journeyService.getStoredJourneys())
-      {
-        switch (journey.getGUIManagedObjectType())
-          {
-            case Journey:
-              journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
-              break;
-          }
-      }
+//  /*****************************************
+//  *
+//  *  processPutJourney
+//  *
+//  *****************************************/
+//
+//  private JSONObject processPutJourney(String userID, JSONObject jsonRoot)
+//  {
+//    /****************************************
+//    *
+//    *  response
+//    *
+//    ****************************************/
+//
+//    Date now = SystemTime.getCurrentTime();
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//
+//    /*****************************************
+//    *
+//    *  journeyID
+//    *
+//    *****************************************/
+//
+//    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+//    if (journeyID == null)
+//      {
+//        journeyID = journeyService.generateJourneyID();
+//        jsonRoot.put("id", journeyID);
+//      }
+//
+//    /*****************************************
+//    *
+//    *  existing journey
+//    *
+//    *****************************************/
+//
+//    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+//    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourney : null;
+//
+//    /*****************************************
+//    *
+//    *  read-only
+//    *
+//    *****************************************/
+//
+//    if (existingJourney != null && existingJourney.getReadOnly())
+//      {
+//        response.put("id", existingJourney.getGUIManagedObjectID());
+//        response.put("accepted", existingJourney.getAccepted());
+//        response.put("valid", existingJourney.getAccepted());
+//        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
+//        response.put("responseCode", "failedReadOnly");
+//        return JSONUtilities.encodeObject(response);
+//      }
+//
+//    /*****************************************
+//    *
+//    *  process journey
+//    *
+//    *****************************************/
+//
+//    long epoch = epochServer.getKey();
+//    try
+//      {
+//        /****************************************
+//        *
+//        *  instantiate journey
+//        *
+//        ****************************************/
+//
+//        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
+//
+//        /*****************************************
+//        *
+//        *  store
+//        *
+//        *****************************************/
+//
+//        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+//
+//        /*****************************************
+//        *
+//        *  response
+//        *
+//        *****************************************/
+//
+//        response.put("id", journey.getJourneyID());
+//        response.put("accepted", journey.getAccepted());
+//        response.put("valid", journey.getAccepted());
+//        response.put("processing", journeyService.isActiveJourney(journey, now));
+//        response.put("responseCode", "ok");
+//        return JSONUtilities.encodeObject(response);
+//      }
+//    catch (JSONUtilitiesException|GUIManagerException e)
+//      {
+//        //
+//        //  incompleteObject
+//        //
+//
+//        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Journey, epoch);
+//
+//        //
+//        //  store
+//        //
+//
+//        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+//
+//        //
+//        //  log
+//        //
+//
+//        StringWriter stackTraceWriter = new StringWriter();
+//        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+//        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+//
+//        //
+//        //  response
+//        //
+//
+//        response.put("journeyID", incompleteObject.getGUIManagedObjectID());
+//        response.put("responseCode", "journeyNotValid");
+//        response.put("responseMessage", e.getMessage());
+//        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+//        return JSONUtilities.encodeObject(response);
+//      }
+//  }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("journeys", JSONUtilities.encodeArray(journeys));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetJourney
-  *
-  *****************************************/
-
-  private JSONObject processGetJourney(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate journey
-    *
-    *****************************************/
-
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
-    if (journey != null) response.put("journey", journeyJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutJourney
-  *
-  *****************************************/
-
-  private JSONObject processPutJourney(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  journeyID
-    *
-    *****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (journeyID == null)
-      {
-        journeyID = journeyService.generateJourneyID();
-        jsonRoot.put("id", journeyID);
-      }
-
-    /*****************************************
-    *
-    *  existing journey
-    *
-    *****************************************/
-
-    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
-    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourney : null;
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingJourney != null && existingJourney.getReadOnly())
-      {
-        response.put("id", existingJourney.getGUIManagedObjectID());
-        response.put("accepted", existingJourney.getAccepted());
-        response.put("valid", existingJourney.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process journey
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate journey
-        *
-        ****************************************/
-
-        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", journey.getJourneyID());
-        response.put("accepted", journey.getAccepted());
-        response.put("valid", journey.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(journey, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Journey, epoch);
-
-        //
-        //  store
-        //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("journeyID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "journeyNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveJourney
-  *
-  *****************************************/
-
-  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-    if (journey != null && ! journey.getReadOnly()) journeyService.removeJourney(journeyID, userID);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (journey != null && ! journey.getReadOnly())
-      responseCode = "ok";
-    else if (journey != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "journeyNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
+//  /*****************************************
+//  *
+//  *  processRemoveJourney
+//  *
+//  *****************************************/
+//
+//  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot)
+//  {
+//    /****************************************
+//    *
+//    *  response
+//    *
+//    ****************************************/
+//
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//
+//    /*****************************************
+//    *
+//    *  now
+//    *
+//    *****************************************/
+//
+//    Date now = SystemTime.getCurrentTime();
+//
+//    /****************************************
+//    *
+//    *  argument
+//    *
+//    ****************************************/
+//
+//    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+//
+//    /*****************************************
+//    *
+//    *  remove
+//    *
+//    *****************************************/
+//
+//    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+//    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
+//    if (journey != null && ! journey.getReadOnly()) journeyService.removeJourney(journeyID, userID);
+//
+//    /*****************************************
+//    *
+//    *  responseCode
+//    *
+//    *****************************************/
+//
+//    String responseCode;
+//    if (journey != null && ! journey.getReadOnly())
+//      responseCode = "ok";
+//    else if (journey != null)
+//      responseCode = "failedReadOnly";
+//    else
+//      responseCode = "journeyNotFound";
+//
+//    /*****************************************
+//    *
+//    *  response
+//    *
+//    *****************************************/
+//
+//    response.put("responseCode", responseCode);
+//    return JSONUtilities.encodeObject(response);
+//  }
 
   /*****************************************
   *
@@ -6699,360 +6729,360 @@ public class GUIManager
       }
   }
 
-  /*****************************************
-  *
-  *  processGetCampaignList
-  *
-  *****************************************/
+//  /*****************************************
+//  *
+//  *  processGetCampaignList
+//  *
+//  *****************************************/
+//
+//  private JSONObject processGetCampaignList(String userID, JSONObject jsonRoot, boolean fullDetails)
+//  {
+//    /*****************************************
+//    *
+//    *  retrieve and convert campaigns
+//    *
+//    *****************************************/
+//
+//    Date now = SystemTime.getCurrentTime();
+//    List<JSONObject> campaigns = new ArrayList<JSONObject>();
+//    for (GUIManagedObject campaign : journeyService.getStoredJourneys())
+//      {
+//        switch (campaign.getGUIManagedObjectType())
+//          {
+//            case Campaign:
+//              campaigns.add(journeyService.generateResponseJSON(campaign, fullDetails, now));
+//              break;
+//          }
+//      }
+//
+//    /*****************************************
+//    *
+//    *  response
+//    *
+//    *****************************************/
+//
+//    HashMap<String,Object> response = new HashMap<String,Object>();;
+//    response.put("responseCode", "ok");
+//    response.put("campaigns", JSONUtilities.encodeArray(campaigns));
+//    return JSONUtilities.encodeObject(response);
+//  }
 
-  private JSONObject processGetCampaignList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert campaigns
-    *
-    *****************************************/
+//  /*****************************************
+//  *
+//  *  processGetCampaign
+//  *
+//  *****************************************/
+//
+//  private JSONObject processGetCampaign(String userID, JSONObject jsonRoot)
+//  {
+//    /****************************************
+//    *
+//    *  response
+//    *
+//    ****************************************/
+//
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//
+//    /****************************************
+//    *
+//    *  argument
+//    *
+//    ****************************************/
+//
+//    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
+//
+//    /*****************************************
+//    *
+//    *  retrieve and decorate campaign
+//    *
+//    *****************************************/
+//
+//    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
+//    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
+//    JSONObject campaignJSON = journeyService.generateResponseJSON(campaign, true, SystemTime.getCurrentTime());
+//
+//    /*****************************************
+//    *
+//    *  response
+//    *
+//    *****************************************/
+//
+//    response.put("responseCode", (campaign != null) ? "ok" : "campaignNotFound");
+//    if (campaign != null) response.put("campaign", campaignJSON);
+//    return JSONUtilities.encodeObject(response);
+//  }
 
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> campaigns = new ArrayList<JSONObject>();
-    for (GUIManagedObject campaign : journeyService.getStoredJourneys())
-      {
-        switch (campaign.getGUIManagedObjectType())
-          {
-            case Campaign:
-              campaigns.add(journeyService.generateResponseJSON(campaign, fullDetails, now));
-              break;
-          }
-      }
+//  /*****************************************
+//  *
+//  *  processPutCampaign
+//  *
+//  *****************************************/
+//
+//  private JSONObject processPutCampaign(String userID, JSONObject jsonRoot)
+//  {
+//    /****************************************
+//    *
+//    *  response
+//    *
+//    ****************************************/
+//
+//    Date now = SystemTime.getCurrentTime();
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//
+//    /*****************************************
+//    *
+//    *  campaignID
+//    *
+//    *****************************************/
+//
+//    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", false);
+//    if (campaignID == null)
+//      {
+//        campaignID = journeyService.generateJourneyID();
+//        jsonRoot.put("id", campaignID);
+//      }
+//
+//    /*****************************************
+//    *
+//    *  existing campaign
+//    *
+//    *****************************************/
+//
+//    GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
+//    existingCampaign = (existingCampaign != null && existingCampaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? existingCampaign : null;
+//
+//    /*****************************************
+//    *
+//    *  read-only
+//    *
+//    *****************************************/
+//
+//    if (existingCampaign != null && existingCampaign.getReadOnly())
+//      {
+//        response.put("id", existingCampaign.getGUIManagedObjectID());
+//        response.put("accepted", existingCampaign.getAccepted());
+//        response.put("valid", existingCampaign.getAccepted());
+//        response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
+//        response.put("responseCode", "failedReadOnly");
+//        return JSONUtilities.encodeObject(response);
+//      }
+//
+//    /*****************************************
+//    *
+//    *  process campaign
+//    *
+//    *****************************************/
+//
+//    long epoch = epochServer.getKey();
+//    try
+//      {
+//        /****************************************
+//        *
+//        *  instantiate campaign
+//        *
+//        ****************************************/
+//
+//        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
+//
+//        /*****************************************
+//        *
+//        *  store
+//        *
+//        *****************************************/
+//
+//        journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
+//
+//        
+//        
+//        
+//        
+//        /*****************************************
+//        *
+//        *  handle related deliverable
+//        *
+//        *****************************************/
+//
+//        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+//        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+//        String providerID = (String) deliveryManagerJSON.get("providerID");
+//        if(campaign.getTargetingType().equals(TargetingType.Manual))
+//          {
+//            
+//            //
+//            // create deliverable  --  only if campaign has "manual provisioning"
+//            //
+//
+//            Map<String, Object> deliverableMap = new HashMap<String, Object>();
+//            deliverableMap.put("id", "journey-" + campaign.getJourneyID());
+//            deliverableMap.put("fulfillmentProviderID", providerID);
+//            deliverableMap.put("commodityID", campaign.getJourneyID());
+//            deliverableMap.put("name", campaign.getJourneyName());
+//            deliverableMap.put("display", campaign.getJourneyName());
+//            deliverableMap.put("active", true);
+//            deliverableMap.put("unitaryCost", 0);
+//            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+//            deliverableService.putDeliverable(deliverable, true, userID);
+//          }
+//        else
+//          {
+//            
+//            //
+//            // delete deliverable  --  only if campaign does NOT have "manual provisioning"
+//            //
+//            
+//            // TODO SCH : may need to check that deliverable is not used in any offer
+//            
+//            for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+//              {
+//                Deliverable deliverable = (Deliverable)deliverableOgbject;
+//                if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaign.getJourneyID()))
+//                  {
+//                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+//                  }
+//              }
+//            
+//          }
+//        
+//        
+//        /*****************************************
+//        *
+//        *  response
+//        *
+//        *****************************************/
+//
+//        response.put("id", campaign.getJourneyID());
+//        response.put("accepted", campaign.getAccepted());
+//        response.put("valid", campaign.getAccepted());
+//        response.put("processing", journeyService.isActiveJourney(campaign, now));
+//        response.put("responseCode", "ok");
+//        return JSONUtilities.encodeObject(response);
+//      }
+//    catch (JSONUtilitiesException|GUIManagerException e)
+//      {
+//        //
+//        //  incompleteObject
+//        //
+//
+//        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Campaign, epoch);
+//
+//        //
+//        //  store
+//        //
+//
+//        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
+//
+//        //
+//        //  log
+//        //
+//
+//        StringWriter stackTraceWriter = new StringWriter();
+//        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+//        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+//
+//        //
+//        //  response
+//        //
+//
+//        response.put("campaignID", incompleteObject.getGUIManagedObjectID());
+//        response.put("responseCode", "campaignNotValid");
+//        response.put("responseMessage", e.getMessage());
+//        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+//        return JSONUtilities.encodeObject(response);
+//      }
+//  }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("campaigns", JSONUtilities.encodeArray(campaigns));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetCampaign
-  *
-  *****************************************/
-
-  private JSONObject processGetCampaign(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate campaign
-    *
-    *****************************************/
-
-    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
-    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-    JSONObject campaignJSON = journeyService.generateResponseJSON(campaign, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (campaign != null) ? "ok" : "campaignNotFound");
-    if (campaign != null) response.put("campaign", campaignJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutCampaign
-  *
-  *****************************************/
-
-  private JSONObject processPutCampaign(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  campaignID
-    *
-    *****************************************/
-
-    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (campaignID == null)
-      {
-        campaignID = journeyService.generateJourneyID();
-        jsonRoot.put("id", campaignID);
-      }
-
-    /*****************************************
-    *
-    *  existing campaign
-    *
-    *****************************************/
-
-    GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
-    existingCampaign = (existingCampaign != null && existingCampaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? existingCampaign : null;
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingCampaign != null && existingCampaign.getReadOnly())
-      {
-        response.put("id", existingCampaign.getGUIManagedObjectID());
-        response.put("accepted", existingCampaign.getAccepted());
-        response.put("valid", existingCampaign.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process campaign
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate campaign
-        *
-        ****************************************/
-
-        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
-
-        
-        
-        
-        
-        /*****************************************
-        *
-        *  handle related deliverable
-        *
-        *****************************************/
-
-        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-        String providerID = (String) deliveryManagerJSON.get("providerID");
-        if(campaign.getTargetingType().equals(TargetingType.Manual))
-          {
-            
-            //
-            // create deliverable  --  only if campaign has "manual provisioning"
-            //
-
-            Map<String, Object> deliverableMap = new HashMap<String, Object>();
-            deliverableMap.put("id", "journey-" + campaign.getJourneyID());
-            deliverableMap.put("fulfillmentProviderID", providerID);
-            deliverableMap.put("commodityID", campaign.getJourneyID());
-            deliverableMap.put("name", campaign.getJourneyName());
-            deliverableMap.put("display", campaign.getJourneyName());
-            deliverableMap.put("active", true);
-            deliverableMap.put("unitaryCost", 0);
-            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-            deliverableService.putDeliverable(deliverable, true, userID);
-          }
-        else
-          {
-            
-            //
-            // delete deliverable  --  only if campaign does NOT have "manual provisioning"
-            //
-            
-            // TODO SCH : may need to check that deliverable is not used in any offer
-            
-            for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-              {
-                Deliverable deliverable = (Deliverable)deliverableOgbject;
-                if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaign.getJourneyID()))
-                  {
-                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-                  }
-              }
-            
-          }
-        
-        
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", campaign.getJourneyID());
-        response.put("accepted", campaign.getAccepted());
-        response.put("valid", campaign.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(campaign, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Campaign, epoch);
-
-        //
-        //  store
-        //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("campaignID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "campaignNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveCampaign
-  *
-  *****************************************/
-
-  private JSONObject processRemoveCampaign(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
-    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-    if (campaign != null && ! campaign.getReadOnly()) 
-      {
-        
-        //
-        // remove journey
-        //
-        
-        journeyService.removeJourney(campaignID, userID);
-
-        //
-        // remove related deliverable
-        //
-        
-        // TODO SCH : what if deliverable is used in an offer ?
-        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-        String providerID = (String) deliveryManagerJSON.get("providerID");
-        for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-          {
-            Deliverable deliverable = (Deliverable)deliverableOgbject;
-            if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaignID))
-              {
-                deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-              }
-          }
-
-      }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (campaign != null && ! campaign.getReadOnly())
-      responseCode = "ok";
-    else if (campaign != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "campaignNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-
+//  /*****************************************
+//  *
+//  *  processRemoveCampaign
+//  *
+//  *****************************************/
+//
+//  private JSONObject processRemoveCampaign(String userID, JSONObject jsonRoot)
+//  {
+//    /****************************************
+//    *
+//    *  response
+//    *
+//    ****************************************/
+//
+//    HashMap<String,Object> response = new HashMap<String,Object>();
+//
+//    /*****************************************
+//    *
+//    *  now
+//    *
+//    *****************************************/
+//
+//    Date now = SystemTime.getCurrentTime();
+//
+//    /****************************************
+//    *
+//    *  argument
+//    *
+//    ****************************************/
+//
+//    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
+//
+//    /*****************************************
+//    *
+//    *  remove
+//    *
+//    *****************************************/
+//
+//    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
+//    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
+//    if (campaign != null && ! campaign.getReadOnly()) 
+//      {
+//        
+//        //
+//        // remove journey
+//        //
+//        
+//        journeyService.removeJourney(campaignID, userID);
+//
+//        //
+//        // remove related deliverable
+//        //
+//        
+//        // TODO SCH : what if deliverable is used in an offer ?
+//        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+//        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+//        String providerID = (String) deliveryManagerJSON.get("providerID");
+//        for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+//          {
+//            Deliverable deliverable = (Deliverable)deliverableOgbject;
+//            if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaignID))
+//              {
+//                deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+//              }
+//          }
+//
+//      }
+//
+//    /*****************************************
+//    *
+//    *  responseCode
+//    *
+//    *****************************************/
+//
+//    String responseCode;
+//    if (campaign != null && ! campaign.getReadOnly())
+//      responseCode = "ok";
+//    else if (campaign != null)
+//      responseCode = "failedReadOnly";
+//    else
+//      responseCode = "campaignNotFound";
+//
+//    /*****************************************
+//    *
+//    *  response
+//    *
+//    *****************************************/
+//
+//    response.put("responseCode", responseCode);
+//    return JSONUtilities.encodeObject(response);
+//  }
+//
   /*****************************************
   *
   *  processCampaignSetActive
@@ -7191,6 +7221,469 @@ public class GUIManager
       }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  /*****************************************
+  *
+  *  processGetJourneyList
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert journeys
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> journeys = new ArrayList<JSONObject>();
+    for (GUIManagedObject journey : journeyService.getStoredJourneys())
+      {
+        if (journey.getGUIManagedObjectType().equals(objectType))
+          {
+              journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    switch (objectType) {
+    case Journey:
+      response.put("journeys", JSONUtilities.encodeArray(journeys));
+      break;
+
+    case Campaign:
+      response.put("campaigns", JSONUtilities.encodeArray(journeys));
+      break;
+
+    case BulkCampaign:
+      response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
+      break;
+
+    default:
+      response.put("journeys", JSONUtilities.encodeArray(journeys));
+      break;
+    }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetJourney
+  *
+  *****************************************/
+
+  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate campaign
+    *
+    *****************************************/
+
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
+    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    switch (objectType) {
+    case Journey:
+      response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
+      if (journey != null) response.put("journey", journeyJSON);
+      break;
+
+    case Campaign:
+      response.put("responseCode", (journey != null) ? "ok" : "campaignNotFound");
+      if (journey != null) response.put("campaign", journeyJSON);
+      break;
+
+    case BulkCampaign:
+      response.put("responseCode", (journey != null) ? "ok" : "bulkCampaignNotFound");
+      if (journey != null) response.put("bulkCampaign", journeyJSON);
+      break;
+
+    default:
+      response.put("responseCode", (journey != null) ? "ok" : "notFound");
+      if (journey != null) response.put("journey", journeyJSON);
+      break;
+    }
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutJourney
+  *
+  *****************************************/
+
+  private JSONObject processPutJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  journeyID
+    *
+    *****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (journeyID == null)
+      {
+        journeyID = journeyService.generateJourneyID();
+        jsonRoot.put("id", journeyID);
+      }
+
+    /*****************************************
+    *
+    *  existing journey
+    *
+    *****************************************/
+
+    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == objectType) ? existingJourney : null;
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingJourney != null && existingJourney.getReadOnly())
+      {
+        response.put("id", existingJourney.getGUIManagedObjectID());
+        response.put("accepted", existingJourney.getAccepted());
+        response.put("valid", existingJourney.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process journey
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate journey
+        *
+        ****************************************/
+
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+
+        /*****************************************
+        *
+        *  handle related deliverable
+        *
+        *****************************************/
+
+        if(GUIManagedObjectType.Campaign.equals(objectType)){
+          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+          String providerID = (String) deliveryManagerJSON.get("providerID");
+          if(journey.getTargetingType().equals(TargetingType.Manual))
+            {
+              
+              //
+              // create deliverable  --  only if campaign has "manual provisioning"
+              //
+
+              Map<String, Object> deliverableMap = new HashMap<String, Object>();
+              deliverableMap.put("id", "journey-" + journey.getJourneyID());
+              deliverableMap.put("fulfillmentProviderID", providerID);
+              deliverableMap.put("commodityID", journey.getJourneyID());
+              deliverableMap.put("name", journey.getJourneyName());
+              deliverableMap.put("display", journey.getJourneyName());
+              deliverableMap.put("active", true);
+              deliverableMap.put("unitaryCost", 0);
+              Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+              deliverableService.putDeliverable(deliverable, true, userID);
+            }
+          else
+            {
+              
+              //
+              // delete deliverable  --  only if campaign does NOT have "manual provisioning"
+              //
+              
+              // TODO SCH : may need to check that deliverable is not used in any offer
+              
+              for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+                {
+                  Deliverable deliverable = (Deliverable)deliverableOgbject;
+                  if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journey.getJourneyID()))
+                    {
+                      deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                    }
+                }
+              
+            }
+        }
+        
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", journey.getJourneyID());
+        response.put("accepted", journey.getAccepted());
+        response.put("valid", journey.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(journey, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, objectType, epoch);
+
+        //
+        //  store
+        //
+
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        switch (objectType) 
+        {
+        case Journey:
+          response.put("responseCode", "journeyNotValid");
+          break;
+
+        case Campaign:
+          response.put("responseCode", "campaignNotValid");
+          break;
+
+        case BulkCampaign:
+          response.put("responseCode", "bulkCampaignNotValid");
+          break;
+
+        default:
+          response.put("responseCode", "notValid");
+          break;
+        }
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveJourney
+  *
+  *****************************************/
+
+  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
+    if (journey != null && ! journey.getReadOnly()) 
+      {
+        
+        //
+        // remove journey
+        //
+        
+        journeyService.removeJourney(journeyID, userID);
+
+        //
+        // remove related deliverable
+        //
+        
+        if(GUIManagedObjectType.Campaign.equals(objectType)){
+          // TODO SCH : what if deliverable is used in an offer ?
+          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+          String providerID = (String) deliveryManagerJSON.get("providerID");
+          for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+            {
+              Deliverable deliverable = (Deliverable)deliverableOgbject;
+              if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journeyID))
+                {
+                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                }
+            }
+        }
+
+      }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (journey != null && ! journey.getReadOnly())
+      responseCode = "ok";
+    else if (journey != null)
+      responseCode = "failedReadOnly";
+    else {
+      switch (objectType) {
+      case Journey:
+        responseCode = "journeyNotFound";
+        break;
+
+      case Campaign:
+        responseCode = "campaignNotFound";
+        break;
+
+      case BulkCampaign:
+        responseCode = "bulkCampaignNotFound";
+        break;
+
+      default:
+        responseCode = "notFound";
+        break;
+      }
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   /*****************************************
   *
   *  processGetJourneyTemplateList

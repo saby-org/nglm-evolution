@@ -398,7 +398,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       struct.put("paymentMeanID", inFulfillmentRequest.getPaymentMeanID());
       struct.put("operation", inFulfillmentRequest.getOperation().getExternalRepresentation());
       struct.put("amount", inFulfillmentRequest.getAmount());
-      struct.put("validityPeriodType", inFulfillmentRequest.getValidityPeriodType().getExternalRepresentation());
+      struct.put("validityPeriodType", (inFulfillmentRequest.getValidityPeriodType() != null ? inFulfillmentRequest.getValidityPeriodType().getExternalRepresentation() : null));
       struct.put("validityPeriodQuantity", inFulfillmentRequest.getValidityPeriodQuantity());
       struct.put("return_code", inFulfillmentRequest.getReturnCode());
       return struct;
@@ -576,7 +576,11 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       String accountID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.deliverableid");
       int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
       String validityPeriodType = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodType");
-      int validityPeriodQuantity = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodQuantity")).intValue();
+      int validityPeriodQuantity = 0;
+      Number validityPeriodQuantityNumber = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodQuantity"));
+      if(validityPeriodQuantityNumber != null){
+        validityPeriodQuantity = validityPeriodQuantityNumber.intValue();
+      }
       
       /*****************************************
       *
