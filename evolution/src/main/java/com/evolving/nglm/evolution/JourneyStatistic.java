@@ -31,10 +31,13 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput, Comparable
 {
@@ -70,6 +73,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     schemaBuilder.field("statusControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusUniversalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("journeyComplete", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("journeyHistorySummary", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("journeyStatusSummary", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
 
@@ -109,6 +114,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   private boolean statusControlGroup;
   private boolean statusUniversalControlGroup;
   private boolean journeyComplete;
+  private List<String> journeyHistorySummary;
+  private List<String> journeyStatusSummary;
 
   /*****************************************
   *
@@ -133,6 +140,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
   public boolean getJourneyComplete() { return journeyComplete; }
   public Date getEventDate() { return transitionDate; }
+  public List<String> getJourneyHistorySummary() { return journeyHistorySummary; }
+  public List<String> getJourneyStatusSummary() { return journeyStatusSummary; }
 
   //
   //  getSubscriberJourneyStatus
@@ -174,6 +183,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = false;
     this.statusUniversalControlGroup = false;
     this.journeyComplete = false;
+    this.journeyHistorySummary = prepareJourneyHistorySummary(context);
+    this.journeyStatusSummary = prepareJourneyStatusSummary(context);
+    
   }
 
   /*****************************************
@@ -200,6 +212,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.journeyComplete = journeyLink.getDestination().getExitNode();
+    this.journeyHistorySummary = prepareJourneyHistorySummary(context);
+    this.journeyStatusSummary = prepareJourneyStatusSummary(context);
   }
 
   /*****************************************
@@ -226,6 +240,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.journeyComplete = true;
+    this.journeyHistorySummary = prepareJourneyHistorySummary(context);
+    this.journeyStatusSummary = prepareJourneyStatusSummary(context);
   }
 
   /*****************************************
@@ -234,7 +250,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete)
+  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<String> journeyHistorySummary, List<String> journeyStatusSummary)
   {
     this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
@@ -252,6 +268,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = statusControlGroup;
     this.statusUniversalControlGroup = statusUniversalControlGroup;
     this.journeyComplete = journeyComplete;
+    this.journeyHistorySummary = journeyHistorySummary;
+    this.journeyStatusSummary = journeyStatusSummary;
   }
 
   /*****************************************
@@ -278,6 +296,18 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = journeyStatistic.getStatusControlGroup();
     this.statusUniversalControlGroup = journeyStatistic.getStatusUniversalControlGroup();
     this.journeyComplete = journeyStatistic.getJourneyComplete();
+    
+    this.journeyHistorySummary = new ArrayList<String>();
+    for(String stat : journeyStatistic.getJourneyHistorySummary())
+      {
+        this.journeyHistorySummary.add(stat);
+      }
+    
+    this.journeyStatusSummary = new ArrayList<String>();
+    for(String status : journeyStatistic.getJourneyStatusSummary())
+      {
+        this.journeyStatusSummary.add(status);
+      }
   }
 
   /*****************************************
@@ -306,6 +336,8 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     struct.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
     struct.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
     struct.put("journeyComplete", journeyStatistic.getJourneyComplete());
+    struct.put("journeyHistorySummary", journeyStatistic.getJourneyHistorySummary());
+    struct.put("journeyStatusSummary", journeyStatistic.getJourneyStatusSummary());
     return struct;
   }
   
@@ -352,12 +384,14 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
     boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
     boolean journeyComplete = valueStruct.getBoolean("journeyComplete");
+    List<String> journeyHistorySummary = (List<String>) valueStruct.get("journeyHistorySummary");
+    List<String> journeyStatusSummary = (List<String>) valueStruct.get("journeyStatusSummary");
     
     //
     //  return
     //
 
-    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete);
+    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyHistorySummary, journeyStatusSummary);
   }
 
   /*****************************************
@@ -375,6 +409,36 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
         result = transitionDate.compareTo(entry.getTransitionDate());
         if (result == 0) result = journeyStatisticID.compareTo(entry.getJourneyStatisticID());
       }
+    return result;
+  }
+  
+  private List<String> prepareJourneyHistorySummary(EvolutionEventContext context)
+  {
+    List<String> result = new ArrayList<String>();
+    if(context.getSubscriberState() != null) {
+      SubscriberState subscriberState = context.getSubscriberState();
+      if(subscriberState.getJourneyStatistics() != null) {
+        for(JourneyStatistic stat : subscriberState.getJourneyStatistics()) {
+          result.add(stat.getToNodeID()+";"+stat.getTransitionDate().getTime());
+        }
+      }
+    }
+    result.add(toNodeID+";"+transitionDate.getTime());
+    return result;
+  }
+  
+  private List<String> prepareJourneyStatusSummary(EvolutionEventContext context)
+  {
+    List<String> result = new ArrayList<String>();
+    if(context.getSubscriberState() != null) {
+      SubscriberState subscriberState = context.getSubscriberState();
+      if(subscriberState.getJourneyStatistics() != null) {
+        for(JourneyStatistic stat : subscriberState.getJourneyStatistics()) {
+          result.add(stat.getSubscriberJourneyStatus()+";"+stat.getTransitionDate().getTime());
+        }
+      }
+    }
+    result.add(getSubscriberJourneyStatus()+";"+transitionDate.getTime());
     return result;
   }
 }

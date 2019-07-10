@@ -262,7 +262,6 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyResponses = new ArrayList<JourneyRequest>(subscriberState.getJourneyResponses());
         this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
-        this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberState.getJourneyStatistics());
         this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
         this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
@@ -275,6 +274,16 @@ public class SubscriberState implements SubscriberStreamOutput
         for (JourneyState journeyState : subscriberState.getJourneyStates())
           {
             this.journeyStates.add(new JourneyState(journeyState));
+          }
+        
+        //
+        //  deep copy of journey statistics
+        //
+        
+        this.journeyStatistics = new ArrayList<JourneyStatistic>();
+        for(JourneyStatistic journeyStatistic : subscriberState.getJourneyStatistics())
+          {
+            this.journeyStatistics.add(new JourneyStatistic(journeyStatistic));
           }
       }
     catch (InvocationTargetException e)

@@ -110,7 +110,16 @@ public class SubscriberHistory
   {
     this.subscriberID = subscriberHistory.getSubscriberID();
     this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberHistory.getDeliveryRequests());
-    this.journeyStatistics = new ArrayList<JourneyStatistic>(subscriberHistory.getJourneyStatistics());
+    
+    //
+    //  deep copy of journey statistics
+    //
+    
+    this.journeyStatistics = new ArrayList<JourneyStatistic>();
+    for(JourneyStatistic journeyStatistic : subscriberHistory.getJourneyStatistics())
+      {
+        this.journeyStatistics.add(new JourneyStatistic(journeyStatistic));
+      }
   }
 
   /*****************************************
