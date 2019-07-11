@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -180,7 +181,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  public static void main(String[] args) throws Exception
+  public static void main(String[] args) throws ThirdPartyManagerException
   {
     NGLMRuntime.initialize();
     ThirdPartyManager thirdPartyManager = new ThirdPartyManager();
@@ -690,49 +691,93 @@ public class ThirdPartyManager
       writer.close();
       exchange.close();
     }
-    catch (org.json.simple.parser.ParseException | IOException | ServerException | RuntimeException e )
-    {
-      //
-      //  log
-      //
+    catch (org.json.simple.parser.ParseException exception)
+      {
+        //
+        //  log
+        //
 
-      StringWriter stackTraceWriter = new StringWriter();
-      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+        StringWriter stackTraceWriter = new StringWriter();
+        exception.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("ParseException processing REST api: {}", stackTraceWriter.toString());
 
-      //
-      //  statistics
-      //
+        //
+        //  statistics
+        //
 
-      updateStatistics(api, e);
+        updateStatistics(api, exception);
 
-      //
-      //  send error response
-      //
+        //
+        //  send error response
+        //
 
-      HashMap<String,Object> response = new HashMap<String,Object>();
-      response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-      response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        HashMap<String,Object> response = new HashMap<String,Object>();
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseMessage());
 
-      //
-      //  standard response fields
-      //
+        //
+        //  standard response fields
+        //
 
-      response.put("apiVersion", RESTAPIVersion);
-      JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+        response.put("apiVersion", RESTAPIVersion);
+        JSONObject jsonResponse = JSONUtilities.encodeObject(response);
 
-      //
-      // headers
-      //
+        //
+        // headers
+        //
 
-      exchange.sendResponseHeaders(200, 0);
-      exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
-      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-      writer.write(jsonResponse.toString());
-      writer.close();
-      exchange.close();
-    }
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }
+    catch (IOException | ServerException | RuntimeException e )
+      {
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  statistics
+        //
+
+        updateStatistics(api, e);
+
+        //
+        //  send error response
+        //
+
+        HashMap<String,Object> response = new HashMap<String,Object>();
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+
+        //
+        //  standard response fields
+        //
+
+        response.put("apiVersion", RESTAPIVersion);
+        JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+
+        //
+        // headers
+        //
+
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }
   }
 
 
@@ -803,9 +848,9 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    String customerID = readString(jsonRoot, "customerID", true);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -874,10 +919,10 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
-    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String customerID = readString(jsonRoot, "customerID", true);
+    String startDateReq = readString(jsonRoot, "startDate", true);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -937,7 +982,7 @@ public class ThirdPartyManager
                   Date startDate = null;
                   Date now = SystemTime.getCurrentTime();
 
-                  if (startDateReq == null || startDateReq.isEmpty()) 
+                  if (startDateReq == null) 
                     {
                       startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
                     }
@@ -1006,10 +1051,10 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
-    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String customerID = readString(jsonRoot, "customerID", true);
+    String startDateReq = readString(jsonRoot, "startDate", true);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -1069,7 +1114,7 @@ public class ThirdPartyManager
                   Date startDate = null;
                   Date now = SystemTime.getCurrentTime();
 
-                  if (startDateReq == null || startDateReq.isEmpty()) 
+                  if (startDateReq == null) 
                     {
                       startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
                     }
@@ -1147,10 +1192,10 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
-    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String customerID = readString(jsonRoot, "customerID", true);
+    String startDateReq = readString(jsonRoot, "startDate", true);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -1248,7 +1293,6 @@ public class ThirdPartyManager
   /*****************************************
    *
    * processGetCustomerJourneys
-   * @throws ThirdPartyManagerException 
    *
    *****************************************/
 
@@ -1263,17 +1307,17 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String journeyObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
-    String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false);
-    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
-    String journeyStartDateStr = JSONUtilities.decodeString(jsonRoot, "journeyStartDate", false);
-    String journeyEndDateStr = JSONUtilities.decodeString(jsonRoot, "journeyEndDate", false);
+    String customerID = readString(jsonRoot, "customerID", true);
+    String journeyObjectiveName = readString(jsonRoot, "objectiveName", true);
+    String journeyState = readString(jsonRoot, "journeyState", true);
+    String customerStatus = readString(jsonRoot, "customerStatus", true);
+    String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", true);
+    String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", true);
 
     Date journeyStartDate = getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
     Date journeyEndDate = getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -1565,18 +1609,18 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String campaignObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
-    String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false);
-    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
-    String campaignStartDateStr = JSONUtilities.decodeString(jsonRoot, "campaignStartDate", false);
-    String campaignEndDateStr = JSONUtilities.decodeString(jsonRoot, "campaignEndDate", false);
+    String customerID = readString(jsonRoot, "customerID", true);
+    String campaignObjectiveName = readString(jsonRoot, "objectiveName", true);
+    String campaignState = readString(jsonRoot, "campaignState", true);
+    String customerStatus = readString(jsonRoot, "customerStatus", true);
+    String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", true);
+    String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", true);
 
 
     Date campaignStartDate = getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
     Date campaignEndDate = getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -1875,11 +1919,11 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
-    String offerState = JSONUtilities.decodeString(jsonRoot, "state", false);
-    String startDateString = JSONUtilities.decodeString(jsonRoot, "startDate", false);
-    String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
-    String offerObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
+    String customerID = readString(jsonRoot, "customerID", true);
+    String offerState = readString(jsonRoot, "state", true);
+    String startDateString = readString(jsonRoot, "startDate", true);
+    String endDateString = readString(jsonRoot, "endDate", true);
+    String offerObjectiveName = readString(jsonRoot, "objectiveName", true);
 
     Date offerStartDate = getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
     Date offerEndDate = getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
@@ -1900,7 +1944,7 @@ public class ThirdPartyManager
       else if (offerState != null && !offerState.isEmpty() && !offerState.equalsIgnoreCase("ACTIVE"))
         {
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"-{state}");
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"-(state)");
         }
       else
         {
@@ -2009,7 +2053,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processGetActiveOffer(JSONObject jsonRoot)
+  private JSONObject processGetActiveOffer(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
     /****************************************
      *
@@ -2025,7 +2069,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String offerID = readString(jsonRoot, "id", true);
 
     /*****************************************
      *
@@ -2109,9 +2153,9 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+    String customerID = readString(jsonRoot, "customerID", true);
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -2240,7 +2284,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String customerID = readString(jsonRoot, "customerID", true);
 
     /*****************************************
      *
@@ -2531,7 +2575,7 @@ public class ThirdPartyManager
     String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true);
     JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
 
-    if (customerID == null || customerID.isEmpty())
+    if (customerID == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{customerID is missing}");
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
@@ -2737,7 +2781,7 @@ public class ThirdPartyManager
       {
         if (pattern != null && !dateString.matches(pattern))
           {
-            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"{invalid date format expected in("+dateFormat+") and found ("+dateString+")}", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode()) ;
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"(invalid date format expected in "+dateFormat+" and found "+dateString+")", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode()) ;
           }
         result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone());
       }
@@ -3308,7 +3352,6 @@ public class ThirdPartyManager
    *****************************************/
 
   public String getDateString(Date date)
-
   {
     String result = null;
     if (date == null) return result;
@@ -3323,5 +3366,62 @@ public class ThirdPartyManager
       log.warn(e.getMessage());
     }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  readString
+  *
+  *****************************************/
+  
+  private String readString(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ThirdPartyManagerException
+  {
+    String result = readString(jsonRoot, key);
+    if (validateNotEmpty && (result == null || result.trim().isEmpty()) && jsonRoot.containsKey(key))
+      {
+        log.error("readString validation error");
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readString
+  *
+  *****************************************/
+  
+  private String readString(JSONObject jsonRoot, String key) throws ThirdPartyManagerException
+  {
+    String result = null;
+    try 
+      {
+        result = JSONUtilities.decodeString(jsonRoot, key, false);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        log.error("readString JSONUtilitiesException "+e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readInteger
+  *
+  *****************************************/
+  
+  private Integer readInteger(JSONObject jsonRoot, String key, boolean required) throws ThirdPartyManagerException
+  {
+    try 
+      {
+        return JSONUtilities.decodeInteger(jsonRoot, key, required);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        log.error("JSONUtilitiesException "+e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
   }
 }
