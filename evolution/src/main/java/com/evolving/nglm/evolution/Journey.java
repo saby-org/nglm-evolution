@@ -880,7 +880,14 @@ public class Journey extends GUIManagedObject
       {
         case Target:
         case Event:
-          if (this.journeyParameters.size() > 0 && this.journeyParameters.size() != this.boundParameters.size()) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+          switch (journeyType) 
+            {
+              case Journey:
+              case Campaign:
+              case BulkCampaign:
+                if (this.journeyParameters.size() > 0 && this.journeyParameters.size() != this.boundParameters.size()) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+                break;
+            }
           break;
       }
 

@@ -48,6 +48,7 @@ public abstract class GUIManagedObject
 
   public enum GUIManagedObjectType
   {
+    JourneyTemplate("journeyTemplate"),
     Journey("journey"),
     Campaign("campaign"),
     BulkCampaign("bulkCampaign"),

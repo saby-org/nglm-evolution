@@ -7221,25 +7221,6 @@ public class GUIManager
       }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   /*****************************************
   *
   *  processGetJourneyList
@@ -7659,30 +7640,6 @@ public class GUIManager
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   /*****************************************
   *
@@ -7704,7 +7661,7 @@ public class GUIManager
       {
         switch (journeyTemplate.getGUIManagedObjectType())
           {
-            case Journey:
+            case JourneyTemplate:
               journeyTemplates.add(journeyTemplateService.generateResponseJSON(journeyTemplate, fullDetails, now));
               break;
           }
@@ -7753,7 +7710,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
-    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journeyTemplate : null;
+    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate : null;
     JSONObject journeyTemplateJSON = journeyTemplateService.generateResponseJSON(journeyTemplate, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -7837,7 +7794,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService);
 
         /*****************************************
         *
@@ -7933,7 +7890,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
-    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journeyTemplate: null;
+    journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate: null;
     if (journeyTemplate != null && ! journeyTemplate.getReadOnly()) journeyTemplateService.removeJourneyTemplate(journeyTemplateID, userID);
 
     /*****************************************
