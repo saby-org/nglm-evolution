@@ -181,7 +181,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  public static void main(String[] args) throws ThirdPartyManagerException
+  public static void main(String[] args)
   {
     NGLMRuntime.initialize();
     ThirdPartyManager thirdPartyManager = new ThirdPartyManager();
@@ -827,7 +827,6 @@ public class ThirdPartyManager
   /*****************************************
    *
    *  processGetCustomer
-   * @throws ThirdPartyManagerException 
    *
    *****************************************/
 
@@ -898,7 +897,6 @@ public class ThirdPartyManager
   /*****************************************
    *
    *  processGetCustomerBDRs
-   * @throws ThirdPartyManagerException 
    *
    *****************************************/
 
@@ -1030,7 +1028,6 @@ public class ThirdPartyManager
   /*****************************************
    *
    *  processGetCustomerODRs
-   * @throws ThirdPartyManagerException 
    *
    *****************************************/
 
@@ -2031,7 +2028,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -3171,10 +3168,10 @@ public class ThirdPartyManager
      *
      *****************************/
 
-    public ThirdPartyCredential(JSONObject jsonRoot)
+    public ThirdPartyCredential(JSONObject jsonRoot) throws ThirdPartyManagerException
     {
-      this.loginName = JSONUtilities.decodeString(jsonRoot, "loginName", false);
-      this.password = JSONUtilities.decodeString(jsonRoot, "password", false);
+      this.loginName = readString(jsonRoot, "loginName", true);
+      this.password = readString(jsonRoot, "password", true);
 
       //
       //  jsonRepresentation

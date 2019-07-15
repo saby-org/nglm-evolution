@@ -89,6 +89,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices;
   private Set<OfferProduct> offerProducts;
   private Set<OfferCallingChannel> offerCallingChannels;
+  private String description;
 
   //
   //  derived
@@ -118,6 +119,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Set<OfferProduct> getOfferProducts() { return offerProducts; }
   public Set<OfferCallingChannel> getOfferCallingChannels() { return offerCallingChannels; }
   public String getStockableItemID() { return stockableItemID; }
+  public String getDescription() { return JSONUtilities.decodeString(getJSONRepresentation(), "description"); }
 
   /*****************************************
   *

@@ -6,17 +6,22 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SystemTime;
 
 public class ThirdPartyJSONGenerator 
 {
@@ -32,6 +37,7 @@ public class ThirdPartyJSONGenerator
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
     offerMap.put("offerID", offer.getOfferID());
+    offerMap.put("offerName", offer.getGUIManagedObjectName());
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
     List<JSONObject> offerCallingChannels = offer.getOfferCallingChannels().stream().map(offerCallingChannel -> ThirdPartyJSONGenerator.generateOfferCallingChannelJSONForThirdParty(offerCallingChannel)).collect(Collectors.toList());
@@ -42,6 +48,49 @@ public class ThirdPartyJSONGenerator
     return JSONUtilities.encodeObject(offerMap);
   }
   
+  /*****************************************
+  *
+  *  generateOfferJSONForThirdParty
+  *
+  *****************************************/
+  
+  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService)
+  {
+    HashMap<String, Object> offerMap = new HashMap<String, Object>();
+    if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
+    offerMap.put("offerID", offer.getOfferID());
+    offerMap.put("offerName", offer.getGUIManagedObjectName());
+    offerMap.put("offerState", offerService.isActiveOffer(offer, SystemTime.getCurrentTime()) ? "active" : "stored");
+    offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate()));
+    offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate()));
+    offerMap.put("offerDescription", offer.getDescription());
+    offerMap.put("offerOfferObjectiveNames", getOfferObjectivesJson(offer, offerObjectiveService));
+    offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
+    offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
+    List<JSONObject> offerCallingChannels = offer.getOfferCallingChannels().stream().map(offerCallingChannel -> ThirdPartyJSONGenerator.generateOfferCallingChannelJSONForThirdParty(offerCallingChannel)).collect(Collectors.toList());
+    offerMap.put("offerCallingChannels", JSONUtilities.encodeArray(offerCallingChannels));
+    offerMap.put("offerType", generateOfferTypeJSONForThirdParty(offer.getOfferType()));
+    List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product)).collect(Collectors.toList());
+    offerMap.put("products", products);
+    return JSONUtilities.encodeObject(offerMap);
+  }
+  
+  /*****************************************
+  *
+  *  getOfferObjectivesJson
+  *
+  *****************************************/
+  
+  private static JSONArray  getOfferObjectivesJson(Offer offer, OfferObjectiveService offerObjectiveService)
+  {
+    List<String> offerObjectiveNames = new ArrayList<String>();
+    for (OfferObjectiveInstance instance : offer.getOfferObjectives())
+      {
+        offerObjectiveNames.add(offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID()).getGUIManagedObjectName());
+      }
+    return JSONUtilities.encodeArray(offerObjectiveNames);
+  }
+
   /*****************************************
   *
   *  generateOfferCallingChannelJSONForThirdParty
@@ -169,5 +218,27 @@ public class ThirdPartyJSONGenerator
       }
     return JSONUtilities.encodeObject(tokenMap);
   }
+  
+  /*****************************************
+  *
+  *  getDateString
+  *
+  *****************************************/
 
+ public static String getDateString(Date date)
+ {
+   String result = null;
+   if (date == null) return result;
+   try
+   {
+     SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());
+     dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+     result = dateFormat.format(date);
+   }
+   catch (Exception e)
+   {
+     e.printStackTrace();
+   }
+   return result;
+ }
 }
