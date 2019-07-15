@@ -314,23 +314,23 @@ public class ThirdPartyManager
     {
       InetSocketAddress addr = new InetSocketAddress(apiRestPort);
       restServer = HttpServer.create(addr, 0);
-      restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
-      restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
-      restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
-      restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerAvailableCampaigns", new APIHandler(API.getCustomerAvailableCampaigns));
-      restServer.createContext("/nglm-thirdpartymanager/updateCustomer", new APIHandler(API.updateCustomer));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOs", new APIHandler(API.getCustomerNBOs));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOsTokens", new APIHandler(API.getCustomerNBOsTokens));
-      restServer.createContext("/nglm-thirdpartymanager/getTokensCodesList", new APIHandler(API.getTokensCodesList));
-      restServer.createContext("/nglm-thirdpartymanager/acceptOffer", new APIHandler(API.acceptOffer));
-      restServer.createContext("/nglm-thirdpartymanager/triggerEvent", new APIHandler(API.triggerEvent));
+      restServer.createContext("/nglm-thirdpartymanager/ping/", new APIHandler(API.ping));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomer/", new APIHandler(API.getCustomer));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs/", new APIHandler(API.getCustomerBDRs));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs/", new APIHandler(API.getCustomerODRs));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerMessages/", new APIHandler(API.getCustomerMessages));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerJourneys/", new APIHandler(API.getCustomerJourneys));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerCampaigns/", new APIHandler(API.getCustomerCampaigns));
+      restServer.createContext("/nglm-thirdpartymanager/getOffersList/", new APIHandler(API.getOffersList));
+      restServer.createContext("/nglm-thirdpartymanager/getActiveOffer/", new APIHandler(API.getActiveOffer));
+      restServer.createContext("/nglm-thirdpartymanager/getActiveOffers/", new APIHandler(API.getActiveOffers));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerAvailableCampaigns/", new APIHandler(API.getCustomerAvailableCampaigns));
+      restServer.createContext("/nglm-thirdpartymanager/updateCustomer/", new APIHandler(API.updateCustomer));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOs/", new APIHandler(API.getCustomerNBOs));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOsTokens/", new APIHandler(API.getCustomerNBOsTokens));
+      restServer.createContext("/nglm-thirdpartymanager/getTokensCodesList/", new APIHandler(API.getTokensCodesList));
+      restServer.createContext("/nglm-thirdpartymanager/acceptOffer/", new APIHandler(API.acceptOffer));
+      restServer.createContext("/nglm-thirdpartymanager/triggerEvent/", new APIHandler(API.triggerEvent));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -2237,7 +2237,7 @@ public class ThirdPartyManager
 
                       Map<String, Object> campaignMap = new HashMap<String, Object>();
                       campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
-                      campaignMap.put("campaignName", elgibleActiveCampaign.getJourneyName());
+                      campaignMap.put("campaignName", elgibleActiveCampaign.getGUIManagedObjectName());
                       campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
                       campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
                       campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
