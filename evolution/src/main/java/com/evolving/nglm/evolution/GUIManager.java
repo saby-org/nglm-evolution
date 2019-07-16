@@ -17125,7 +17125,7 @@ public class GUIManager
                         
                         Map<String, Object> campaignMap = new HashMap<String, Object>();
                         campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
-                        campaignMap.put("campaignName", elgibleActiveCampaign.getJourneyName());
+                        campaignMap.put("campaignName", elgibleActiveCampaign.getGUIManagedObjectName());
                         campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
                         campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
                         campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
