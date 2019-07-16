@@ -804,7 +804,7 @@ public class ThirdPartyManager
     //  validate
     //
     
-    if (path.equals(exchange.getHttpContext().getPath()))
+    if (! path.equals(exchange.getHttpContext().getPath()))
       {
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage() + " - (invalid URL)", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
       }
