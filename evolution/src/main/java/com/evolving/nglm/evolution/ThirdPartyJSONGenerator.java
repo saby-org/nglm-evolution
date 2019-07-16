@@ -65,8 +65,6 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerOfferObjectiveNames", getOfferObjectivesJson(offer, offerObjectiveService));
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    List<JSONObject> offerCallingChannels = offer.getOfferCallingChannels().stream().map(offerCallingChannel -> ThirdPartyJSONGenerator.generateOfferCallingChannelJSONForThirdParty(offerCallingChannel)).collect(Collectors.toList());
-    offerMap.put("offerCallingChannels", JSONUtilities.encodeArray(offerCallingChannels));
     offerMap.put("offerType", generateOfferTypeJSONForThirdParty(offer.getOfferType()));
     List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product)).collect(Collectors.toList());
     offerMap.put("products", products);
