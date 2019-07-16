@@ -16618,7 +16618,8 @@ public class GUIManager
                         
                         Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
-                        journeyResponseMap.put("journeyName", storeJourney.getGUIManagedObjectName());
+                        journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
+                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         
@@ -16916,6 +16917,7 @@ public class GUIManager
                         Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
                         campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                         campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
+                        campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
                         campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                         campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
                         
@@ -17811,6 +17813,29 @@ public class GUIManager
   private String normalizeSegmentName(String segmentName)
   {
     return segmentName.replace(" ",".");
+  }
+  
+  /*****************************************
+  *
+  *  validateURIandContext
+  *
+  *****************************************/
+  
+  private void validateURIandContext(HttpExchange exchange) throws GUIManagerException
+  {
+    String path = exchange.getRequestURI().getPath();
+    if (path.endsWith("/")) path = path.substring(0, path.length()-1);
+    
+    //
+    //  validate
+    //
+    
+    if (! path.equals(exchange.getHttpContext().getPath()))
+      {
+        log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
+        throw new GUIManagerException("invalid URL", "404");
+      }
+      
   }
 
   /*****************************************

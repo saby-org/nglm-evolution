@@ -686,16 +686,25 @@ public class ThirdPartyManager
 
       response.put("apiVersion", RESTAPIVersion);
       JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+      
+      int headerValue = 200;
+      String result = jsonResponse.toString();
+      
+      if (ex.getResponseCode() == -404)
+        {
+          headerValue = 404;
+          result = "<h1>404 Not Found</h1>No context found for request";
+        }
 
       //
       // headers
       //
 
-      exchange.sendResponseHeaders(200, 0);
       exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+      exchange.sendResponseHeaders(headerValue, 0);
 
       BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-      writer.write(jsonResponse.toString());
+      writer.write(result);
       writer.close();
       exchange.close();
     }
@@ -806,7 +815,8 @@ public class ThirdPartyManager
     
     if (! path.equals(exchange.getHttpContext().getPath()))
       {
-        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage() + " - (invalid URL)", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
+        throw new ThirdPartyManagerException("invalid URL", -404);
       }
       
   }
@@ -1550,7 +1560,8 @@ public class ThirdPartyManager
 
                       Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
                       journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
-                      journeyResponseMap.put("journeyName", storeJourney.getGUIManagedObjectName());
+                      journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
+                      journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
                       journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                       journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
 
@@ -1855,6 +1866,7 @@ public class ThirdPartyManager
                       Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
                       campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                       campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
+                      campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
                       campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                       campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
 
