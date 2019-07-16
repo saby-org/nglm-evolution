@@ -1824,7 +1824,7 @@ public class ThirdPartyManager
 
                       Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
                       campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
-                      campaignResponseMap.put("campaignName", storeCampaign.getGUIManagedObjectName());
+                      campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                       campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                       campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
 
@@ -2237,7 +2237,7 @@ public class ThirdPartyManager
 
                       Map<String, Object> campaignMap = new HashMap<String, Object>();
                       campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
-                      campaignMap.put("campaignName", elgibleActiveCampaign.getGUIManagedObjectName());
+                      campaignMap.put("campaignName", journeyService.generateResponseJSON(elgibleActiveCampaign, true, SystemTime.getCurrentTime()).get("display"));
                       campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
                       campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
                       campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
