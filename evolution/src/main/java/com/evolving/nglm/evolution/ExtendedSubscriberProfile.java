@@ -47,6 +47,8 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 
 public abstract class ExtendedSubscriberProfile
 {
@@ -166,6 +168,7 @@ public abstract class ExtendedSubscriberProfile
 
   protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation, Map<String, Object> kpiPresentation);
   protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation, Map<String, Object> kpiPresentation);
+  protected abstract void validateUpdateProfileRequestFields(JSONObject jsonRoot) throws ValidateUpdateProfileRequestException;
 
   /****************************************
   *
@@ -443,6 +446,79 @@ public abstract class ExtendedSubscriberProfile
   *  toString
   *
   *****************************************/
+  
+  /*****************************************
+  *
+  *  readString
+  *
+  *****************************************/
+  
+  protected String readString(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ValidateUpdateProfileRequestException
+  {
+    String result = readString(jsonRoot, key);
+    if (validateNotEmpty && (result == null || result.trim().isEmpty()) && jsonRoot.containsKey(key))
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readString
+  *
+  *****************************************/
+  
+  protected String readString(JSONObject jsonRoot, String key) throws ValidateUpdateProfileRequestException
+  {
+    String result = null;
+    try 
+      {
+        result = JSONUtilities.decodeString(jsonRoot, key, false);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readInteger
+  *
+  *****************************************/
+  
+  protected Integer readInteger(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ValidateUpdateProfileRequestException
+  {
+    Integer result = readInteger(jsonRoot, key);
+    if (validateNotEmpty && (result == null) && jsonRoot.containsKey(key))
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readInteger
+  *
+  *****************************************/
+  
+  protected Integer readInteger(JSONObject jsonRoot, String key) throws ValidateUpdateProfileRequestException
+  {
+    Integer result = null;
+    try 
+      {
+        result = JSONUtilities.decodeInteger(jsonRoot, key);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
 
   //
   //  toString

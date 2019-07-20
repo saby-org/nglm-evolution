@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -19,14 +20,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -39,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -266,6 +266,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
   protected abstract void addProfileFieldsForGUIPresentation(Map<String, Object> baseProfilePresentation, Map<String, Object> kpiPresentation);
   protected abstract void addProfileFieldsForThirdPartyPresentation(Map<String, Object> baseProfilePresentation, Map<String, Object> kpiPresentation);
+  protected abstract void validateUpdateProfileRequestFields(JSONObject jsonRoot) throws ValidateUpdateProfileRequestException;
 
   /****************************************
   *
@@ -1381,4 +1382,248 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return result;
   }
+  
+  public void validateUpdateProfileRequest(JSONObject jsonRoot) throws ValidateUpdateProfileRequestException
+  {
+    //
+    //  read
+    //
+    
+    String evolutionSubscriberStatus = readString(jsonRoot, "evolutionSubscriberStatus", true);
+    String language = readString(jsonRoot, "language", true);
+    
+    //
+    //  validate
+    //
+    
+    if(language != null && (Deployment.getSupportedLanguages().get(language) == null)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (language) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+    if(evolutionSubscriberStatus != null && (EvolutionSubscriberStatus.fromExternalRepresentation(evolutionSubscriberStatus) == EvolutionSubscriberStatus.Unknown)) throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " (evolutionSubscriberStatus) ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+
+    //
+    // validateUpdateProfileRequestFields
+    //
+    
+    validateUpdateProfileRequestFields(jsonRoot);
+    
+    if (extendedSubscriberProfile != null) extendedSubscriberProfile.validateUpdateProfileRequestFields(jsonRoot);
+  }
+  
+  /*****************************************
+  *
+  *  validateDateFromString
+  *
+  *****************************************/
+
+ protected Date validateDateFromString(String dateString) throws ValidateUpdateProfileRequestException
+ {
+   Date result = null;
+   if (dateString != null)
+     {
+       try 
+         {
+           result = GUIManagedObject.parseDateField(dateString);
+         }
+       catch(JSONUtilitiesException ex)
+         {
+           throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()+"(invalid date "+dateString+")", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+         }
+       
+     }
+   return result;
+ }
+  
+  /*****************************************
+  *
+  *  readString
+  *
+  *****************************************/
+  
+  protected String readString(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ValidateUpdateProfileRequestException
+  {
+    String result = readString(jsonRoot, key);
+    if (validateNotEmpty && (result == null || result.trim().isEmpty()) && jsonRoot.containsKey(key))
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readString
+  *
+  *****************************************/
+  
+  protected String readString(JSONObject jsonRoot, String key) throws ValidateUpdateProfileRequestException
+  {
+    String result = null;
+    try 
+      {
+        result = JSONUtilities.decodeString(jsonRoot, key, false);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  
+  /*****************************************
+  *
+  *  readBoolean
+  *
+  *****************************************/
+  
+  protected Boolean readBoolean(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ValidateUpdateProfileRequestException
+  {
+    Boolean result = readBoolean(jsonRoot, key);
+    if (validateNotEmpty && (result == null) && jsonRoot.containsKey(key))
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readBoolean
+  *
+  *****************************************/
+  
+  protected Boolean readBoolean(JSONObject jsonRoot, String key) throws ValidateUpdateProfileRequestException
+  {
+    Boolean result = null;
+    try 
+      {
+        result = JSONUtilities.decodeBoolean(jsonRoot, key);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readInteger
+  *
+  *****************************************/
+  
+  protected Integer readInteger(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ValidateUpdateProfileRequestException
+  {
+    Integer result = readInteger(jsonRoot, key);
+    if (validateNotEmpty && (result == null) && jsonRoot.containsKey(key))
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readInteger
+  *
+  *****************************************/
+  
+  protected Integer readInteger(JSONObject jsonRoot, String key) throws ValidateUpdateProfileRequestException
+  {
+    Integer result = null;
+    try 
+      {
+        result = JSONUtilities.decodeInteger(jsonRoot, key);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readDouble
+  *
+  *****************************************/
+  
+  protected Double readDouble(JSONObject jsonRoot, String key, boolean validateNotEmpty) throws ValidateUpdateProfileRequestException
+  {
+    Double result = readDouble(jsonRoot, key);
+    if (validateNotEmpty && (result == null) && jsonRoot.containsKey(key))
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  readDouble
+  *
+  *****************************************/
+  
+  protected Double readDouble(JSONObject jsonRoot, String key) throws ValidateUpdateProfileRequestException
+  {
+    Double result = null;
+    try 
+      {
+        result = JSONUtilities.decodeDouble(jsonRoot, key);
+      }
+    catch (JSONUtilitiesException e) 
+      {
+        throw new ValidateUpdateProfileRequestException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+      }
+    return result;
+  }
+  
+  
+  /*****************************************
+  *
+  *  class ValidateUpdateProfileRequestException
+  *
+  *****************************************/
+
+ public static class ValidateUpdateProfileRequestException extends Exception
+ {
+   /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+   private int responseCode;
+
+   /*****************************************
+    *
+    *  accessors
+    *
+    *****************************************/
+
+   public int getResponseCode() { return responseCode; }
+
+   /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+   public ValidateUpdateProfileRequestException(String responseMessage, int responseCode)
+   {
+     super(responseMessage);
+     this.responseCode = responseCode;
+   }
+
+   /*****************************************
+    *
+    *  constructor - excpetion
+    *
+    *****************************************/
+
+   public ValidateUpdateProfileRequestException(Throwable e)
+   {
+     super(e.getMessage(), e);
+     this.responseCode = -1;
+   }
+ }
 }

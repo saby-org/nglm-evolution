@@ -70,6 +70,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.CustomerStatusInJourney;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
@@ -2347,6 +2348,9 @@ public class ThirdPartyManager
       {
         try 
         {
+          SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+          baseSubscriberProfile.validateUpdateProfileRequest(jsonRoot);
+          
           jsonRoot.put("subscriberID", subscriberID);
           SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
 
@@ -2359,11 +2363,16 @@ public class ThirdPartyManager
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
-        catch (GUIManagerException e) 
+        catch (GUIManagerException | SubscriberProfileServiceException e) 
         {
           log.error("unable to process request updateCustomer {} ", e.getMessage());
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
+        } 
+        catch (ValidateUpdateProfileRequestException e)
+        {
+          throw new ThirdPartyManagerException(e.getMessage(), e.getResponseCode()) ;
         }
+        
       }
 
     /*****************************************
