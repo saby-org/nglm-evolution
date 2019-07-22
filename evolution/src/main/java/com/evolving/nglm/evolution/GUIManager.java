@@ -1893,7 +1893,7 @@ public class GUIManager
                   break;
 
                 case putBulkCampaign:
-                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  jsonResponse = processPutBulkCampaign(userID, jsonRoot);
                   break;
 
                 case removeBulkCampaign:
@@ -7641,6 +7641,187 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  /*****************************************
+  *
+  *  processGetJourneyTemplateList
+  *
+  *****************************************/  
+  
+  private JSONObject processPutBulkCampaign(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  retrieve campaign informations
+    *
+    *****************************************/
+    
+    String bulkCampaignTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", true);
+    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(bulkCampaignTemplateID, now);
+    if(journeyTemplate == null){
+      response.put("responseCode", "journeyTemplateNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    String bulkCampaignID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (bulkCampaignID == null)
+      {
+        bulkCampaignID = journeyService.generateJourneyID();
+        jsonRoot.put("id", bulkCampaignID);
+      }
+    String bulkCampaignName = JSONUtilities.decodeString(jsonRoot, "name", true);
+    String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", true);
+    String bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
+    String bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
+    String bulkCampaignTargetID = JSONUtilities.decodeString(jsonRoot, "targetID", true);
+    JSONArray bulkCampaignBoundParameters = JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", true);
+    
+    /*****************************************
+    *
+    *  existing journey
+    *
+    *****************************************/
+
+    GUIManagedObject existingBulkCampaign = journeyService.getStoredJourney(bulkCampaignID);
+    existingBulkCampaign = (existingBulkCampaign != null && existingBulkCampaign.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign) ? existingBulkCampaign : null;
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingBulkCampaign != null && existingBulkCampaign.getReadOnly())
+      {
+        response.put("id", existingBulkCampaign.getGUIManagedObjectID());
+        response.put("accepted", existingBulkCampaign.getAccepted());
+        response.put("valid", existingBulkCampaign.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(existingBulkCampaign, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process journey
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /*****************************************
+        *
+        *  generate JSON representation of the bulk campaign
+        *
+        *****************************************/
+
+        JSONObject campaignJSONRepresentation = journeyTemplate.getJSONRepresentation();
+        campaignJSONRepresentation.put("id", bulkCampaignID);
+        campaignJSONRepresentation.put("name", bulkCampaignName);
+        campaignJSONRepresentation.put("description", bulkCampaignDescription);
+        campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
+        campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
+        campaignJSONRepresentation.put("targetID", bulkCampaignTargetID);
+        campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
+
+        /****************************************
+        *
+        *  instantiate bulk campaign
+        *
+        ****************************************/
+
+        Journey bulkCampaign = new Journey(campaignJSONRepresentation, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
+        
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyService.putJourney(bulkCampaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingBulkCampaign == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", bulkCampaign.getJourneyID());
+        response.put("accepted", bulkCampaign.getAccepted());
+        response.put("valid", bulkCampaign.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(bulkCampaign, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.BulkCampaign, epoch);
+
+        //
+        //  store
+        //
+
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingBulkCampaign == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "bulkCampaignNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   /*****************************************
   *
   *  processGetJourneyTemplateList
@@ -7823,7 +8004,7 @@ public class GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Journey, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch);
 
         //
         //  store
