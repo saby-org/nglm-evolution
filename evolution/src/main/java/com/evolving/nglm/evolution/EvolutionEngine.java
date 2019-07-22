@@ -1804,31 +1804,16 @@ public class EvolutionEngine
         switch (subscriberGroup.getSubscriberGroupType())
           {
             case SegmentationDimension:
-              {
-                String dimensionID = subscriberGroup.getSubscriberGroupIDs().get(0);
-                String segmentID = subscriberGroup.getSubscriberGroupIDs().get(1);
-                SegmentationDimension segmentationDimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now);
-                if (segmentationDimension != null)
-                  {
-                    switch (segmentationDimension.getTargetingType())
-                      {
-                        case FILE_IMPORT:
-                          subscriberProfile.setSegment(dimensionID, segmentID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
-                          subscriberProfileUpdated = true;
-                          break;
-                      }
-                  }
-              }
+              String dimensionID = subscriberGroup.getSubscriberGroupIDs().get(0);
+              String segmentID = subscriberGroup.getSubscriberGroupIDs().get(1);
+              subscriberProfile.setSegment(dimensionID, segmentID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+              subscriberProfileUpdated = true;
               break;
 
             case Target:
               String targetID = subscriberGroup.getSubscriberGroupIDs().get(0);
-              Target target = targetService.getActiveTarget(targetID, now);
-              if (target != null)
-                {
-                  subscriberProfile.setTarget(targetID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
-                  subscriberProfileUpdated = true;
-                }
+              subscriberProfile.setTarget(targetID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+              subscriberProfileUpdated = true;
               break;
           }
       }
