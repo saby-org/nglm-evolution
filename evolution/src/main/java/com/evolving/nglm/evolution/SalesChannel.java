@@ -9,37 +9,23 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TimeZone;
 
 public class SalesChannel extends GUIManagedObject
 {
@@ -58,9 +44,10 @@ public class SalesChannel extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("sales_channel");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("callingChannelIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("salesPartnerIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -84,6 +71,7 @@ public class SalesChannel extends GUIManagedObject
   ****************************************/
 
   private List<String> callingChannelIDs;
+  private List<String> salesPartnerIDs;
   
   /****************************************
   *
@@ -94,6 +82,7 @@ public class SalesChannel extends GUIManagedObject
   public String getSalesChannelID() { return getGUIManagedObjectID(); }
   public String getSalesChannelName() { return getGUIManagedObjectName(); }
   public List<String> getCallingChannelIDs() { return callingChannelIDs; }
+  public List<String> getSalesPartnerIDs() { return salesPartnerIDs; }
 
   /*****************************************
   *
@@ -101,10 +90,11 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public SalesChannel(SchemaAndValue schemaAndValue, List<String> callingChannelIDs)
+  public SalesChannel(SchemaAndValue schemaAndValue, List<String> callingChannelIDs, List<String> salesPartnerIDs)
   {
     super(schemaAndValue);
     this.callingChannelIDs = callingChannelIDs;
+    this.salesPartnerIDs = salesPartnerIDs;
   }
 
   /*****************************************
@@ -119,6 +109,7 @@ public class SalesChannel extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, salesChannel);
     struct.put("callingChannelIDs", salesChannel.getCallingChannelIDs());
+    struct.put("salesPartnerIDs", salesChannel.getSalesPartnerIDs());
     return struct;
   }
 
@@ -144,12 +135,12 @@ public class SalesChannel extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     List<String> callingChannelIDs = (List<String>) valueStruct.get("callingChannelIDs");
-    
+    List<String> salesPartnerIDs = (List<String>) valueStruct.get("salesPartnerIDs");
     //
     //  return
     //
 
-    return new SalesChannel(schemaAndValue, callingChannelIDs);
+    return new SalesChannel(schemaAndValue, callingChannelIDs, salesPartnerIDs);
   }
   
   /*****************************************
@@ -182,7 +173,8 @@ public class SalesChannel extends GUIManagedObject
     *
     *****************************************/
 
-    this.callingChannelIDs = decodeCallingChannelIDs(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelIDs", true));
+    this.callingChannelIDs = decodeIDs(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelIDs", true));
+    this.salesPartnerIDs = decodeIDs(JSONUtilities.decodeJSONArray(jsonRoot, "salesPartnerIDs", false));
     
     /*****************************************
     *
@@ -221,23 +213,23 @@ public class SalesChannel extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeCallingChannelIDs
+  *  decodeIDs
   *
   *****************************************/
 
-  private List<String> decodeCallingChannelIDs(JSONArray jsonArray)
+  private List<String> decodeIDs(JSONArray jsonArray)
   {
-    List<String> callingChannelIDs = null;
+    List<String> IDs = null;
     if (jsonArray != null)
       {
-        callingChannelIDs = new ArrayList<String>();
+        IDs = new ArrayList<String>();
         for (int i=0; i<jsonArray.size(); i++)
           {
-            String callingChannelID = (String) jsonArray.get(i);
-            callingChannelIDs.add(callingChannelID);
+            String ID = (String) jsonArray.get(i);
+            IDs.add(ID);
           }
       }
-    return callingChannelIDs;
+    return IDs;
   }
 
   /*****************************************
@@ -253,6 +245,7 @@ public class SalesChannel extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSalesChannel.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(callingChannelIDs, existingSalesChannel.getCallingChannelIDs());
+        epochChanged = epochChanged || ! Objects.equals(salesPartnerIDs, existingSalesChannel.getSalesPartnerIDs());
         return epochChanged;
       }
     else
@@ -267,7 +260,7 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, SalesPartnerService salesPartnerService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -289,5 +282,13 @@ public class SalesChannel extends GUIManagedObject
         CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, date);
         if (! callingChannelService.isActiveCallingChannelThroughInterval(callingChannel, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid calling channel (start/end dates)", callingChannelID);
       }
+    
+    if(salesPartnerIDs != null && !salesPartnerIDs.isEmpty())
+      {
+        for(String salesPartnerID : salesPartnerIDs) {
+          if (salesPartnerService.getActiveSalesPartner(salesPartnerID, date) == null) throw new GUIManagerException("unknown sales partner", salesPartnerID);
+          
+      }
+    }
   }
 }

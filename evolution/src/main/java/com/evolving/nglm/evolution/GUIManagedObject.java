@@ -172,6 +172,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CommunicationChannel.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(LoyaltyProgram.serde());
+    guiManagedObjectSerdes.add(SalesPartner.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

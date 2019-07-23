@@ -168,6 +168,7 @@ public class Deployment
   private static int ucgEngineESConnectTimeout;
   private static int ucgEngineESSocketTimeout;
   private static int ucgEngineESMasRetryTimeout;
+  private static String salesPartnerTopic;
 
   /*****************************************
   *
@@ -338,6 +339,7 @@ public class Deployment
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
+  public static String getSalesPartnerTopic() { return salesPartnerTopic; }
 
   /*****************************************
   *
@@ -1232,6 +1234,19 @@ public class Deployment
     try
       {
         journeyMetricTopic = JSONUtilities.decodeString(jsonRoot, "journeyMetricTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  salesPartnerTopic
+    //
+
+    try
+      {
+        salesPartnerTopic = JSONUtilities.decodeString(jsonRoot, "salesPartnerTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
