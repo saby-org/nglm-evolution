@@ -120,8 +120,6 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       //  return
       //
       
-      log.info("JourneyStatisticESSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
-      
       return documentMap;
     }
 

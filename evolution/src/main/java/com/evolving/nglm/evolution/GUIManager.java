@@ -7948,20 +7948,9 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   /*****************************************
   *
-  *  processGetJourneyTemplateList
+  *  processPutBulkCampaign
   *
   *****************************************/  
   
@@ -8037,18 +8026,38 @@ public class GUIManager
       {
         /*****************************************
         *
+        *  templateJSONRepresentation
+        *
+        *****************************************/
+
+        JSONObject templateJSONRepresentation = journeyTemplate.getJSONRepresentation();
+
+        /*****************************************
+        *
         *  generate JSON representation of the bulk campaign
         *
         *****************************************/
 
-        JSONObject campaignJSONRepresentation = journeyTemplate.getJSONRepresentation();
+        Map<String,Object> campaignJSONRepresentation = new HashMap<String,Object>(templateJSONRepresentation);
+
+        //
+        //  override with bulkCampaign attributes
+        //
+        
         campaignJSONRepresentation.put("id", bulkCampaignID);
         campaignJSONRepresentation.put("name", bulkCampaignName);
         campaignJSONRepresentation.put("description", bulkCampaignDescription);
         campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
         campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
+        campaignJSONRepresentation.put("targetingType", "criteria");
         campaignJSONRepresentation.put("targetID", bulkCampaignTargetID);
         campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
+
+        //
+        //  campaignJSON
+        //
+
+        JSONObject campaignJSON = JSONUtilities.encodeObject(campaignJSONRepresentation);
 
         /****************************************
         *
@@ -8056,7 +8065,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSONRepresentation, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
         
         /*****************************************
         *
@@ -8112,22 +8121,6 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   /*****************************************
   *
