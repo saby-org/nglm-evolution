@@ -14864,17 +14864,9 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSubscriberMessageTemplates())
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredMailTemplates(true))
       {
-        switch (template.getGUIManagedObjectType())
-          {
-            case MailMessageTemplate:
-              if (! template.getInternalOnly())
-                {
-                  templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
-                }
-              break;
-          }
+        templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
 
     /*****************************************
@@ -15169,17 +15161,9 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSubscriberMessageTemplates())
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSMSTemplates(true))
       {
-        switch (template.getGUIManagedObjectType())
-          {
-            case SMSMessageTemplate:
-              if (! template.getInternalOnly())
-                {
-                  templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
-                }
-              break;
-          }
+        templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
 
     /*****************************************
@@ -16228,8 +16212,8 @@ public class GUIManager
     response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
     response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
     response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
-    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates().size());
-    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates().size());
+    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true).size());
+    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true).size());
     response.put("reportsCount", reportService.getStoredReports().size());
     response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
     response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());

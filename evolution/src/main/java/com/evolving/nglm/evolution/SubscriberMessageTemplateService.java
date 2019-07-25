@@ -168,7 +168,7 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public Collection<GUIManagedObject> getStoredMailTemplates()
+  public Collection<GUIManagedObject> getStoredMailTemplates(boolean externalOnly)
   {
     Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
     for (GUIManagedObject template : getStoredSubscriberMessageTemplates())
@@ -176,7 +176,10 @@ public class SubscriberMessageTemplateService extends GUIService
         switch (template.getGUIManagedObjectType())
           {
             case MailMessageTemplate:
-              result.add(template);
+              if (! externalOnly || ! template.getInternalOnly())
+                {
+                  result.add(template);
+                }
               break;
           }
       }
@@ -189,7 +192,7 @@ public class SubscriberMessageTemplateService extends GUIService
   *
   *****************************************/
 
-  public Collection<GUIManagedObject> getStoredSMSTemplates()
+  public Collection<GUIManagedObject> getStoredSMSTemplates(boolean externalOnly)
   {
     Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
     for (GUIManagedObject template : getStoredSubscriberMessageTemplates())
@@ -197,7 +200,10 @@ public class SubscriberMessageTemplateService extends GUIService
         switch (template.getGUIManagedObjectType())
           {
             case SMSMessageTemplate:
-              result.add(template);
+              if (! externalOnly || ! template.getInternalOnly())
+                {
+                  result.add(template);
+                }
               break;
           }
       }
