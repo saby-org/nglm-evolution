@@ -149,7 +149,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("evolutionSubscriberStatusChangeDate", subscriberProfile.getEvolutionSubscriberStatusChangeDate());
       documentMap.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
-      documentMap.put("language", subscriberProfile.getLanguage() != null ? subscriberProfile.getLanguage() : Deployment.getBaseLanguage());
+      documentMap.put("language", subscriberProfile.getLanguage());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));
       addToDocumentMap(documentMap, subscriberProfile, now);
       

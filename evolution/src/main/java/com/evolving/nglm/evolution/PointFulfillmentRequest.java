@@ -268,7 +268,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
   *
   ****************************************/
   
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
   {
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(DELIVERABLEID, getPointID());
@@ -282,7 +282,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     guiPresentationMap.put(ORIGIN, "");
   }
   
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
   {
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());

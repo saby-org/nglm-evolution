@@ -167,5 +167,5 @@ public class PushMessage
   *
   *****************************************/
 
-  public String resolve(SubscriberEvaluationRequest subscriberEvaluationRequest) { return messageText.resolve(subscriberEvaluationRequest); }
+  public String resolveX(SubscriberEvaluationRequest subscriberEvaluationRequest) { return messageText.resolveX(subscriberEvaluationRequest); }
 }

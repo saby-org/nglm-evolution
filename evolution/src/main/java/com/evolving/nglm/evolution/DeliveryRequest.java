@@ -294,8 +294,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
-  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService);
-  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService);
   public abstract Integer getActivityType();
 
   /*****************************************
@@ -490,7 +490,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getGUIPresentationMap
   //
 
-  public Map<String, Object> getGUIPresentationMap(SalesChannelService salesChannelService)
+  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
@@ -499,7 +499,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     guiPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForGUIPresentation(guiPresentationMap, salesChannelService);
+    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService);
     return guiPresentationMap;
   }
   
@@ -507,7 +507,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getThirdPartyPresentationMap
   //
 
-  public Map<String, Object> getThirdPartyPresentationMap(SalesChannelService salesChannelService)
+  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
@@ -516,7 +516,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     thirdPartyPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, salesChannelService);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService);
     return thirdPartyPresentationMap;
   }
 

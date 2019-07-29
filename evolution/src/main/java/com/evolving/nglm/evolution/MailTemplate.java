@@ -14,6 +14,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -44,11 +45,25 @@ public class MailTemplate extends SubscriberMessageTemplate
   *****************************************/
 
   //
+  //  schema
+  //    
+
+  private static Schema schema = null;
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("mail_template");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schema = schemaBuilder.build();
+  }
+
+  //
   //  serde
   //
 
-  private static ConnectSerde<MailTemplate> serde = new ConnectSerde<MailTemplate>(SubscriberMessageTemplate.schema(), false, MailTemplate.class, MailTemplate::pack, MailTemplate::unpack);
-  public static Object pack(Object value) { return SubscriberMessageTemplate.pack(value); }
+  private static ConnectSerde<MailTemplate> serde = new ConnectSerde<MailTemplate>(schema, false, MailTemplate.class, MailTemplate::pack, MailTemplate::unpack);
+  public static Object pack(Object value) { return SubscriberMessageTemplate.packCommon(schema, value); }
   public static MailTemplate unpack(SchemaAndValue schemaAndValue) { return new MailTemplate(schemaAndValue); }
   public MailTemplate(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
@@ -56,7 +71,7 @@ public class MailTemplate extends SubscriberMessageTemplate
   //  accessor
   //
 
-  public static Schema schema() { return SubscriberMessageTemplate.schema(); }
+  public static Schema schema() { return schema; }
   public static ConnectSerde<MailTemplate> serde() { return serde; }
 
   /*****************************************
@@ -88,7 +103,7 @@ public class MailTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getSubject().resolve(subscriberEvaluationRequest); }
-  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getHTMLBody().resolve(subscriberEvaluationRequest); }
-  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getTextBody().resolve(subscriberEvaluationRequest); }
+  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getSubject().resolveX(subscriberEvaluationRequest); }
+  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getHTMLBody().resolveX(subscriberEvaluationRequest); }
+  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getTextBody().resolveX(subscriberEvaluationRequest); }
 }

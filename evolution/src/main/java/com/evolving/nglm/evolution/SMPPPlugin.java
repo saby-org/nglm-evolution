@@ -33,6 +33,7 @@ public class SMPPPlugin implements SMSNotificationInterface
   *
   *****************************************/
 
+  private SMSNotificationManager smsNotificationManager = null;
   private SimpleSMSSender sender = null;
 
   /*****************************************
@@ -43,6 +44,16 @@ public class SMPPPlugin implements SMSNotificationInterface
 
   public void init(SMSNotificationManager smsNotificationManager, JSONObject notificationPluginConfiguration, String notificationPluginSpecificConfiguration, String pluginName)
   {
+    //
+    //  smsNotificationManager
+    //
+
+    this.smsNotificationManager = smsNotificationManager;
+
+    //
+    //  attributes
+    //  
+
     String smscHost = JSONUtilities.decodeString(notificationPluginConfiguration, "smsc_connection", true);
     String username = JSONUtilities.decodeString(notificationPluginConfiguration, "username", true);
     String password = JSONUtilities.decodeString(notificationPluginConfiguration, "password", true);
@@ -59,7 +70,6 @@ public class SMPPPlugin implements SMSNotificationInterface
     String encoding_charset = JSONUtilities.decodeString(notificationPluginConfiguration, "encoding_charset", false);
     String expiration_period = JSONUtilities.decodeString(notificationPluginConfiguration, "expiration_period", false);
     String delay_on_queue_full = JSONUtilities.decodeString(notificationPluginConfiguration, "delay_on_queue_full", false);
-	   
     String smpp_receiver_thread_number = JSONUtilities.decodeString(notificationPluginConfiguration, "smpp_receiver_thread_number", false);
     String load_HP_roman8_as_data_coding0 = JSONUtilities.decodeString(notificationPluginConfiguration, "load_HP_roman8_as_data_coding0", false);
     String load_UTF16_as_data_coding8 = JSONUtilities.decodeString(notificationPluginConfiguration, "load_UTF16_as_data_coding8", false);
@@ -74,13 +84,24 @@ public class SMPPPlugin implements SMSNotificationInterface
     String sms_MO_event_name = JSONUtilities.decodeString(notificationPluginConfiguration, "sms_MO_event_name", false);
     String sms_MO_channel_name = JSONUtilities.decodeString(notificationPluginConfiguration, "sms_MO_channel_name", false);
     
+    //
+    //  log
+    //
     
     log.info("SMPP Plugin init; smscHost="+smscHost+ ", username="+username+ ", password="+password + ", connectionType="+connection_type);
 
-    if(smscHost == null || username == null || password == null || connection_type == null)
+    //
+    //  validate
+    //
+
+    if (smscHost == null || username == null || password == null || connection_type == null)
       {
         throw new RuntimeException("Bad SMSC Server configuration; smscHost="+smscHost+ ", username="+username+ ", password="+password + ", connectionType="+connection_type);
       }
+
+    //
+    // validate smscHost
+    //
 
     String[] split = smscHost.split(":");
     String host = split[0];
@@ -93,6 +114,10 @@ public class SMPPPlugin implements SMSNotificationInterface
       {
         throw new RuntimeException("Bad SMSC port " + port, e);
       }
+
+    //
+    //  factory
+    //
 
     SMSSenderFactory smsSenderFactory = null ;
     SMSC config = new SMSC(pluginName);
@@ -114,60 +139,30 @@ public class SMPPPlugin implements SMSNotificationInterface
     config.addProperty(SMPP_CONFIGS.encoding_charset.toString(), encoding_charset != null ? encoding_charset : "ISO8859_1");
     config.addProperty(SMPP_CONFIGS.expiration_period.toString(), expiration_period != null ? expiration_period : String.valueOf(2));
     config.addProperty(SMPP_CONFIGS.delay_on_queue_full.toString(), delay_on_queue_full != null ? delay_on_queue_full : String.valueOf(60));
-    
-    if(smpp_receiver_thread_number!= null){
-    	config.addProperty(SMPP_CONFIGS.smpp_receiver_thread_number.toString(), smpp_receiver_thread_number);
-    }
-    if(load_HP_roman8_as_data_coding0!= null){    
-	    config.addProperty(SMPP_CONFIGS.load_HP_roman8_as_data_coding0.toString(), load_HP_roman8_as_data_coding0);
-    }
-	if(load_UTF16_as_data_coding8!= null){
-	    config.addProperty(SMPP_CONFIGS.load_UTF16_as_data_coding8.toString(), load_UTF16_as_data_coding8);
-	}
-	if(data_packing!= null){
-	    config.addProperty(SMPP_CONFIGS.data_packing.toString(), data_packing);
-	}
-	if(support_sar!= null){
-		config.addProperty(SMPP_CONFIGS.support_sar.toString(), support_sar);
-	}
-	if(support_udh!= null){
-		config.addProperty(SMPP_CONFIGS.support_udh.toString(), support_udh);
-	}
-	if(handle_submit_sm_response_in_multi_part!= null){
-		config.addProperty(SMPP_CONFIGS.handle_submit_sm_response_in_multi_part.toString(), handle_submit_sm_response_in_multi_part);
-	}
-	if(dest_addr_subunit!= null){
-		config.addProperty(SMPP_CONFIGS.dest_addr_subunit.toString(), dest_addr_subunit);
-	}
-	if(service_type!= null){
-		config.addProperty(SMPP_CONFIGS.service_type.toString(), service_type);
-	}
-	if(delivery_receipt_decoding_hex_dec!= null){
-		config.addProperty(SMPP_CONFIGS.delivery_receipt_decoding_hex_dec.toString(), delivery_receipt_decoding_hex_dec);
-	}
-	if(is_send_to_payload!= null){
-		config.addProperty(SMPP_CONFIGS.is_send_to_payload.toString(), is_send_to_payload);    
-	}
-	  
-  if(sms_MO_event_name != null) {
-	  config.addProperty(SMPP_CONFIGS.sms_MO_event_name.toString(), sms_MO_event_name);  
-	}
-  
-  if(sms_MO_channel_name != null) {
-    config.addProperty(SMPP_CONFIGS.sms_MO_channel_name.toString(), sms_MO_event_name);  
-  }
-  smsSenderFactory = new SMSSenderFactory(config);
-
-  smsSenderFactory.init(smsNotificationManager);
-  if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
-    {
-      log.info("SMPP Driver Load NOT Successfully: no sender created");
-    }
-  else
-    {
-      log.info("SMPP Driver Load Successfully");
-      sender = smsSenderFactory.getSMSSenders()[0];
-    }
+    if (smpp_receiver_thread_number != null) config.addProperty(SMPP_CONFIGS.smpp_receiver_thread_number.toString(), smpp_receiver_thread_number);
+    if (load_HP_roman8_as_data_coding0 != null) config.addProperty(SMPP_CONFIGS.load_HP_roman8_as_data_coding0.toString(), load_HP_roman8_as_data_coding0);
+    if (load_UTF16_as_data_coding8 != null) config.addProperty(SMPP_CONFIGS.load_UTF16_as_data_coding8.toString(), load_UTF16_as_data_coding8);
+    if (data_packing != null) config.addProperty(SMPP_CONFIGS.data_packing.toString(), data_packing);
+    if (support_sar != null) config.addProperty(SMPP_CONFIGS.support_sar.toString(), support_sar);
+    if (support_udh != null) config.addProperty(SMPP_CONFIGS.support_udh.toString(), support_udh);
+    if (handle_submit_sm_response_in_multi_part != null) config.addProperty(SMPP_CONFIGS.handle_submit_sm_response_in_multi_part.toString(), handle_submit_sm_response_in_multi_part);
+    if (dest_addr_subunit != null) config.addProperty(SMPP_CONFIGS.dest_addr_subunit.toString(), dest_addr_subunit);
+    if (service_type != null) config.addProperty(SMPP_CONFIGS.service_type.toString(), service_type);
+    if (delivery_receipt_decoding_hex_dec != null) config.addProperty(SMPP_CONFIGS.delivery_receipt_decoding_hex_dec.toString(), delivery_receipt_decoding_hex_dec);
+    if (is_send_to_payload != null) config.addProperty(SMPP_CONFIGS.is_send_to_payload.toString(), is_send_to_payload);    
+    if (sms_MO_event_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_event_name.toString(), sms_MO_event_name);  
+    if (sms_MO_channel_name != null)  config.addProperty(SMPP_CONFIGS.sms_MO_channel_name.toString(), sms_MO_event_name);  
+    smsSenderFactory = new SMSSenderFactory(config);
+    smsSenderFactory.init(smsNotificationManager);
+    if(smsSenderFactory.getSMSSenders() == null || (smsSenderFactory.getSMSSenders() != null && smsSenderFactory.getSMSSenders().length == 0))
+      {
+        log.info("SMPP Driver Load NOT Successfully: no sender created");
+      }
+    else
+      {
+        log.info("SMPP Driver Load Successfully");
+        sender = smsSenderFactory.getSMSSenders()[0];
+      }
   }
 
   /*****************************************
@@ -178,10 +173,9 @@ public class SMPPPlugin implements SMSNotificationInterface
 
   public void send(SMSNotificationManagerRequest deliveryRequest)
   {
-    String text = deliveryRequest.getText();
+    String text = deliveryRequest.getText(smsNotificationManager.getSubscriberMessageTemplateService());
     String destination = deliveryRequest.getDestination();
     String source = deliveryRequest.getSource();
-
     if(sender == null)
       {
         throw new RuntimeException("SMPPPlugin.send("+deliveryRequest+") sender is null, no smsc");

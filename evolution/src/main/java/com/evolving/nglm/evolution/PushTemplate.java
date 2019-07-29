@@ -14,6 +14,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -44,11 +45,25 @@ public class PushTemplate extends SubscriberMessageTemplate
   *****************************************/
 
   //
+  //  schema
+  //    
+
+  private static Schema schema = null;
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("push_template");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schema = schemaBuilder.build();
+  }
+
+  //
   //  serde
   //
 
-  private static ConnectSerde<PushTemplate> serde = new ConnectSerde<PushTemplate>(SubscriberMessageTemplate.schema(), false, PushTemplate.class, PushTemplate::pack, PushTemplate::unpack);
-  public static Object pack(Object value) { return SubscriberMessageTemplate.pack(value); }
+  private static ConnectSerde<PushTemplate> serde = new ConnectSerde<PushTemplate>(schema, false, PushTemplate.class, PushTemplate::pack, PushTemplate::unpack);
+  public static Object pack(Object value) { return SubscriberMessageTemplate.packCommon(schema, value); }
   public static PushTemplate unpack(SchemaAndValue schemaAndValue) { return new PushTemplate(schemaAndValue); }
   public PushTemplate(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
@@ -56,7 +71,7 @@ public class PushTemplate extends SubscriberMessageTemplate
   //  accessor
   //
 
-  public static Schema schema() { return SubscriberMessageTemplate.schema(); }
+  public static Schema schema() { return schema; }
   public static ConnectSerde<PushTemplate> serde() { return serde; }
 
   /*****************************************
@@ -86,5 +101,5 @@ public class PushTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public String resolve(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getMessageText().resolve(subscriberEvaluationRequest); }
+  public String resolveX(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getMessageText().resolveX(subscriberEvaluationRequest); }
 }

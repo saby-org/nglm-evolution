@@ -183,7 +183,7 @@ public class EmailMessage
   *
   *****************************************/
 
-  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return subject.resolve(subscriberEvaluationRequest); }
-  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return htmlBody.resolve(subscriberEvaluationRequest); }
-  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return textBody.resolve(subscriberEvaluationRequest); }
+  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return subject.resolveX(subscriberEvaluationRequest); }
+  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return htmlBody.resolveX(subscriberEvaluationRequest); }
+  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return textBody.resolveX(subscriberEvaluationRequest); }
 }

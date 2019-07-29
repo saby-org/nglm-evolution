@@ -14,6 +14,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -44,11 +45,25 @@ public class SMSMessage extends SubscriberMessage
   *****************************************/
 
   //
+  //  schema
+  //    
+
+  private static Schema schema = null;
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("sms_message");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schema = schemaBuilder.build();
+  }
+
+  //
   //  serde
   //
 
-  private static ConnectSerde<SMSMessage> serde = new ConnectSerde<SMSMessage>(SubscriberMessage.schema(), false, SMSMessage.class, SMSMessage::pack, SMSMessage::unpack);
-  public static Object pack(Object value) { return SubscriberMessage.pack(value); }
+  private static ConnectSerde<SMSMessage> serde = new ConnectSerde<SMSMessage>(schema, false, SMSMessage.class, SMSMessage::pack, SMSMessage::unpack);
+  public static Object pack(Object value) { return packCommon(schema, value); }
   public static SMSMessage unpack(SchemaAndValue schemaAndValue) { return new SMSMessage(schemaAndValue); }
   public SMSMessage(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
@@ -56,7 +71,7 @@ public class SMSMessage extends SubscriberMessage
   //  accessor
   //
 
-  public static Schema schema() { return SubscriberMessage.schema(); }
+  public static Schema schema() { return schema; }
   public static ConnectSerde<SMSMessage> serde() { return serde; }
 
   /*****************************************
@@ -69,12 +84,4 @@ public class SMSMessage extends SubscriberMessage
   {
     super(smsMessageJSON, Arrays.asList("messageText"), subscriberMessageTemplateService, criterionContext);
   }
-
-  /*****************************************
-  *
-  *  resolve
-  *
-  *****************************************/
-
-  public String resolve(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest) { return super.resolve(evolutionEventContext, subscriberEvaluationRequest, 0); }
 }

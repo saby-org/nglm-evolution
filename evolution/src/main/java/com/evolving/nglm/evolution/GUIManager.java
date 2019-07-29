@@ -16440,7 +16440,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(salesChannelService))).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService))).collect(Collectors.toList());
                   }
 
                 //
@@ -16558,7 +16558,7 @@ public class GUIManager
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(salesChannelService);
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
                             DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(bdrMap.get(DeliveryRequest.MODULEID).toString());
                             if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
                               {
@@ -16687,7 +16687,7 @@ public class GUIManager
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(salesChannelService);
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
                             String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
                             if (offerID != null)
                               {
@@ -16827,7 +16827,7 @@ public class GUIManager
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap(salesChannelService)));
+                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService)));
                           }
                       }
                   }

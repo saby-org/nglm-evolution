@@ -104,6 +104,19 @@ public class SubscriberEvaluationRequest
 
   /*****************************************
   *
+  *  getLanguage
+  *
+  *****************************************/
+
+  public String getLanguage()
+  {
+    String languageID = (String) CriterionContext.Profile.getCriterionFields().get("subscriber.language").retrieve(this);
+    String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
+    return language;
+  }
+
+  /*****************************************
+  *
   *  subscriberTrace
   *
   *****************************************/

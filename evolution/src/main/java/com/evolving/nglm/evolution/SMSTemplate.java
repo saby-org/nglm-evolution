@@ -15,6 +15,7 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -45,11 +46,25 @@ public class SMSTemplate extends SubscriberMessageTemplate
   *****************************************/
 
   //
+  //  schema
+  //    
+
+  private static Schema schema = null;
+  static
+  {
+    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+    schemaBuilder.name("sms_template");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schema = schemaBuilder.build();
+  }
+
+  //
   //  serde
   //
 
-  private static ConnectSerde<SMSTemplate> serde = new ConnectSerde<SMSTemplate>(SubscriberMessageTemplate.schema(), false, SMSTemplate.class, SMSTemplate::pack, SMSTemplate::unpack);
-  public static Object pack(Object value) { return SubscriberMessageTemplate.pack(value); }
+  private static ConnectSerde<SMSTemplate> serde = new ConnectSerde<SMSTemplate>(schema, false, SMSTemplate.class, SMSTemplate::pack, SMSTemplate::unpack);
+  public static Object pack(Object value) { return SubscriberMessageTemplate.packCommon(schema, value); }
   public static SMSTemplate unpack(SchemaAndValue schemaAndValue) { return new SMSTemplate(schemaAndValue); }
   public SMSTemplate(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
@@ -57,7 +72,7 @@ public class SMSTemplate extends SubscriberMessageTemplate
   //  accessor
   //
 
-  public static Schema schema() { return SubscriberMessageTemplate.schema(); }
+  public static Schema schema() { return schema; }
   public static ConnectSerde<SMSTemplate> serde() { return serde; }
 
   /*****************************************
@@ -80,12 +95,4 @@ public class SMSTemplate extends SubscriberMessageTemplate
   {
     super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, Arrays.asList("messageText"), epoch, existingTemplateUnchecked);
   }
-
-  /*****************************************
-  *
-  *  resolve
-  *
-  *****************************************/
-
-  public String resolve(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getMessageText().resolve(subscriberEvaluationRequest); }
 }

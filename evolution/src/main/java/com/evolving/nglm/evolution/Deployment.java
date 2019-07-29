@@ -35,7 +35,16 @@ public class Deployment
   *  data
   *
   *****************************************/
+
+  //
+  //  log
+  //
+
   private static final Logger log = LoggerFactory.getLogger(Deployment.class);
+
+  //
+  //  data
+  //
 
   private static String subscriberGroupLoaderAlternateID;
   private static String getCustomerAlternateID;
@@ -89,6 +98,7 @@ public class Deployment
   private static String journeyResponseTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
+  private static String salesPartnerTopic;
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
@@ -102,6 +112,7 @@ public class Deployment
   private static CompressionType subscriberProfileCompressionType;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
+  private static String baseLanguageID;
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
@@ -168,7 +179,6 @@ public class Deployment
   private static int ucgEngineESConnectTimeout;
   private static int ucgEngineESSocketTimeout;
   private static int ucgEngineESMasRetryTimeout;
-  private static String salesPartnerTopic;
 
   /*****************************************
   *
@@ -260,6 +270,7 @@ public class Deployment
   public static String getJourneyResponseTopic() { return journeyResponseTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
+  public static String getSalesPartnerTopic() { return salesPartnerTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
@@ -273,6 +284,7 @@ public class Deployment
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
+  public static String getBaseLanguageID() { return baseLanguageID; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
   public static Map<String,SupportedTokenCodesFormat> getSupportedTokenCodesFormats() { return supportedTokenCodesFormats; }
@@ -339,7 +351,6 @@ public class Deployment
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
-  public static String getSalesPartnerTopic() { return salesPartnerTopic; }
 
   /*****************************************
   *
@@ -1429,6 +1440,12 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+
+    //
+    //  baseLanguageID
+    //
+
+    baseLanguageID = getSupportedLanguageID(Deployment.getBaseLanguage());
 
     //
     //  supportedCurrencies

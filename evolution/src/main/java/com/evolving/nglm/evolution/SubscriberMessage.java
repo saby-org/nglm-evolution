@@ -51,7 +51,7 @@ public abstract class SubscriberMessage
   //  schema
   //
 
-  private static Schema schema = null;
+  private static Schema commonSchema = null;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
@@ -60,14 +60,14 @@ public abstract class SubscriberMessage
     schemaBuilder.field("subscriberMessageTemplateID", Schema.STRING_SCHEMA);
     schemaBuilder.field("parameterTags", SimpleParameterMap.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.array(DialogMessage.schema()).schema());
-    schema = schemaBuilder.build();
+    commonSchema = schemaBuilder.build();
   };
 
   //
   //  accessor
   //
 
-  public static Schema schema() { return schema; }
+  public static Schema commonSchema() { return commonSchema; }
 
   /*****************************************
   *
@@ -311,11 +311,11 @@ public abstract class SubscriberMessage
 
   /*****************************************
   *
-  *  pack
+  *  packCommon
   *
   *****************************************/
 
-  public static Object pack(Object value)
+  public static Object packCommon(Schema schema, Object value)
   {
     SubscriberMessage subscriberMessage = (SubscriberMessage) value;
     Struct struct = new Struct(schema);
@@ -343,15 +343,12 @@ public abstract class SubscriberMessage
 
   /*****************************************
   *
-  *  resolve
+  *  resolveTemplate
   *
   *****************************************/
 
-  protected String resolve(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, int dialogMessageIndex)
+  protected SubscriberMessageTemplate resolveTemplate(EvolutionEventContext evolutionEventContext)
   {
-    SubscriberMessageTemplate subscriberMessageTemplate = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getSubscriberMessageTemplateID(), evolutionEventContext.now());
-    DialogMessage dialogMessage = (subscriberMessageTemplate != null) ? subscriberMessageTemplate.getDialogMessages().get(dialogMessageIndex) : null;
-    String resolvedText = (dialogMessage != null) ? dialogMessage.resolve(subscriberEvaluationRequest) : "";
-    return resolvedText;
+    return evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getSubscriberMessageTemplateID(), evolutionEventContext.now());
   }
 }

@@ -100,13 +100,22 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanagersms";
   public String pluginName;
-  
+  private SubscriberMessageTemplateService subscriberMessageTemplateService;
+
   //
   //  logger
   //
 
   private static final Logger log = LoggerFactory.getLogger(SMSNotificationManager.class);
   
+  /*****************************************
+  *
+  *  accessors
+  *
+  *****************************************/
+
+  public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
+
   /*****************************************
   *
   *  constructor
@@ -122,17 +131,26 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), SMSNotificationManagerRequest.serde(), Deployment.getDeliveryManagers().get(pluginName));
     
     //
+    //  plugin class
+    //
+
+    String smsPluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
+    JSONObject smsPluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginConfiguration", true);
+    log.info("SMSNotificationManager: plugin instanciation : smsPluginClassName = "+smsPluginClassName);
+    log.info("SMSNotificationManager: plugin instanciation : smsPluginConfiguration = "+smsPluginConfiguration);
+
+    //
+    //  service
+    //
+
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "smsnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
+    subscriberMessageTemplateService.start();
+        
+    //
     //  manager
     //
     
     this.pluginName = pluginName;
-    
-    String smsPluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginClass", true);
-    log.info("SMSNotificationManager: plugin instanciation : smsPluginClassName = "+smsPluginClassName);
-
-    JSONObject smsPluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "notificationPluginConfiguration", true);
-    log.info("SMSNotificationManager: plugin instanciation : smsPluginConfiguration = "+smsPluginConfiguration);
-
     try
       {
         smsNotification = (SMSNotificationInterface) (Class.forName(smsPluginClassName).newInstance());
@@ -148,17 +166,20 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         log.error("SMSNotificationManager: could not find class " + smsPluginClassName, e);
         throw new RuntimeException("SMSNotificationManager: could not find class " + smsPluginClassName, e);
       }
-    
+
     //
     // statistics
     //
     
-    try{
-      stats = new NotificationStatistics(applicationID, pluginName);
-    }catch(Exception e){
-      log.error("SMSNotificationManager: could not load statistics ", e);
-      throw new RuntimeException("SMSNotificationManager: could not load statistics  ", e);
-    }
+    try
+      {
+        stats = new NotificationStatistics(applicationID, pluginName);
+      }
+    catch(Exception e)
+      {
+        log.error("SMSNotificationManager: could not load statistics ", e);
+        throw new RuntimeException("SMSNotificationManager: could not load statistics  ", e);
+      }
       
     //
     //  threads
@@ -203,7 +224,9 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("source", Schema.STRING_SCHEMA);
-      schemaBuilder.field("text", Schema.STRING_SCHEMA);
+      schemaBuilder.field("language", Schema.STRING_SCHEMA);
+      schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("messageTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
       schema = schemaBuilder.build();
@@ -229,9 +252,11 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public String destination;
-    public String source;
-    public String text;
+    private String destination;
+    private String source;
+    private String language;
+    private String templateID;
+    private List<String> messageTags;
     private boolean confirmationExpected;
     private SMSMessageStatus status;
     private int returnCode;
@@ -243,11 +268,19 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     
     public String getDestination() { return destination; }
     public String getSource() { return source; }
-    public String getText() { return text; }
+    public String getLanguage() { return language; }
+    public String getTemplateID() { return templateID; }
+    public List<String> getMessageTags() { return messageTags; }
     public boolean getConfirmationExpected() { return confirmationExpected; }
     public SMSMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+
+    //
+    //  abstract
+    //
+
+    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
 
     //
     //   setters
@@ -260,16 +293,32 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     
     /*****************************************
     *
+    *  getText
+    *
+    *****************************************/
+
+    public String getText(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      SMSTemplate smsTemplate = (SMSTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      DialogMessage dialogMessage = (smsTemplate != null) ? smsTemplate.getMessageText() : null;
+      String text = (dialogMessage != null) ? dialogMessage.resolve(language, messageTags) : null;
+      return text;
+    }
+
+    /*****************************************
+    *
     *  constructor
     *
     *****************************************/
     
-    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String text)
+    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
       this.source = source;
-      this.text = text;
+      this.language = language;
+      this.templateID = templateID;
+      this.messageTags = messageTags;
       this.status = SMSMessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = "";
@@ -286,24 +335,44 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       super(jsonRoot);
       this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
       this.source = JSONUtilities.decodeString(jsonRoot, "source", true);
-      this.text = JSONUtilities.decodeString(jsonRoot, "text", true);
+      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
+      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
+      this.messageTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "messageTags", new JSONArray()));
       this.status = SMSMessageStatus.PENDING;
       this.returnCode = SMSMessageStatus.PENDING.getReturnCode();
       this.returnCodeDetails = "";
     }
-    
+
+    /*****************************************
+    *
+    *  decodeMessageTags
+    *
+    *****************************************/
+
+    private List<String> decodeMessageTags(JSONArray jsonArray)
+    {
+      List<String> messageTags = new ArrayList<String>();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          messageTags.add((String) jsonArray.get(i));
+        }
+      return messageTags;
+    }
+
     /*****************************************
     *
     *  constructor -- unpack
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String text, boolean confirmationExpected, SMSMessageStatus status)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, SMSMessageStatus status)
     {
       super(schemaAndValue);
       this.destination = destination;
       this.source = source;
-      this.text = text;
+      this.language = language;
+      this.templateID = templateID;
+      this.messageTags = messageTags;
       this.confirmationExpected = confirmationExpected;
       this.status = status;
       this.returnCode = status.getReturnCode();
@@ -320,7 +389,9 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       super(smsNotificationManagerRequest);
       this.destination = smsNotificationManagerRequest.getDestination();
       this.source = smsNotificationManagerRequest.getSource();
-      this.text = smsNotificationManagerRequest.getText();
+      this.language = smsNotificationManagerRequest.getLanguage();
+      this.templateID = smsNotificationManagerRequest.getTemplateID();
+      this.messageTags = smsNotificationManagerRequest.getMessageTags();
       this.confirmationExpected = smsNotificationManagerRequest.getConfirmationExpected();
       this.status = smsNotificationManagerRequest.getMessageStatus();
       this.returnCode = smsNotificationManagerRequest.getReturnCode();
@@ -351,7 +422,9 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       packCommon(struct, notificationRequest);
       struct.put("destination", notificationRequest.getDestination());
       struct.put("source", notificationRequest.getSource());
-      struct.put("text", notificationRequest.getText());
+      struct.put("language", notificationRequest.getLanguage());
+      struct.put("templateID", notificationRequest.getTemplateID());
+      struct.put("messageTags", notificationRequest.getMessageTags());
       struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
       struct.put("return_code", notificationRequest.getReturnCode());
       return struct;
@@ -386,26 +459,19 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       Struct valueStruct = (Struct) value;
       String destination = valueStruct.getString("destination");
       String source = valueStruct.getString("source");
-      String text = valueStruct.getString("text");
+      String language = valueStruct.getString("language");
+      String templateID = valueStruct.getString("templateID");
+      List<String> messageTags = (List<String>) valueStruct.get("messageTags");
       boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
       Integer returnCode = valueStruct.getInt32("return_code");
       SMSMessageStatus status = SMSMessageStatus.fromReturnCode(returnCode);
       
       //
-      //  log
-      //
-
-      log.debug("SMSNotificationManagerRequest:unpack destination;"+destination + " source;"+source + " text;"+text);
-
-      //
       //  return
       //
 
-      
-      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, text, confirmationExpected, status);
+      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, status);
     }
-    
-    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
     
     /****************************************
     *
@@ -413,7 +479,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(MODULEID, getModuleID());
@@ -423,14 +489,14 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       guiPresentationMap.put(NOTIFICATION_SUBJECT, null);
-      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getText());
+      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getText(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_HTML_BODY, null);
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
     @Override
-    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
+    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
@@ -440,7 +506,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, null);
-      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getText());
+      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getText(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, null);
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
@@ -503,7 +569,11 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
-      String text = smsMessage.resolve(evolutionEventContext, subscriberEvaluationRequest);
+      String language = subscriberEvaluationRequest.getLanguage();
+      SMSTemplate baseTemplate = (SMSTemplate) smsMessage.resolveTemplate(evolutionEventContext);
+      SMSTemplate template = (baseTemplate != null) ? (SMSTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext) : null;
+      DialogMessage messageText = (template != null) ? template.getMessageText() : null;
+      List<String> messageTags = (messageText != null) ? messageText.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
 
       /*****************************************
       *
@@ -512,16 +582,20 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       SMSNotificationManagerRequest request = null;
-      if (msisdn != null)
+      if (template != null && msisdn != null)
         {
-          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, text);
+          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
         }
-      else
+      else if (template != null)
         {
           log.info("SMSNotificationManager unknown MSISDN for subscriberID {}" + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+        }
+      else
+        {
+          log.info("SMSNotificationManager unknown template {}" + smsMessage.getSubscriberMessageTemplateID());
         }
 
       /*****************************************

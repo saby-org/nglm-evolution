@@ -248,7 +248,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   ****************************************/
   
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SalesChannelService salesChannelService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
   {
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(DELIVERABLEID, getJourneyID());
@@ -260,7 +260,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     guiPresentationMap.put(ORIGIN, "");
   }
   
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SalesChannelService salesChannelService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
   {
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getJourneyID());

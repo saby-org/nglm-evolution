@@ -120,8 +120,8 @@ public class DialogMessage
         *
         *****************************************/
 
-        SupportedLanguage supportedLanaguage = Deployment.getSupportedLanguages().get(JSONUtilities.decodeString(messageJSON, "languageID", true));
-        String language = (supportedLanaguage != null) ? supportedLanaguage.getName() : null;
+        SupportedLanguage supportedLanguage = Deployment.getSupportedLanguages().get(JSONUtilities.decodeString(messageJSON, "languageID", true));
+        String language = (supportedLanguage != null) ? supportedLanguage.getName() : null;
         if (language == null) throw new GUIManagerException("unsupported language", JSONUtilities.decodeString(messageJSON, "languageID", true));
 
         /*****************************************
@@ -356,7 +356,7 @@ public class DialogMessage
   *
   *****************************************/
 
-  public String resolve(SubscriberEvaluationRequest subscriberEvaluationRequest)
+  public String resolveX(SubscriberEvaluationRequest subscriberEvaluationRequest)
   {
     /*****************************************
     *
@@ -369,7 +369,8 @@ public class DialogMessage
     //
 
     CriterionField subscriberLanguage = CriterionContext.Profile.getCriterionFields().get("subscriber.language");
-    String language = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
+    String languageID = (String) subscriberLanguage.retrieve(subscriberEvaluationRequest);
+    String language = (languageID != null && Deployment.getSupportedLanguages().get(languageID) != null) ? Deployment.getSupportedLanguages().get(languageID).getName() : Deployment.getBaseLanguage();
 
     //
     //  message text
@@ -486,6 +487,102 @@ public class DialogMessage
 
   /*****************************************
   *
+  *  resolveMessageTags
+  *
+  *****************************************/
+
+  protected List<String> resolveMessageTags(SubscriberEvaluationRequest subscriberEvaluationRequest, String language)
+  {
+    /*****************************************
+    *
+    *  tags
+    *
+    *****************************************/
+
+    Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+    MessageFormat formatter = null;
+    List<String> messageTags = new ArrayList<String>();
+    for (int i=0; i<this.allTags.size(); i++)
+      {
+        //
+        //  criterionField
+        //
+
+        CriterionField tag = this.allTags.get(i);
+
+        //
+        //  retrieve value
+        //
+        
+        Object tagValue = tag.retrieve(subscriberEvaluationRequest);
+
+        //
+        //  resolve formatDataType
+        //
+
+        CriterionDataType formatDataType = resolveFormatDataType(tag.getFieldDataType(), tagValue);
+
+        //
+        //  formatter for tag
+        //
+
+        formatter = new MessageFormat("{0" + tag.resolveTagFormat(formatDataType) + "}", messageLocale);
+        for (Format format : formatter.getFormats())
+          {
+            if (format instanceof SimpleDateFormat)
+              {
+                ((SimpleDateFormat) format).setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+              }
+          }
+
+        //
+        //  formatted tag
+        //
+
+        Object[] tagValues = new Object[1];
+        tagValues[0] = tagValue;
+        String formattedTag = formatter.format(tagValues);
+        
+        //
+        //  truncate (if necessary)
+        //
+
+        int maxLength = tag.resolveTagMaxLength(formatDataType);
+        String resolvedTag = formattedTag;
+        if (formattedTag.length() > maxLength)
+          {
+            switch (formatDataType)
+              {
+                case StringCriterion:
+                  resolvedTag = formattedTag.substring(0, maxLength);
+                  break;
+
+                default:
+                  StringBuilder invalidTag = new StringBuilder();
+                  for (int j=0; j<maxLength; j++) invalidTag.append("X");
+                  resolvedTag = invalidTag.toString();
+                  break;
+              }
+          }
+        
+        //
+        //  resolved tag
+        //
+
+        messageTags.add(resolvedTag);
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    ****************************************/
+
+    return messageTags;
+  }
+
+  /*****************************************
+  *
   *  resolveFormatDataType
   *
   *****************************************/
@@ -502,6 +599,24 @@ public class DialogMessage
           break;
       }
     return formatDataType;
+  }
+
+  /*****************************************
+  *
+  *  resolve
+  *
+  *****************************************/
+
+  public String resolve(String language, List<String> messageTags)
+  {
+    String text = null;
+    if (messageTextByLanguage.get(language) != null)
+      {
+        Locale messageLocale = new Locale(language, Deployment.getBaseCountry());
+        MessageFormat formatter = new MessageFormat(messageTextByLanguage.get(language), messageLocale);
+        text = formatter.format(messageTags.toArray());
+      }
+    return text;
   }
 
   /*****************************************

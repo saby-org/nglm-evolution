@@ -1563,7 +1563,7 @@ public class EvolutionEngine
             SupportedLanguage supportedLanguage = Deployment.getSupportedLanguages().get((String) subscriberProfileForceUpdate.getParameterMap().get("language"));
             if (supportedLanguage != null)
               {
-                subscriberProfile.setLanguage(supportedLanguage.getID());
+                subscriberProfile.setLanguageID(supportedLanguage.getID());
                 subscriberProfileUpdated = true;
               }
           }

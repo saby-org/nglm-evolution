@@ -51,23 +51,23 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   //  schema
   //
 
-  private static Schema schema = null;
+  private static Schema commonSchema = null;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_message_template");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),1));
+    for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.array(DialogMessage.schema()).schema());
     schemaBuilder.field("readOnlyCopyID", Schema.OPTIONAL_STRING_SCHEMA);
-    schema = schemaBuilder.build();
+    commonSchema = schemaBuilder.build();
   };
 
   //
   //  accessor
   //
 
-  protected static Schema schema() { return schema; }
+  public static Schema commonSchema() { return commonSchema; }
 
   /*****************************************
   *
@@ -177,14 +177,16 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //  construct JSON representation
     //
 
-    JSONObject readOnlyCopy = subscriberMessageTemplateService.getJSONRepresentation(subscriberMessageTemplate);
-    readOnlyCopy.put("id", "readonly-" + subscriberMessageTemplateService.generateSubscriberMessageTemplateID());
-    readOnlyCopy.put("effectiveStartDate", null);
-    readOnlyCopy.put("effectiveEndDate", null);
-    readOnlyCopy.put("readOnly", true);
-    readOnlyCopy.put("internalOnly", true);
-    readOnlyCopy.put("active", true);
-
+    JSONObject templateJSON = subscriberMessageTemplateService.getJSONRepresentation(subscriberMessageTemplate);
+    Map<String,Object> readOnlyCopyJSON = new HashMap<String,Object>(templateJSON);
+    readOnlyCopyJSON.put("id", "readonly-" + subscriberMessageTemplateService.generateSubscriberMessageTemplateID());
+    readOnlyCopyJSON.put("effectiveStartDate", null);
+    readOnlyCopyJSON.put("effectiveEndDate", null);
+    readOnlyCopyJSON.put("readOnly", true);
+    readOnlyCopyJSON.put("internalOnly", true);
+    readOnlyCopyJSON.put("active", true);
+    JSONObject readOnlyCopy = JSONUtilities.encodeObject(readOnlyCopyJSON);
+    
     //
     //  readOnlyCopy
     //
@@ -319,15 +321,15 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   /*****************************************
   *
-  *  pack
+  *  packCommon
   *
   *****************************************/
 
-  public static Object pack(Object value)
+  protected static Object packCommon(Schema schema, Object value)
   {
     SubscriberMessageTemplate subscriberMessageTemplate = (SubscriberMessageTemplate) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, subscriberMessageTemplate);
+    GUIManagedObject.packCommon(struct, subscriberMessageTemplate);
     struct.put("dialogMessages", packDialogMessages(subscriberMessageTemplate.getDialogMessages()));
     struct.put("readOnlyCopyID", subscriberMessageTemplate.getReadOnlyCopyID());
     return struct;
