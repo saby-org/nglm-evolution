@@ -236,6 +236,13 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCr
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 
 --
+--  configAdaptor
+-- 
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSupportedLanguages; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getSMSTemplate; echo
+
+--
 --  elasticsearch - propensity
 --
 

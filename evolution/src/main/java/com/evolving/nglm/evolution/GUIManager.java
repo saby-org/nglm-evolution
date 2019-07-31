@@ -136,7 +136,7 @@ public class GUIManager
   *  enum
   *
   *****************************************/
-  
+
   public enum CustomerStatusInJourney
   {
     ENTERED("ENTERED"), 
@@ -156,6 +156,10 @@ public class GUIManager
 
   public enum API
   {
+    //
+    //  GUI APIs
+    //  
+
     getStaticConfiguration("getStaticConfiguration"),
     getSupportedLanguages("getSupportedLanguages"),
     getSupportedCurrencies("getSupportedCurrencies"),
@@ -362,6 +366,18 @@ public class GUIManager
     getPartner("getPartner"),
     putPartner("putPartner"),
     removePartner("removePartner"),
+
+    //
+    //  configAdaptor APIs
+    //
+
+    configAdaptorSupportedLanguages("configAdaptorSupportedLanguages"),
+    configAdaptorSMSTemplate("configAdaptorSMSTemplate"),
+
+    //
+    //  structor
+    //
+
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -440,7 +456,7 @@ public class GUIManager
   private CommunicationChannelBlackoutService communicationChannelBlackoutService;
   private LoyaltyProgramService loyaltyProgramService;
   private SalesPartnerService salesPartnerService;
-  
+
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
   private static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
@@ -603,7 +619,7 @@ public class GUIManager
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     salesPartnerService = new SalesPartnerService(bootstrapServers, "guimanager-salespartnerservice-"+apiProcessKey, salesPartnerTopic, true);
-    
+
     /*****************************************
     *
     *  Elasticsearch -- client
@@ -630,31 +646,31 @@ public class GUIManager
       CommodityType commodityType = CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
       if(commodityType != null){
         switch (commodityType) {
-        case IN:
-        case EMPTY:
-          
-          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-          String providerID = (String) deliveryManagerJSON.get("providerID");
-          providersMap.put(providerID, deliveryManager);
-          
-          break;
-        default:
-          break;
+            case IN:
+            case EMPTY:
+
+              JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+              String providerID = (String) deliveryManagerJSON.get("providerID");
+              providersMap.put(providerID, deliveryManager);
+
+              break;
+            default:
+              break;
         }
       }
     }
-    
+
     for(DeliveryManagerAccount deliveryManagerAccount : Deployment.getDeliveryManagerAccounts().values()){
       String providerID = deliveryManagerAccount.getProviderID();
       DeliveryManagerDeclaration deliveryManagerDeclaration = providersMap.get(providerID);
       if(deliveryManagerDeclaration == null){
         throw new ServerRuntimeException("Delivery manager accounts : could not retrieve provider with ID "+providerID);
       }
-      
+
       //
       // remove all paymentMeans related to this provider
       //
-      
+
       Collection<GUIManagedObject> paymentMeanList = paymentMeanService.getStoredPaymentMeans();
       for(GUIManagedObject paymentMeanObject : paymentMeanList){
         PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
@@ -662,11 +678,11 @@ public class GUIManager
           paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
         }
       }
-      
+
       //
       // remove all deliverables related to this provider
       //
-      
+
       Collection<GUIManagedObject> deliverableList = deliverableService.getStoredDeliverables();
       for(GUIManagedObject deliverableObject : deliverableList){
         Deliverable deliverable = (Deliverable) deliverableObject;
@@ -674,7 +690,7 @@ public class GUIManager
           deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
         }
       }
-      
+
       //
       // add new paymentMeans and new deliverables
       //
@@ -691,13 +707,13 @@ public class GUIManager
           paymentMeanMap.put("active", true);
           paymentMeanMap.put("readOnly", true);
           try
-          {
-            PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
-            paymentMeanService.putPaymentMean(paymentMean, true, "0");
-          } catch (GUIManagerException e)
-          {
-            throw new ServerRuntimeException("could not add paymentMean related to provider "+providerID+" (account "+account.getName()+")", e);
-          }
+            {
+              PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
+              paymentMeanService.putPaymentMean(paymentMean, true, "0");
+            } catch (GUIManagerException e)
+            {
+              throw new ServerRuntimeException("could not add paymentMean related to provider "+providerID+" (account "+account.getName()+")", e);
+            }
         }
         if(account.getCreditable()){
           Map<String, Object> deliverableMap = new HashMap<String, Object>();
@@ -710,17 +726,17 @@ public class GUIManager
           deliverableMap.put("unitaryCost", 0);
           deliverableMap.put("readOnly", true);
           try
-          {
-            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-            deliverableService.putDeliverable(deliverable, true, "0");
-          } catch (GUIManagerException e)
-          {
-            throw new ServerRuntimeException("could not add deliverable related to provider "+providerID+" (account "+account.getName()+")", e);
-          }
+            {
+              Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+              deliverableService.putDeliverable(deliverable, true, "0");
+            } catch (GUIManagerException e)
+            {
+              throw new ServerRuntimeException("could not add deliverable related to provider "+providerID+" (account "+account.getName()+")", e);
+            }
         }
       }
     }
-    
+
     /*****************************************
     *
     *  services - initialize
@@ -768,7 +784,7 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
-                
+
     //
     //  productTypes
     //
@@ -789,7 +805,7 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
-    
+
     //
     //  reports
     //
@@ -894,24 +910,24 @@ public class GUIManager
             throw new ServerRuntimeException("deployment", e);
           }
       }
-    
+
     //
     //  communicationChannels
     //
 
     try
-    {
-      JSONArray initialCommunicationChannelsJSONArray = Deployment.getInitialCommunicationChannelsJSONArray();
-      for (int i=0; i<initialCommunicationChannelsJSONArray.size(); i++)
-        {
-          JSONObject communicationChannelJSON = (JSONObject) initialCommunicationChannelsJSONArray.get(i);
-          processPutCommunicationChannel("0", communicationChannelJSON);
-        }
-    }
+      {
+        JSONArray initialCommunicationChannelsJSONArray = Deployment.getInitialCommunicationChannelsJSONArray();
+        for (int i=0; i<initialCommunicationChannelsJSONArray.size(); i++)
+          {
+            JSONObject communicationChannelJSON = (JSONObject) initialCommunicationChannelsJSONArray.get(i);
+            processPutCommunicationChannel("0", communicationChannelJSON);
+          }
+      }
     catch (JSONUtilitiesException e)
-    {
-      throw new ServerRuntimeException("deployment", e);
-    }
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
 
     //
     //  contactPolicies
@@ -1222,7 +1238,7 @@ public class GUIManager
     communicationChannelBlackoutService.start();
     loyaltyProgramService.start();
     salesPartnerService.start();
-    
+
     /*****************************************
     *
     *  REST interface -- server and handlers
@@ -1439,7 +1455,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPartner", new APISimpleHandler(API.getPartner));
         restServer.createContext("/nglm-guimanager/putPartner", new APISimpleHandler(API.putPartner));
         restServer.createContext("/nglm-guimanager/removePartner", new APISimpleHandler(API.removePartner));
-        
+        restServer.createContext("/nglm-configadaptor/getSupportedLanguages", new APISimpleHandler(API.configAdaptorSupportedLanguages));
+        restServer.createContext("/nglm-configadaptor/getSMSTemplate", new APISimpleHandler(API.configAdaptorSMSTemplate));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1936,7 +1953,7 @@ public class GUIManager
                 case removeJourneyTemplate:
                   jsonResponse = processRemoveJourneyTemplate(userID, jsonRoot);
                   break;
-                  
+
                 case getSegmentationDimensionList:
                   jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true);
                   break;
@@ -2308,56 +2325,56 @@ public class GUIManager
                 case getTokenCodesFormats:
                   jsonResponse = processGetTokenCodesFormats(userID, jsonRoot);
                   break;
-                  
-               case getMailTemplateList:
-                 jsonResponse = processGetMailTemplateList(userID, jsonRoot, true);
-                 break;
 
-               case getMailTemplateSummaryList:
-                 jsonResponse = processGetMailTemplateList(userID, jsonRoot, false);
-                 break;
+                case getMailTemplateList:
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true);
+                  break;
 
-               case getMailTemplate:
-                 jsonResponse = processGetMailTemplate(userID, jsonRoot);
-                 break;
+                case getMailTemplateSummaryList:
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, false);
+                  break;
 
-               case putMailTemplate:
-                 jsonResponse = processPutMailTemplate(userID, jsonRoot);
-                 break;
+                case getMailTemplate:
+                  jsonResponse = processGetMailTemplate(userID, jsonRoot);
+                  break;
 
-               case removeMailTemplate:
-                 jsonResponse = processRemoveMailTemplate(userID, jsonRoot);
-                 break;
+                case putMailTemplate:
+                  jsonResponse = processPutMailTemplate(userID, jsonRoot);
+                  break;
 
-               case getSMSTemplateList:
-                 jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true);
-                 break;
+                case removeMailTemplate:
+                  jsonResponse = processRemoveMailTemplate(userID, jsonRoot);
+                  break;
 
-               case getSMSTemplateSummaryList:
-                 jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false);
-                 break;
+                case getSMSTemplateList:
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true);
+                  break;
 
-               case getSMSTemplate:
-                 jsonResponse = processGetSMSTemplate(userID, jsonRoot);
-                 break;
+                case getSMSTemplateSummaryList:
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false);
+                  break;
 
-               case putSMSTemplate:
-                 jsonResponse = processPutSMSTemplate(userID, jsonRoot);
-                 break;
+                case getSMSTemplate:
+                  jsonResponse = processGetSMSTemplate(userID, jsonRoot);
+                  break;
 
-               case removeSMSTemplate:
-                 jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
-                 break;
+                case putSMSTemplate:
+                  jsonResponse = processPutSMSTemplate(userID, jsonRoot);
+                  break;
 
-               case getFulfillmentProviders:
-                 jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
-                 break;
+                case removeSMSTemplate:
+                  jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
+                  break;
 
-               case getPaymentMeans:
-                 jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
-                 break;
+                case getFulfillmentProviders:
+                  jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
+                  break;
 
-               case getPaymentMeanList:
+                case getPaymentMeans:
+                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
+                  break;
+
+                case getPaymentMeanList:
                   jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
                   break;
 
@@ -2416,7 +2433,7 @@ public class GUIManager
                 case refreshUCG:
                   jsonResponse = processRefreshUCG(userID, jsonRoot);
                   break;
-                  
+
                 case getUploadedFileList:
                   jsonResponse = processGetFilesList(userID, jsonRoot, true);
                   break;
@@ -2456,93 +2473,101 @@ public class GUIManager
                 case removeTarget:
                   jsonResponse = processRemoveTarget(userID, jsonRoot);
                   break;
-                  
+
                 case updateCustomer:
                   jsonResponse = processUpdateCustomer(userID, jsonRoot);
                   break;
-                  
+
                 case getCommunicationChannelsList:
                   jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, true);
                   break;
-                  
+
                 case getCommunicationChannelsSummaryList:
                   jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, false);
                   break;
-                  
+
                 case getCommunicationChannel:
                   jsonResponse = processGetCommunicationChannel(userID, jsonRoot);
                   break;
-                  
+
                 case putCommunicationChannel:
                   jsonResponse = processPutCommunicationChannel(userID, jsonRoot);
                   break;
-                  
+
                 case removeCommunicationChannel:
                   jsonResponse = processRemoveCommunicationChannel(userID, jsonRoot);
                   break;
-                  
+
                 case getBlackoutPeriodsList:
                   jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true);
                   break;
-                  
+
                 case getBlackoutPeriodsSummaryList:
                   jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, false);
                   break;
-                  
+
                 case getBlackoutPeriods:
                   jsonResponse = processGetBlackoutPeriods(userID, jsonRoot);
                   break;
-                  
+
                 case putBlackoutPeriods:
                   jsonResponse = processPutBlackoutPeriods(userID, jsonRoot);
                   break;
-                  
+
                 case removeBlackoutPeriods:
                   jsonResponse = processRemoveBlackoutPeriods(userID, jsonRoot);
                   break;
-                  
+
                 case getLoyaltyProgramTypesList:
                   jsonResponse = processGetLoyaltyProgramTypesList(userID, jsonRoot);
                   break;
-                  
+
                 case getLoyaltyProgramsList:
                   jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, true);
                   break;
-                  
+
                 case getLoyaltyProgramsSummaryList:
                   jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, false);
                   break;
-                  
+
                 case getLoyaltyProgram:
                   jsonResponse = processGetLoyaltyProgram(userID, jsonRoot);
                   break;
-                  
+
                 case putLoyaltyProgram:
                   jsonResponse = processPutLoyaltyProgram(userID, jsonRoot);
                   break;
-                  
+
                 case removeLoyaltyProgram:
                   jsonResponse = processRemoveLoyaltyProgram(userID, jsonRoot);
                   break;
-                  
+
                 case getPartnersList:
                   jsonResponse = processGetPartnersList(userID, jsonRoot, true);
                   break;
-                  
+
                 case getPartnersSummaryList:
                   jsonResponse = processGetPartnersList(userID, jsonRoot, false);
                   break;
-                  
+
                 case getPartner:
                   jsonResponse = processGetSalesPartner(userID, jsonRoot);
                   break;
-                  
+
                 case putPartner:
                   jsonResponse = processPutSalesPartner(userID, jsonRoot);
                   break;
-                  
+
                 case removePartner:
                   jsonResponse = processRemoveSalesPartner(userID, jsonRoot);
+                  break;
+
+                case configAdaptorSupportedLanguages:
+                  jsonResponse = processConfigAdaptorSupportedLanguages(jsonRoot);
+                  break;
+
+                case configAdaptorSMSTemplate:
+                  jsonResponse = processConfigAdaptorSMSTemplate(jsonRoot);
                   break;
               }
           }
@@ -2562,10 +2587,10 @@ public class GUIManager
           }
 
         /*****************************************
-         *
-         *  send response
-         *
-         *****************************************/
+        *
+        *  send response
+        *
+        *****************************************/
 
         //
         //  standard response fields
@@ -2615,7 +2640,7 @@ public class GUIManager
         exchange.close();
       }
   }
-  
+
   /*****************************************
   *
   *  handleFileAPI
@@ -2720,7 +2745,7 @@ public class GUIManager
                 case putUploadedFile:
                   processPutFile(jsonResponse, exchange);
                   break;
-                  
+
                 case downloadReport:
                   processDownloadReport(userID, jsonRoot, jsonResponse, exchange);
                   break;
@@ -2763,407 +2788,7 @@ public class GUIManager
         exchange.close();
       }
   }
-  
-  /*****************************************
-  *
-  *  processPutFile
-  *
-  *****************************************/
 
-  private void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException
-  {
-    /****************************************
-    *
-    *  response map and object
-    *
-    ****************************************/
-
-    JSONObject jsonRoot = null;
-    String fileID = null;
-    String userID = null;
-    String responseText = null;
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    
-    /****************************************
-    *
-    *  check incoming request
-    *
-    ****************************************/
-
-    //
-    //  contentType
-    //
-
-    String contentType = exchange.getRequestHeaders().getFirst("Content-Type"); 
-    if(contentType == null)
-      { 
-        responseText = "Content-Type is null";    
-      }
-    else if (!contentType.startsWith(MULTIPART_FORM_DATA))
-      { 
-        responseText = "Message is not multipart/form-data";
-      } 
-
-    //
-    //  contentLength
-    //
-
-    String contentLengthString = exchange.getRequestHeaders().getFirst("Content-Length"); 
-    if(contentLengthString == null)
-      { 
-        responseText = "Content of message is null";  
-      } 
-
-    /****************************************
-    *
-    *  apache FileUpload API
-    *
-    ****************************************/
-
-    final InputStream requestBodyStream = exchange.getRequestBody(); 
-    final String contentEncoding = exchange.getRequestHeaders().getFirst("Content-Encoding");
-    FileUpload upload = new FileUpload(); 
-    FileItemIterator fileItemIterator; 
-    try
-      {
-        fileItemIterator = upload.getItemIterator(new RequestContext()
-        { 
-          public String getCharacterEncoding() { return contentEncoding; } 
-          public String getContentType() { return contentType; } 
-          public int getContentLength() { return 0; } 
-          public InputStream getInputStream() throws IOException { return requestBodyStream; }
-        }); 
-
-        if (!fileItemIterator.hasNext())
-          { 
-            responseText = "Body is empty";
-          }
-
-        //
-        // here we will extract the meta data of the request and the file
-        //
-
-        if (responseText == null)
-          {
-            boolean uploadFile = false;
-            while (fileItemIterator.hasNext())
-              {
-                FileItemStream fis = fileItemIterator.next();
-                if (fis.getFieldName().equals(FILE_UPLOAD_META_DATA))
-                  {
-                    InputStream streams = fis.openStream();
-                    String jsonAsString = Streams.asString(streams, "UTF-8");
-                    jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
-                    userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
-                    if(!jsonRoot.containsKey("id"))
-                      {
-                        fileID = uploadedFileService.generateFileID();
-                      }
-                    else
-                      {
-                        fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
-                      }
-                    jsonRoot.put("id", fileID);
-                    uploadFile = true;
-                  }
-                if (fis.getFieldName().equals(FILE_REQUEST) && uploadFile)
-                  {
-                    // converted the meta data and now attempting to save the file locally
-                    //
-
-                    long epoch = epochServer.getKey();
-
-                    /*****************************************
-                    *
-                    *  existing UploadedFile
-                    *
-                    *****************************************/
-
-                    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
-                    try
-                      {
-                        /****************************************
-                        *
-                        *  instantiate new UploadedFile
-                        *
-                        ****************************************/
-
-                        UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
-
-                        /*****************************************
-                        *
-                        *  store UploadedFile
-                        *
-                        *****************************************/
-
-                        uploadedFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
-
-                        /*****************************************
-                        *
-                        *  revalidate dependent objects
-                        *
-                        *****************************************/
-
-                        revalidateTargets(now);
-                        
-                        /*****************************************
-                        *
-                        *  response
-                        *
-                        *****************************************/
-
-                        jsonResponse.put("fileID", fileID);
-                        jsonResponse.put("id", fileID);
-                        jsonResponse.put("accepted", true);
-                        jsonResponse.put("valid", true);
-                        jsonResponse.put("processing", true);
-                        jsonResponse.put("responseCode", "ok");
-                      }
-                    catch (JSONUtilitiesException|GUIManagerException e)
-                      {
-                        //
-                        //  incompleteObject
-                        //
-
-                        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-                        //
-                        //  store
-                        //
-
-                        uploadedFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
-
-                        //
-                        //  revalidate dependent objects
-                        //
-
-                        revalidateTargets(now);
-
-                        //
-                        //  log
-                        //
-
-                        StringWriter stackTraceWriter = new StringWriter();
-                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-                        //
-                        //  response
-                        //
-
-                        jsonResponse.put("id", incompleteObject.getGUIManagedObjectID());
-                        jsonResponse.put("responseCode", "fileNotValid");
-                        jsonResponse.put("responseMessage", e.getMessage());
-                        jsonResponse.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-                      }
-                  }
-              }
-          }
-        else
-          {
-            jsonResponse.put("responseCode", "systemError");
-            jsonResponse.put("responseMessage", responseText);
-          }
-
-        //
-        //  log
-        //
-
-        log.debug("API (raw response): {}", jsonResponse.toString());
-
-        //
-        //  send
-        //
-
-        exchange.sendResponseHeaders(200, 0);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-        writer.write(jsonResponse.toString());
-        writer.close();
-        exchange.close();
-      }
-    catch (Exception e)
-      { 
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.error("Failed to write file REST api: {}", stackTraceWriter.toString());   
-        jsonResponse.put("responseCode", "systemError");
-        jsonResponse.put("responseMessage", e.getMessage());
-        exchange.sendResponseHeaders(200, 0);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-        writer.write(jsonResponse.toString());
-        writer.close();
-        exchange.close();
-      } 
-  }
-
-  /*****************************************
-  *
-  *  processGetFilesList
-  *
-  *****************************************/
-  
-  private JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert UploadedFiles
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> uploadedFiles = new ArrayList<JSONObject>();
-    String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
-    for (GUIManagedObject uploaded : uploadedFileService.getStoredGUIManagedObjects())
-      {
-        String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
-        if (Objects.equals(applicationID, fileApplicationID))
-          {
-            uploadedFiles.add(uploadedFileService.generateResponseJSON(uploaded, fullDetails, now));
-          }
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    //
-    //  uploadedFiles
-    //
-
-    HashMap<String,Object> responseResult = new HashMap<String,Object>();
-    responseResult.put("applicationID", applicationID);
-    responseResult.put("uploadedFiles", JSONUtilities.encodeArray(uploadedFiles));
-
-    //
-    //  response
-    //
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("uploadedFiles", JSONUtilities.encodeObject(responseResult));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processRemoveUploadedFile
-  *
-  *****************************************/
-  
-  public JSONObject processRemoveUploadedFile(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String uploadedFileID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(uploadedFileID);
-    if (existingFileUpload != null && !existingFileUpload.getReadOnly())
-      {
-        uploadedFileService.deleteUploadedFile(uploadedFileID, userID, (UploadedFile)existingFileUpload);
-      }
-
-    /*****************************************
-    *
-    *  revalidate dependent objects
-    *
-    *****************************************/
-
-    revalidateTargets(now);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingFileUpload != null && ! existingFileUpload.getReadOnly())
-      responseCode = "ok";
-    else if (existingFileUpload != null) 
-      responseCode = "failedReadOnly";
-    else 
-      responseCode = "uploadedFileNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  getCustomerAlternateIDs
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerAlternateIDs(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve alternateIDs
-    *
-    *****************************************/
-
-    List<JSONObject> alternateIDs = new ArrayList<JSONObject>();
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-      {
-        JSONObject json = new JSONObject();
-        json.put("id", alternateID.getID());
-        json.put("display", alternateID.getDisplay());
-        alternateIDs.add(json);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("alternateIDs", JSONUtilities.encodeArray(alternateIDs));
-    return JSONUtilities.encodeObject(response);
-  }
-  
   /*****************************************
   *
   *  processFailedLicenseCheck
@@ -3173,1413 +2798,8 @@ public class GUIManager
   private JSONObject processFailedLicenseCheck(LicenseState licenseState)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();
-
     response.put("responseCode", "failedLicenseCheck");
     response.put("responseMessage", licenseState.getOutcome().name());
-
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetTarget
-  *
-  *****************************************/
- 
-  private JSONObject processGetTarget(String userID, JSONObject jsonRoot)
-  {
-    log.info("GUIManager.processGetTarget("+userID+", "+jsonRoot+") called ...");
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate target
-    *
-    *****************************************/
-
-    GUIManagedObject target = targetService.getStoredTarget(targetID);
-    JSONObject targetJSON = targetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (target != null) ? "ok" : "targetNotFound");
-    if (target != null) response.put("target", targetJSON);
-
-    log.info("GUIManager.processGetTarget("+userID+", "+jsonRoot+") DONE");
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-   *
-   *  processPutTarget
-   *
-   *****************************************/
-
-  private JSONObject processPutTarget(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  targetID
-    *
-    *****************************************/
-
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (targetID == null)
-      {
-        targetID = targetService.generateTargetID();
-        jsonRoot.put("id", targetID);
-      }
-
-    /*****************************************
-    *
-    *  existing target
-    *
-    *****************************************/
-
-    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingTarget != null && existingTarget.getReadOnly())
-      {
-        response.put("id", existingTarget.getGUIManagedObjectID());
-        response.put("accepted", existingTarget.getAccepted());
-        response.put("valid", existingTarget.getAccepted());
-        response.put("processing", targetService.isActiveTarget(existingTarget, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process target
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-    {
-      /****************************************
-      *
-      *  instantiate Target
-      *
-      ****************************************/
-
-      Target target = new Target(jsonRoot, epoch, existingTarget);
-
-      /*****************************************
-      *
-      *  store
-      *
-      *****************************************/
-
-      targetService.putTarget(target, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
-
-      /*****************************************
-      *
-      *  revalidate dependent objects
-      *
-      *****************************************/
-
-      revalidateJourneys(now);
-
-      /*****************************************
-      *
-      *  response
-      *
-      *****************************************/
-
-      response.put("id", target.getGUIManagedObjectID());
-      response.put("accepted", target.getAccepted());
-      response.put("valid", target.getAccepted());
-      response.put("processing", targetService.isActiveTarget(target, now));
-      response.put("responseCode", "ok");
-      return JSONUtilities.encodeObject(response);
-    }
-    catch (JSONUtilitiesException|GUIManagerException e)
-    {
-      //
-      //  incompleteObject
-      //
-
-      IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-      //
-      //  store
-      //
-
-      targetService.putTarget(incompleteObject, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
-
-      //
-      //  revalidate dependent objects
-      //
-
-      revalidateJourneys(now);
-      
-      //
-      //  log
-      //
-
-      StringWriter stackTraceWriter = new StringWriter();
-      e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-      //
-      //  response
-      //
-
-      response.put("targetID", incompleteObject.getGUIManagedObjectID());
-      response.put("responseCode", "targetNotValid");
-      response.put("responseMessage", e.getMessage());
-      response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-      return JSONUtilities.encodeObject(response);
-    }
-  }
-  
-  /*****************************************
-  *
-  *  processGetCommunicationChannel
-  *
-  *****************************************/
- 
-  private JSONObject processGetCommunicationChannel(String userID, JSONObject jsonRoot)
-  {
-    log.info("GUIManager.processGetCommunicationChannel("+userID+", "+jsonRoot+") called ...");
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate communication channel
-    *
-    *****************************************/
-
-    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-    JSONObject communicationChannelJSON = communicationChannelService.generateResponseJSON(communicationChannel, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
-    if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
-
-    log.info("GUIManager.processGetCommunicationChannel("+userID+", "+jsonRoot+") DONE");
-
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetTargetList
-  *
-  *****************************************/
-
-  private JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-
-    /*****************************************
-    *
-    *  retrieve target list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> targetLists = new ArrayList<JSONObject>();
-    for (GUIManagedObject targetList : targetService.getStoredTargets())
-      {
-        JSONObject targetResponse = targetService.generateResponseJSON(targetList, fullDetails, now);
-        targetResponse.put("isRunning", targetService.isActiveTarget(targetList, now) ? targetService.isTargetFileBeingProcessed((Target) targetList) : false);
-        targetLists.add(targetResponse);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("targets", JSONUtilities.encodeArray(targetLists));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processRemoveTarget
-  *
-  *****************************************/
-  
-  private JSONObject processRemoveTarget(String userID, JSONObject jsonRoot){
-    
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
-    if (existingTarget != null && !existingTarget.getReadOnly()) {
-      targetService.removeTarget(targetID, userID);
-    }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingTarget != null && !existingTarget.getReadOnly()) {
-      responseCode = "ok";
-    }
-    else if (existingTarget != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "targetNotFound";
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetCommunicationChannelsList
-  *
-  *****************************************/
-
-  private JSONObject processGetCommunicationChannelsList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve communication channel list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> communicationChannelList = new ArrayList<JSONObject>();
-    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels())
-      {
-        JSONObject channel = communicationChannelService.generateResponseJSON(communicationChannel, fullDetails, now);
-        communicationChannelList.add(channel);
-      }
-
-    List<JSONObject> defaultTimeWindowList = new ArrayList<JSONObject>();
-    NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
-    
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
-    response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processPutCommunicationChannel
-  *
-  *****************************************/
-
- private JSONObject processPutCommunicationChannel(String userID, JSONObject jsonRoot)
- {
-   /****************************************
-   *
-   *  response
-   *
-   ****************************************/
-
-   Date now = SystemTime.getCurrentTime();
-   HashMap<String,Object> response = new HashMap<String,Object>();
-
-   /*****************************************
-   *
-   *  communicationChannelID
-   *
-   *****************************************/
-
-   String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
-   if (communicationChannelID == null)
-     {
-       communicationChannelID = communicationChannelService.generateCommunicationChannelID();
-       jsonRoot.put("id", communicationChannelID);
-     }
-
-   /*****************************************
-   *
-   *  existing CommunicationChannel
-   *
-   *****************************************/
-
-   GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-
-   /*****************************************
-   *
-   *  read-only
-   *
-   *****************************************/
-
-   if (existingCommunicationChannel != null && existingCommunicationChannel.getReadOnly())
-     {
-       response.put("id", existingCommunicationChannel.getGUIManagedObjectID());
-       response.put("accepted", existingCommunicationChannel.getAccepted());
-       response.put("valid", existingCommunicationChannel.getAccepted());
-       response.put("processing", communicationChannelService.isActiveCommunicationChannel(existingCommunicationChannel, now));
-       response.put("responseCode", "failedReadOnly");
-       return JSONUtilities.encodeObject(response);
-     }
-
-   /*****************************************
-   *
-   *  process CommunicationChannel
-   *
-   *****************************************/
-
-   long epoch = epochServer.getKey();
-   try
-   {
-     /****************************************
-     *
-     *  instantiate CommunicationChannel
-     *
-     ****************************************/
-
-     CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, epoch, existingCommunicationChannel);
-
-     /*****************************************
-     *
-     *  store
-     *
-     *****************************************/
-
-     communicationChannelService.putCommunicationChannel(communicationChannel, (existingCommunicationChannel == null), userID);
-
-     /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
-
-     response.put("id", communicationChannel.getGUIManagedObjectID());
-     response.put("accepted", communicationChannel.getAccepted());
-     response.put("valid", communicationChannel.getAccepted());
-     response.put("processing", communicationChannelService.isActiveCommunicationChannel(communicationChannel, now));
-     response.put("responseCode", "ok");
-     return JSONUtilities.encodeObject(response);
-   }
-   catch (JSONUtilitiesException|GUIManagerException e)
-   {
-     //
-     //  incompleteObject
-     //
-
-     IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-     //
-     //  store
-     //
-
-     communicationChannelService.putCommunicationChannel(incompleteObject, (existingCommunicationChannel == null), userID);
-     
-     //
-     //  log
-     //
-
-     StringWriter stackTraceWriter = new StringWriter();
-     e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-     //
-     //  response
-     //
-
-     response.put("communicationChannelID", incompleteObject.getGUIManagedObjectID());
-     response.put("responseCode", "communicationChannelNotValid");
-     response.put("responseMessage", e.getMessage());
-     response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-     return JSONUtilities.encodeObject(response);
-   }
- }
-  
-  /*****************************************
-  *
-  *  processRemoveCommunicationChannel
-  *
-  *****************************************/
-  
-  private JSONObject processRemoveCommunicationChannel(String userID, JSONObject jsonRoot){
-    
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-    if (existingCommunicationChannel != null && !existingCommunicationChannel.getReadOnly()) {
-      communicationChannelService.removeCommunicationChannel(communicationChannelID, userID);
-    }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingCommunicationChannel != null && !existingCommunicationChannel.getReadOnly()) {
-      responseCode = "ok";
-    }
-    else if (existingCommunicationChannel != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "communicationChannelNotFound";
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetBlackoutPeriods
-  *
-  *****************************************/
- 
-  private JSONObject processGetBlackoutPeriods(String userID, JSONObject jsonRoot)
-  {
-    log.info("GUIManager.processGetBlackoutPeriods("+userID+", "+jsonRoot+") called ...");
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String communicationChannelBlackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /**************************************************************
-    *
-    *  retrieve and decorate communication channel blackout period
-    *
-    ***************************************************************/
-
-    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
-    JSONObject communicationChannelBlackoutPeriodJSON = communicationChannelBlackoutService.generateResponseJSON(communicationChannelBlackoutPeriod, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (communicationChannelBlackoutPeriod != null) ? "ok" : "communicationChannelBlackoutPeriodNotFound");
-    if (communicationChannelBlackoutPeriod != null) response.put("blackoutPeriods", communicationChannelBlackoutPeriodJSON);
-
-    log.info("GUIManager.processGetBlackoutPeriods("+userID+", "+jsonRoot+") DONE");
-
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetBlackoutPeriodsList
-  *
-  *****************************************/
-
-  private JSONObject processGetBlackoutPeriodsList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve blackout period list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> communicationChannelBlackoutList = new ArrayList<JSONObject>();
-    for (GUIManagedObject blackoutPeriods : communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts())
-      {
-        JSONObject blackoutPeriod = communicationChannelBlackoutService.generateResponseJSON(blackoutPeriods, fullDetails, now);
-        communicationChannelBlackoutList.add(blackoutPeriod);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("blackoutPeriods", JSONUtilities.encodeArray(communicationChannelBlackoutList));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processPutBlackoutPeriods
-  *
-  *****************************************/
-
- private JSONObject processPutBlackoutPeriods(String userID, JSONObject jsonRoot)
- {
-   /****************************************
-   *
-   *  response
-   *
-   ****************************************/
-
-   Date now = SystemTime.getCurrentTime();
-   HashMap<String,Object> response = new HashMap<String,Object>();
-
-   /*****************************************
-   *
-   *  CommunicationChannelBlackoutPeriodID
-   *
-   *****************************************/
-
-   String communicationChannelBlackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", false);
-   if (communicationChannelBlackoutPeriodID == null)
-     {
-       communicationChannelBlackoutPeriodID = communicationChannelBlackoutService.generateCommunicationChannelBlackoutID();
-       jsonRoot.put("id", communicationChannelBlackoutPeriodID);
-     }
-
-   /*****************************************
-   *
-   *  existing CommunicationChannelBlackoutPeriod
-   *
-   *****************************************/
-
-   GUIManagedObject existingCommunicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
-
-   /*****************************************
-   *
-   *  read-only
-   *
-   *****************************************/
-
-   if (existingCommunicationChannelBlackoutPeriod != null && existingCommunicationChannelBlackoutPeriod.getReadOnly())
-     {
-       response.put("id", existingCommunicationChannelBlackoutPeriod.getGUIManagedObjectID());
-       response.put("accepted", existingCommunicationChannelBlackoutPeriod.getAccepted());
-       response.put("valid", existingCommunicationChannelBlackoutPeriod.getAccepted());
-       response.put("processing", communicationChannelBlackoutService.isActiveCommunicationChannelBlackout(existingCommunicationChannelBlackoutPeriod, now));
-       response.put("responseCode", "failedReadOnly");
-       return JSONUtilities.encodeObject(response);
-     }
-
-   /*****************************************
-   *
-   *  process CommunicationChannelBlackoutPeriod
-   *
-   *****************************************/
-
-   long epoch = epochServer.getKey();
-   try
-   {
-     /****************************************
-     *
-     *  instantiate CommunicationChannelBlackoutPeriod
-     *
-     ****************************************/
-
-     CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = new CommunicationChannelBlackoutPeriod(jsonRoot, epoch, existingCommunicationChannelBlackoutPeriod);
-
-     /*****************************************
-     *
-     *  store
-     *
-     *****************************************/
-
-     communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod, (existingCommunicationChannelBlackoutPeriod == null), userID);
-
-     /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
-
-     response.put("id", communicationChannelBlackoutPeriod.getGUIManagedObjectID());
-     response.put("accepted", communicationChannelBlackoutPeriod.getAccepted());
-     response.put("valid", communicationChannelBlackoutPeriod.getAccepted());
-     response.put("processing", communicationChannelBlackoutService.isActiveCommunicationChannelBlackout(communicationChannelBlackoutPeriod, now));
-     response.put("responseCode", "ok");
-     return JSONUtilities.encodeObject(response);
-   }
-   catch (JSONUtilitiesException|GUIManagerException e)
-   {
-     //
-     //  incompleteObject
-     //
-
-     IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-     //
-     //  store
-     //
-
-     communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject, (existingCommunicationChannelBlackoutPeriod == null), userID);
-     
-     //
-     //  log
-     //
-
-     StringWriter stackTraceWriter = new StringWriter();
-     e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-     //
-     //  response
-     //
-
-     response.put("id", incompleteObject.getGUIManagedObjectID());
-     response.put("responseCode", "communicationChannelBlackoutPeriodNotValid");
-     response.put("responseMessage", e.getMessage());
-     response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-     return JSONUtilities.encodeObject(response);
-   }
- }
-  
-  /*****************************************
-  *
-  *  processRemoveBlackoutPeriods
-  *
-  *****************************************/
-  
-  private JSONObject processRemoveBlackoutPeriods(String userID, JSONObject jsonRoot){
-    
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String blackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID);
-    if (existingBlackoutPeriod != null && !existingBlackoutPeriod.getReadOnly()) {
-      communicationChannelBlackoutService.removeCommunicationChannelBlackout(blackoutPeriodID, userID);
-    }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingBlackoutPeriod != null && !existingBlackoutPeriod.getReadOnly()) {
-      responseCode = "ok";
-    }
-    else if (existingBlackoutPeriod != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "communicationChannelBlackoutNotFound";
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetLoyaltyProgramTypesList
-  *
-  *****************************************/
-
-  private JSONObject processGetLoyaltyProgramTypesList(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve loyalty program type list
-    *
-    *****************************************/
-    
-    List<JSONObject> programTypeList = new ArrayList<JSONObject>();
-    for (ProgramType programType : Deployment.getProgramTypes().values())
-      {
-        JSONObject programTypeJSON = programType.getJSONRepresentation();
-        programTypeList.add(programTypeJSON);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("programTypes", JSONUtilities.encodeArray(programTypeList));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetPartnersList
-  *
-  *****************************************/
-
-  private JSONObject processGetPartnersList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve sales partner list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> salesPartnerList = new ArrayList<JSONObject>();
-    for (GUIManagedObject salesPartner : salesPartnerService.getStoredGUIManagedObjects())
-      {
-        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(salesPartner, fullDetails, now);
-        salesPartnerList.add(loyaltyPro);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("salesPartners", JSONUtilities.encodeArray(salesPartnerList));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetSalesPartner
-  *
-  *****************************************/
- 
-  private JSONObject processGetSalesPartner(String userID, JSONObject jsonRoot)
-  {
-    log.info("GUIManager.processGetSalesPartner("+userID+", "+jsonRoot+") called ...");
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /**************************************************************
-    *
-    *  retrieve and decorate salesPartner
-    *
-    ***************************************************************/
-
-    GUIManagedObject salesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
-    JSONObject salesPartnerJSON = salesPartnerService.generateResponseJSON(salesPartner, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (salesPartner != null) ? "ok" : "salesPartnerNotFound");
-    if (salesPartner != null) response.put("salesPartner", salesPartnerJSON);
-
-    log.info("GUIManager.processGetSalesPartner("+userID+", "+jsonRoot+") DONE");
-
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processPutSalesPartner
-  *
-  *****************************************/
-
- private JSONObject processPutSalesPartner(String userID, JSONObject jsonRoot)
- {
-   /****************************************
-   *
-   *  response
-   *
-   ****************************************/
-
-   Date now = SystemTime.getCurrentTime();
-   HashMap<String,Object> response = new HashMap<String,Object>();
-
-   /*****************************************
-   *
-   *  salesPartnerID
-   *
-   *****************************************/
-
-   String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", false);
-   if (salesPartnerID == null)
-     {
-       salesPartnerID = salesPartnerService.generateSalesPartnerID();
-       jsonRoot.put("id", salesPartnerID);
-     }
-
-   /*****************************************
-   *
-   *  existing SalesPartner
-   *
-   *****************************************/
-
-   GUIManagedObject existingSalesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
-
-   /*****************************************
-   *
-   *  read-only
-   *
-   *****************************************/
-
-   if (existingSalesPartner != null && existingSalesPartner.getReadOnly())
-     {
-       response.put("id", existingSalesPartner.getGUIManagedObjectID());
-       response.put("accepted", existingSalesPartner.getAccepted());
-       response.put("valid", existingSalesPartner.getAccepted());
-       response.put("processing", salesPartnerService.isActiveSalesPartner(existingSalesPartner, now));
-       response.put("responseCode", "failedReadOnly");
-       return JSONUtilities.encodeObject(response);
-     }
-
-   /*****************************************
-   *
-   *  process SalesPartner
-   *
-   *****************************************/
-
-   long epoch = epochServer.getKey();
-   try
-   {
-     /****************************************
-     *
-     *  instantiate SalesPartner
-     *
-     ****************************************/
-
-     SalesPartner salesPartner = new SalesPartner(jsonRoot, epoch, existingSalesPartner);
-
-     /*****************************************
-     *
-     *  store
-     *
-     *****************************************/
-
-     salesPartnerService.putSalesPartner(salesPartner, (existingSalesPartner == null), userID);
-
-     /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
-
-     response.put("id", salesPartner.getGUIManagedObjectID());
-     response.put("accepted", salesPartner.getAccepted());
-     response.put("valid", salesPartner.getAccepted());
-     response.put("processing", salesPartnerService.isActiveSalesPartner(existingSalesPartner, now));
-     response.put("responseCode", "ok");
-     return JSONUtilities.encodeObject(response);
-   }
-   catch (JSONUtilitiesException|GUIManagerException e)
-   {
-     //
-     //  incompleteObject
-     //
-
-     IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-     //
-     //  store
-     //
-
-     salesPartnerService.putSalesPartner(incompleteObject, (existingSalesPartner == null), userID);
-     
-     //
-     //  log
-     //
-
-     StringWriter stackTraceWriter = new StringWriter();
-     e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-     //
-     //  response
-     //
-
-     response.put("id", incompleteObject.getGUIManagedObjectID());
-     response.put("responseCode", "loyaltyProgramNotValid");
-     response.put("responseMessage", e.getMessage());
-     response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-     return JSONUtilities.encodeObject(response);
-   }
- }
- 
- /*****************************************
- *
- *  processRemoveSalesPartner
- *
- *****************************************/
- 
- private JSONObject processRemoveSalesPartner(String userID, JSONObject jsonRoot){
-   
-   /****************************************
-   *
-   *  response
-   *
-   ****************************************/
-
-   HashMap<String,Object> response = new HashMap<String,Object>();
-
-   /****************************************
-   *
-   *  argument
-   *
-   ****************************************/
-
-   String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-   /*****************************************
-   *
-   *  remove
-   *
-   *****************************************/
-
-   GUIManagedObject existingSalesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
-   if (existingSalesPartner != null && !existingSalesPartner.getReadOnly()) {
-     salesPartnerService.removeSalesPartner(salesPartnerID, userID);
-   }
-
-   /*****************************************
-   *
-   *  responseCode
-   *
-   *****************************************/
-
-   String responseCode;
-   if (existingSalesPartner != null && !existingSalesPartner.getReadOnly()) {
-     responseCode = "ok";
-   }
-   else if (existingSalesPartner != null) {
-     responseCode = "failedReadOnly";
-   }
-   else {
-     responseCode = "salesPartnerNotFound";
-   }
-
-   /*****************************************
-   *
-   *  response
-   *
-   *****************************************/
-
-   response.put("responseCode", responseCode);
-   return JSONUtilities.encodeObject(response);
- }
-  
-  /*****************************************
-  *
-  *  processGetLoyaltyProgramsList
-  *
-  *****************************************/
-
-  private JSONObject processGetLoyaltyProgramsList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve loyalty program list
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> loyaltyProgramList = new ArrayList<JSONObject>();
-    for (GUIManagedObject loyaltyProgram : loyaltyProgramService.getStoredGUIManagedObjects())
-      {
-        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
-        loyaltyProgramList.add(loyaltyPro);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramList));
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetLoyaltyProgram
-  *
-  *****************************************/
- 
-  private JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot)
-  {
-    log.info("GUIManager.processGetLoyaltyProgram("+userID+", "+jsonRoot+") called ...");
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /**************************************************************
-    *
-    *  retrieve and decorate loyalty program
-    *
-    ***************************************************************/
-
-    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-    JSONObject loyaltyProgramJSON = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramNotFound");
-    if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
-
-    log.info("GUIManager.processGetLoyaltyProgram("+userID+", "+jsonRoot+") DONE");
-
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processPutLoyaltyProgram
-  *
-  *****************************************/
-
- private JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot)
- {
-   /****************************************
-   *
-   *  response
-   *
-   ****************************************/
-
-   Date now = SystemTime.getCurrentTime();
-   HashMap<String,Object> response = new HashMap<String,Object>();
-
-   /*****************************************
-   *
-   *  loyaltyProgramID
-   *
-   *****************************************/
-
-   String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", false);
-   if (loyaltyProgramID == null)
-     {
-       loyaltyProgramID = loyaltyProgramService.generateLoyaltyProgramID();
-       jsonRoot.put("id", loyaltyProgramID);
-     }
-
-   /*****************************************
-   *
-   *  existing LoyaltyProgram
-   *
-   *****************************************/
-
-   GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-
-   /*****************************************
-   *
-   *  read-only
-   *
-   *****************************************/
-
-   if (existingLoyaltyProgram != null && existingLoyaltyProgram.getReadOnly())
-     {
-       response.put("id", existingLoyaltyProgram.getGUIManagedObjectID());
-       response.put("accepted", existingLoyaltyProgram.getAccepted());
-       response.put("valid", existingLoyaltyProgram.getAccepted());
-       response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingLoyaltyProgram, now));
-       response.put("responseCode", "failedReadOnly");
-       return JSONUtilities.encodeObject(response);
-     }
-
-   /*****************************************
-   *
-   *  process LoyaltyProgram
-   *
-   *****************************************/
-
-   long epoch = epochServer.getKey();
-   try
-   {
-     /****************************************
-     *
-     *  instantiate LoyaltyProgram
-     *
-     ****************************************/
-
-     LoyaltyProgram loyaltyProgram = new LoyaltyProgram(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
-
-     /*****************************************
-     *
-     *  store
-     *
-     *****************************************/
-
-     loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
-
-     /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
-
-     response.put("id", loyaltyProgram.getGUIManagedObjectID());
-     response.put("accepted", loyaltyProgram.getAccepted());
-     response.put("valid", loyaltyProgram.getAccepted());
-     response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingLoyaltyProgram, now));
-     response.put("responseCode", "ok");
-     return JSONUtilities.encodeObject(response);
-   }
-   catch (JSONUtilitiesException|GUIManagerException e)
-   {
-     //
-     //  incompleteObject
-     //
-
-     IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-     //
-     //  store
-     //
-
-     loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID);
-     
-     //
-     //  log
-     //
-
-     StringWriter stackTraceWriter = new StringWriter();
-     e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-     log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-     //
-     //  response
-     //
-
-     response.put("id", incompleteObject.getGUIManagedObjectID());
-     response.put("responseCode", "loyaltyProgramNotValid");
-     response.put("responseMessage", e.getMessage());
-     response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-     return JSONUtilities.encodeObject(response);
-   }
- }
-  
-  /*****************************************
-  *
-  *  processRemoveLoyaltyProgram
-  *
-  *****************************************/
-  
-  private JSONObject processRemoveLoyaltyProgram(String userID, JSONObject jsonRoot){
-    
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly()) {
-      loyaltyProgramService.removeLoyaltyProgram(loyaltyProgramID, userID);
-    }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly()) {
-      responseCode = "ok";
-    }
-    else if (existingLoyaltyProgram != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "loyaltyProgamNotFound";
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5130,7 +3350,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     return JSONUtilities.encodeObject(response);
-  }
+  } 
 
   /*****************************************
   *
@@ -5473,7 +3693,7 @@ public class GUIManager
         CriterionContext criterionContext = new CriterionContext(journeyParameters, Journey.processContextVariableNodes(contextVariableNodes, journeyParameters), journeyNodeType, journeyNodeEvent, false);
         journeyCriterionFields = processCriterionFields(criterionContext.getCriterionFields(), tagsOnly);
       }
-    
+
     /*****************************************
     *
     *  strip out everything but id/display
@@ -5722,7 +3942,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes(), journeyParameters, contextVariables);
-    
+
     /*****************************************
     *
     *  response
@@ -5770,23 +3990,26 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getCampaignToolbox
+  *  processGetJourneyList
   *
   *****************************************/
 
-  private JSONObject processGetCampaignToolbox(String userID, JSONObject jsonRoot)
+  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails)
   {
     /*****************************************
     *
-    *  retrieve campaignToolboxSections
+    *  retrieve and convert journeys
     *
     *****************************************/
 
-    List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
-    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> journeys = new ArrayList<JSONObject>();
+    for (GUIManagedObject journey : journeyService.getStoredJourneys())
       {
-        JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
-        campaignToolboxSections.add(campaignToolboxSectionJSON);
+        if (journey.getGUIManagedObjectType().equals(objectType))
+          {
+            journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
+          }
       }
 
     /*****************************************
@@ -5797,1106 +4020,393 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
+    switch (objectType) {
+        case Journey:
+          response.put("journeys", JSONUtilities.encodeArray(journeys));
+          break;
+
+        case Campaign:
+          response.put("campaigns", JSONUtilities.encodeArray(journeys));
+          break;
+
+        case BulkCampaign:
+          response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
+          break;
+
+        default:
+          response.put("journeys", JSONUtilities.encodeArray(journeys));
+          break;
+    }
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processCriterionFields
+  *  processGetJourney
   *
   *****************************************/
 
-  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly)
+  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
   {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
     /*****************************************
     *
-    *  filter out parameter-only and tag-only data types
+    *  retrieve and decorate campaign
+    *
+    *****************************************/
+
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
+    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    switch (objectType) {
+        case Journey:
+          response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
+          if (journey != null) response.put("journey", journeyJSON);
+          break;
+
+        case Campaign:
+          response.put("responseCode", (journey != null) ? "ok" : "campaignNotFound");
+          if (journey != null) response.put("campaign", journeyJSON);
+          break;
+
+        case BulkCampaign:
+          response.put("responseCode", (journey != null) ? "ok" : "bulkCampaignNotFound");
+          if (journey != null) response.put("bulkCampaign", journeyJSON);
+          break;
+
+        default:
+          response.put("responseCode", (journey != null) ? "ok" : "notFound");
+          if (journey != null) response.put("journey", journeyJSON);
+          break;
+    }
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutJourney
+  *
+  *****************************************/
+
+  private JSONObject processPutJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  journeyID
+    *
+    *****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (journeyID == null)
+      {
+        journeyID = journeyService.generateJourneyID();
+        jsonRoot.put("id", journeyID);
+      }
+
+    /*****************************************
+    *
+    *  existing journey
+    *
+    *****************************************/
+
+    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == objectType) ? existingJourney : null;
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingJourney != null && existingJourney.getReadOnly())
+      {
+        response.put("id", existingJourney.getGUIManagedObjectID());
+        response.put("accepted", existingJourney.getAccepted());
+        response.put("valid", existingJourney.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process journey
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate journey
+        *
+        ****************************************/
+
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+
+        /*****************************************
+        *
+        *  handle related deliverable
+        *
+        *****************************************/
+
+        if(GUIManagedObjectType.Campaign.equals(objectType)){
+          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+          String providerID = (String) deliveryManagerJSON.get("providerID");
+          if(journey.getTargetingType().equals(TargetingType.Manual))
+            {
+
+              //
+              // create deliverable  --  only if campaign has "manual provisioning"
+              //
+
+              Map<String, Object> deliverableMap = new HashMap<String, Object>();
+              deliverableMap.put("id", "journey-" + journey.getJourneyID());
+              deliverableMap.put("fulfillmentProviderID", providerID);
+              deliverableMap.put("commodityID", journey.getJourneyID());
+              deliverableMap.put("name", journey.getJourneyName());
+              deliverableMap.put("display", journey.getJourneyName());
+              deliverableMap.put("active", true);
+              deliverableMap.put("unitaryCost", 0);
+              Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+              deliverableService.putDeliverable(deliverable, true, userID);
+            }
+          else
+            {
+
+              //
+              // delete deliverable  --  only if campaign does NOT have "manual provisioning"
+              //
+
+              // TODO SCH : may need to check that deliverable is not used in any offer
+
+              for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+                {
+                  Deliverable deliverable = (Deliverable)deliverableOgbject;
+                  if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journey.getJourneyID()))
+                    {
+                      deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                    }
+                }
+
+            }
+        }
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", journey.getJourneyID());
+        response.put("accepted", journey.getAccepted());
+        response.put("valid", journey.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(journey, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, objectType, epoch);
+
+        //
+        //  store
+        //
+
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        switch (objectType) 
+          {
+            case Journey:
+              response.put("responseCode", "journeyNotValid");
+              break;
+
+            case Campaign:
+              response.put("responseCode", "campaignNotValid");
+              break;
+
+            case BulkCampaign:
+              response.put("responseCode", "bulkCampaignNotValid");
+              break;
+
+            default:
+              response.put("responseCode", "notValid");
+              break;
+          }
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveJourney
+  *
+  *****************************************/
+
+  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
     *
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    Map<String,CriterionField> criterionFields = new LinkedHashMap<String,CriterionField>();
-    for (CriterionField criterionField : baseCriterionFields.values())
-      {
-        switch (criterionField.getFieldDataType())
-          {
-            case IntegerCriterion:
-            case DoubleCriterion:
-            case StringCriterion:
-            case BooleanCriterion:
-            case DateCriterion:
-              criterionFields.put(criterionField.getID(), criterionField);
-              break;
-
-            case StringSetCriterion:
-              if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
-              break;
-          }
-      }
 
     /****************************************
     *
-    *  resolve field data types
+    *  argument
     *
     ****************************************/
 
-    Map<String, ResolvedFieldType> resolvedFieldTypes = new LinkedHashMap<String, ResolvedFieldType>();
-    Map<String, List<JSONObject>> resolvedAvailableValues = new LinkedHashMap<String, List<JSONObject>>();
-    for (CriterionField criterionField : criterionFields.values())
-      {
-        List<JSONObject> availableValues = evaluateAvailableValues(criterionField, now, true);
-        resolvedFieldTypes.put(criterionField.getID(), new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
-        resolvedAvailableValues.put(criterionField.getID(), availableValues);
-      }
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
-    /****************************************
+    /*****************************************
     *
-    *  default list of fields for each field data type
+    *  remove
     *
-    ****************************************/
+    *****************************************/
 
-    Map<ResolvedFieldType, List<CriterionField>> defaultFieldsForResolvedType = new LinkedHashMap<ResolvedFieldType, List<CriterionField>>();
-    for (CriterionField criterionField : criterionFields.values())
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
+    if (journey != null && ! journey.getReadOnly()) 
       {
-        if (! criterionField.getID().equals(CriterionField.EvaluationDateField))
-          {
-            ResolvedFieldType resolvedFieldType = resolvedFieldTypes.get(criterionField.getID());
-            List<CriterionField> fields = defaultFieldsForResolvedType.get(resolvedFieldType);
-            if (fields == null)
-              {
-                fields = new ArrayList<CriterionField>();
-                defaultFieldsForResolvedType.put(resolvedFieldType, fields);
-              }
-            fields.add(criterionField);
-          }
+
+        //
+        // remove journey
+        //
+
+        journeyService.removeJourney(journeyID, userID);
+
+        //
+        // remove related deliverable
+        //
+
+        if(GUIManagedObjectType.Campaign.equals(objectType)){
+          // TODO SCH : what if deliverable is used in an offer ?
+          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+          String providerID = (String) deliveryManagerJSON.get("providerID");
+          for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+            {
+              Deliverable deliverable = (Deliverable)deliverableOgbject;
+              if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journeyID))
+                {
+                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                }
+            }
+        }
+
       }
 
-    /****************************************
+    /*****************************************
     *
-    *  process
+    *  responseCode
     *
-    ****************************************/
+    *****************************************/
 
-    List<JSONObject> result = new ArrayList<JSONObject>();
-    for (CriterionField criterionField : criterionFields.values())
-      {
-        if (! criterionField.getInternalOnly())
-          {
-            //
-            //  remove server-side fields
-            //
+    String responseCode;
+    if (journey != null && ! journey.getReadOnly())
+      responseCode = "ok";
+    else if (journey != null)
+      responseCode = "failedReadOnly";
+    else {
+      switch (objectType) {
+          case Journey:
+            responseCode = "journeyNotFound";
+            break;
 
-            JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
-            criterionFieldJSON.remove("esField");
-            criterionFieldJSON.remove("retriever");
+          case Campaign:
+            responseCode = "campaignNotFound";
+            break;
 
-            //
-            //  evaluate operators
-            //
+          case BulkCampaign:
+            responseCode = "bulkCampaignNotFound";
+            break;
 
-            List<JSONObject> fieldAvailableValues = resolvedAvailableValues.get(criterionField.getID());
-            List<JSONObject> operators = evaluateOperators(criterionFieldJSON, fieldAvailableValues);
-            criterionFieldJSON.put("operators", operators);
-            criterionFieldJSON.remove("includedOperators");
-            criterionFieldJSON.remove("excludedOperators");
-
-            //
-            //  evaluate comparable fields
-            //
-
-            List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
-            criterionFieldJSON.put("singletonComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true));
-            criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
-            criterionFieldJSON.remove("includedComparableFields");
-            criterionFieldJSON.remove("excludedComparableFields");
-
-            //
-            //  evaluate available values for reference data
-            //
-
-            criterionFieldJSON.put("availableValues", resolvedAvailableValues.get(criterionField.getID()));
-
-            //
-            //  resolve maxTagLength
-            //
-
-            criterionFieldJSON.put("tagMaxLength", criterionField.resolveTagMaxLength());
-
-            //
-            //  normalize set-valued dataTypes to singleton-valued dataTypes (required by GUI)
-            //
-
-            switch (criterionField.getFieldDataType())
-              {
-                case StringSetCriterion:
-                  criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
-                  break;
-              }
-
-            //
-            //  add
-            //
-
-            result.add(criterionFieldJSON);
-          }
+          default:
+            responseCode = "notFound";
+            break;
       }
+    }
 
-    //
-    //  return
-    //
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
 
-    return result;
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
   }
-
-  /****************************************
-  *
-  *  evaluateOperators
-  *
-  ****************************************/
-
-  private List<JSONObject> evaluateOperators(JSONObject criterionFieldJSON, List<JSONObject> fieldAvailableValues)
-  {
-    //
-    //  all operators
-    //
-
-    Map<String,SupportedOperator> supportedOperatorsForType = Deployment.getSupportedDataTypes().get(criterionFieldJSON.get("dataType")).getOperators();
-
-    //
-    //  remove set operators for non-enumerated types
-    //
-
-    List<String> supportedOperators = new ArrayList<String>();
-    for (String supportedOperatorID : supportedOperatorsForType.keySet())
-      {
-        SupportedOperator supportedOperator = supportedOperatorsForType.get(supportedOperatorID);
-        if (! supportedOperator.getArgumentSet())
-          supportedOperators.add(supportedOperatorID);
-        else if (supportedOperator.getArgumentSet() && fieldAvailableValues != null)
-          supportedOperators.add(supportedOperatorID);
-      }
-
-    //
-    //  find list of explicitly included operators
-    //
-
-    List<String> requestedIncludedOperatorIDs = null;
-    if (criterionFieldJSON.get("includedOperators") != null)
-      {
-        requestedIncludedOperatorIDs = new ArrayList<String>();
-        for (String operator : supportedOperators)
-          {
-            for (String operatorRegex : (List<String>) criterionFieldJSON.get("includedOperators"))
-              {
-                Pattern pattern = Pattern.compile("^" + operatorRegex + "$");
-                if (pattern.matcher(operator).matches())
-                  {
-                    requestedIncludedOperatorIDs.add(operator);
-                    break;
-                  }
-              }
-          }
-      }
-
-    //
-    //  find list of explicitly excluded operators
-    //
-
-    List<String> requestedExcludedOperatorIDs = null;
-    if (criterionFieldJSON.get("excludedOperators") != null)
-      {
-        requestedExcludedOperatorIDs = new ArrayList<String>();
-        for (String operator : supportedOperators)
-          {
-            for (String operatorRegex : (List<String>) criterionFieldJSON.get("excludedOperators"))
-              {
-                Pattern pattern = Pattern.compile("^" + operatorRegex + "$");
-                if (pattern.matcher(operator).matches())
-                  {
-                    requestedExcludedOperatorIDs.add(operator);
-                    break;
-                  }
-              }
-          }
-      }
-
-    //
-    //  resolve included/excluded operators
-    //
-
-    List<String> includedOperatorIDs = requestedIncludedOperatorIDs != null ? requestedIncludedOperatorIDs : supportedOperators;
-    Set<String> excludedOperatorIDs = requestedExcludedOperatorIDs != null ? new LinkedHashSet<String>(requestedExcludedOperatorIDs) : Collections.<String>emptySet();
-
-    //
-    //  evaluate
-    //
-
-    List<JSONObject> result = new ArrayList<JSONObject>();
-    for (String operatorID : includedOperatorIDs)
-      {
-        SupportedOperator operator = supportedOperatorsForType.get(operatorID);
-        if (! excludedOperatorIDs.contains(operatorID))
-          {
-            result.add(operator.getJSONRepresentation());
-          }
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /****************************************
-  *
-  *  evaluateComparableFields
-  *
-  ****************************************/
-
-  private List<JSONObject> evaluateComparableFields(String criterionFieldID, JSONObject criterionFieldJSON, Collection<CriterionField> allFields, boolean singleton)
-  {
-    //
-    //  all fields
-    //
-
-    Map<String, CriterionField> comparableFields = new LinkedHashMap<String, CriterionField>();
-    for (CriterionField criterionField : allFields)
-      {
-        comparableFields.put(criterionField.getID(), criterionField);
-      }
-
-    //
-    //  find list of explicitly included fields
-    //
-
-    List<String> requestedIncludedComparableFieldIDs = null;
-    if (criterionFieldJSON.get("includedComparableFields") != null)
-      {
-        requestedIncludedComparableFieldIDs = new ArrayList<String>();
-        for (String comparableField : comparableFields.keySet())
-          {
-            for (String fieldRegex : (List<String>) criterionFieldJSON.get("includedComparableFields"))
-              {
-                Pattern pattern = Pattern.compile("^" + fieldRegex + "$");
-                if (pattern.matcher(comparableField).matches())
-                  {
-                    requestedIncludedComparableFieldIDs.add(comparableField);
-                    break;
-                  }
-              }
-          }
-      }
-
-    //
-    //  find list of explicitly excluded fields
-    //
-
-    List<String> requestedExcludedComparableFieldIDs = null;
-    if (criterionFieldJSON.get("excludedComparableFields") != null)
-      {
-        requestedExcludedComparableFieldIDs = new ArrayList<String>();
-        for (String comparableField : comparableFields.keySet())
-          {
-            for (String fieldRegex : (List<String>) criterionFieldJSON.get("excludedComparableFields"))
-              {
-                Pattern pattern = Pattern.compile("^" + fieldRegex + "$");
-                if (pattern.matcher(comparableField).matches())
-                  {
-                    requestedExcludedComparableFieldIDs.add(comparableField);
-                    break;
-                  }
-              }
-          }
-      }
-
-    //
-    //  resolve included/excluded fields
-    //
-
-    List<String> includedComparableFieldIDs = requestedIncludedComparableFieldIDs != null ? requestedIncludedComparableFieldIDs : new ArrayList<String>(comparableFields.keySet());
-    Set<String> excludedComparableFieldIDs = requestedExcludedComparableFieldIDs != null ? new LinkedHashSet<String>(requestedExcludedComparableFieldIDs) : new HashSet<String>();
-
-    //
-    //  always exclude internal-only fields
-    //
-
-    for (CriterionField criterionField : comparableFields.values())
-      {
-        if (criterionField.getInternalOnly())
-          {
-            excludedComparableFieldIDs.add(criterionField.getID());
-          }
-      }
-
-    //
-    //  evaluate
-    //
-
-    List<JSONObject> result = new ArrayList<JSONObject>();
-    for (String comparableFieldID : includedComparableFieldIDs)
-      {
-        CriterionField criterionField = comparableFields.get(comparableFieldID);
-        if ((! excludedComparableFieldIDs.contains(comparableFieldID)) && (singleton == criterionField.getFieldDataType().getSingletonType()) && (! comparableFieldID.equals(criterionFieldID)))
-          {
-            HashMap<String,Object> comparableFieldJSON = new HashMap<String,Object>();
-            comparableFieldJSON.put("id", criterionField.getID());
-            comparableFieldJSON.put("display", criterionField.getDisplay());
-            result.add(JSONUtilities.encodeObject(comparableFieldJSON));
-          }
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  processNodeTypes
-  *
-  *****************************************/
-
-  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
-  {
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> result = new ArrayList<JSONObject>();
-    for (NodeType nodeType : nodeTypes.values())
-      {
-        //
-        //  clone
-        //
-
-        JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
-
-        //
-        //  parameters
-        //
-
-        List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
-        JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
-        for (int i=0; i<parameters.size(); i++)
-          {
-            //
-            //  clone (so we can modify the result)
-            //
-
-            JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
-
-            //
-            //  availableValues
-            //
-            
-            List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
-            parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
-
-            //
-            //  expressionFields
-            //
-
-            CriterionField parameter = nodeType.getParameters().get(JSONUtilities.decodeString(parameterJSON, "id", true));
-            if (parameter != null && parameter.getExpressionValuedParameter())
-              {
-                //
-                //  default list of fields for parameter data type
-                //
-
-                CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, false);
-                List<CriterionField> defaultFields = new ArrayList<CriterionField>();
-                for (CriterionField criterionField : criterionContext.getCriterionFields().values())
-                  {
-                    if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
-                      {
-                        defaultFields.add(criterionField);
-                      }
-                  }
-                
-                //
-                //  evaluate comparable fields
-                //
-
-                List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
-                parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
-              }
-
-            //
-            //  result
-            //
-
-            resolvedParameters.add(parameterJSON);
-          }
-        resolvedNodeTypeJSON.put("parameters", JSONUtilities.encodeArray(resolvedParameters));
-
-        //
-        //  dynamic output connector
-        //
-
-        JSONObject dynamicOutputConnectorJSON = JSONUtilities.decodeJSONObject(resolvedNodeTypeJSON, "dynamicOutputConnector", false);
-        if (dynamicOutputConnectorJSON != null)
-          {
-            JSONObject resolvedDynamicOutputConnectorJSON = (JSONObject) dynamicOutputConnectorJSON.clone();
-            List<JSONObject>  resolvedDynamicOutputConnectorParameters = new ArrayList<JSONObject>();
-            JSONArray dynamicOutputConnectorParameters = JSONUtilities.decodeJSONArray(resolvedDynamicOutputConnectorJSON, "parameters", true);
-            for (int i=0; i<dynamicOutputConnectorParameters.size(); i++)
-              {
-                JSONObject parameterJSON = (JSONObject) ((JSONObject) dynamicOutputConnectorParameters.get(i)).clone();
-                List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
-                parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
-                resolvedDynamicOutputConnectorParameters.add(parameterJSON);
-              }
-            resolvedDynamicOutputConnectorJSON.put("parameters", JSONUtilities.encodeArray(resolvedDynamicOutputConnectorParameters));
-            resolvedNodeTypeJSON.put("dynamicOutputConnector", resolvedDynamicOutputConnectorJSON);
-          }
-
-        //
-        //  result
-        //
-
-        result.add(resolvedNodeTypeJSON);
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  evaluateAvailableValues
-  *
-  *****************************************/
-
-  private List<JSONObject> evaluateAvailableValues(CriterionField criterionField, Date now, boolean includeDynamic)
-  {
-    JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation();
-    List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(criterionFieldJSON, "availableValues", false), now, includeDynamic);
-    return availableValues;
-  }
-
-  /*****************************************
-  *
-  *  evaluateAvailableValues
-  *
-  *****************************************/
-
-  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues, Date now)
-  {
-    return evaluateAvailableValues(availableValues, now, true);
-  }
-
-  /****************************************
-  *
-  *  evaluateAvailableValues
-  *
-  ****************************************/
-
-  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues, Date now, boolean includeDynamic)
-  {
-    List<JSONObject> result = null;
-    if (availableValues != null)
-      {
-        result = new ArrayList<JSONObject>();
-        Pattern enumeratedValuesPattern = Pattern.compile("^#(.*?)#$");
-        for (Object availableValueUnchecked : availableValues)
-          {
-            if (availableValueUnchecked instanceof String)
-              {
-                String availableValue = (String) availableValueUnchecked;
-                Matcher matcher = enumeratedValuesPattern.matcher(availableValue);
-                if (matcher.matches())
-                  {
-                    result.addAll(evaluateEnumeratedValues(matcher.group(1), now, includeDynamic));
-                  }
-                else
-                  {
-                    HashMap<String,Object> availableValueJSON = new HashMap<String,Object>();
-                    availableValueJSON.put("id", availableValue);
-                    availableValueJSON.put("display", availableValue);
-                    result.add(JSONUtilities.encodeObject(availableValueJSON));
-                  }
-              }
-            else if (availableValueUnchecked instanceof JSONObject)
-              {
-                JSONObject availableValue = (JSONObject) availableValueUnchecked;
-                result.add(availableValue);
-              }
-            else
-              {
-                Object availableValue = (Object) availableValueUnchecked;
-                HashMap<String,Object> availableValueJSON = new HashMap<String,Object>();
-                availableValueJSON.put("id", availableValue);
-                availableValueJSON.put("display", availableValue.toString());
-                result.add(JSONUtilities.encodeObject(availableValueJSON));
-              }
-          }
-      }
-    return result;
-  }
-
-  /****************************************
-  *
-  *  evaluateEnumeratedValues
-  *
-  ****************************************/
-
-  private List<JSONObject> evaluateEnumeratedValues(String reference, Date now, boolean includeDynamic)
-  {
-    List<JSONObject> result = new ArrayList<JSONObject>();
-    switch (reference)
-      {
-        case "supportedLanguages":
-          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedLanguage.getID());
-              availableValue.put("display", supportedLanguage.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          break;
-
-        case "segments":
-          if (includeDynamic)
-            {
-              for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
-                {
-                  for (Segment segment : dimension.getSegments())
-                    {
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", segment.getID());
-                      availableValue.put("display", segment.getName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "eventNames":
-          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", evolutionEngineEventDeclaration.getName());
-              availableValue.put("display", evolutionEngineEventDeclaration.getName());
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          break;
-
-        case "paymentMeans":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
-                {
-                  if (paymentMeanUnchecked.getAccepted())
-                    {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", paymentMean.getPaymentMeanID());
-                      availableValue.put("display", paymentMean.getDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "offers":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject offerUnchecked : offerService.getStoredOffers())
-                {
-                  if (offerUnchecked.getAccepted())
-                    {
-                      Offer offer = (Offer) offerUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", offer.getOfferID());
-                      availableValue.put("display", offer.getDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-          case "offerObjectives":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject offerObjectiveUnchecked : offerObjectiveService.getStoredOfferObjectives())
-                {
-                  if (offerObjectiveUnchecked.getAccepted())
-                    {
-                      OfferObjective offerObjective = (OfferObjective) offerObjectiveUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", offerObjective.getOfferObjectiveID());
-                      availableValue.put("display", offerObjective.getOfferObjectiveName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "pointDeliverables":
-          if (includeDynamic)
-            {
-              DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
-              JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-              String providerID = (String) deliveryManagerJSON.get("providerID");
-              for (GUIManagedObject deliverableUnchecked : deliverableService.getStoredDeliverables())
-                {
-                  if (deliverableUnchecked.getAccepted())
-                    {
-                      Deliverable deliverable = (Deliverable) deliverableUnchecked;
-                      if(deliverable.getFulfillmentProviderID().equals(providerID)){
-                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                        availableValue.put("id", deliverable.getDeliverableID());
-                        availableValue.put("display", deliverable.getDeliverableName());
-                        result.add(JSONUtilities.encodeObject(availableValue));
-                      }
-                    }
-                }
-            }
-          break;
-
-        case "products":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject productUnchecked : productService.getStoredProducts())
-                {
-                  if (productUnchecked.getAccepted())
-                    {
-                      Product product = (Product) productUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", product.getProductID());
-                      availableValue.put("display", product.getDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "productTypes":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject productTypeUnchecked : productTypeService.getStoredProductTypes())
-                {
-                  if (productTypeUnchecked.getAccepted())
-                    {
-                      ProductType productType = (ProductType) productTypeUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", productType.getProductTypeID());
-                      availableValue.put("display", productType.getProductTypeName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "callableCampaigns":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
-                {
-                  if (campaignUnchecked.getAccepted())
-                    {
-                      Journey campaign = (Journey) campaignUnchecked;
-                      switch (campaign.getTargetingType())
-                        {
-                          case Manual:
-                            switch (campaign.getGUIManagedObjectType())
-                              {
-                                case Campaign:
-                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                  availableValue.put("id", campaign.getJourneyID());
-                                  availableValue.put("display", campaign.getJourneyName());
-                                  result.add(JSONUtilities.encodeObject(availableValue));
-                                  break;
-                              }
-                            break;
-                        }
-                    }
-                }
-            }
-          break;
-
-        case "callableJourneys":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
-                {
-                  if (journeyUnchecked.getAccepted())
-                    {
-                      Journey journey = (Journey) journeyUnchecked;
-                      switch (journey.getTargetingType())
-                        {
-                          case Manual:
-                            switch (journey.getGUIManagedObjectType())
-                              {
-                                case Journey:
-                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                  availableValue.put("id", journey.getJourneyID());
-                                  availableValue.put("display", journey.getJourneyName());
-                                  result.add(JSONUtilities.encodeObject(availableValue));
-                                  break;
-                              }
-                            break;
-                        }
-                    }
-                }
-            }
-          break;
-
-        case "presentationStrategies":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
-                {
-                  if (presentationStrategyUnchecked.getAccepted())
-                    {
-                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
-                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "offersPresentationTokenTypes":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
-                {
-                  if (tokenTypeUnchecked.getAccepted())
-                    {
-                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
-                      switch (tokenType.getTokenTypeKind())
-                        {
-                          case OffersPresentation:
-                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                            availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeName());
-                            result.add(JSONUtilities.encodeObject(availableValue));
-                            break;
-                        }
-                    }
-                }
-            }
-          break;
-
-        case "supportedShortCodes":
-          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedShortCode.getID());
-              availableValue.put("display", supportedShortCode.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          break;
-
-        case "supportedEmailAddresses":
-          for (SupportedEmailAddress supportedEmailAddress : Deployment.getSupportedEmailAddresses().values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedEmailAddress.getID());
-              availableValue.put("display", supportedEmailAddress.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          break;
-
-        default:
-          if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null)
-            {
-              try
-                {
-                  result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
-                }
-              catch (IllegalAccessException|InvocationTargetException e)
-                {
-                  throw new RuntimeException(e);
-                }
-            }
-          break;
-      }
-    return result;
-  }
-
-//  /*****************************************
-//  *
-//  *  processGetJourneyList
-//  *
-//  *****************************************/
-//
-//  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, boolean fullDetails)
-//  {
-//    /*****************************************
-//    *
-//    *  retrieve and convert journeys
-//    *
-//    *****************************************/
-//
-//    Date now = SystemTime.getCurrentTime();
-//    List<JSONObject> journeys = new ArrayList<JSONObject>();
-//    for (GUIManagedObject journey : journeyService.getStoredJourneys())
-//      {
-//        switch (journey.getGUIManagedObjectType())
-//          {
-//            case Journey:
-//              journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
-//              break;
-//          }
-//      }
-//
-//    /*****************************************
-//    *
-//    *  response
-//    *
-//    *****************************************/
-//
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//    response.put("responseCode", "ok");
-//    response.put("journeys", JSONUtilities.encodeArray(journeys));
-//    return JSONUtilities.encodeObject(response);
-//  }
-
-//  /*****************************************
-//  *
-//  *  processGetJourney
-//  *
-//  *****************************************/
-//
-//  private JSONObject processGetJourney(String userID, JSONObject jsonRoot)
-//  {
-//    /****************************************
-//    *
-//    *  response
-//    *
-//    ****************************************/
-//
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//
-//    /****************************************
-//    *
-//    *  argument
-//    *
-//    ****************************************/
-//
-//    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-//
-//    /*****************************************
-//    *
-//    *  retrieve and decorate journey
-//    *
-//    *****************************************/
-//
-//    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-//    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-//    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
-//
-//    /*****************************************
-//    *
-//    *  response
-//    *
-//    *****************************************/
-//
-//    response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
-//    if (journey != null) response.put("journey", journeyJSON);
-//    return JSONUtilities.encodeObject(response);
-//  }
-
-//  /*****************************************
-//  *
-//  *  processPutJourney
-//  *
-//  *****************************************/
-//
-//  private JSONObject processPutJourney(String userID, JSONObject jsonRoot)
-//  {
-//    /****************************************
-//    *
-//    *  response
-//    *
-//    ****************************************/
-//
-//    Date now = SystemTime.getCurrentTime();
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//
-//    /*****************************************
-//    *
-//    *  journeyID
-//    *
-//    *****************************************/
-//
-//    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
-//    if (journeyID == null)
-//      {
-//        journeyID = journeyService.generateJourneyID();
-//        jsonRoot.put("id", journeyID);
-//      }
-//
-//    /*****************************************
-//    *
-//    *  existing journey
-//    *
-//    *****************************************/
-//
-//    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
-//    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? existingJourney : null;
-//
-//    /*****************************************
-//    *
-//    *  read-only
-//    *
-//    *****************************************/
-//
-//    if (existingJourney != null && existingJourney.getReadOnly())
-//      {
-//        response.put("id", existingJourney.getGUIManagedObjectID());
-//        response.put("accepted", existingJourney.getAccepted());
-//        response.put("valid", existingJourney.getAccepted());
-//        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
-//        response.put("responseCode", "failedReadOnly");
-//        return JSONUtilities.encodeObject(response);
-//      }
-//
-//    /*****************************************
-//    *
-//    *  process journey
-//    *
-//    *****************************************/
-//
-//    long epoch = epochServer.getKey();
-//    try
-//      {
-//        /****************************************
-//        *
-//        *  instantiate journey
-//        *
-//        ****************************************/
-//
-//        Journey journey = new Journey(jsonRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
-//
-//        /*****************************************
-//        *
-//        *  store
-//        *
-//        *****************************************/
-//
-//        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-//
-//        /*****************************************
-//        *
-//        *  response
-//        *
-//        *****************************************/
-//
-//        response.put("id", journey.getJourneyID());
-//        response.put("accepted", journey.getAccepted());
-//        response.put("valid", journey.getAccepted());
-//        response.put("processing", journeyService.isActiveJourney(journey, now));
-//        response.put("responseCode", "ok");
-//        return JSONUtilities.encodeObject(response);
-//      }
-//    catch (JSONUtilitiesException|GUIManagerException e)
-//      {
-//        //
-//        //  incompleteObject
-//        //
-//
-//        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Journey, epoch);
-//
-//        //
-//        //  store
-//        //
-//
-//        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-//
-//        //
-//        //  log
-//        //
-//
-//        StringWriter stackTraceWriter = new StringWriter();
-//        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-//        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-//
-//        //
-//        //  response
-//        //
-//
-//        response.put("journeyID", incompleteObject.getGUIManagedObjectID());
-//        response.put("responseCode", "journeyNotValid");
-//        response.put("responseMessage", e.getMessage());
-//        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-//        return JSONUtilities.encodeObject(response);
-//      }
-//  }
-
-//  /*****************************************
-//  *
-//  *  processRemoveJourney
-//  *
-//  *****************************************/
-//
-//  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot)
-//  {
-//    /****************************************
-//    *
-//    *  response
-//    *
-//    ****************************************/
-//
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//
-//    /*****************************************
-//    *
-//    *  now
-//    *
-//    *****************************************/
-//
-//    Date now = SystemTime.getCurrentTime();
-//
-//    /****************************************
-//    *
-//    *  argument
-//    *
-//    ****************************************/
-//
-//    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-//
-//    /*****************************************
-//    *
-//    *  remove
-//    *
-//    *****************************************/
-//
-//    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-//    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-//    if (journey != null && ! journey.getReadOnly()) journeyService.removeJourney(journeyID, userID);
-//
-//    /*****************************************
-//    *
-//    *  responseCode
-//    *
-//    *****************************************/
-//
-//    String responseCode;
-//    if (journey != null && ! journey.getReadOnly())
-//      responseCode = "ok";
-//    else if (journey != null)
-//      responseCode = "failedReadOnly";
-//    else
-//      responseCode = "journeyNotFound";
-//
-//    /*****************************************
-//    *
-//    *  response
-//    *
-//    *****************************************/
-//
-//    response.put("responseCode", responseCode);
-//    return JSONUtilities.encodeObject(response);
-//  }
 
   /*****************************************
   *
@@ -7036,360 +4546,39 @@ public class GUIManager
       }
   }
 
-//  /*****************************************
-//  *
-//  *  processGetCampaignList
-//  *
-//  *****************************************/
-//
-//  private JSONObject processGetCampaignList(String userID, JSONObject jsonRoot, boolean fullDetails)
-//  {
-//    /*****************************************
-//    *
-//    *  retrieve and convert campaigns
-//    *
-//    *****************************************/
-//
-//    Date now = SystemTime.getCurrentTime();
-//    List<JSONObject> campaigns = new ArrayList<JSONObject>();
-//    for (GUIManagedObject campaign : journeyService.getStoredJourneys())
-//      {
-//        switch (campaign.getGUIManagedObjectType())
-//          {
-//            case Campaign:
-//              campaigns.add(journeyService.generateResponseJSON(campaign, fullDetails, now));
-//              break;
-//          }
-//      }
-//
-//    /*****************************************
-//    *
-//    *  response
-//    *
-//    *****************************************/
-//
-//    HashMap<String,Object> response = new HashMap<String,Object>();;
-//    response.put("responseCode", "ok");
-//    response.put("campaigns", JSONUtilities.encodeArray(campaigns));
-//    return JSONUtilities.encodeObject(response);
-//  }
+  /*****************************************
+  *
+  *  getCampaignToolbox
+  *
+  *****************************************/
 
-//  /*****************************************
-//  *
-//  *  processGetCampaign
-//  *
-//  *****************************************/
-//
-//  private JSONObject processGetCampaign(String userID, JSONObject jsonRoot)
-//  {
-//    /****************************************
-//    *
-//    *  response
-//    *
-//    ****************************************/
-//
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//
-//    /****************************************
-//    *
-//    *  argument
-//    *
-//    ****************************************/
-//
-//    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
-//
-//    /*****************************************
-//    *
-//    *  retrieve and decorate campaign
-//    *
-//    *****************************************/
-//
-//    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
-//    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-//    JSONObject campaignJSON = journeyService.generateResponseJSON(campaign, true, SystemTime.getCurrentTime());
-//
-//    /*****************************************
-//    *
-//    *  response
-//    *
-//    *****************************************/
-//
-//    response.put("responseCode", (campaign != null) ? "ok" : "campaignNotFound");
-//    if (campaign != null) response.put("campaign", campaignJSON);
-//    return JSONUtilities.encodeObject(response);
-//  }
+  private JSONObject processGetCampaignToolbox(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve campaignToolboxSections
+    *
+    *****************************************/
 
-//  /*****************************************
-//  *
-//  *  processPutCampaign
-//  *
-//  *****************************************/
-//
-//  private JSONObject processPutCampaign(String userID, JSONObject jsonRoot)
-//  {
-//    /****************************************
-//    *
-//    *  response
-//    *
-//    ****************************************/
-//
-//    Date now = SystemTime.getCurrentTime();
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//
-//    /*****************************************
-//    *
-//    *  campaignID
-//    *
-//    *****************************************/
-//
-//    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", false);
-//    if (campaignID == null)
-//      {
-//        campaignID = journeyService.generateJourneyID();
-//        jsonRoot.put("id", campaignID);
-//      }
-//
-//    /*****************************************
-//    *
-//    *  existing campaign
-//    *
-//    *****************************************/
-//
-//    GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
-//    existingCampaign = (existingCampaign != null && existingCampaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? existingCampaign : null;
-//
-//    /*****************************************
-//    *
-//    *  read-only
-//    *
-//    *****************************************/
-//
-//    if (existingCampaign != null && existingCampaign.getReadOnly())
-//      {
-//        response.put("id", existingCampaign.getGUIManagedObjectID());
-//        response.put("accepted", existingCampaign.getAccepted());
-//        response.put("valid", existingCampaign.getAccepted());
-//        response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
-//        response.put("responseCode", "failedReadOnly");
-//        return JSONUtilities.encodeObject(response);
-//      }
-//
-//    /*****************************************
-//    *
-//    *  process campaign
-//    *
-//    *****************************************/
-//
-//    long epoch = epochServer.getKey();
-//    try
-//      {
-//        /****************************************
-//        *
-//        *  instantiate campaign
-//        *
-//        ****************************************/
-//
-//        Journey campaign = new Journey(jsonRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
-//
-//        /*****************************************
-//        *
-//        *  store
-//        *
-//        *****************************************/
-//
-//        journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
-//
-//        
-//        
-//        
-//        
-//        /*****************************************
-//        *
-//        *  handle related deliverable
-//        *
-//        *****************************************/
-//
-//        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-//        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-//        String providerID = (String) deliveryManagerJSON.get("providerID");
-//        if(campaign.getTargetingType().equals(TargetingType.Manual))
-//          {
-//            
-//            //
-//            // create deliverable  --  only if campaign has "manual provisioning"
-//            //
-//
-//            Map<String, Object> deliverableMap = new HashMap<String, Object>();
-//            deliverableMap.put("id", "journey-" + campaign.getJourneyID());
-//            deliverableMap.put("fulfillmentProviderID", providerID);
-//            deliverableMap.put("commodityID", campaign.getJourneyID());
-//            deliverableMap.put("name", campaign.getJourneyName());
-//            deliverableMap.put("display", campaign.getJourneyName());
-//            deliverableMap.put("active", true);
-//            deliverableMap.put("unitaryCost", 0);
-//            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-//            deliverableService.putDeliverable(deliverable, true, userID);
-//          }
-//        else
-//          {
-//            
-//            //
-//            // delete deliverable  --  only if campaign does NOT have "manual provisioning"
-//            //
-//            
-//            // TODO SCH : may need to check that deliverable is not used in any offer
-//            
-//            for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-//              {
-//                Deliverable deliverable = (Deliverable)deliverableOgbject;
-//                if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaign.getJourneyID()))
-//                  {
-//                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-//                  }
-//              }
-//            
-//          }
-//        
-//        
-//        /*****************************************
-//        *
-//        *  response
-//        *
-//        *****************************************/
-//
-//        response.put("id", campaign.getJourneyID());
-//        response.put("accepted", campaign.getAccepted());
-//        response.put("valid", campaign.getAccepted());
-//        response.put("processing", journeyService.isActiveJourney(campaign, now));
-//        response.put("responseCode", "ok");
-//        return JSONUtilities.encodeObject(response);
-//      }
-//    catch (JSONUtilitiesException|GUIManagerException e)
-//      {
-//        //
-//        //  incompleteObject
-//        //
-//
-//        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.Campaign, epoch);
-//
-//        //
-//        //  store
-//        //
-//
-//        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
-//
-//        //
-//        //  log
-//        //
-//
-//        StringWriter stackTraceWriter = new StringWriter();
-//        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-//        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-//
-//        //
-//        //  response
-//        //
-//
-//        response.put("campaignID", incompleteObject.getGUIManagedObjectID());
-//        response.put("responseCode", "campaignNotValid");
-//        response.put("responseMessage", e.getMessage());
-//        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-//        return JSONUtilities.encodeObject(response);
-//      }
-//  }
+    List<JSONObject> campaignToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection campaignToolboxSection : Deployment.getCampaignToolbox().values())
+      {
+        JSONObject campaignToolboxSectionJSON = campaignToolboxSection.getJSONRepresentation();
+        campaignToolboxSections.add(campaignToolboxSectionJSON);
+      }
 
-//  /*****************************************
-//  *
-//  *  processRemoveCampaign
-//  *
-//  *****************************************/
-//
-//  private JSONObject processRemoveCampaign(String userID, JSONObject jsonRoot)
-//  {
-//    /****************************************
-//    *
-//    *  response
-//    *
-//    ****************************************/
-//
-//    HashMap<String,Object> response = new HashMap<String,Object>();
-//
-//    /*****************************************
-//    *
-//    *  now
-//    *
-//    *****************************************/
-//
-//    Date now = SystemTime.getCurrentTime();
-//
-//    /****************************************
-//    *
-//    *  argument
-//    *
-//    ****************************************/
-//
-//    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
-//
-//    /*****************************************
-//    *
-//    *  remove
-//    *
-//    *****************************************/
-//
-//    GUIManagedObject campaign = journeyService.getStoredJourney(campaignID);
-//    campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-//    if (campaign != null && ! campaign.getReadOnly()) 
-//      {
-//        
-//        //
-//        // remove journey
-//        //
-//        
-//        journeyService.removeJourney(campaignID, userID);
-//
-//        //
-//        // remove related deliverable
-//        //
-//        
-//        // TODO SCH : what if deliverable is used in an offer ?
-//        DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-//        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-//        String providerID = (String) deliveryManagerJSON.get("providerID");
-//        for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-//          {
-//            Deliverable deliverable = (Deliverable)deliverableOgbject;
-//            if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(campaignID))
-//              {
-//                deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-//              }
-//          }
-//
-//      }
-//
-//    /*****************************************
-//    *
-//    *  responseCode
-//    *
-//    *****************************************/
-//
-//    String responseCode;
-//    if (campaign != null && ! campaign.getReadOnly())
-//      responseCode = "ok";
-//    else if (campaign != null)
-//      responseCode = "failedReadOnly";
-//    else
-//      responseCode = "campaignNotFound";
-//
-//    /*****************************************
-//    *
-//    *  response
-//    *
-//    *****************************************/
-//
-//    response.put("responseCode", responseCode);
-//    return JSONUtilities.encodeObject(response);
-//  }
-//
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processCampaignSetActive
@@ -7530,430 +4719,10 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetJourneyList
-  *
-  *****************************************/
-
-  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails)
-  {
-    /*****************************************
-    *
-    *  retrieve and convert journeys
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> journeys = new ArrayList<JSONObject>();
-    for (GUIManagedObject journey : journeyService.getStoredJourneys())
-      {
-        if (journey.getGUIManagedObjectType().equals(objectType))
-          {
-              journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
-          }
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    switch (objectType) {
-    case Journey:
-      response.put("journeys", JSONUtilities.encodeArray(journeys));
-      break;
-
-    case Campaign:
-      response.put("campaigns", JSONUtilities.encodeArray(journeys));
-      break;
-
-    case BulkCampaign:
-      response.put("bulkCampaigns", JSONUtilities.encodeArray(journeys));
-      break;
-
-    default:
-      response.put("journeys", JSONUtilities.encodeArray(journeys));
-      break;
-    }
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetJourney
-  *
-  *****************************************/
-
-  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate campaign
-    *
-    *****************************************/
-
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
-    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    switch (objectType) {
-    case Journey:
-      response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
-      if (journey != null) response.put("journey", journeyJSON);
-      break;
-
-    case Campaign:
-      response.put("responseCode", (journey != null) ? "ok" : "campaignNotFound");
-      if (journey != null) response.put("campaign", journeyJSON);
-      break;
-
-    case BulkCampaign:
-      response.put("responseCode", (journey != null) ? "ok" : "bulkCampaignNotFound");
-      if (journey != null) response.put("bulkCampaign", journeyJSON);
-      break;
-
-    default:
-      response.put("responseCode", (journey != null) ? "ok" : "notFound");
-      if (journey != null) response.put("journey", journeyJSON);
-      break;
-    }
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processPutJourney
-  *
-  *****************************************/
-
-  private JSONObject processPutJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  journeyID
-    *
-    *****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (journeyID == null)
-      {
-        journeyID = journeyService.generateJourneyID();
-        jsonRoot.put("id", journeyID);
-      }
-
-    /*****************************************
-    *
-    *  existing journey
-    *
-    *****************************************/
-
-    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
-    existingJourney = (existingJourney != null && existingJourney.getGUIManagedObjectType() == objectType) ? existingJourney : null;
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingJourney != null && existingJourney.getReadOnly())
-      {
-        response.put("id", existingJourney.getGUIManagedObjectID());
-        response.put("accepted", existingJourney.getAccepted());
-        response.put("valid", existingJourney.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(existingJourney, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process journey
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate journey
-        *
-        ****************************************/
-
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-
-        /*****************************************
-        *
-        *  handle related deliverable
-        *
-        *****************************************/
-
-        if(GUIManagedObjectType.Campaign.equals(objectType)){
-          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-          String providerID = (String) deliveryManagerJSON.get("providerID");
-          if(journey.getTargetingType().equals(TargetingType.Manual))
-            {
-              
-              //
-              // create deliverable  --  only if campaign has "manual provisioning"
-              //
-
-              Map<String, Object> deliverableMap = new HashMap<String, Object>();
-              deliverableMap.put("id", "journey-" + journey.getJourneyID());
-              deliverableMap.put("fulfillmentProviderID", providerID);
-              deliverableMap.put("commodityID", journey.getJourneyID());
-              deliverableMap.put("name", journey.getJourneyName());
-              deliverableMap.put("display", journey.getJourneyName());
-              deliverableMap.put("active", true);
-              deliverableMap.put("unitaryCost", 0);
-              Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-              deliverableService.putDeliverable(deliverable, true, userID);
-            }
-          else
-            {
-              
-              //
-              // delete deliverable  --  only if campaign does NOT have "manual provisioning"
-              //
-              
-              // TODO SCH : may need to check that deliverable is not used in any offer
-              
-              for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-                {
-                  Deliverable deliverable = (Deliverable)deliverableOgbject;
-                  if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journey.getJourneyID()))
-                    {
-                      deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-                    }
-                }
-              
-            }
-        }
-        
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", journey.getJourneyID());
-        response.put("accepted", journey.getAccepted());
-        response.put("valid", journey.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(journey, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, objectType, epoch);
-
-        //
-        //  store
-        //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("id", incompleteObject.getGUIManagedObjectID());
-        switch (objectType) 
-        {
-        case Journey:
-          response.put("responseCode", "journeyNotValid");
-          break;
-
-        case Campaign:
-          response.put("responseCode", "campaignNotValid");
-          break;
-
-        case BulkCampaign:
-          response.put("responseCode", "bulkCampaignNotValid");
-          break;
-
-        default:
-          response.put("responseCode", "notValid");
-          break;
-        }
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemoveJourney
-  *
-  *****************************************/
-
-  private JSONObject processRemoveJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
-    if (journey != null && ! journey.getReadOnly()) 
-      {
-        
-        //
-        // remove journey
-        //
-        
-        journeyService.removeJourney(journeyID, userID);
-
-        //
-        // remove related deliverable
-        //
-        
-        if(GUIManagedObjectType.Campaign.equals(objectType)){
-          // TODO SCH : what if deliverable is used in an offer ?
-          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-          String providerID = (String) deliveryManagerJSON.get("providerID");
-          for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-            {
-              Deliverable deliverable = (Deliverable)deliverableOgbject;
-              if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journeyID))
-                {
-                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-                }
-            }
-        }
-
-      }
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (journey != null && ! journey.getReadOnly())
-      responseCode = "ok";
-    else if (journey != null)
-      responseCode = "failedReadOnly";
-    else {
-      switch (objectType) {
-      case Journey:
-        responseCode = "journeyNotFound";
-        break;
-
-      case Campaign:
-        responseCode = "campaignNotFound";
-        break;
-
-      case BulkCampaign:
-        responseCode = "bulkCampaignNotFound";
-        break;
-
-      default:
-        responseCode = "notFound";
-        break;
-      }
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
   *  processPutBulkCampaign
   *
   *****************************************/  
-  
+
   private JSONObject processPutBulkCampaign(String userID, JSONObject jsonRoot)
   {
     /****************************************
@@ -7970,7 +4739,7 @@ public class GUIManager
     *  retrieve campaign informations
     *
     *****************************************/
-    
+
     String bulkCampaignTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", true);
     Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(bulkCampaignTemplateID, now);
     if(journeyTemplate == null){
@@ -7989,7 +4758,7 @@ public class GUIManager
     String bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
     String bulkCampaignTargetID = JSONUtilities.decodeString(jsonRoot, "targetID", true);
     JSONArray bulkCampaignBoundParameters = JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", true);
-    
+
     /*****************************************
     *
     *  existing journey
@@ -8043,7 +4812,7 @@ public class GUIManager
         //
         //  override with bulkCampaign attributes
         //
-        
+
         campaignJSONRepresentation.put("id", bulkCampaignID);
         campaignJSONRepresentation.put("name", bulkCampaignName);
         campaignJSONRepresentation.put("description", bulkCampaignDescription);
@@ -8066,7 +4835,7 @@ public class GUIManager
         ****************************************/
 
         Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
-        
+
         /*****************************************
         *
         *  store
@@ -8121,7 +4890,7 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
-  
+
   /*****************************************
   *
   *  processGetJourneyTemplateList
@@ -8396,7 +5165,7 @@ public class GUIManager
 
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
-  }
+  }  
 
   /*****************************************
   *
@@ -8416,24 +5185,24 @@ public class GUIManager
     List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
     for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
       {
-        
-//        SegmentationDimensionTargetingType targetingType = ((SegmentationDimension)segmentationDimension).getTargetingType();
-//        
-//        switch(targetingType) {
-//          case ELIGIBILITY:
-//
-//            break;
-//          case FILE_IMPORT:
-//            
-//            break;
-//          case RANGES:
-//            if(((SegmentationDimensionRanges)segmentationDimension).get != null) {
-//              ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(((SegmentationDimensionRanges)segmentationDimension).getContactPolicyID(), now);
-//              segmentationDimensions.add(contactPolicy.getJSONRepresentation());
-//            }
-//            break;
-//        }
-        
+
+        //        SegmentationDimensionTargetingType targetingType = ((SegmentationDimension)segmentationDimension).getTargetingType();
+        //        
+        //        switch(targetingType) {
+        //          case ELIGIBILITY:
+        //
+        //            break;
+        //          case FILE_IMPORT:
+        //            
+        //            break;
+        //          case RANGES:
+        //            if(((SegmentationDimensionRanges)segmentationDimension).get != null) {
+        //              ContactPolicy contactPolicy = contactPolicyService.getActiveContactPolicy(((SegmentationDimensionRanges)segmentationDimension).getContactPolicyID(), now);
+        //              segmentationDimensions.add(contactPolicy.getJSONRepresentation());
+        //            }
+        //            break;
+        //        }
+
         segmentationDimensions.add(segmentationDimensionService.generateResponseJSON(segmentationDimension, fullDetails, now));
       }
 
@@ -8897,7 +5666,7 @@ public class GUIManager
         //
         // BaseSplit query creation
         //
-        
+
         for(int i = 0; i < nbBaseSplits; i++)
           {
             baseSplitQueries.add(QueryBuilders.boolQuery());
@@ -8931,7 +5700,7 @@ public class GUIManager
             //
             //  Must_not for all following buckets (reminder : bucket must be disjointed, if not, some customer could be counted in several buckets)
             //
-            
+
             for(int j = i+1; j < nbBaseSplits; j++)
               {
                 BoolQueryBuilder nextQuery = baseSplitQueries.get(j);
@@ -9134,7 +5903,7 @@ public class GUIManager
     //
     //  fill response JSON object with counts for each segments from ElasticSearch result
     //
-    
+
     for(JSONObject responseBaseSplit : responseBaseSplits)
       {
         Filters.Bucket bucket = mainAggregationResult.getBucketByKey((String) responseBaseSplit.get("splitName"));
@@ -9144,7 +5913,7 @@ public class GUIManager
             //
             // This specific segment aggregation is corresponding to the "default" BaseSplit (without any variableName)
             //
-            
+
             ParsedFilter other = (ParsedFilter) segmentAggregationResult;
 
             //
@@ -9254,75 +6023,76 @@ public class GUIManager
     List<JSONObject> aggregationResult = new ArrayList<>();
     List<QueryBuilder> processedQueries = new ArrayList<>();
     try
-    {
-      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
-      List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-      SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
-      for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
       {
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
-        for(QueryBuilder processedQuery : processedQueries)
-        {
-          query = query.mustNot(processedQuery);
-        }
-        BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
-        for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
-        {
-          segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
-          processedQueries.add(segmentQuery);
-        }
-        query = query.filter(segmentQuery);
-        //use name as key, even if normally should use id, to make simpler to use this count in chart
-        aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
-      }
-      AggregationBuilder aggregation = null;
-      FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
-      filterArray = aggFilters.toArray(filterArray);
-      aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
-      ((FiltersAggregationBuilder) aggregation).otherBucket(true);
-      ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
-      searchSourceBuilder.aggregation(aggregation);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+        List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+        for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
+          {
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
+            for(QueryBuilder processedQuery : processedQueries)
+              {
+                query = query.mustNot(processedQuery);
+              }
+            BoolQueryBuilder segmentQuery = QueryBuilders.boolQuery();
+            for(EvaluationCriterion evaluationCriterion:segmentEligibility.getProfileCriteria())
+              {
+                segmentQuery = segmentQuery.filter(evaluationCriterion.esQuery());
+                processedQueries.add(segmentQuery);
+              }
+            query = query.filter(segmentQuery);
+            //use name as key, even if normally should use id, to make simpler to use this count in chart
+            aggFilters.add(new FiltersAggregator.KeyedFilter(segmentEligibility.getName(),query));
+          }
+        AggregationBuilder aggregation = null;
+        FiltersAggregator.KeyedFilter [] filterArray = new FiltersAggregator.KeyedFilter [aggFilters.size()];
+        filterArray = aggFilters.toArray(filterArray);
+        aggregation = AggregationBuilders.filters("SegmentEligibility",filterArray);
+        ((FiltersAggregationBuilder) aggregation).otherBucket(true);
+        ((FiltersAggregationBuilder) aggregation).otherBucketKey("other_key");
+        searchSourceBuilder.aggregation(aggregation);
 
-      //
-      //  search in ES
-      //
+        //
+        //  search in ES
+        //
 
-      SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
-      SearchResponse searchResponse = elasticsearch.search(searchRequest);
-      Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
-      for (Filters.Bucket entry : aggResultFilters.getBuckets())
-      {
-        HashMap<String,Object> aggItem = new HashMap<String,Object>();
-        String key = entry.getKeyAsString();            // bucket key
-        long docCount = entry.getDocCount();            // Doc count
-        aggItem.put("name",key);
-        aggItem.put("count",docCount);
-        aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+        SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+        SearchResponse searchResponse = elasticsearch.search(searchRequest);
+        Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
+        for (Filters.Bucket entry : aggResultFilters.getBuckets())
+          {
+            HashMap<String,Object> aggItem = new HashMap<String,Object>();
+            String key = entry.getKeyAsString();            // bucket key
+            long docCount = entry.getDocCount();            // Doc count
+            aggItem.put("name",key);
+            aggItem.put("count",docCount);
+            aggregationResult.add(JSONUtilities.encodeObject(aggItem));
+          }
       }
-    }
     catch(Exception ex)
-    {
-      //
-      //  log
-      //
+      {
+        //
+        //  log
+        //
 
-      StringWriter stackTraceWriter = new StringWriter();
-      ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
-      log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+        StringWriter stackTraceWriter = new StringWriter();
+        ex.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
 
-      //
-      //  response
-      //
+        //
+        //  response
+        //
 
-      response.put("responseCode", "systemError");
-      response.put("responseMessage", ex.getMessage());
-      response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
-      return JSONUtilities.encodeObject(response);
-    }
+        response.put("responseCode", "systemError");
+        response.put("responseMessage", ex.getMessage());
+        response.put("responseParameter", (ex instanceof GUIManagerException) ? ((GUIManagerException) ex).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
     response.put("responseCode", "ok");
     response.put("result",aggregationResult);
     return JSONUtilities.encodeObject(response);
   }
+
 
   /*****************************************
   *
@@ -9667,7 +6437,7 @@ public class GUIManager
         DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
         JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
         String providerID = (String) deliveryManagerJSON.get("providerID");
-        
+
         //
         // deliverable
         //
@@ -9683,11 +6453,11 @@ public class GUIManager
           Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
           deliverableService.putDeliverable(deliverable, true, userID);
         }
-        
+
         //
         // paymentMean
         //
-        
+
         if(point.getDebitable()){
           Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
           paymentMeanMap.put("id", "point-" + point.getPointID());
@@ -9699,7 +6469,7 @@ public class GUIManager
           PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
           paymentMeanService.putPaymentMean(paymentMean, true, userID);
         }
-        
+
         /*****************************************
         *
         *  response
@@ -9790,7 +6560,7 @@ public class GUIManager
         }
       }
     }
-    
+
     Collection<GUIManagedObject> paymentMeanObjects = paymentMeanService.getStoredPaymentMeans();
     for(GUIManagedObject paymentMeanObject : paymentMeanObjects){
       if(paymentMeanObject instanceof PaymentMean){
@@ -10096,7 +6866,7 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetReportConfig
+  *  processGetReportGlobalConfiguration
   *
   *****************************************/
 
@@ -10143,134 +6913,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processLaunchReport
-  *
-  *****************************************/
-
-  private JSONObject processLaunchReport(String userID, JSONObject jsonRoot)
-  {
-    log.trace("In processLaunchReport : "+jsonRoot);
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    Report report = (Report) reportService.getStoredReport(reportID);
-    log.trace("Looking for "+reportID+" and got "+report);
-    String responseCode;
-    if (report == null)
-      {
-        responseCode = "reportNotFound";
-      }
-    else
-      {
-        if(!reportService.isReportRunning(report.getName())) {
-          reportService.launchReport(report.getName());
-          responseCode = "ok";
-        }else {
-          responseCode = "reportIsAlreadyRunning";
-        }
-      }
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processDownloadReport
-  *
-  *****************************************/
-
-  private void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
-  {
-    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    GUIManagedObject report1 = reportService.getStoredReport(reportID);
-    log.trace("Looking for "+reportID+" and got "+report1);
-    String responseCode = null;
-    
-    if (report1 == null)
-      {
-        responseCode = "reportNotFound";
-      }
-    else
-      {
-        try
-          {
-            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
-            String reportName = report.getName();
-            
-            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
-            String fileExtension = Deployment.getReportManagerFileExtension();
-
-            File folder = new File(outputPath);
-            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension;
-            
-            File[] listOfFiles = folder.listFiles(new FileFilter(){
-              @Override
-              public boolean accept(File f) {
-                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
-              }});
-
-            File reportFile = null;
-
-            long lastMod = Long.MIN_VALUE;
-            if(listOfFiles != null && listOfFiles.length != 0) {
-              for (int i = 0; i < listOfFiles.length; i++) {
-                if (listOfFiles[i].isFile()) {
-                  if(listOfFiles[i].lastModified() > lastMod) {
-                    reportFile = listOfFiles[i];
-                    lastMod = reportFile.lastModified();
-                  }
-                }
-              }
-            }else {
-              responseCode = "Cant find report with that name";
-            }
-
-            if(reportFile != null && reportFile.length() != 0) {
-              try {
-                FileInputStream fis = new FileInputStream(reportFile);
-                exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                exchange.sendResponseHeaders(200, reportFile.length());
-                OutputStream os = exchange.getResponseBody();
-                int c;
-                while ((c = fis.read()) != -1) {
-                  os.write(c);
-                }
-                fis.close();
-                os.flush();
-                os.close();
-              } catch (Exception excp) {
-                StringWriter stackTraceWriter = new StringWriter();
-                excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-              }
-            }else {
-              responseCode = "Report is empty";
-            }
-          }
-        catch (GUIManagerException e)
-          {
-            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
-            responseCode = "internalError";
-          }
-      }
-    if(responseCode != null) {
-      try {
-        jsonResponse.put("responseCode", responseCode);
-        exchange.sendResponseHeaders(200, 0);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-        writer.write(jsonResponse.toString());
-        writer.close();
-        exchange.close();
-      }catch(Exception e) {
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-      }
-    }
-  }
-
-  /*****************************************
-  *
   *  processPutReport
   *
   *****************************************/
@@ -10289,15 +6931,15 @@ public class GUIManager
     log.trace("ID : "+reportID);
     GUIManagedObject existingReport = reportService.getStoredReport(reportID);
     if (existingReport != null && existingReport.getReadOnly())
-    {
-      log.trace("existingReport : "+existingReport);
-      response.put("id", existingReport.getGUIManagedObjectID());
-      response.put("accepted", existingReport.getAccepted());
-      response.put("valid", existingReport.getAccepted());
-      response.put("processing", reportService.isActiveReport(existingReport, now));
-      response.put("responseCode", "failedReadOnly");
-      return JSONUtilities.encodeObject(response);
-    }
+      {
+        log.trace("existingReport : "+existingReport);
+        response.put("id", existingReport.getGUIManagedObjectID());
+        response.put("accepted", existingReport.getAccepted());
+        response.put("valid", existingReport.getAccepted());
+        response.put("processing", reportService.isActiveReport(existingReport, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
     if (existingReport != null) {
       Report existingRept = (Report) existingReport;
       // Is the new effective scheduling valid ?
@@ -10350,6 +6992,37 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }  
+
+  /*****************************************
+  *
+  *  processLaunchReport
+  *
+  *****************************************/
+
+  private JSONObject processLaunchReport(String userID, JSONObject jsonRoot)
+  {
+    log.trace("In processLaunchReport : "+jsonRoot);
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    Report report = (Report) reportService.getStoredReport(reportID);
+    log.trace("Looking for "+reportID+" and got "+report);
+    String responseCode;
+    if (report == null)
+      {
+        responseCode = "reportNotFound";
+      }
+    else
+      {
+        if(!reportService.isReportRunning(report.getName())) {
+          reportService.launchReport(report.getName());
+          responseCode = "ok";
+        }else {
+          responseCode = "reportIsAlreadyRunning";
+        }
+      }
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -12719,7 +9392,7 @@ public class GUIManager
     *  retrieve and decorate scoring strategy
     *
     *****************************************/
-    
+
     Date now = SystemTime.getCurrentTime();
     GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
     JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
@@ -13276,322 +9949,7 @@ public class GUIManager
     response.put("productTypes", JSONUtilities.encodeArray(productTypes));
     return JSONUtilities.encodeObject(response);
   }
-  
-  /*****************************************
-  *
-  *  processGetFulfillmentProviders
-  *
-  *****************************************/
 
-  private JSONObject processGetFulfillmentProviders(String userID, JSONObject jsonRoot)
-  {
-    /*****************************************
-    *
-    *  retrieve fulfillment providers
-    *
-    *****************************************/
-    
-    List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
-    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
-      CommodityType commodityType = CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
-      if(commodityType != null){
-        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-        Map<String, String> providerJSON = new HashMap<String, String>();
-        providerJSON.put("id", (String) deliveryManagerJSON.get("providerID"));
-        providerJSON.put("name", (String) deliveryManagerJSON.get("providerName"));
-        providerJSON.put("providerType", commodityType.toString());
-        providerJSON.put("deliveryType", deliveryManager.getDeliveryType());
-        providerJSON.put("url", (String) deliveryManagerJSON.get("url"));
-        FulfillmentProvider provider = new FulfillmentProvider(JSONUtilities.encodeObject(providerJSON));
-        fulfillmentProviders.add(provider.getJSONRepresentation());
-      } 
-    }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProviders));
-    return JSONUtilities.encodeObject(response);
-  }  
-  
-  /*****************************************
-  *
-  *  processGetPaymentMeanList
-  *
-  *****************************************/
-
-  private JSONObject processGetPaymentMeanList(String userID, JSONObject jsonRoot, boolean fullDetails)
-  {
-
-    /*****************************************
-    *
-    *  retrieve payment means
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
-    for (GUIManagedObject paymentMean : paymentMeanService.getStoredPaymentMeans())
-      {
-        paymentMeans.add(paymentMeanService.generateResponseJSON(paymentMean, fullDetails, now));
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    response.put("responseCode", "ok");
-    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeans));
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetPaymentMean
-  *
-  *****************************************/
-
-  private JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate payment mean
-    *
-    *****************************************/
-
-    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
-    JSONObject paymentMeanJSON = paymentMeanService.generateResponseJSON(paymentMean, true, SystemTime.getCurrentTime());
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (paymentMean != null) ? "ok" : "paymentMeanNotFound");
-    if (paymentMean != null) response.put("paymentMean", paymentMeanJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processPutPaymentMean
-  *
-  *****************************************/
-
-  private JSONObject processPutPaymentMean(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-    
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-    
-    /*****************************************
-    *
-    *  paymentMeanID
-    *
-    *****************************************/
-    
-    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (paymentMeanID == null)
-      {
-        paymentMeanID = paymentMeanService.generatePaymentMeanID();
-        jsonRoot.put("id", paymentMeanID);
-      }
-    
-    /*****************************************
-    *
-    *  existing paymentMean
-    *
-    *****************************************/
-
-    GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
-
-    /*****************************************
-    *
-    *  read-only
-    *
-    *****************************************/
-
-    if (existingPaymentMean != null && existingPaymentMean.getReadOnly())
-      {
-        response.put("id", existingPaymentMean.getGUIManagedObjectID());
-        response.put("accepted", existingPaymentMean.getAccepted());
-        response.put("processing", paymentMeanService.isActivePaymentMean(existingPaymentMean, now));
-        response.put("responseCode", "failedReadOnly");
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process paymentMean
-    *
-    *****************************************/
-
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  instantiate paymentMean
-        *
-        ****************************************/
-
-        PaymentMean paymentMean = new PaymentMean(jsonRoot, epoch, existingPaymentMean);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), userID);
-
-        /*****************************************
-        *
-        *  revalidateProducts
-        *
-        *****************************************/
-
-        revalidateProducts(now);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", paymentMean.getPaymentMeanID());
-        response.put("accepted", paymentMean.getAccepted());
-        response.put("processing", paymentMeanService.isActivePaymentMean(paymentMean, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (JSONUtilitiesException|GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
-
-        //
-        //  store
-        //
-
-        paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingPaymentMean == null), userID);
-
-        //
-        //  revalidateProducts
-        //
-
-        revalidateProducts(now);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-        
-        //
-        //  response
-        //
-
-        response.put("id", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "paymentMeanNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
-  }
-
-  /*****************************************
-  *
-  *  processRemovePaymentMean
-  *
-  *****************************************/
-
-  private JSONObject processRemovePaymentMean(String userID, JSONObject jsonRoot)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-    
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-    
-    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
-    
-    /*****************************************
-    *
-    *  remove
-    *
-    *****************************************/
-
-    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
-    if (paymentMean != null && ! paymentMean.getReadOnly()) paymentMeanService.removePaymentMean(paymentMeanID, userID);
-
-    /*****************************************
-    *
-    *  responseCode
-    *
-    *****************************************/
-
-    String responseCode;
-    if (paymentMean != null && ! paymentMean.getReadOnly())
-      responseCode = "ok";
-    else if (paymentMean != null)
-      responseCode = "failedReadOnly";
-    else
-      responseCode = "paymentMeanNotFound";
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", responseCode);
-    return JSONUtilities.encodeObject(response);
-  }
-  
   /*****************************************
   *
   *  processGetProductType
@@ -14006,11 +10364,11 @@ public class GUIManager
         ucgRuleService.putUCGRule(ucgRule,segmentationDimensionService,(existingUCGRule == null), userID);
 
         /*****************************************
-         *
-         *  deactivate any active rules except current one active
-         *  this replace one UCGRule active sequence from UCGRule.validate()
-         *
-         *****************************************/
+        *
+        *  deactivate any active rules except current one active
+        *  this replace one UCGRule active sequence from UCGRule.validate()
+        *
+        *****************************************/
 
         if(ucgRule.getActive()) {
           deactivateOtherUCGRules(ucgRule, now);
@@ -14064,68 +10422,8 @@ public class GUIManager
   }
 
   /*****************************************
-   *
-   *  deactivateOtherUCGRules
-   *
-   *****************************************/
-
-  private void deactivateOtherUCGRules(UCGRule currentUCGRule,Date date)
-  {
-    /****************************************
-     *
-     *  identify
-     *
-     ****************************************/
-
-    Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
-      {
-        //
-        //  modifiedUCGRule
-        //
-        if(currentUCGRule.getGUIManagedObjectID() != existingUCGRule.getGUIManagedObjectID() && existingUCGRule.getActive() == true)
-          {
-            long epoch = epochServer.getKey();
-            GUIManagedObject modifiedUCGRule;
-            try
-              {
-                JSONObject existingRuleJSON = existingUCGRule.getJSONRepresentation();
-                existingRuleJSON.replace("active", Boolean.FALSE);
-                UCGRule ucgRule = new UCGRule(existingRuleJSON, epoch, existingUCGRule);
-                //ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
-                modifiedUCGRule = ucgRule;
-              }
-            catch (JSONUtilitiesException | GUIManagerException e)
-              {
-                modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
-              }
-
-        //
-        //  changed?
-        //
-
-        if (existingUCGRule.getAccepted() != modifiedUCGRule.getAccepted())
-          {
-            modifiedUCGRules.add(modifiedUCGRule);
-          }
-      }
-    }
-
-    /****************************************
-     *
-     *  update
-     *
-     ****************************************/
-
-    for (GUIManagedObject modifiedUCGRule : modifiedUCGRules)
-      {
-        ucgRuleService.putGUIManagedObject(modifiedUCGRule, date, false, null);
-      }
-  }
-
-  /*****************************************
   *
-  *  processRemoveProduct
+  *  processRemoveUCGRule
   *
   *****************************************/
 
@@ -14187,7 +10485,7 @@ public class GUIManager
 
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
-  }
+  }  
 
   /*****************************************
   *
@@ -14812,7 +11110,7 @@ public class GUIManager
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
-  
+
   /*****************************************
   *
   *  processGetTokenCodesFormats
@@ -14822,11 +11120,11 @@ public class GUIManager
   {
 
     /*****************************************
-     *
-     *  retrieve tokenCodesFormats
-     *
-     *****************************************/
-    
+    *
+    *  retrieve tokenCodesFormats
+    *
+    *****************************************/
+
     List<JSONObject> supportedTokenCodesFormats = new ArrayList<JSONObject>();
     for (SupportedTokenCodesFormat supportedTokenCodesFormat : Deployment.getSupportedTokenCodesFormats().values())
       {
@@ -14835,10 +11133,10 @@ public class GUIManager
       }
 
     /*****************************************
-     *
-     *  response
-     *
-     *****************************************/
+    *
+    *  response
+    *
+    *****************************************/
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
@@ -14846,8 +11144,6 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
-
-  
   /*****************************************
   *
   *  processGetMailTemplateList
@@ -15440,6 +11736,4667 @@ public class GUIManager
 
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetFulfillmentProviders
+  *
+  *****************************************/
+
+  private JSONObject processGetFulfillmentProviders(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve fulfillment providers
+    *
+    *****************************************/
+
+    List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
+    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
+      CommodityType commodityType = CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
+      if(commodityType != null){
+        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+        Map<String, String> providerJSON = new HashMap<String, String>();
+        providerJSON.put("id", (String) deliveryManagerJSON.get("providerID"));
+        providerJSON.put("name", (String) deliveryManagerJSON.get("providerName"));
+        providerJSON.put("providerType", commodityType.toString());
+        providerJSON.put("deliveryType", deliveryManager.getDeliveryType());
+        providerJSON.put("url", (String) deliveryManagerJSON.get("url"));
+        FulfillmentProvider provider = new FulfillmentProvider(JSONUtilities.encodeObject(providerJSON));
+        fulfillmentProviders.add(provider.getJSONRepresentation());
+      } 
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("fulfillmentProviders", JSONUtilities.encodeArray(fulfillmentProviders));
+    return JSONUtilities.encodeObject(response);
+  }  
+
+  /*****************************************
+  *
+  *  processGetPaymentMeanList
+  *
+  *****************************************/
+
+  private JSONObject processGetPaymentMeanList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+
+    /*****************************************
+    *
+    *  retrieve payment means
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
+    for (GUIManagedObject paymentMean : paymentMeanService.getStoredPaymentMeans())
+      {
+        paymentMeans.add(paymentMeanService.generateResponseJSON(paymentMean, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("paymentMeans", JSONUtilities.encodeArray(paymentMeans));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPaymentMean
+  *
+  *****************************************/
+
+  private JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate payment mean
+    *
+    *****************************************/
+
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+    JSONObject paymentMeanJSON = paymentMeanService.generateResponseJSON(paymentMean, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (paymentMean != null) ? "ok" : "paymentMeanNotFound");
+    if (paymentMean != null) response.put("paymentMean", paymentMeanJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPaymentMean
+  *
+  *****************************************/
+
+  private JSONObject processPutPaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  paymentMeanID
+    *
+    *****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (paymentMeanID == null)
+      {
+        paymentMeanID = paymentMeanService.generatePaymentMeanID();
+        jsonRoot.put("id", paymentMeanID);
+      }
+
+    /*****************************************
+    *
+    *  existing paymentMean
+    *
+    *****************************************/
+
+    GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingPaymentMean != null && existingPaymentMean.getReadOnly())
+      {
+        response.put("id", existingPaymentMean.getGUIManagedObjectID());
+        response.put("accepted", existingPaymentMean.getAccepted());
+        response.put("processing", paymentMeanService.isActivePaymentMean(existingPaymentMean, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process paymentMean
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate paymentMean
+        *
+        ****************************************/
+
+        PaymentMean paymentMean = new PaymentMean(jsonRoot, epoch, existingPaymentMean);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), userID);
+
+        /*****************************************
+        *
+        *  revalidateProducts
+        *
+        *****************************************/
+
+        revalidateProducts(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", paymentMean.getPaymentMeanID());
+        response.put("accepted", paymentMean.getAccepted());
+        response.put("processing", paymentMeanService.isActivePaymentMean(paymentMean, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        paymentMeanService.putIncompletePaymentMean(incompleteObject, (existingPaymentMean == null), userID);
+
+        //
+        //  revalidateProducts
+        //
+
+        revalidateProducts(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "paymentMeanNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemovePaymentMean
+  *
+  *****************************************/
+
+  private JSONObject processRemovePaymentMean(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+    if (paymentMean != null && ! paymentMean.getReadOnly()) paymentMeanService.removePaymentMean(paymentMeanID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (paymentMean != null && ! paymentMean.getReadOnly())
+      responseCode = "ok";
+    else if (paymentMean != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "paymentMeanNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetDashboardCounts
+  *
+  *****************************************/
+
+  private JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
+    response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
+    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
+    response.put("pointCount", pointService.getStoredPoints().size());
+    response.put("offerCount", offerService.getStoredOffers().size());
+    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
+    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
+    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
+    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels().size());
+    response.put("supplierCount", supplierService.getStoredSuppliers().size());
+    response.put("productCount", productService.getStoredProducts().size());
+    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
+    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives().size());
+    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
+    response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
+    response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
+    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true).size());
+    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true).size());
+    response.put("reportsCount", reportService.getStoredReports().size());
+    response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
+    response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCustomer
+  * @throws GUIManagerException
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+
+    /*****************************************
+    *
+    *  getSubscriberProfile
+    *
+    *****************************************/
+
+    if (subscriberID != null)
+      {
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+              }
+            else
+              {
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, targetService, pointService, subscriberGroupEpochReader);
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCustomerMetaData
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerMetaData(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /***************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    //
+    //  no args
+    //
+
+    /*****************************************
+    *
+    *  retrieve CustomerMetaData
+    *
+    *****************************************/
+
+    List<JSONObject> generalDetailsMetaDataList = Deployment.getCustomerMetaData().getGeneralDetailsMetaData().stream().map(generalDetailsMetaData -> generalDetailsMetaData.getJSONRepresentation()).collect(Collectors.toList());
+    List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
+    response.put("generalDetailsMetaData", JSONUtilities.encodeArray(generalDetailsMetaDataList));
+    response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+
+    /****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /****************************************
+  *
+  *  processGetCustomerActivityByDateRange
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerActivityByDateRange(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String fromDateReq = JSONUtilities.decodeString(jsonRoot, "fromDate", false);
+    String toDateReq = JSONUtilities.decodeString(jsonRoot, "toDate", false);
+
+    //
+    // yyyy-MM-dd -- date format
+    //
+
+    String dateFormat = "yyyy-MM-dd";
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> deliveryRequestsJson = new ArrayList<JSONObject>();
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
+                  {
+                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+
+                    //
+                    // prepare dates
+                    //
+
+                    Date fromDate = null;
+                    Date toDate = null;
+                    Date now = SystemTime.getCurrentTime();
+
+                    if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty())
+                      {
+                        toDate = now;
+                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
+                      }
+                    else if (toDateReq == null || toDateReq.isEmpty())
+                      {
+                        toDate = now;
+                        fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      }
+                    else
+                      {
+                        toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getBaseTimeZone());
+                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
+                      }
+
+                    //
+                    // filter
+                    //
+
+                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                    for (DeliveryRequest activity : activities)
+                      {
+                        if ( (activity.getEventDate().before(toDate) && activity.getEventDate().after(fromDate)) || (activity.getEventDate().equals(toDate) || activity.getEventDate().equals(fromDate)) )
+                          {
+                            result.add(activity);
+                          }
+                      }
+
+                    //
+                    // prepare json
+                    //
+
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService))).collect(Collectors.toList());
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("activities", JSONUtilities.encodeArray(deliveryRequestsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  * processGetCustomerBDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerBDRs(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    //
+    // yyyy-MM-dd -- date format
+    //
+
+    String dateFormat = "yyyy-MM-dd";
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
+                  {
+                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+
+                    //
+                    // filterBDRs
+                    //
+
+                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList());
+
+                    //
+                    // prepare dates
+                    //
+
+                    Date startDate = null;
+                    Date now = SystemTime.getCurrentTime();
+
+                    if (startDateReq == null || startDateReq.isEmpty())
+                      {
+                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                      }
+                    else
+                      {
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      }
+
+                    //
+                    // filter and prepare json
+                    //
+
+                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                    for (DeliveryRequest bdr : BDRs)
+                      {
+                        if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
+                          {
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
+                            DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(bdrMap.get(DeliveryRequest.MODULEID).toString());
+                            if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
+                              {
+                                bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
+                              }
+                            else
+                              {
+                                bdrMap.put(DeliveryRequest.FEATURENAME, null);
+                              }
+                            BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
+                          }
+                      }
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  * processGetCustomerODRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerODRs(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    //
+    // yyyy-MM-dd -- date format
+    //
+
+    String dateFormat = "yyyy-MM-dd";
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
+                  {
+                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+
+                    //
+                    // filter ODRs
+                    //
+
+                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList());
+
+                    //
+                    // prepare dates
+                    //
+
+                    Date startDate = null;
+                    Date now = SystemTime.getCurrentTime();
+
+                    if (startDateReq == null || startDateReq.isEmpty())
+                      {
+                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                      }
+                    else
+                      {
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      }
+
+                    //
+                    // filter using dates and prepare json
+                    //
+
+                    for (DeliveryRequest odr : ODRs)
+                      {
+                        if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
+                          {
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
+                            String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
+                            if (offerID != null)
+                              {
+                                Offer offer = (Offer) offerService.getStoredOffer(offerID);
+                                if (offer != null)
+                                  {
+                                    if (offer.getOfferSalesChannelsAndPrices() != null)
+                                      {
+                                        for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                                          {
+                                            presentationMap.put(DeliveryRequest.SALESCHANNELID, channel.getSalesChannelIDs());
+                                            presentationMap.put(DeliveryRequest.OFFERPRICE, channel.getPrice().getAmount());
+                                          }
+                                      }
+                                    presentationMap.put(DeliveryRequest.OFFERNAME, offer.getGUIManagedObjectName());
+                                    presentationMap.put(DeliveryRequest.OFFERSTOCK, "");
+                                    presentationMap.put(DeliveryRequest.OFFERCONTENT, offer.getOfferProducts().toString());
+                                  }
+                              }
+                            ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
+                          }
+                      }
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  * processGetCustomerMessages
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerMessages(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    //
+    // yyyy-MM-dd -- date format
+    //
+
+    String dateFormat = "yyyy-MM-dd";
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> messagesJson = new ArrayList<JSONObject>();
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
+                  {
+                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
+
+                    //
+                    // filter ODRs
+                    //
+
+                    List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList());
+
+                    //
+                    // prepare dates
+                    //
+
+                    Date startDate = null;
+                    Date now = SystemTime.getCurrentTime();
+
+                    if (startDateReq == null || startDateReq.isEmpty())
+                      {
+                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                      }
+                    else
+                      {
+                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      }
+
+                    //
+                    // filter using dates and prepare json
+                    //
+
+                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                    for (DeliveryRequest message : messages)
+                      {
+                        if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
+                          {
+                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService)));
+                          }
+                      }
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("messages", JSONUtilities.encodeArray(messagesJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  * processGetCustomerJourneys
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerJourneys(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String journeyObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
+    String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false);
+    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
+    String journeyStartDateStr = JSONUtilities.decodeString(jsonRoot, "journeyStartDate", false);
+    String journeyEndDateStr = JSONUtilities.decodeString(jsonRoot, "journeyEndDate", false);
+
+
+    //
+    // yyyy-MM-dd -- date format
+    //
+
+    String dateFormat = "yyyy-MM-dd";
+    Date journeyStartDate = getDateFromString(journeyStartDateStr, dateFormat);
+    Date journeyEndDate = getDateFromString(journeyEndDateStr, dateFormat);
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> journeysJson = new ArrayList<JSONObject>();
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
+                  {
+
+                    //
+                    //  read campaigns
+                    //
+
+                    Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys();
+                    List<Journey> storeJourneys = new ArrayList<Journey>();
+                    for (GUIManagedObject storeJourney : stroeRawJourneys)
+                      {
+                        if (storeJourney instanceof Journey ) storeJourneys.add( (Journey) storeJourney);
+                      }
+
+                    //
+                    // filter Journeys
+                    //
+
+                    storeJourneys = storeJourneys.stream().filter(journey -> journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey).collect(Collectors.toList()); 
+
+                    //
+                    // filter on journeyStartDate
+                    //
+
+                    if (journeyStartDate != null)
+                      {
+                        storeJourneys = storeJourneys.stream().filter(journey -> (journey.getEffectiveStartDate() == null || journey.getEffectiveStartDate().compareTo(journeyStartDate) >= 0)).collect(Collectors.toList()); 
+                      }
+
+                    //
+                    // filter on journeyEndDate
+                    //
+
+                    if (journeyEndDate != null)
+                      {
+                        storeJourneys = storeJourneys.stream().filter(journey -> (journey.getEffectiveEndDate() == null || journey.getEffectiveEndDate().compareTo(journeyEndDate) <= 0)).collect(Collectors.toList());
+                      }
+
+                    //
+                    // filter on journeyObjectiveName
+                    //
+
+                    if (journeyObjectiveName != null && !journeyObjectiveName.isEmpty())
+                      {
+
+                        //
+                        //  read objective
+                        //
+
+                        Collection<JourneyObjective> activejourneyObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime());
+
+                        //
+                        //  filter activejourneyObjective by name
+                        //
+
+                        List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(journeyObjectiveName)).collect(Collectors.toList());
+                        JourneyObjective exactJourneyObjective = journeyObjectives.size() > 0 ? journeyObjectives.get(0) : null;
+
+                        //
+                        //  filter
+                        //
+                        if (exactJourneyObjective == null)
+                          storeJourneys = new ArrayList<Journey>();
+                        else
+                          storeJourneys = storeJourneys.stream().filter(journey -> (journey.getJourneyObjectiveInstances() != null && (journey.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactJourneyObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
+
+                      }
+
+                    //
+                    //  read campaign statistics 
+                    //
+
+                    List<JourneyStatistic> journeyStatistics = subscriberHistory.getJourneyStatistics();
+
+                    //
+                    // change data structure to map
+                    //
+
+                    Map<String, List<JourneyStatistic>> journeyStatisticsMap = journeyStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+
+                    for (Journey storeJourney : storeJourneys)
+                      {
+
+                        //
+                        //  thisJourneyStatistics
+                        //
+
+                        List<JourneyStatistic> thisJourneyStatistics = journeyStatisticsMap.get(storeJourney.getJourneyID());
+
+                        //
+                        //  continue if not in stat
+                        //
+
+                        if (thisJourneyStatistics == null || thisJourneyStatistics.isEmpty()) continue;
+
+                        //
+                        // filter on journeyState
+                        //
+
+                        if (journeyState != null && !journeyState.isEmpty())
+                          {
+                            boolean criteriaSatisfied = false;
+                            switch (journeyState)
+                              {
+                                case "active":
+                                  criteriaSatisfied = storeJourney.getActive();
+                                  break;
+                                case "inactive":
+                                  criteriaSatisfied = !storeJourney.getActive();
+                                  break;
+                              }
+                            if (! criteriaSatisfied) continue;
+                          }
+
+                        //
+                        // filter on customerStatus
+                        //
+
+                        boolean statusNotified = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
+                        boolean statusConverted = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
+                        boolean statusControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
+                        boolean statusUniversalControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                        boolean journeyComplete = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
+                        if (customerStatus != null)
+                          {
+                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
+                            boolean criteriaSatisfied = false;
+                            switch (customerStatusInJourney)
+                              {
+                                case ENTERED:
+                                  criteriaSatisfied = !journeyComplete;
+                                  break;
+                                case NOTIFIED:
+                                  criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
+                                  break;
+                                case CONVERTED:
+                                  criteriaSatisfied = statusConverted && !journeyComplete;
+                                  break;
+                                case CONTROL:
+                                  criteriaSatisfied = statusControlGroup && !journeyComplete;
+                                  break;
+                                case UCG:
+                                  criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
+                                  break;
+                                case NOTIFIED_CONVERTED:
+                                  criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
+                                  break;
+                                case CONTROL_CONVERTED:
+                                  criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
+                                  break;
+                                case COMPLETED:
+                                  criteriaSatisfied = journeyComplete;
+                                  break;
+                                case UNKNOWN:
+                                  break;
+                              }
+                            if (!criteriaSatisfied) continue;
+                          }
+
+                        //
+                        // prepare response
+                        //
+
+                        Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
+                        journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
+                        journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
+                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
+                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
+                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+
+                        //
+                        // reverse sort
+                        //
+
+                        Collections.sort(thisJourneyStatistics, Collections.reverseOrder());
+
+                        //
+                        // prepare current node
+                        //
+
+                        JourneyStatistic subsLatestStatistic = thisJourneyStatistics.get(0);
+                        Map<String, Object> currentState = new HashMap<String, Object>();
+                        currentState.put("nodeID", subsLatestStatistic.getToNodeID());
+                        currentState.put("nodeName", subsLatestStatistic.getToNodeID() == null ? null : storeJourney.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
+                        JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
+
+                        //
+                        //  node history
+                        //
+
+                        List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
+                        for (JourneyStatistic journeyStatistic : thisJourneyStatistics)
+                          {
+                            Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
+                            nodeHistoriesMap.put("fromNodeID", journeyStatistic.getFromNodeID());
+                            nodeHistoriesMap.put("toNodeID", journeyStatistic.getToNodeID());
+                            nodeHistoriesMap.put("fromNode", journeyStatistic.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyStatistic.getFromNodeID()).getNodeName());
+                            nodeHistoriesMap.put("toNode", journeyStatistic.getToNodeID() == null  ? null : storeJourney.getJourneyNode(journeyStatistic.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyStatistic.getTransitionDate()));
+                            nodeHistoriesMap.put("linkID", journeyStatistic.getLinkID());
+                            nodeHistoriesMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+                            nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+                          }
+
+                        journeyResponseMap.put("statusNotified", statusNotified);
+                        journeyResponseMap.put("statusConverted", statusConverted);
+                        journeyResponseMap.put("statusControlGroup", statusControlGroup);
+                        journeyResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                        journeyResponseMap.put("journeyComplete", journeyComplete);
+                        journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                        journeyResponseMap.put("currentState", currentStateJson);
+                        journeysJson.add(JSONUtilities.encodeObject(journeyResponseMap));
+                      }
+                  }
+                response.put("journeys", JSONUtilities.encodeArray(journeysJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  * processGetGetCustomerCampaigns
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerCampaigns(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String campaignObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
+    String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false);
+    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
+    String campaignStartDateStr = JSONUtilities.decodeString(jsonRoot, "campaignStartDate", false);
+    String campaignEndDateStr = JSONUtilities.decodeString(jsonRoot, "campaignEndDate", false);
+
+
+    //
+    // yyyy-MM-dd -- date format
+    //
+
+    String dateFormat = "yyyy-MM-dd";
+    Date campaignStartDate = getDateFromString(campaignStartDateStr, dateFormat);
+    Date campaignEndDate = getDateFromString(campaignEndDateStr, dateFormat);
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
+                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
+                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
+                  {
+
+                    //
+                    //  read campaigns
+                    //
+
+                    Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys();
+                    List<Journey> storeCampaigns = new ArrayList<Journey>();
+                    for (GUIManagedObject storeCampaign : storeRawCampaigns)
+                      {
+                        if (storeCampaign instanceof Journey) storeCampaigns.add( (Journey) storeCampaign);
+                      }
+
+                    //
+                    // filter campaigns
+                    //
+
+                    storeCampaigns = storeCampaigns.stream().filter(campaign -> campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList()); 
+
+                    //
+                    // filter on campaignStartDate
+                    //
+
+                    if (campaignStartDate != null )
+                      {
+                        storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getEffectiveStartDate() == null || campaign.getEffectiveStartDate().compareTo(campaignStartDate) >= 0)).collect(Collectors.toList()); 
+                      }
+
+                    //
+                    // filter on campaignEndDate
+                    //
+
+                    if (campaignEndDate != null)
+                      {
+                        storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getEffectiveEndDate() == null || campaign.getEffectiveEndDate().compareTo(campaignEndDate) <= 0)).collect(Collectors.toList());
+                      }
+
+                    //
+                    // filter on campaignObjectiveName
+                    //
+
+                    if (campaignObjectiveName != null && !campaignObjectiveName.isEmpty())
+                      {
+
+                        //
+                        //  read objective
+                        //
+
+                        Collection<JourneyObjective> activecampaignObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime());
+
+                        //
+                        //  lookup activecampaignObjective by name
+                        //
+
+                        List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(campaignObjectiveName)).collect(Collectors.toList());
+                        JourneyObjective exactCampaignObjective = campaignObjectives.size() > 0 ? campaignObjectives.get(0) : null;
+
+                        //
+                        //  filter
+                        //
+
+                        if (exactCampaignObjective == null)
+                          storeCampaigns = new ArrayList<Journey>();
+                        else
+                          storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getJourneyObjectiveInstances() != null && (campaign.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactCampaignObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
+
+                      }
+
+                    //
+                    //  read campaign statistics 
+                    //
+
+                    List<JourneyStatistic> subscribersCampaignStatistics = subscriberHistory.getJourneyStatistics();
+
+                    //
+                    // change data structure to map
+                    //
+
+                    Map<String, List<JourneyStatistic>> campaignStatisticsMap = subscribersCampaignStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+
+                    for (Journey storeCampaign : storeCampaigns)
+                      {
+
+                        //
+                        //  thisCampaignStatistics
+                        //
+
+                        List<JourneyStatistic> thisCampaignStatistics = campaignStatisticsMap.get(storeCampaign.getJourneyID());
+
+                        //
+                        //  continue if not in stat
+                        //
+
+                        if (thisCampaignStatistics == null || thisCampaignStatistics.isEmpty()) continue;
+
+                        //
+                        // filter on campaignState
+                        //
+
+                        if (campaignState != null && !campaignState.isEmpty())
+                          {
+                            boolean criteriaSatisfied = false;
+                            switch (campaignState)
+                              {
+                                case "active":
+                                  criteriaSatisfied = storeCampaign.getActive();
+                                  break;
+                                case "inactive":
+                                  criteriaSatisfied = !storeCampaign.getActive();
+                                  break;
+                              }
+                            if (! criteriaSatisfied) continue;
+                          }
+
+                        //
+                        // filter on customerStatus
+                        //
+
+                        boolean statusNotified = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusNotified()).count() > 0L ;
+                        boolean statusConverted = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusConverted()).count() > 0L ;
+                        boolean statusControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusControlGroup()).count() > 0L ;
+                        boolean statusUniversalControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusUniversalControlGroup()).count() > 0L ;
+                        boolean campaignComplete = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
+
+                        if (customerStatus != null)
+                          {
+                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
+                            boolean criteriaSatisfied = false;
+                            switch (customerStatusInJourney)
+                              {
+                                case ENTERED:
+                                  criteriaSatisfied = !campaignComplete;
+                                  break;
+                                case NOTIFIED:
+                                  criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
+                                  break;
+                                case CONVERTED:
+                                  criteriaSatisfied = statusConverted && !campaignComplete;
+                                  break;
+                                case CONTROL:
+                                  criteriaSatisfied = statusControlGroup && !campaignComplete;
+                                  break;
+                                case UCG:
+                                  criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;
+                                  break;
+                                case NOTIFIED_CONVERTED:
+                                  criteriaSatisfied = statusNotified && statusConverted && !campaignComplete;
+                                  break;
+                                case CONTROL_CONVERTED:
+                                  criteriaSatisfied = statusControlGroup && statusConverted && !campaignComplete;
+                                  break;
+                                case COMPLETED:
+                                  criteriaSatisfied = campaignComplete;
+                                  break;
+                                case UNKNOWN:
+                                  break;
+                              }
+                            if (! criteriaSatisfied) continue;
+                          }
+
+                        //
+                        // prepare response
+                        //
+
+                        Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
+                        campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
+                        campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
+                        campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
+                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
+                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+
+                        //
+                        // reverse sort
+                        //
+
+                        Collections.sort(thisCampaignStatistics, Collections.reverseOrder());
+
+                        //
+                        // prepare current node
+                        //
+
+                        JourneyStatistic subsLatestStatistic = thisCampaignStatistics.get(0);
+                        Map<String, Object> currentState = new HashMap<String, Object>();
+                        currentState.put("nodeID", subsLatestStatistic.getToNodeID());
+                        currentState.put("nodeName", subsLatestStatistic.getToNodeID() == null ? null : storeCampaign.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
+                        JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
+
+                        //
+                        //  node history
+                        //
+
+                        List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
+                        for (JourneyStatistic campaignStatistic : thisCampaignStatistics)
+                          {
+                            Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
+                            nodeHistoriesMap.put("fromNodeID", campaignStatistic.getFromNodeID());
+                            nodeHistoriesMap.put("toNodeID", campaignStatistic.getToNodeID());
+                            nodeHistoriesMap.put("fromNode", campaignStatistic.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(campaignStatistic.getFromNodeID()).getNodeName());
+                            nodeHistoriesMap.put("toNode", campaignStatistic.getToNodeID() == null ? null : storeCampaign.getJourneyNode(campaignStatistic.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("transitionDate", getDateString(campaignStatistic.getTransitionDate()));
+                            nodeHistoriesMap.put("linkID", campaignStatistic.getLinkID());
+                            nodeHistoriesMap.put("deliveryRequestID", campaignStatistic.getDeliveryRequestID());
+                            nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
+                          }
+
+                        campaignResponseMap.put("statusNotified", statusNotified);
+                        campaignResponseMap.put("statusConverted", statusConverted);
+                        campaignResponseMap.put("statusControlGroup", statusControlGroup);
+                        campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                        campaignResponseMap.put("campaignComplete", campaignComplete);
+                        campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
+                        campaignResponseMap.put("currentState", currentStateJson);
+                        campaignsJson.add(JSONUtilities.encodeObject(campaignResponseMap));
+                      }
+                  }
+                response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  * refreshUCG
+  *
+  *****************************************/
+
+  private JSONObject processRefreshUCG(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  identify active UCGRule (if any)
+    *
+    *****************************************/
+
+    UCGRule activeUCGRule = null;
+    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
+      {
+        activeUCGRule = ucgRule;
+      }
+
+    /*****************************************
+    *
+    *  refresh
+    *
+    *****************************************/
+
+    if (activeUCGRule != null)
+      {
+        activeUCGRule.setRefreshEpoch(activeUCGRule.getRefreshEpoch() != null ? activeUCGRule.getRefreshEpoch() + 1 : 1);
+        ucgRuleService.putUCGRule(activeUCGRule,segmentationDimensionService,false, userID);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (activeUCGRule != null) ? "ok" : "noActiveUCGRule");
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetFilesList
+  *
+  *****************************************/
+
+  private JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert UploadedFiles
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> uploadedFiles = new ArrayList<JSONObject>();
+    String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
+    for (GUIManagedObject uploaded : uploadedFileService.getStoredGUIManagedObjects())
+      {
+        String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
+        if (Objects.equals(applicationID, fileApplicationID))
+          {
+            uploadedFiles.add(uploadedFileService.generateResponseJSON(uploaded, fullDetails, now));
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    //
+    //  uploadedFiles
+    //
+
+    HashMap<String,Object> responseResult = new HashMap<String,Object>();
+    responseResult.put("applicationID", applicationID);
+    responseResult.put("uploadedFiles", JSONUtilities.encodeArray(uploadedFiles));
+
+    //
+    //  response
+    //
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("uploadedFiles", JSONUtilities.encodeObject(responseResult));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processRemoveUploadedFile
+  *
+  *****************************************/
+
+  public JSONObject processRemoveUploadedFile(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String uploadedFileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(uploadedFileID);
+    if (existingFileUpload != null && !existingFileUpload.getReadOnly())
+      {
+        uploadedFileService.deleteUploadedFile(uploadedFileID, userID, (UploadedFile)existingFileUpload);
+      }
+
+    /*****************************************
+    *
+    *  revalidate dependent objects
+    *
+    *****************************************/
+
+    revalidateTargets(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingFileUpload != null && ! existingFileUpload.getReadOnly())
+      responseCode = "ok";
+    else if (existingFileUpload != null) 
+      responseCode = "failedReadOnly";
+    else 
+      responseCode = "uploadedFileNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getCustomerAlternateIDs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerAlternateIDs(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve alternateIDs
+    *
+    *****************************************/
+
+    List<JSONObject> alternateIDs = new ArrayList<JSONObject>();
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+      {
+        JSONObject json = new JSONObject();
+        json.put("id", alternateID.getID());
+        json.put("display", alternateID.getDisplay());
+        alternateIDs.add(json);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("alternateIDs", JSONUtilities.encodeArray(alternateIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCustomerAvailableCampaigns
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerAvailableCampaigns(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+    /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else
+      {
+        /*****************************************
+        *
+        * getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
+            if (subscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+              } 
+            else
+              {
+                Date now = SystemTime.getCurrentTime();
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+                SubscriberHistory subscriberHistory = subscriberProfile.getSubscriberHistory();
+                Map<String, List<JourneyStatistic>> campaignStatisticsMap = new HashMap<String, List<JourneyStatistic>>();
+
+                //
+                //  journey statistics
+                //
+
+                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
+                  {
+                    campaignStatisticsMap = subscriberHistory.getJourneyStatistics().stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+                  }
+
+                //
+                //  read the active journeys
+                //
+
+                Collection<Journey> activeCampaigns = journeyService.getActiveJourneys(now);
+
+                //
+                //  respect manual campaigns only
+                //
+
+                activeCampaigns = activeCampaigns.stream().filter(activeJourney -> TargetingType.Manual == activeJourney.getTargetingType()).collect(Collectors.toList());
+
+                //
+                // list the eligible campaigns
+                //
+
+                Collection<Journey> elgibleActiveCampaigns = activeCampaigns.stream().filter(activeJourney -> activeJourney.evaluateEligibilityCriteria(evaluationRequest)).collect(Collectors.toList());
+
+                //
+                //  consider if not enter
+                //
+
+                List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
+                for (Journey elgibleActiveCampaign : elgibleActiveCampaigns)
+                  {
+                    if (campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()) == null || campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()).isEmpty())
+                      {
+                        //
+                        // prepare and decorate response
+                        //
+
+                        Map<String, Object> campaignMap = new HashMap<String, Object>();
+                        campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
+                        campaignMap.put("campaignName", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("display"));
+                        campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
+                        campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
+                        campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
+                        campaignsJson.add(JSONUtilities.encodeObject(campaignMap));
+                      }
+                  }
+                response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            log.error("SubscriberProfileServiceException ", e.getMessage());
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetTargetList
+  *
+  *****************************************/
+
+  private JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+
+    /*****************************************
+    *
+    *  retrieve target list
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> targetLists = new ArrayList<JSONObject>();
+    for (GUIManagedObject targetList : targetService.getStoredTargets())
+      {
+        JSONObject targetResponse = targetService.generateResponseJSON(targetList, fullDetails, now);
+        targetResponse.put("isRunning", targetService.isActiveTarget(targetList, now) ? targetService.isTargetFileBeingProcessed((Target) targetList) : false);
+        targetLists.add(targetResponse);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("targets", JSONUtilities.encodeArray(targetLists));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutTarget
+  *
+  *****************************************/
+
+  private JSONObject processPutTarget(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  targetID
+    *
+    *****************************************/
+
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (targetID == null)
+      {
+        targetID = targetService.generateTargetID();
+        jsonRoot.put("id", targetID);
+      }
+
+    /*****************************************
+    *
+    *  existing target
+    *
+    *****************************************/
+
+    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingTarget != null && existingTarget.getReadOnly())
+      {
+        response.put("id", existingTarget.getGUIManagedObjectID());
+        response.put("accepted", existingTarget.getAccepted());
+        response.put("valid", existingTarget.getAccepted());
+        response.put("processing", targetService.isActiveTarget(existingTarget, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process target
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate Target
+        *
+        ****************************************/
+
+        Target target = new Target(jsonRoot, epoch, existingTarget);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        targetService.putTarget(target, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
+
+        /*****************************************
+        *
+        *  revalidate dependent objects
+        *
+        *****************************************/
+
+        revalidateJourneys(now);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", target.getGUIManagedObjectID());
+        response.put("accepted", target.getAccepted());
+        response.put("valid", target.getAccepted());
+        response.put("processing", targetService.isActiveTarget(target, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        targetService.putTarget(incompleteObject, uploadedFileService, subscriberIDService, (existingTarget == null), userID);
+
+        //
+        //  revalidate dependent objects
+        //
+
+        revalidateJourneys(now);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("targetID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "targetNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processGetTarget
+  *
+  *****************************************/
+
+  private JSONObject processGetTarget(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate target
+    *
+    *****************************************/
+
+    GUIManagedObject target = targetService.getStoredTarget(targetID);
+    JSONObject targetJSON = targetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (target != null) ? "ok" : "targetNotFound");
+    if (target != null) response.put("target", targetJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processRemoveTarget
+  *
+  *****************************************/
+
+  private JSONObject processRemoveTarget(String userID, JSONObject jsonRoot){
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
+    if (existingTarget != null && !existingTarget.getReadOnly()) {
+      targetService.removeTarget(targetID, userID);
+    }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingTarget != null && !existingTarget.getReadOnly()) {
+      responseCode = "ok";
+    }
+    else if (existingTarget != null) {
+      responseCode = "failedReadOnly";
+    }
+    else {
+      responseCode = "targetNotFound";
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processUpdateCustomer
+  *
+  *****************************************/
+
+  private JSONObject processUpdateCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+    /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else
+      {
+        jsonRoot.put("subscriberID", subscriberID);
+        SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+
+        //
+        //  submit to kafka
+        //
+
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCommunicationChannelsList
+  *
+  *****************************************/
+
+  private JSONObject processGetCommunicationChannelsList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve communication channel list
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> communicationChannelList = new ArrayList<JSONObject>();
+    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels())
+      {
+        JSONObject channel = communicationChannelService.generateResponseJSON(communicationChannel, fullDetails, now);
+        communicationChannelList.add(channel);
+      }
+
+    List<JSONObject> defaultTimeWindowList = new ArrayList<JSONObject>();
+    NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
+    response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCommunicationChannel
+  *
+  *****************************************/
+
+  private JSONObject processGetCommunicationChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate communication channel
+    *
+    *****************************************/
+
+    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+    JSONObject communicationChannelJSON = communicationChannelService.generateResponseJSON(communicationChannel, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
+    if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutCommunicationChannel
+  *
+  *****************************************/
+
+  private JSONObject processPutCommunicationChannel(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  communicationChannelID
+    *
+    *****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (communicationChannelID == null)
+      {
+        communicationChannelID = communicationChannelService.generateCommunicationChannelID();
+        jsonRoot.put("id", communicationChannelID);
+      }
+
+    /*****************************************
+    *
+    *  existing CommunicationChannel
+    *
+    *****************************************/
+
+    GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCommunicationChannel != null && existingCommunicationChannel.getReadOnly())
+      {
+        response.put("id", existingCommunicationChannel.getGUIManagedObjectID());
+        response.put("accepted", existingCommunicationChannel.getAccepted());
+        response.put("valid", existingCommunicationChannel.getAccepted());
+        response.put("processing", communicationChannelService.isActiveCommunicationChannel(existingCommunicationChannel, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process CommunicationChannel
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate CommunicationChannel
+        *
+        ****************************************/
+
+        CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, epoch, existingCommunicationChannel);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        communicationChannelService.putCommunicationChannel(communicationChannel, (existingCommunicationChannel == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", communicationChannel.getGUIManagedObjectID());
+        response.put("accepted", communicationChannel.getAccepted());
+        response.put("valid", communicationChannel.getAccepted());
+        response.put("processing", communicationChannelService.isActiveCommunicationChannel(communicationChannel, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        communicationChannelService.putCommunicationChannel(incompleteObject, (existingCommunicationChannel == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("communicationChannelID", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "communicationChannelNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveCommunicationChannel
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCommunicationChannel(String userID, JSONObject jsonRoot){
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+    if (existingCommunicationChannel != null && !existingCommunicationChannel.getReadOnly()) {
+      communicationChannelService.removeCommunicationChannel(communicationChannelID, userID);
+    }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingCommunicationChannel != null && !existingCommunicationChannel.getReadOnly()) {
+      responseCode = "ok";
+    }
+    else if (existingCommunicationChannel != null) {
+      responseCode = "failedReadOnly";
+    }
+    else {
+      responseCode = "communicationChannelNotFound";
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetBlackoutPeriodsList
+  *
+  *****************************************/
+
+  private JSONObject processGetBlackoutPeriodsList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve blackout period list
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> communicationChannelBlackoutList = new ArrayList<JSONObject>();
+    for (GUIManagedObject blackoutPeriods : communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts())
+      {
+        JSONObject blackoutPeriod = communicationChannelBlackoutService.generateResponseJSON(blackoutPeriods, fullDetails, now);
+        communicationChannelBlackoutList.add(blackoutPeriod);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("blackoutPeriods", JSONUtilities.encodeArray(communicationChannelBlackoutList));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetBlackoutPeriods
+  *
+  *****************************************/
+
+  private JSONObject processGetBlackoutPeriods(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String communicationChannelBlackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /**************************************************************
+    *
+    *  retrieve and decorate communication channel blackout period
+    *
+    ***************************************************************/
+
+    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
+    JSONObject communicationChannelBlackoutPeriodJSON = communicationChannelBlackoutService.generateResponseJSON(communicationChannelBlackoutPeriod, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (communicationChannelBlackoutPeriod != null) ? "ok" : "communicationChannelBlackoutPeriodNotFound");
+    if (communicationChannelBlackoutPeriod != null) response.put("blackoutPeriods", communicationChannelBlackoutPeriodJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutBlackoutPeriods
+  *
+  *****************************************/
+
+  private JSONObject processPutBlackoutPeriods(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  CommunicationChannelBlackoutPeriodID
+    *
+    *****************************************/
+
+    String communicationChannelBlackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (communicationChannelBlackoutPeriodID == null)
+      {
+        communicationChannelBlackoutPeriodID = communicationChannelBlackoutService.generateCommunicationChannelBlackoutID();
+        jsonRoot.put("id", communicationChannelBlackoutPeriodID);
+      }
+
+    /*****************************************
+    *
+    *  existing CommunicationChannelBlackoutPeriod
+    *
+    *****************************************/
+
+    GUIManagedObject existingCommunicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCommunicationChannelBlackoutPeriod != null && existingCommunicationChannelBlackoutPeriod.getReadOnly())
+      {
+        response.put("id", existingCommunicationChannelBlackoutPeriod.getGUIManagedObjectID());
+        response.put("accepted", existingCommunicationChannelBlackoutPeriod.getAccepted());
+        response.put("valid", existingCommunicationChannelBlackoutPeriod.getAccepted());
+        response.put("processing", communicationChannelBlackoutService.isActiveCommunicationChannelBlackout(existingCommunicationChannelBlackoutPeriod, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process CommunicationChannelBlackoutPeriod
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate CommunicationChannelBlackoutPeriod
+        *
+        ****************************************/
+
+        CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = new CommunicationChannelBlackoutPeriod(jsonRoot, epoch, existingCommunicationChannelBlackoutPeriod);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        communicationChannelBlackoutService.putCommunicationChannelBlackout(communicationChannelBlackoutPeriod, (existingCommunicationChannelBlackoutPeriod == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", communicationChannelBlackoutPeriod.getGUIManagedObjectID());
+        response.put("accepted", communicationChannelBlackoutPeriod.getAccepted());
+        response.put("valid", communicationChannelBlackoutPeriod.getAccepted());
+        response.put("processing", communicationChannelBlackoutService.isActiveCommunicationChannelBlackout(communicationChannelBlackoutPeriod, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        communicationChannelBlackoutService.putCommunicationChannelBlackout(incompleteObject, (existingCommunicationChannelBlackoutPeriod == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "communicationChannelBlackoutPeriodNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveBlackoutPeriods
+  *
+  *****************************************/
+
+  private JSONObject processRemoveBlackoutPeriods(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String blackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID);
+    if (existingBlackoutPeriod != null && !existingBlackoutPeriod.getReadOnly())
+      {
+        communicationChannelBlackoutService.removeCommunicationChannelBlackout(blackoutPeriodID, userID);
+      }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingBlackoutPeriod != null && !existingBlackoutPeriod.getReadOnly())
+      {
+        responseCode = "ok";
+      }
+    else if (existingBlackoutPeriod != null)
+      {
+        responseCode = "failedReadOnly";
+      }
+    else
+      {
+        responseCode = "communicationChannelBlackoutNotFound";
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetLoyaltyProgramTypesList
+  *
+  *****************************************/
+
+  private JSONObject processGetLoyaltyProgramTypesList(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve loyalty program type list
+    *
+    *****************************************/
+
+    List<JSONObject> programTypeList = new ArrayList<JSONObject>();
+    for (ProgramType programType : Deployment.getProgramTypes().values())
+      {
+        JSONObject programTypeJSON = programType.getJSONRepresentation();
+        programTypeList.add(programTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("programTypes", JSONUtilities.encodeArray(programTypeList));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetLoyaltyProgramsList
+  *
+  *****************************************/
+
+  private JSONObject processGetLoyaltyProgramsList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve loyalty program list
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> loyaltyProgramList = new ArrayList<JSONObject>();
+    for (GUIManagedObject loyaltyProgram : loyaltyProgramService.getStoredGUIManagedObjects())
+      {
+        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
+        loyaltyProgramList.add(loyaltyPro);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramList));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetLoyaltyProgram
+  *
+  *****************************************/
+
+  private JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /**************************************************************
+    *
+    *  retrieve and decorate loyalty program
+    *
+    ***************************************************************/
+
+    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+    JSONObject loyaltyProgramJSON = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (loyaltyProgram != null) ? "ok" : "loyaltyProgramNotFound");
+    if (loyaltyProgram != null) response.put("loyaltyProgram", loyaltyProgramJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutLoyaltyProgram
+  *
+  *****************************************/
+
+  private JSONObject processPutLoyaltyProgram(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  loyaltyProgramID
+    *
+    *****************************************/
+
+    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (loyaltyProgramID == null)
+      {
+        loyaltyProgramID = loyaltyProgramService.generateLoyaltyProgramID();
+        jsonRoot.put("id", loyaltyProgramID);
+      }
+
+    /*****************************************
+    *
+    *  existing LoyaltyProgram
+    *
+    *****************************************/
+
+    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingLoyaltyProgram != null && existingLoyaltyProgram.getReadOnly())
+      {
+        response.put("id", existingLoyaltyProgram.getGUIManagedObjectID());
+        response.put("accepted", existingLoyaltyProgram.getAccepted());
+        response.put("valid", existingLoyaltyProgram.getAccepted());
+        response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingLoyaltyProgram, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process LoyaltyProgram
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate LoyaltyProgram
+        *
+        ****************************************/
+
+        LoyaltyProgram loyaltyProgram = new LoyaltyProgram(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", loyaltyProgram.getGUIManagedObjectID());
+        response.put("accepted", loyaltyProgram.getAccepted());
+        response.put("valid", loyaltyProgram.getAccepted());
+        response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingLoyaltyProgram, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingLoyaltyProgram == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "loyaltyProgramNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveLoyaltyProgram
+  *
+  *****************************************/
+
+  private JSONObject processRemoveLoyaltyProgram(String userID, JSONObject jsonRoot){
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
+    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly()) {
+      loyaltyProgramService.removeLoyaltyProgram(loyaltyProgramID, userID);
+    }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly()) {
+      responseCode = "ok";
+    }
+    else if (existingLoyaltyProgram != null) {
+      responseCode = "failedReadOnly";
+    }
+    else {
+      responseCode = "loyaltyProgamNotFound";
+    }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPartnersList
+  *
+  *****************************************/
+
+  private JSONObject processGetPartnersList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve sales partner list
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> salesPartnerList = new ArrayList<JSONObject>();
+    for (GUIManagedObject salesPartner : salesPartnerService.getStoredGUIManagedObjects())
+      {
+        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(salesPartner, fullDetails, now);
+        salesPartnerList.add(loyaltyPro);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("salesPartners", JSONUtilities.encodeArray(salesPartnerList));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetSalesPartner
+  *
+  *****************************************/
+
+  private JSONObject processGetSalesPartner(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /**************************************************************
+    *
+    *  retrieve and decorate salesPartner
+    *
+    ***************************************************************/
+
+    GUIManagedObject salesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
+    JSONObject salesPartnerJSON = salesPartnerService.generateResponseJSON(salesPartner, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (salesPartner != null) ? "ok" : "salesPartnerNotFound");
+    if (salesPartner != null) response.put("salesPartner", salesPartnerJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutSalesPartner
+  *
+  *****************************************/
+
+  private JSONObject processPutSalesPartner(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  salesPartnerID
+    *
+    *****************************************/
+
+    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (salesPartnerID == null)
+      {
+        salesPartnerID = salesPartnerService.generateSalesPartnerID();
+        jsonRoot.put("id", salesPartnerID);
+      }
+
+    /*****************************************
+    *
+    *  existing SalesPartner
+    *
+    *****************************************/
+
+    GUIManagedObject existingSalesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingSalesPartner != null && existingSalesPartner.getReadOnly())
+      {
+        response.put("id", existingSalesPartner.getGUIManagedObjectID());
+        response.put("accepted", existingSalesPartner.getAccepted());
+        response.put("valid", existingSalesPartner.getAccepted());
+        response.put("processing", salesPartnerService.isActiveSalesPartner(existingSalesPartner, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process SalesPartner
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate SalesPartner
+        *
+        ****************************************/
+
+        SalesPartner salesPartner = new SalesPartner(jsonRoot, epoch, existingSalesPartner);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        salesPartnerService.putSalesPartner(salesPartner, (existingSalesPartner == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", salesPartner.getGUIManagedObjectID());
+        response.put("accepted", salesPartner.getAccepted());
+        response.put("valid", salesPartner.getAccepted());
+        response.put("processing", salesPartnerService.isActiveSalesPartner(existingSalesPartner, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        salesPartnerService.putSalesPartner(incompleteObject, (existingSalesPartner == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "loyaltyProgramNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveSalesPartner
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSalesPartner(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject existingSalesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
+    if (existingSalesPartner != null && !existingSalesPartner.getReadOnly())
+      {
+        salesPartnerService.removeSalesPartner(salesPartnerID, userID);
+      }
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (existingSalesPartner != null && !existingSalesPartner.getReadOnly())
+      {
+        responseCode = "ok";
+      }
+    else if (existingSalesPartner != null)
+      {
+        responseCode = "failedReadOnly";
+      }
+    else
+      {
+        responseCode = "salesPartnerNotFound";
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorSupportedLanguages
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorSupportedLanguages(JSONObject jsonRoot)
+  {
+    return processGetSupportedLanguages(null, jsonRoot);
+  }
+  
+  /*****************************************
+  *
+  *  processConfigAdaptorSMSTemplate
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorSMSTemplate(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve template
+    *
+    *****************************************/
+
+
+    GUIManagedObject templateUnchecked = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+    templateUnchecked = (templateUnchecked != null && templateUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? templateUnchecked : null;
+    SMSTemplate template = (SMSTemplate) templateUnchecked;
+    DialogMessage messageText = (template != null) ? template.getMessageText() : null;
+
+    /*****************************************
+    *
+    *  format result
+    *
+    *****************************************/
+
+    HashMap<String,Object> templateJSON = new HashMap<String,Object>();
+    if (template != null)
+      {
+        //
+        //  messageTextByLanguage
+        //
+
+        List<JSONObject> messageTextByLanguage = new ArrayList<JSONObject>();
+        for (String language : messageText.getMessageTextByLanguage().keySet())
+          {
+            String text =  messageText.getMessageTextByLanguage().get(language);
+            Map<String,Object> messageJSON = new HashMap<String,Object>();
+            messageJSON.put("languageID", language);
+            messageJSON.put("messageText", text);
+            messageTextByLanguage.add(JSONUtilities.encodeObject(messageJSON));
+            
+          }
+
+        //
+        //  template
+        //
+
+        templateJSON.put("id", template.getSMSTemplateID());
+        templateJSON.put("name", template.getSMSTemplateName());
+        templateJSON.put("active", template.getActive());
+        templateJSON.put("message", JSONUtilities.encodeArray(messageTextByLanguage));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (template != null) ? "ok" : "templateNotFound");
+    if (template != null) response.put("template", JSONUtilities.encodeObject(templateJSON));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutFile
+  *
+  *****************************************/
+
+  private void processPutFile(JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  {
+    /****************************************
+    *
+    *  response map and object
+    *
+    ****************************************/
+
+    JSONObject jsonRoot = null;
+    String fileID = null;
+    String userID = null;
+    String responseText = null;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  check incoming request
+    *
+    ****************************************/
+
+    //
+    //  contentType
+    //
+
+    String contentType = exchange.getRequestHeaders().getFirst("Content-Type"); 
+    if(contentType == null)
+      { 
+        responseText = "Content-Type is null";    
+      }
+    else if (!contentType.startsWith(MULTIPART_FORM_DATA))
+      { 
+        responseText = "Message is not multipart/form-data";
+      } 
+
+    //
+    //  contentLength
+    //
+
+    String contentLengthString = exchange.getRequestHeaders().getFirst("Content-Length"); 
+    if(contentLengthString == null)
+      { 
+        responseText = "Content of message is null";  
+      } 
+
+    /****************************************
+    *
+    *  apache FileUpload API
+    *
+    ****************************************/
+
+    final InputStream requestBodyStream = exchange.getRequestBody(); 
+    final String contentEncoding = exchange.getRequestHeaders().getFirst("Content-Encoding");
+    FileUpload upload = new FileUpload(); 
+    FileItemIterator fileItemIterator; 
+    try
+      {
+        fileItemIterator = upload.getItemIterator(new RequestContext()
+        { 
+          public String getCharacterEncoding() { return contentEncoding; } 
+          public String getContentType() { return contentType; } 
+          public int getContentLength() { return 0; } 
+          public InputStream getInputStream() throws IOException { return requestBodyStream; }
+        }); 
+
+        if (!fileItemIterator.hasNext())
+          { 
+            responseText = "Body is empty";
+          }
+
+        //
+        // here we will extract the meta data of the request and the file
+        //
+
+        if (responseText == null)
+          {
+            boolean uploadFile = false;
+            while (fileItemIterator.hasNext())
+              {
+                FileItemStream fis = fileItemIterator.next();
+                if (fis.getFieldName().equals(FILE_UPLOAD_META_DATA))
+                  {
+                    InputStream streams = fis.openStream();
+                    String jsonAsString = Streams.asString(streams, "UTF-8");
+                    jsonRoot = (JSONObject) (new JSONParser()).parse(jsonAsString);
+                    userID = JSONUtilities.decodeString(jsonRoot, "userID", true);
+                    if(!jsonRoot.containsKey("id"))
+                      {
+                        fileID = uploadedFileService.generateFileID();
+                      }
+                    else
+                      {
+                        fileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+                      }
+                    jsonRoot.put("id", fileID);
+                    uploadFile = true;
+                  }
+                if (fis.getFieldName().equals(FILE_REQUEST) && uploadFile)
+                  {
+                    // converted the meta data and now attempting to save the file locally
+                    //
+
+                    long epoch = epochServer.getKey();
+
+                    /*****************************************
+                    *
+                    *  existing UploadedFile
+                    *
+                    *****************************************/
+
+                    GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
+                    try
+                      {
+                        /****************************************
+                        *
+                        *  instantiate new UploadedFile
+                        *
+                        ****************************************/
+
+                        UploadedFile uploadedFile = new UploadedFile(jsonRoot, epoch, existingFileUpload);
+
+                        /*****************************************
+                        *
+                        *  store UploadedFile
+                        *
+                        *****************************************/
+
+                        uploadedFileService.putUploadedFile(uploadedFile, fis.openStream(), uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
+
+                        /*****************************************
+                        *
+                        *  revalidate dependent objects
+                        *
+                        *****************************************/
+
+                        revalidateTargets(now);
+
+                        /*****************************************
+                        *
+                        *  response
+                        *
+                        *****************************************/
+
+                        jsonResponse.put("fileID", fileID);
+                        jsonResponse.put("id", fileID);
+                        jsonResponse.put("accepted", true);
+                        jsonResponse.put("valid", true);
+                        jsonResponse.put("processing", true);
+                        jsonResponse.put("responseCode", "ok");
+                      }
+                    catch (JSONUtilitiesException|GUIManagerException e)
+                      {
+                        //
+                        //  incompleteObject
+                        //
+
+                        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+                        //
+                        //  store
+                        //
+
+                        uploadedFileService.putIncompleteUploadedFile(incompleteObject, (existingFileUpload == null), userID);
+
+                        //
+                        //  revalidate dependent objects
+                        //
+
+                        revalidateTargets(now);
+
+                        //
+                        //  log
+                        //
+
+                        StringWriter stackTraceWriter = new StringWriter();
+                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+                        //
+                        //  response
+                        //
+
+                        jsonResponse.put("id", incompleteObject.getGUIManagedObjectID());
+                        jsonResponse.put("responseCode", "fileNotValid");
+                        jsonResponse.put("responseMessage", e.getMessage());
+                        jsonResponse.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+                      }
+                  }
+              }
+          }
+        else
+          {
+            jsonResponse.put("responseCode", "systemError");
+            jsonResponse.put("responseMessage", responseText);
+          }
+
+        //
+        //  log
+        //
+
+        log.debug("API (raw response): {}", jsonResponse.toString());
+
+        //
+        //  send
+        //
+
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }
+    catch (Exception e)
+      { 
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Failed to write file REST api: {}", stackTraceWriter.toString());   
+        jsonResponse.put("responseCode", "systemError");
+        jsonResponse.put("responseMessage", e.getMessage());
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      } 
+  }
+
+  /*****************************************
+  *
+  *  processDownloadReport
+  *
+  *****************************************/
+
+  private void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange)
+  {
+    String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    GUIManagedObject report1 = reportService.getStoredReport(reportID);
+    log.trace("Looking for "+reportID+" and got "+report1);
+    String responseCode = null;
+
+    if (report1 == null)
+      {
+        responseCode = "reportNotFound";
+      }
+    else
+      {
+        try
+          {
+            Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null);
+            String reportName = report.getName();
+
+            String outputPath = Deployment.getReportManagerOutputPath()+File.separator;
+            String fileExtension = Deployment.getReportManagerFileExtension();
+
+            File folder = new File(outputPath);
+            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension;
+
+            File[] listOfFiles = folder.listFiles(new FileFilter(){
+              @Override
+                  public boolean accept(File f) {
+                return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+              }});
+
+              File reportFile = null;
+
+              long lastMod = Long.MIN_VALUE;
+              if(listOfFiles != null && listOfFiles.length != 0) {
+                for (int i = 0; i < listOfFiles.length; i++) {
+                  if (listOfFiles[i].isFile()) {
+                    if(listOfFiles[i].lastModified() > lastMod) {
+                      reportFile = listOfFiles[i];
+                      lastMod = reportFile.lastModified();
+                    }
+                  }
+                }
+              }else {
+                responseCode = "Cant find report with that name";
+              }
+
+              if(reportFile != null && reportFile.length() != 0) {
+                try {
+                  FileInputStream fis = new FileInputStream(reportFile);
+                  exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                  exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                  exchange.sendResponseHeaders(200, reportFile.length());
+                  OutputStream os = exchange.getResponseBody();
+                  int c;
+                  while ((c = fis.read()) != -1) {
+                    os.write(c);
+                  }
+                  fis.close();
+                  os.flush();
+                  os.close();
+                } catch (Exception excp) {
+                  StringWriter stackTraceWriter = new StringWriter();
+                  excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                  log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                }
+              }else {
+                responseCode = "Report is empty";
+              }
+          }
+        catch (GUIManagerException e)
+          {
+            log.info("Exception when building report from "+report1+" : "+e.getLocalizedMessage());
+            responseCode = "internalError";
+          }
+      }
+    if(responseCode != null) {
+      try {
+        jsonResponse.put("responseCode", responseCode);
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }catch(Exception e) {
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+      }
+    }
+  }
+
+  /*****************************************
+  *
+  *  processCriterionFields
+  *
+  *****************************************/
+
+  private List<JSONObject> processCriterionFields(Map<String,CriterionField> baseCriterionFields, boolean tagsOnly)
+  {
+    /*****************************************
+    *
+    *  filter out parameter-only and tag-only data types
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    Map<String,CriterionField> criterionFields = new LinkedHashMap<String,CriterionField>();
+    for (CriterionField criterionField : baseCriterionFields.values())
+      {
+        switch (criterionField.getFieldDataType())
+          {
+            case IntegerCriterion:
+            case DoubleCriterion:
+            case StringCriterion:
+            case BooleanCriterion:
+            case DateCriterion:
+              criterionFields.put(criterionField.getID(), criterionField);
+              break;
+
+            case StringSetCriterion:
+              if (! tagsOnly) criterionFields.put(criterionField.getID(), criterionField);
+              break;
+          }
+      }
+
+    /****************************************
+    *
+    *  resolve field data types
+    *
+    ****************************************/
+
+    Map<String, ResolvedFieldType> resolvedFieldTypes = new LinkedHashMap<String, ResolvedFieldType>();
+    Map<String, List<JSONObject>> resolvedAvailableValues = new LinkedHashMap<String, List<JSONObject>>();
+    for (CriterionField criterionField : criterionFields.values())
+      {
+        List<JSONObject> availableValues = evaluateAvailableValues(criterionField, now, true);
+        resolvedFieldTypes.put(criterionField.getID(), new ResolvedFieldType(criterionField.getFieldDataType(), availableValues));
+        resolvedAvailableValues.put(criterionField.getID(), availableValues);
+      }
+
+    /****************************************
+    *
+    *  default list of fields for each field data type
+    *
+    ****************************************/
+
+    Map<ResolvedFieldType, List<CriterionField>> defaultFieldsForResolvedType = new LinkedHashMap<ResolvedFieldType, List<CriterionField>>();
+    for (CriterionField criterionField : criterionFields.values())
+      {
+        if (! criterionField.getID().equals(CriterionField.EvaluationDateField))
+          {
+            ResolvedFieldType resolvedFieldType = resolvedFieldTypes.get(criterionField.getID());
+            List<CriterionField> fields = defaultFieldsForResolvedType.get(resolvedFieldType);
+            if (fields == null)
+              {
+                fields = new ArrayList<CriterionField>();
+                defaultFieldsForResolvedType.put(resolvedFieldType, fields);
+              }
+            fields.add(criterionField);
+          }
+      }
+
+    /****************************************
+    *
+    *  process
+    *
+    ****************************************/
+
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    for (CriterionField criterionField : criterionFields.values())
+      {
+        if (! criterionField.getInternalOnly())
+          {
+            //
+            //  remove server-side fields
+            //
+
+            JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation().clone();
+            criterionFieldJSON.remove("esField");
+            criterionFieldJSON.remove("retriever");
+
+            //
+            //  evaluate operators
+            //
+
+            List<JSONObject> fieldAvailableValues = resolvedAvailableValues.get(criterionField.getID());
+            List<JSONObject> operators = evaluateOperators(criterionFieldJSON, fieldAvailableValues);
+            criterionFieldJSON.put("operators", operators);
+            criterionFieldJSON.remove("includedOperators");
+            criterionFieldJSON.remove("excludedOperators");
+
+            //
+            //  evaluate comparable fields
+            //
+
+            List<CriterionField> defaultComparableFields = defaultFieldsForResolvedType.get(resolvedFieldTypes.get(criterionField.getID()));
+            criterionFieldJSON.put("singletonComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, true));
+            criterionFieldJSON.put("setValuedComparableFields", evaluateComparableFields(criterionField.getID(), criterionFieldJSON, defaultComparableFields, false));
+            criterionFieldJSON.remove("includedComparableFields");
+            criterionFieldJSON.remove("excludedComparableFields");
+
+            //
+            //  evaluate available values for reference data
+            //
+
+            criterionFieldJSON.put("availableValues", resolvedAvailableValues.get(criterionField.getID()));
+
+            //
+            //  resolve maxTagLength
+            //
+
+            criterionFieldJSON.put("tagMaxLength", criterionField.resolveTagMaxLength());
+
+            //
+            //  normalize set-valued dataTypes to singleton-valued dataTypes (required by GUI)
+            //
+
+            switch (criterionField.getFieldDataType())
+              {
+                case StringSetCriterion:
+                  criterionFieldJSON.put("dataType", CriterionDataType.StringCriterion.getExternalRepresentation());
+                  break;
+              }
+
+            //
+            //  add
+            //
+
+            result.add(criterionFieldJSON);
+          }
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /****************************************
+  *
+  *  evaluateOperators
+  *
+  ****************************************/
+
+  private List<JSONObject> evaluateOperators(JSONObject criterionFieldJSON, List<JSONObject> fieldAvailableValues)
+  {
+    //
+    //  all operators
+    //
+
+    Map<String,SupportedOperator> supportedOperatorsForType = Deployment.getSupportedDataTypes().get(criterionFieldJSON.get("dataType")).getOperators();
+
+    //
+    //  remove set operators for non-enumerated types
+    //
+
+    List<String> supportedOperators = new ArrayList<String>();
+    for (String supportedOperatorID : supportedOperatorsForType.keySet())
+      {
+        SupportedOperator supportedOperator = supportedOperatorsForType.get(supportedOperatorID);
+        if (! supportedOperator.getArgumentSet())
+          supportedOperators.add(supportedOperatorID);
+        else if (supportedOperator.getArgumentSet() && fieldAvailableValues != null)
+          supportedOperators.add(supportedOperatorID);
+      }
+
+    //
+    //  find list of explicitly included operators
+    //
+
+    List<String> requestedIncludedOperatorIDs = null;
+    if (criterionFieldJSON.get("includedOperators") != null)
+      {
+        requestedIncludedOperatorIDs = new ArrayList<String>();
+        for (String operator : supportedOperators)
+          {
+            for (String operatorRegex : (List<String>) criterionFieldJSON.get("includedOperators"))
+              {
+                Pattern pattern = Pattern.compile("^" + operatorRegex + "$");
+                if (pattern.matcher(operator).matches())
+                  {
+                    requestedIncludedOperatorIDs.add(operator);
+                    break;
+                  }
+              }
+          }
+      }
+
+    //
+    //  find list of explicitly excluded operators
+    //
+
+    List<String> requestedExcludedOperatorIDs = null;
+    if (criterionFieldJSON.get("excludedOperators") != null)
+      {
+        requestedExcludedOperatorIDs = new ArrayList<String>();
+        for (String operator : supportedOperators)
+          {
+            for (String operatorRegex : (List<String>) criterionFieldJSON.get("excludedOperators"))
+              {
+                Pattern pattern = Pattern.compile("^" + operatorRegex + "$");
+                if (pattern.matcher(operator).matches())
+                  {
+                    requestedExcludedOperatorIDs.add(operator);
+                    break;
+                  }
+              }
+          }
+      }
+
+    //
+    //  resolve included/excluded operators
+    //
+
+    List<String> includedOperatorIDs = requestedIncludedOperatorIDs != null ? requestedIncludedOperatorIDs : supportedOperators;
+    Set<String> excludedOperatorIDs = requestedExcludedOperatorIDs != null ? new LinkedHashSet<String>(requestedExcludedOperatorIDs) : Collections.<String>emptySet();
+
+    //
+    //  evaluate
+    //
+
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    for (String operatorID : includedOperatorIDs)
+      {
+        SupportedOperator operator = supportedOperatorsForType.get(operatorID);
+        if (! excludedOperatorIDs.contains(operatorID))
+          {
+            result.add(operator.getJSONRepresentation());
+          }
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /****************************************
+  *
+  *  evaluateComparableFields
+  *
+  ****************************************/
+
+  private List<JSONObject> evaluateComparableFields(String criterionFieldID, JSONObject criterionFieldJSON, Collection<CriterionField> allFields, boolean singleton)
+  {
+    //
+    //  all fields
+    //
+
+    Map<String, CriterionField> comparableFields = new LinkedHashMap<String, CriterionField>();
+    for (CriterionField criterionField : allFields)
+      {
+        comparableFields.put(criterionField.getID(), criterionField);
+      }
+
+    //
+    //  find list of explicitly included fields
+    //
+
+    List<String> requestedIncludedComparableFieldIDs = null;
+    if (criterionFieldJSON.get("includedComparableFields") != null)
+      {
+        requestedIncludedComparableFieldIDs = new ArrayList<String>();
+        for (String comparableField : comparableFields.keySet())
+          {
+            for (String fieldRegex : (List<String>) criterionFieldJSON.get("includedComparableFields"))
+              {
+                Pattern pattern = Pattern.compile("^" + fieldRegex + "$");
+                if (pattern.matcher(comparableField).matches())
+                  {
+                    requestedIncludedComparableFieldIDs.add(comparableField);
+                    break;
+                  }
+              }
+          }
+      }
+
+    //
+    //  find list of explicitly excluded fields
+    //
+
+    List<String> requestedExcludedComparableFieldIDs = null;
+    if (criterionFieldJSON.get("excludedComparableFields") != null)
+      {
+        requestedExcludedComparableFieldIDs = new ArrayList<String>();
+        for (String comparableField : comparableFields.keySet())
+          {
+            for (String fieldRegex : (List<String>) criterionFieldJSON.get("excludedComparableFields"))
+              {
+                Pattern pattern = Pattern.compile("^" + fieldRegex + "$");
+                if (pattern.matcher(comparableField).matches())
+                  {
+                    requestedExcludedComparableFieldIDs.add(comparableField);
+                    break;
+                  }
+              }
+          }
+      }
+
+    //
+    //  resolve included/excluded fields
+    //
+
+    List<String> includedComparableFieldIDs = requestedIncludedComparableFieldIDs != null ? requestedIncludedComparableFieldIDs : new ArrayList<String>(comparableFields.keySet());
+    Set<String> excludedComparableFieldIDs = requestedExcludedComparableFieldIDs != null ? new LinkedHashSet<String>(requestedExcludedComparableFieldIDs) : new HashSet<String>();
+
+    //
+    //  always exclude internal-only fields
+    //
+
+    for (CriterionField criterionField : comparableFields.values())
+      {
+        if (criterionField.getInternalOnly())
+          {
+            excludedComparableFieldIDs.add(criterionField.getID());
+          }
+      }
+
+    //
+    //  evaluate
+    //
+
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    for (String comparableFieldID : includedComparableFieldIDs)
+      {
+        CriterionField criterionField = comparableFields.get(comparableFieldID);
+        if ((! excludedComparableFieldIDs.contains(comparableFieldID)) && (singleton == criterionField.getFieldDataType().getSingletonType()) && (! comparableFieldID.equals(criterionFieldID)))
+          {
+            HashMap<String,Object> comparableFieldJSON = new HashMap<String,Object>();
+            comparableFieldJSON.put("id", criterionField.getID());
+            comparableFieldJSON.put("display", criterionField.getDisplay());
+            result.add(JSONUtilities.encodeObject(comparableFieldJSON));
+          }
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  processNodeTypes
+  *
+  *****************************************/
+
+  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
+  {
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    for (NodeType nodeType : nodeTypes.values())
+      {
+        //
+        //  clone
+        //
+
+        JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
+
+        //
+        //  parameters
+        //
+
+        List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
+        JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
+        for (int i=0; i<parameters.size(); i++)
+          {
+            //
+            //  clone (so we can modify the result)
+            //
+
+            JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+            //
+            //  availableValues
+            //
+
+            List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
+            parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
+
+            //
+            //  expressionFields
+            //
+
+            CriterionField parameter = nodeType.getParameters().get(JSONUtilities.decodeString(parameterJSON, "id", true));
+            if (parameter != null && parameter.getExpressionValuedParameter())
+              {
+                //
+                //  default list of fields for parameter data type
+                //
+
+                CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables, nodeType, (EvolutionEngineEventDeclaration) null, false);
+                List<CriterionField> defaultFields = new ArrayList<CriterionField>();
+                for (CriterionField criterionField : criterionContext.getCriterionFields().values())
+                  {
+                    if (! criterionField.getID().equals(CriterionField.EvaluationDateField) && criterionField.getFieldDataType() == parameter.getFieldDataType())
+                      {
+                        defaultFields.add(criterionField);
+                      }
+                  }
+
+                //
+                //  evaluate comparable fields
+                //
+
+                List<JSONObject> expressionFields = evaluateComparableFields(parameter.getID(), parameter.getJSONRepresentation(), defaultFields, true);
+                parameterJSON.put("expressionFields", JSONUtilities.encodeArray(expressionFields));
+              }
+
+            //
+            //  result
+            //
+
+            resolvedParameters.add(parameterJSON);
+          }
+        resolvedNodeTypeJSON.put("parameters", JSONUtilities.encodeArray(resolvedParameters));
+
+        //
+        //  dynamic output connector
+        //
+
+        JSONObject dynamicOutputConnectorJSON = JSONUtilities.decodeJSONObject(resolvedNodeTypeJSON, "dynamicOutputConnector", false);
+        if (dynamicOutputConnectorJSON != null)
+          {
+            JSONObject resolvedDynamicOutputConnectorJSON = (JSONObject) dynamicOutputConnectorJSON.clone();
+            List<JSONObject>  resolvedDynamicOutputConnectorParameters = new ArrayList<JSONObject>();
+            JSONArray dynamicOutputConnectorParameters = JSONUtilities.decodeJSONArray(resolvedDynamicOutputConnectorJSON, "parameters", true);
+            for (int i=0; i<dynamicOutputConnectorParameters.size(); i++)
+              {
+                JSONObject parameterJSON = (JSONObject) ((JSONObject) dynamicOutputConnectorParameters.get(i)).clone();
+                List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
+                parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
+                resolvedDynamicOutputConnectorParameters.add(parameterJSON);
+              }
+            resolvedDynamicOutputConnectorJSON.put("parameters", JSONUtilities.encodeArray(resolvedDynamicOutputConnectorParameters));
+            resolvedNodeTypeJSON.put("dynamicOutputConnector", resolvedDynamicOutputConnectorJSON);
+          }
+
+        //
+        //  result
+        //
+
+        result.add(resolvedNodeTypeJSON);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  evaluateAvailableValues
+  *
+  *****************************************/
+
+  private List<JSONObject> evaluateAvailableValues(CriterionField criterionField, Date now, boolean includeDynamic)
+  {
+    JSONObject criterionFieldJSON = (JSONObject) criterionField.getJSONRepresentation();
+    List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(criterionFieldJSON, "availableValues", false), now, includeDynamic);
+    return availableValues;
+  }
+
+  /*****************************************
+  *
+  *  evaluateAvailableValues
+  *
+  *****************************************/
+
+  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues, Date now)
+  {
+    return evaluateAvailableValues(availableValues, now, true);
+  }
+
+  /****************************************
+  *
+  *  evaluateAvailableValues
+  *
+  ****************************************/
+
+  private List<JSONObject> evaluateAvailableValues(JSONArray availableValues, Date now, boolean includeDynamic)
+  {
+    List<JSONObject> result = null;
+    if (availableValues != null)
+      {
+        result = new ArrayList<JSONObject>();
+        Pattern enumeratedValuesPattern = Pattern.compile("^#(.*?)#$");
+        for (Object availableValueUnchecked : availableValues)
+          {
+            if (availableValueUnchecked instanceof String)
+              {
+                String availableValue = (String) availableValueUnchecked;
+                Matcher matcher = enumeratedValuesPattern.matcher(availableValue);
+                if (matcher.matches())
+                  {
+                    result.addAll(evaluateEnumeratedValues(matcher.group(1), now, includeDynamic));
+                  }
+                else
+                  {
+                    HashMap<String,Object> availableValueJSON = new HashMap<String,Object>();
+                    availableValueJSON.put("id", availableValue);
+                    availableValueJSON.put("display", availableValue);
+                    result.add(JSONUtilities.encodeObject(availableValueJSON));
+                  }
+              }
+            else if (availableValueUnchecked instanceof JSONObject)
+              {
+                JSONObject availableValue = (JSONObject) availableValueUnchecked;
+                result.add(availableValue);
+              }
+            else
+              {
+                Object availableValue = (Object) availableValueUnchecked;
+                HashMap<String,Object> availableValueJSON = new HashMap<String,Object>();
+                availableValueJSON.put("id", availableValue);
+                availableValueJSON.put("display", availableValue.toString());
+                result.add(JSONUtilities.encodeObject(availableValueJSON));
+              }
+          }
+      }
+    return result;
+  }
+
+  /****************************************
+  *
+  *  evaluateEnumeratedValues
+  *
+  ****************************************/
+
+  private List<JSONObject> evaluateEnumeratedValues(String reference, Date now, boolean includeDynamic)
+  {
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    switch (reference)
+      {
+        case "supportedLanguages":
+          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedLanguage.getID());
+              availableValue.put("display", supportedLanguage.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "segments":
+          if (includeDynamic)
+            {
+              for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+                {
+                  for (Segment segment : dimension.getSegments())
+                    {
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", segment.getID());
+                      availableValue.put("display", segment.getName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "eventNames":
+          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", evolutionEngineEventDeclaration.getName());
+              availableValue.put("display", evolutionEngineEventDeclaration.getName());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "paymentMeans":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+                {
+                  if (paymentMeanUnchecked.getAccepted())
+                    {
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", paymentMean.getPaymentMeanID());
+                      availableValue.put("display", paymentMean.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "offers":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject offerUnchecked : offerService.getStoredOffers())
+                {
+                  if (offerUnchecked.getAccepted())
+                    {
+                      Offer offer = (Offer) offerUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", offer.getOfferID());
+                      availableValue.put("display", offer.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "offerObjectives":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject offerObjectiveUnchecked : offerObjectiveService.getStoredOfferObjectives())
+                {
+                  if (offerObjectiveUnchecked.getAccepted())
+                    {
+                      OfferObjective offerObjective = (OfferObjective) offerObjectiveUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", offerObjective.getOfferObjectiveID());
+                      availableValue.put("display", offerObjective.getOfferObjectiveName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "pointDeliverables":
+          if (includeDynamic)
+            {
+              DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
+              JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+              String providerID = (String) deliveryManagerJSON.get("providerID");
+              for (GUIManagedObject deliverableUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverableUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverableUnchecked;
+                      if(deliverable.getFulfillmentProviderID().equals(providerID)){
+                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                        availableValue.put("id", deliverable.getDeliverableID());
+                        availableValue.put("display", deliverable.getDeliverableName());
+                        result.add(JSONUtilities.encodeObject(availableValue));
+                      }
+                    }
+                }
+            }
+          break;
+
+        case "products":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject productUnchecked : productService.getStoredProducts())
+                {
+                  if (productUnchecked.getAccepted())
+                    {
+                      Product product = (Product) productUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", product.getProductID());
+                      availableValue.put("display", product.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "productTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject productTypeUnchecked : productTypeService.getStoredProductTypes())
+                {
+                  if (productTypeUnchecked.getAccepted())
+                    {
+                      ProductType productType = (ProductType) productTypeUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", productType.getProductTypeID());
+                      availableValue.put("display", productType.getProductTypeName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "callableCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (campaignUnchecked.getAccepted())
+                    {
+                      Journey campaign = (Journey) campaignUnchecked;
+                      switch (campaign.getTargetingType())
+                        {
+                          case Manual:
+                            switch (campaign.getGUIManagedObjectType())
+                              {
+                                case Campaign:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", campaign.getJourneyID());
+                                  availableValue.put("display", campaign.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "callableJourneys":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (journeyUnchecked.getAccepted())
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      switch (journey.getTargetingType())
+                        {
+                          case Manual:
+                            switch (journey.getGUIManagedObjectType())
+                              {
+                                case Journey:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", journey.getJourneyID());
+                                  availableValue.put("display", journey.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "presentationStrategies":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
+                {
+                  if (presentationStrategyUnchecked.getAccepted())
+                    {
+                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
+                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "offersPresentationTokenTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
+                {
+                  if (tokenTypeUnchecked.getAccepted())
+                    {
+                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
+                      switch (tokenType.getTokenTypeKind())
+                        {
+                          case OffersPresentation:
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", tokenType.getTokenTypeID());
+                            availableValue.put("display", tokenType.getTokenTypeName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "supportedShortCodes":
+          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedShortCode.getID());
+              availableValue.put("display", supportedShortCode.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "supportedEmailAddresses":
+          for (SupportedEmailAddress supportedEmailAddress : Deployment.getSupportedEmailAddresses().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedEmailAddress.getID());
+              availableValue.put("display", supportedEmailAddress.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        default:
+          if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null)
+            {
+              try
+                {
+                  result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
+                }
+              catch (IllegalAccessException|InvocationTargetException e)
+                {
+                  throw new RuntimeException(e);
+                }
+            }
+          break;
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  deactivateOtherUCGRules
+  *
+  *****************************************/
+
+  private void deactivateOtherUCGRules(UCGRule currentUCGRule,Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+
+    Set<GUIManagedObject> modifiedUCGRules = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingUCGRule : ucgRuleService.getStoredUCGRules())
+      {
+        //
+        //  modifiedUCGRule
+        //
+        if(currentUCGRule.getGUIManagedObjectID() != existingUCGRule.getGUIManagedObjectID() && existingUCGRule.getActive() == true)
+          {
+            long epoch = epochServer.getKey();
+            GUIManagedObject modifiedUCGRule;
+            try
+              {
+                JSONObject existingRuleJSON = existingUCGRule.getJSONRepresentation();
+                existingRuleJSON.replace("active", Boolean.FALSE);
+                UCGRule ucgRule = new UCGRule(existingRuleJSON, epoch, existingUCGRule);
+                //ucgRule.validate(ucgRuleService, segmentationDimensionService, date);
+                modifiedUCGRule = ucgRule;
+              }
+            catch (JSONUtilitiesException | GUIManagerException e)
+              {
+                modifiedUCGRule = new IncompleteObject(existingUCGRule.getJSONRepresentation(), epoch);
+              }
+
+            //
+            //  changed?
+            //
+
+            if (existingUCGRule.getAccepted() != modifiedUCGRule.getAccepted())
+              {
+                modifiedUCGRules.add(modifiedUCGRule);
+              }
+          }
+      }
+
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+
+    for (GUIManagedObject modifiedUCGRule : modifiedUCGRules)
+      {
+        ucgRuleService.putGUIManagedObject(modifiedUCGRule, date, false, null);
+      }
   }
 
   /*****************************************
@@ -16186,1491 +17143,6 @@ public class GUIManager
       }
   }
 
-  /*****************************************
-  *
-  *  processGetDashboardCounts
-  *
-  *****************************************/
-
-  private JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot)
-  {
-    HashMap<String,Object> response = new HashMap<String,Object>();;
-    response.put("responseCode", "ok");
-    response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
-    response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
-    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
-    response.put("pointCount", pointService.getStoredPoints().size());
-    response.put("offerCount", offerService.getStoredOffers().size());
-    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
-    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
-    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
-    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels().size());
-    response.put("supplierCount", supplierService.getStoredSuppliers().size());
-    response.put("productCount", productService.getStoredProducts().size());
-    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
-    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives().size());
-    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
-    response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
-    response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
-    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true).size());
-    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true).size());
-    response.put("reportsCount", reportService.getStoredReports().size());
-    response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
-    response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetCustomer
-  * @throws GUIManagerException
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-
-    Map<String, Object> response = new LinkedHashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-
-    /*****************************************
-    *
-    *  getSubscriberProfile
-    *
-    *****************************************/
-
-    if (subscriberID != null)
-      {
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-              }
-            else
-              {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, targetService, pointService, subscriberGroupEpochReader);
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processGetCustomerMetaData
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerMetaData(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /***************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    //
-    //  no args
-    //
-
-    /*****************************************
-    *
-    *  retrieve CustomerMetaData
-    *
-    *****************************************/
-
-    List<JSONObject> generalDetailsMetaDataList = Deployment.getCustomerMetaData().getGeneralDetailsMetaData().stream().map(generalDetailsMetaData -> generalDetailsMetaData.getJSONRepresentation()).collect(Collectors.toList());
-    List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
-    response.put("generalDetailsMetaData", JSONUtilities.encodeArray(generalDetailsMetaDataList));
-    response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", "ok");
-
-    /****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /****************************************
-  *
-  *  processGetCustomerActivityByDateRange
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerActivityByDateRange(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String fromDateReq = JSONUtilities.decodeString(jsonRoot, "fromDate", false);
-    String toDateReq = JSONUtilities.decodeString(jsonRoot, "toDate", false);
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-    else
-      {
-        /*****************************************
-        *
-        *  getSubscriberProfile - include history
-        *
-        *****************************************/
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
-              }
-            else
-              {
-                List<JSONObject> deliveryRequestsJson = new ArrayList<JSONObject>();
-                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
-                  {
-                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
-
-                    //
-                    // prepare dates
-                    //
-
-                    Date fromDate = null;
-                    Date toDate = null;
-                    Date now = SystemTime.getCurrentTime();
-
-                    if (fromDateReq == null || fromDateReq.isEmpty() || toDateReq == null || toDateReq.isEmpty())
-                      {
-                        toDate = now;
-                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
-                      }
-                    else if (toDateReq == null || toDateReq.isEmpty())
-                      {
-                        toDate = now;
-                        fromDate = RLMDateUtils.parseDate(fromDateReq, dateFormat, Deployment.getBaseTimeZone());
-                      }
-                    else
-                      {
-                        toDate = RLMDateUtils.parseDate(toDateReq, dateFormat, Deployment.getBaseTimeZone());
-                        fromDate = RLMDateUtils.addDays(toDate, -7, Deployment.getBaseTimeZone());
-                      }
-
-                    //
-                    // filter
-                    //
-
-                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                    for (DeliveryRequest activity : activities)
-                      {
-                        if ( (activity.getEventDate().before(toDate) && activity.getEventDate().after(fromDate)) || (activity.getEventDate().equals(toDate) || activity.getEventDate().equals(fromDate)) )
-                          {
-                            result.add(activity);
-                          }
-                      }
-
-                    //
-                    // prepare json
-                    //
-
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService))).collect(Collectors.toList());
-                  }
-
-                //
-                // prepare response
-                //
-
-                response.put("activities", JSONUtilities.encodeArray(deliveryRequestsJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  * processGetCustomerBDRs
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerBDRs(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-    else
-      {
-        /*****************************************
-        *
-        *  getSubscriberProfile - include history
-        *
-        *****************************************/
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
-              }
-            else
-              {
-                List<JSONObject> BDRsJson = new ArrayList<JSONObject>();
-                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
-                  {
-                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
-
-                    //
-                    // filterBDRs
-                    //
-
-                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList());
-
-                    //
-                    // prepare dates
-                    //
-
-                    Date startDate = null;
-                    Date now = SystemTime.getCurrentTime();
-
-                    if (startDateReq == null || startDateReq.isEmpty())
-                      {
-                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
-                      }
-                    else
-                      {
-                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
-                      }
-
-                    //
-                    // filter and prepare json
-                    //
-
-                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                    for (DeliveryRequest bdr : BDRs)
-                      {
-                        if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
-                          {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
-                            DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(bdrMap.get(DeliveryRequest.MODULEID).toString());
-                            if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
-                              {
-                                bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
-                              }
-                            else
-                              {
-                                bdrMap.put(DeliveryRequest.FEATURENAME, null);
-                              }
-                            BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
-                          }
-                      }
-                  }
-
-                //
-                // prepare response
-                //
-
-                response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  * processGetCustomerODRs
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerODRs(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-    else
-      {
-        /*****************************************
-        *
-        *  getSubscriberProfile - include history
-        *
-        *****************************************/
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
-              }
-            else
-              {
-                List<JSONObject> ODRsJson = new ArrayList<JSONObject>();
-                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
-                  {
-                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
-
-                    //
-                    // filter ODRs
-                    //
-
-                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList());
-
-                    //
-                    // prepare dates
-                    //
-
-                    Date startDate = null;
-                    Date now = SystemTime.getCurrentTime();
-
-                    if (startDateReq == null || startDateReq.isEmpty())
-                      {
-                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
-                      }
-                    else
-                      {
-                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
-                      }
-
-                    //
-                    // filter using dates and prepare json
-                    //
-
-                    for (DeliveryRequest odr : ODRs)
-                      {
-                        if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
-                          {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
-                            String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
-                            if (offerID != null)
-                              {
-                                Offer offer = (Offer) offerService.getStoredOffer(offerID);
-                                if (offer != null)
-                                  {
-                                    if (offer.getOfferSalesChannelsAndPrices() != null)
-                                      {
-                                        for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
-                                          {
-                                            presentationMap.put(DeliveryRequest.SALESCHANNELID, channel.getSalesChannelIDs());
-                                            presentationMap.put(DeliveryRequest.OFFERPRICE, channel.getPrice().getAmount());
-                                          }
-                                      }
-                                    presentationMap.put(DeliveryRequest.OFFERNAME, offer.getGUIManagedObjectName());
-                                    presentationMap.put(DeliveryRequest.OFFERSTOCK, "");
-                                    presentationMap.put(DeliveryRequest.OFFERCONTENT, offer.getOfferProducts().toString());
-                                  }
-                              }
-                            ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
-                          }
-                      }
-                  }
-
-                //
-                // prepare response
-                //
-
-                response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  * processGetCustomerMessages
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerMessages(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-    else
-      {
-        /*****************************************
-        *
-        *  getSubscriberProfile - include history
-        *
-        *****************************************/
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
-              }
-            else
-              {
-                List<JSONObject> messagesJson = new ArrayList<JSONObject>();
-                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getDeliveryRequests() != null)
-                  {
-                    List<DeliveryRequest> activities = subscriberHistory.getDeliveryRequests();
-
-                    //
-                    // filter ODRs
-                    //
-
-                    List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList());
-
-                    //
-                    // prepare dates
-                    //
-
-                    Date startDate = null;
-                    Date now = SystemTime.getCurrentTime();
-
-                    if (startDateReq == null || startDateReq.isEmpty())
-                      {
-                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
-                      }
-                    else
-                      {
-                        startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
-                      }
-
-                    //
-                    // filter using dates and prepare json
-                    //
-
-                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
-                    for (DeliveryRequest message : messages)
-                      {
-                        if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
-                          {
-                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService)));
-                          }
-                      }
-                  }
-
-                //
-                // prepare response
-                //
-
-                response.put("messages", JSONUtilities.encodeArray(messagesJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  * processGetCustomerJourneys
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerJourneys(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String journeyObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
-    String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false);
-    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
-    String journeyStartDateStr = JSONUtilities.decodeString(jsonRoot, "journeyStartDate", false);
-    String journeyEndDateStr = JSONUtilities.decodeString(jsonRoot, "journeyEndDate", false);
-
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-    Date journeyStartDate = getDateFromString(journeyStartDateStr, dateFormat);
-    Date journeyEndDate = getDateFromString(journeyEndDateStr, dateFormat);
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-    else
-      {
-        /*****************************************
-        *
-        *  getSubscriberProfile - include history
-        *
-        *****************************************/
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
-              }
-            else
-              {
-                List<JSONObject> journeysJson = new ArrayList<JSONObject>();
-                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
-                  {
-                    
-                    //
-                    //  read campaigns
-                    //
-                    
-                    Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys();
-                    List<Journey> storeJourneys = new ArrayList<Journey>();
-                    for (GUIManagedObject storeJourney : stroeRawJourneys)
-                      {
-                        if (storeJourney instanceof Journey ) storeJourneys.add( (Journey) storeJourney);
-                      }
-                    
-                    //
-                    // filter Journeys
-                    //
-                    
-                    storeJourneys = storeJourneys.stream().filter(journey -> journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey).collect(Collectors.toList()); 
-                    
-                    //
-                    // filter on journeyStartDate
-                    //
-                    
-                    if (journeyStartDate != null)
-                      {
-                        storeJourneys = storeJourneys.stream().filter(journey -> (journey.getEffectiveStartDate() == null || journey.getEffectiveStartDate().compareTo(journeyStartDate) >= 0)).collect(Collectors.toList()); 
-                      }
-                    
-                    //
-                    // filter on journeyEndDate
-                    //
-                    
-                    if (journeyEndDate != null)
-                      {
-                        storeJourneys = storeJourneys.stream().filter(journey -> (journey.getEffectiveEndDate() == null || journey.getEffectiveEndDate().compareTo(journeyEndDate) <= 0)).collect(Collectors.toList());
-                      }
-                    
-                    //
-                    // filter on journeyObjectiveName
-                    //
-                    
-                    if (journeyObjectiveName != null && !journeyObjectiveName.isEmpty())
-                      {
-                        
-                        //
-                        //  read objective
-                        //
-                        
-                        Collection<JourneyObjective> activejourneyObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime());
-                       
-                        //
-                        //  filter activejourneyObjective by name
-                        //
-                        
-                        List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(journeyObjectiveName)).collect(Collectors.toList());
-                        JourneyObjective exactJourneyObjective = journeyObjectives.size() > 0 ? journeyObjectives.get(0) : null;
-
-                        //
-                        //  filter
-                        //
-                        if (exactJourneyObjective == null)
-                          storeJourneys = new ArrayList<Journey>();
-                        else
-                          storeJourneys = storeJourneys.stream().filter(journey -> (journey.getJourneyObjectiveInstances() != null && (journey.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactJourneyObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
-                       
-                      }
-                    
-                    //
-                    //  read campaign statistics 
-                    //
-                    
-                    List<JourneyStatistic> journeyStatistics = subscriberHistory.getJourneyStatistics();
-                    
-                    //
-                    // change data structure to map
-                    //
-                    
-                    Map<String, List<JourneyStatistic>> journeyStatisticsMap = journeyStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
-                    
-                    for (Journey storeJourney : storeJourneys)
-                      {
-                        
-                        //
-                        //  thisJourneyStatistics
-                        //
-                        
-                        List<JourneyStatistic> thisJourneyStatistics = journeyStatisticsMap.get(storeJourney.getJourneyID());
-                        
-                        //
-                        //  continue if not in stat
-                        //
-                        
-                        if (thisJourneyStatistics == null || thisJourneyStatistics.isEmpty()) continue;
-                        
-                        //
-                        // filter on journeyState
-                        //
-
-                        if (journeyState != null && !journeyState.isEmpty())
-                          {
-                            boolean criteriaSatisfied = false;
-                            switch (journeyState)
-                              {
-                                case "active":
-                                  criteriaSatisfied = storeJourney.getActive();
-                                  break;
-                                case "inactive":
-                                  criteriaSatisfied = !storeJourney.getActive();
-                                  break;
-                              }
-                            if (! criteriaSatisfied) continue;
-                          }
-                        
-                        //
-                        // filter on customerStatus
-                        //
-                        
-                        boolean statusNotified = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
-                        boolean statusConverted = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
-                        boolean statusControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
-                        boolean statusUniversalControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
-                        boolean journeyComplete = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                        if (customerStatus != null)
-                          {
-                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
-                            boolean criteriaSatisfied = false;
-                            switch (customerStatusInJourney)
-                              {
-                                case ENTERED:
-                                  criteriaSatisfied = !journeyComplete;
-                                  break;
-                                case NOTIFIED:
-                                  criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
-                                  break;
-                                case CONVERTED:
-                                  criteriaSatisfied = statusConverted && !journeyComplete;
-                                  break;
-                                case CONTROL:
-                                  criteriaSatisfied = statusControlGroup && !journeyComplete;
-                                  break;
-                                case UCG:
-                                  criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
-                                  break;
-                                case NOTIFIED_CONVERTED:
-                                  criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
-                                  break;
-                                case CONTROL_CONVERTED:
-                                  criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
-                                  break;
-                                case COMPLETED:
-                                  criteriaSatisfied = journeyComplete;
-                                  break;
-                                case UNKNOWN:
-                                  break;
-                              }
-                            if (!criteriaSatisfied) continue;
-                          }
-                        
-                        //
-                        // prepare response
-                        //
-                        
-                        Map<String, Object> journeyResponseMap = new HashMap<String, Object>();
-                        journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
-                        journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
-                        journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
-                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
-                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
-                        
-                        //
-                        // reverse sort
-                        //
-
-                        Collections.sort(thisJourneyStatistics, Collections.reverseOrder());
-
-                        //
-                        // prepare current node
-                        //
-
-                        JourneyStatistic subsLatestStatistic = thisJourneyStatistics.get(0);
-                        Map<String, Object> currentState = new HashMap<String, Object>();
-                        currentState.put("nodeID", subsLatestStatistic.getToNodeID());
-                        currentState.put("nodeName", subsLatestStatistic.getToNodeID() == null ? null : storeJourney.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
-                        JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
-                        
-                        //
-                        //  node history
-                        //
-                        
-                        List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
-                        for (JourneyStatistic journeyStatistic : thisJourneyStatistics)
-                          {
-                            Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
-                            nodeHistoriesMap.put("fromNodeID", journeyStatistic.getFromNodeID());
-                            nodeHistoriesMap.put("toNodeID", journeyStatistic.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", journeyStatistic.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyStatistic.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", journeyStatistic.getToNodeID() == null  ? null : storeJourney.getJourneyNode(journeyStatistic.getToNodeID()).getNodeName());
-                            nodeHistoriesMap.put("transitionDate", getDateString(journeyStatistic.getTransitionDate()));
-                            nodeHistoriesMap.put("linkID", journeyStatistic.getLinkID());
-                            nodeHistoriesMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
-                            nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
-                          }
-                        
-                        journeyResponseMap.put("statusNotified", statusNotified);
-                        journeyResponseMap.put("statusConverted", statusConverted);
-                        journeyResponseMap.put("statusControlGroup", statusControlGroup);
-                        journeyResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
-                        journeyResponseMap.put("journeyComplete", journeyComplete);
-                        journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
-                        journeyResponseMap.put("currentState", currentStateJson);
-                        journeysJson.add(JSONUtilities.encodeObject(journeyResponseMap));
-                      }
-                  }
-                response.put("journeys", JSONUtilities.encodeArray(journeysJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  * processGetGetCustomerCampaigns
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerCampaigns(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String campaignObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
-    String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false);
-    String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
-    String campaignStartDateStr = JSONUtilities.decodeString(jsonRoot, "campaignStartDate", false);
-    String campaignEndDateStr = JSONUtilities.decodeString(jsonRoot, "campaignEndDate", false);
-
-
-    //
-    // yyyy-MM-dd -- date format
-    //
-
-    String dateFormat = "yyyy-MM-dd";
-    Date campaignStartDate = getDateFromString(campaignStartDateStr, dateFormat);
-    Date campaignEndDate = getDateFromString(campaignEndDateStr, dateFormat);
-
-    /*****************************************
-    *
-    *  resolve subscriberID
-    *
-    *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
-        response.put("responseCode", "CustomerNotFound");
-      }
-    else
-      {
-        /*****************************************
-        *
-        *  getSubscriberProfile - include history
-        *
-        *****************************************/
-        try
-          {
-            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (baseSubscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
-              }
-            else
-              {
-                List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
-                SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
-                  {
-                    
-                    //
-                    //  read campaigns
-                    //
-                    
-                    Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys();
-                    List<Journey> storeCampaigns = new ArrayList<Journey>();
-                    for (GUIManagedObject storeCampaign : storeRawCampaigns)
-                      {
-                        if (storeCampaign instanceof Journey) storeCampaigns.add( (Journey) storeCampaign);
-                      }
-                    
-                    //
-                    // filter campaigns
-                    //
-                    
-                    storeCampaigns = storeCampaigns.stream().filter(campaign -> campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList()); 
-                    
-                    //
-                    // filter on campaignStartDate
-                    //
-                    
-                    if (campaignStartDate != null )
-                      {
-                        storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getEffectiveStartDate() == null || campaign.getEffectiveStartDate().compareTo(campaignStartDate) >= 0)).collect(Collectors.toList()); 
-                      }
-                    
-                    //
-                    // filter on campaignEndDate
-                    //
-                    
-                    if (campaignEndDate != null)
-                      {
-                        storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getEffectiveEndDate() == null || campaign.getEffectiveEndDate().compareTo(campaignEndDate) <= 0)).collect(Collectors.toList());
-                      }
-                    
-                    //
-                    // filter on campaignObjectiveName
-                    //
-                    
-                    if (campaignObjectiveName != null && !campaignObjectiveName.isEmpty())
-                      {
-                        
-                        //
-                        //  read objective
-                        //
-                        
-                        Collection<JourneyObjective> activecampaignObjectives = journeyObjectiveService.getActiveJourneyObjectives(SystemTime.getCurrentTime());
-                       
-                        //
-                        //  lookup activecampaignObjective by name
-                        //
-                        
-                        List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(campaignObjectiveName)).collect(Collectors.toList());
-                        JourneyObjective exactCampaignObjective = campaignObjectives.size() > 0 ? campaignObjectives.get(0) : null;
-                        
-                        //
-                        //  filter
-                        //
-                        
-                        if (exactCampaignObjective == null)
-                          storeCampaigns = new ArrayList<Journey>();
-                        else
-                          storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getJourneyObjectiveInstances() != null && (campaign.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactCampaignObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
-                       
-                      }
-                    
-                    //
-                    //  read campaign statistics 
-                    //
-                    
-                    List<JourneyStatistic> subscribersCampaignStatistics = subscriberHistory.getJourneyStatistics();
-                    
-                    //
-                    // change data structure to map
-                    //
-                    
-                    Map<String, List<JourneyStatistic>> campaignStatisticsMap = subscribersCampaignStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
-                    
-                    for (Journey storeCampaign : storeCampaigns)
-                      {
-                        
-                        //
-                        //  thisCampaignStatistics
-                        //
-                        
-                        List<JourneyStatistic> thisCampaignStatistics = campaignStatisticsMap.get(storeCampaign.getJourneyID());
-                        
-                        //
-                        //  continue if not in stat
-                        //
-                        
-                        if (thisCampaignStatistics == null || thisCampaignStatistics.isEmpty()) continue;
-                        
-                        //
-                        // filter on campaignState
-                        //
-
-                        if (campaignState != null && !campaignState.isEmpty())
-                          {
-                            boolean criteriaSatisfied = false;
-                            switch (campaignState)
-                              {
-                                case "active":
-                                  criteriaSatisfied = storeCampaign.getActive();
-                                  break;
-                                case "inactive":
-                                  criteriaSatisfied = !storeCampaign.getActive();
-                                  break;
-                              }
-                            if (! criteriaSatisfied) continue;
-                          }
-                        
-                        //
-                        // filter on customerStatus
-                        //
-                        
-                        boolean statusNotified = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusNotified()).count() > 0L ;
-                        boolean statusConverted = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusConverted()).count() > 0L ;
-                        boolean statusControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusControlGroup()).count() > 0L ;
-                        boolean statusUniversalControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusUniversalControlGroup()).count() > 0L ;
-                        boolean campaignComplete = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
-                        
-                        if (customerStatus != null)
-                          {
-                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
-                            boolean criteriaSatisfied = false;
-                            switch (customerStatusInJourney)
-                              {
-                                case ENTERED:
-                                  criteriaSatisfied = !campaignComplete;
-                                  break;
-                                case NOTIFIED:
-                                  criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
-                                  break;
-                                case CONVERTED:
-                                  criteriaSatisfied = statusConverted && !campaignComplete;
-                                  break;
-                                case CONTROL:
-                                  criteriaSatisfied = statusControlGroup && !campaignComplete;
-                                  break;
-                                case UCG:
-                                  criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;
-                                  break;
-                                case NOTIFIED_CONVERTED:
-                                  criteriaSatisfied = statusNotified && statusConverted && !campaignComplete;
-                                  break;
-                                case CONTROL_CONVERTED:
-                                  criteriaSatisfied = statusControlGroup && statusConverted && !campaignComplete;
-                                  break;
-                                case COMPLETED:
-                                  criteriaSatisfied = campaignComplete;
-                                  break;
-                                case UNKNOWN:
-                                  break;
-                              }
-                            if (! criteriaSatisfied) continue;
-                          }
-                        
-                        //
-                        // prepare response
-                        //
-                        
-                        Map<String, Object> campaignResponseMap = new HashMap<String, Object>();
-                        campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
-                        campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
-                        campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
-                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
-                        
-                        //
-                        // reverse sort
-                        //
-
-                        Collections.sort(thisCampaignStatistics, Collections.reverseOrder());
-
-                        //
-                        // prepare current node
-                        //
-
-                        JourneyStatistic subsLatestStatistic = thisCampaignStatistics.get(0);
-                        Map<String, Object> currentState = new HashMap<String, Object>();
-                        currentState.put("nodeID", subsLatestStatistic.getToNodeID());
-                        currentState.put("nodeName", subsLatestStatistic.getToNodeID() == null ? null : storeCampaign.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
-                        JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
-
-                        //
-                        //  node history
-                        //
-                        
-                        List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
-                        for (JourneyStatistic campaignStatistic : thisCampaignStatistics)
-                          {
-                            Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
-                            nodeHistoriesMap.put("fromNodeID", campaignStatistic.getFromNodeID());
-                            nodeHistoriesMap.put("toNodeID", campaignStatistic.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", campaignStatistic.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(campaignStatistic.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", campaignStatistic.getToNodeID() == null ? null : storeCampaign.getJourneyNode(campaignStatistic.getToNodeID()).getNodeName());
-                            nodeHistoriesMap.put("transitionDate", getDateString(campaignStatistic.getTransitionDate()));
-                            nodeHistoriesMap.put("linkID", campaignStatistic.getLinkID());
-                            nodeHistoriesMap.put("deliveryRequestID", campaignStatistic.getDeliveryRequestID());
-                            nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
-                          }
-                        
-                        campaignResponseMap.put("statusNotified", statusNotified);
-                        campaignResponseMap.put("statusConverted", statusConverted);
-                        campaignResponseMap.put("statusControlGroup", statusControlGroup);
-                        campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
-                        campaignResponseMap.put("campaignComplete", campaignComplete);
-                        campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
-                        campaignResponseMap.put("currentState", currentStateJson);
-                        campaignsJson.add(JSONUtilities.encodeObject(campaignResponseMap));
-                      }
-                  }
-                response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  * refreshUCG
-  *
-  *****************************************/
-
-  private JSONObject processRefreshUCG(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  identify active UCGRule (if any)
-    *
-    *****************************************/
-
-    UCGRule activeUCGRule = null;
-    for (UCGRule ucgRule : ucgRuleService.getActiveUCGRules(now))
-      {
-        activeUCGRule = ucgRule;
-      }
-
-    /*****************************************
-    *
-    *  refresh
-    *
-    *****************************************/
-
-    if (activeUCGRule != null)
-      {
-        activeUCGRule.setRefreshEpoch(activeUCGRule.getRefreshEpoch() != null ? activeUCGRule.getRefreshEpoch() + 1 : 1);
-        ucgRuleService.putUCGRule(activeUCGRule,segmentationDimensionService,false, userID);
-      }
-
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (activeUCGRule != null) ? "ok" : "noActiveUCGRule");
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processGetCustomerAvailableCampaigns
-  *
-  *****************************************/
-
-  private JSONObject processGetCustomerAvailableCampaigns(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-     *
-     * argument
-     *
-     ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-
-    /*****************************************
-     *
-     * resolve subscriberID
-     *
-     *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        response.put("responseCode", "CustomerNotFound");
-      } 
-    else
-      {
-        /*****************************************
-         *
-         * getSubscriberProfile - include history
-         *
-         *****************************************/
-        try
-          {
-            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, true);
-            if (subscriberProfile == null)
-              {
-                response.put("responseCode", "CustomerNotFound");
-              } 
-            else
-              {
-                Date now = SystemTime.getCurrentTime();
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
-                SubscriberHistory subscriberHistory = subscriberProfile.getSubscriberHistory();
-                Map<String, List<JourneyStatistic>> campaignStatisticsMap = new HashMap<String, List<JourneyStatistic>>();
-                
-                //
-                //  journey statistics
-                //
-                
-                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
-                  {
-                    campaignStatisticsMap = subscriberHistory.getJourneyStatistics().stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
-                  }
-                
-                //
-                //  read the active journeys
-                //
-                
-                Collection<Journey> activeCampaigns = journeyService.getActiveJourneys(now);
-                
-                //
-                //  respect manual campaigns only
-                //
-                
-                activeCampaigns = activeCampaigns.stream().filter(activeJourney -> TargetingType.Manual == activeJourney.getTargetingType()).collect(Collectors.toList());
-                
-                //
-                // list the eligible campaigns
-                //
-                
-                Collection<Journey> elgibleActiveCampaigns = activeCampaigns.stream().filter(activeJourney -> activeJourney.evaluateEligibilityCriteria(evaluationRequest)).collect(Collectors.toList());
-                
-                //
-                //  consider if not enter
-                //
-                
-                List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
-                for (Journey elgibleActiveCampaign : elgibleActiveCampaigns)
-                  {
-                    if (campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()) == null || campaignStatisticsMap.get(elgibleActiveCampaign.getJourneyID()).isEmpty())
-                      {
-                        //
-                        // prepare and decorate response
-                        //
-                        
-                        Map<String, Object> campaignMap = new HashMap<String, Object>();
-                        campaignMap.put("campaignID", elgibleActiveCampaign.getJourneyID());
-                        campaignMap.put("campaignName", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("display"));
-                        campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
-                        campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
-                        campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
-                        campaignsJson.add(JSONUtilities.encodeObject(campaignMap));
-                      }
-                  }
-                response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
-                response.put("responseCode", "ok");
-              }
-          }
-        catch (SubscriberProfileServiceException e)
-          {
-            log.error("SubscriberProfileServiceException ", e.getMessage());
-            throw new GUIManagerException(e);
-          }
-      }
-
-    /*****************************************
-     *
-     * return
-     *
-     *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  /*****************************************
-  *
-  *  processUpdateCustomer
-  *
-  *****************************************/
-
-  private JSONObject processUpdateCustomer(String userID, JSONObject jsonRoot) throws GUIManagerException
-  {
-    Map<String, Object> response = new HashMap<String, Object>();
-
-    /****************************************
-     *
-     * argument
-     *
-     ****************************************/
-
-    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-
-    /*****************************************
-     *
-     * resolve subscriberID
-     *
-     *****************************************/
-
-    String subscriberID = resolveSubscriberID(customerID);
-    if (subscriberID == null)
-      {
-        response.put("responseCode", "CustomerNotFound");
-      } 
-    else
-      {
-        jsonRoot.put("subscriberID", subscriberID);
-        SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-        
-        //
-        //  submit to kafka
-        //
-
-        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-        
-        response.put("responseCode", "ok");
-      }
-
-    /*****************************************
-     *
-     * return
-     *
-     *****************************************/
-
-    return JSONUtilities.encodeObject(response);
-  }
-
   /****************************************
   *
   *  resolveSubscriberID
@@ -17764,13 +17236,13 @@ public class GUIManager
       handleSimpleHandler(api, exchange);
     }
   }
-  
+
   /*****************************************
   *
   *  class APIComplexHandler
   *
   *****************************************/
-  
+
   private class APIComplexHandler implements HttpHandler
   {
     /*****************************************
@@ -17803,7 +17275,6 @@ public class GUIManager
       handleComplexAPI(api, exchange);
     }
   }
-  
 
   /*****************************************
   *
@@ -18133,7 +17604,7 @@ public class GUIManager
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
     private SalesPartnerService salesPartnerService;
-    
+
     /*****************************************
     *
     *  accessors
@@ -18170,7 +17641,7 @@ public class GUIManager
     public CommunicationChannelBlackoutService getCommunicationChannelBlackoutService() { return communicationChannelBlackoutService; }
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
     public SalesPartnerService getSalesPartnerService() { return salesPartnerService; }
-    
+
     /*****************************************
     *
     *  constructor
@@ -18282,28 +17753,27 @@ public class GUIManager
   {
     return segmentName.replace(" ",".");
   }
-  
+
   /*****************************************
   *
   *  validateURIandContext
   *
   *****************************************/
-  
+
   private void validateURIandContext(HttpExchange exchange) throws GUIManagerException
   {
     String path = exchange.getRequestURI().getPath();
     if (path.endsWith("/")) path = path.substring(0, path.length()-1);
-    
+
     //
     //  validate
     //
-    
+
     if (! path.equals(exchange.getHttpContext().getPath()))
       {
         log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
         throw new GUIManagerException("invalid URL", "404");
       }
-      
   }
 
   /*****************************************
@@ -18324,7 +17794,7 @@ public class GUIManager
       }
     catch (Exception e)
       {
-    	log.warn(e.getMessage());
+        log.warn(e.getMessage());
       }
     return result;
   }
