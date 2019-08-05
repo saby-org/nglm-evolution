@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -12751,8 +12752,8 @@ public class GUIManager
     //
 
     String dateFormat = "yyyy-MM-dd";
-    Date journeyStartDate = getDateFromString(journeyStartDateStr, dateFormat);
-    Date journeyEndDate = getDateFromString(journeyEndDateStr, dateFormat);
+    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, dateFormat));
+    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, dateFormat));
 
     /*****************************************
     *
@@ -12840,7 +12841,7 @@ public class GUIManager
                         //  filter activejourneyObjective by name
                         //
 
-                        List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(journeyObjectiveName)).collect(Collectors.toList());
+                        List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObjectiveName.equals(journeyObj.getJSONRepresentation().get("display"))).collect(Collectors.toList());
                         JourneyObjective exactJourneyObjective = journeyObjectives.size() > 0 ? journeyObjectives.get(0) : null;
 
                         //
@@ -13047,8 +13048,8 @@ public class GUIManager
     //
 
     String dateFormat = "yyyy-MM-dd";
-    Date campaignStartDate = getDateFromString(campaignStartDateStr, dateFormat);
-    Date campaignEndDate = getDateFromString(campaignEndDateStr, dateFormat);
+    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, dateFormat));
+    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, dateFormat));
 
     /*****************************************
     *
@@ -13136,7 +13137,7 @@ public class GUIManager
                         //  lookup activecampaignObjective by name
                         //
 
-                        List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(campaignObjectiveName)).collect(Collectors.toList());
+                        List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> campaignObjectiveName.equals(journeyObj.getJSONRepresentation().get("display"))).collect(Collectors.toList());
                         JourneyObjective exactCampaignObjective = campaignObjectives.size() > 0 ? campaignObjectives.get(0) : null;
 
                         //
@@ -17194,6 +17195,50 @@ public class GUIManager
     if (dateString != null)
       {
         result = RLMDateUtils.parseDate(dateString, dateFormat, Deployment.getBaseTimeZone());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  prepareEndDate
+  *
+  *****************************************/
+
+  private Date prepareEndDate(Date endDate)
+  {
+    Date result = null;
+    if (endDate != null)
+      {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTime(endDate);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        result = cal.getTime();
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  prepareStartDate
+  *
+  *****************************************/
+
+  private Date prepareStartDate(Date startDate)
+  {
+    Date result = null;
+    if (startDate != null)
+      {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTime(startDate);
+        cal.set(Calendar.HOUR_OF_DAY, 00);
+        cal.set(Calendar.MINUTE, 00);
+        cal.set(Calendar.SECOND, 00);
+        result = cal.getTime();
       }
     return result;
   }

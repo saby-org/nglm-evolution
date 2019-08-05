@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1358,8 +1359,8 @@ public class ThirdPartyManager
     String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", true);
     String journeyEndDateStr = readString(jsonRoot, "journeyEndDate", true);
 
-    Date journeyStartDate = getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
-    Date journeyEndDate = getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    Date journeyStartDate = prepareStartDate(getDateFromString(journeyStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    Date journeyEndDate = prepareEndDate(getDateFromString(journeyEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
 
     if (customerID == null)
       {
@@ -1456,7 +1457,7 @@ public class ThirdPartyManager
                       //  filter activejourneyObjective by name
                       //
 
-                      List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(journeyObjectiveName)).collect(Collectors.toList());
+                      List<JourneyObjective> journeyObjectives = activejourneyObjectives.stream().filter(journeyObj -> journeyObjectiveName.equals(journeyObj.getJSONRepresentation().get("display"))).collect(Collectors.toList());
                       JourneyObjective exactJourneyObjective = journeyObjectives.size() > 0 ? journeyObjectives.get(0) : null;
 
                       //
@@ -1662,8 +1663,8 @@ public class ThirdPartyManager
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", true);
 
 
-    Date campaignStartDate = getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
-    Date campaignEndDate = getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    Date campaignStartDate = prepareStartDate(getDateFromString(campaignStartDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    Date campaignEndDate = prepareEndDate(getDateFromString(campaignEndDateStr, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
 
     if (customerID == null)
       {
@@ -1760,7 +1761,11 @@ public class ThirdPartyManager
                       //  lookup activecampaignObjective by name
                       //
 
-                      List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> journeyObj.getJourneyObjectiveName().equals(campaignObjectiveName)).collect(Collectors.toList());
+                      log.info("[CHECKPOINT START] journey objectives from active campaigns...");
+                      activecampaignObjectives.stream().forEach(journeyObj -> log.info("journey objectives {} ",journeyObj.getJourneyObjectiveName()));
+                      log.info("[CHECKPOINT END] journey objectives from active campaigns...");
+                      
+                      List<JourneyObjective> campaignObjectives = activecampaignObjectives.stream().filter(journeyObj -> campaignObjectiveName.equals(journeyObj.getJSONRepresentation().get("display"))).collect(Collectors.toList());
                       JourneyObjective exactCampaignObjective = campaignObjectives.size() > 0 ? campaignObjectives.get(0) : null;
 
                       //
@@ -1971,8 +1976,8 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", true);
     String offerObjectiveName = readString(jsonRoot, "objectiveName", true);
 
-    Date offerStartDate = getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
-    Date offerEndDate = getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+    Date offerStartDate = prepareStartDate(getDateFromString(startDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
+    Date offerEndDate = prepareEndDate(getDateFromString(endDateString, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN));
 
     try
     {
@@ -2850,6 +2855,50 @@ public class ThirdPartyManager
     return result;
   }
 
+  /*****************************************
+  *
+  *  prepareEndDate
+  *
+  *****************************************/
+
+  private Date prepareEndDate(Date endDate)
+  {
+    Date result = null;
+    if (endDate != null)
+      {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTime(endDate);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        result = cal.getTime();
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  prepareStartDate
+  *
+  *****************************************/
+
+  private Date prepareStartDate(Date startDate)
+  {
+    Date result = null;
+    if (startDate != null)
+      {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone(Deployment.getBaseTimeZone()));
+        cal.setTime(startDate);
+        cal.set(Calendar.HOUR_OF_DAY, 00);
+        cal.set(Calendar.MINUTE, 00);
+        cal.set(Calendar.SECOND, 00);
+        result = cal.getTime();
+      }
+    return result;
+  }
+  
   /*****************************************
    *
    *  class APIHandler
