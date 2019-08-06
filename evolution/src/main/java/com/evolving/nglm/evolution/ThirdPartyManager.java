@@ -1525,7 +1525,7 @@ public class ThirdPartyManager
                       boolean statusControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
                       boolean statusUniversalControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
                       boolean journeyComplete = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-
+                      
                       if (customerStatus != null)
                         {
                           CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
@@ -1539,10 +1539,10 @@ public class ThirdPartyManager
                               criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
                               break;
                             case CONVERTED:
-                              criteriaSatisfied = statusConverted && !journeyComplete;
+                              criteriaSatisfied = statusConverted && !statusNotified && !journeyComplete;
                               break;
                             case CONTROL:
-                              criteriaSatisfied = statusControlGroup && !journeyComplete;
+                              criteriaSatisfied = statusControlGroup && !statusConverted && !journeyComplete;
                               break;
                             case UCG:
                               criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
@@ -1848,10 +1848,10 @@ public class ThirdPartyManager
                               criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
                               break;
                             case CONVERTED:
-                              criteriaSatisfied = statusConverted && !campaignComplete;
+                              criteriaSatisfied = statusConverted && !statusNotified && !campaignComplete;
                               break;
                             case CONTROL:
-                              criteriaSatisfied = statusControlGroup && !campaignComplete;
+                              criteriaSatisfied = statusControlGroup && !statusConverted && !campaignComplete;
                               break;
                             case UCG:
                               criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;

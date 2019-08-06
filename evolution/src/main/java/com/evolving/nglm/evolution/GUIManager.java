@@ -12922,10 +12922,10 @@ public class GUIManager
                                   criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
                                   break;
                                 case CONVERTED:
-                                  criteriaSatisfied = statusConverted && !journeyComplete;
+                                  criteriaSatisfied = statusConverted && !statusNotified && !journeyComplete;
                                   break;
                                 case CONTROL:
-                                  criteriaSatisfied = statusControlGroup && !journeyComplete;
+                                  criteriaSatisfied = statusControlGroup && !statusConverted && !journeyComplete;
                                   break;
                                 case UCG:
                                   criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
@@ -13220,10 +13220,10 @@ public class GUIManager
                                   criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
                                   break;
                                 case CONVERTED:
-                                  criteriaSatisfied = statusConverted && !campaignComplete;
+                                  criteriaSatisfied = statusConverted && !statusNotified && !campaignComplete;
                                   break;
                                 case CONTROL:
-                                  criteriaSatisfied = statusControlGroup && !campaignComplete;
+                                  criteriaSatisfied = statusControlGroup && !statusConverted && !campaignComplete;
                                   break;
                                 case UCG:
                                   criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;
