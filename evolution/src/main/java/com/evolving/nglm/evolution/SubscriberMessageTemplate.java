@@ -89,6 +89,13 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   public List<DialogMessage> getDialogMessages() { return dialogMessages; }
   public String getReadOnlyCopyID() { return readOnlyCopyID; }
 
+  //
+  //  abstract
+  //
+
+  public abstract String getTemplateType();
+  public abstract List<String> getDialogMessageFields();
+
   /*****************************************
   *
   *  setters
@@ -103,7 +110,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  protected SubscriberMessageTemplate(JSONObject jsonRoot, GUIManagedObjectType messageTemplateType, List<String> dialogMessageFields, long epoch, GUIManagedObject existingSubscriberMessageTemplateUnchecked) throws GUIManagerException
+  protected SubscriberMessageTemplate(JSONObject jsonRoot, GUIManagedObjectType messageTemplateType, long epoch, GUIManagedObject existingSubscriberMessageTemplateUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -147,7 +154,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
     if (messagesJSON.size() > 0)
       {
-        for (String dialogMessageField : dialogMessageFields)
+        for (String dialogMessageField : getDialogMessageFields())
           {
             dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, CriterionContext.Profile));
           }
@@ -230,7 +237,9 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     SubscriberMessageTemplate result = null;
-    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null);        
+    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(internalSubscriberMessageTemplate, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessage");
 
     //

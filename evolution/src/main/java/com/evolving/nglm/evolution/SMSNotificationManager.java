@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
@@ -228,14 +229,15 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
       schemaBuilder.field("messageTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
+      schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
+      schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
     //
     //  serde
     //
-        
+
     private static ConnectSerde<SMSNotificationManagerRequest> serde = new ConnectSerde<SMSNotificationManagerRequest>(schema, false, SMSNotificationManagerRequest.class, SMSNotificationManagerRequest::pack, SMSNotificationManagerRequest::unpack);
 
     //
@@ -245,7 +247,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public static Schema schema() { return schema; }
     public static ConnectSerde<SMSNotificationManagerRequest> serde() { return serde; }
     public Schema subscriberStreamEventSchema() { return schema(); }
-    
+
     /*****************************************
     *
     *  data
@@ -261,11 +263,11 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     private SMSMessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
-    
+
     //
     //  accessors
     //
-    
+
     public String getDestination() { return destination; }
     public String getSource() { return source; }
     public String getLanguage() { return language; }
@@ -283,8 +285,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
 
     //
-    //   setters
-    // 
+    //  setters
+    //
 
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setMessageStatus(SMSMessageStatus status) { this.status = status; }
@@ -310,7 +312,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *  constructor
     *
     *****************************************/
-    
+
     public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags)
     {
       super(context, deliveryType, deliveryRequestSource);
@@ -321,7 +323,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.messageTags = messageTags;
       this.status = SMSMessageStatus.PENDING;
       this.returnCode = status.getReturnCode();
-      this.returnCodeDetails = "";
+      this.returnCodeDetails = null;
     }
     
     /*****************************************
@@ -340,7 +342,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.messageTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "messageTags", new JSONArray()));
       this.status = SMSMessageStatus.PENDING;
       this.returnCode = SMSMessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = "";
+      this.returnCodeDetails = null;
     }
 
     /*****************************************
@@ -365,7 +367,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, SMSMessageStatus status)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, SMSMessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -376,6 +378,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.confirmationExpected = confirmationExpected;
       this.status = status;
       this.returnCode = status.getReturnCode();
+      this.returnCodeDetails = returnCodeDetails;
     }
     
     /*****************************************
@@ -426,7 +429,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       struct.put("templateID", notificationRequest.getTemplateID());
       struct.put("messageTags", notificationRequest.getMessageTags());
       struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
-      struct.put("return_code", notificationRequest.getReturnCode());
+      struct.put("returnCode", notificationRequest.getReturnCode());
+      struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       return struct;
     }
     
@@ -463,14 +467,15 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       String templateID = valueStruct.getString("templateID");
       List<String> messageTags = (List<String>) valueStruct.get("messageTags");
       boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
-      Integer returnCode = valueStruct.getInt32("return_code");
+      Integer returnCode = valueStruct.getInt32("returnCode");
+      String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       SMSMessageStatus status = SMSMessageStatus.fromReturnCode(returnCode);
       
       //
       //  return
       //
 
-      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, status);
+      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, status, returnCodeDetails);
     }
     
     /****************************************
@@ -479,6 +484,10 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     ****************************************/
     
+    //
+    //  addFieldsForGUIPresentation
+    //
+
     @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -495,8 +504,11 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
-    @Override
-    public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
+    //
+    //  addFieldsForThirdPartyPresentation
+    //
+
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
@@ -558,6 +570,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       SMSMessage smsMessage = (SMSMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
+      ContactType contactType = ContactType.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype"));
       String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
       boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
 
@@ -588,6 +601,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
+          request.setDeliveryPriority(contactType.getDeliveryPriority());
         }
       else if (template != null)
         {

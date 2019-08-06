@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryGuarantee;
+import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.DeploymentManagedObject;
@@ -14,10 +15,13 @@ import com.evolving.nglm.core.DeploymentManagedObject;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class DeliveryManagerDeclaration
@@ -31,7 +35,7 @@ public class DeliveryManagerDeclaration
   private JSONObject jsonRepresentation;
   private String deliveryType;
   private String requestClassName;
-  private String requestTopic;
+  private List<String> requestTopics;
   private String responseTopic;
   private String internalTopic;
   private String routingTopic;
@@ -50,7 +54,7 @@ public class DeliveryManagerDeclaration
   public JSONObject getJSONRepresentation() { return jsonRepresentation; }
   public String getDeliveryType() { return deliveryType; }
   public String getRequestClassName() { return requestClassName; }
-  public String getRequestTopic() { return requestTopic; }
+  public List<String> getRequestTopics() { return requestTopics; }
   public String getResponseTopic() { return responseTopic; }
   public String getInternalTopic() { return internalTopic; }
   public String getRoutingTopic() { return routingTopic; }
@@ -59,6 +63,13 @@ public class DeliveryManagerDeclaration
   public int getRetries() { return retries; }
   public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
+
+  //
+  // derived
+  //
+
+  public String getDefaultRequestTopic() { return (requestTopics.size() > 0) ? requestTopics.get(0) : null; }
+  public String getRequestTopic(DeliveryPriority deliveryPriority) { return requestTopics.get(Math.min(requestTopics.size()-1,deliveryPriority.getTopicIndex())); }
 
   //
   //  getRequestSerde
@@ -94,7 +105,7 @@ public class DeliveryManagerDeclaration
     this.jsonRepresentation = jsonRoot;
     this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
     this.requestClassName = JSONUtilities.decodeString(jsonRoot, "requestClass", true);
-    this.requestTopic = JSONUtilities.decodeString(jsonRoot, "requestTopic", true);
+    this.requestTopics = decodeRequestTopics(jsonRoot);
     this.responseTopic = JSONUtilities.decodeString(jsonRoot, "responseTopic", true);
     this.internalTopic = JSONUtilities.decodeString(jsonRoot, "internalTopic", false);
     this.routingTopic = JSONUtilities.decodeString(jsonRoot, "routingTopic", false);
@@ -103,5 +114,29 @@ public class DeliveryManagerDeclaration
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
     this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 60);
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 600);
+  }
+
+  /*****************************************
+  *
+  *  decodeRequestTopics
+  *
+  *****************************************/
+
+  private List<String> decodeRequestTopics(JSONObject jsonRoot) throws JSONUtilitiesException
+  {
+    List<String> requestTopics = new ArrayList<String>();
+    if (JSONUtilities.decodeJSONArray(jsonRoot, "requestTopics", false) != null)
+      {
+        JSONArray jsonArray = JSONUtilities.decodeJSONArray(jsonRoot, "requestTopics", true);
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            requestTopics.add((String) jsonArray.get(i));
+          }
+      }
+    else
+      {
+        requestTopics.add(JSONUtilities.decodeString(jsonRoot, "requestTopic", true));
+      }
+    return requestTopics;
   }
 }

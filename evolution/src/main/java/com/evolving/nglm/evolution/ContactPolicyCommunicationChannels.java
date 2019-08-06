@@ -6,10 +6,11 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -33,15 +34,17 @@ public class ContactPolicyCommunicationChannels
 
   public enum ContactType
   {
-    CallToAction("callToAction", "Call To Action"),
-    Reminder("reminder", "Reminder"),
-    Response("response", "Response"),
-    Unknown("(unknown)", "(unknown)");
+    CallToAction("callToAction", "Call To Action", DeliveryPriority.High),
+    Reminder("reminder", "Reminder", DeliveryPriority.Standard),
+    Response("response", "Response", DeliveryPriority.Urgent),
+    Unknown("(unknown)", "(unknown)", DeliveryPriority.Unknown);
     private String externalRepresentation;
     private String display;
-    private ContactType(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
+    private DeliveryPriority deliveryPriority;
+    private ContactType(String externalRepresentation, String display, DeliveryPriority deliveryPriority) { this.externalRepresentation = externalRepresentation; this.display = display; this.deliveryPriority = deliveryPriority; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getDisplay() { return display; }
+    public DeliveryPriority getDeliveryPriority() { return deliveryPriority; }
     public static ContactType fromExternalRepresentation(String externalRepresentation) { for (ContactType enumeratedValue : ContactType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   

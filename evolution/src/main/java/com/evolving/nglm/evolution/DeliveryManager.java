@@ -12,6 +12,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.WorkItemScheduler;
+import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -171,7 +172,7 @@ public abstract class DeliveryManager
   private String deliveryManagerKey;
   private String bootstrapServers;
   private ConnectSerde<DeliveryRequest> requestSerde;
-  private String requestTopic;
+  private List<String> requestTopics;
   private String responseTopic;
   private String internalTopic;
   private String routingTopic;
@@ -246,7 +247,7 @@ public abstract class DeliveryManager
   *****************************************/
 
   public String getDeliveryManagerKey() { return deliveryManagerKey; }
-  public String getRequestTopic() { return requestTopic; }
+  public List<String> getRequestTopics() { return requestTopics; }
   public String getResponseTopic() { return responseTopic; }
   public String getInternalTopic() { return internalTopic; }
   public String getRoutingTopic() { return routingTopic; }
@@ -255,6 +256,12 @@ public abstract class DeliveryManager
   public int getRetries() { return retries; }
   public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
+
+  //
+  //  derived
+  //
+
+  private String getDefaultRequestTopic() { return requestTopics.get(0); }
 
   /*****************************************
   *
@@ -385,6 +392,14 @@ public abstract class DeliveryManager
     
     /*****************************************
     *
+    *  validate -- TEMPORARY, DeliveryManagers dervied from DeliveryManager.java doe NOT support priority
+    *
+    *****************************************/
+
+    if (deliveryManagerDeclaration.getRequestTopics().size() == 0) throw new RuntimeException("invalid delivery manager (no request topic)");
+
+    /*****************************************
+    *
     *  status
     *
     *****************************************/
@@ -401,7 +416,7 @@ public abstract class DeliveryManager
     this.deliveryManagerKey = deliveryManagerKey;
     this.bootstrapServers = bootstrapServers;
     this.requestSerde = (ConnectSerde<DeliveryRequest>) requestSerde;
-    this.requestTopic = deliveryManagerDeclaration.getRequestTopic();
+    this.requestTopics = deliveryManagerDeclaration.getRequestTopics();
     this.responseTopic = deliveryManagerDeclaration.getResponseTopic();
     this.internalTopic = deliveryManagerDeclaration.getInternalTopic();
     this.routingTopic = deliveryManagerDeclaration.getRoutingTopic();
@@ -862,7 +877,7 @@ public abstract class DeliveryManager
                 revokeRequestConsumerPartitions(requestConsumerAssignment);
 
                 //
-                //  unsubscribe from requestTopic
+                //  unsubscribe from requestTopics
                 //
 
                 requestConsumer.unsubscribe();
@@ -945,7 +960,7 @@ public abstract class DeliveryManager
               @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {  revokeRequestConsumerPartitions(partitions); }
               @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) { assignRequestConsumerPartitions(partitions); }
             };
-            requestConsumer.subscribe(Arrays.asList(requestTopic), listener);
+            requestConsumer.subscribe(requestTopics, listener);
             requestConsumerAssignment = new HashSet<TopicPartition>(requestConsumer.assignment());
           }
 
@@ -998,7 +1013,7 @@ public abstract class DeliveryManager
             //  deliver
             //
             
-            submitDeliveryRequest(deliveryRequest, true, false, null);
+            submitDeliveryRequest(deliveryRequest, true, false);
           }
 
         /*****************************************
@@ -1034,7 +1049,7 @@ public abstract class DeliveryManager
             //  deliver
             //
             
-            submitDeliveryRequest(deliveryRequest, false, true, null);
+            submitDeliveryRequest(deliveryRequest, false, true);
           }
 
         /****************************************
@@ -1073,7 +1088,7 @@ public abstract class DeliveryManager
             //  process
             //
 
-            submitDeliveryRequest(deliveryRequest, false, false, requestRecord.offset());
+            submitDeliveryRequest(deliveryRequest, false, false, requestRecord.topic(), requestRecord.offset());
           }
       }
   }
@@ -1084,7 +1099,7 @@ public abstract class DeliveryManager
   *
   *****************************************/
 
-  private void submitDeliveryRequest(DeliveryRequest deliveryRequest, boolean restart, boolean retry, Long deliveryRequestOffset)
+  private void submitDeliveryRequest(DeliveryRequest deliveryRequest, boolean restart, boolean retry, String deliveryRequestTopic, Long deliveryRequestOffset)
   {
     /****************************************
     *
@@ -1211,7 +1226,7 @@ public abstract class DeliveryManager
           {
             try
               {
-                requestConsumer.commitSync(Collections.<TopicPartition,OffsetAndMetadata>singletonMap(new TopicPartition(requestTopic, deliveryRequest.getDeliveryPartition()), new OffsetAndMetadata(deliveryRequestOffset + 1)));
+                requestConsumer.commitSync(Collections.<TopicPartition,OffsetAndMetadata>singletonMap(new TopicPartition(deliveryRequestTopic, deliveryRequest.getDeliveryPartition()), new OffsetAndMetadata(deliveryRequestOffset + 1)));
                 break;
               }
             catch (WakeupException e)
@@ -1250,6 +1265,17 @@ public abstract class DeliveryManager
     ****************************************/
 
     submitRequestQueue.add(deliveryRequest);
+  }
+
+  /*****************************************
+  *
+  *  submitDeliveryRequestTopic
+  *
+  *****************************************/
+
+  private void submitDeliveryRequest(DeliveryRequest deliveryRequest, boolean restart, boolean retry)
+  {
+    submitDeliveryRequest(deliveryRequest, restart, retry, null, null);
   }
   
   /*****************************************

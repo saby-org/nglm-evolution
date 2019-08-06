@@ -110,7 +110,7 @@ public class ExternalDeliveryRequestFileSourceConnector extends FileSourceConnec
           if (deliveryManagerCount > 0) topic.append(",");
           topic.append(deliveryManager.getDeliveryType());
           topic.append(":");
-          topic.append(deliveryManager.getRequestTopic());
+          topic.append(deliveryManager.getDefaultRequestTopic());
           deliveryManagerCount += 1;
         }
 

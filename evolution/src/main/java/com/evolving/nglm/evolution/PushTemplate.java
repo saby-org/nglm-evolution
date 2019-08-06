@@ -11,6 +11,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -84,6 +85,13 @@ public class PushTemplate extends SubscriberMessageTemplate
   public String getPushTemplateName() { return getGUIManagedObjectName(); }
   public DialogMessage getMessageText() { return super.getDialogMessages().get(0); }
   
+  //
+  //  abstract
+  //
+
+  @Override public String getTemplateType() { return "push"; }
+  @Override public List<String> getDialogMessageFields() { return Arrays.asList("messageText"); }
+
   /*****************************************
   *
   *  constructor -- standard
@@ -92,7 +100,7 @@ public class PushTemplate extends SubscriberMessageTemplate
 
   public PushTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.PushMessageTemplate, Arrays.asList("messageText"), epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.PushMessageTemplate, epoch, existingTemplateUnchecked);
   }
 
   /*****************************************

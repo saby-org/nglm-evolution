@@ -317,6 +317,11 @@ public class GUIManager
     getSMSTemplate("getSMSTemplate"),
     putSMSTemplate("putSMSTemplate"),
     removeSMSTemplate("removeSMSTemplate"),
+    getPushTemplateList("getPushTemplateList"),
+    getPushTemplateSummaryList("getPushTemplateSummaryList"),
+    getPushTemplate("getPushTemplate"),
+    putPushTemplate("putPushTemplate"),
+    removePushTemplate("removePushTemplate"),
     getFulfillmentProviders("getFulfillmentProviders"),
     getPaymentMeans("getPaymentMeans"),
     getPaymentMeanList("getPaymentMeanList"),
@@ -373,7 +378,7 @@ public class GUIManager
     //
 
     configAdaptorSupportedLanguages("configAdaptorSupportedLanguages"),
-    configAdaptorSMSTemplate("configAdaptorSMSTemplate"),
+    configAdaptorSubscriberMessageTemplate("configAdaptorSubscriberMessageTemplate"),
 
     //
     //  structor
@@ -1406,6 +1411,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSMSTemplate", new APISimpleHandler(API.getSMSTemplate));
         restServer.createContext("/nglm-guimanager/putSMSTemplate", new APISimpleHandler(API.putSMSTemplate));
         restServer.createContext("/nglm-guimanager/removeSMSTemplate", new APISimpleHandler(API.removeSMSTemplate));
+        restServer.createContext("/nglm-guimanager/getPushTemplateList", new APISimpleHandler(API.getPushTemplateList));
+        restServer.createContext("/nglm-guimanager/getPushTemplateSummaryList", new APISimpleHandler(API.getPushTemplateSummaryList));
+        restServer.createContext("/nglm-guimanager/getPushTemplate", new APISimpleHandler(API.getPushTemplate));
+        restServer.createContext("/nglm-guimanager/putPushTemplate", new APISimpleHandler(API.putPushTemplate));
+        restServer.createContext("/nglm-guimanager/removePushTemplate", new APISimpleHandler(API.removePushTemplate));
         restServer.createContext("/nglm-guimanager/getFulfillmentProviders", new APISimpleHandler(API.getFulfillmentProviders));
         restServer.createContext("/nglm-guimanager/getPaymentMeans", new APISimpleHandler(API.getPaymentMeans));
         restServer.createContext("/nglm-guimanager/getPaymentMeanList", new APISimpleHandler(API.getPaymentMeanList));
@@ -1457,7 +1467,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putPartner", new APISimpleHandler(API.putPartner));
         restServer.createContext("/nglm-guimanager/removePartner", new APISimpleHandler(API.removePartner));
         restServer.createContext("/nglm-configadaptor/getSupportedLanguages", new APISimpleHandler(API.configAdaptorSupportedLanguages));
-        restServer.createContext("/nglm-configadaptor/getSMSTemplate", new APISimpleHandler(API.configAdaptorSMSTemplate));
+        restServer.createContext("/nglm-configadaptor/getSubscriberMessageTemplate", new APISimpleHandler(API.configAdaptorSubscriberMessageTemplate));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -2367,6 +2377,26 @@ public class GUIManager
                   jsonResponse = processRemoveSMSTemplate(userID, jsonRoot);
                   break;
 
+                case getPushTemplateList:
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, true);
+                  break;
+
+                case getPushTemplateSummaryList:
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, false);
+                  break;
+
+                case getPushTemplate:
+                  jsonResponse = processGetPushTemplate(userID, jsonRoot);
+                  break;
+
+                case putPushTemplate:
+                  jsonResponse = processPutPushTemplate(userID, jsonRoot);
+                  break;
+
+                case removePushTemplate:
+                  jsonResponse = processRemovePushTemplate(userID, jsonRoot);
+                  break;
+
                 case getFulfillmentProviders:
                   jsonResponse = processGetFulfillmentProviders(userID, jsonRoot);
                   break;
@@ -2567,8 +2597,8 @@ public class GUIManager
                   jsonResponse = processConfigAdaptorSupportedLanguages(jsonRoot);
                   break;
 
-                case configAdaptorSMSTemplate:
-                  jsonResponse = processConfigAdaptorSMSTemplate(jsonRoot);
+                case configAdaptorSubscriberMessageTemplate:
+                  jsonResponse = processConfigAdaptorSubscriberMessageTemplate(jsonRoot);
                   break;
               }
           }
@@ -11741,6 +11771,303 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processGetPushTemplateList
+  *
+  *****************************************/
+
+  private JSONObject processGetPushTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert templates
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> templates = new ArrayList<JSONObject>();
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(true))
+      {
+        templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("templates", JSONUtilities.encodeArray(templates));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetPushTemplate
+  *
+  *****************************************/
+
+  private JSONObject processGetPushTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate template
+    *
+    *****************************************/
+
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
+    JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (template != null) ? "ok" : "templateNotFound");
+    if (template != null) response.put("template", templateJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutPushTemplate
+  *
+  *****************************************/
+
+  private JSONObject processPutPushTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  templateID
+    *
+    *****************************************/
+
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (templateID == null)
+      {
+        templateID = subscriberMessageTemplateService.generateSubscriberMessageTemplateID();
+        jsonRoot.put("id", templateID);
+      }
+
+    /*****************************************
+    *
+    *  existing template
+    *
+    *****************************************/
+
+    GUIManagedObject existingTemplate = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    existingTemplate = (existingTemplate != null && existingTemplate.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? existingTemplate : null;
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingTemplate != null && existingTemplate.getReadOnly())
+      {
+        response.put("id", existingTemplate.getGUIManagedObjectID());
+        response.put("accepted", existingTemplate.getAccepted());
+        response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(existingTemplate, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process template
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate template
+        *
+        ****************************************/
+
+        PushTemplate pushTemplate = new PushTemplate(jsonRoot, epoch, existingTemplate);
+
+        /*****************************************
+        *
+        *  enhance with parameterTags
+        *
+        *****************************************/
+
+        if (pushTemplate.getParameterTags().size() > 0)
+          {
+            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
+            for (CriterionField parameterTag : pushTemplate.getParameterTags())
+              {
+                parameterTags.add(parameterTag.getJSONRepresentation());
+              }
+            pushTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
+          }
+
+        /*****************************************
+        *
+        *  store read-only copy
+        *
+        *****************************************/
+
+        if (existingTemplate == null || pushTemplate.getEpoch() != existingTemplate.getEpoch())
+          {
+            if (! pushTemplate.getReadOnly())
+              {
+                PushTemplate readOnlyCopy = (PushTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService);
+                pushTemplate.setReadOnlyCopyID(readOnlyCopy.getPushTemplateID());
+                subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
+              }
+          }
+        else if (existingTemplate.getAccepted())
+          {
+            pushTemplate.setReadOnlyCopyID(((PushTemplate) existingTemplate).getReadOnlyCopyID());
+          }
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        subscriberMessageTemplateService.putSubscriberMessageTemplate(pushTemplate, (existingTemplate == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", pushTemplate.getPushTemplateID());
+        response.put("accepted", pushTemplate.getAccepted());
+        response.put("processing", subscriberMessageTemplateService.isActiveSubscriberMessageTemplate(pushTemplate, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        subscriberMessageTemplateService.putIncompleteSubscriberMessageTemplate(incompleteObject, (existingTemplate == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "pushTemplateNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemovePushTemplate
+  *
+  *****************************************/
+
+  private JSONObject processRemovePushTemplate(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
+    if (template != null && ! template.getReadOnly()) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (template != null && ! template.getReadOnly())
+      responseCode = "ok";
+    else if (template != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "templateNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  processGetFulfillmentProviders
   *
   *****************************************/
@@ -12082,6 +12409,7 @@ public class GUIManager
     response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
     response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true).size());
     response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true).size());
+    response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true).size());
     response.put("reportsCount", reportService.getStoredReports().size());
     response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
     response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());
@@ -15104,11 +15432,11 @@ public class GUIManager
   
   /*****************************************
   *
-  *  processConfigAdaptorSMSTemplate
+  *  processConfigAdaptorSubscriberMessageTemplate
   *
   *****************************************/
 
-  private JSONObject processConfigAdaptorSMSTemplate(JSONObject jsonRoot)
+  private JSONObject processConfigAdaptorSubscriberMessageTemplate(JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -15132,11 +15460,7 @@ public class GUIManager
     *
     *****************************************/
 
-
-    GUIManagedObject templateUnchecked = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
-    templateUnchecked = (templateUnchecked != null && templateUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? templateUnchecked : null;
-    SMSTemplate template = (SMSTemplate) templateUnchecked;
-    DialogMessage messageText = (template != null) ? template.getMessageText() : null;
+    SubscriberMessageTemplate template = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -15147,31 +15471,64 @@ public class GUIManager
     HashMap<String,Object> templateJSON = new HashMap<String,Object>();
     if (template != null)
       {
-        //
-        //  messageTextByLanguage
-        //
+        /*****************************************
+        *
+        *  messageByLanguagea
+        *
+        *****************************************/
 
-        List<JSONObject> messageTextByLanguage = new ArrayList<JSONObject>();
-        for (String language : messageText.getMessageTextByLanguage().keySet())
+        Map<String,Map<String,Object>> messageByLanguage = new HashMap<String,Map<String,Object>>();
+        for (int i=0; i<template.getDialogMessages().size(); i++)
           {
-            String text =  messageText.getMessageTextByLanguage().get(language);
-            Map<String,Object> messageJSON = new HashMap<String,Object>();
-            messageJSON.put("languageID", language);
-            messageJSON.put("messageText", text);
-            messageTextByLanguage.add(JSONUtilities.encodeObject(messageJSON));
-            
+            String messageTextField = template.getDialogMessageFields().get(i);
+            DialogMessage messageText = template.getDialogMessages().get(i);
+            for (String language : messageText.getMessageTextByLanguage().keySet())
+              {
+                //
+                //  create entry for language (if necessary)
+                //
+
+                Map<String,Object> fieldsByLanguage = messageByLanguage.get(language);
+                if (fieldsByLanguage == null)
+                  {
+                    fieldsByLanguage = new HashMap<String,Object>();
+                    fieldsByLanguage.put("language", language);
+                    messageByLanguage.put(language, fieldsByLanguage);
+                  }
+
+                //
+                //  field
+                //
+
+                fieldsByLanguage.put(messageTextField, messageText.getMessageTextByLanguage().get(language));
+              }
           }
 
-        //
-        //  template
-        //
+        /*****************************************
+        *
+        *  messageJSON
+        *
+        *****************************************/
 
-        templateJSON.put("id", template.getSMSTemplateID());
-        templateJSON.put("name", template.getSMSTemplateName());
+        List<JSONObject> messageJSON = new ArrayList<JSONObject>();
+        for (Map<String,Object> fieldsByLanguage : messageByLanguage.values())
+          {
+            messageJSON.add(JSONUtilities.encodeObject(fieldsByLanguage));
+          }
+
+        /*****************************************
+        *
+        *  template
+        *
+        *****************************************/
+        
+        templateJSON.put("id", template.getSubscriberMessageTemplateID());
+        templateJSON.put("name", template.getSubscriberMessageTemplateName());
         templateJSON.put("active", template.getActive());
-        templateJSON.put("message", JSONUtilities.encodeArray(messageTextByLanguage));
+        templateJSON.put("templateType", template.getTemplateType());
+        templateJSON.put("message", JSONUtilities.encodeArray(messageJSON));
       }
-
+    
     /*****************************************
     *
     *  response

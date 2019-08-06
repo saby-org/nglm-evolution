@@ -85,6 +85,13 @@ public class SMSTemplate extends SubscriberMessageTemplate
   public String getSMSTemplateName() { return getGUIManagedObjectName(); }
   public DialogMessage getMessageText() { return super.getDialogMessages().get(0); }
   
+  //
+  //  abstract
+  //
+
+  @Override public String getTemplateType() { return "sms"; }
+  @Override public List<String> getDialogMessageFields() { return Arrays.asList("messageText"); }
+
   /*****************************************
   *
   *  constructor -- standard
@@ -93,6 +100,6 @@ public class SMSTemplate extends SubscriberMessageTemplate
 
   public SMSTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, Arrays.asList("messageText"), epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked);
   }
 }

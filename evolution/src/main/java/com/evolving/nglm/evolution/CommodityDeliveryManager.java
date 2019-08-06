@@ -279,7 +279,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
           // update list (kafka) request producers
           //
           
-          String requestTopic = deliveryManager.getRequestTopic();
+          String requestTopic = deliveryManager.getDefaultRequestTopic();
           Properties kafkaProducerProperties = new Properties();
           kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
           kafkaProducerProperties.put("acks", "all");
@@ -764,7 +764,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     // get kafka producer
 
     DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get("commodityDelivery");
-    String requestTopic = deliveryManagerDeclaration.getRequestTopic();
+    String requestTopic = deliveryManagerDeclaration.getDefaultRequestTopic();
 
     if(commodityDeliveryRequestProducer == null){
       Properties kafkaProducerProperties = new Properties();
@@ -1180,7 +1180,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.IN+" request ...");
       
       DeliveryManagerDeclaration inManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
-      String inRequestTopic = inManagerDeclaration.getRequestTopic();
+      String inRequestTopic = inManagerDeclaration.getDefaultRequestTopic();
 
       HashMap<String,Object> inRequestData = new HashMap<String,Object>();
       
@@ -1226,7 +1226,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.POINT+" request ...");
 
       DeliveryManagerDeclaration pointManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
-      String pointRequestTopic = pointManagerDeclaration.getRequestTopic();
+      String pointRequestTopic = pointManagerDeclaration.getDefaultRequestTopic();
 
       HashMap<String,Object> pointRequestData = new HashMap<String,Object>();
       
@@ -1270,7 +1270,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       log.info(Thread.currentThread().getId()+" - CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+CommodityType.JOURNEY+" request ...");
       
       DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryType);
-      String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic();
+      String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
 
       HashMap<String,Object> journeyRequestData = new HashMap<String,Object>();
       

@@ -51,16 +51,16 @@ public class SimpleEmailSender {
 	 */
 	public void sendEmail(MailNotificationManagerRequest deliveryRequest) throws MessagingException {
 		if (logger.isTraceEnabled()) logger.trace("START: SimpleEmailSender.sendEmail("+deliveryRequest+")");
-		String emailText = deliveryRequest.getTextBody();
+		String emailText = deliveryRequest.getTextBody(mailNotificationManager.getSubscriberMessageTemplateService());
 		String toEmail = deliveryRequest.getDestination();
 //		String dmMessageId = deliveryRequest.getDeliveryRequestID();
-		if (logger.isTraceEnabled()) logger.trace("SimpleEmailSender.sendEmail this.fromEmail="+this.fromEmail+" getSender=" +deliveryRequest.getSource());
+		if (logger.isTraceEnabled()) logger.trace("SimpleEmailSender.sendEmail this.fromEmail="+this.fromEmail+" getSender=" +deliveryRequest.getFromAddress());
 		// EFOGC-5467 : we give priority to this.fromEmail because it also includes the "Friendly From" field.
 		//              dmMsg.getSender().getSender() only contains the "real" email address.
 		// String frmEmail = ((dmMsg.getSender().getSender() == null || dmMsg.getSender().getSender().isEmpty()) ? this.fromEmail : dmMsg.getSender().getSender());
 		String frmEmail = this.fromEmail;
 		if (frmEmail == null)
-			frmEmail = deliveryRequest.getSource();
+			frmEmail = deliveryRequest.getFromAddress();
 		String subject = (null == forceSubject ? "" : forceSubject);
 		
 		send(frmEmail, subject, emailText, replyTo, toEmail, deliveryRequest);

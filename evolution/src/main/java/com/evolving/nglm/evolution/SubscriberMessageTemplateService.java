@@ -212,6 +212,30 @@ public class SubscriberMessageTemplateService extends GUIService
 
   /*****************************************
   *
+  *  getStoredPushTemplates
+  *
+  *****************************************/
+
+  public Collection<GUIManagedObject> getStoredPushTemplates(boolean externalOnly)
+  {
+    Set<GUIManagedObject> result = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject template : getStoredSubscriberMessageTemplates())
+      {
+        switch (template.getGUIManagedObjectType())
+          {
+            case PushMessageTemplate:
+              if (! externalOnly || ! template.getInternalOnly())
+                {
+                  result.add(template);
+                }
+              break;
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
   *  interface TemplateListener
   *
   *****************************************/

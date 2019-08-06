@@ -1494,12 +1494,12 @@ public class Journey extends GUIManagedObject
               break;
 
             case EmailMessageParameter:
-              EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+              EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
               boundParameters.put(parameterName, emailMessageValue);
               break;
 
             case PushMessageParameter:
-              PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+              PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
               boundParameters.put(parameterName, pushMessageValue);
               break;
           }
@@ -2078,12 +2078,12 @@ public class Journey extends GUIManagedObject
                 break;
 
               case EmailMessageParameter:
-                EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, emailMessageValue);
                 break;
 
               case PushMessageParameter:
-                PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, pushMessageValue);
                 break;
             }
@@ -2379,12 +2379,12 @@ public class Journey extends GUIManagedObject
                     break;
 
                   case EmailMessageParameter:
-                    EmailMessage emailMessageValue = new EmailMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                    EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                     outputConnectorParameters.put(parameterName, emailMessageValue);
                     break;
 
                   case PushMessageParameter:
-                    PushMessage pushMessageValue = new PushMessage(JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray()), criterionContext);
+                    PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                     outputConnectorParameters.put(parameterName, pushMessageValue);
                     break;
                 }

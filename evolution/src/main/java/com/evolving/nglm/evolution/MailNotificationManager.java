@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Field;
@@ -14,12 +15,14 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
@@ -91,12 +94,21 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   private NotificationStatistics stats = null;
   private static String applicationID = "deliverymanager-notificationmanagermail";
   public String pluginName;
+  private SubscriberMessageTemplateService subscriberMessageTemplateService;
 
   //
   //  logger
   //
 
   private static final Logger log = LoggerFactory.getLogger(MailNotificationManager.class);
+
+  /*****************************************
+  *
+  *  accessors
+  *
+  *****************************************/
+
+  public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
 
   /*****************************************
   *
@@ -111,6 +123,13 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     //
 
     super(applicationID, deliveryManagerKey, Deployment.getBrokerServers(), MailNotificationManagerRequest.serde, Deployment.getDeliveryManagers().get(pluginName));
+
+    //
+    //  service
+    //
+
+    subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "mailnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
+    subscriberMessageTemplateService.start();
 
     //
     //  manager
@@ -193,12 +212,15 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
-      schemaBuilder.field("source", Schema.STRING_SCHEMA);
-      schemaBuilder.field("subject", Schema.STRING_SCHEMA);
-      schemaBuilder.field("htmlBody", Schema.STRING_SCHEMA);
-      schemaBuilder.field("textBody", Schema.STRING_SCHEMA);
+      schemaBuilder.field("fromAddress", Schema.STRING_SCHEMA);
+      schemaBuilder.field("language", Schema.STRING_SCHEMA);
+      schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("subjectTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
+      schemaBuilder.field("htmlBodyTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
+      schemaBuilder.field("textBodyTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
-      schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
+      schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
+      schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -223,10 +245,12 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *****************************************/
 
     private String destination;
-    private String source;
-    private String subject;
-    private String htmlBody;
-    private String textBody;
+    private String fromAddress;
+    private String language;
+    private String templateID;
+    private List<String> subjectTags;
+    private List<String> htmlBodyTags;
+    private List<String> textBodyTags;
     private boolean confirmationExpected;
     private MAILMessageStatus status;
     private int returnCode;
@@ -237,14 +261,22 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     //
 
     public String getDestination() { return destination; }
-    public String getSource() { return source; }
-    public String getSubject() { return subject; }
-    public String getHtmlBody() { return htmlBody; }
-    public String getTextBody() { return textBody; }
+    public String getFromAddress() { return fromAddress; }
+    public String getLanguage() { return language; }
+    public String getTemplateID() { return templateID; }
+    public List<String> getSubjectTags() { return subjectTags; }
+    public List<String> getHtmlBodyTags() { return htmlBodyTags; }
+    public List<String> getTextBodyTags() { return textBodyTags; }
     public boolean getConfirmationExpected() { return confirmationExpected; }
     public MAILMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
+
+    //
+    //  abstract
+    //
+
+    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
 
     //
     //  setters
@@ -252,26 +284,70 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
     public void setMessageStatus(MAILMessageStatus status) { this.status = status; }
-    public void setReturnCode(int returnCode) { this.returnCode = returnCode; }
+    public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
     
+    /*****************************************
+    *
+    *  getSubject
+    *
+    *****************************************/
+
+    public String getSubject(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getSubject() : null;
+      String text = (dialogMessage != null) ? dialogMessage.resolve(language, subjectTags) : null;
+      return text;
+    }
+
+    /*****************************************
+    *
+    *  getHtmlBody
+    *
+    *****************************************/
+
+    public String getHtmlBody(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getHTMLBody() : null;
+      String text = (dialogMessage != null) ? dialogMessage.resolve(language, htmlBodyTags) : null;
+      return text;
+    }
+
+    /*****************************************
+    *
+    *  getTextBody
+    *
+    *****************************************/
+
+    public String getTextBody(SubscriberMessageTemplateService subscriberMessageTemplateService)
+    {
+      MailTemplate mailTemplate = (MailTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      DialogMessage dialogMessage = (mailTemplate != null) ? mailTemplate.getTextBody() : null;
+      String text = (dialogMessage != null) ? dialogMessage.resolve(language, textBodyTags) : null;
+      return text;
+    }
+
     /*****************************************
     *
     *  constructor
     *
     *****************************************/
 
-    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String subject, String htmlBody, String textBody)
+    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.destination = destination;
-      this.source = source;
-      this.subject = subject;
-      this.htmlBody = htmlBody;
-      this.textBody = textBody;
+      this.fromAddress = fromAddress;
+      this.language = language;
+      this.templateID = templateID;
+      this.subjectTags = subjectTags;
+      this.htmlBodyTags = htmlBodyTags;
+      this.textBodyTags = textBodyTags;
       this.status = MAILMessageStatus.PENDING;
-      this.returnCode = MAILMessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = "";
+      this.returnCode = status.getReturnCode();
+      this.returnCodeDetails = null;
     }
 
     /*****************************************
@@ -279,18 +355,36 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *  constructor -- external
     *
     *****************************************/
-
+    
     public MailNotificationManagerRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
     {
       super(jsonRoot);
       this.destination = JSONUtilities.decodeString(jsonRoot, "destination", true);
-      this.source = JSONUtilities.decodeString(jsonRoot, "source", true);
-      this.subject = JSONUtilities.decodeString(jsonRoot, "subject", true);
-      this.htmlBody = JSONUtilities.decodeString(jsonRoot, "htmlBody", true);
-      this.textBody = JSONUtilities.decodeString(jsonRoot, "textBody", true);
+      this.fromAddress = JSONUtilities.decodeString(jsonRoot, "fromAddress", true);
+      this.language = JSONUtilities.decodeString(jsonRoot, "language", true);
+      this.templateID = JSONUtilities.decodeString(jsonRoot, "templateID", true);
+      this.subjectTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "subjectTags", new JSONArray()));
+      this.htmlBodyTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "htmlBodyTags", new JSONArray()));
+      this.textBodyTags = decodeMessageTags(JSONUtilities.decodeJSONArray(jsonRoot, "textBodyTags", new JSONArray()));
       this.status = MAILMessageStatus.PENDING;
       this.returnCode = MAILMessageStatus.PENDING.getReturnCode();
-      this.returnCodeDetails = "";
+      this.returnCodeDetails = null;
+    }
+
+    /*****************************************
+    *
+    *  decodeMessageTags
+    *
+    *****************************************/
+
+    private List<String> decodeMessageTags(JSONArray jsonArray)
+    {
+      List<String> messageTags = new ArrayList<String>();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          messageTags.add((String) jsonArray.get(i));
+        }
+      return messageTags;
     }
 
     /*****************************************
@@ -299,17 +393,20 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String subject, String htmlBody, String textBody, boolean confirmationExpected, MAILMessageStatus status)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, MAILMessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
-      this.source = source;
-      this.subject = subject;
-      this.htmlBody = htmlBody;
-      this.textBody = textBody;
+      this.fromAddress = fromAddress;
+      this.language = language;
+      this.templateID = templateID;
+      this.subjectTags = subjectTags;
+      this.htmlBodyTags = htmlBodyTags;
+      this.textBodyTags = textBodyTags;
       this.confirmationExpected = confirmationExpected;
       this.status = status;
       this.returnCode = status.getReturnCode();
+      this.returnCodeDetails = returnCodeDetails;
     }
 
     /*****************************************
@@ -322,10 +419,12 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     {
       super(mailNotificationManagerRequest);
       this.destination = mailNotificationManagerRequest.getDestination();
-      this.source = mailNotificationManagerRequest.getSource();
-      this.subject = mailNotificationManagerRequest.getSubject();
-      this.htmlBody = mailNotificationManagerRequest.getHtmlBody();
-      this.textBody = mailNotificationManagerRequest.getTextBody();
+      this.fromAddress = mailNotificationManagerRequest.getFromAddress();
+      this.language = mailNotificationManagerRequest.getLanguage();
+      this.templateID = mailNotificationManagerRequest.getTemplateID();
+      this.subjectTags = mailNotificationManagerRequest.getSubjectTags();
+      this.htmlBodyTags = mailNotificationManagerRequest.getHtmlBodyTags();
+      this.textBodyTags = mailNotificationManagerRequest.getTextBodyTags();
       this.confirmationExpected = mailNotificationManagerRequest.getConfirmationExpected();
       this.status = mailNotificationManagerRequest.getMessageStatus();
       this.returnCode = mailNotificationManagerRequest.getReturnCode();
@@ -355,19 +454,22 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       Struct struct = new Struct(schema);
       packCommon(struct, notificationRequest);
       struct.put("destination", notificationRequest.getDestination());
-      struct.put("source", notificationRequest.getSource());
-      struct.put("subject", notificationRequest.getSubject());
-      struct.put("htmlBody", notificationRequest.getHtmlBody());
-      struct.put("textBody", notificationRequest.getTextBody());
+      struct.put("fromAddress", notificationRequest.getFromAddress());
+      struct.put("language", notificationRequest.getLanguage());
+      struct.put("templateID", notificationRequest.getTemplateID());
+      struct.put("subjectTags", notificationRequest.getSubjectTags());
+      struct.put("htmlBodyTags", notificationRequest.getHtmlBodyTags());
+      struct.put("textBodyTags", notificationRequest.getTextBodyTags());
       struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
-      struct.put("return_code", notificationRequest.getReturnCode());
+      struct.put("returnCode", notificationRequest.getReturnCode());
+      struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       return struct;
     }
-
+    
     //
     //  subscriberStreamEventPack
     //
-
+    
     public Object subscriberStreamEventPack(Object value) { return pack(value); }
 
     /*****************************************
@@ -392,22 +494,23 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
       Struct valueStruct = (Struct) value;
       String destination = valueStruct.getString("destination");
-      String source = valueStruct.getString("source");
-      String subject = valueStruct.getString("subject");
-      String htmlBody = valueStruct.getString("htmlBody");
-      String textBody = valueStruct.getString("textBody");
+      String fromAddress = valueStruct.getString("fromAddress");
+      String language = valueStruct.getString("language");
+      String templateID = valueStruct.getString("templateID");
+      List<String> subjectTags = (List<String>) valueStruct.get("subjectTags");
+      List<String> htmlBodyTags = (List<String>) valueStruct.get("htmlBodyTags");
+      List<String> textBodyTags = (List<String>) valueStruct.get("textBodyTags");
       boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
-      Integer returnCode = valueStruct.getInt32("return_code");
+      Integer returnCode = valueStruct.getInt32("returnCode");
+      String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MAILMessageStatus status = MAILMessageStatus.fromReturnCode(returnCode);
-
+      
       //
       //  return
       //
 
-      return new MailNotificationManagerRequest(schemaAndValue, destination, source, subject, htmlBody, textBody, confirmationExpected, status);
+      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, status, returnCodeDetails);
     }
-    
-    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
     
     /****************************************
     *
@@ -415,34 +518,42 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     ****************************************/
     
+    //
+    //  addFieldsForGUIPresentation
+    //
+
     @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(ORIGIN, getSource());
+      guiPresentationMap.put(ORIGIN, getFromAddress());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject());
-      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody());
-      guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody());
+      guiPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
+      guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
+      guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
+    //
+    //  addFieldsForThirdPartyPresentation
+    //
+
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(ORIGIN, getSource());
+      thirdPartyPresentationMap.put(ORIGIN, getFromAddress());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject());
-      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody());
-      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody());
+      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, getSubject(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getTextBody(subscriberMessageTemplateService));
+      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -493,7 +604,9 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       EmailMessage emailMessage = (EmailMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
-      String fromAddress = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
+      ContactType contactType = ContactType.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype"));
+      String fromAddress = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromAddress") : "TBD";
+      boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
 
       /*****************************************
       *
@@ -503,10 +616,30 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
-      String emailSubject = emailMessage.resolveSubject(subscriberEvaluationRequest);
-      String emailHTMLBody = emailMessage.resolveHTMLBody(subscriberEvaluationRequest);
-      String emailTextBody = emailMessage.resolveTextBody(subscriberEvaluationRequest);
-      boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
+      String language = subscriberEvaluationRequest.getLanguage();
+      MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);
+      MailTemplate template = (baseTemplate != null) ? (MailTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext) : null;
+
+      //
+      //  subject
+      //
+
+      DialogMessage subject = (template != null) ? template.getSubject() : null;
+      List<String> subjectTags = (subject != null) ? subject.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+
+      //
+      //  htmlBody
+      //
+
+      DialogMessage htmlBody = (template != null) ? template.getHTMLBody() : null;
+      List<String> htmlBodyTags = (htmlBody != null) ? htmlBody.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
+
+      //
+      //  textBody
+      //
+
+      DialogMessage textBody = (template != null) ? template.getTextBody() : null;
+      List<String> textBodyTags = (textBody != null) ? textBody.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
       
       /*****************************************
       *
@@ -515,12 +648,13 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *****************************************/
 
       MailNotificationManagerRequest request = null;
-      if (email != null)
+      if (template != null && email != null)
         {
-          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, emailSubject, emailHTMLBody, emailTextBody);
+          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags);
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
+          request.setDeliveryPriority(contactType.getDeliveryPriority());
         }
       else
         {
@@ -555,7 +689,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
 
         DeliveryRequest deliveryRequest = nextRequest();
 
-        log.info("SMSNotificationManagerRequest run deliveryRequest;" + deliveryRequest);
+        log.info("MailNotificationManagerRequest run deliveryRequest;" + deliveryRequest);
 
         mailNotification.send((MailNotificationManagerRequest)deliveryRequest);
 

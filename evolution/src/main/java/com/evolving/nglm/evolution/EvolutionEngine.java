@@ -89,6 +89,7 @@ import com.evolving.nglm.core.SubscriberTraceControl;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
@@ -834,12 +835,42 @@ public class EvolutionEngine
 
     for (String deliveryType : deliveryRequestStreams.keySet())
       {
+        //
+        //  branch by priority
+        //
+
         DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get(deliveryType);
-        String requestTopic = deliveryManager.getRequestTopic();
+        DeliveryPriority[] deliveryPriorities = new DeliveryPriority[DeliveryPriority.values().length - 1];
+        DeliveryPriorityPredicate[] deliveryPriorityPredicates = new DeliveryPriorityPredicate[DeliveryPriority.values().length - 1];
+        int j = 0;
+        for (DeliveryPriority deliveryPriority : DeliveryPriority.values())
+          {
+            if (deliveryPriority != DeliveryPriority.Unknown)
+              {
+                deliveryPriorities[j] = deliveryPriority;
+                deliveryPriorityPredicates[j] = new DeliveryPriorityPredicate(deliveryPriority);
+                j += 1;
+              }
+          }
+
+        //
+        //  branch 
+        //
+
+        KStream<StringKey, DeliveryRequest>[] branchedDeliveryRequestStreamsByPriority = deliveryRequestStreams.get(deliveryType).branch(deliveryPriorityPredicates);
+
+        //
+        //  sink
+        //
+
         ConnectSerde<DeliveryRequest> requestSerde = (ConnectSerde<DeliveryRequest>) deliveryManager.getRequestSerde();
-        KStream<StringKey, DeliveryRequest> requestStream = deliveryRequestStreams.get(deliveryType);
-        KStream<StringKey, DeliveryRequest> rekeyedRequestStream = requestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
-        rekeyedRequestStream.to(requestTopic, Produced.with(stringKeySerde, requestSerde));
+        for (int k=0; k<branchedDeliveryRequestStreamsByPriority.length; k++)
+          {
+            String requestTopic = deliveryManager.getRequestTopic(deliveryPriorities[k]);
+            KStream<StringKey, DeliveryRequest> requestStream = branchedDeliveryRequestStreamsByPriority[k];
+            KStream<StringKey, DeliveryRequest> rekeyedRequestStream = requestStream.map(EvolutionEngine::rekeyDeliveryRequestStream);
+            rekeyedRequestStream.to(requestTopic, Produced.with(stringKeySerde, requestSerde));
+          }
       }
 
     /*****************************************
@@ -1129,12 +1160,45 @@ public class EvolutionEngine
     }
 
     //
-    //  test (Predicate interface)
+    //  test (predicate interface)
     //
 
     @Override public boolean test(StringKey stringKey, DeliveryRequest deliveryRequest)
     {
       return deliveryType.equals(deliveryRequest.getDeliveryType());
+    }
+  }
+
+  /****************************************
+  *
+  *  class DeliveryPriorityPredicate
+  *
+  ****************************************/
+
+  private static class DeliveryPriorityPredicate implements Predicate<StringKey, DeliveryRequest>
+  {
+    //
+    //  data
+    //
+
+    DeliveryPriority deliveryPriority;
+
+    //
+    //  constructor
+    //
+
+    private DeliveryPriorityPredicate(DeliveryPriority deliveryPriority)
+    {
+      this.deliveryPriority = deliveryPriority;
+    }
+
+    //
+    //  test (predicate interface)
+    //
+
+    @Override public boolean test(StringKey stringKey, DeliveryRequest deliveryRequest)
+    {
+      return deliveryPriority == deliveryRequest.getDeliveryPriority();
     }
   }
 

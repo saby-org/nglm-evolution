@@ -86,6 +86,13 @@ public class MailTemplate extends SubscriberMessageTemplate
   public DialogMessage getHTMLBody() { return super.getDialogMessages().get(1); }
   public DialogMessage getTextBody() { return super.getDialogMessages().get(2); }
   
+  //
+  //  abstract
+  //
+
+  @Override public String getTemplateType() { return "mail"; }
+  @Override public List<String> getDialogMessageFields() { return Arrays.asList("subject", "htmlBody", "textBody"); }
+
   /*****************************************
   *
   *  constructor -- standard
@@ -94,7 +101,7 @@ public class MailTemplate extends SubscriberMessageTemplate
 
   public MailTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.MailMessageTemplate, Arrays.asList("subject", "htmlBody", "textBody"), epoch, existingTemplateUnchecked);
+    super(jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked);
   }
   
   /*****************************************

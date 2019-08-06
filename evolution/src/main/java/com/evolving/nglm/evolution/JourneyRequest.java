@@ -127,15 +127,6 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-//  public JourneyRequest(JSONObject jsonRoot, String journeyRequestID, String subscriberID, Date eventDate, String journeyID)
-//  {
-//    super(jsonRoot);
-//    this.journeyRequestID = journeyRequestID;
-//    this.subscriberID = subscriberID;
-//    this.eventDate = eventDate;
-//    this.journeyID = journeyID;
-//    this.eligible = false;
-//  }
   public JourneyRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
   {
     super(jsonRoot);

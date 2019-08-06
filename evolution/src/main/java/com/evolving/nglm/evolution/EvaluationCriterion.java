@@ -721,10 +721,13 @@ public class EvaluationCriterion
       }
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
-        log.debug("invalid argument {}", argumentExpression);
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.debug(stackTraceWriter.toString());
+        if (log.isDebugEnabled())
+          {
+            log.debug("invalid argument {}", argumentExpression);
+            StringWriter stackTraceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+            log.debug(stackTraceWriter.toString());
+          }
         evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
         return false;
       }

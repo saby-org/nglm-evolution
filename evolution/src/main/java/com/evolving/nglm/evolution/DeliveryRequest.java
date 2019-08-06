@@ -151,6 +151,26 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     public Integer getExternalRepresentation() { return externalRepresentation; }
     public static ActivityType fromActivityTypeExternalRepresentation(Integer externalRepresentation) { for (ActivityType enumeratedValue : ActivityType.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
+
+  /*****************************************
+  *
+  *  enum - DeliveryPriority
+  *
+  ****************************************/
+
+  public enum DeliveryPriority
+  {
+    Urgent("urgent", 2),
+    High("high", 1),
+    Standard("standard", 0),
+    Unknown("(unknown)", -1);
+    private String externalRepresentation;
+    private int topicIndex;
+    private DeliveryPriority(String externalRepresentation, int topicIndex) { this.externalRepresentation = externalRepresentation; this.topicIndex = topicIndex; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public int getTopicIndex() { return topicIndex; }
+    public static DeliveryPriority fromExternalRepresentation(String externalRepresentation) { for (DeliveryPriority enumeratedValue : DeliveryPriority.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
   
   /*****************************************
   *
@@ -173,6 +193,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("creationDate", Timestamp.SCHEMA);
     schemaBuilder.field("originatingRequest", SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("deliveryPriority", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -230,6 +251,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private boolean originatingRequest;
   private Date creationDate;
   private String subscriberID;
+  private DeliveryPriority deliveryPriority;
   private String eventID;
   private String moduleID;
   private String featureID;
@@ -254,6 +276,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public boolean getOriginatingRequest() { return originatingRequest; }
   public Date getCreationDate() { return creationDate; }
   public String getSubscriberID() { return subscriberID; }
+  public DeliveryPriority getDeliveryPriority() { return deliveryPriority; }
   public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
@@ -280,6 +303,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public void setCorrelator(String correlator) { this.correlator = correlator; }
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
+  public void setDeliveryPriority(DeliveryPriority deliveryPriority) { this.deliveryPriority = deliveryPriority; }
   public void setEventID(String eventID) { this.eventID = eventID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
@@ -317,6 +341,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.originatingRequest = true;
     this.creationDate = context.now();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
+    this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
@@ -344,6 +369,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.originatingRequest = deliveryRequest.getOriginatingRequest();
     this.creationDate = deliveryRequest.getCreationDate();
     this.subscriberID = deliveryRequest.getSubscriberID();
+    this.deliveryPriority = deliveryRequest.getDeliveryPriority();
     this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
     this.featureID = deliveryRequest.getFeatureID();
@@ -377,6 +403,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+    this.deliveryPriority = DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", "standard"));
     this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
@@ -404,6 +431,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("originatingRequest", deliveryRequest.getOriginatingRequest());
     struct.put("creationDate", deliveryRequest.getCreationDate());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
+    struct.put("deliveryPriority", deliveryRequest.getDeliveryPriority().getExternalRepresentation());
     struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
     struct.put("featureID", deliveryRequest.getFeatureID());
@@ -444,6 +472,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
     Date creationDate = (schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime();
     String subscriberID = valueStruct.getString("subscriberID");
+    DeliveryPriority deliveryPriority = DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority"));
     String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
     String featureID = valueStruct.getString("featureID");
@@ -466,6 +495,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.originatingRequest = originatingRequest;
     this.creationDate = creationDate;
     this.subscriberID = subscriberID;
+    this.deliveryPriority = deliveryPriority;
     this.eventID = eventID;
     this.moduleID = moduleID;
     this.featureID = featureID;
@@ -553,6 +583,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append("," + originatingRequest);
     b.append("," + creationDate);
     b.append("," + subscriberID);
+    b.append("," + deliveryPriority);
     b.append("," + eventID);
     b.append("," + moduleID);
     b.append("," + featureID);

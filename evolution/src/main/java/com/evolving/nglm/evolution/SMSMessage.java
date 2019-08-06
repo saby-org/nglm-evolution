@@ -46,7 +46,7 @@ public class SMSMessage extends SubscriberMessage
 
   //
   //  schema
-  //    
+  //
 
   private static Schema schema = null;
   static
