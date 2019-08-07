@@ -22,6 +22,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -112,12 +113,27 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String journeyID)
+  public JourneyRequest(EvolutionEventContext context, String deliveryRequestSource, String journeyID)
   {
-    super(context, deliveryType, deliveryRequestSource);
+    super(context, "journeyFulfillment", deliveryRequestSource);
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
     this.journeyID = journeyID;
+    this.eligible = false;
+  }
+  
+  /*****************************************
+  *
+  *  constructor -- enterCampaign
+  *
+  *****************************************/
+
+  public JourneyRequest(String uniqueKey, String subscriberID, String deliveryRequestSource, boolean universalControlGroup)
+  {
+    super(uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup);
+    this.journeyRequestID = uniqueKey;
+    this.eventDate = SystemTime.getActualCurrentTime();
+    this.journeyID = deliveryRequestSource;
     this.eligible = false;
   }
 

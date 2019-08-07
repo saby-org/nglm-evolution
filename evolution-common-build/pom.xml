@@ -162,6 +162,7 @@
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
     <topic.salespartner>salespartner</topic.salespartner>
+    <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>

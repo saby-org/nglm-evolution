@@ -179,6 +179,7 @@ public class Deployment
   private static int ucgEngineESConnectTimeout;
   private static int ucgEngineESSocketTimeout;
   private static int ucgEngineESMasRetryTimeout;
+  private static String exclusionInclusionTargetTopic;
 
   /*****************************************
   *
@@ -351,6 +352,7 @@ public class Deployment
   public static int getUcgEngineESConnectTimeout() { return ucgEngineESConnectTimeout; }
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
+  public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
 
   /*****************************************
   *
@@ -1050,6 +1052,19 @@ public class Deployment
     try
       {
         targetTopic = JSONUtilities.decodeString(jsonRoot, "targetTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  exclusionInclusionTargetTopic
+    //
+
+    try
+      {
+        exclusionInclusionTargetTopic = JSONUtilities.decodeString(jsonRoot, "exclusionInclusionTargetTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

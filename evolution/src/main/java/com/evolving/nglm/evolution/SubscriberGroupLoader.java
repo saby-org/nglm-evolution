@@ -132,6 +132,7 @@ public class SubscriberGroupLoader
       {
         case SegmentationDimension:
         case Target:
+        case ExclusionInclusionTarget:
           break;
 
         default:

@@ -145,6 +145,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("previousEvolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_segments").schema());
     schemaBuilder.field("targets", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_targets").schema());
+    schemaBuilder.field("exclusionInclusionTargets", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_exclusion_inclusion_targets").schema());
     schemaBuilder.field("universalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tokens", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
     schemaBuilder.field("pointBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, PointBalance.schema()).name("subscriber_profile_balances").schema());
@@ -220,6 +221,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private String languageID;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
+  private Map<String,Integer> exclusionInclusionTargets; 
 
   /****************************************
   *
@@ -240,6 +242,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public String getLanguageID() { return languageID; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
+  public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -384,6 +387,47 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return result;
   }
+  
+  //
+  //  getExclusionInclusionTargetNames (set of target name)
+  //
+
+  public Set<String> getExclusionInclusionTargetNames(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  {
+    Date evaluationDate = SystemTime.getCurrentTime();
+    Set<String> result = new HashSet<String>();
+    for (String targetID : exclusionInclusionTargets.keySet())
+      {
+        ExclusionInclusionTarget target = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(targetID, evaluationDate);
+        if (target != null)
+          {
+            int epoch = exclusionInclusionTargets.get(targetID);
+            if (epoch == (subscriberGroupEpochReader.get(targetID) != null ? subscriberGroupEpochReader.get(targetID).getEpoch() : 0))
+              {
+                result.add(target.getExclusionInclusionTargetName());
+              }
+          }
+      }
+    return result;
+  }
+  
+  //
+  //  getExclusionInclusionTargets (set of ExclusionInclusionTargetID)
+  //
+
+  public Set<String> getExclusionInclusionTargets(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  {
+    Set<String> result = new HashSet<String>();
+    for (String exclusionInclusionTargetID : exclusionInclusionTargets.keySet())
+      {
+        int epoch = exclusionInclusionTargets.get(exclusionInclusionTargetID);
+        if (epoch == (subscriberGroupEpochReader.get(exclusionInclusionTargetID) != null ? subscriberGroupEpochReader.get(exclusionInclusionTargetID).getEpoch() : 0))
+          {
+            result.add(exclusionInclusionTargetID);
+          }
+      }
+    return result;
+  }
 
   /****************************************
   *
@@ -395,7 +439,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -434,6 +478,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("points", JSONUtilities.encodeArray(pointsPresentation));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
+    generalDetailsPresentation.put("exclusionInclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionInclusionTargetNames(exclusionInclusionTargetService, subscriberGroupEpochReader))));
 
     //
     // prepare basic kpiPresentation (if any)
@@ -731,6 +776,31 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
           }
       }
   }
+  
+  //
+  //  setExclusionInclusionTarget
+  //
+
+  public void setExclusionInclusionTarget(String exclusionInclusionID, int epoch, boolean addSubscriber)
+  {
+    if (exclusionInclusionTargets.get(exclusionInclusionID) == null || exclusionInclusionTargets.get(exclusionInclusionID).intValue() <= epoch)
+      {
+        //
+        //  unconditionally remove groupID (if present)
+        //
+
+        exclusionInclusionTargets.remove(exclusionInclusionID);
+
+        //
+        //  add (if necessary)
+        //
+
+        if (addSubscriber)
+          {
+            exclusionInclusionTargets.put(exclusionInclusionID, epoch);
+          }
+      }
+  }
 
   /*****************************************
   *
@@ -753,6 +823,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.languageID = null;
     this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
+    this.exclusionInclusionTargets = new HashMap<String, Integer>();
   }
 
   /*****************************************
@@ -789,7 +860,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     String languageID = valueStruct.getString("language");
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
-
+    Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
+    
     //
     //  return
     //
@@ -807,6 +879,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.languageID = languageID;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberHistory = subscriberHistory;
+    this.exclusionInclusionTargets = exclusionInclusionTargets;
   }
 
   /*****************************************
@@ -961,6 +1034,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.languageID = subscriberProfile.getLanguageID();
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
+    this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
   }
 
   /*****************************************
@@ -984,6 +1058,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("language", subscriberProfile.getLanguageID());
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
+    struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
   }
 
   /****************************************

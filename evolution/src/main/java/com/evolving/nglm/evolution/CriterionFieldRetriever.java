@@ -69,6 +69,14 @@ public abstract class CriterionFieldRetriever
 
   public static Object getTargets(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getTargets(evaluationRequest.getSubscriberGroupEpochReader()); }
 
+  
+  //
+  //  exclusionInclusionTarget membership
+  //
+
+  public static Object getExclusionInclusionTargets(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getSubscriberProfile().getExclusionInclusionTargets(evaluationRequest.getSubscriberGroupEpochReader()); }
+
+  
   /*****************************************
   *
   *  complex

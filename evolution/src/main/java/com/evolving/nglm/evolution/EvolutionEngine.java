@@ -1879,6 +1879,12 @@ public class EvolutionEngine
               subscriberProfile.setTarget(targetID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
               subscriberProfileUpdated = true;
               break;
+              
+            case ExclusionInclusionTarget:
+              String exclusionInclusionTargetID = subscriberGroup.getSubscriberGroupIDs().get(0);
+              subscriberProfile.setExclusionInclusionTarget(exclusionInclusionTargetID, subscriberGroup.getEpoch(), subscriberGroup.getAddSubscriber());
+              subscriberProfileUpdated = true;
+              break;
           }
       }
 
@@ -4465,7 +4471,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, "journeyFulfillment", deliveryRequestSource, journeyID);
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, deliveryRequestSource, journeyID);
 
       /*****************************************
       *

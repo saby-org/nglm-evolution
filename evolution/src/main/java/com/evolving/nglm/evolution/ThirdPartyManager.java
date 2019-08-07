@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,7 +52,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Alarm;
+import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -157,7 +161,8 @@ public class ThirdPartyManager
     getCustomerNBOsTokens,
     getTokensCodesList,
     acceptOffer,
-    triggerEvent;
+    triggerEvent,
+    enterCampaign;
   }
 
   //
@@ -336,6 +341,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getTokensCodesList", new APIHandler(API.getTokensCodesList));
       restServer.createContext("/nglm-thirdpartymanager/acceptOffer", new APIHandler(API.acceptOffer));
       restServer.createContext("/nglm-thirdpartymanager/triggerEvent", new APIHandler(API.triggerEvent));
+      restServer.createContext("/nglm-thirdpartymanager/enterCampaign", new APIHandler(API.enterCampaign));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -610,6 +616,9 @@ public class ThirdPartyManager
               break;
             case triggerEvent:
               jsonResponse = processTriggerEvent(jsonRoot);
+              break;
+            case enterCampaign:
+              jsonResponse = processEnterCampaign(jsonRoot);
               break;
           }
         }
@@ -1572,6 +1581,34 @@ public class ThirdPartyManager
                       journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
                       journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                       journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                      List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                      for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
+                        {
+                          List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                          JSONObject result = new JSONObject();
+                          
+                          JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                          result.put("active", journeyObjective.getActive());
+                          result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                          result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                          result.put("readOnly", journeyObjective.getReadOnly());
+                          result.put("name", journeyObjective.getGUIManagedObjectName());
+                          result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                          result.put("id", journeyObjective.getGUIManagedObjectID());
+                          
+                          for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                            {
+                              JSONObject characteristics = new JSONObject();
+                              characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                              characteristics.put("value", catalogCharacteristicInstance.getValue());
+                              resultCharacteristics.add(characteristics);
+                            }
+                          
+                          result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                          resultObjectives.add(result);
+                        }
+                      
+                      journeyResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
 
                       //
                       // reverse sort
@@ -1881,6 +1918,34 @@ public class ThirdPartyManager
                       campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
                       campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                       campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+                      List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                      for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
+                        {
+                          List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                          JSONObject result = new JSONObject();
+                          
+                          JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                          result.put("active", journeyObjective.getActive());
+                          result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                          result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                          result.put("readOnly", journeyObjective.getReadOnly());
+                          result.put("name", journeyObjective.getGUIManagedObjectName());
+                          result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                          result.put("id", journeyObjective.getGUIManagedObjectID());
+                          
+                          for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                            {
+                              JSONObject characteristics = new JSONObject();
+                              characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                              characteristics.put("value", catalogCharacteristicInstance.getValue());
+                              resultCharacteristics.add(characteristics);
+                            }
+                          
+                          result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                          resultObjectives.add(result);
+                        }
+                      
+                      campaignResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
 
                       //
                       // reverse sort
@@ -2295,6 +2360,33 @@ public class ThirdPartyManager
                       campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
                       campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
                       campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
+                      List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                      for (JourneyObjectiveInstance journeyObjectiveInstance : elgibleActiveCampaign.getJourneyObjectiveInstances())
+                        {
+                          List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                          JSONObject result = new JSONObject();
+                          
+                          JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                          result.put("active", journeyObjective.getActive());
+                          result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                          result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                          result.put("readOnly", journeyObjective.getReadOnly());
+                          result.put("name", journeyObjective.getGUIManagedObjectName());
+                          result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                          result.put("id", journeyObjective.getGUIManagedObjectID());
+                          
+                          for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                            {
+                              JSONObject characteristics = new JSONObject();
+                              characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                              characteristics.put("value", catalogCharacteristicInstance.getValue());
+                              resultCharacteristics.add(characteristics);
+                            }
+                          
+                          result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                          resultObjectives.add(result);
+                        }                   
+                      campaignMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
                       campaignsJson.add(JSONUtilities.encodeObject(campaignMap));
                     }
                 }
@@ -2725,6 +2817,120 @@ public class ThirdPartyManager
      * return
      *
      *****************************************/
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processEnterCampaign
+   * @throws ThirdPartyManagerException 
+  *
+  *****************************************/
+  
+  private JSONObject processEnterCampaign(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+    String responseCode = null;
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  getSubscriberProfile
+    *
+    *****************************************/
+
+    SubscriberProfile baseSubscriberProfile = null;
+    if (subscriberID != null)
+      {
+        try
+          {
+            baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            log.error("SubscriberProfileServiceException ", e.getMessage());
+            throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+          }
+      }
+    
+    Journey journey = null;
+    String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", true);
+    Collection<Journey> allActiveJourneys = journeyService.getActiveJourneys(SystemTime.getActualCurrentTime());
+    if(allActiveJourneys != null)
+      {
+        for(Journey activeJourney : allActiveJourneys)
+          {
+            if(activeJourney.getJourneyName().equals(campaignName))
+              {
+                if(activeJourney.getTargetingType().equals(TargetingType.Manual))
+                  {
+                    journey = activeJourney;
+                    responseCode = null;
+                    break;
+                  }
+                else
+                  {
+                    responseCode = "Campaign is not manual targeting";
+                  }
+              }
+            else
+              {
+                responseCode = "Campaign not found";
+              }
+          }
+      }
+
+    if(journey != null)
+      {
+        String uniqueKey = UUID.randomUUID().toString();
+        JourneyRequest journeyRequest = new JourneyRequest(uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
+        DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
+        String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic();
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
+        responseCode = "ok";
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
 

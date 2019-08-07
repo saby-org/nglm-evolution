@@ -29,7 +29,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
 
-public class TargetService extends GUIService
+public class ExclusionInclusionTargetService extends GUIService
 {
   /*****************************************
   *
@@ -41,7 +41,7 @@ public class TargetService extends GUIService
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(TargetService.class);
+  private static final Logger log = LoggerFactory.getLogger(ExclusionInclusionTargetService.class);
   
   //
   //  serdes
@@ -56,9 +56,9 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  private TargetListener TargetListener = null;
+  private ExclusionInclusionTargetListener exclusionInclusionTargetListener = null;
   private volatile boolean stopRequested = false;
-  private BlockingQueue<Target> listenerQueue = new LinkedBlockingQueue<Target>();
+  private BlockingQueue<ExclusionInclusionTarget> listenerQueue = new LinkedBlockingQueue<ExclusionInclusionTarget>();
   private UploadedFileService uploadedFileService = null; 
   private SubscriberIDService subscriberIDService = null;
   private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
@@ -71,27 +71,27 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService, TargetListener targetListener, boolean notifyOnSignificantChange)
+  public ExclusionInclusionTargetService(String bootstrapServers, String groupID, String exclusionInclusionTargetTopic, boolean masterService, ExclusionInclusionTargetListener exclusionInclusionTargetListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "TargetService", groupID, targetTopic, masterService, getSuperListener(targetListener), "putTarget", "removeTarget", notifyOnSignificantChange);
+    super(bootstrapServers, "TargetService", groupID, exclusionInclusionTargetTopic, masterService, getSuperListener(exclusionInclusionTargetListener), "putExclusionInclusionTarget", "removeExclusionInclusionTarget", notifyOnSignificantChange);
   }
 
   //
   //  constructor
   //
 
-  public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService, TargetListener targetListener)
+  public ExclusionInclusionTargetService(String bootstrapServers, String groupID, String exclusionInclusionTargetTopic, boolean masterService, ExclusionInclusionTargetListener exclusionInclusionTargetListener)
   {
-    this(bootstrapServers, groupID, targetTopic, masterService, targetListener, true);
+    this(bootstrapServers, groupID, exclusionInclusionTargetTopic, masterService, exclusionInclusionTargetListener, true);
   }
 
   //
   //  constructor
   //
 
-  public TargetService(String bootstrapServers, String groupID, String targetTopic, boolean masterService)
+  public ExclusionInclusionTargetService(String bootstrapServers, String groupID, String exclusionInclusionTargetTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, targetTopic, masterService, (TargetListener) null, true);
+    this(bootstrapServers, groupID, exclusionInclusionTargetTopic, masterService, (ExclusionInclusionTargetListener) null, true);
     
     /*****************************************
     *
@@ -111,7 +111,7 @@ public class TargetService extends GUIService
     //
 
     Runnable listener = new Runnable() { @Override public void run() { runListener(); } };
-    listenerThread = new Thread(listener, "TargetService");
+    listenerThread = new Thread(listener, "ExclusionInclusionTargetService");
     listenerThread.start();
   }
 
@@ -119,15 +119,15 @@ public class TargetService extends GUIService
   //  getSuperListener
   //
 
-  private static GUIManagedObjectListener getSuperListener(TargetListener targetListener)
+  private static GUIManagedObjectListener getSuperListener(ExclusionInclusionTargetListener exclusionInclusionTargetListener)
   {
     GUIManagedObjectListener superListener = null;
-    if (targetListener != null)
+    if (exclusionInclusionTargetListener != null)
       {
         superListener = new GUIManagedObjectListener()
         {
-          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { targetListener.targetActivated((Target) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { targetListener.targetDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { exclusionInclusionTargetListener.exclusionInclusionTargetActivated((ExclusionInclusionTarget) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { exclusionInclusionTargetListener.exclusionInclusionTargetDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -139,12 +139,12 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public String generateTargetID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredTarget(String targetID) { return getStoredGUIManagedObject(targetID); }
-  public Collection<GUIManagedObject> getStoredTargets() { return getStoredGUIManagedObjects(); }
-  public boolean isActiveTarget(GUIManagedObject targetUnchecked, Date date) { return isActiveGUIManagedObject(targetUnchecked, date); }
-  public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
-  public Collection<Target> getActiveTargets(Date date) { return (Collection<Target>) getActiveGUIManagedObjects(date); }
+  public String generateExclusionInclusionTargetID() { return generateGUIManagedObjectID(); }
+  public GUIManagedObject getStoredExclusionInclusionTarget(String exclusionInclusionTargetID) { return getStoredGUIManagedObject(exclusionInclusionTargetID); }
+  public Collection<GUIManagedObject> getStoredExclusionInclusionTargets() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveExclusionInclusionTarget(GUIManagedObject exclusionInclusionTargetUnchecked, Date date) { return isActiveGUIManagedObject(exclusionInclusionTargetUnchecked, date); }
+  public ExclusionInclusionTarget getActiveExclusionInclusionTarget(String exclusionInclusionTargetID, Date date) { return (ExclusionInclusionTarget) getActiveGUIManagedObject(exclusionInclusionTargetID, date); }
+  public Collection<ExclusionInclusionTarget> getActiveExclusionInclusionTargets(Date date) { return (Collection<ExclusionInclusionTarget>) getActiveGUIManagedObjects(date); }
 
   /*****************************************
   *
@@ -152,7 +152,7 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void putTarget(GUIManagedObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException
+  public void putExclusionInclusionTarget(GUIManagedObject exclusionInclusionTarget, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID) throws GUIManagerException
   {
     this.uploadedFileService = uploadedFileService;
     this.subscriberIDService = subscriberIDService;
@@ -167,38 +167,38 @@ public class TargetService extends GUIService
     //  validate
     //
 
-    if (target instanceof Target)
+    if (exclusionInclusionTarget instanceof ExclusionInclusionTarget)
       {
-        ((Target) target).validate(uploadedFileService, now);
+        ((ExclusionInclusionTarget) exclusionInclusionTarget).validate(uploadedFileService, now);
       }
     
     //
     //  put
     //
 
-    putGUIManagedObject(target, now, newObject, userID);
+    putGUIManagedObject(exclusionInclusionTarget, now, newObject, userID);
 
     //
     //  process file
     //
 
-    if (isActiveTarget(target, now))
+    if (isActiveExclusionInclusionTarget(exclusionInclusionTarget, now))
       {
-        notifyListenerOfTarget((Target) target);
+        notifyListenerOfExclusionInclusionTarget((ExclusionInclusionTarget) exclusionInclusionTarget);
       }
   }
   
   /*****************************************
   *
-  *  putTarget
+  *  putExclusionInclusionTarget
   *
   *****************************************/
 
-  public void putTarget(IncompleteObject target, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID)
+  public void putExclusionInclusionTarget(IncompleteObject exclusionInclusionTarget, UploadedFileService uploadedFileService, SubscriberIDService subscriberIDService, boolean newObject, String userID)
   {
     try
       {
-        putTarget((GUIManagedObject) target, uploadedFileService, subscriberIDService, newObject, userID);
+        putExclusionInclusionTarget((GUIManagedObject) exclusionInclusionTarget, uploadedFileService, subscriberIDService, newObject, userID);
       }
     catch (GUIManagerException e)
       {
@@ -212,7 +212,7 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  public void removeTarget(String targetID, String userID) { removeGUIManagedObject(targetID, SystemTime.getCurrentTime(), userID); }
+  public void removeExclusionInclusionTarget(String exclusionInclusionTargetID, String userID) { removeGUIManagedObject(exclusionInclusionTargetID, SystemTime.getCurrentTime(), userID); }
   
   /*****************************************
   *
@@ -220,9 +220,9 @@ public class TargetService extends GUIService
   *
   *****************************************/
   
-  public boolean isTargetFileBeingProcessed (Target target) {
+  public boolean isExclusionInclusionTargetFileBeingProcessed (ExclusionInclusionTarget exclusionInclusionTarget) {
     if(listenerQueue != null) {
-      if(listenerQueue.contains(target))
+      if(listenerQueue.contains(exclusionInclusionTarget))
         return true;
     }
     return false;
@@ -230,14 +230,14 @@ public class TargetService extends GUIService
 
   /*****************************************
   *
-  *  interface TargetListener
+  *  interface ExclusionInclusionTargetListener
   *
   *****************************************/
 
-  public interface TargetListener
+  public interface ExclusionInclusionTargetListener
   {
-    public void targetActivated(Target target);
-    public void targetDeactivated(String guiManagedObjectID);
+    public void exclusionInclusionTargetActivated(ExclusionInclusionTarget exclusionInclusionTarget);
+    public void exclusionInclusionTargetDeactivated(String guiManagedObjectID);
   }
   
   /*****************************************
@@ -246,9 +246,9 @@ public class TargetService extends GUIService
   *
   *****************************************/
 
-  private void notifyListenerOfTarget(Target target)
+  private void notifyListenerOfExclusionInclusionTarget(ExclusionInclusionTarget exclusionInclusionTarget)
   {
-    listenerQueue.add(target);
+    listenerQueue.add(exclusionInclusionTarget);
   }
 
   /*****************************************
@@ -274,15 +274,15 @@ public class TargetService extends GUIService
             //  get next 
             //
 
-            Target target = listenerQueue.take();
+            ExclusionInclusionTarget exclusionInclusionTarget = listenerQueue.take();
             
             /*****************************************
             *
-            *  open zookeeper and lock target
+            *  open zookeeper and lock exclusionInclusionTarget
             *
             *****************************************/
 
-            ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(target.getTargetID());
+            ZooKeeper zookeeper = SubscriberGroupEpochService.openZooKeeperAndLockGroup(exclusionInclusionTarget.getExclusionInclusionTargetID());
             
             /*****************************************
             *
@@ -290,7 +290,7 @@ public class TargetService extends GUIService
             *
             *****************************************/
 
-            SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, target.getTargetID());
+            SubscriberGroupEpoch existingEpoch = SubscriberGroupEpochService.retrieveSubscriberGroupEpoch(zookeeper, exclusionInclusionTarget.getExclusionInclusionTargetID());
 
             /*****************************************
             *
@@ -298,18 +298,18 @@ public class TargetService extends GUIService
             *
             *****************************************/
 
-            SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, target.getTargetID(), existingEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
+            SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpochService.updateSubscriberGroupEpoch(zookeeper, exclusionInclusionTarget.getExclusionInclusionTargetID(), existingEpoch, kafkaProducer, Deployment.getSubscriberGroupEpochTopic());
             
             //
             // time to work
             //
             
-            if(target.getTargetFileID() != null)
+            if(exclusionInclusionTarget.getFileID() != null)
               {
-                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(target.getTargetFileID());
+                UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(exclusionInclusionTarget.getFileID());
                 if (uploadedFile == null)
                   { 
-                    log.warn("TargetService.run(uploaded file not found, processing done)");
+                    log.warn("ExclusionInclusionTargetService.run(uploaded file not found, processing done)");
                     return;
                   }
                 else
@@ -328,19 +328,19 @@ public class TargetService extends GUIService
                             String subscriberID = (alternateID != null) ? subscriberIDService.getSubscriberID(alternateID.getID(), line) : line;
                             if(subscriberID != null)
                               {
-                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.Target, Arrays.asList(target.getTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
+                                SubscriberGroup subscriberGroup = new SubscriberGroup(subscriberID, now, SubscriberGroupType.ExclusionInclusionTarget, Arrays.asList(exclusionInclusionTarget.getExclusionInclusionTargetID()), subscriberGroupEpoch.getEpoch(), LoadType.Add.getAddRecord());
                                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(subscriberGroupTopic, stringKeySerde.serializer().serialize(subscriberGroupTopic, new StringKey(subscriberGroup.getSubscriberID())), subscriberGroupSerde.serializer().serialize(subscriberGroupTopic, subscriberGroup)));
                               }
                             else
                               {
-                                log.warn("TargetService.run(cant resolve subscriberID ID="+line+")");
+                                log.warn("ExclusionInclusionTargetService.run(cant resolve subscriberID ID="+line+")");
                               }
                           }
                         reader.close();
                       }
                     catch (IOException | SubscriberIDServiceException e)
                       {
-                        log.warn("TargetService.run(problem with file parsing)", e);
+                        log.warn("ExclusionInclusionTargetService.run(problem with file parsing)", e);
                       }
                   }
               }
@@ -351,7 +351,7 @@ public class TargetService extends GUIService
             *
             *****************************************/
 
-            SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, target.getTargetID());
+            SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, exclusionInclusionTarget.getExclusionInclusionTargetID());
             subscriberIDService.close();
           }
         catch (InterruptedException e)
@@ -378,21 +378,21 @@ public class TargetService extends GUIService
   public static void main(String[] args)
   {
     //
-    //  targetListener
+    //  exclusionInclusionTargetListener
     //
 
-    TargetListener targetListener = new TargetListener()
+    ExclusionInclusionTargetListener exclusionInclusionTargetListener = new ExclusionInclusionTargetListener()
     {
-      @Override public void targetActivated(Target target) { System.out.println("Target activated: " + target.getGUIManagedObjectID()); }
-      @Override public void targetDeactivated(String guiManagedObjectID) { System.out.println("Target deactivated: " + guiManagedObjectID); }
+      @Override public void exclusionInclusionTargetActivated(ExclusionInclusionTarget exclusionInclusionTarget) { System.out.println("ExclusionInclusionTarget activated: " + exclusionInclusionTarget.getGUIManagedObjectID()); }
+      @Override public void exclusionInclusionTargetDeactivated(String guiManagedObjectID) { System.out.println("ExclusionInclusionTarget deactivated: " + guiManagedObjectID); }
     };
 
     //
-    //  targetService
+    //  exclusionInclusionTargetService
     //
 
-    TargetService targetService = new TargetService(Deployment.getBrokerServers(), "example-targetservice-001", Deployment.getTargetTopic(), false, targetListener);
-    targetService.start();
+    ExclusionInclusionTargetService exclusionInclusionTargetService = new ExclusionInclusionTargetService(Deployment.getBrokerServers(), "example-exclusionInclusionTargetservice-001", Deployment.getExclusionInclusionTargetTopic(), false, exclusionInclusionTargetListener);
+    exclusionInclusionTargetService.start();
 
     //
     //  sleep forever

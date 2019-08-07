@@ -355,6 +355,39 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
   }
+  
+  /*******************************************
+  *
+  *  constructor -- guimanager (enterCampaign)
+  *
+  *******************************************/
+
+  protected DeliveryRequest(String uniqueKey, String subscriberID, String deliveryType, String deliveryRequestSource, boolean universalControlGroup)
+  {
+    /*****************************************
+    *
+    *  simple fields
+    *
+    *****************************************/
+
+    this.deliveryRequestID = uniqueKey;
+    this.deliveryRequestSource = deliveryRequestSource;
+    this.originatingRequest = true;
+    this.creationDate = SystemTime.getActualCurrentTime();
+    this.subscriberID = subscriberID;
+    this.eventID = this.deliveryRequestID;
+    this.moduleID = null;
+    this.featureID = null;
+    this.deliveryPartition = null;
+    this.retries = 0;
+    this.timeout = null;
+    this.correlator = null;
+    this.control = universalControlGroup;
+    this.deliveryType = deliveryType;
+    this.deliveryStatus = DeliveryStatus.Pending;
+    this.deliveryDate = null;
+    this.diplomaticBriefcase = new HashMap<String, String>();
+  }
 
   /*****************************************
   *

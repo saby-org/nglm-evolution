@@ -35,6 +35,7 @@ public class SubscriberGroup implements AutoProvisionSubscriberStreamEvent
   {
     SegmentationDimension("segmentationDimension"),
     Target("target"),
+    ExclusionInclusionTarget("exclusionInclusionTarget"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private SubscriberGroupType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

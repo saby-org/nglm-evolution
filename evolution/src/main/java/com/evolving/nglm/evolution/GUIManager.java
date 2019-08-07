@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,6 +91,7 @@ import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -110,6 +112,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.Journey.GUINode;
@@ -372,6 +375,12 @@ public class GUIManager
     getPartner("getPartner"),
     putPartner("putPartner"),
     removePartner("removePartner"),
+    enterCampaign("enterCampaign"),
+    getExclusionInclusionTargetList("getExclusionInclusionTargetList"),
+    getExclusionInclusionTargetSummaryList("getExclusionInclusionTargetSummaryList"),
+    putExclusionInclusionTarget("putExclusionInclusionTarget"),
+    getExclusionInclusionTarget("getExclusionInclusionTarget"),
+    removeExclusionInclusionTarget("removeExclusionInclusionTarget"),
 
     //
     //  configAdaptor APIs
@@ -462,6 +471,7 @@ public class GUIManager
   private CommunicationChannelBlackoutService communicationChannelBlackoutService;
   private LoyaltyProgramService loyaltyProgramService;
   private SalesPartnerService salesPartnerService;
+  private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -547,6 +557,7 @@ public class GUIManager
     String communicationChannelBlackoutTopic = Deployment.getCommunicationChannelBlackoutTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String salesPartnerTopic = Deployment.getSalesPartnerTopic();
+    String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -625,6 +636,7 @@ public class GUIManager
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     salesPartnerService = new SalesPartnerService(bootstrapServers, "guimanager-salespartnerservice-"+apiProcessKey, salesPartnerTopic, true);
+    exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
 
     /*****************************************
     *
@@ -1244,6 +1256,7 @@ public class GUIManager
     communicationChannelBlackoutService.start();
     loyaltyProgramService.start();
     salesPartnerService.start();
+    exclusionInclusionTargetService.start();
 
     /*****************************************
     *
@@ -1466,6 +1479,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPartner", new APISimpleHandler(API.getPartner));
         restServer.createContext("/nglm-guimanager/putPartner", new APISimpleHandler(API.putPartner));
         restServer.createContext("/nglm-guimanager/removePartner", new APISimpleHandler(API.removePartner));
+        restServer.createContext("/nglm-guimanager/enterCampaign", new APISimpleHandler(API.enterCampaign));
+        restServer.createContext("/nglm-guimanager/getExclusionInclusionTargetList", new APISimpleHandler(API.getExclusionInclusionTargetList));
+        restServer.createContext("/nglm-guimanager/getExclusionInclusionTargetSummaryList", new APISimpleHandler(API.getExclusionInclusionTargetSummaryList));
+        restServer.createContext("/nglm-guimanager/putExclusionInclusionTarget", new APISimpleHandler(API.putExclusionInclusionTarget));
+        restServer.createContext("/nglm-guimanager/getExclusionInclusionTarget", new APISimpleHandler(API.getExclusionInclusionTarget));
+        restServer.createContext("/nglm-guimanager/removeExclusionInclusionTarget", new APISimpleHandler(API.removeExclusionInclusionTarget));
         restServer.createContext("/nglm-configadaptor/getSupportedLanguages", new APISimpleHandler(API.configAdaptorSupportedLanguages));
         restServer.createContext("/nglm-configadaptor/getSubscriberMessageTemplate", new APISimpleHandler(API.configAdaptorSubscriberMessageTemplate));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -1482,7 +1501,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, salesPartnerService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, salesPartnerService, exclusionInclusionTargetService);
 
     /*****************************************
     *
@@ -1490,7 +1509,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, salesPartnerService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, salesPartnerService, exclusionInclusionTargetService));
 
     /*****************************************
     *
@@ -1545,12 +1564,13 @@ public class GUIManager
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
     private SalesPartnerService salesPartnerService;
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, SalesPartnerService salesPartnerService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, SalesPartnerService salesPartnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1584,6 +1604,7 @@ public class GUIManager
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
       this.salesPartnerService = salesPartnerService;
+      this.exclusionInclusionTargetService = exclusionInclusionTargetService;
     }
 
     //
@@ -1631,6 +1652,8 @@ public class GUIManager
       if (communicationChannelBlackoutService != null) communicationChannelBlackoutService.stop();
       if (loyaltyProgramService != null) loyaltyProgramService.stop();
       if (salesPartnerService != null) salesPartnerService.stop();
+      if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
+      
       //
       //  rest server
       //
@@ -2593,6 +2616,30 @@ public class GUIManager
                   jsonResponse = processRemoveSalesPartner(userID, jsonRoot);
                   break;
 
+                case enterCampaign:
+                  jsonResponse = processEnterCampaign(userID, jsonRoot);
+                  break;
+                  
+                case getExclusionInclusionTargetList:  
+                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, true);
+                  break;
+                  
+                case getExclusionInclusionTargetSummaryList:
+                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, false);
+                  break;
+                  
+                case putExclusionInclusionTarget:
+                  jsonResponse = processPutExclusionInclusionTarget(userID, jsonRoot);
+                  break;
+                  
+                case getExclusionInclusionTarget:
+                  jsonResponse = processGetExclusionInclusionTarget(userID, jsonRoot);
+                  break;
+                  
+                case removeExclusionInclusionTarget:
+                  jsonResponse = processRemoveExclusionInclusionTarget(userID, jsonRoot);
+                  break;
+                  
                 case configAdaptorSupportedLanguages:
                   jsonResponse = processConfigAdaptorSupportedLanguages(jsonRoot);
                   break;
@@ -12466,7 +12513,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, targetService, pointService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, targetService, pointService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
@@ -13283,6 +13330,34 @@ public class GUIManager
                         journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
                         journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                        List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                        for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
+                          {
+                            List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                            JSONObject result = new JSONObject();
+                            
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                            result.put("active", journeyObjective.getActive());
+                            result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                            result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                            result.put("readOnly", journeyObjective.getReadOnly());
+                            result.put("name", journeyObjective.getGUIManagedObjectName());
+                            result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                            result.put("id", journeyObjective.getGUIManagedObjectID());
+                            
+                            for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                              {
+                                JSONObject characteristics = new JSONObject();
+                                characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                resultCharacteristics.add(characteristics);
+                              }
+                            
+                            result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                            resultObjectives.add(result);
+                          }
+                        
+                        journeyResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
 
                         //
                         // reverse sort
@@ -13581,7 +13656,36 @@ public class GUIManager
                         campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
                         campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
                         campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
-
+                        
+                        List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                        for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
+                          {
+                            List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                            JSONObject result = new JSONObject();
+                            
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                            result.put("active", journeyObjective.getActive());
+                            result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                            result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                            result.put("readOnly", journeyObjective.getReadOnly());
+                            result.put("name", journeyObjective.getGUIManagedObjectName());
+                            result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                            result.put("id", journeyObjective.getGUIManagedObjectID());
+                            
+                            for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                              {
+                                JSONObject characteristics = new JSONObject();
+                                characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                resultCharacteristics.add(characteristics);
+                              }
+                            
+                            result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                            resultObjectives.add(result);
+                          }
+                        
+                        campaignResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
+                        
                         //
                         // reverse sort
                         //
@@ -13953,6 +14057,33 @@ public class GUIManager
                         campaignMap.put("description", journeyService.generateResponseJSON(elgibleActiveCampaign, true, now).get("description"));
                         campaignMap.put("startDate", getDateString(elgibleActiveCampaign.getEffectiveStartDate()));
                         campaignMap.put("endDate", getDateString(elgibleActiveCampaign.getEffectiveEndDate()));
+                        List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
+                        for (JourneyObjectiveInstance journeyObjectiveInstance : elgibleActiveCampaign.getJourneyObjectiveInstances())
+                          {
+                            List<JSONObject> resultCharacteristics = new ArrayList<JSONObject>();
+                            JSONObject result = new JSONObject();
+                            
+                            JourneyObjective journeyObjective = journeyObjectiveService.getActiveJourneyObjective(journeyObjectiveInstance.getJourneyObjectiveID(), SystemTime.getCurrentTime());
+                            result.put("active", journeyObjective.getActive());
+                            result.put("parentJourneyObjectiveID", journeyObjective.getParentJourneyObjectiveID());
+                            result.put("display", journeyObjective.getJSONRepresentation().get("display"));
+                            result.put("readOnly", journeyObjective.getReadOnly());
+                            result.put("name", journeyObjective.getGUIManagedObjectName());
+                            result.put("contactPolicyID", journeyObjective.getContactPolicyID());
+                            result.put("id", journeyObjective.getGUIManagedObjectID());
+                            
+                            for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
+                              {
+                                JSONObject characteristics = new JSONObject();
+                                characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                                characteristics.put("value", catalogCharacteristicInstance.getValue());
+                                resultCharacteristics.add(characteristics);
+                              }
+                            
+                            result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
+                            resultObjectives.add(result);
+                          }
+                        campaignMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
                         campaignsJson.add(JSONUtilities.encodeObject(campaignMap));
                       }
                   }
@@ -15351,6 +15482,394 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+  
+  /*****************************************
+  *
+  *  processGetExclusionInclusionTargetList
+  *
+  *****************************************/
+
+  private JSONObject processGetExclusionInclusionTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert exclusionInclusionTargets
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> exclusionInclusionTargets = new ArrayList<JSONObject>();
+    for (GUIManagedObject exclusionInclusionTarget : exclusionInclusionTargetService.getStoredExclusionInclusionTargets())
+      {
+        exclusionInclusionTargets.add(exclusionInclusionTargetService.generateResponseJSON(exclusionInclusionTarget, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("exclusionInclusionTargets", JSONUtilities.encodeArray(exclusionInclusionTargets));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetExclusionInclusionTarget
+  *
+  *****************************************/
+
+  private JSONObject processGetExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate exclusionInclusionTarget
+    *
+    *****************************************/
+
+    GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
+    JSONObject exclusionInclusionTargetJSON = exclusionInclusionTargetService.generateResponseJSON(exclusionInclusionTarget, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (exclusionInclusionTarget != null) ? "ok" : "exclusionInclusionTargetNotFound");
+    if (exclusionInclusionTarget != null) response.put("exclusionInclusionTarget", exclusionInclusionTargetJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutExclusionInclusionTarget
+  *
+  *****************************************/
+
+  private JSONObject processPutExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  exclusionInclusionTargetID
+    *
+    *****************************************/
+
+    String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (exclusionInclusionTargetID == null)
+      {
+        exclusionInclusionTargetID = exclusionInclusionTargetService.generateExclusionInclusionTargetID();
+        jsonRoot.put("id", exclusionInclusionTargetID);
+      }
+
+    /*****************************************
+    *
+    *  existing exclusionInclusionTarget
+    *
+    *****************************************/
+
+    GUIManagedObject existingExclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingExclusionInclusionTarget != null && existingExclusionInclusionTarget.getReadOnly())
+      {
+        response.put("id", existingExclusionInclusionTarget.getGUIManagedObjectID());
+        response.put("accepted", existingExclusionInclusionTarget.getAccepted());
+        response.put("valid", existingExclusionInclusionTarget.getAccepted());
+        response.put("processing", exclusionInclusionTargetService.isActiveExclusionInclusionTarget(existingExclusionInclusionTarget, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process exclusionInclusionTarget
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate exclusionInclusionTarget
+        *
+        ****************************************/
+
+        ExclusionInclusionTarget exclusionInclusionTarget = new ExclusionInclusionTarget(jsonRoot, epoch, existingExclusionInclusionTarget);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        exclusionInclusionTargetService.putExclusionInclusionTarget(exclusionInclusionTarget, uploadedFileService, subscriberIDService, (existingExclusionInclusionTarget == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", exclusionInclusionTarget.getExclusionInclusionTargetID());
+        response.put("accepted", exclusionInclusionTarget.getAccepted());
+        response.put("valid", exclusionInclusionTarget.getAccepted());
+        response.put("processing", exclusionInclusionTargetService.isActiveExclusionInclusionTarget(exclusionInclusionTarget, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        exclusionInclusionTargetService.putExclusionInclusionTarget(incompleteObject, uploadedFileService, subscriberIDService, (existingExclusionInclusionTarget == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "exclusionInclusionTargetNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveExclusionInclusionTarget
+  *
+  *****************************************/
+
+  private JSONObject processRemoveExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
+    if (exclusionInclusionTarget != null && ! exclusionInclusionTarget.getReadOnly()) exclusionInclusionTargetService.removeExclusionInclusionTarget(exclusionInclusionTargetID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (exclusionInclusionTarget != null && ! exclusionInclusionTarget.getReadOnly())
+      responseCode = "ok";
+    else if (exclusionInclusionTarget != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "exclusionInclusionTargetNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processEnterCampaign
+   * @throws GUIManagerException 
+  *
+  *****************************************/
+  
+  private JSONObject processEnterCampaign(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+    String responseCode = null;
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        responseCode = "CustomerNotFound";
+      }
+
+    /*****************************************
+    *
+    *  getSubscriberProfile
+    *
+    *****************************************/
+
+    SubscriberProfile baseSubscriberProfile = null;
+    if (subscriberID != null)
+      {
+        try
+          {
+            baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+            if (baseSubscriberProfile == null)
+              {
+                responseCode = "CustomerNotFound";
+              }
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+    
+    Journey journey = null;
+    if(responseCode == null)
+      {
+        String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", true);
+        Collection<Journey> allJourneys = journeyService.getActiveJourneys(SystemTime.getActualCurrentTime());
+        if(allJourneys != null)
+          {
+            for(Journey activeJourney : allJourneys)
+              {
+                if(activeJourney.getJourneyName().equals(campaignName))
+                  {
+                    if(activeJourney.getTargetingType().equals(TargetingType.Manual))
+                      {
+                        journey = activeJourney;
+                        responseCode = null;
+                        break;
+                      }
+                    else
+                      {
+                        responseCode = "Campaign is not manual targeting";
+                      }
+                  }
+                else
+                  {
+                    responseCode = "Campaign not found";
+                  }
+              }
+          }
+      }
+    
+    if(journey != null)
+      {
+        String uniqueKey = UUID.randomUUID().toString();
+        JourneyRequest journeyRequest = new JourneyRequest(uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
+        DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
+        String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic();
+        
+        Properties kafkaProducerProperties = new Properties();
+        kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+        kafkaProducerProperties.put("acks", "all");
+        kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+        kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+        KafkaProducer journeyProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
+        journeyProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
+      
+        responseCode = "ok";
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -18006,6 +18525,7 @@ public class GUIManager
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
     private SalesPartnerService salesPartnerService;
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     /*****************************************
     *
@@ -18043,6 +18563,7 @@ public class GUIManager
     public CommunicationChannelBlackoutService getCommunicationChannelBlackoutService() { return communicationChannelBlackoutService; }
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
     public SalesPartnerService getSalesPartnerService() { return salesPartnerService; }
+    public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
 
     /*****************************************
     *
@@ -18050,7 +18571,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, SalesPartnerService salesPartnerService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, SalesPartnerService salesPartnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -18082,6 +18603,7 @@ public class GUIManager
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
       this.salesPartnerService = salesPartnerService;
+      this.exclusionInclusionTargetService = exclusionInclusionTargetService;
     }
   }
 
