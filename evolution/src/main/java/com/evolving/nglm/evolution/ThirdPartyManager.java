@@ -2919,7 +2919,7 @@ public class ThirdPartyManager
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
-        String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic();
+        String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getJourneyRequestTopic(), StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getDeliveryRequestID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
         responseCode = "ok";
       }
