@@ -15849,7 +15849,7 @@ public class GUIManager
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup());
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
-        String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic();
+        String journeyRequestTopic = journeyManagerDeclaration.getDefaultRequestTopic();
         
         Properties kafkaProducerProperties = new Properties();
         kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
