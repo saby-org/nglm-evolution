@@ -37,6 +37,7 @@ import org.json.simple.JSONObject;
 
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -171,22 +172,29 @@ public abstract class SubscriberProfileService
     *
     *****************************************/
 
-    public RedisSubscriberProfileService(String redisSentinels)
+    public RedisSubscriberProfileService(String redisSentinels, String name)
     {
       Set<String> sentinels = new HashSet<String>(Arrays.asList(redisSentinels.split("\\s*,\\s*")));
       this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels);
+      JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+      jedisPoolConfig.setTestOnBorrow(true);
+      jedisPoolConfig.setTestOnReturn(false);
+      jedisPoolConfig.setMaxTotal(2);
+      if (name != null)
+        {
+          jedisPoolConfig.setJmxNamePrefix("SubscriberProfileService");
+          jedisPoolConfig.setJmxNameBase(name);
+        }
+      this.jedisSentinelPool = new JedisSentinelPool(redisInstance, sentinels, jedisPoolConfig);
       this.jedis = null;
     }
 
     //
-    //  legacy historical constructor
+    //  legacy historical constructors
     //
     
-    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisSentinels)
-    {
-      this(redisSentinels);
-    }
-    
+    public RedisSubscriberProfileService(String redisSentinels) { this(redisSentinels, null); }
+    public RedisSubscriberProfileService(String bootstrapServers, String groupID, String subscriberUpdateTopic, String redisSentinels) { this(redisSentinels, null); }
 
     /*****************************************
     *

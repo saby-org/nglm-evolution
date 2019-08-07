@@ -72,7 +72,7 @@ public class SubscriberProfileForceUpdateFileSourceConnector extends FileSourceC
       //  subscriberIDService
       //
 
-      subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels());
+      subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "SubscriberProfileForceUpdateFileSourceConnector-" + Integer.toString(getTaskNumber()));
     }
     
     /*****************************************

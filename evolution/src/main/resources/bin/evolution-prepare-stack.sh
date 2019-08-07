@@ -35,12 +35,18 @@ cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-applicatio
 #
 
 cat $DEPLOY_ROOT/docker/prometheus-application.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
-echo >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
+
+#
+#  kafka-lag-exporter
+#
+
+cat $DEPLOY_ROOT/docker/kafka-lag-exporter.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
 
 #
 #  postamble
 #
 
+echo >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
 cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-application-monitoring.yml
 
 #########################################

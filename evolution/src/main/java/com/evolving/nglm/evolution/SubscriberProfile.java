@@ -727,6 +727,17 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
 
   //
+  //  setEvolutionSubscriberStatus
+  //
+
+  public void setEvolutionSubscriberStatus(EvolutionSubscriberStatus newEvolutionSubscriberStatus, Date date)
+  {
+    this.previousEvolutionSubscriberStatus = this.evolutionSubscriberStatus;
+    this.evolutionSubscriberStatus = newEvolutionSubscriberStatus;
+    this.evolutionSubscriberStatusChangeDate = date;
+  }
+  
+  //
   //  setSegment
   //
 

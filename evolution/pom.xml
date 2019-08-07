@@ -41,14 +41,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.7.1-build190807-SNAPSHOT</version>
+    <version>4.7.1-build190807a-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>4.7.1-build190807-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.7.1-build190807a-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.0.25</gui-fwk.version>
@@ -67,6 +67,9 @@
     
     <!-- dependencies - fake components -->
     <fake.smsc.version>0.0.5</fake.smsc.version>
+
+    <!-- lag exporter -->
+    <lagexporter.version>0.4.0</lagexporter.version>
     
     <!-- core-common-build -->
     <common.build.phase.proguard>package</common.build.phase.proguard>
@@ -254,6 +257,9 @@
                     <include>bin/upgrade-run-flyway.sh</include>
                     <include>bin/upgrade-run-postamble.sh</include>
                     <include>bin/fakein-run.sh</include>
+                    <include>bin/kafka-lag-exporter-run.sh</include>
+                    <include>config/kafka-lag-exporter.conf</include>
+                    <include>config/kafka-lag-exporter-logback.xml</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>config/evolutionengine_jmx.yml</include>
                     <include>config/ucgengine_jmx.yml</include>
@@ -416,6 +422,35 @@
             </configuration>
           </execution>
 
+          <execution>
+            <id>generate-kafka-lag-exporter-docker-stack</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/kafka-lag-exporter</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>src/main/resources/docker/kafka-lag-exporter</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/kafka-lag-exporter.conf</include>
+                    <include>config/kafka-lag-exporter-logback.xml</include>
+                    <include>bin/kafka-lag-exporter-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>                
+              </resources>              
+            </configuration>            
+          </execution>
+
         </executions>
       </plugin>
 
@@ -466,7 +501,21 @@
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>
-          
+
+          <execution>
+            <id>docker-kafka-lag-exporter</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>              
+              <contextDirectory>${project.build.directory}/assembled-docker/kafka-lag-exporter</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-kafkalagexporter</repository>
+              <classifier>docker-info-kafkalagexporter</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
         </executions>
       </plugin>
       

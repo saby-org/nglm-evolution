@@ -235,7 +235,7 @@ public class SubscriberGroupLoader
     *
     *****************************************/
 
-    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels());
+    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "subscribergrouploader");
 
     /*****************************************
     *

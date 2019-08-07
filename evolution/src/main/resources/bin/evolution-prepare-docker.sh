@@ -37,6 +37,7 @@ do
       docker pull ${env.DOCKER_REGISTRY}sbm.web:${gui-sbm.version}
       docker pull ${env.DOCKER_REGISTRY}ev-e4o-flyway:${flyway.version}
       docker pull ${env.DOCKER_REGISTRY}ev-gui.sqlscripts:${flyway.gui.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-kafkalagexporter:${lagexporter.version}
 
       if [ "${FAKEEMULATORS_ENABLED:-false}" = "true" ]; then
           docker pull ${env.DOCKER_REGISTRY}ev-fakesmsc:${fake.smsc.version}

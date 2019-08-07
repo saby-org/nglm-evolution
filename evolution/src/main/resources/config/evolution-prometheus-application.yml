@@ -1,5 +1,5 @@
 #
-#  global configh
+#  global config
 #
 
 global:
@@ -124,3 +124,9 @@ scrape_configs:
     static_configs:
       - targets: [<_DNBOPROXY_PROMETHEUS_>]
 
+ # kafka lag exporter job
+  - job_name: 'kafkalagexporter'
+
+    # main config
+    static_configs:
+      - targets: [<_KAFKA_LAG_EXPORTER_URL_>]
