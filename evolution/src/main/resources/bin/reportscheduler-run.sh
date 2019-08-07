@@ -33,11 +33,24 @@ done
 echo zookeeper cluster ready
 
 #
-#  wait for kafka / schema registry
+#  wait for kafka
 #
 
 cub kafka-ready -b $BROKER_SERVERS $BROKER_COUNT $CUB_KAFKA_TIMEOUT
-cub sr-ready $MASTER_REGISTRY_HOST $MASTER_REGISTRY_PORT $CUB_SCHEMA_REGISTRY_TIMEOUT
+
+#
+#  wait for schema registry
+#
+
+echo waiting for schema registry cluster ...
+for REGISTRY_SERVER in `echo $REGISTRY_SERVERS | sed 's/,/ /g' | uniq`
+do
+  export REGISTRY_HOST=`echo $REGISTRY_SERVER | cut -d: -f1`
+  export REGISTRY_PORT=`echo $REGISTRY_SERVER | cut -d: -f2`
+  cub sr-ready $REGISTRY_HOST $REGISTRY_PORT $CUB_SCHEMA_REGISTRY_TIMEOUT
+  echo schema registry $REGISTRY_SERVER ready
+done 
+echo schema registry cluster ready
 
 #
 #  wait for deployment
