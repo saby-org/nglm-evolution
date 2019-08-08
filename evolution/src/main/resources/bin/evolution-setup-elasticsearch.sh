@@ -35,8 +35,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
                   "subscriberID" : { "type" : "keyword" },
@@ -48,7 +46,6 @@
                   "language" : { "type" : "keyword" },
                   "segments" : { "type" : "keyword" }
                 }
-            }
         }
     }'
   echo
@@ -84,8 +81,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
                   "offerID" : { "type" : "keyword" },
@@ -93,7 +88,6 @@
                   "propensity" : { "type" : "double" },
                   "evaluationDate" : { "type" : "date" }
                 }
-            }
         }
     }'
   echo
@@ -129,8 +123,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
@@ -147,7 +139,6 @@
 	          "deliveryStatus" : { "type" : "keyword" },
 	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
                 }
-            }
         }
     }'
   echo
@@ -183,8 +174,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
@@ -206,7 +195,6 @@
 	          "voucherCode" : { "type" : "keyword" },
 	          "voucherPartnerID" : { "type" : "keyword" }
                 }
-            }
         }
     }'
   echo
@@ -242,8 +230,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
@@ -257,7 +243,6 @@
 	          "deliveryStatus" : { "type" : "keyword" },
 	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
                 }
-            }
         }
     }'
   echo
@@ -293,8 +278,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
                   "journeyInstanceID" : { "type" : "keyword" },
@@ -312,7 +295,6 @@
                   "statusUniversalControlGroup" : { "type" : "boolean" },
                   "journeyComplete" : { "type" : "boolean" }
                 }
-            }
         }
     }'
   echo
@@ -381,8 +363,6 @@
           },
         "mappings" :
           {
-            "doc" :
-              {
                 "properties" :
                   {
                     "subscriberID" : { "type" : "keyword" },
@@ -390,7 +370,6 @@
                     "eligible" : { "type" : "keyword" },
                     "evaluationDate" : { "type" : "date" }
                   }
-              }
           }
       }'
     echo
@@ -415,22 +394,19 @@
           },
         "mappings" :
           {
-            "doc" :
-              {
                 "properties" :
                   {
                     "count" : { "type" : "long" }
                   }
-              }
           }
       }'
 
-    curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/doc/1 -H'Content-Type: application/json' -d'
+    curl -XPUT http://$MASTER_ESROUTER_SERVER/regr_counter/_create/1 -H'Content-Type: application/json' -d'
       {
         "count" : 100
       }'
-      
+
     echo
   fi
 
-  
+
