@@ -27,8 +27,6 @@ import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.OutgoingConnectionPoint;
 import com.evolving.nglm.evolution.SMSMessage;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.core.JSONUtilities;

@@ -34,17 +34,21 @@ public class ContactPolicyCommunicationChannels
 
   public enum ContactType
   {
-    CallToAction("callToAction", "Call To Action", DeliveryPriority.High),
-    Reminder("reminder", "Reminder", DeliveryPriority.Standard),
-    Response("response", "Response", DeliveryPriority.Urgent),
-    Unknown("(unknown)", "(unknown)", DeliveryPriority.Unknown);
+    CallToAction("callToAction", "Call To Action", DeliveryPriority.Standard, true),
+    Reminder("reminder", "Reminder", DeliveryPriority.Standard, true),
+    Response("response", "Response", DeliveryPriority.Urgent, false),
+    Announcement("announcement", "Announcement", DeliveryPriority.Standard, true),
+    ActionNotification("actionNotification", "Action Notification", DeliveryPriority.Urgent, false),
+    Unknown("(unknown)", "(unknown)", DeliveryPriority.Unknown, false);
     private String externalRepresentation;
     private String display;
     private DeliveryPriority deliveryPriority;
-    private ContactType(String externalRepresentation, String display, DeliveryPriority deliveryPriority) { this.externalRepresentation = externalRepresentation; this.display = display; this.deliveryPriority = deliveryPriority; }
+    private boolean checkContactPolicy;
+    private ContactType(String externalRepresentation, String display, DeliveryPriority deliveryPriority, boolean checkContactPolicy) { this.externalRepresentation = externalRepresentation; this.display = display; this.deliveryPriority = deliveryPriority; this.checkContactPolicy = checkContactPolicy; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getDisplay() { return display; }
     public DeliveryPriority getDeliveryPriority() { return deliveryPriority; }
+    public boolean getCheckContactPolicy() { return checkContactPolicy; }
     public static ContactType fromExternalRepresentation(String externalRepresentation) { for (ContactType enumeratedValue : ContactType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   

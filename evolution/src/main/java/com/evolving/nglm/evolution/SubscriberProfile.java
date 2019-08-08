@@ -46,6 +46,8 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ExclusionInclusionTarget.TargetType;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
 {
@@ -1140,6 +1142,68 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     for (String pointID : pointBalances.keySet())
       {
         result.put(pointID, PointBalance.pack(pointBalances.get(pointID)));
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  getInInclusionList
+  *
+  ****************************************/
+  
+  public boolean getInInclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetingType targetingType)
+  {
+    //
+    //  we only allow target type for exclusion/inclusion
+    //
+    if(!targetingType.equals(TargetingType.Target))
+      {
+        return true;
+      }
+    
+    boolean result = true;
+    if(exclusionInclusionTargets != null && !exclusionInclusionTargets.isEmpty())
+      {
+        for(String exclusionInclusionTargetID : exclusionInclusionTargets.keySet())
+          {
+            int epoch = exclusionInclusionTargets.get(exclusionInclusionTargetID);
+            if (epoch == (subscriberGroupEpochReader.get(exclusionInclusionTargetID) != null ? subscriberGroupEpochReader.get(exclusionInclusionTargetID).getEpoch() : 0))
+              {
+                result = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(exclusionInclusionTargetID, SystemTime.getActualCurrentTime()).getTargetType().equals(TargetType.Inclusion);
+              }
+          }
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  getInExclusionList
+  *
+  ****************************************/
+  
+  public boolean getInExclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetingType targetingType)
+  {
+    //
+    //  we only allow target entry for exclusion/inclusion
+    //
+    if(!targetingType.equals(TargetingType.Target))
+      {
+        return false;
+      }
+    
+    boolean result = false;
+    if(exclusionInclusionTargets != null && !exclusionInclusionTargets.isEmpty())
+      {
+        for(String exclusionInclusionTargetID : exclusionInclusionTargets.keySet())
+          {
+            int epoch = exclusionInclusionTargets.get(exclusionInclusionTargetID);
+            if (epoch == (subscriberGroupEpochReader.get(exclusionInclusionTargetID) != null ? subscriberGroupEpochReader.get(exclusionInclusionTargetID).getEpoch() : 0))
+              {
+                result = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(exclusionInclusionTargetID, SystemTime.getActualCurrentTime()).getTargetType().equals(TargetType.Exclusion);
+              }
+          }
       }
     return result;
   }

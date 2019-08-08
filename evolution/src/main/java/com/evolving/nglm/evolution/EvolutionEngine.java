@@ -95,6 +95,7 @@ import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
+import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
@@ -178,6 +179,7 @@ public class EvolutionEngine
   private static HttpServer subscriberProfileServer;
   private static HttpServer internalServer;
   private static HttpClient httpClient;
+  private static ExclusionInclusionTargetService exclusionInclusionTargetService;
 
   /****************************************
   *
@@ -337,6 +339,13 @@ public class EvolutionEngine
     
     pointService = new PointService(bootstrapServers, "evolutionengine-pointservice-" + evolutionEngineKey, Deployment.getPointTopic(), false);
     pointService.start();
+    
+    //
+    // exclusionInclusionTargetService
+    //
+    
+    exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "evolutionengine-exclusioninclusiontargetservice-" + evolutionEngineKey, Deployment.getExclusionInclusionTargetTopic(), false);
+    exclusionInclusionTargetService.start();
     
     //
     //  subscriberGroupEpochReader
@@ -1045,7 +1054,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, targetService, journeyObjectiveService, segmentationDimensionService, timerService, subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, targetService, journeyObjectiveService, segmentationDimensionService, timerService, exclusionInclusionTargetService, subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1224,12 +1233,13 @@ public class EvolutionEngine
     private TimerService timerService;
     private HttpServer subscriberProfileServer;
     private HttpServer internalServer;
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, ExclusionInclusionTargetService exclusionInclusionTargetService,  HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1241,6 +1251,7 @@ public class EvolutionEngine
       this.timerService = timerService;
       this.subscriberProfileServer = subscriberProfileServer;
       this.internalServer = internalServer;
+      this.exclusionInclusionTargetService = exclusionInclusionTargetService;
     }
 
     //
@@ -1271,6 +1282,7 @@ public class EvolutionEngine
       journeyObjectiveService.stop();
       segmentationDimensionService.stop();
       timerService.stop();
+      exclusionInclusionTargetService.stop();
 
       //
       //  rest server
@@ -2397,21 +2409,51 @@ public class EvolutionEngine
                   }
               }
 
-            /*****************************************
+            /*********************************************
             *
-            *  pass targeting criteria
+            *  pass targeting criteria and inclusion list
             *
-            *****************************************/
+            **********************************************/
 
             if (enterJourney)
               {
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                if (! EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria(targetService, now)))
+                if (!subscriberState.getSubscriberProfile().getInInclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, journey.getTargetingType()) && !EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria(targetService, now)))
                   {
                     enterJourney = false;
                   }
                 context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                 context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: targeting criteria {0}", journey.getJourneyID());
+              }
+            
+            /*****************************************
+            *
+            *  pass is customer UCG?
+            *
+            *****************************************/
+
+            if (enterJourney)
+              {
+                if (journey.getTargetingType().equals(TargetingType.Target) && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                  {
+                    enterJourney = false;
+                  }
+                context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: user is UCG {0}", journey.getJourneyID());
+              }
+            
+            /******************************************
+            *
+            *  pass is customer in the exclusion list?
+            *
+            *******************************************/
+
+            if (enterJourney)
+              {
+                if (subscriberState.getSubscriberProfile().getInExclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, journey.getTargetingType()))
+                  {
+                    enterJourney = false;
+                  }
+                context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: user is in exclusion list {0}", journey.getJourneyID());
               }
 
             /*****************************************
