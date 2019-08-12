@@ -330,8 +330,6 @@
         },
       "mappings" :
         {
-          "doc" :
-            {
               "properties" :
                 {
                   "journeyInstanceID" : { "type" : "keyword" },
@@ -339,7 +337,6 @@
                   "subscriberID" : { "type" : "keyword" },
                   "journeyExitDate" : { "type" : "date" }
                 }
-            }
         }
     }'
   echo
