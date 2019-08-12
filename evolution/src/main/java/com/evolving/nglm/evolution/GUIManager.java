@@ -15871,7 +15871,7 @@ public class GUIManager
     if(responseCode == null)
       {
         String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", true);
-        Collection<Journey> allJourneys = journeyService.getActiveJourneys(SystemTime.getActualCurrentTime());
+        Collection<Journey> allJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
         if(allJourneys != null)
           {
             for(Journey activeJourney : allJourneys)

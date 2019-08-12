@@ -2301,6 +2301,8 @@ public class EvolutionEngine
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
     Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
+    boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
+    boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
     for (Journey journey : activeJourneys)
       {
         //
@@ -2409,23 +2411,6 @@ public class EvolutionEngine
                   }
               }
 
-            /*********************************************
-            *
-            *  pass targeting criteria and inclusion list
-            *
-            **********************************************/
-
-            if (enterJourney)
-              {
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                if (!subscriberState.getSubscriberProfile().getInInclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, journey.getTargetingType()) && !EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria(targetService, now)))
-                  {
-                    enterJourney = false;
-                  }
-                context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
-                context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: targeting criteria {0}", journey.getJourneyID());
-              }
-            
             /*****************************************
             *
             *  pass is customer UCG?
@@ -2434,11 +2419,16 @@ public class EvolutionEngine
 
             if (enterJourney)
               {
-                if (journey.getTargetingType().equals(TargetingType.Target) && subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                switch (journey.getTargetingType())
                   {
-                    enterJourney = false;
+                    case Target:
+                      if (subscriberState.getSubscriberProfile().getUniversalControlGroup())
+                        {
+                          enterJourney = false;
+                          context.subscriberTrace("NotEligible: user is UCG {0}", journey.getJourneyID());
+                        }
+                      break;
                   }
-                context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: user is UCG {0}", journey.getJourneyID());
               }
             
             /******************************************
@@ -2449,11 +2439,49 @@ public class EvolutionEngine
 
             if (enterJourney)
               {
-                if (subscriberState.getSubscriberProfile().getInExclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, journey.getTargetingType()))
+                switch (journey.getTargetingType())
                   {
-                    enterJourney = false;
+                    case Target:
+                      if (exclusionList)
+                        {
+                          enterJourney = false;
+                          context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
+                        }
+                      break;
                   }
-                context.subscriberTrace(enterJourney ? "Eligible: {0}" : "NotEligible: user is in exclusion list {0}", journey.getJourneyID());
+              }
+
+            /*********************************************
+            *
+            *  pass targeting criteria and inclusion list
+            *
+            **********************************************/
+
+            if (enterJourney)
+              {
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                boolean targetingCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria(targetService, now));
+                switch (journey.getTargetingType())
+                  {
+                    case Target:
+                      if (! inclusionList && ! targetingCriteria)
+                        {
+                          enterJourney = false;
+                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                          context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
+                        }
+                      break;
+
+                    case Event:
+                    case Manual:
+                      if (! targetingCriteria)
+                        {
+                          enterJourney = false;
+                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                          context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
+                        }
+                      break;
+                  }
               }
 
             /*****************************************
@@ -2464,6 +2492,14 @@ public class EvolutionEngine
 
             if (enterJourney)
               {
+                /*****************************************
+                *
+                *  subscriberTrace
+                *
+                *****************************************/
+
+                context.subscriberTrace("Eligible: {0}", journey.getJourneyID());
+
                 /*****************************************
                 *
                 *  enterJourney -- all journeys

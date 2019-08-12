@@ -132,7 +132,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   {
     super(uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup);
     this.journeyRequestID = uniqueKey;
-    this.eventDate = SystemTime.getActualCurrentTime();
+    this.eventDate = SystemTime.getCurrentTime();
     this.journeyID = deliveryRequestSource;
     this.eligible = false;
   }

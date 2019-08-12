@@ -580,7 +580,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
         ((EmptyFulfillmentRequest)deliveryRequest).setStatus(status);
         ((EmptyFulfillmentRequest)deliveryRequest).setReturnCode(status.getExternalRepresentation());
         deliveryRequest.setDeliveryStatus(getEmptyFulfillmentStatus(status));
-        deliveryRequest.setDeliveryDate(SystemTime.getActualCurrentTime());
+        deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(deliveryRequest);
         bdrStats.updateBDREventCount(1, getEmptyFulfillmentStatus(status));
 

@@ -8,7 +8,9 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -145,6 +147,44 @@ public class ExclusionInclusionTargetService extends GUIService
   public boolean isActiveExclusionInclusionTarget(GUIManagedObject exclusionInclusionTargetUnchecked, Date date) { return isActiveGUIManagedObject(exclusionInclusionTargetUnchecked, date); }
   public ExclusionInclusionTarget getActiveExclusionInclusionTarget(String exclusionInclusionTargetID, Date date) { return (ExclusionInclusionTarget) getActiveGUIManagedObject(exclusionInclusionTargetID, date); }
   public Collection<ExclusionInclusionTarget> getActiveExclusionInclusionTargets(Date date) { return (Collection<ExclusionInclusionTarget>) getActiveGUIManagedObjects(date); }
+
+  //
+  //  getActiveInclusionTargets
+  //
+
+  public Collection<ExclusionInclusionTarget> getActiveInclusionTargets(Date date)
+  {
+    Set<ExclusionInclusionTarget> result = new HashSet<ExclusionInclusionTarget>();
+    for (ExclusionInclusionTarget exclusionInclusionTarget : getActiveExclusionInclusionTargets(date))
+      {
+        switch (exclusionInclusionTarget.getTargetType())
+          {
+            case Inclusion:
+              result.add(exclusionInclusionTarget);
+              break;
+          }
+      }
+    return result;
+  }
+
+  //
+  //  getActiveExclusionTargets
+  //
+
+  public Collection<ExclusionInclusionTarget> getActiveExclusionTargets(Date date)
+  {
+    Set<ExclusionInclusionTarget> result = new HashSet<ExclusionInclusionTarget>();
+    for (ExclusionInclusionTarget exclusionInclusionTarget : getActiveExclusionInclusionTargets(date))
+      {
+        switch (exclusionInclusionTarget.getTargetType())
+          {
+            case Exclusion:
+              result.add(exclusionInclusionTarget);
+              break;
+          }
+      }
+    return result;
+  }
 
   /*****************************************
   *

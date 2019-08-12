@@ -79,6 +79,7 @@ public class ExclusionInclusionTarget extends GUIManagedObject
   *  data
   *
   *****************************************/
+
   private TargetType targetType;
   private String fileID;
   private List<EvaluationCriterion> criteriaList;
@@ -88,11 +89,13 @@ public class ExclusionInclusionTarget extends GUIManagedObject
   *  accessors
   *
   *****************************************/
+
   public String getExclusionInclusionTargetID() { return getGUIManagedObjectID();}
   public String getExclusionInclusionTargetName() { return getGUIManagedObjectName();}
   public TargetType getTargetType() { return targetType;}
   public String getFileID() { return fileID;}
   public List<EvaluationCriterion> getCriteriaList() { return criteriaList; }
+
   /*****************************************
   *
   *  constructor -- unpack

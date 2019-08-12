@@ -115,7 +115,7 @@ public class UploadedFile extends GUIManagedObject
     this.fileEncoding = JSONUtilities.decodeString(jsonRoot, "fileEncoding", false);
     this.fileSize = JSONUtilities.decodeInteger(jsonRoot, "fileSize", false);
     this.numberOfLines = JSONUtilities.decodeInteger(jsonRoot, "numberOfLines", false);
-    this.uploadDate = SystemTime.getActualCurrentTime();
+    this.uploadDate = SystemTime.getCurrentTime();
 
     //
     //  destinationFilename

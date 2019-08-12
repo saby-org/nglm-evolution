@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
@@ -1152,25 +1153,17 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
   
-  public boolean getInInclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetingType targetingType)
+  public boolean getInInclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
-    //
-    //  we only allow target type for exclusion/inclusion
-    //
-    if(!targetingType.equals(TargetingType.Target))
+    boolean result = false;
+    for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now))
       {
-        return true;
-      }
-    
-    boolean result = true;
-    if(exclusionInclusionTargets != null && !exclusionInclusionTargets.isEmpty())
-      {
-        for(String exclusionInclusionTargetID : exclusionInclusionTargets.keySet())
+        if (subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID()) != null)
           {
-            int epoch = exclusionInclusionTargets.get(exclusionInclusionTargetID);
-            if (epoch == (subscriberGroupEpochReader.get(exclusionInclusionTargetID) != null ? subscriberGroupEpochReader.get(exclusionInclusionTargetID).getEpoch() : 0))
+            if (Objects.equals(subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID())))
               {
-                result = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(exclusionInclusionTargetID, SystemTime.getActualCurrentTime()).getTargetType().equals(TargetType.Inclusion);
+                result = true;
+                break;
               }
           }
       }
@@ -1183,25 +1176,17 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
   
-  public boolean getInExclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetingType targetingType)
+  public boolean getInExclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
-    //
-    //  we only allow target entry for exclusion/inclusion
-    //
-    if(!targetingType.equals(TargetingType.Target))
-      {
-        return false;
-      }
-    
     boolean result = false;
-    if(exclusionInclusionTargets != null && !exclusionInclusionTargets.isEmpty())
+    for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now))
       {
-        for(String exclusionInclusionTargetID : exclusionInclusionTargets.keySet())
+        if (subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID()) != null)
           {
-            int epoch = exclusionInclusionTargets.get(exclusionInclusionTargetID);
-            if (epoch == (subscriberGroupEpochReader.get(exclusionInclusionTargetID) != null ? subscriberGroupEpochReader.get(exclusionInclusionTargetID).getEpoch() : 0))
+            if (Objects.equals(subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID())))
               {
-                result = exclusionInclusionTargetService.getActiveExclusionInclusionTarget(exclusionInclusionTargetID, SystemTime.getActualCurrentTime()).getTargetType().equals(TargetType.Exclusion);
+                result = true;
+                break;
               }
           }
       }

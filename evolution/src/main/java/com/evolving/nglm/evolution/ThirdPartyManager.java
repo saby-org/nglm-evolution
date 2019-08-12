@@ -2889,7 +2889,7 @@ public class ThirdPartyManager
     
     Journey journey = null;
     String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", true);
-    Collection<Journey> allActiveJourneys = journeyService.getActiveJourneys(SystemTime.getActualCurrentTime());
+    Collection<Journey> allActiveJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
     if(allActiveJourneys != null)
       {
         for(Journey activeJourney : allActiveJourneys)

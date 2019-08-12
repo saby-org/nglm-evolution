@@ -373,7 +373,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryRequestID = uniqueKey;
     this.deliveryRequestSource = deliveryRequestSource;
     this.originatingRequest = true;
-    this.creationDate = SystemTime.getActualCurrentTime();
+    this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = subscriberID;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;

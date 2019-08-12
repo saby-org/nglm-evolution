@@ -666,7 +666,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         ((INFulfillmentRequest)deliveryRequest).setStatus(status);
         ((INFulfillmentRequest)deliveryRequest).setReturnCode(status.getExternalRepresentation());
         deliveryRequest.setDeliveryStatus(getINFulfillmentStatus(status));
-        deliveryRequest.setDeliveryDate(SystemTime.getActualCurrentTime());
+        deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
         completeRequest(deliveryRequest);
         bdrStats.updateBDREventCount(1, getINFulfillmentStatus(status));
 
