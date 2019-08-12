@@ -119,7 +119,7 @@ public class ProductService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("offerTypeID", guiManagedObject.getJSONRepresentation().get("offerTypeID"));
+    result.put("supplierID", guiManagedObject.getJSONRepresentation().get("supplierID"));
     result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
     return result;
   }

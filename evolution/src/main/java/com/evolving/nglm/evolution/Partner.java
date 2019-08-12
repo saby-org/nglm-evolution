@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  SalesPartners.java
+*  Partner.java
 *
 *****************************************************************************/
 
@@ -22,7 +22,7 @@ import org.apache.kafka.connect.data.Struct;
 import java.util.Date;
 import java.util.Objects;
 
-public class SalesPartner extends GUIManagedObject
+public class Partner extends GUIManagedObject
 {
   /*****************************************
   *
@@ -38,7 +38,7 @@ public class SalesPartner extends GUIManagedObject
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("sales_partners");
+    schemaBuilder.name("partner");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("website", Schema.OPTIONAL_STRING_SCHEMA);
@@ -60,14 +60,14 @@ public class SalesPartner extends GUIManagedObject
   //  serde
   //
 
-  private static ConnectSerde<SalesPartner> serde = new ConnectSerde<SalesPartner>(schema, false, SalesPartner.class, SalesPartner::pack, SalesPartner::unpack);
+  private static ConnectSerde<Partner> serde = new ConnectSerde<Partner>(schema, false, Partner.class, Partner::pack, Partner::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<SalesPartner> serde() { return serde; }
+  public static ConnectSerde<Partner> serde() { return serde; }
 
   /****************************************
   *
@@ -94,8 +94,8 @@ public class SalesPartner extends GUIManagedObject
   *
   ****************************************/
 
-  public String getSalesChannelID() { return getGUIManagedObjectID(); }
-  public String getSalesChannelName() { return getGUIManagedObjectName(); }
+  public String getPartnerID() { return getGUIManagedObjectID(); }
+  public String getPartnerName() { return getGUIManagedObjectName(); }
   public String getWebsite(){ return website; }
   public String getPhone(){ return phone; }
   public String getEmail(){ return email; }
@@ -115,7 +115,7 @@ public class SalesPartner extends GUIManagedObject
   *
   *****************************************/
 
-  public SalesPartner(SchemaAndValue schemaAndValue, String website, String phone, String email, String contactPerson, String address, String mobile, String alternateMobile, String partnerType, String billingMode, String contractNumber, String billingCode, String paymentDetails)
+  public Partner(SchemaAndValue schemaAndValue, String website, String phone, String email, String contactPerson, String address, String mobile, String alternateMobile, String partnerType, String billingMode, String contractNumber, String billingCode, String paymentDetails)
   {
     super(schemaAndValue);
     this.website = website;
@@ -140,21 +140,21 @@ public class SalesPartner extends GUIManagedObject
 
   public static Object pack(Object value)
   {
-    SalesPartner salesPartner = (SalesPartner) value;
+    Partner partner = (Partner) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, salesPartner);
-    struct.put("website", salesPartner.getWebsite());
-    struct.put("phone", salesPartner.getPhone());
-    struct.put("email", salesPartner.getEmail());
-    struct.put("contactPerson", salesPartner.getContactPerson());
-    struct.put("address", salesPartner.getAddress());
-    struct.put("mobile", salesPartner.getMobile());
-    struct.put("alternateMobile", salesPartner.getAlternateMobile());
-    struct.put("partnerType", salesPartner.getPartnerType());
-    struct.put("billingMode", salesPartner.getBillingMode());
-    struct.put("contractNumber", salesPartner.getContractNumber());
-    struct.put("billingCode", salesPartner.getBillingCode());
-    struct.put("paymentDetails", salesPartner.getPaymentDetails());
+    packCommon(struct, partner);
+    struct.put("website", partner.getWebsite());
+    struct.put("phone", partner.getPhone());
+    struct.put("email", partner.getEmail());
+    struct.put("contactPerson", partner.getContactPerson());
+    struct.put("address", partner.getAddress());
+    struct.put("mobile", partner.getMobile());
+    struct.put("alternateMobile", partner.getAlternateMobile());
+    struct.put("partnerType", partner.getPartnerType());
+    struct.put("billingMode", partner.getBillingMode());
+    struct.put("contractNumber", partner.getContractNumber());
+    struct.put("billingCode", partner.getBillingCode());
+    struct.put("paymentDetails", partner.getPaymentDetails());
     return struct;
   }
 
@@ -164,7 +164,7 @@ public class SalesPartner extends GUIManagedObject
   *
   *****************************************/
 
-  public static SalesPartner unpack(SchemaAndValue schemaAndValue)
+  public static Partner unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -195,7 +195,7 @@ public class SalesPartner extends GUIManagedObject
     //  return
     //
 
-    return new SalesPartner(schemaAndValue, website, phone, email, contactPerson, address, mobile, alternateMobile, partnerType, billingMode, contractNumber, billingCode, paymentDetails);
+    return new Partner(schemaAndValue, website, phone, email, contactPerson, address, mobile, alternateMobile, partnerType, billingMode, contractNumber, billingCode, paymentDetails);
   }
   
   /*****************************************
@@ -204,7 +204,7 @@ public class SalesPartner extends GUIManagedObject
   *
   *****************************************/
 
-  public SalesPartner(JSONObject jsonRoot, long epoch, GUIManagedObject existingSalesPartnerUnchecked) throws GUIManagerException
+  public Partner(JSONObject jsonRoot, long epoch, GUIManagedObject existingPartnerUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -212,15 +212,15 @@ public class SalesPartner extends GUIManagedObject
     *
     *****************************************/
 
-    super(jsonRoot, (existingSalesPartnerUnchecked != null) ? existingSalesPartnerUnchecked.getEpoch() : epoch);
+    super(jsonRoot, (existingPartnerUnchecked != null) ? existingPartnerUnchecked.getEpoch() : epoch);
 
     /*****************************************
     *
-    *  existingSalesChannel
+    *  existingPartner
     *
     *****************************************/
 
-    SalesPartner existingSalesChannel = (existingSalesPartnerUnchecked != null && existingSalesPartnerUnchecked instanceof SalesPartner) ? (SalesPartner) existingSalesPartnerUnchecked : null;
+    Partner existingPartner = (existingPartnerUnchecked != null && existingPartnerUnchecked instanceof Partner) ? (Partner) existingPartnerUnchecked : null;
     
     /*****************************************
     *
@@ -247,7 +247,7 @@ public class SalesPartner extends GUIManagedObject
     *
     *****************************************/
 
-    if (epochChanged(existingSalesChannel))
+    if (epochChanged(existingPartner))
       {
         this.setEpoch(epoch);
       }
@@ -259,24 +259,24 @@ public class SalesPartner extends GUIManagedObject
   *
   *****************************************/
 
-  private boolean epochChanged(SalesPartner existingSalesPartner)
+  private boolean epochChanged(Partner existingPartner)
   {
-    if (existingSalesPartner != null && existingSalesPartner.getAccepted())
+    if (existingPartner != null && existingPartner.getAccepted())
       {
         boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSalesPartner.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(getWebsite(), existingSalesPartner.getWebsite());
-        epochChanged = epochChanged || ! Objects.equals(getPhone(), existingSalesPartner.getPhone());
-        epochChanged = epochChanged || ! Objects.equals(getEmail(), existingSalesPartner.getEmail());
-        epochChanged = epochChanged || ! Objects.equals(getContactPerson(), existingSalesPartner.getContactPerson());
-        epochChanged = epochChanged || ! Objects.equals(getAddress(), existingSalesPartner.getAddress());
-        epochChanged = epochChanged || ! Objects.equals(getMobile(), existingSalesPartner.getMobile());
-        epochChanged = epochChanged || ! Objects.equals(getAlternateMobile(), existingSalesPartner.getAlternateMobile());
-        epochChanged = epochChanged || ! Objects.equals(getPartnerType(), existingSalesPartner.getPartnerType());
-        epochChanged = epochChanged || ! Objects.equals(getBillingMode(), existingSalesPartner.getBillingMode());
-        epochChanged = epochChanged || ! Objects.equals(getContractNumber(), existingSalesPartner.getContractNumber());
-        epochChanged = epochChanged || ! Objects.equals(getBillingCode(), existingSalesPartner.getBillingCode());
-        epochChanged = epochChanged || ! Objects.equals(getPaymentDetails(), existingSalesPartner.getPaymentDetails());
+        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingPartner.getGUIManagedObjectID());
+        epochChanged = epochChanged || ! Objects.equals(getWebsite(), existingPartner.getWebsite());
+        epochChanged = epochChanged || ! Objects.equals(getPhone(), existingPartner.getPhone());
+        epochChanged = epochChanged || ! Objects.equals(getEmail(), existingPartner.getEmail());
+        epochChanged = epochChanged || ! Objects.equals(getContactPerson(), existingPartner.getContactPerson());
+        epochChanged = epochChanged || ! Objects.equals(getAddress(), existingPartner.getAddress());
+        epochChanged = epochChanged || ! Objects.equals(getMobile(), existingPartner.getMobile());
+        epochChanged = epochChanged || ! Objects.equals(getAlternateMobile(), existingPartner.getAlternateMobile());
+        epochChanged = epochChanged || ! Objects.equals(getPartnerType(), existingPartner.getPartnerType());
+        epochChanged = epochChanged || ! Objects.equals(getBillingMode(), existingPartner.getBillingMode());
+        epochChanged = epochChanged || ! Objects.equals(getContractNumber(), existingPartner.getContractNumber());
+        epochChanged = epochChanged || ! Objects.equals(getBillingCode(), existingPartner.getBillingCode());
+        epochChanged = epochChanged || ! Objects.equals(getPaymentDetails(), existingPartner.getPaymentDetails());
         return epochChanged;
       }
     else

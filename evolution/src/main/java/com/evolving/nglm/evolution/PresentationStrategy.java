@@ -62,14 +62,13 @@ public class PresentationStrategy extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("presentation_strategy");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("salesChannelIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("maximumPresentations", Schema.INT32_SCHEMA);
     schemaBuilder.field("maximumPresentationsPeriodDays", Schema.INT32_SCHEMA);
-    schemaBuilder.field("targetGroupPositions", SchemaBuilder.array(PresentationPosition.schema()).schema());
-    schemaBuilder.field("controlGroupPositions", SchemaBuilder.array(PresentationPosition.schema()).schema());
-    schemaBuilder.field("scoringStrategies", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).name("presentation_strategy_scoringstrategies").schema());
+    schemaBuilder.field("setA", PositionSet.schema());
+    schemaBuilder.field("setB", PositionSet.schema());
     schema = schemaBuilder.build();
   };
 
@@ -95,9 +94,8 @@ public class PresentationStrategy extends GUIManagedObject
   private Set<String> salesChannelIDs;
   private Integer maximumPresentations;
   private Integer maximumPresentationsPeriodDays;
-  private List<PresentationPosition> targetGroupPositions;
-  private List<PresentationPosition> controlGroupPositions;
-  private Map<OfferType,String> scoringStrategies;
+  private PositionSet setA;
+  private PositionSet setB;
 
   /****************************************
   *
@@ -113,9 +111,8 @@ public class PresentationStrategy extends GUIManagedObject
   public Set<String> getSalesChannelIDs() { return salesChannelIDs; }
   public Integer getMaximumPresentations() { return maximumPresentations; }
   public Integer getMaximumPresentationsPeriodDays() { return maximumPresentationsPeriodDays; }
-  public List<PresentationPosition> getTargetGroupPositions() { return targetGroupPositions; }
-  public List<PresentationPosition> getControlGroupPositions() { return controlGroupPositions; }
-  public Map<OfferType,String> getScoringStrategies() { return scoringStrategies; }
+  public PositionSet getSetA() { return setA; }
+  public PositionSet getSetB() { return setB; }
 
   /*****************************************
   *
@@ -123,15 +120,14 @@ public class PresentationStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  public PresentationStrategy(SchemaAndValue schemaAndValue, Set<String> salesChannelIDs, Integer maximumPresentations, Integer maximumPresentationsPeriodDays, List<PresentationPosition> targetGroupPositions, List<PresentationPosition> controlGroupPositions, Map<OfferType,String> scoringStrategies)
+  public PresentationStrategy(SchemaAndValue schemaAndValue, Set<String> salesChannelIDs, Integer maximumPresentations, Integer maximumPresentationsPeriodDays, PositionSet setA, PositionSet setB)
   {
     super(schemaAndValue);
     this.salesChannelIDs = salesChannelIDs;
     this.maximumPresentations = maximumPresentations;
     this.maximumPresentationsPeriodDays = maximumPresentationsPeriodDays;
-    this.targetGroupPositions = targetGroupPositions;
-    this.controlGroupPositions = controlGroupPositions;
-    this.scoringStrategies = scoringStrategies;
+    this.setA = setA;
+    this.setB = setB;
   }
 
   /*****************************************
@@ -148,9 +144,8 @@ public class PresentationStrategy extends GUIManagedObject
     struct.put("salesChannelIDs", packSalesChannelIDs(presentationStrategy.getSalesChannelIDs()));
     struct.put("maximumPresentations", presentationStrategy.getMaximumPresentations());
     struct.put("maximumPresentationsPeriodDays", presentationStrategy.getMaximumPresentationsPeriodDays());
-    struct.put("targetGroupPositions", packPresentationPositions(presentationStrategy.getTargetGroupPositions()));
-    struct.put("controlGroupPositions", packPresentationPositions(presentationStrategy.getControlGroupPositions()));
-    struct.put("scoringStrategies", packScoringStrategies(presentationStrategy.getScoringStrategies()));
+    struct.put("setA", PositionSet.pack(presentationStrategy.getSetA()));
+    struct.put("setB", PositionSet.pack(presentationStrategy.getSetB()));
     return struct;
   }
 
@@ -166,39 +161,6 @@ public class PresentationStrategy extends GUIManagedObject
     for (String salesChannelID : salesChannelIDs)
       {
         result.add(salesChannelID);
-      }
-    return result;
-  }
-
-  /****************************************
-  *
-  *  packPresentationPositions
-  *
-  ****************************************/
-
-  private static List<Object> packPresentationPositions(List<PresentationPosition> presentationPositions)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (PresentationPosition presentationPosition : presentationPositions)
-      {
-        result.add(PresentationPosition.pack(presentationPosition));
-      }
-    return result;
-  }
-
-  /****************************************
-  *
-  *  packScoringStrategies
-  *
-  ****************************************/
-
-  private static Map<String,String> packScoringStrategies(Map<OfferType,String> scoringStrategies)
-  {
-    Map<String,String> result = new LinkedHashMap<String,String>();
-    for (OfferType offerType : scoringStrategies.keySet())
-      {
-        String scoringStrategy = scoringStrategies.get(offerType);
-        result.put(offerType.getID(), scoringStrategy);
       }
     return result;
   }
@@ -227,15 +189,14 @@ public class PresentationStrategy extends GUIManagedObject
     Set<String> salesChannelIDs = unpackSalesChannels((List<String>) valueStruct.get("salesChannelIDs"));
     Integer maximumPresentations = valueStruct.getInt32("maximumPresentations");
     Integer maximumPresentationsPeriodDays = valueStruct.getInt32("maximumPresentationsPeriodDays");
-    List<PresentationPosition> targetGroupPositions = unpackPresentationPositions(schema.field("targetGroupPositions").schema(), valueStruct.get("targetGroupPositions"));
-    List<PresentationPosition> controlGroupPositions = unpackPresentationPositions(schema.field("controlGroupPositions").schema(), valueStruct.get("controlGroupPositions"));
-    Map<OfferType,String> scoringStrategies = unpackScoringStrategies((Map<String,String>) valueStruct.get("scoringStrategies"));
+    PositionSet setA = PositionSet.unpack(new SchemaAndValue(schema.field("setA").schema(), valueStruct.get("setA")));
+    PositionSet setB = PositionSet.unpack(new SchemaAndValue(schema.field("setB").schema(), valueStruct.get("setB")));
     
     //
     //  return
     //
 
-    return new PresentationStrategy(schemaAndValue, salesChannelIDs, maximumPresentations, maximumPresentationsPeriodDays, targetGroupPositions, controlGroupPositions, scoringStrategies);
+    return new PresentationStrategy(schemaAndValue, salesChannelIDs, maximumPresentations, maximumPresentationsPeriodDays, setA, setB);
   }
   
   /*****************************************
@@ -250,57 +211,6 @@ public class PresentationStrategy extends GUIManagedObject
     for (String salesChannelID : salesChannelIDs)
       {
         result.add(salesChannelID);
-      }
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  unpackPresentationPositions
-  *
-  *****************************************/
-
-  private static List<PresentationPosition> unpackPresentationPositions(Schema schema, Object value)
-  {
-    //
-    //  get schema for PresentationPosition
-    //
-
-    Schema presentationPositionSchema = schema.valueSchema();
-    
-    //
-    //  unpack
-    //
-
-    List<PresentationPosition> result = new ArrayList<PresentationPosition>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object presentationPosition : valueArray)
-      {
-        result.add(PresentationPosition.unpack(new SchemaAndValue(presentationPositionSchema, presentationPosition)));
-      }
-
-    //
-    //  return
-    //
-
-    return result;
-  }
-
-  /*****************************************
-  *
-  *  unpackScoringStrategies
-  *
-  *****************************************/
-
-  private static Map<OfferType,String> unpackScoringStrategies(Map<String,String> scoringStrategies)
-  {
-    Map<OfferType,String> result  = new LinkedHashMap<OfferType,String>();
-    for (String offerTypeName : scoringStrategies.keySet())
-      {
-        OfferType offerType = Deployment.getOfferTypes().get(offerTypeName);
-        if (offerType == null) throw new SerializationException("unknown offerType: " + offerTypeName);
-        String scoringStrategy = scoringStrategies.get(offerType);
-        result.put(offerType, scoringStrategy);
       }
     return result;
   }
@@ -338,9 +248,8 @@ public class PresentationStrategy extends GUIManagedObject
     this.salesChannelIDs = decodeSalesChannelIDs(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelIDs", true));
     this.maximumPresentations = JSONUtilities.decodeInteger(jsonRoot, "maximumPresentations", false);
     this.maximumPresentationsPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumPresentationsPeriodDays", false);
-    this.targetGroupPositions = decodePresentationPositions(JSONUtilities.decodeJSONArray(jsonRoot, "targetGroupPositions", true));
-    this.controlGroupPositions = decodePresentationPositions(JSONUtilities.decodeJSONArray(jsonRoot, "controlGroupPositions", true));
-    this.scoringStrategies = decodeScoringStrategies(JSONUtilities.decodeJSONArray(jsonRoot, "scoringStrategies", true));
+    this.setA = new PositionSet(JSONUtilities.decodeJSONObject(jsonRoot, "setA", true));
+    this.setB = new PositionSet(JSONUtilities.decodeJSONObject(jsonRoot, "setB", true));
 
     /*****************************************
     *
@@ -372,43 +281,6 @@ public class PresentationStrategy extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodePresentationPositions
-  *
-  *****************************************/
-
-  private List<PresentationPosition> decodePresentationPositions(JSONArray jsonArray) throws GUIManagerException
-  {
-    List<PresentationPosition> result = new ArrayList<PresentationPosition>();
-    for (int i=0; i<jsonArray.size(); i++)
-      {
-        result.add(new PresentationPosition((JSONObject) jsonArray.get(i)));
-      }
-    return result;
-  }
-  
-  /*****************************************
-  *
-  *  decodeScoringStrategies
-  *
-  *****************************************/
-
-  private Map<OfferType,String> decodeScoringStrategies(JSONArray jsonArray) throws GUIManagerException
-  {
-    Map<OfferType,String> result = new LinkedHashMap<OfferType,String>();
-    for (int i=0; i<jsonArray.size(); i++)
-      {
-        JSONObject jsonObject = (JSONObject) jsonArray.get(i);
-        String offerTypeID = JSONUtilities.decodeString(jsonObject, "offerTypeID", true);
-        OfferType offerType = Deployment.getOfferTypes().get(offerTypeID);
-        if (offerType == null) throw new GUIManagerException("unknown offerType", offerTypeID);
-        String scoringStrategyID = JSONUtilities.decodeString(jsonObject, "scoringStrategyID", true);
-        result.put(offerType, scoringStrategyID);
-      }
-    return result;
-  }
-
-  /*****************************************
-  *
   *  epochChanged
   *
   *****************************************/
@@ -422,9 +294,8 @@ public class PresentationStrategy extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(salesChannelIDs, existingPresentationStrategy.getSalesChannelIDs());
         epochChanged = epochChanged || ! Objects.equals(maximumPresentations, existingPresentationStrategy.getMaximumPresentations());
         epochChanged = epochChanged || ! Objects.equals(maximumPresentationsPeriodDays, existingPresentationStrategy.getMaximumPresentationsPeriodDays());
-        epochChanged = epochChanged || ! Objects.equals(targetGroupPositions, existingPresentationStrategy.getTargetGroupPositions());
-        epochChanged = epochChanged || ! Objects.equals(controlGroupPositions, existingPresentationStrategy.getControlGroupPositions());
-        epochChanged = epochChanged || ! Objects.equals(scoringStrategies, existingPresentationStrategy.getScoringStrategies());
+        epochChanged = epochChanged || ! Objects.equals(setA, existingPresentationStrategy.getSetA());
+        epochChanged = epochChanged || ! Objects.equals(setB, existingPresentationStrategy.getSetB());
         return epochChanged;
       }
     else
@@ -441,9 +312,14 @@ public class PresentationStrategy extends GUIManagedObject
 
   public void validate(ScoringStrategyService scoringStrategyService, Date date) throws GUIManagerException
   {
-    for (String scoringStrategyID : scoringStrategies.values())
+    Set<PositionElement> pes = new HashSet<>();
+    pes.addAll(setA.getPositions());
+    pes.addAll(setB.getPositions());
+    for (PositionElement pe : pes)
       {
+        String scoringStrategyID = pe.getScoringStrategyID();
         if (scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, date) == null) throw new GUIManagerException("unknown scoring strategy", scoringStrategyID);
       }
   }
 }
+

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -40,6 +41,9 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -701,28 +705,17 @@ public class DNBOProxy
     JSONObject valueRes;
     
     try {
-      ScoringGroup selectedScoringGroup = getScoringGroup(scoringStrategy, subscriberProfile);
-      logFragment = "DNBOProxy.getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringGroup for " + msisdn + " " + selectedScoringGroup;
+      ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile);
+      logFragment = "DNBOProxy.getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
       returnedLog.append(logFragment+", ");
       if (log.isDebugEnabled())
       {
         log.debug(logFragment);
       }
 
-      // ##############################" ScoringSplit
-      // ##############################
+      Set<Offer> offersForAlgo = getOffersToOptimize(msisdn, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile);
 
-      ScoringSplit selectedScoringSplit = getScoringSplit(msisdn, selectedScoringGroup);
-      logFragment = "DNBOProxy.getOffers ScoringStrategy : " + selectedScoringSplit+ ", selectedScoringSplit : "+selectedScoringSplit.getOfferObjectiveIDs();
-      returnedLog.append(logFragment+", ");
-      if (log.isDebugEnabled())
-      {
-        log.debug(logFragment);
-      }
-
-      Set<Offer> offersForAlgo = getOffersToOptimize(msisdn, selectedScoringSplit.getOfferObjectiveIDs(), subscriberProfile);
-
-      OfferOptimizationAlgorithm algo = selectedScoringSplit.getOfferOptimizationAlgorithm();
+      OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
       if (algo == null)
       {
         log.warn("DNBOProxy.getOffers No Algo returned for selectedScoringSplit " + scoringStrategy.getScoringStrategyID());
@@ -731,10 +724,10 @@ public class DNBOProxy
 
       OfferOptimizationAlgorithmParameter thresholdParameter = new OfferOptimizationAlgorithmParameter("thresholdValue");
 
-      OfferOptimizationAlgorithmParameter valueModeParameter = new OfferOptimizationAlgorithmParameter("valueMode");
+      Map<OfferOptimizationAlgorithmParameter, String> algoParameters = selectedScoringSegment.getParameters(); 
 
       double threshold = 0;
-      String thresholdString = selectedScoringSplit.getParameters().get(thresholdParameter);
+      String thresholdString = selectedScoringSegment.getParameters().get(thresholdParameter);
       if (thresholdString != null)
       {
         threshold = Double.parseDouble(thresholdString);
@@ -745,22 +738,11 @@ public class DNBOProxy
       {
         log.debug(logFragment);
       }
-
-      String valueMode = selectedScoringSplit.getParameters().get(valueModeParameter);
-      if (valueMode == null || valueMode.equals(""))
-      {
-        logFragment = "DNBOProxy.getOffers no value mode";
-        if (log.isDebugEnabled())
-          {
-            log.debug(logFragment);
-          }
-        returnedLog.append(logFragment+", ");
-      }
       
       // This returns an ordered Collection (and sorted by offerScore)
       Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
           OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
-              algo, valueMode, offersForAlgo, subscriberProfile, threshold, salesChannelID,
+              algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
               productService, productTypeService, catalogCharacteristicService,
               propensityDataReader, subscriberGroupEpochReader,
               segmentationDimensionService, returnedLog);
@@ -773,7 +755,7 @@ public class DNBOProxy
       //
       // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
       //
-      Set<String> offerObjectiveIds = selectedScoringSplit.getAlwaysAppendOfferObjectiveIDs();
+      Set<String> offerObjectiveIds = selectedScoringSegment.getAlwaysAppendOfferObjectiveIDs();
       for(Offer offer : offerService.getActiveOffers(now))
         {
           boolean inList = true;
@@ -1000,50 +982,81 @@ public class DNBOProxy
     return result;
   }
 
-  private ScoringSplit getScoringSplit(String msisdn, ScoringGroup selectedScoringGroup) throws GetOfferException
-  {
-    // now let evaluate the split testing...
-    // let compute the split bashed on hash...
-    int nbSamples = selectedScoringGroup.getScoringSplits().size();
-    // let get the same sample for the subscriber for the whole strategy
-    String hashed = msisdn + nbSamples;
-    int hash = hashed.hashCode();
-    if (hash < 0)
-      {
-        hash = hash * -1; // can happen because a hashcode is a SIGNED
-        // integer
-      }
-    int sampleId = hash % nbSamples; // modulo
+//  private ScoringSplit getScoringSplit(String msisdn, ScoringGroup selectedScoringGroup) throws GetOfferException
+//  {
+//    // now let evaluate the split testing...
+//    // let compute the split bashed on hash...
+//    int nbSamples = selectedScoringGroup.getScoringSplits().size();
+//    // let get the same sample for the subscriber for the whole strategy
+//    String hashed = msisdn + nbSamples;
+//    int hash = hashed.hashCode();
+//    if (hash < 0)
+//      {
+//        hash = hash * -1; // can happen because a hashcode is a SIGNED
+//        // integer
+//      }
+//    int sampleId = hash % nbSamples; // modulo
+//
+//    // now retrieve the good split strategy for this user:
+//    ScoringSplit selectedScoringSplit = selectedScoringGroup.getScoringSplits().get(sampleId);
+//
+//    if (selectedScoringSplit == null)
+//      {
+//        // should never happen since modulo plays on the number of samples
+//        log.warn("DNBOProxy.getScoringSplit Split Testing modulo problem for " + msisdn + " and subStrategy " + selectedScoringGroup);
+//        throw new GetOfferException("Split Testing modulo problem for " + msisdn + " and subStrategy " + selectedScoringGroup);
+//      }
+//    return selectedScoringSplit;
+//  }
 
-    // now retrieve the good split strategy for this user:
-    ScoringSplit selectedScoringSplit = selectedScoringGroup.getScoringSplits().get(sampleId);
+//  private ScoringGroup getScoringGroup(ScoringStrategy strategy, SubscriberProfile subscriberProfile) throws GetOfferException
+//  {
+//    // let retrieve the first sub strategy that maps this user:
+//    Date now = SystemTime.getCurrentTime();
+//    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
+//
+//    ScoringGroup selectedScoringGroup = strategy.evaluateScoringGroups(evaluationRequest);
+//    if (log.isDebugEnabled())
+//      {
+//        log.debug("DNBOProxy.getScoringGroup Retrieved matching scoringGroup " + (selectedScoringGroup != null ? display(selectedScoringGroup.getProfileCriteria()) : null));
+//      }
+//
+//    if (selectedScoringGroup == null)
+//      {
+//        throw new GetOfferException("Can't retrieve ScoringGroup for strategy " + strategy.getScoringStrategyID() + " and msisdn " + subscriberProfile.getSubscriberID());
+//      }
+//    return selectedScoringGroup;
+//  }
 
-    if (selectedScoringSplit == null)
-      {
-        // should never happen since modulo plays on the number of samples
-        log.warn("DNBOProxy.getScoringSplit Split Testing modulo problem for " + msisdn + " and subStrategy " + selectedScoringGroup);
-        throw new GetOfferException("Split Testing modulo problem for " + msisdn + " and subStrategy " + selectedScoringGroup);
-      }
-    return selectedScoringSplit;
-  }
-
-  private ScoringGroup getScoringGroup(ScoringStrategy strategy, SubscriberProfile subscriberProfile) throws GetOfferException
+  private ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile) throws GetOfferException
   {
     // let retrieve the first sub strategy that maps this user:
     Date now = SystemTime.getCurrentTime();
     SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
 
-    ScoringGroup selectedScoringGroup = strategy.evaluateScoringGroups(evaluationRequest);
+    // TODO MK TRACE BEGIN
+    List<ScoringSegment> ssl = strategy.getScoringSegments();
+    for (ScoringSegment ss : ssl) 
+      {
+        log.trace("scoring segment "+ss.toString()+" : segments IDs size : "+ss.getSegmentIDs().size()); 
+        for (String id : ss.getSegmentIDs())
+          {
+            log.trace("     scoring segment "+ss.toString()+" : segment id = "+id); 
+          }
+      }
+    // TODO MK TRACE END
+    
+    ScoringSegment selectedScoringSegment = strategy.evaluateScoringSegments(evaluationRequest);
     if (log.isDebugEnabled())
       {
-        log.debug("DNBOProxy.getScoringGroup Retrieved matching scoringGroup " + (selectedScoringGroup != null ? display(selectedScoringGroup.getProfileCriteria()) : null));
+        log.debug("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
       }
 
-    if (selectedScoringGroup == null)
+    if (selectedScoringSegment == null)
       {
-        throw new GetOfferException("Can't retrieve ScoringGroup for strategy " + strategy.getScoringStrategyID() + " and msisdn " + subscriberProfile.getSubscriberID());
+        throw new GetOfferException("Can't retrieve ScoringSegment for strategy " + strategy.getScoringStrategyID() + " and msisdn " + subscriberProfile.getSubscriberID());
       }
-    return selectedScoringGroup;
+    return selectedScoringSegment;
   }
 
   public static String display(List<EvaluationCriterion> profileCriteria) {
@@ -1053,5 +1066,4 @@ public class DNBOProxy
     }
     return res.toString();
   }
-  
 }

@@ -1,43 +1,31 @@
 /*****************************************************************************
 *
-*  PresentationPosition.java
+*  PositionElement.java
 *
 *****************************************************************************/
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.SchemaUtilities;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
-
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Objects;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class PresentationPosition
+public class PositionElement
 {
   /*****************************************
   *
@@ -53,7 +41,7 @@ public class PresentationPosition
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("presentation_position");
+    schemaBuilder.name("presentation_positionelement");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("scoringStrategyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("additionalCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
@@ -64,14 +52,14 @@ public class PresentationPosition
   //  serde
   //
 
-  private static ConnectSerde<PresentationPosition> serde = new ConnectSerde<PresentationPosition>(schema, false, PresentationPosition.class, PresentationPosition::pack, PresentationPosition::unpack);
+  private static ConnectSerde<PositionElement> serde = new ConnectSerde<PositionElement>(schema, false, PositionElement.class, PositionElement::pack, PositionElement::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<PresentationPosition> serde() { return serde; }
+  public static ConnectSerde<PositionElement> serde() { return serde; }
 
   /*****************************************
   *
@@ -97,7 +85,7 @@ public class PresentationPosition
   *
   *****************************************/
 
-  public PresentationPosition(String scoringStrategyID, List<EvaluationCriterion> additionalCriteria)
+  public PositionElement(String scoringStrategyID, List<EvaluationCriterion> additionalCriteria)
   {
     this.scoringStrategyID = scoringStrategyID;
     this.additionalCriteria = additionalCriteria;
@@ -111,10 +99,10 @@ public class PresentationPosition
 
   public static Object pack(Object value)
   {
-    PresentationPosition presentationPosition = (PresentationPosition) value;
+    PositionElement positionElement = (PositionElement) value;
     Struct struct = new Struct(schema);
-    struct.put("scoringStrategyID", presentationPosition.getScoringStrategyID());
-    struct.put("additionalCriteria", packAdditionalCriteria(presentationPosition.getAdditionalCriteria()));
+    struct.put("scoringStrategyID", positionElement.getScoringStrategyID());
+    struct.put("additionalCriteria", packAdditionalCriteria(positionElement.getAdditionalCriteria()));
     return struct;
   }
 
@@ -140,7 +128,7 @@ public class PresentationPosition
   *
   *****************************************/
 
-  public static PresentationPosition unpack(SchemaAndValue schemaAndValue)
+  public static PositionElement unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -155,16 +143,16 @@ public class PresentationPosition
     //
 
     Struct valueStruct = (Struct) value;
-    String scoringStrategyID = valueStruct.getString("scoringStrategyID");
+    String scoringStrategy = (String) valueStruct.get("scoringStrategyID");
     List<EvaluationCriterion> additionalCriteria = unpackAdditionalCriteria(schema.field("additionalCriteria").schema(), valueStruct.get("additionalCriteria"));
 
     //
     //  return
     //
 
-    return new PresentationPosition(scoringStrategyID, additionalCriteria);
+    return new PositionElement(scoringStrategy, additionalCriteria);
   }
-
+  
   /*****************************************
   *
   *  unpackAdditionalCriteria
@@ -203,7 +191,7 @@ public class PresentationPosition
   *
   *****************************************/
 
-  public PresentationPosition(JSONObject jsonRoot) throws GUIManagerException
+  public PositionElement(JSONObject jsonRoot) throws GUIManagerException
   {
     this.scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", true);
     this.additionalCriteria = decodeAdditionalCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "additionalCriteria", true));
@@ -234,9 +222,9 @@ public class PresentationPosition
   public boolean equals(Object obj)
   {
     boolean result = false;
-    if (obj instanceof PresentationPosition)
+    if (obj instanceof PositionElement)
       {
-        PresentationPosition presentationPosition = (PresentationPosition) obj;
+        PositionElement presentationPosition = (PositionElement) obj;
         result = true;
         result = result && Objects.equals(scoringStrategyID, presentationPosition.getScoringStrategyID());
         result = result && Objects.equals(additionalCriteria, presentationPosition.getAdditionalCriteria());

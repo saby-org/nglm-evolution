@@ -1,12 +1,14 @@
 package com.evolving.nglm.evolution.offeroptimizer;
 
+import java.util.Map;
+
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
+import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
-import com.evolving.nglm.evolution.SubscriberProfile;
 
 public interface IOfferOptimizerAlgorithm
 {
@@ -22,10 +24,10 @@ public interface IOfferOptimizerAlgorithm
    * @return
    */
   public ProposedOfferDetails getOfferPropensityScore(
-		String valueMode, 
+    Map<OfferOptimizationAlgorithmParameter, String> algoParameters, 
 		Offer o,
 		String salesChannelId, 
-		int offerCurrentPropensity,
+		double offerCurrentPropensity,
 		long offerPrice,
 		SubscriberEvaluationRequest subscriberEvaluationRequest,
 		OfferOptimizationAlgorithm algoDefinition,

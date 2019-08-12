@@ -187,7 +187,8 @@ public class GUIManager
     getJourneyCriterionFieldIDs("getJourneyCriterionFieldIDs"),
     getJourneyCriterionField("getJourneyCriterionField"),
     getOfferCategories("getOfferCategories"),
-    getOfferTypes("getOfferTypes"),
+    getOfferProperties("getOfferProperties"),
+    getScoringEngines("scoringEngines"),
     getOfferOptimizationAlgorithms("getOfferOptimizationAlgorithms"),
     getNodeTypes("getNodeTypes"),
     getJourneyToolbox("getJourneyToolbox"),
@@ -470,8 +471,8 @@ public class GUIManager
   private CommunicationChannelService communicationChannelService;
   private CommunicationChannelBlackoutService communicationChannelBlackoutService;
   private LoyaltyProgramService loyaltyProgramService;
-  private SalesPartnerService salesPartnerService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
+  private PartnerService partnerService;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -556,8 +557,8 @@ public class GUIManager
     String communicationChannelTopic = Deployment.getCommunicationChannelTopic();
     String communicationChannelBlackoutTopic = Deployment.getCommunicationChannelBlackoutTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
-    String salesPartnerTopic = Deployment.getSalesPartnerTopic();
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
+    String partnerTopic = Deployment.getPartnerTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -635,8 +636,8 @@ public class GUIManager
     communicationChannelService = new CommunicationChannelService(bootstrapServers, "guimanager-communicationchannelservice-" + apiProcessKey, communicationChannelTopic, true);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
-    salesPartnerService = new SalesPartnerService(bootstrapServers, "guimanager-salespartnerservice-"+apiProcessKey, salesPartnerTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
+    partnerService = new PartnerService(bootstrapServers, "guimanager-partnerservice-"+apiProcessKey, partnerTopic, true);
 
     /*****************************************
     *
@@ -1255,8 +1256,8 @@ public class GUIManager
     communicationChannelService.start();
     communicationChannelBlackoutService.start();
     loyaltyProgramService.start();
-    salesPartnerService.start();
     exclusionInclusionTargetService.start();
+    partnerService.start();
 
     /*****************************************
     *
@@ -1291,7 +1292,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyCriterionFieldIDs", new APISimpleHandler(API.getJourneyCriterionFieldIDs));
         restServer.createContext("/nglm-guimanager/getJourneyCriterionField", new APISimpleHandler(API.getJourneyCriterionField));
         restServer.createContext("/nglm-guimanager/getOfferCategories", new APISimpleHandler(API.getOfferCategories));
-        restServer.createContext("/nglm-guimanager/getOfferTypes", new APISimpleHandler(API.getOfferTypes));
+        restServer.createContext("/nglm-guimanager/getOfferProperties", new APISimpleHandler(API.getOfferProperties));
+        restServer.createContext("/nglm-guimanager/getScoringEngines", new APISimpleHandler(API.getScoringEngines));
         restServer.createContext("/nglm-guimanager/getOfferOptimizationAlgorithms", new APISimpleHandler(API.getOfferOptimizationAlgorithms));
         restServer.createContext("/nglm-guimanager/getNodeTypes", new APISimpleHandler(API.getNodeTypes));
         restServer.createContext("/nglm-guimanager/getJourneyToolbox", new APISimpleHandler(API.getJourneyToolbox));
@@ -1501,7 +1503,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, salesPartnerService, exclusionInclusionTargetService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService);
 
     /*****************************************
     *
@@ -1509,7 +1511,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, salesPartnerService, exclusionInclusionTargetService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService));
 
     /*****************************************
     *
@@ -1563,14 +1565,14 @@ public class GUIManager
     private CommunicationChannelService communicationChannelService;
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
-    private SalesPartnerService salesPartnerService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
+    private PartnerService partnerService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, SalesPartnerService salesPartnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1603,8 +1605,8 @@ public class GUIManager
       this.communicationChannelService = communicationChannelService;
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
-      this.salesPartnerService = salesPartnerService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
+      this.partnerService = partnerService;
     }
 
     //
@@ -1651,9 +1653,9 @@ public class GUIManager
       if (communicationChannelService != null) communicationChannelService.stop();
       if (communicationChannelBlackoutService != null) communicationChannelBlackoutService.stop();
       if (loyaltyProgramService != null) loyaltyProgramService.stop();
-      if (salesPartnerService != null) salesPartnerService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
-      
+      if (partnerService != null) partnerService.stop();
+
       //
       //  rest server
       //
@@ -1872,8 +1874,12 @@ public class GUIManager
                   jsonResponse = processGetOfferCategories(userID, jsonRoot);
                   break;
 
-                case getOfferTypes:
-                  jsonResponse = processGetOfferTypes(userID, jsonRoot);
+                case getOfferProperties:
+                  jsonResponse = processGetOfferProperties(userID, jsonRoot);
+                  break;
+
+                case getScoringEngines:
+                  jsonResponse = processGetScoringEngines(userID, jsonRoot);
                   break;
 
                 case getOfferOptimizationAlgorithms:
@@ -2605,15 +2611,15 @@ public class GUIManager
                   break;
 
                 case getPartner:
-                  jsonResponse = processGetSalesPartner(userID, jsonRoot);
+                  jsonResponse = processGetPartner(userID, jsonRoot);
                   break;
 
                 case putPartner:
-                  jsonResponse = processPutSalesPartner(userID, jsonRoot);
+                  jsonResponse = processPutPartner(userID, jsonRoot);
                   break;
 
                 case removePartner:
-                  jsonResponse = processRemoveSalesPartner(userID, jsonRoot);
+                  jsonResponse = processRemovePartner(userID, jsonRoot);
                   break;
 
                 case enterCampaign:
@@ -3024,15 +3030,28 @@ public class GUIManager
 
     /*****************************************
     *
-    *  retrieve offerTypes
+    *  retrieve offerProperties
     *
     *****************************************/
 
-    List<JSONObject> offerTypes = new ArrayList<JSONObject>();
-    for (OfferType offerType : Deployment.getOfferTypes().values())
+    List<JSONObject> offerProperties = new ArrayList<JSONObject>();
+    for (OfferProperty offerProperty : Deployment.getOfferProperties().values())
       {
-        JSONObject offerTypeJSON = offerType.getJSONRepresentation();
-        offerTypes.add(offerTypeJSON);
+        JSONObject offerPropertyJSON = offerProperty.getJSONRepresentation();
+        offerProperties.add(offerPropertyJSON);
+      }
+
+    /*****************************************
+    *
+    *  retrieve scoringEngines
+    *
+    *****************************************/
+
+    List<JSONObject> scoringEngines = new ArrayList<JSONObject>();
+    for (ScoringEngine scoringEngine : Deployment.getScoringEngines().values())
+      {
+        JSONObject scoringEngineJSON = scoringEngine.getJSONRepresentation();
+        scoringEngines.add(scoringEngineJSON);
       }
 
     /*****************************************
@@ -3097,7 +3116,8 @@ public class GUIManager
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
     response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
     response.put("offerCategories", JSONUtilities.encodeArray(offerCategories));
-    response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
+    response.put("offerProperties", JSONUtilities.encodeArray(offerProperties));
+    response.put("scoringEngines", JSONUtilities.encodeArray(scoringEngines));
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
     response.put("nodeTypes", JSONUtilities.encodeArray(nodeTypes));
     response.put("journeyToolbox", JSONUtilities.encodeArray(journeyToolboxSections));
@@ -3931,23 +3951,23 @@ public class GUIManager
 
   /*****************************************
   *
-  *  getOfferTypes
+  *  getOfferProperties
   *
   *****************************************/
 
-  private JSONObject processGetOfferTypes(String userID, JSONObject jsonRoot)
+  private JSONObject processGetOfferProperties(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
-    *  retrieve offerTypes
+    *  retrieve offerProperties
     *
     *****************************************/
 
-    List<JSONObject> offerTypes = new ArrayList<JSONObject>();
-    for (OfferType offerType : Deployment.getOfferTypes().values())
+    List<JSONObject> offerProperties = new ArrayList<JSONObject>();
+    for (OfferProperty offerProperty : Deployment.getOfferProperties().values())
       {
-        JSONObject offerTypeJSON = offerType.getJSONRepresentation();
-        offerTypes.add(offerTypeJSON);
+        JSONObject offerPropertyJSON = offerProperty.getJSONRepresentation();
+        offerProperties.add(offerPropertyJSON);
       }
 
     /*****************************************
@@ -3958,7 +3978,40 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("offerTypes", JSONUtilities.encodeArray(offerTypes));
+    response.put("offerProperties", JSONUtilities.encodeArray(offerProperties));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getScoringEngines
+  *
+  *****************************************/
+
+  private JSONObject processGetScoringEngines(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve scoringEngines
+    *
+    *****************************************/
+
+    List<JSONObject> scoringEngines = new ArrayList<JSONObject>();
+    for (ScoringEngine scoringEngine : Deployment.getScoringEngines().values())
+      {
+        JSONObject scoringEngineJSON = scoringEngine.getJSONRepresentation();
+        scoringEngines.add(scoringEngineJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("scoringEngines", JSONUtilities.encodeArray(scoringEngines));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -8100,7 +8153,7 @@ public class GUIManager
         *
         *****************************************/
 
-        salesChannelService.putSalesChannel(salesChannel, callingChannelService, salesPartnerService, (existingSalesChannel == null), userID);
+        salesChannelService.putSalesChannel(salesChannel, callingChannelService, partnerService, (existingSalesChannel == null), userID);
 
         /*****************************************
         *
@@ -8135,7 +8188,7 @@ public class GUIManager
         //  store
         //
 
-        salesChannelService.putSalesChannel(incompleteObject, callingChannelService, salesPartnerService, (existingSalesChannel == null), userID);
+        salesChannelService.putSalesChannel(incompleteObject, callingChannelService, partnerService, (existingSalesChannel == null), userID);
 
         //
         //  revalidateOffers
@@ -15295,11 +15348,11 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    List<JSONObject> salesPartnerList = new ArrayList<JSONObject>();
-    for (GUIManagedObject salesPartner : salesPartnerService.getStoredGUIManagedObjects())
+    List<JSONObject> partnerList = new ArrayList<JSONObject>();
+    for (GUIManagedObject partner : partnerService.getStoredGUIManagedObjects())
       {
-        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(salesPartner, fullDetails, now);
-        salesPartnerList.add(loyaltyPro);
+        JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(partner, fullDetails, now);
+        partnerList.add(loyaltyPro);
       }
 
     /*****************************************
@@ -15310,17 +15363,17 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("salesPartners", JSONUtilities.encodeArray(salesPartnerList));
+    response.put("partners", JSONUtilities.encodeArray(partnerList));
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processGetSalesPartner
+  *  processGetPartner
   *
   *****************************************/
 
-  private JSONObject processGetSalesPartner(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPartner(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -15336,16 +15389,16 @@ public class GUIManager
     *
     ****************************************/
 
-    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String partnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
     /**************************************************************
     *
-    *  retrieve and decorate salesPartner
+    *  retrieve and decorate partner
     *
     ***************************************************************/
 
-    GUIManagedObject salesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
-    JSONObject salesPartnerJSON = salesPartnerService.generateResponseJSON(salesPartner, true, SystemTime.getCurrentTime());
+    GUIManagedObject partner = partnerService.getStoredGUIManagedObject(partnerID);
+    JSONObject partnerJSON = partnerService.generateResponseJSON(partner, true, SystemTime.getCurrentTime());
 
     /*****************************************
     *
@@ -15353,18 +15406,18 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (salesPartner != null) ? "ok" : "salesPartnerNotFound");
-    if (salesPartner != null) response.put("salesPartner", salesPartnerJSON);
+    response.put("responseCode", (partner != null) ? "ok" : "partnerNotFound");
+    if (partner != null) response.put("partner", partnerJSON);
     return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
   *
-  *  processPutSalesPartner
+  *  processPutPartner
   *
   *****************************************/
 
-  private JSONObject processPutSalesPartner(String userID, JSONObject jsonRoot)
+  private JSONObject processPutPartner(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -15377,24 +15430,24 @@ public class GUIManager
 
     /*****************************************
     *
-    *  salesPartnerID
+    *  partnerID
     *
     *****************************************/
 
-    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", false);
-    if (salesPartnerID == null)
+    String partnerID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (partnerID == null)
       {
-        salesPartnerID = salesPartnerService.generateSalesPartnerID();
-        jsonRoot.put("id", salesPartnerID);
+        partnerID = partnerService.generatePartnerID();
+        jsonRoot.put("id", partnerID);
       }
 
     /*****************************************
     *
-    *  existing SalesPartner
+    *  existing Partner
     *
     *****************************************/
 
-    GUIManagedObject existingSalesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
+    GUIManagedObject existingPartner = partnerService.getStoredGUIManagedObject(partnerID);
 
     /*****************************************
     *
@@ -15402,19 +15455,19 @@ public class GUIManager
     *
     *****************************************/
 
-    if (existingSalesPartner != null && existingSalesPartner.getReadOnly())
+    if (existingPartner != null && existingPartner.getReadOnly())
       {
-        response.put("id", existingSalesPartner.getGUIManagedObjectID());
-        response.put("accepted", existingSalesPartner.getAccepted());
-        response.put("valid", existingSalesPartner.getAccepted());
-        response.put("processing", salesPartnerService.isActiveSalesPartner(existingSalesPartner, now));
+        response.put("id", existingPartner.getGUIManagedObjectID());
+        response.put("accepted", existingPartner.getAccepted());
+        response.put("valid", existingPartner.getAccepted());
+        response.put("processing", partnerService.isActivePartner(existingPartner, now));
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************
     *
-    *  process SalesPartner
+    *  process Partner
     *
     *****************************************/
 
@@ -15423,11 +15476,11 @@ public class GUIManager
       {
         /****************************************
         *
-        *  instantiate SalesPartner
+        *  instantiate Partner
         *
         ****************************************/
 
-        SalesPartner salesPartner = new SalesPartner(jsonRoot, epoch, existingSalesPartner);
+        Partner partner = new Partner(jsonRoot, epoch, existingPartner);
 
         /*****************************************
         *
@@ -15435,7 +15488,7 @@ public class GUIManager
         *
         *****************************************/
 
-        salesPartnerService.putSalesPartner(salesPartner, (existingSalesPartner == null), userID);
+        partnerService.putPartner(partner, (existingPartner == null), userID);
 
         /*****************************************
         *
@@ -15443,10 +15496,10 @@ public class GUIManager
         *
         *****************************************/
 
-        response.put("id", salesPartner.getGUIManagedObjectID());
-        response.put("accepted", salesPartner.getAccepted());
-        response.put("valid", salesPartner.getAccepted());
-        response.put("processing", salesPartnerService.isActiveSalesPartner(existingSalesPartner, now));
+        response.put("id", partner.getGUIManagedObjectID());
+        response.put("accepted", partner.getAccepted());
+        response.put("valid", partner.getAccepted());
+        response.put("processing", partnerService.isActivePartner(existingPartner, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -15462,7 +15515,7 @@ public class GUIManager
         //  store
         //
 
-        salesPartnerService.putSalesPartner(incompleteObject, (existingSalesPartner == null), userID);
+        partnerService.putPartner(incompleteObject, (existingPartner == null), userID);
 
         //
         //  log
@@ -15874,11 +15927,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processRemoveSalesPartner
+  *  processRemovePartner
   *
   *****************************************/
 
-  private JSONObject processRemoveSalesPartner(String userID, JSONObject jsonRoot)
+  private JSONObject processRemovePartner(String userID, JSONObject jsonRoot)
   {
     /****************************************
     *
@@ -15894,7 +15947,7 @@ public class GUIManager
     *
     ****************************************/
 
-    String salesPartnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String partnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
     /*****************************************
     *
@@ -15902,10 +15955,10 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject existingSalesPartner = salesPartnerService.getStoredGUIManagedObject(salesPartnerID);
-    if (existingSalesPartner != null && !existingSalesPartner.getReadOnly())
+    GUIManagedObject existingPartner = partnerService.getStoredGUIManagedObject(partnerID);
+    if (existingPartner != null && !existingPartner.getReadOnly())
       {
-        salesPartnerService.removeSalesPartner(salesPartnerID, userID);
+        partnerService.removePartner(partnerID, userID);
       }
 
     /*****************************************
@@ -15915,17 +15968,17 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingSalesPartner != null && !existingSalesPartner.getReadOnly())
+    if (existingPartner != null && !existingPartner.getReadOnly())
       {
         responseCode = "ok";
       }
-    else if (existingSalesPartner != null)
+    else if (existingPartner != null)
       {
         responseCode = "failedReadOnly";
       }
     else
       {
-        responseCode = "salesPartnerNotFound";
+        responseCode = "partnerNotFound";
       }
 
     /*****************************************
@@ -17169,7 +17222,7 @@ public class GUIManager
                         {
                           case OffersPresentation:
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                            availableValue.put("id", tokenType.getTokenTypeID());
+                            availableValue.put("id", tokenType.getCodeFormat());
                             availableValue.put("display", tokenType.getTokenTypeName());
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
@@ -17797,7 +17850,7 @@ public class GUIManager
         try
           {
             SalesChannel salesChannel = new SalesChannel(existingSalesChannel.getJSONRepresentation(), epoch, existingSalesChannel);
-            salesChannel.validate(callingChannelService, salesPartnerService, date);
+            salesChannel.validate(callingChannelService, partnerService, date);
             modifiedSalesChannel = salesChannel;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -18524,8 +18577,8 @@ public class GUIManager
     private CommunicationChannelService communicationChannelService;
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
-    private SalesPartnerService salesPartnerService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
+    private PartnerService partnerService;
 
     /*****************************************
     *
@@ -18562,8 +18615,8 @@ public class GUIManager
     public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
     public CommunicationChannelBlackoutService getCommunicationChannelBlackoutService() { return communicationChannelBlackoutService; }
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
-    public SalesPartnerService getSalesPartnerService() { return salesPartnerService; }
     public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
+    public PartnerService getPartnerService() { return partnerService; }
 
     /*****************************************
     *
@@ -18571,7 +18624,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, SalesPartnerService salesPartnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -18602,8 +18655,8 @@ public class GUIManager
       this.communicationChannelService = communicationChannelService;
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
-      this.salesPartnerService = salesPartnerService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
+      this.partnerService = partnerService;
     }
   }
 

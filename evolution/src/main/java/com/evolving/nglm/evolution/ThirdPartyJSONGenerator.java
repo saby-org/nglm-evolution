@@ -19,7 +19,6 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 
@@ -40,7 +39,6 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerName", offer.getGUIManagedObjectName());
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    offerMap.put("offerType", generateOfferTypeJSONForThirdParty(offer.getOfferType()));
     List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product)).collect(Collectors.toList());
     offerMap.put("products", products);
     return JSONUtilities.encodeObject(offerMap);
@@ -65,7 +63,6 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerOfferObjectiveNames", getOfferObjectivesJson(offer, offerObjectiveService));
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    offerMap.put("offerType", generateOfferTypeJSONForThirdParty(offer.getOfferType()));
     List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product)).collect(Collectors.toList());
     offerMap.put("products", products);
     return JSONUtilities.encodeObject(offerMap);
@@ -87,70 +84,6 @@ public class ThirdPartyJSONGenerator
     return JSONUtilities.encodeArray(offerObjectiveNames);
   }
 
-  /*****************************************
-  *
-  *  generateOfferCallingChannelJSONForThirdParty
-  *
-  *****************************************/
-  
-  protected static JSONObject generateOfferCallingChannelJSONForThirdParty(OfferCallingChannel offerCallingChannel) 
-  {
-    HashMap<String, Object> offerCallingChannelMap = new HashMap<String, Object>();
-    if ( null == offerCallingChannel ) return JSONUtilities.encodeObject(offerCallingChannelMap);
-    offerCallingChannelMap.put("callingChannelID", offerCallingChannel.getCallingChannelID());
-    List<JSONObject> offerCallingChannelProperties = offerCallingChannel.getOfferCallingChannelProperties().stream().map(offerCallingChannelProperty -> ThirdPartyJSONGenerator.generateOfferCallingChannelPropertyJSONForThirdParty(offerCallingChannelProperty)).collect(Collectors.toList());
-    offerCallingChannelMap.put("offerCallingChannelProperties", JSONUtilities.encodeArray(offerCallingChannelProperties));
-    return JSONUtilities.encodeObject(offerCallingChannelMap);
-  }
-  
-  /*****************************************
-  *
-  *  generateOfferCallingChannelPropertyJSONForThirdParty
-  *
-  *****************************************/
-  
-  protected static JSONObject generateOfferCallingChannelPropertyJSONForThirdParty(OfferCallingChannelProperty offerCallingChannelProperty) 
-  {
-    HashMap<String, Object> offerCallingChannelPropertyMap = new HashMap<String, Object>();
-    if ( null == offerCallingChannelProperty ) return JSONUtilities.encodeObject(offerCallingChannelPropertyMap);
-    offerCallingChannelPropertyMap.put("property", generateCallingChannelPropertyJSONForThirdParty(offerCallingChannelProperty.getProperty()));
-    offerCallingChannelPropertyMap.put("propertyValue", offerCallingChannelProperty.getPropertyValue());
-    offerCallingChannelPropertyMap.put("textValue", offerCallingChannelProperty.getTextValues());
-    return JSONUtilities.encodeObject(offerCallingChannelPropertyMap);
-  }
-  
-  /*****************************************
-  *
-  *  generateCallingChannelPropertyJSONForThirdParty
-  *
-  *****************************************/
-  
-  protected static JSONObject generateCallingChannelPropertyJSONForThirdParty(CallingChannelProperty callingChannelProperty) 
-  {
-    HashMap<String, Object> callingChannelPropertyMap = new HashMap<String, Object>();
-    if ( null == callingChannelProperty ) return JSONUtilities.encodeObject(callingChannelPropertyMap);
-    callingChannelPropertyMap.put("display", callingChannelProperty.getDisplay());
-    callingChannelPropertyMap.put("id", callingChannelProperty.getID());
-    callingChannelPropertyMap.put("name", callingChannelProperty.getName());
-    return JSONUtilities.encodeObject(callingChannelPropertyMap);
-  }
-  
-  /*****************************************
-  *
-  *  generateOfferTypeJSONForThirdParty
-  *
-  *****************************************/
-  
-  protected static JSONObject generateOfferTypeJSONForThirdParty(OfferType offerType) 
-  {
-    HashMap<String, Object> offerTypeMap = new HashMap<String, Object>();
-    if ( null == offerType ) return JSONUtilities.encodeObject(offerTypeMap);
-    offerTypeMap.put("display", offerType.getDisplay());
-    offerTypeMap.put("id", offerType.getID());
-    offerTypeMap.put("name", offerType.getName());
-    return JSONUtilities.encodeObject(offerTypeMap);
-  }
-  
   /*****************************************
   *
   *  generateProductJSONForThirdParty

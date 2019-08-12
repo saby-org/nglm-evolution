@@ -211,7 +211,7 @@ public class Target extends GUIManagedObject
 
     /*****************************************
     *
-    *  existingSupplier
+    *  existingTarget
     *
     *****************************************/
 

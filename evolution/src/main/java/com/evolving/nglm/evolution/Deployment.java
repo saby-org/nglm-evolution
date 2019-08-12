@@ -71,6 +71,7 @@ public class Deployment
   private static String callingChannelTopic;
   private static String salesChannelTopic;
   private static String supplierTopic;
+  private static String partnerTopic;
   private static String productTopic;
   private static String catalogCharacteristicTopic;
   private static String contactPolicyTopic;
@@ -98,7 +99,6 @@ public class Deployment
   private static String journeyResponseTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
-  private static String salesPartnerTopic;
   private static String deliverableSourceTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
@@ -124,6 +124,7 @@ public class Deployment
   private static JSONArray initialCallingChannelsJSONArray = null;
   private static JSONArray initialSalesChannelsJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
+  private static JSONArray initialPartnersJSONArray = null;
   private static JSONArray initialProductsJSONArray = null;
   private static JSONArray initialReportsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
@@ -143,7 +144,8 @@ public class Deployment
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
-  private static Map<String,OfferType> offerTypes = new LinkedHashMap<String,OfferType>();
+  private static Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
+  private static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
@@ -244,6 +246,7 @@ public class Deployment
   public static String getCallingChannelTopic() { return callingChannelTopic; }
   public static String getSalesChannelTopic() { return salesChannelTopic; }
   public static String getSupplierTopic() { return supplierTopic; }
+  public static String getPartnerTopic() { return partnerTopic; }
   public static String getProductTopic() { return productTopic; }
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
   public static String getContactPolicyTopic() { return contactPolicyTopic; }
@@ -271,7 +274,6 @@ public class Deployment
   public static String getJourneyResponseTopic() { return journeyResponseTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
-  public static String getSalesPartnerTopic() { return salesPartnerTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
@@ -297,6 +299,7 @@ public class Deployment
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
   public static JSONArray getInitialSalesChannelsJSONArray() { return initialSalesChannelsJSONArray; }
   public static JSONArray getInitialSuppliersJSONArray() { return initialSuppliersJSONArray; }
+  public static JSONArray getInitialPartnersJSONArray() { return initialPartnersJSONArray; }
   public static JSONArray getInitialProductsJSONArray() { return initialProductsJSONArray; }
   public static JSONArray getInitialReportsJSONArray() { return initialReportsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
@@ -316,7 +319,8 @@ public class Deployment
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
   public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
-  public static Map<String,OfferType> getOfferTypes() { return offerTypes; }
+  public static Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
+  public static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
   public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; }
@@ -838,6 +842,19 @@ public class Deployment
       }
 
     //
+    //  partnerTopic
+    //
+
+    try
+      {
+        partnerTopic = JSONUtilities.decodeString(jsonRoot, "partnerTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  productTopic
     //
 
@@ -1267,19 +1284,6 @@ public class Deployment
       }
     
     //
-    //  salesPartnerTopic
-    //
-
-    try
-      {
-        salesPartnerTopic = JSONUtilities.decodeString(jsonRoot, "salesPartnerTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
     //  deliverableSourceTopic
     //
 
@@ -1633,6 +1637,12 @@ public class Deployment
     initialSuppliersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialSuppliers", new JSONArray());
 
     //
+    //  initialPartnersJSONArray
+    //
+
+    initialPartnersJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialPartners", new JSONArray());
+
+    //
     //  initialProductsJSONArray
     //
 
@@ -1857,17 +1867,36 @@ public class Deployment
       }
 
     //
-    //  offerTypes
+    //  offerProperties
     //
 
     try
       {
-        JSONArray offerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerTypes", new JSONArray());
-        for (int i=0; i<offerTypeValues.size(); i++)
+        JSONArray offerPropertyValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerProperties", new JSONArray());
+        for (int i=0; i<offerPropertyValues.size(); i++)
           {
-            JSONObject offerTypeJSON = (JSONObject) offerTypeValues.get(i);
-            OfferType offerType = new OfferType(offerTypeJSON);
-            offerTypes.put(offerType.getID(), offerType);
+            JSONObject offerPropertyJSON = (JSONObject) offerPropertyValues.get(i);
+            OfferProperty offerProperty = new OfferProperty(offerPropertyJSON);
+            offerProperties.put(offerProperty.getID(), offerProperty);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  scoringEngines
+    //
+
+    try
+      {
+        JSONArray scoringEngineValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringEngines", new JSONArray());
+        for (int i=0; i<scoringEngineValues.size(); i++)
+          {
+            JSONObject scoringEngineJSON = (JSONObject) scoringEngineValues.get(i);
+            ScoringEngine scoringEngine = new ScoringEngine(scoringEngineJSON);
+            scoringEngines.put(scoringEngine.getID(), scoringEngine);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

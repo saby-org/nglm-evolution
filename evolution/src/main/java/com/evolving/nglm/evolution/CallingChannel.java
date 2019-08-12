@@ -6,40 +6,19 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.Objects;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.SchemaUtilities;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONObject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class CallingChannel extends GUIManagedObject
 {
@@ -58,10 +37,8 @@ public class CallingChannel extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("calling_channel");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("mandatoryCallingChannelPropertyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
-    schemaBuilder.field("optionalCallingChannelPropertyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -84,8 +61,7 @@ public class CallingChannel extends GUIManagedObject
   *
   ****************************************/
 
-  private Set<CallingChannelProperty> mandatoryCallingChannelProperties;
-  private Set<CallingChannelProperty> optionalCallingChannelProperties;
+  // none currently
 
   /****************************************
   *
@@ -94,8 +70,6 @@ public class CallingChannel extends GUIManagedObject
   ****************************************/
 
   public String getCallingChannelID() { return getGUIManagedObjectID(); }
-  public Set<CallingChannelProperty> getMandatoryCallingChannelProperties() { return mandatoryCallingChannelProperties; }
-  public Set<CallingChannelProperty> getOptionalCallingChannelProperties() { return optionalCallingChannelProperties; }
 
   /*****************************************
   *
@@ -103,11 +77,9 @@ public class CallingChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public CallingChannel(SchemaAndValue schemaAndValue, Set<CallingChannelProperty> mandatoryCallingChannelProperties, Set<CallingChannelProperty> optionalCallingChannelProperties)
+  public CallingChannel(SchemaAndValue schemaAndValue)
   {
     super(schemaAndValue);
-    this.mandatoryCallingChannelProperties = mandatoryCallingChannelProperties;
-    this.optionalCallingChannelProperties = optionalCallingChannelProperties;
   }
 
   /*****************************************
@@ -121,27 +93,9 @@ public class CallingChannel extends GUIManagedObject
     CallingChannel callingChannel = (CallingChannel) value;
     Struct struct = new Struct(schema);
     packCommon(struct, callingChannel);
-    struct.put("mandatoryCallingChannelPropertyIDs", packCallingChannelProperties(callingChannel.getMandatoryCallingChannelProperties()));
-    struct.put("optionalCallingChannelPropertyIDs", packCallingChannelProperties(callingChannel.getOptionalCallingChannelProperties()));
     return struct;
   }
   
-  /*****************************************
-  *
-  *  packCallingChannelProperties
-  *
-  *****************************************/
-
-  private static List<Object> packCallingChannelProperties(Set<CallingChannelProperty> callingChannelProperties)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (CallingChannelProperty callingChannelProperty : callingChannelProperties)
-      {
-        result.add(callingChannelProperty.getID());
-      }
-    return result;
-  }
-
   /*****************************************
   *
   *  unpack
@@ -163,32 +117,12 @@ public class CallingChannel extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    Set<CallingChannelProperty> mandatoryCallingChannelProperties = unpackCallingChannelProperties((List<String>) valueStruct.get("mandatoryCallingChannelPropertyIDs"));
-    Set<CallingChannelProperty> optionalCallingChannelProperties = unpackCallingChannelProperties((List<String>) valueStruct.get("optionalCallingChannelPropertyIDs"));
     
     //
     //  return
     //
 
-    return new CallingChannel(schemaAndValue, mandatoryCallingChannelProperties, optionalCallingChannelProperties);
-  }
-
-  /*****************************************
-  *
-  *  unpackCallingChannelProperties
-  *
-  *****************************************/
-
-  private static Set<CallingChannelProperty> unpackCallingChannelProperties(List<String> callingChannelPropertyIDs)
-  {
-    Set<CallingChannelProperty> result = new HashSet<CallingChannelProperty>();
-    for (String callingChannelPropertyID : callingChannelPropertyIDs)
-      {
-        CallingChannelProperty callingChannelProperty = Deployment.getCallingChannelProperties().get(callingChannelPropertyID);
-        if (callingChannelProperty == null) throw new SerializationException("unknown callingChannelProperty: " + callingChannelPropertyID);
-        result.add(callingChannelProperty);
-      }
-    return result;
+    return new CallingChannel(schemaAndValue);
   }
 
   /*****************************************
@@ -221,8 +155,7 @@ public class CallingChannel extends GUIManagedObject
     *
     *****************************************/
 
-    this.mandatoryCallingChannelProperties = decodeCallingChannelProperties(JSONUtilities.decodeJSONArray(jsonRoot, "properties", true), true);
-    this.optionalCallingChannelProperties = decodeCallingChannelProperties(JSONUtilities.decodeJSONArray(jsonRoot, "properties", true), false);
+    // none
 
     /*****************************************
     *
@@ -247,28 +180,6 @@ public class CallingChannel extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeCallingChannelProperties
-  *
-  *****************************************/
-
-  private Set<CallingChannelProperty> decodeCallingChannelProperties(JSONArray jsonArray, boolean returnMandatory) throws GUIManagerException, JSONUtilitiesException
-  {
-    Set<CallingChannelProperty> result = new HashSet<CallingChannelProperty>();
-    for (int i=0; i<jsonArray.size(); i++)
-      {
-        JSONObject propertyDeclaration = (JSONObject) jsonArray.get(i);
-        CallingChannelProperty callingChannelProperty = Deployment.getCallingChannelProperties().get(JSONUtilities.decodeString(propertyDeclaration, "callingChannelPropertyID", true));
-        String callingChannelPropertyName = JSONUtilities.decodeString(propertyDeclaration, "callingChannelPropertyName", true);
-        boolean mandatory = JSONUtilities.decodeBoolean(propertyDeclaration, "mandatory", Boolean.FALSE);
-        if (callingChannelProperty == null) throw new GUIManagerException("unknown callingChannelProperty", JSONUtilities.decodeString(propertyDeclaration, "callingChannelPropertyID", true));
-        if (! Objects.equals(callingChannelPropertyName, callingChannelProperty.getName())) throw new GUIManagerException("propertyName mismatch", "(" + callingChannelProperty.getName() + ", " + callingChannelPropertyName);
-        if (mandatory == returnMandatory) result.add(callingChannelProperty);
-      }
-    return result;
-  }
-
-  /*****************************************
-  *
   *  epochChanged
   *
   *****************************************/
@@ -279,8 +190,6 @@ public class CallingChannel extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingCallingChannel.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(mandatoryCallingChannelProperties, existingCallingChannel.getMandatoryCallingChannelProperties());
-        epochChanged = epochChanged || ! Objects.equals(optionalCallingChannelProperties, existingCallingChannel.getOptionalCallingChannelProperties());
         return epochChanged;
       }
     else

@@ -1,16 +1,17 @@
 package com.evolving.nglm.evolution.offeroptimizer;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
+import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
-import com.evolving.nglm.evolution.SubscriberProfile;
 
 public class GenericPropensityAlgo implements IOfferOptimizerAlgorithm {
 
@@ -25,13 +26,14 @@ public class GenericPropensityAlgo implements IOfferOptimizerAlgorithm {
    * @return
    */
   @Override
-  public ProposedOfferDetails getOfferPropensityScore(String valueMode, Offer o, String salesChannelId,
-      int offerCurrentPropensity, long offerPrice, SubscriberEvaluationRequest subscriberEvaluationRequest,
+  public ProposedOfferDetails getOfferPropensityScore(Map<OfferOptimizationAlgorithmParameter, String> algoParameters,
+      Offer o, String salesChannelId,
+      double offerCurrentPropensity, long offerPrice, SubscriberEvaluationRequest subscriberEvaluationRequest,
       OfferOptimizationAlgorithm algoDefinition, ProductService productService, 
       ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService) {
     if (logger.isTraceEnabled()) {
       logger.trace("GenericPropensityAlgo.getOfferPropensityScore Entered "
-          + valueMode + " " + o.getOfferID() + " " + salesChannelId + " "  + offerCurrentPropensity + " "
+          + algoParameters + " " + o.getOfferID() + " " + salesChannelId + " "  + offerCurrentPropensity + " "
           + offerPrice + " " + subscriberEvaluationRequest.getSubscriberProfile() + " " + algoDefinition);
     }
     if (o.getOfferProducts().size() == 0) {

@@ -152,6 +152,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CallingChannel.serde());
     guiManagedObjectSerdes.add(SalesChannel.serde());
     guiManagedObjectSerdes.add(Supplier.serde());
+    guiManagedObjectSerdes.add(Partner.serde());
     guiManagedObjectSerdes.add(PaymentMean.serde());
     guiManagedObjectSerdes.add(Product.serde());
     guiManagedObjectSerdes.add(CatalogCharacteristic.serde());
@@ -172,7 +173,6 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CommunicationChannel.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(LoyaltyProgram.serde());
-    guiManagedObjectSerdes.add(SalesPartner.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));

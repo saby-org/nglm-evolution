@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  OfferType.java
+*  ScoringEngine.java
 *
 *****************************************************************************/
 
@@ -15,7 +15,7 @@ import org.json.simple.JSONObject;
 
 import java.util.Objects;
 
-public class OfferType extends DeploymentManagedObject
+public class ScoringEngine extends DeploymentManagedObject
 {
   /*****************************************
   *
@@ -23,7 +23,7 @@ public class OfferType extends DeploymentManagedObject
   *
   *****************************************/
 
-  public OfferType(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
+  public ScoringEngine(JSONObject jsonRoot) throws NoSuchMethodException, IllegalAccessException
   {
     super(jsonRoot);
   }

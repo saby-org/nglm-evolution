@@ -7,21 +7,10 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.OfferCallingChannel.OfferCallingChannelProperty;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
-
-import com.evolving.nglm.core.JSONUtilities;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.connect.data.Field;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,6 +18,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 public class Offer extends GUIManagedObject implements StockableItem
 {
@@ -49,15 +52,15 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.name("offer");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("initialPropensity", Schema.INT32_SCHEMA);
+    schemaBuilder.field("initialPropensity", Schema.FLOAT64_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
-    schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
     schemaBuilder.field("offerOfferObjectives", SchemaBuilder.array(OfferObjectiveInstance.schema()).schema());
     schemaBuilder.field("offerSalesChannelsAndPrices", SchemaBuilder.array(OfferSalesChannelsAndPrice.schema()).schema());
     schemaBuilder.field("offerProducts", SchemaBuilder.array(OfferProduct.schema()).schema());
-    schemaBuilder.field("offerCallingChannels", SchemaBuilder.array(OfferCallingChannel.schema()).schema());
+    schemaBuilder.field("offerTranslations", SchemaBuilder.array(OfferTranslation.schema()).schema());
+    schemaBuilder.field("offerCharacteristics", OfferCharacteristics.schema());
     schema = schemaBuilder.build();
   };
 
@@ -80,15 +83,15 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   ****************************************/
 
-  private int initialPropensity;
+  private double initialPropensity;
   private Integer stock;
   private int unitaryCost;
   private List<EvaluationCriterion> profileCriteria;
-  private OfferType offerType;
   private Set<OfferObjectiveInstance> offerOfferObjectives; 
   private Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices;
   private Set<OfferProduct> offerProducts;
-  private Set<OfferCallingChannel> offerCallingChannels;
+  private Set<OfferTranslation> offerTranslations;
+  private OfferCharacteristics offerCharacteristics;
   private String description;
 
   //
@@ -109,15 +112,15 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   public String getOfferID() { return getGUIManagedObjectID(); }
   public String getDisplay() { return getGUIManagedObjectName(); }
-  public int getInitialPropensity() { return initialPropensity; }
+  public double getInitialPropensity() { return initialPropensity; }
   public Integer getStock() { return stock; } 
   public int getUnitaryCost() { return unitaryCost; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
-  public OfferType getOfferType() { return offerType; }
   public Set<OfferObjectiveInstance> getOfferObjectives() { return offerOfferObjectives;  }
   public Set<OfferSalesChannelsAndPrice> getOfferSalesChannelsAndPrices() { return offerSalesChannelsAndPrices;  }
   public Set<OfferProduct> getOfferProducts() { return offerProducts; }
-  public Set<OfferCallingChannel> getOfferCallingChannels() { return offerCallingChannels; }
+  public Set<OfferTranslation> getOfferTranslations() { return offerTranslations; }
+  public OfferCharacteristics getOfferCharacteristics() { return offerCharacteristics; }
   public String getStockableItemID() { return stockableItemID; }
   public String getDescription() { return JSONUtilities.decodeString(getJSONRepresentation(), "description"); }
 
@@ -138,19 +141,19 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, int initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, OfferType offerType, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferCallingChannel> offerCallingChannels)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations)
   {
     super(schemaAndValue);
     this.initialPropensity = initialPropensity;
     this.stock = stock;
     this.unitaryCost = unitaryCost;
     this.profileCriteria = profileCriteria;
-    this.offerType = offerType;
     this.offerOfferObjectives = offerObjectives;
     this.offerSalesChannelsAndPrices = offerSalesChannelsAndPrices;
     this.offerProducts = offerProducts;
-    this.offerCallingChannels = offerCallingChannels;
+    this.offerTranslations = offerTranslations;
     this.stockableItemID = "offer-" + getOfferID();
+    this.offerCharacteristics = offerCharacteristics;
   }
 
   /*****************************************
@@ -168,11 +171,11 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("stock", offer.getStock());
     struct.put("unitaryCost", offer.getUnitaryCost());
     struct.put("profileCriteria", packProfileCriteria(offer.getProfileCriteria()));
-    struct.put("offerType", offer.getOfferType().getID());
     struct.put("offerOfferObjectives", packOfferObjectives(offer.getOfferObjectives()));
     struct.put("offerSalesChannelsAndPrices", packOfferSalesChannelsAndPrices(offer.getOfferSalesChannelsAndPrices()));
     struct.put("offerProducts", packOfferProducts(offer.getOfferProducts()));
-    struct.put("offerCallingChannels", packOfferCallingChannels(offer.getOfferCallingChannels()));
+    struct.put("offerTranslations", packOfferTranslations(offer.getOfferTranslations()));
+    struct.put("offerCharacteristics", OfferCharacteristics.pack(offer.getOfferCharacteristics()));
     return struct;
   }
 
@@ -242,16 +245,16 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   /****************************************
   *
-  *  packOfferCallingChannels
+  *  packOfferTranslations
   *
   ****************************************/
 
-  private static List<Object> packOfferCallingChannels(Set<OfferCallingChannel> offerCallingChannels)
+  private static List<Object> packOfferTranslations(Set<OfferTranslation> offerTranslations)
   {
     List<Object> result = new ArrayList<Object>();
-    for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
+    for (OfferTranslation offerTranslation : offerTranslations)
       {
-        result.add(OfferCallingChannel.pack(offerCallingChannel));
+        result.add(OfferTranslation.pack(offerTranslation));
       }
     return result;
   }
@@ -277,27 +280,21 @@ public class Offer extends GUIManagedObject implements StockableItem
     //
 
     Struct valueStruct = (Struct) value;
-    int initialPropensity = valueStruct.getInt32("initialPropensity");
+    double initialPropensity = valueStruct.getFloat64("initialPropensity");
     Integer stock = valueStruct.getInt32("stock");
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
-    OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
     Set<OfferObjectiveInstance> offerObjectives = unpackOfferObjectives(schema.field("offerOfferObjectives").schema(), valueStruct.get("offerOfferObjectives"));
     Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices = unpackOfferSalesChannelsAndPrices(schema.field("offerSalesChannelsAndPrices").schema(), valueStruct.get("offerSalesChannelsAndPrices"));
     Set<OfferProduct> offerProducts = unpackOfferProducts(schema.field("offerProducts").schema(), valueStruct.get("offerProducts"));
-    Set<OfferCallingChannel> offerCallingChannels = unpackOfferCallingChannels(schema.field("offerCallingChannels").schema(), valueStruct.get("offerCallingChannels"));
-    
-    //
-    //  validate
-    //
-
-    if (offerType == null) throw new SerializationException("unknown offerType: " + valueStruct.getString("offerType"));
+    Set<OfferTranslation> offerTranslations = unpackOfferTranslations(schema.field("offerTranslations").schema(), valueStruct.get("offerTranslations"));
+    OfferCharacteristics offerCharacteristics = OfferCharacteristics.unpack(new SchemaAndValue(schema.field("offerCharacteristics").schema(), valueStruct.get("offerCharacteristics")));
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerType, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerCallingChannels);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerCharacteristics, offerTranslations);
   }
   
   /*****************************************
@@ -430,27 +427,27 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   /*****************************************
   *
-  *  unpackOfferCallingChannels
+  *  unpackOfferTranslations
   *
   *****************************************/
 
-  private static Set<OfferCallingChannel> unpackOfferCallingChannels(Schema schema, Object value)
+  private static Set<OfferTranslation> unpackOfferTranslations(Schema schema, Object value)
   {
     //
-    //  get schema for OfferCallingChannel
+    //  get schema for OfferTranslation
     //
 
-    Schema offerCallingChannelSchema = schema.valueSchema();
+    Schema offerTranslationSchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    Set<OfferCallingChannel> result = new HashSet<OfferCallingChannel>();
+    Set<OfferTranslation> result = new HashSet<OfferTranslation>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object offerCallingChannel : valueArray)
+    for (Object offerTranslation : valueArray)
       {
-        result.add(OfferCallingChannel.unpack(new SchemaAndValue(offerCallingChannelSchema, offerCallingChannel)));
+        result.add(OfferTranslation.unpack(new SchemaAndValue(offerTranslationSchema, offerTranslation)));
       }
 
     //
@@ -490,24 +487,16 @@ public class Offer extends GUIManagedObject implements StockableItem
     *
     *****************************************/
     
-    this.initialPropensity = JSONUtilities.decodeInteger(jsonRoot, "initialPropensity", true);
+    this.initialPropensity = JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true);
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
-    this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
     this.offerOfferObjectives = decodeOfferObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectives", true), catalogCharacteristicService);
     this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
     this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
-    this.offerCallingChannels = decodeOfferCallingChannels(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannels", false));
+    this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
     this.stockableItemID = "offer-" + getOfferID();
-
-    /*****************************************
-    *
-    *  validate
-    *
-    *****************************************/
-
-    if (this.offerType == null) throw new GUIManagerException("unsupported offerType", JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
+    this.offerCharacteristics = new OfferCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", true));
 
     /*****************************************
     *
@@ -574,6 +563,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       }
     return result;
   }
+  
   /*****************************************
   *
   *  decodeOfferProducts
@@ -592,21 +582,21 @@ public class Offer extends GUIManagedObject implements StockableItem
       }
     return result;
   }
-
+  
   /*****************************************
   *
-  *  decodeOfferCallingChannels
+  *  decodeOfferTranslations
   *
   *****************************************/
 
-  private Set<OfferCallingChannel> decodeOfferCallingChannels(JSONArray jsonArray) throws GUIManagerException
+  private Set<OfferTranslation> decodeOfferTranslations(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<OfferCallingChannel> result = new HashSet<OfferCallingChannel>();
+    Set<OfferTranslation> result = new HashSet<OfferTranslation>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferCallingChannel((JSONObject) jsonArray.get(i)));
+            result.add(new OfferTranslation((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
@@ -628,11 +618,11 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(stock, existingOffer.getStock());
         epochChanged = epochChanged || ! (unitaryCost == existingOffer.getUnitaryCost());
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingOffer.getProfileCriteria());
-        epochChanged = epochChanged || ! Objects.equals(offerType, existingOffer.getOfferType());
         epochChanged = epochChanged || ! Objects.equals(offerOfferObjectives, existingOffer.getOfferObjectives());
         epochChanged = epochChanged || ! Objects.equals(offerSalesChannelsAndPrices, existingOffer.getOfferSalesChannelsAndPrices());
         epochChanged = epochChanged || ! Objects.equals(offerProducts, existingOffer.getOfferProducts());
-        epochChanged = epochChanged || ! Objects.equals(offerCallingChannels, existingOffer.getOfferCallingChannels());
+        epochChanged = epochChanged || ! Objects.equals(offerTranslations, existingOffer.getOfferTranslations());
+        epochChanged = epochChanged || ! Objects.equals(offerCharacteristics, existingOffer.getOfferCharacteristics());
         return epochChanged;
       }
     else
@@ -649,85 +639,8 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   public void validate(CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, Date date) throws GUIManagerException
   {
-    /****************************************
-    *
-    *  ensure active calling channels
-    *
-    ****************************************/
+    // TODO validate offerCharacteristics
     
-    Set<String> validCallingChannelIDs = new HashSet<String>();
-    for (OfferCallingChannel offerCallingChannel : offerCallingChannels)
-      {
-        /*****************************************
-        *
-        *  retrieve callingChannel
-        *
-        *****************************************/
-
-        CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(offerCallingChannel.getCallingChannelID(), date);
-
-        /*****************************************
-        *
-        *  validate the callingChannel exists and is active
-        *
-        *****************************************/
-
-        if (callingChannel == null)
-          {
-            log.info("offer {} uses unknown calling channel: {}", getOfferID(), offerCallingChannel.getCallingChannelID());
-            continue;
-          }
-
-        /*****************************************
-        *
-        *  validate the properties
-        *
-        *****************************************/
-
-        //
-        //  set of properties defined for this calling channel
-        //
-
-        Set<CallingChannelProperty> offerProperties = new HashSet<CallingChannelProperty>();
-        for (OfferCallingChannelProperty offerCallingChannelProperty : offerCallingChannel.getOfferCallingChannelProperties())
-          {
-            offerProperties.add(offerCallingChannelProperty.getProperty());
-          }
-
-        //
-        //  validate mandatory properties
-        //
-
-        if (! offerProperties.containsAll(callingChannel.getMandatoryCallingChannelProperties())) throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID());
-
-        //
-        //  validate optional properties
-        //
-
-        offerProperties.removeAll(callingChannel.getMandatoryCallingChannelProperties());
-        offerProperties.removeAll(callingChannel.getOptionalCallingChannelProperties());
-        if (offerProperties.size() > 0) throw new GUIManagerException("unknown calling channel properties", callingChannel.getGUIManagedObjectID());
-
-        /*****************************************
-        *
-        *  valid calling channel
-        *
-        *****************************************/
-
-        validCallingChannelIDs.add(callingChannel.getCallingChannelID());
-      }
-
-    /*****************************************
-    *
-    *  ensure at least one valid calling channel
-    *
-    *****************************************/
-
-    if (validCallingChannelIDs.size() == 0)
-      {
-        throw new GUIManagerException("no valid calling channels", getOfferID());
-      }
-
     /****************************************
     *
     *  ensure active sales channel
@@ -756,17 +669,10 @@ public class Offer extends GUIManagedObject implements StockableItem
               }
 
             //
-            //  ensure matching calling channel
+            //  valid salesChannelAndPrice
             //
 
-            for (String callingChannelIDForSalesChannel : salesChannel.getCallingChannelIDs())
-              {
-                if (validCallingChannelIDs.contains(callingChannelIDForSalesChannel))
-                  {
-                    validOfferSalesChannelsAndPrices.add(offerSalesChannelsAndPrice);
-                    break;
-                  }
-              }
+            validOfferSalesChannelsAndPrices.add(offerSalesChannelsAndPrice);
           }
       }
 

@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -58,10 +59,11 @@ public class ScoringStrategy extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("scoring_strategy");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("offerType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("scoringGroups", SchemaBuilder.array(ScoringGroup.schema()).schema());
+    schemaBuilder.field("scoringEngineID", SchemaBuilder.string().defaultValue("").schema());
+    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("scoringSegments", SchemaBuilder.array(ScoringSegment.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -84,8 +86,9 @@ public class ScoringStrategy extends GUIManagedObject
   *
   ****************************************/
 
-  private OfferType offerType;
-  private List<ScoringGroup> scoringGroups;
+  private ScoringEngine scoringEngine;
+  private String dimensionID;
+  private List<ScoringSegment> scoringSegments;
 
   /****************************************
   *
@@ -98,23 +101,28 @@ public class ScoringStrategy extends GUIManagedObject
   //
 
   public String getScoringStrategyID() { return getGUIManagedObjectID(); }
-  public OfferType getOfferType() { return offerType; }
-  public List<ScoringGroup> getScoringGroups() { return scoringGroups; }
+  public ScoringEngine getScoringEngine() { return scoringEngine; }
+  public String getDimensionID() { return dimensionID; }
+  public List<ScoringSegment> getScoringSegments() { return scoringSegments; }
 
   /*****************************************
   *
-  *  evaluateScoringGroups
+  *  evaluateScoringSegments
   *
   *****************************************/
-
-  public ScoringGroup evaluateScoringGroups(SubscriberEvaluationRequest evaluationRequest)
+  
+  public ScoringSegment evaluateScoringSegments(SubscriberEvaluationRequest evaluationRequest)
   {
-    ScoringGroup result = null;
-    for (ScoringGroup scoringGroup : scoringGroups)
+    ScoringSegment result = null;
+    SubscriberProfile sp = evaluationRequest.getSubscriberProfile();
+    Map<String, String> segments = sp.getSegmentsMap(evaluationRequest.getSubscriberGroupEpochReader());
+    String segment = segments.get(dimensionID);
+    for (ScoringSegment scoringSegment : scoringSegments)
       {
-        if (scoringGroup.evaluateProfileCriteria(evaluationRequest))
+        if (scoringSegment.getSegmentIDs().contains(segment)
+            || scoringSegment.getSegmentIDs().isEmpty()) // Case of the last segment : matches everyone
           {
-            result = scoringGroup;
+            result = scoringSegment;
             break;
           }
       }
@@ -127,11 +135,12 @@ public class ScoringStrategy extends GUIManagedObject
   *
   *****************************************/
 
-  public ScoringStrategy(SchemaAndValue schemaAndValue, OfferType offerType, List<ScoringGroup> scoringGroups)
+  public ScoringStrategy(SchemaAndValue schemaAndValue, ScoringEngine scoringEngine, String dimensionID, List<ScoringSegment> scoringSegments)
   {
     super(schemaAndValue);
-    this.offerType = offerType;
-    this.scoringGroups = scoringGroups;
+    this.scoringEngine = scoringEngine;
+    this.dimensionID = dimensionID;
+    this.scoringSegments = scoringSegments;
   }
 
   /*****************************************
@@ -145,23 +154,24 @@ public class ScoringStrategy extends GUIManagedObject
     ScoringStrategy scoringStrategy = (ScoringStrategy) value;
     Struct struct = new Struct(schema);
     packCommon(struct, scoringStrategy);
-    struct.put("offerType", scoringStrategy.getOfferType().getID());
-    struct.put("scoringGroups", packScoringGroups(scoringStrategy.getScoringGroups()));
+    struct.put("scoringEngineID", scoringStrategy.getScoringEngine().getID());
+    struct.put("dimensionID", scoringStrategy.getDimensionID());
+    struct.put("scoringSegments", packScoringSegments(scoringStrategy.getScoringSegments()));
     return struct;
   }
 
   /****************************************
   *
-  *  packScoringGroups
+  *  packScoringSegments
   *
   ****************************************/
 
-  private static List<Object> packScoringGroups(List<ScoringGroup> scoringGroups)
+  private static List<Object> packScoringSegments(List<ScoringSegment> scoringSegments)
   {
     List<Object> result = new ArrayList<Object>();
-    for (ScoringGroup scoringGroup : scoringGroups)
+    for (ScoringSegment scoringSegment : scoringSegments)
       {
-        result.add(ScoringGroup.pack(scoringGroup));
+        result.add(ScoringSegment.pack(scoringSegment));
       }
     return result;
   }
@@ -187,45 +197,46 @@ public class ScoringStrategy extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    OfferType offerType = Deployment.getOfferTypes().get(valueStruct.getString("offerType"));
-    List<ScoringGroup> scoringGroups = unpackScoringGroups(schema.field("scoringGroups").schema(), valueStruct.get("scoringGroups"));
+    ScoringEngine scoringEngine = (schemaVersion >= 2) ? Deployment.getScoringEngines().get(valueStruct.getString("scoringEngineID")) : Deployment.getScoringEngines().values().iterator().next();
+    String dimensionID = valueStruct.getString("dimensionID");
+    List<ScoringSegment> scoringSegments = unpackScoringSegments(schema.field("scoringSegments").schema(), valueStruct.get("scoringSegments"));
     
     //
     //  validate
     //
 
-    if (offerType == null) throw new SerializationException("unknown offerType: " + valueStruct.getString("offerType"));    
+    if (scoringEngine == null) throw new SerializationException("unknown scoringEngine: " + valueStruct.getString("scoringEngineID"));
 
     //
     //  return
     //
 
-    return new ScoringStrategy(schemaAndValue, offerType, scoringGroups);
+    return new ScoringStrategy(schemaAndValue, scoringEngine, dimensionID, scoringSegments);
   }
   
   /*****************************************
   *
-  *  unpackScoringGroups
+  *  unpackScoringSegments
   *
   *****************************************/
 
-  private static List<ScoringGroup> unpackScoringGroups(Schema schema, Object value)
+  private static List<ScoringSegment> unpackScoringSegments(Schema schema, Object value)
   {
     //
-    //  get schema for ScoringGroup
+    //  get schema for ScoringSegment
     //
 
-    Schema scoringGroupSchema = schema.valueSchema();
+    Schema scoringSegmentSchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    List<ScoringGroup> result = new ArrayList<ScoringGroup>();
+    List<ScoringSegment> result = new ArrayList<>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object scoringGroup : valueArray)
+    for (Object scoringSegment : valueArray)
       {
-        result.add(ScoringGroup.unpack(new SchemaAndValue(scoringGroupSchema, scoringGroup)));
+        result.add(ScoringSegment.unpack(new SchemaAndValue(scoringSegmentSchema, scoringSegment)));
       }
 
     //
@@ -264,35 +275,18 @@ public class ScoringStrategy extends GUIManagedObject
     *  attributes
     *
     *****************************************/
-    
     //
     //  simple
     //
-
-    this.offerType = Deployment.getOfferTypes().get(JSONUtilities.decodeString(jsonRoot, "offerTypeID", true));
-
-    //
-    //  standard scoring groups
-    //
-
-    ScoringGroup universalControlGroup = new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "universalControlGroup", true), "universalControlGroup");
-    ScoringGroup controlGroup = new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "controlGroup", true), "controlGroup");
-    ScoringGroup defaultGroup = new ScoringGroup(JSONUtilities.decodeJSONObject(jsonRoot, "defaultGroup", true), "defaultGroup");
-    if (universalControlGroup.getProfileCriteria().size() > 0) throw new GUIManagerException("invalid standard scoring group (profileCriteria)", universalControlGroup.getName());
-    if (controlGroup.getProfileCriteria().size() > 0) throw new GUIManagerException("invalid standard scoring group (profileCriteria)", controlGroup.getName());
-    if (defaultGroup.getProfileCriteria().size() > 0) throw new GUIManagerException("invalid standard scoring group (profileCriteria)", defaultGroup.getName());
-    universalControlGroup.getProfileCriteria().addAll(Deployment.getUniversalControlGroupCriteria());
-    controlGroup.getProfileCriteria().addAll(Deployment.getControlGroupCriteria());
     
-    //
-    //  scoringGroups
-    //
+    this.scoringEngine = Deployment.getScoringEngines().get(JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
+    this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", true);
 
-    this.scoringGroups = new ArrayList<ScoringGroup>();
-    this.scoringGroups.add(universalControlGroup);
-    this.scoringGroups.add(controlGroup);
-    this.scoringGroups.addAll(decodeScoringGroups(JSONUtilities.decodeJSONArray(jsonRoot, "targetGroups", true), "targetGroup"));
-    this.scoringGroups.add(defaultGroup);
+    //
+    //  scoring segments
+    //
+    
+    scoringSegments = decodeScoringSegments(JSONUtilities.decodeJSONArray(jsonRoot, "scoringSegments", true));
 
     /*****************************************
     *
@@ -300,14 +294,10 @@ public class ScoringStrategy extends GUIManagedObject
     *
     *****************************************/
 
-    if (this.offerType == null) throw new GUIManagerException("unsupported offerType", JSONUtilities.decodeString(jsonRoot, "offerType", true));
+    if (this.scoringEngine == null) throw new GUIManagerException("unsupported scoringEngine", JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
     if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
     if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
-    for (ScoringGroup scoringGroup : this.scoringGroups)
-      {
-        if (scoringGroup.getScoringSplits().size() < 1) throw new GUIManagerException("invalid scoringGroup (no scoringSplits)", scoringGroup.getName());
-      }
-
+    
     /*****************************************
     *
     *  epoch
@@ -322,16 +312,16 @@ public class ScoringStrategy extends GUIManagedObject
 
   /*****************************************
   *
-  *  decodeScoringGroups
+  *  decodeScoringSegments
   *
   *****************************************/
 
-  private List<ScoringGroup> decodeScoringGroups(JSONArray jsonArray, String baseName)  throws GUIManagerException, JSONUtilitiesException
+  private List<ScoringSegment> decodeScoringSegments(JSONArray jsonArray)  throws GUIManagerException, JSONUtilitiesException
   {
-    List<ScoringGroup> result = new ArrayList<ScoringGroup>();
+    List<ScoringSegment> result = new ArrayList<>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new ScoringGroup((JSONObject) jsonArray.get(i), baseName + "-" + i));
+        result.add(new ScoringSegment((JSONObject) jsonArray.get(i)));
       }
     return result;
   }
@@ -348,8 +338,9 @@ public class ScoringStrategy extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingScoringStrategy.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(getOfferType(), existingScoringStrategy.getOfferType());
-        epochChanged = epochChanged || ! Objects.equals(scoringGroups, existingScoringStrategy.getScoringGroups());
+        epochChanged = epochChanged || ! Objects.equals(getScoringEngine(), existingScoringStrategy.getScoringEngine());
+        epochChanged = epochChanged || ! Objects.equals(getDimensionID(), existingScoringStrategy.getDimensionID());
+        epochChanged = epochChanged || ! Objects.equals(scoringSegments, existingScoringStrategy.getScoringSegments());
         return epochChanged;
       }
     else
@@ -366,15 +357,17 @@ public class ScoringStrategy extends GUIManagedObject
 
   public void validate(OfferObjectiveService offerObjectiveService, Date date) throws GUIManagerException
   {
-    for (ScoringGroup scoringGroup : scoringGroups)
+    for (ScoringSegment scoringSegments : scoringSegments)
       {
-        for (ScoringSplit scoringSplit : scoringGroup.getScoringSplits())
+        Set<String> allOfferObjectivesID = new HashSet<>();
+        allOfferObjectivesID.addAll(scoringSegments.getOfferObjectiveIDs());
+        allOfferObjectivesID.addAll(scoringSegments.getAlwaysAppendOfferObjectiveIDs());
+        for (String offerObjectiveID : allOfferObjectivesID)
           {
-            for (String offerObjectiveID : scoringSplit.getOfferObjectiveIDs())
-              {
-                if (offerObjectiveService.getActiveOfferObjective(offerObjectiveID, date) == null) throw new GUIManagerException("unknown offer objective", offerObjectiveID);
-              }
+            if (offerObjectiveService.getActiveOfferObjective(offerObjectiveID, date) == null) throw new GUIManagerException("unknown offer objective", offerObjectiveID);
           }
       }
+    // TODO : validate segments
+    
   }
 }

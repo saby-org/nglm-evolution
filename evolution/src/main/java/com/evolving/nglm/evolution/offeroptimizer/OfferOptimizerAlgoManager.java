@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -12,17 +13,17 @@ import org.apache.log4j.Logger;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
-import com.evolving.nglm.evolution.DNBOProxy;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
+import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.evolution.OfferSalesChannelsAndPrice;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
 import com.evolving.nglm.evolution.PropensityKey;
 import com.evolving.nglm.evolution.PropensityState;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;
 
@@ -57,7 +58,7 @@ public class OfferOptimizerAlgoManager {
   }
 
   public Collection<ProposedOfferDetails> applyScoreAndSort(OfferOptimizationAlgorithm algoDefinitions,
-      String valueMode, Set<Offer> offers, SubscriberProfile subscriberProfile, double minScoreThreshold,
+      Map<OfferOptimizationAlgorithmParameter, String> algoParameters, Set<Offer> offers, SubscriberProfile subscriberProfile, double minScoreThreshold,
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
@@ -119,13 +120,12 @@ public class OfferOptimizerAlgoManager {
             propensityState = propensityDataReader.get(pk);
           }
         
-        int currentPropensity = 50; // TODO: In the future, use: o.getInitialPropensity();
+        double currentPropensity = 0.5; // TODO: In the future, use: o.getInitialPropensity();
         if (propensityState != null) 
           {
             int presentationThreshold = Deployment.getPropensityInitialisationPresentationThreshold();
             int daysThreshold = Deployment.getPropensityInitialisationDurationInDaysThreshold();
-            double p = propensityState.getPropensity(0.50d, o.getEffectiveStartDate(), presentationThreshold, daysThreshold); // TODO: In the future, use: o.getInitialPropensity();
-            currentPropensity = (int) (100.0 * p);
+            currentPropensity = propensityState.getPropensity(0.50d, o.getEffectiveStartDate(), presentationThreshold, daysThreshold); // TODO: In the future, use: o.getInitialPropensity();
           } 
         else 
           {
@@ -153,7 +153,7 @@ public class OfferOptimizerAlgoManager {
                 if (salesChannelID.equals(requestedSalesChannelId)) 
                   {
                     SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
-                    ProposedOfferDetails scorePerChannel = algo.getOfferPropensityScore(valueMode, o,
+                    ProposedOfferDetails scorePerChannel = algo.getOfferPropensityScore(algoParameters, o,
                         salesChannelID,
                         currentPropensity, salesChannelAndPrice.getPrice() != null
                         ? salesChannelAndPrice.getPrice().getAmount() : 0,
