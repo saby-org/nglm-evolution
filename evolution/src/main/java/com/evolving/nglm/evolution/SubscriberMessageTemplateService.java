@@ -106,6 +106,7 @@ public class SubscriberMessageTemplateService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("languageIDs", JSONUtilities.encodeArray((guiManagedObject instanceof SubscriberMessageTemplate) ? ((SubscriberMessageTemplate) guiManagedObject).getLanguages() : new ArrayList<String>()));
+    result.put("areaAvailability", guiManagedObject.getJSONRepresentation().get("areaAvailability"));
     return result;
   }
   

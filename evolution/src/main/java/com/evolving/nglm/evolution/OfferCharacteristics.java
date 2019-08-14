@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class OfferCharacteristics
@@ -95,15 +97,9 @@ public class OfferCharacteristics
   *
   *****************************************/
 
-  OfferCharacteristics(JSONObject jsonRoot) throws GUIManagerException
+  OfferCharacteristics(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
-    /*****************************************
-    *
-    *  properties
-    *
-    *****************************************/
-
-    properties = decodeOfferCharacteristicProperties(JSONUtilities.decodeJSONArray(jsonRoot, "languageProperties", false));
+    properties = (jsonRoot != null) ? decodeOfferCharacteristicProperties(JSONUtilities.decodeJSONArray(jsonRoot, "languageProperties", false), catalogCharacteristicService) : new HashSet<OfferCharacteristicsLanguageProperty>();
   }
 
   /*****************************************
@@ -112,14 +108,14 @@ public class OfferCharacteristics
   *
   *****************************************/
 
-  private Set<OfferCharacteristicsLanguageProperty> decodeOfferCharacteristicProperties(JSONArray jsonArray) throws GUIManagerException
+  private Set<OfferCharacteristicsLanguageProperty> decodeOfferCharacteristicProperties(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     Set<OfferCharacteristicsLanguageProperty> result = new HashSet<OfferCharacteristicsLanguageProperty>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferCharacteristicsLanguageProperty((JSONObject) jsonArray.get(i)));
+            result.add(new OfferCharacteristicsLanguageProperty((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
@@ -331,14 +327,14 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    OfferCharacteristicsLanguageProperty(JSONObject jsonRoot) throws GUIManagerException
+    OfferCharacteristicsLanguageProperty(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
     {
       //
       //  basic fields
       //
 
       this.languageID = JSONUtilities.decodeString(jsonRoot, "languageID", false);
-      this.properties = decodeOfferCharacteristicsProperties(JSONUtilities.decodeJSONArray(jsonRoot, "properties", false));
+      this.properties = decodeOfferCharacteristicsProperties(JSONUtilities.decodeJSONArray(jsonRoot, "properties", false), catalogCharacteristicService);
 
       //
       //  validate 
@@ -352,14 +348,14 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    private Set<OfferCharacteristicsProperty> decodeOfferCharacteristicsProperties(JSONArray jsonArray) throws GUIManagerException
+    private Set<OfferCharacteristicsProperty> decodeOfferCharacteristicsProperties(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
     {
       Set<OfferCharacteristicsProperty> result = new HashSet<OfferCharacteristicsProperty>();
       if (jsonArray != null)
         {
           for (int i=0; i<jsonArray.size(); i++)
             {
-              result.add(new OfferCharacteristicsProperty((JSONObject) jsonArray.get(i)));
+              result.add(new OfferCharacteristicsProperty((JSONObject) jsonArray.get(i), catalogCharacteristicService));
             }
         }
       return result;
@@ -545,7 +541,7 @@ public class OfferCharacteristics
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("catalogCharacteristicID", Schema.STRING_SCHEMA);
       schemaBuilder.field("catalogCharacteristicName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("value", Schema.STRING_SCHEMA);
+      schemaBuilder.field("value", ParameterMap.schema());
       schema = schemaBuilder.build();
     };
 
@@ -563,7 +559,7 @@ public class OfferCharacteristics
 
     private String catalogCharacteristicID;
     private String catalogCharacteristicName;
-    private String value;
+    private ParameterMap value;
 
     /*****************************************
     *
@@ -571,7 +567,7 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    private OfferCharacteristicsProperty(String catalogCharacteristicID, String catalogCharacteristicName, String value)
+    private OfferCharacteristicsProperty(String catalogCharacteristicID, String catalogCharacteristicName, ParameterMap value)
     {
       this.catalogCharacteristicID = catalogCharacteristicID;
       this.catalogCharacteristicName = catalogCharacteristicName;
@@ -584,7 +580,7 @@ public class OfferCharacteristics
     *
     *****************************************/
 
-    OfferCharacteristicsProperty(JSONObject jsonRoot) throws GUIManagerException
+    OfferCharacteristicsProperty(JSONObject jsonRoot, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
     {
       //
       //  basic fields
@@ -592,11 +588,66 @@ public class OfferCharacteristics
 
       this.catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicID", false);
       this.catalogCharacteristicName = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicName", false);
-      this.value = JSONUtilities.decodeString(jsonRoot, "value", false);
+      CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
+      CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
 
       //
-      //  validate 
+      //  parse value
       //
+
+      Object value = null;
+      switch (dataType)
+        {
+          case IntegerCriterion:
+            value = JSONUtilities.decodeInteger(jsonRoot, "value", false);
+            break;
+
+          case DoubleCriterion:
+            value = JSONUtilities.decodeDouble(jsonRoot, "value", false);
+            break;
+
+          case StringCriterion:
+            value = JSONUtilities.decodeString(jsonRoot, "value", false);
+            break;
+
+          case DateCriterion:
+            value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+            break;
+
+          case BooleanCriterion:
+            value = JSONUtilities.decodeBoolean(jsonRoot, "value", false);
+            break;
+
+          case StringSetCriterion:
+            JSONArray jsonArrayString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> stringSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayString.size(); i++)
+              {
+                stringSetValue.add(jsonArrayString.get(i));
+              }
+            value = stringSetValue;
+            break;
+
+          case IntegerSetCriterion:
+            JSONArray jsonArrayInteger = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+            Set<Object> integerSetValue = new HashSet<Object>();
+            for (int i=0; i<jsonArrayInteger.size(); i++)
+              {
+                integerSetValue.add(new Integer(((Number) jsonArrayInteger.get(i)).intValue()));
+              }
+            value = integerSetValue;
+            break;
+
+          default:
+            throw new GUIManagerException("unsupported catalogCharacteristic", catalogCharacteristicID);
+        }
+
+      //
+      //  store in singleton parameterMap
+      //
+
+      this.value = new ParameterMap();
+      this.value.put("value", value);
     }
     
     /*****************************************
@@ -607,7 +658,8 @@ public class OfferCharacteristics
 
     public String getCatalogCharacteristicID() { return catalogCharacteristicID; }
     public String getCatalogCharacteristicName() { return catalogCharacteristicName; }
-    public String getValue() { return value; }
+    public Object getValue() { return value.get("value"); }
+    private ParameterMap getParameterMap() { return value; }
 
     /*****************************************
     *
@@ -632,7 +684,7 @@ public class OfferCharacteristics
       Struct struct = new Struct(schema);
       struct.put("catalogCharacteristicID", offerCharacteristicsProperty.getCatalogCharacteristicID());
       struct.put("catalogCharacteristicName", offerCharacteristicsProperty.getCatalogCharacteristicName());
-      struct.put("value", offerCharacteristicsProperty.getValue());
+      struct.put("value", ParameterMap.pack(offerCharacteristicsProperty.getParameterMap()));
       return struct;
     }
 
@@ -659,7 +711,7 @@ public class OfferCharacteristics
       Struct valueStruct = (Struct) value;
       String catalogCharacteristicID = valueStruct.getString("catalogCharacteristicID");
       String catalogCharacteristicName = valueStruct.getString("catalogCharacteristicName");
-      String value2 = valueStruct.getString("value");
+      ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("value").schema(), valueStruct.get("value")));
 
       //
       //  validate
@@ -669,7 +721,7 @@ public class OfferCharacteristics
       //  return
       //
 
-      return new OfferCharacteristicsProperty(catalogCharacteristicID, catalogCharacteristicName, value2);
+      return new OfferCharacteristicsProperty(catalogCharacteristicID, catalogCharacteristicName, parameterMap);
     }
 
     /*****************************************
@@ -687,7 +739,7 @@ public class OfferCharacteristics
           result = true;
           result = result && Objects.equals(catalogCharacteristicID, offerCharacteristicsProperty.getCatalogCharacteristicID());
           result = result && Objects.equals(catalogCharacteristicName, offerCharacteristicsProperty.getCatalogCharacteristicName());
-          result = result && Objects.equals(value, offerCharacteristicsProperty.getValue());
+          result = result && Objects.equals(value, offerCharacteristicsProperty.getParameterMap());
         }
       return result;
     }
@@ -703,6 +755,4 @@ public class OfferCharacteristics
       return value.hashCode();
     }
   }
-
-  
 }
