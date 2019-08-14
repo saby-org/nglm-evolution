@@ -28,6 +28,7 @@ import java.text.Format;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -403,7 +404,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   public List<String> getLanguages()
   {
-    List<String> languages = new ArrayList<String>();
+    Set<String> languages = new HashSet<String>();
     for (DialogMessage dialogMessage : dialogMessages)
       {
         for (String languageName : dialogMessage.getMessageTextByLanguage().keySet())
@@ -415,7 +416,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
               }
           }
       }
-    return languages;
+    return Collections.<String>list(Collections.enumeration(languages));
   }
 
   /*****************************************

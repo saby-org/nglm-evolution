@@ -105,7 +105,7 @@ public class SubscriberMessageTemplateService extends GUIService
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
-    result.put("languageIDs", JSONUtilities.encodeArray((guiManagedObject instanceof SubscriberMessageTemplate) ? ((SubscriberMessageTemplate) guiManagedObject).getLanguages() :new ArrayList<String>()));
+    result.put("languageIDs", JSONUtilities.encodeArray((guiManagedObject instanceof SubscriberMessageTemplate) ? ((SubscriberMessageTemplate) guiManagedObject).getLanguages() : new ArrayList<String>()));
     return result;
   }
   

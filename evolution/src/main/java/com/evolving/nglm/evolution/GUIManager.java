@@ -371,8 +371,8 @@ public class GUIManager
     getLoyaltyProgram("getLoyaltyProgram"),
     putLoyaltyProgram("putLoyaltyProgram"),
     removeLoyaltyProgram("removeLoyaltyProgram"),
-    getPartnersList("getPartnersList"),
-    getPartnersSummaryList("getPartnersSummaryList"),
+    getPartnerList("getPartnerList"),
+    getPartnerSummaryList("getPartnerSummaryList"),
     getPartner("getPartner"),
     putPartner("putPartner"),
     removePartner("removePartner"),
@@ -1476,8 +1476,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
-        restServer.createContext("/nglm-guimanager/getPartnersList", new APISimpleHandler(API.getPartnersList));
-        restServer.createContext("/nglm-guimanager/getPartnersSummaryList", new APISimpleHandler(API.getPartnersSummaryList));
+        restServer.createContext("/nglm-guimanager/getPartnerList", new APISimpleHandler(API.getPartnerList));
+        restServer.createContext("/nglm-guimanager/getPartnerSummaryList", new APISimpleHandler(API.getPartnerSummaryList));
         restServer.createContext("/nglm-guimanager/getPartner", new APISimpleHandler(API.getPartner));
         restServer.createContext("/nglm-guimanager/putPartner", new APISimpleHandler(API.putPartner));
         restServer.createContext("/nglm-guimanager/removePartner", new APISimpleHandler(API.removePartner));
@@ -2602,12 +2602,12 @@ public class GUIManager
                   jsonResponse = processRemoveLoyaltyProgram(userID, jsonRoot);
                   break;
 
-                case getPartnersList:
-                  jsonResponse = processGetPartnersList(userID, jsonRoot, true);
+                case getPartnerList:
+                  jsonResponse = processGetPartnerList(userID, jsonRoot, true);
                   break;
 
-                case getPartnersSummaryList:
-                  jsonResponse = processGetPartnersList(userID, jsonRoot, false);
+                case getPartnerSummaryList:
+                  jsonResponse = processGetPartnerList(userID, jsonRoot, false);
                   break;
 
                 case getPartner:
@@ -3721,7 +3721,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
     EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
@@ -15335,11 +15335,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetPartnersList
+  *  processGetPartnerList
   *
   *****************************************/
 
-  private JSONObject processGetPartnersList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPartnerList(String userID, JSONObject jsonRoot, boolean fullDetails)
   {
     /*****************************************
     *
@@ -17015,7 +17015,7 @@ public class GUIManager
                     {
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", segment.getID());
-                      availableValue.put("display", segment.getName());
+                      availableValue.put("display", dimension.getSegmentationDimensionName() + ":" + segment.getName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }

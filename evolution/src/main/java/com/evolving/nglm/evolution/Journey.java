@@ -1189,6 +1189,44 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
+    *  validate mandatory parameters
+    *
+    *****************************************/
+
+    for (JourneyNode journeyNode : this.journeyNodes.values())
+      {
+        //
+        //  node parameters
+        //
+
+        for (String parameterName : journeyNode.getNodeType().getParameters().keySet())
+          {
+            CriterionField parameterDeclaration = journeyNode.getNodeType().getParameters().get(parameterName);
+            if (parameterDeclaration.getMandatoryParameter() && journeyNode.getNodeParameters().containsKey(parameterName) && journeyNode.getNodeParameters().get(parameterName) == null)
+              {
+                throw new GUIManagerException("mandatory parameter not set", parameterName);
+              }
+          }
+
+        //
+        //  link parameters
+        //
+
+        for (String parameterName : journeyNode.getNodeType().getOutputConnectorParameters().keySet())
+          {
+            CriterionField parameterDeclaration = journeyNode.getNodeType().getOutputConnectorParameters().get(parameterName);
+            for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values())
+              {
+                if (parameterDeclaration.getMandatoryParameter() && journeyLink.getLinkParameters().containsKey(parameterName) && journeyLink.getLinkParameters().get(parameterName) == null)
+                  {
+                    throw new GUIManagerException("mandatory parameter not set", parameterName);
+                  }
+              }
+          }
+      }
+
+    /*****************************************
+    *
     *  targeting criteria from start node (TEMPORARY)
     *
     *****************************************/
@@ -1863,6 +1901,17 @@ public class Journey extends GUIManagedObject
     return contextVariableFields;
   }
   
+  /*****************************************
+  *
+  *  isExpressionValuedParameterValue
+  *
+  *****************************************/
+
+  public static boolean isExpressionValuedParameterValue(JSONObject parameterJSON)
+  {
+    return (parameterJSON.get("value") instanceof JSONObject) && (((JSONObject) parameterJSON.get("value")).get("expression") != null);
+  }
+
   /*****************************************************************************
   *
   *  class GUINode
@@ -1994,7 +2043,7 @@ public class Journey extends GUIManagedObject
           String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
           CriterionField parameter = nodeType.getParameters().get(parameterName);
           if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
-          if (parameter.getExpressionValuedParameter() && isExpressionValuedParameterValue(parameterJSON)) continue;
+          if (Journey.isExpressionValuedParameterValue(parameterJSON)) continue;
           switch (parameter.getFieldDataType())
             {
               case IntegerCriterion:
@@ -2052,7 +2101,7 @@ public class Journey extends GUIManagedObject
           String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
           CriterionField parameter = nodeType.getParameters().get(parameterName);
           if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
-          if (parameter.getExpressionValuedParameter() && isExpressionValuedParameterValue(parameterJSON)) continue;
+          if (Journey.isExpressionValuedParameterValue(parameterJSON)) continue;
 
           /*****************************************
           *
@@ -2093,17 +2142,6 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
-    *  isExpressionValuedParameterValue
-    *
-    *****************************************/
-
-    private boolean isExpressionValuedParameterValue(JSONObject parameterJSON)
-    {
-      return (parameterJSON.get("value") instanceof JSONObject) && (((JSONObject) parameterJSON.get("value")).get("expression") != null);
-    }
-
-    /*****************************************
-    *
     *  decodeExpressionValuedParameters
     *
     *****************************************/
@@ -2123,7 +2161,7 @@ public class Journey extends GUIManagedObject
           String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
           CriterionField parameter = nodeType.getParameters().get(parameterName);
           if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
-          if (! parameter.getExpressionValuedParameter() || ! isExpressionValuedParameterValue(parameterJSON)) continue;
+          if (! isExpressionValuedParameterValue(parameterJSON)) continue;
 
           /*****************************************
           *

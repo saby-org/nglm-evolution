@@ -193,7 +193,7 @@ public abstract class SubscriberMessage
         String parameterID = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
         CriterionField parameter = parameterTagsByID.get(parameterID);
         if (parameter == null) throw new GUIManagerException("unknown parameterTag", parameterID);
-        if (! isExpressionValuedParameterValue(parameterJSON))
+        if (! Journey.isExpressionValuedParameterValue(parameterJSON))
           {
             switch (parameter.getFieldDataType())
               {
@@ -231,17 +231,6 @@ public abstract class SubscriberMessage
     *****************************************/
 
     return parameterTags;
-  }
-
-  /*****************************************
-  *
-  *  isExpressionValuedParameterValue
-  *
-  *****************************************/
-
-  private boolean isExpressionValuedParameterValue(JSONObject parameterJSON)
-  {
-    return (parameterJSON.get("value") instanceof JSONObject) && (((JSONObject) parameterJSON.get("value")).get("expression") != null);
   }
 
   /*****************************************
