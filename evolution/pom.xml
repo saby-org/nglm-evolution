@@ -59,7 +59,7 @@
     <gui-iar.version>1.0.21</gui-iar.version>
     <gui-opr.version>1.0.37</gui-opr.version>
     <gui-stg.version>1.0.46</gui-stg.version>
-    <gui-sbm.version>1.0.41</gui-sbm.version>
+    <gui-sbm.version>1.0.42</gui-sbm.version>
     <gui-csrmockup.version>1.0.2</gui-csrmockup.version>
 
     <!-- dependencies - mysql -->
