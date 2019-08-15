@@ -26,5 +26,6 @@ done
 ssh $MASTER_SWARM_HOST "
    rm -rf ${NGLM_DATA}
    rm -rf ${NGLM_SUBSCRIBERGROUP_DATA}
+   rm -rf ${NGLM_STORECONFIGURATION_DATA}
 "
 

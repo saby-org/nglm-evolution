@@ -24,8 +24,9 @@ do
 	      docker pull ${env.DOCKER_REGISTRY}ev-dnboproxy:${project.name}-${project.version}
       fi
 
-	  docker pull ${env.DOCKER_REGISTRY}ev-evolutionengine:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-evolutionengine:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribergroup:${project.name}-${project.version}
+      docker pull ${env.DOCKER_REGISTRY}ev-storeconfiguration:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-simpletransform:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-connect:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-subscribermanager:${project.name}-${project.version}

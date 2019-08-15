@@ -108,6 +108,14 @@ ssh $MASTER_SWARM_HOST "
 "
 
 #
+#  storeconfiguration
+#
+
+ssh $MASTER_SWARM_HOST "
+   mkdir -p $NGLM_STORECONFIGURATION_DATA
+"
+
+#
 #  Report Manager
 #
 

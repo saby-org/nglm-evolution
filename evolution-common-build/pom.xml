@@ -63,6 +63,7 @@
     <common.build.phase.generate-dnboproxy-image>none</common.build.phase.generate-dnboproxy-image>
     <common.build.phase.generate-evolutionengine-image>none</common.build.phase.generate-evolutionengine-image>
     <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
+    <common.build.phase.generate-storeconfiguration-image>none</common.build.phase.generate-storeconfiguration-image>
     <common.build.phase.generate-ucgengine-image>none</common.build.phase.generate-ucgengine-image>
     <common.build.phase.generate-infulfillmentmanager-image>none</common.build.phase.generate-infulfillmentmanager-image>
     <common.build.phase.generate-emptyfulfillmentmanager-image>none</common.build.phase.generate-emptyfulfillmentmanager-image>
@@ -79,6 +80,7 @@
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
     <common.build.skip.docker-evolutionengine-image>true</common.build.skip.docker-evolutionengine-image>
     <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
+    <common.build.skip.docker-storeconfiguration-image>true</common.build.skip.docker-storeconfiguration-image>
     <common.build.skip.docker-ucgengine-image>true</common.build.skip.docker-ucgengine-image>
     <common.build.skip.docker-infulfillmentmanager-image>true</common.build.skip.docker-infulfillmentmanager-image>
     <common.build.skip.docker-emptyfulfillmentmanager-image>true</common.build.skip.docker-emptyfulfillmentmanager-image>
@@ -577,6 +579,48 @@
                   <directory>${project.build.directory}/nglm-evolution-resources</directory>
                   <includes>
                     <include>bin/subscribergroup-run.sh</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+
+          <execution>
+            <id>generate-storeconfiguration-stack</id>
+            <phase>${common.build.phase.generate-storeconfiguration-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/storeconfiguration</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/storeconfiguration</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/storeconfiguration-run.sh</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -1129,6 +1173,21 @@
               <contextDirectory>${project.build.directory}/assembled-docker/subscribergroup</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-subscribergroup</repository>
               <classifier>docker-info-subscribergroup</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-storeconfiguration</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-storeconfiguration-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/storeconfiguration</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-storeconfiguration</repository>
+              <classifier>docker-info-storeconfiguration</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

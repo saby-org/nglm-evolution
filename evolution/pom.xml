@@ -249,10 +249,12 @@
                     <include>bin/reportmanager-run.sh</include>
                     <include>bin/reportscheduler-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
+                    <include>bin/storeconfiguration-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/thirdpartymanager-run.sh</include>
                     <include>bin/dnboproxy-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
+                    <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
                     <include>bin/upgrade-run-flyway.sh</include>
                     <include>bin/upgrade-run-postamble.sh</include>
@@ -306,7 +308,7 @@
                     <include>docker/reportscheduler/*</include>
                     <include>docker/reportscheduler.yml</include>
                     <include>docker/subscribergroup/*</include>
-                    <include>docker/subscribergroup.yml</include>
+                    <include>docker/storeconfiguration/*</include>
                     <include>docker/upgrade/*</include>
                     <include>docker/upgrade-preamble.yml</include>
                     <include>docker/upgrade-postamble.yml</include>

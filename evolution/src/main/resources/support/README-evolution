@@ -334,6 +334,13 @@ $DEPLOY_ROOT/bin/update-subscribergroup.sh remove segmentationDimension churnRis
 $DEPLOY_ROOT/bin/update-subscribergroup.sh delete segmentationDimension churnRisk
 
 --
+--  storeconfiguration
+--
+
+$DEPLOY_ROOT/bin/storeconfiguration.sh store <_GUIMANAGER_HOST_> <_GUIMANAGER_PORT_> nglm-configuration.json
+$DEPLOY_ROOT/bin/storeconfiguration.sh load <_GUIMANAGER_HOST_> <_GUIMANAGER_PORT_> nglm-configuration.json
+
+--
 --  service example programs
 --
 
