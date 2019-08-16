@@ -8,7 +8,8 @@
   #  sink connector -- subscriberProfile (redis)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_SUBSCRIBERPROFILE_REDIS=${CONNECT_URL_SUBSCRIBERPROFILE_REDIS:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_REDIS/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "subscriberprofile_redis_sink_connector",
       "config" :
@@ -27,7 +28,8 @@
   #  sink connector -- journeyStatistic (elasticsearch)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_JOURNEYSTATISTIC_ES=${CONNECT_URL_JOURNEYSTATISTIC_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_JOURNEYSTATISTIC_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "journeystatistic_es_sink_connector",
       "config" :
@@ -45,7 +47,8 @@
   #  sink connector -- journeyMetric (elasticsearch)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_JOURNEYMETRIC_ES=${CONNECT_URL_JOURNEYMETRIC_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "journeymetric_es_sink_connector",
       "config" :
@@ -64,7 +67,8 @@
   #  source connector -- externalDeliveryRequest
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_EXTERNALDELIVERYREQUEST=${CONNECT_URL_EXTERNALDELIVERYREQUEST:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_EXTERNALDELIVERYREQUEST/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "externaldeliveryrequest_file_connector",
       "config" :
@@ -87,7 +91,8 @@
   #  source connector -- presentationLog
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_PRESENTATIONLOG=${CONNECT_URL_PRESENTATIONLOG:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_PRESENTATIONLOG/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "presentationlog_file_connector",
       "config" :
@@ -110,7 +115,8 @@
   #  source connector -- acceptanceLog
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_ACCEPTANCELOG=${CONNECT_URL_ACCEPTANCELOG:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_ACCEPTANCELOG/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "acceptancelog_file_connector",
       "config" :
@@ -133,7 +139,8 @@
   #  source connector -- SubscriberProfileForceUpdateFileSourceConnector
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_SUBSCRIBERPROFILE_FORCEUPDATE=${CONNECT_URL_SUBSCRIBERPROFILE_FORCEUPDATE:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_FORCEUPDATE/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "SubscriberProfileForceUpdateFileSourceConnector",
       "config" :
@@ -156,7 +163,8 @@
   #  sink connector -- propensity (elasticsearch)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_PROPENSITY_ES=${CONNECT_URL_PROPENSITY_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_PROPENSITY_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "propensity_es_sink_connector",
       "config" :
@@ -174,7 +182,8 @@
   #  sink connector -- ODR (elasticsearch)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_ODR_ES=${CONNECT_URL_ODR_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_ODR_ES/connectors -H "Content-Type: application/json" -d '
      {
        "name" : "odr_es_sink_connector",
        "config" :
@@ -192,7 +201,8 @@
   #  sink connector -- BDR (elasticsearch)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_BDR_ES=${CONNECT_URL_BDR_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_BDR_ES/connectors -H "Content-Type: application/json" -d '
      {
        "name" : "bdr_es_sink_connector",
        "config" :
@@ -210,7 +220,8 @@
   #  sink connector -- Notification (elasticsearch)
   #
 
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_NOTIFICATION_ES=${CONNECT_URL_NOTIFICATION_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "notification_es_sink_connector",
       "config" :
@@ -230,7 +241,8 @@
 
   if [ "${env.USE_REGRESSION}" = "1" ]
   then
-  curl -XPOST $CONNECT_URL/connectors -H "Content-Type: application/json" -d '
+  export CONNECT_URL_PERIODIC_EVALUATION=${CONNECT_URL_PERIODIC_EVALUATION:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_PERIODIC_EVALUATION/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "periodicevaluation_file_connector",
       "config" :
