@@ -47,7 +47,7 @@ public class CommunicationChannel extends GUIManagedObject
       schemaBuilder.field("defaultSourceAddress", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("profileAddressField", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("deliveryType", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("notificationDailyWindows", NotificationDailyWindows.schema());
+      schemaBuilder.field("notificationDailyWindows", NotificationDailyWindows.serde().optionalSchema().schema());
       schemaBuilder.field("communicationChannelParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("communication_channel_parameters").schema());
       schema = schemaBuilder.build();
     };
@@ -120,7 +120,7 @@ public class CommunicationChannel extends GUIManagedObject
       struct.put("defaultSourceAddress", communicationChannel.getDefaultSourceAddress());
       struct.put("profileAddressField", communicationChannel.getProfileAddressField());
       struct.put("deliveryType", communicationChannel.getDeliveryType());
-      if(communicationChannel.getNotificationDailyWindows() != null) struct.put("notificationDailyWindows", NotificationDailyWindows.pack(communicationChannel.getNotificationDailyWindows()));
+      struct.put("notificationDailyWindows", NotificationDailyWindows.serde().packOptional(communicationChannel.getNotificationDailyWindows()));
       struct.put("communicationChannelParameters", packCommunicationChannelParameters(communicationChannel.getParameters()));
       return struct;
     }
@@ -167,7 +167,7 @@ public class CommunicationChannel extends GUIManagedObject
       String profileAddressField = valueStruct.getString("profileAddressField");
       String deliveryType = valueStruct.getString("deliveryType");
       NotificationDailyWindows notificationTimeWindows = null;
-      if(valueStruct.get("notificationDailyWindows") != null) notificationTimeWindows = NotificationDailyWindows.unpack(new SchemaAndValue(schema.field("notificationDailyWindows").schema(), valueStruct.get("notificationDailyWindows")));
+      notificationTimeWindows = NotificationDailyWindows.serde().unpackOptional(new SchemaAndValue(schema.field("notificationDailyWindows").schema(), valueStruct.get("notificationDailyWindows")));
       Map<String,CriterionField> communicationChannelParameters = unpackCommunicationChannelParameters(schema.field("communicationChannelParameters").schema(), (Map<String,Object>) valueStruct.get("communicationChannelParameters"));
       
       //

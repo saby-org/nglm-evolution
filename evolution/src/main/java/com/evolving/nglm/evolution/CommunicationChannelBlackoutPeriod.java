@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.apache.kafka.connect.data.Field;
@@ -10,12 +11,14 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 
 public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
 {
@@ -264,7 +268,7 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
   }
 
   public static class BlackoutPeriods
-  {
+  { 
     //
     //  logger
     //
@@ -287,8 +291,8 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("blackout_periods");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("from", Schema.INT64_SCHEMA);
-      schemaBuilder.field("until", Schema.INT64_SCHEMA);
+      schemaBuilder.field("from", Timestamp.builder().optional().schema());
+      schemaBuilder.field("until", Timestamp.builder().optional().schema());
       schema = schemaBuilder.build();
     };
 
@@ -346,8 +350,8 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
     {
       BlackoutPeriods contactPolicyBlackout = (BlackoutPeriods) value;
       Struct struct = new Struct(schema);
-      struct.put("from", contactPolicyBlackout.getStartTime().getTime());
-      struct.put("until", contactPolicyBlackout.getEndTime().getTime());
+      struct.put("from", contactPolicyBlackout.getStartTime());
+      struct.put("until", contactPolicyBlackout.getEndTime());
       return struct;
     }
 
@@ -373,12 +377,9 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
 
       Struct valueStruct = (Struct) value;
 
-      long stTime = valueStruct.getInt64("from");
-      long edTime = valueStruct.getInt64("until");
-
-      Date from = new Date(stTime);
-      Date until = new Date(edTime);
-
+      Date from = (Date) valueStruct.get("from");
+      Date until = (Date) valueStruct.get("until");
+      
       //
       //  return
       //
@@ -400,16 +401,10 @@ public class CommunicationChannelBlackoutPeriod extends GUIManagedObject
        *  attributes
        *
        *****************************************/
-
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      String stTime = JSONUtilities.decodeString(jsonRoot, "from", true);
-      String edTime = JSONUtilities.decodeString(jsonRoot, "until", true);
-      try {
-        this.from = sdf.parse(stTime);
-        this.until = sdf.parse(edTime);
-      }catch(Exception e) {
-        log.warn("CommunicationChannelBlackout: parse exception ", e);
-      }
+      
+      //Use the date converter from the GUI as this is used in a GUIM
+      this.from = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "from", false));
+      this.until = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "until", false));
     }
   }
 }

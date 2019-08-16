@@ -124,6 +124,7 @@ public class SimpleEmailSender {
                                mailNotificationRequest.setDeliveryStatus(DeliveryStatus.Acknowledged);
                                mailNotificationRequest.setMessageStatus(MAILMessageStatus.DELIVERED);
                                mailNotificationRequest.setReturnCode(MAILMessageStatus.DELIVERED.getReturnCode());
+                               mailNotificationRequest.setReturnCodeDetails(MAILMessageStatus.DELIVERED.toString());
                                updateDeliveryRequest(mailNotificationRequest);
                            }else {
                              completeDeliveryRequest(mailNotificationRequest, mailNotificationRequest.getDeliveryRequestID(), MAILMessageStatus.SENT, DeliveryStatus.Acknowledged, NotificationStatusCode.fromReturnCode(NotificationStatusCode.EMAIL_SENT.getReturnCode()).toString());

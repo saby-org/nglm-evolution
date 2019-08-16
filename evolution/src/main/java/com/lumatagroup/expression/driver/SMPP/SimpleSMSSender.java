@@ -933,7 +933,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                 logger.info("SimpleSMSSender.onSubmitSmResp: seqnum: "+packetSequenceNumber+", idreceipt: "+ messageId);
 
 //                if(smsCorrelation.getDeliveryRequest().getConfirmationExpected()) {
-                  updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged); 
+                  updateDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
 //                }else {
 //                  completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, SMSMessageStatus.SENT, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus())); 
 //                }
@@ -991,11 +991,12 @@ public class SimpleSMSSender extends SMSSenderListener {
     smsNotificationManager.completeDeliveryRequest(smsNotif);
   }
   
-  private void updateDeliveryRequest(SMSNotificationManagerRequest smsNotif, String messageId, SMSMessageStatus status, DeliveryStatus deliveryStatus){
+  private void updateDeliveryRequest(SMSNotificationManagerRequest smsNotif, String messageId, SMSMessageStatus status, DeliveryStatus deliveryStatus, String returnCodeDetails){
     smsNotif.setCorrelator(messageId);
     smsNotif.setDeliveryStatus(deliveryStatus);
     smsNotif.setMessageStatus(status);
     smsNotif.setReturnCode(status.getReturnCode());
+    smsNotif.setReturnCodeDetails(returnCodeDetails);
     smsNotificationManager.updateDeliveryRequest(smsNotif);
   }
   

@@ -8,6 +8,9 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
+import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
+import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -16,8 +19,11 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
@@ -100,13 +106,30 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       //
       //  flat fields
       //
+      List<String> journeyReward = new ArrayList<String>();
+      for(RewardHistory history : journeyStatistic.getJourneyRewardHistory()) {
+        journeyReward.add(history.toString());
+      }
+      
+      List<String> journeyNode = new ArrayList<String>();
+      for(NodeHistory node : journeyStatistic.getJourneyNodeHistory()) {
+        journeyNode.add(node.toString());
+      }
+      
+      List<String> journeyStatus = new ArrayList<String>();
+      for(StatusHistory status : journeyStatistic.getJourneyStatusHistory()) {
+        journeyStatus.add(status.toString());
+      }
       
       documentMap.put("journeyInstanceID", journeyStatistic.getJourneyInstanceID());
       documentMap.put("journeyID", journeyStatistic.getJourneyID());
       documentMap.put("subscriberID", journeyStatistic.getSubscriberID());
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
-      documentMap.put("statsHistory", journeyStatistic.getJourneyHistorySummary());
-      documentMap.put("statusHistory", journeyStatistic.getJourneyStatusSummary());
+      documentMap.put("nodeHistory", journeyNode);
+      documentMap.put("statusHistory", journeyStatus);
+      documentMap.put("fromNodeID", journeyStatistic.getFromNodeID());
+      documentMap.put("toNodeID", journeyStatistic.getToNodeID());
+      documentMap.put("rewardHistory", journeyReward);
       documentMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
       documentMap.put("markNotified", journeyStatistic.getMarkNotified());
       documentMap.put("markConverted", journeyStatistic.getMarkConverted());
@@ -116,7 +139,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
 
-      //
+      // 
       //  return
       //
       

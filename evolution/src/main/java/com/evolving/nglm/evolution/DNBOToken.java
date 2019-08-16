@@ -111,7 +111,7 @@ public class DNBOToken extends Token {
 
   public DNBOToken(String tokenCode, TokenStatus tokenStatus, Date creationDate, Date boundedDate,
       Date redeemedDate, Date tokenExpirationDate, int boundedCount, String eventID,
-      String subscriberID, String tokenTypeID, int moduleID, Integer featureID,
+      String subscriberID, String tokenTypeID, String moduleID, Integer featureID,
       String presentationStrategyID, boolean isAutoBounded, boolean isAutoRedeemed,
       List<String> presentedOffersIDs, String acceptedOfferID) {
     super(tokenCode, tokenStatus, creationDate, boundedDate, redeemedDate, tokenExpirationDate,

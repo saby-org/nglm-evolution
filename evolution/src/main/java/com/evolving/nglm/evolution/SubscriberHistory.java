@@ -37,7 +37,7 @@ public class SubscriberHistory
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
-    schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
+    schemaBuilder.field("journeyHistory", SchemaBuilder.array(JourneyHistory.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -62,7 +62,7 @@ public class SubscriberHistory
 
   private String subscriberID;
   private List<DeliveryRequest> deliveryRequests;
-  private List<JourneyStatistic> journeyStatistics;
+  private List<JourneyHistory> journeyHistory;
 
   /*****************************************
   *
@@ -72,7 +72,7 @@ public class SubscriberHistory
 
   public String getSubscriberID() { return subscriberID; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
-  public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
+  public List<JourneyHistory> getJourneyHistory() { return journeyHistory; }
 
   /*****************************************
   *
@@ -84,7 +84,7 @@ public class SubscriberHistory
   {
     this.subscriberID = subscriberID;
     this.deliveryRequests = new ArrayList<DeliveryRequest>();
-    this.journeyStatistics = new ArrayList<JourneyStatistic>();
+    this.journeyHistory = new ArrayList<JourneyHistory>();
   }
 
   /*****************************************
@@ -93,11 +93,11 @@ public class SubscriberHistory
   *
   *****************************************/
 
-  private SubscriberHistory(String subscriberID, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics)
+  private SubscriberHistory(String subscriberID, List<DeliveryRequest> deliveryRequests, List<JourneyHistory> journeyHistory)
   {
     this.subscriberID = subscriberID;
     this.deliveryRequests = deliveryRequests;
-    this.journeyStatistics = journeyStatistics;
+    this.journeyHistory = journeyHistory;
   }
 
   /*****************************************
@@ -115,10 +115,10 @@ public class SubscriberHistory
     //  deep copy of journey statistics
     //
     
-    this.journeyStatistics = new ArrayList<JourneyStatistic>();
-    for(JourneyStatistic journeyStatistic : subscriberHistory.getJourneyStatistics())
+    this.journeyHistory = new ArrayList<JourneyHistory>();
+    for(JourneyHistory journeyHistory : subscriberHistory.getJourneyHistory())
       {
-        this.journeyStatistics.add(new JourneyStatistic(journeyStatistic));
+        this.journeyHistory.add(new JourneyHistory(journeyHistory));
       }
   }
 
@@ -134,7 +134,7 @@ public class SubscriberHistory
     Struct struct = new Struct(schema);
     struct.put("subscriberID", subscriberHistory.getSubscriberID());
     struct.put("deliveryRequests", packDeliveryRequests(subscriberHistory.getDeliveryRequests()));
-    struct.put("journeyStatistics", packJourneyStatistics(subscriberHistory.getJourneyStatistics()));
+    struct.put("journeyHistory", packJourneyHistory(subscriberHistory.getJourneyHistory()));
     return struct;
   }
 
@@ -156,16 +156,16 @@ public class SubscriberHistory
   
   /*****************************************
   *
-  *  packJourneyStatistics
+  *  packJourneyHistory
   *
   *****************************************/
 
-  private static List<Object> packJourneyStatistics(List<JourneyStatistic> journeyStatistics)
+  private static List<Object> packJourneyHistory(List<JourneyHistory> journeyHistory)
   {
     List<Object> result = new ArrayList<Object>();
-    for (JourneyStatistic journeyStatistic : journeyStatistics)
+    for (JourneyHistory history : journeyHistory)
       {
-        result.add(JourneyStatistic.pack(journeyStatistic));
+        result.add(JourneyHistory.pack(history));
       }
     return result;
   }
@@ -193,13 +193,13 @@ public class SubscriberHistory
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
-    List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
+    List<JourneyHistory> journeyHistory = unpackJourneyHistory(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory"));
 
     //  
     //  return
     //
 
-    return new SubscriberHistory(subscriberID, deliveryRequests, journeyStatistics);
+    return new SubscriberHistory(subscriberID, deliveryRequests, journeyHistory);
   }
     
   /*****************************************
@@ -241,23 +241,23 @@ public class SubscriberHistory
   *
   *****************************************/
 
-  private static List<JourneyStatistic> unpackJourneyStatistics(Schema schema, Object value)
+  private static List<JourneyHistory> unpackJourneyHistory(Schema schema, Object value)
   {
     //
-    //  get schema for JourneyStatistic
+    //  get schema for JourneyHistory
     //
 
-    Schema journeyStatisticSchema = schema.valueSchema();
+    Schema journeyHistorySchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    List<JourneyStatistic> result = new ArrayList<JourneyStatistic>();
+    List<JourneyHistory> result = new ArrayList<JourneyHistory>();
     List<Object> valueArray = (List<Object>) value;
     for (Object request : valueArray)
       {
-        JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticSchema, request));
+        JourneyHistory journeyStatistic = JourneyHistory.unpack(new SchemaAndValue(journeyHistorySchema, request));
         result.add(journeyStatistic);
       }
 

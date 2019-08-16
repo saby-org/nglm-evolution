@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -2506,9 +2507,13 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
-                JourneyState journeyState = new JourneyState(context, journey, journey.getBoundParameters(), now);
+                JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
+                JourneyState journeyState = new JourneyState(context, journey, journey.getBoundParameters(), SystemTime.getCurrentTime(), journeyHistory);
+                journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
+                
+                journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(),journeyState, false);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState));
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState));
                 subscriberStateUpdated = true;
 
                 /*****************************************
@@ -2638,6 +2643,22 @@ public class EvolutionEngine
     List<JourneyState> inactiveJourneyStates = new ArrayList<JourneyState>();
     for (JourneyState journeyState : subscriberState.getJourneyStates())
       {
+        
+        /*****************************************
+        *
+        *   get reward information 
+        *
+        *****************************************/
+        
+        if(evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
+          {
+          DeliveryRequest deliveryResponse = (DeliveryRequest)evolutionEvent;
+          if(deliveryResponse.getModuleID().equals(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && deliveryResponse.getFeatureID().equals(journeyState.getJourneyID())) 
+            {
+              journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);          
+            }
+          }
+        
         /*****************************************
         *
         *  get journey and journeyNode
@@ -2656,7 +2677,8 @@ public class EvolutionEngine
         if (journey == null || journeyNode == null)
           {
             journeyState.setJourneyExitDate(now);
-            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
+            journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
+            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, now));
             inactiveJourneyStates.add(journeyState);
             continue;
           }
@@ -2792,7 +2814,8 @@ public class EvolutionEngine
                             //
 
                             journeyState.setJourneyExitDate(now);
-                            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
+                            journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
+                            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime()));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -2829,6 +2852,7 @@ public class EvolutionEngine
 
                 JourneyNode nextJourneyNode = firedLink.getDestination();
                 journeyState.setJourneyNodeID(nextJourneyNode.getNodeID(), now);
+                journeyState.getJourneyHistory().addNodeInformation(firedLink.getSourceReference(), firedLink.getDestinationReference(), journeyState.getJourneyOutstandingDeliveryRequestID(), firedLink.getLinkID()); 
                 journeyNode = nextJourneyNode;
                 subscriberStateUpdated = true;
 
@@ -2887,7 +2911,8 @@ public class EvolutionEngine
                             //
 
                             journeyState.setJourneyExitDate(now);
-                            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, now));
+                            journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
+                            subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime()));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -2999,8 +3024,9 @@ public class EvolutionEngine
                 //
                 //  journeyStatistic
                 //
-
-                subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState, firedLink, markNotified, markConverted));
+                
+                journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, firedLink.getDestination().getExitNode());
+                subscriberState.getJourneyStatistics().add(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted));
               }
           }
         while (firedLink != null && journeyState.getJourneyExitDate() == null);
@@ -3378,31 +3404,37 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  add to history
+    *  add to subscriberHistory
     *
     *****************************************/
-
-    //
-    //  find sorted location to insert
-    //
-
-    int i = 0;
-    while (i < subscriberHistory.getJourneyStatistics().size() && subscriberHistory.getJourneyStatistics().get(i).compareTo(journeyStatistic) <= 0)
+    
+    ListIterator<JourneyHistory> iterator = subscriberHistory.getJourneyHistory().listIterator();
+    JourneyHistory updatedHistory = null;
+    while (iterator.hasNext()) 
       {
-        i += 1;
+        JourneyHistory history = iterator.next();
+        if(history.getJourneyID().equals(journeyStatistic.getJourneyID())) 
+          {
+            updatedHistory = new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory());
+            iterator.remove();
+            break;
+          }
       }
 
-    //
-    //  insert
-    //
-
-    subscriberHistory.getJourneyStatistics().add(i, journeyStatistic);
-
+    if(updatedHistory != null)
+      {
+        subscriberHistory.getJourneyHistory().add(new JourneyHistory(updatedHistory));
+      }    
+    else 
+      {
+        subscriberHistory.getJourneyHistory().add(new JourneyHistory(journeyStatistic.getJourneyID(), journeyStatistic.getJourneyNodeHistory(), journeyStatistic.getJourneyStatusHistory(), journeyStatistic.getJourneyRewardHistory()));
+      }
+    
     /*****************************************
-    *
-    *  return
-    *
-    *****************************************/
+     *
+     *  return
+     *
+     *****************************************/
 
     return true;
   }

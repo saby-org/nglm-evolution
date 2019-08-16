@@ -20,6 +20,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
 {
   
   private static OfferService offerService;
+  private static ProductService productService;
   
   /****************************************
   *
@@ -61,28 +62,16 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       //
 
       super.start(taskConfig);
-      
-      OfferListener offerListener = new OfferListener()
-      {
-        @Override
-        public void offerDeactivated(String guiManagedOfferID)
-        {
-           // must record the offer start date and initial propensity into the table 
-           // TODO Auto-generated method stub
-        }
-        @Override
-        public void offerActivated(Offer offer)
-        {
-          // TODO Auto-generated method stub
-        }
-      };
     
       //
       //  services
       //
    
-      offerService = new OfferService(Deployment.getBrokerServers(), "ordsinkconnector-offerservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getOfferTopic(), false, offerListener);
+      offerService = new OfferService(Deployment.getBrokerServers(), "ordsinkconnector-offerservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getOfferTopic(), false);
       offerService.start();
+      
+      productService = new ProductService(Deployment.getBrokerServers(), "ordsinkconnector-productservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getProductTopic(), false);
+      productService.start();
     }
 
     /*****************************************
@@ -137,15 +126,29 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap.put("purchaseID", purchaseManager.getEventID());
         documentMap.put("offerID", purchaseManager.getOfferID());
         documentMap.put("offerQty", purchaseManager.getQuantity());
+        documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
         if(offer != null){
           if(offer.getOfferSalesChannelsAndPrices() != null){
             for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-              documentMap.put("salesChannelID", channel.getSalesChannelIDs());
-              documentMap.put("offerPrice", channel.getPrice().getAmount());
+              if(channel.getSalesChannelIDs() != null) {
+                for(String salesChannelID : channel.getSalesChannelIDs()) {
+                  if(salesChannelID.equals(purchaseManager.getSalesChannelID())) {
+                    documentMap.put("offerPrice", channel.getPrice().getAmount());
+                  }
+                }
+              }
             }
           }
           documentMap.put("offerStock", offer.getStock());
-          documentMap.put("offerContent", offer.getOfferProducts().toString());
+          StringBuilder sb = new StringBuilder();
+          if(offer.getOfferProducts() != null) {
+            for(OfferProduct offerProduct : offer.getOfferProducts()) {
+              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+              sb.append(product!=null?product.getGUIManagedObjectName():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+            }
+          }
+          String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          documentMap.put("offerContent", offerContent);
         }
         documentMap.put("moduleID", purchaseManager.getModuleID());
         documentMap.put("featureID", purchaseManager.getFeatureID());

@@ -91,7 +91,6 @@ import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -112,11 +111,11 @@ import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -13214,7 +13213,7 @@ public class GUIManager
               {
                 List<JSONObject> journeysJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
+                if (subscriberHistory != null && subscriberHistory.getJourneyHistory() != null)
                   {
 
                     //
@@ -13286,13 +13285,13 @@ public class GUIManager
                     //  read campaign statistics 
                     //
 
-                    List<JourneyStatistic> journeyStatistics = subscriberHistory.getJourneyStatistics();
+                    List<JourneyHistory> journeyHistory = subscriberHistory.getJourneyHistory();
 
                     //
                     // change data structure to map
                     //
 
-                    Map<String, List<JourneyStatistic>> journeyStatisticsMap = journeyStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+                    Map<String, List<JourneyHistory>> journeyStatisticsMap = journeyHistory.stream().collect(Collectors.groupingBy(JourneyHistory::getJourneyID));
 
                     for (Journey storeJourney : storeJourneys)
                       {
@@ -13301,7 +13300,7 @@ public class GUIManager
                         //  thisJourneyStatistics
                         //
 
-                        List<JourneyStatistic> thisJourneyStatistics = journeyStatisticsMap.get(storeJourney.getJourneyID());
+                        List<JourneyHistory> thisJourneyStatistics = journeyStatisticsMap.get(storeJourney.getJourneyID());
 
                         //
                         //  continue if not in stat
@@ -13329,14 +13328,27 @@ public class GUIManager
                           }
 
                         //
-                        // filter on customerStatus
+                        // reverse sort
                         //
 
-                        boolean statusNotified = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
-                        boolean statusConverted = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
-                        boolean statusControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
-                        boolean statusUniversalControlGroup = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
-                        boolean journeyComplete = thisJourneyStatistics.stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
+                        Collections.sort(thisJourneyStatistics, Collections.reverseOrder());
+
+                        //
+                        // prepare current node
+                        //
+
+                        JourneyHistory subsLatestStatistic = thisJourneyStatistics.get(0);
+                        
+                        //
+                        // filter on customerStatus
+                        //
+                        
+                        boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
+                        boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
+                        boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
+                        boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                        boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
+                        
                         if (customerStatus != null)
                           {
                             CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
@@ -13412,20 +13424,10 @@ public class GUIManager
                         
                         journeyResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
 
-                        //
-                        // reverse sort
-                        //
-
-                        Collections.sort(thisJourneyStatistics, Collections.reverseOrder());
-
-                        //
-                        // prepare current node
-                        //
-
-                        JourneyStatistic subsLatestStatistic = thisJourneyStatistics.get(0);
                         Map<String, Object> currentState = new HashMap<String, Object>();
-                        currentState.put("nodeID", subsLatestStatistic.getToNodeID());
-                        currentState.put("nodeName", subsLatestStatistic.getToNodeID() == null ? null : storeJourney.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
+                        NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
+                        currentState.put("nodeID", nodeHistory.getToNodeID());
+                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
                         JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                         //
@@ -13433,16 +13435,16 @@ public class GUIManager
                         //
 
                         List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
-                        for (JourneyStatistic journeyStatistic : thisJourneyStatistics)
+                        for (NodeHistory journeyHistories : subsLatestStatistic.getNodeHistory())
                           {
                             Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
-                            nodeHistoriesMap.put("fromNodeID", journeyStatistic.getFromNodeID());
-                            nodeHistoriesMap.put("toNodeID", journeyStatistic.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", journeyStatistic.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyStatistic.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", journeyStatistic.getToNodeID() == null  ? null : storeJourney.getJourneyNode(journeyStatistic.getToNodeID()).getNodeName());
-                            nodeHistoriesMap.put("transitionDate", getDateString(journeyStatistic.getTransitionDate()));
-                            nodeHistoriesMap.put("linkID", journeyStatistic.getLinkID());
-                            nodeHistoriesMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+                            nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
+                            nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
+                            nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
+                            nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                           }
 
@@ -13538,7 +13540,7 @@ public class GUIManager
               {
                 List<JSONObject> campaignsJson = new ArrayList<JSONObject>();
                 SubscriberHistory subscriberHistory = baseSubscriberProfile.getSubscriberHistory();
-                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
+                if (subscriberHistory != null && subscriberHistory.getJourneyHistory() != null)
                   {
 
                     //
@@ -13611,13 +13613,13 @@ public class GUIManager
                     //  read campaign statistics 
                     //
 
-                    List<JourneyStatistic> subscribersCampaignStatistics = subscriberHistory.getJourneyStatistics();
+                    List<JourneyHistory> subscribersCampaignHistory = subscriberHistory.getJourneyHistory();
 
                     //
                     // change data structure to map
                     //
 
-                    Map<String, List<JourneyStatistic>> campaignStatisticsMap = subscribersCampaignStatistics.stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+                    Map<String, List<JourneyHistory>> campaignStatisticsMap = subscribersCampaignHistory.stream().collect(Collectors.groupingBy(JourneyHistory::getJourneyID));
 
                     for (Journey storeCampaign : storeCampaigns)
                       {
@@ -13626,13 +13628,13 @@ public class GUIManager
                         //  thisCampaignStatistics
                         //
 
-                        List<JourneyStatistic> thisCampaignStatistics = campaignStatisticsMap.get(storeCampaign.getJourneyID());
+                        List<JourneyHistory> thisCampaignHistory = campaignStatisticsMap.get(storeCampaign.getJourneyID());
 
                         //
                         //  continue if not in stat
                         //
 
-                        if (thisCampaignStatistics == null || thisCampaignStatistics.isEmpty()) continue;
+                        if (thisCampaignHistory == null || thisCampaignHistory.isEmpty()) continue;
 
                         //
                         // filter on campaignState
@@ -13654,48 +13656,60 @@ public class GUIManager
                           }
 
                         //
-                        // filter on customerStatus
+                        // reverse sort
                         //
 
-                        boolean statusNotified = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusNotified()).count() > 0L ;
-                        boolean statusConverted = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusConverted()).count() > 0L ;
-                        boolean statusControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusControlGroup()).count() > 0L ;
-                        boolean statusUniversalControlGroup = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getStatusUniversalControlGroup()).count() > 0L ;
-                        boolean campaignComplete = thisCampaignStatistics.stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L ;
+                        Collections.sort(thisCampaignHistory, Collections.reverseOrder());
+
+                        //
+                        // prepare current node
+                        //
+
+                        JourneyHistory subsLatestStatistic = thisCampaignHistory.get(0);
+
+                        //
+                        // filter on customerStatus
+                        //
+                        
+                        boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusNotified()).count() > 0L ;
+                        boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusConverted()).count() > 0L ;
+                        boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
+                        boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
+                        boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
 
                         if (customerStatus != null)
                           {
                             CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
                             boolean criteriaSatisfied = false;
                             switch (customerStatusInJourney)
-                              {
-                                case ENTERED:
-                                  criteriaSatisfied = !campaignComplete;
-                                  break;
-                                case NOTIFIED:
-                                  criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
-                                  break;
-                                case CONVERTED:
-                                  criteriaSatisfied = statusConverted && !statusNotified && !campaignComplete;
-                                  break;
-                                case CONTROL:
-                                  criteriaSatisfied = statusControlGroup && !statusConverted && !campaignComplete;
-                                  break;
-                                case UCG:
-                                  criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;
-                                  break;
-                                case NOTIFIED_CONVERTED:
-                                  criteriaSatisfied = statusNotified && statusConverted && !campaignComplete;
-                                  break;
-                                case CONTROL_CONVERTED:
-                                  criteriaSatisfied = statusControlGroup && statusConverted && !campaignComplete;
-                                  break;
-                                case COMPLETED:
-                                  criteriaSatisfied = campaignComplete;
-                                  break;
-                                case UNKNOWN:
-                                  break;
-                              }
+                            {
+                              case ENTERED:
+                                criteriaSatisfied = !journeyComplete;
+                                break;
+                              case NOTIFIED:
+                                criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
+                                break;
+                              case CONVERTED:
+                                criteriaSatisfied = statusConverted && !statusNotified && !journeyComplete;
+                                break;
+                              case CONTROL:
+                                criteriaSatisfied = statusControlGroup && !statusConverted && !journeyComplete;
+                                break;
+                              case UCG:
+                                criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
+                                break;
+                              case NOTIFIED_CONVERTED:
+                                criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
+                                break;
+                              case CONTROL_CONVERTED:
+                                criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
+                                break;
+                              case COMPLETED:
+                                criteriaSatisfied = journeyComplete;
+                                break;
+                              case UNKNOWN:
+                                break;
+                            }
                             if (! criteriaSatisfied) continue;
                           }
 
@@ -13738,21 +13752,11 @@ public class GUIManager
                           }
                         
                         campaignResponseMap.put("objectives", JSONUtilities.encodeArray(resultObjectives));
-                        
-                        //
-                        // reverse sort
-                        //
 
-                        Collections.sort(thisCampaignStatistics, Collections.reverseOrder());
-
-                        //
-                        // prepare current node
-                        //
-
-                        JourneyStatistic subsLatestStatistic = thisCampaignStatistics.get(0);
                         Map<String, Object> currentState = new HashMap<String, Object>();
-                        currentState.put("nodeID", subsLatestStatistic.getToNodeID());
-                        currentState.put("nodeName", subsLatestStatistic.getToNodeID() == null ? null : storeCampaign.getJourneyNode(subsLatestStatistic.getToNodeID()).getNodeName());
+                        NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
+                        currentState.put("nodeID", nodeHistory.getToNodeID());
+                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
                         JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                         //
@@ -13760,16 +13764,16 @@ public class GUIManager
                         //
 
                         List<JSONObject> nodeHistoriesJson = new ArrayList<JSONObject>();
-                        for (JourneyStatistic campaignStatistic : thisCampaignStatistics)
+                        for (NodeHistory journeyHistories : subsLatestStatistic.getNodeHistory())
                           {
                             Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
-                            nodeHistoriesMap.put("fromNodeID", campaignStatistic.getFromNodeID());
-                            nodeHistoriesMap.put("toNodeID", campaignStatistic.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", campaignStatistic.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(campaignStatistic.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", campaignStatistic.getToNodeID() == null ? null : storeCampaign.getJourneyNode(campaignStatistic.getToNodeID()).getNodeName());
-                            nodeHistoriesMap.put("transitionDate", getDateString(campaignStatistic.getTransitionDate()));
-                            nodeHistoriesMap.put("linkID", campaignStatistic.getLinkID());
-                            nodeHistoriesMap.put("deliveryRequestID", campaignStatistic.getDeliveryRequestID());
+                            nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
+                            nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
+                            nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
+                            nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                           }
 
@@ -13777,7 +13781,7 @@ public class GUIManager
                         campaignResponseMap.put("statusConverted", statusConverted);
                         campaignResponseMap.put("statusControlGroup", statusControlGroup);
                         campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
-                        campaignResponseMap.put("campaignComplete", campaignComplete);
+                        campaignResponseMap.put("journeyComplete", journeyComplete);
                         campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                         campaignResponseMap.put("currentState", currentStateJson);
                         campaignsJson.add(JSONUtilities.encodeObject(campaignResponseMap));
@@ -14062,15 +14066,15 @@ public class GUIManager
                 Date now = SystemTime.getCurrentTime();
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
                 SubscriberHistory subscriberHistory = subscriberProfile.getSubscriberHistory();
-                Map<String, List<JourneyStatistic>> campaignStatisticsMap = new HashMap<String, List<JourneyStatistic>>();
+                Map<String, List<JourneyHistory>> campaignStatisticsMap = new HashMap<String, List<JourneyHistory>>();
 
                 //
                 //  journey statistics
                 //
 
-                if (subscriberHistory != null && subscriberHistory.getJourneyStatistics() != null)
+                if (subscriberHistory != null && subscriberHistory.getJourneyHistory() != null)
                   {
-                    campaignStatisticsMap = subscriberHistory.getJourneyStatistics().stream().collect(Collectors.groupingBy(JourneyStatistic::getJourneyID));
+                    campaignStatisticsMap = subscriberHistory.getJourneyHistory().stream().collect(Collectors.groupingBy(JourneyHistory::getJourneyID));
                   }
 
                 //
@@ -14516,9 +14520,6 @@ public class GUIManager
         communicationChannelList.add(channel);
       }
 
-    List<JSONObject> defaultTimeWindowList = new ArrayList<JSONObject>();
-    NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
-
     /*****************************************
     *
     *  response
@@ -14528,7 +14529,10 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
-    response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+    if(fullDetails) {
+      NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+      response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
+    }
     return JSONUtilities.encodeObject(response);
   }
 
@@ -18503,12 +18507,6 @@ public class GUIManager
 
     switch (module)
       {
-        case Campaign_Manager:
-          GUIManagedObject campaign = journeyService.getStoredJourney(featureId);
-          campaign = (campaign != null && campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? campaign : null;
-          featureName = campaign == null ? null : campaign.getGUIManagedObjectName();
-          break;
-
         case Journey_Manager:
           GUIManagedObject journey = journeyService.getStoredJourney(featureId);
           journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;

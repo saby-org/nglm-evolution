@@ -66,7 +66,7 @@ public class Token
     schemaBuilder.field("eventID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("tokenTypeID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("moduleID", Schema.INT32_SCHEMA);
+    schemaBuilder.field("moduleID", Schema.STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_INT32_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
@@ -106,7 +106,7 @@ public class Token
   private String eventID;                   // reference to the TokenManagerEvent that generated this token
   private String subscriberID;
   private String tokenTypeID;
-  private Integer moduleID;                 // reference to the Token requester
+  private String moduleID;                 // reference to the Token requester
   private Integer featureID;                // reference to the Token requester
 
   /*****************************************
@@ -125,7 +125,7 @@ public class Token
   public String getEventID() { return eventID; }
   public String getSubscriberID() { return subscriberID; }
   public String getTokenTypeID() { return tokenTypeID; }
-  public Integer getModuleID() { return moduleID; }
+  public String getModuleID() { return moduleID; }
   public Integer getFeatureID() { return featureID; }
 
   //
@@ -142,7 +142,7 @@ public class Token
   public void setEventID(String eventID) { this.eventID = eventID; }
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
   public void setTokenTypeID(String tokenTypeID) { this.tokenTypeID = tokenTypeID; }
-  public void setModuleID(Integer moduleID) { this.moduleID = moduleID; }
+  public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setFeatureID(Integer featureID) { this.featureID = featureID; }
 
   /*****************************************
@@ -151,7 +151,7 @@ public class Token
   *
   *****************************************/
 
-  public Token(String tokenCode, TokenStatus tokenStatus, Date creationDate, Date boundDate, Date redeemedDate, Date tokenExpirationDate, int boundCount, String eventID, String subscriberID, String tokenTypeID, int moduleID, Integer featureID)
+  public Token(String tokenCode, TokenStatus tokenStatus, Date creationDate, Date boundDate, Date redeemedDate, Date tokenExpirationDate, int boundCount, String eventID, String subscriberID, String tokenTypeID, String moduleID, Integer featureID)
   {
     this.tokenCode = tokenCode;
     this.tokenStatus = tokenStatus;
@@ -220,7 +220,7 @@ public class Token
     String eventID = valueStruct.getString("eventID");
     String subscriberID = valueStruct.getString("subscriberID");
     String tokenTypeID = valueStruct.getString("tokenTypeID");
-    Integer moduleID = valueStruct.getInt32("moduleID");
+    String moduleID = valueStruct.getString("moduleID");
     Integer featureID = valueStruct.getInt32("featureID");
 
     //

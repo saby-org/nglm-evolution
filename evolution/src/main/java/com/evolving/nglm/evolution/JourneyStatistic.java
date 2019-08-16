@@ -10,34 +10,21 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
+import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
+import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput, Comparable
 {
@@ -73,8 +60,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     schemaBuilder.field("statusControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusUniversalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("journeyComplete", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("journeyHistorySummary", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("journeyStatusSummary", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("journeyNodeHistory", SchemaBuilder.array(NodeHistory.schema()).schema());
+    schemaBuilder.field("journeyStatusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
+    schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -114,8 +102,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   private boolean statusControlGroup;
   private boolean statusUniversalControlGroup;
   private boolean journeyComplete;
-  private List<String> journeyHistorySummary;
-  private List<String> journeyStatusSummary;
+  private List<NodeHistory> journeyNodeHistory;
+  private List<StatusHistory> journeyStatusHistory;
+  private List<RewardHistory> journeyRewardHistory;
 
   /*****************************************
   *
@@ -140,8 +129,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
   public boolean getJourneyComplete() { return journeyComplete; }
   public Date getEventDate() { return transitionDate; }
-  public List<String> getJourneyHistorySummary() { return journeyHistorySummary; }
-  public List<String> getJourneyStatusSummary() { return journeyStatusSummary; }
+  public List<NodeHistory> getJourneyNodeHistory() { return journeyNodeHistory; }
+  public List<StatusHistory> getJourneyStatusHistory() { return journeyStatusHistory; }
+  public List<RewardHistory> getJourneyRewardHistory() { return journeyRewardHistory; }
 
   //
   //  getSubscriberJourneyStatus
@@ -165,7 +155,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyState journeyState)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -183,9 +173,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = false;
     this.statusUniversalControlGroup = false;
     this.journeyComplete = false;
-    this.journeyHistorySummary = prepareJourneyHistorySummary(context);
-    this.journeyStatusSummary = prepareJourneyStatusSummary(context);
-    
+    this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
   }
 
   /*****************************************
@@ -194,7 +184,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -212,8 +202,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.journeyComplete = journeyLink.getDestination().getExitNode();
-    this.journeyHistorySummary = prepareJourneyHistorySummary(context);
-    this.journeyStatusSummary = prepareJourneyStatusSummary(context);
+    this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
   }
 
   /*****************************************
@@ -222,7 +213,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyState journeyState, Date exitDate)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Date exitDate)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -240,8 +231,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.statusUniversalControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) ? journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName()) : Boolean.FALSE;
     this.journeyComplete = true;
-    this.journeyHistorySummary = prepareJourneyHistorySummary(context);
-    this.journeyStatusSummary = prepareJourneyStatusSummary(context);
+    this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
+    this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
+    this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
   }
 
   /*****************************************
@@ -250,7 +242,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<String> journeyHistorySummary, List<String> journeyStatusSummary)
+  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory)
   {
     this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
@@ -268,8 +260,9 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusControlGroup = statusControlGroup;
     this.statusUniversalControlGroup = statusUniversalControlGroup;
     this.journeyComplete = journeyComplete;
-    this.journeyHistorySummary = journeyHistorySummary;
-    this.journeyStatusSummary = journeyStatusSummary;
+    this.journeyNodeHistory = journeyNodeHistory;
+    this.journeyStatusHistory = journeyStatusHistory;
+    this.journeyRewardHistory = journeyRewardHistory;
   }
 
   /*****************************************
@@ -297,16 +290,22 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.statusUniversalControlGroup = journeyStatistic.getStatusUniversalControlGroup();
     this.journeyComplete = journeyStatistic.getJourneyComplete();
     
-    this.journeyHistorySummary = new ArrayList<String>();
-    for(String stat : journeyStatistic.getJourneyHistorySummary())
+    this.journeyNodeHistory = new ArrayList<NodeHistory>();
+    for(NodeHistory stat : journeyStatistic.getJourneyNodeHistory())
       {
-        this.journeyHistorySummary.add(stat);
+        this.journeyNodeHistory.add(stat);
       }
     
-    this.journeyStatusSummary = new ArrayList<String>();
-    for(String status : journeyStatistic.getJourneyStatusSummary())
+    this.journeyStatusHistory = new ArrayList<StatusHistory>();
+    for(StatusHistory status : journeyStatistic.getJourneyStatusHistory())
       {
-        this.journeyStatusSummary.add(status);
+        this.journeyStatusHistory.add(status);
+      }
+    
+    this.journeyRewardHistory = new ArrayList<RewardHistory>();
+    for(RewardHistory reward : journeyStatistic.getJourneyRewardHistory())
+      {
+        this.journeyRewardHistory.add(reward);
       }
   }
 
@@ -336,9 +335,58 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     struct.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
     struct.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
     struct.put("journeyComplete", journeyStatistic.getJourneyComplete());
-    struct.put("journeyHistorySummary", journeyStatistic.getJourneyHistorySummary());
-    struct.put("journeyStatusSummary", journeyStatistic.getJourneyStatusSummary());
+    struct.put("journeyNodeHistory", packNodeHistory(journeyStatistic.getJourneyNodeHistory()));
+    struct.put("journeyStatusHistory", packStatusHistory(journeyStatistic.getJourneyStatusHistory()));
+    struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
     return struct;
+  }
+  
+  /*****************************************
+  *
+  *  packRewardHistory
+  *
+  *****************************************/
+
+  private static List<Object> packRewardHistory(List<RewardHistory> rewardHistory)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (RewardHistory reward : rewardHistory)
+      {
+        result.add(RewardHistory.pack(reward));
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  packStatusHistory
+  *
+  *****************************************/
+
+  private static List<Object> packStatusHistory(List<StatusHistory> statusHistory)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (StatusHistory status : statusHistory)
+      {
+        result.add(StatusHistory.pack(status));
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  packNodeHistory
+  *
+  *****************************************/
+
+  private static List<Object> packNodeHistory(List<NodeHistory> nodeHistory)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (NodeHistory node : nodeHistory)
+      {
+        result.add(NodeHistory.pack(node));
+      }
+    return result;
   }
   
   //
@@ -384,14 +432,111 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     boolean statusControlGroup = valueStruct.getBoolean("statusControlGroup");
     boolean statusUniversalControlGroup = valueStruct.getBoolean("statusUniversalControlGroup");
     boolean journeyComplete = valueStruct.getBoolean("journeyComplete");
-    List<String> journeyHistorySummary = (List<String>) valueStruct.get("journeyHistorySummary");
-    List<String> journeyStatusSummary = (List<String>) valueStruct.get("journeyStatusSummary");
+    List<RewardHistory> journeyRewardHistory =  unpackRewardHistory(schema.field("journeyRewardHistory").schema(), valueStruct.get("journeyRewardHistory"));
+    List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
+    List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
     
     //
     //  return
     //
 
-    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyHistorySummary, journeyStatusSummary);
+    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory);
+  }
+  
+  /*****************************************
+  *
+  *  unpackStatusHistory
+  *
+  *****************************************/
+
+  private static List<StatusHistory> unpackStatusHistory(Schema schema, Object value)
+  {
+    //
+    //  get schema for StatusHistory
+    //
+
+    Schema statusHistorySchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    List<StatusHistory> result = new ArrayList<StatusHistory>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object status : valueArray)
+      {
+        result.add(StatusHistory.unpack(new SchemaAndValue(statusHistorySchema, status)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  unpackRewardHistory
+  *
+  *****************************************/
+
+  private static List<RewardHistory> unpackRewardHistory(Schema schema, Object value)
+  {
+    //
+    //  get schema for RewardHistory
+    //
+
+    Schema rewardHistorySchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    List<RewardHistory> result = new ArrayList<RewardHistory>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object reward : valueArray)
+      {
+        result.add(RewardHistory.unpack(new SchemaAndValue(rewardHistorySchema, reward)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  unpackNodeHistory
+  *
+  *****************************************/
+
+  private static List<NodeHistory> unpackNodeHistory(Schema schema, Object value)
+  {
+    //
+    //  get schema for NodeHistory
+    //
+
+    Schema nodeHistorySchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    List<NodeHistory> result = new ArrayList<NodeHistory>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object node : valueArray)
+      {
+        result.add(NodeHistory.unpack(new SchemaAndValue(nodeHistorySchema, node)));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
   }
 
   /*****************************************
@@ -412,33 +557,69 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     return result;
   }
   
-  private List<String> prepareJourneyHistorySummary(EvolutionEventContext context)
+  /*****************************************
+  *
+  *  prepareJourneyNodeSummary
+  *
+  *****************************************/
+  
+  private List<NodeHistory> prepareJourneyNodeSummary(JourneyHistory journeyHistory)
   {
-    List<String> result = new ArrayList<String>();
-    if(context.getSubscriberState() != null) {
-      SubscriberState subscriberState = context.getSubscriberState();
-      if(subscriberState.getJourneyStatistics() != null) {
-        for(JourneyStatistic stat : subscriberState.getJourneyStatistics()) {
-          result.add(stat.getToNodeID()+";"+stat.getTransitionDate().getTime());
-        }
+    List<NodeHistory> result = new ArrayList<NodeHistory>();
+    if(journeyHistory != null) 
+      {
+        if(journeyHistory.getJourneyID().equals(journeyID)) 
+          {
+            for(NodeHistory stat : journeyHistory.getNodeHistory()) 
+              {
+                result.add(stat);
+              }
+          }
       }
-    }
-    result.add(toNodeID+";"+transitionDate.getTime());
     return result;
   }
   
-  private List<String> prepareJourneyStatusSummary(EvolutionEventContext context)
+  /*****************************************
+  *
+  *  prepareJourneyStatusSummary
+  *
+  *****************************************/
+  
+  private List<StatusHistory> prepareJourneyStatusSummary(JourneyHistory journeyHistory)
   {
-    List<String> result = new ArrayList<String>();
-    if(context.getSubscriberState() != null) {
-      SubscriberState subscriberState = context.getSubscriberState();
-      if(subscriberState.getJourneyStatistics() != null) {
-        for(JourneyStatistic stat : subscriberState.getJourneyStatistics()) {
-          result.add(stat.getSubscriberJourneyStatus()+";"+stat.getTransitionDate().getTime());
-        }
+    List<StatusHistory> result = new ArrayList<StatusHistory>();
+    if(journeyHistory != null) 
+      {
+        if(journeyHistory.getJourneyID().equals(journeyID))
+          {
+            for(StatusHistory status : journeyHistory.getStatusHistory()) 
+              {
+                result.add(status);
+              }
+          }
       }
-    }
-    result.add(getSubscriberJourneyStatus()+";"+transitionDate.getTime());
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  prepareJourneyRewardsSummary
+  *
+  *****************************************/
+  
+  private List<RewardHistory> prepareJourneyRewardsSummary(JourneyHistory journeyHistory)
+  {
+    List<RewardHistory> result = new ArrayList<RewardHistory>();
+    if(journeyHistory != null) 
+      {
+        if(journeyHistory.getJourneyID().equals(journeyID)) 
+          {
+            for(RewardHistory rewardHistory : journeyHistory.getRewardHistory()) 
+              {
+                result.add(rewardHistory);
+              }
+          }
+      }
     return result;
   }
 }

@@ -7,27 +7,14 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -67,6 +54,7 @@ public class JourneyState
     schemaBuilder.field("journeyOutstandingJourneyRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("journeyOutstandingJourneyInstanceID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("journeyOutstandingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("journeyHistory", JourneyHistory.schema());
     schema = schemaBuilder.build();
   };
 
@@ -103,6 +91,7 @@ public class JourneyState
   private String journeyOutstandingJourneyRequestID;
   private String journeyOutstandingJourneyInstanceID;
   private String journeyOutstandingDeliveryRequestID;
+  private JourneyHistory journeyHistory;
 
   /*****************************************
   *
@@ -124,6 +113,7 @@ public class JourneyState
   public String getJourneyOutstandingJourneyRequestID() { return journeyOutstandingJourneyRequestID; }
   public String getJourneyOutstandingJourneyInstanceID() { return journeyOutstandingJourneyInstanceID; }
   public String getJourneyOutstandingDeliveryRequestID() { return journeyOutstandingDeliveryRequestID; }
+  public JourneyHistory getJourneyHistory() { return journeyHistory; }
 
   /*****************************************
   *
@@ -144,7 +134,7 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(EvolutionEventContext context, Journey journey, Map<String, Object> journeyParameters, Date journeyEntryDate)
+  public JourneyState(EvolutionEventContext context, Journey journey, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory)
   {
     this.journeyInstanceID = context.getUniqueKey();
     this.journeyID = journey.getJourneyID();
@@ -160,6 +150,7 @@ public class JourneyState
     this.journeyOutstandingJourneyRequestID = null;
     this.journeyOutstandingJourneyInstanceID = null;
     this.journeyOutstandingDeliveryRequestID = null;    
+    this.journeyHistory = journeyHistory;
   }
 
   /*****************************************
@@ -168,7 +159,7 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, String journeyID, String journeyNodeID, ParameterMap journeyParameters, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingJourneyRequestID, String journeyOutstandingJourneyInstanceID, String journeyOutstandingDeliveryRequestID)
+  public JourneyState(String journeyInstanceID, String journeyID, String journeyNodeID, ParameterMap journeyParameters, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingJourneyRequestID, String journeyOutstandingJourneyInstanceID, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory)
   {
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
@@ -184,6 +175,7 @@ public class JourneyState
     this.journeyOutstandingJourneyRequestID = journeyOutstandingJourneyRequestID;
     this.journeyOutstandingJourneyInstanceID = journeyOutstandingJourneyInstanceID;
     this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID;
+    this.journeyHistory = journeyHistory;
   }
 
   /*****************************************
@@ -208,6 +200,7 @@ public class JourneyState
     this.journeyOutstandingJourneyRequestID = journeyState.getJourneyOutstandingJourneyRequestID();
     this.journeyOutstandingJourneyInstanceID = journeyState.getJourneyOutstandingJourneyInstanceID();
     this.journeyOutstandingDeliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
+    this.journeyHistory = journeyState.getJourneyHistory();
   }
 
   /*****************************************
@@ -234,6 +227,7 @@ public class JourneyState
     struct.put("journeyOutstandingJourneyRequestID", journeyState.getJourneyOutstandingJourneyRequestID());
     struct.put("journeyOutstandingJourneyInstanceID", journeyState.getJourneyOutstandingJourneyInstanceID());
     struct.put("journeyOutstandingDeliveryRequestID", journeyState.getJourneyOutstandingDeliveryRequestID());
+    struct.put("journeyHistory", JourneyHistory.serde().pack(journeyState.getJourneyHistory()));
     return struct;
   }
   
@@ -272,11 +266,12 @@ public class JourneyState
     String journeyOutstandingJourneyRequestID = valueStruct.getString("journeyOutstandingJourneyRequestID");
     String journeyOutstandingJourneyInstanceID = valueStruct.getString("journeyOutstandingJourneyInstanceID");
     String journeyOutstandingDeliveryRequestID = valueStruct.getString("journeyOutstandingDeliveryRequestID");
-
+    JourneyHistory journeyHistory = JourneyHistory.serde().unpack(new SchemaAndValue(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory")));
+    
     //
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, journeyID, journeyNodeID, journeyParameters, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingJourneyRequestID, journeyOutstandingJourneyInstanceID, journeyOutstandingDeliveryRequestID);
+    return new JourneyState(journeyInstanceID, journeyID, journeyNodeID, journeyParameters, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingJourneyRequestID, journeyOutstandingJourneyInstanceID, journeyOutstandingDeliveryRequestID, journeyHistory);
   }
 }

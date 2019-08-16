@@ -10,6 +10,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.core.SimpleESSinkConnector;
@@ -117,10 +118,10 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("eventDatetime", mailNotification.getEventDate());
         documentMap.put("moduleID", mailNotification.getModuleID());
         documentMap.put("featureID", mailNotification.getFeatureID());
-        documentMap.put("origin", "");
+        documentMap.put("origin", mailNotification.getDeliveryRequestSource());
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", mailNotification.getReturnCodeDetails());
+        documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
       }else{
         documentMap = new HashMap<String,Object>();
         SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(smsNotificationValueSchema, smsNotificationValue));
@@ -131,10 +132,10 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("eventDatetime", smsNotification.getEventDate());
         documentMap.put("moduleID", smsNotification.getModuleID());
         documentMap.put("featureID", smsNotification.getFeatureID());
-        documentMap.put("origin", "");
+        documentMap.put("origin", smsNotification.getDeliveryRequestSource());
         documentMap.put("returnCode", smsNotification.getReturnCode());
         documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
-        documentMap.put("returnCodeDetails", smsNotification.getReturnCodeDetails());
+        documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
       }
       
       return documentMap;

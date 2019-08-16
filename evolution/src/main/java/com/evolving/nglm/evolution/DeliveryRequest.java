@@ -121,17 +121,16 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   
   public enum Module
   {
-    Campaign_Manager(1),
-    Journey_Manager(2),
-    Offer_Catalog(3),
-    Delivery_Manager(4),
-    Customer_Care(5),
-    REST_API(6),
-    Unknown(999);
-    private Integer externalRepresentation;
-    private Module(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public Integer getExternalRepresentation() { return externalRepresentation; }
-    public static Module fromExternalRepresentation(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(Integer.valueOf(externalRepresentation))) return enumeratedValue; } return Unknown; }
+    Journey_Manager("1"),
+    Offer_Catalog("3"),
+    Delivery_Manager("4"),
+    Customer_Care("5"),
+    REST_API("6"),
+    Unknown("999");
+    private String externalRepresentation;
+    private Module(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static Module fromExternalRepresentation(String externalRepresentation) { for (Module enumeratedValue : Module.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   
   /*****************************************
