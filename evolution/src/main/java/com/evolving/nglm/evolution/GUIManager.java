@@ -388,7 +388,21 @@ public class GUIManager
 
     configAdaptorSupportedLanguages("configAdaptorSupportedLanguages"),
     configAdaptorSubscriberMessageTemplate("configAdaptorSubscriberMessageTemplate"),
-
+    configAdaptorOffer("configAdaptorOffer"),
+    configAdaptorProduct("configAdaptorProduct"),
+    configAdaptorPresentationStrategy("configAdaptorPresentationStrategy"),
+    configAdaptorScoringStrategy("configAdaptorScoringStrategy"),
+    configAdaptorCallingChannel("configAdaptorCallingChannel"),
+    configAdaptorSalesChannel("configAdaptorSalesChannel"),
+    configAdaptorCommunicationChannel("configAdaptorCommunicationChannel"),
+    configAdaptorBlackoutPeriods("configAdaptorBlackoutPeriods"),
+    configAdaptorContactPolicy("configAdaptorContactPolicy"),
+    configAdaptorSegmentationDimension("configAdaptorSegmentationDimension"),
+    configAdaptorCampaign("configAdaptorCampaign"),
+    configAdaptorJourneyObjective("configAdaptorJourneyObjective"),
+    configAdaptorProductType("configAdaptorProductType"),
+    configAdaptorOfferObjective("configAdaptorOfferObjective"),        
+    
     //
     //  structor
     //
@@ -1488,6 +1502,20 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeExclusionInclusionTarget", new APISimpleHandler(API.removeExclusionInclusionTarget));
         restServer.createContext("/nglm-configadaptor/getSupportedLanguages", new APISimpleHandler(API.configAdaptorSupportedLanguages));
         restServer.createContext("/nglm-configadaptor/getSubscriberMessageTemplate", new APISimpleHandler(API.configAdaptorSubscriberMessageTemplate));
+        restServer.createContext("/nglm-configadaptor/getOffer", new APISimpleHandler(API.configAdaptorOffer));
+        restServer.createContext("/nglm-configadaptor/getProduct", new APISimpleHandler(API.configAdaptorProduct));
+        restServer.createContext("/nglm-configadaptor/getPresentationStrategy", new APISimpleHandler(API.configAdaptorPresentationStrategy));
+        restServer.createContext("/nglm-configadaptor/getScoringStrategy", new APISimpleHandler(API.configAdaptorScoringStrategy));
+        restServer.createContext("/nglm-configadaptor/getCallingChannel", new APISimpleHandler(API.configAdaptorCallingChannel));
+        restServer.createContext("/nglm-configadaptor/getSalesChannel", new APISimpleHandler(API.configAdaptorSalesChannel));
+        restServer.createContext("/nglm-configadaptor/getCommunicationChannel", new APISimpleHandler(API.configAdaptorCommunicationChannel));
+        restServer.createContext("/nglm-configadaptor/getBlackoutPeriods", new APISimpleHandler(API.configAdaptorBlackoutPeriods));
+        restServer.createContext("/nglm-configadaptor/getContactPolicy", new APISimpleHandler(API.configAdaptorContactPolicy));
+        restServer.createContext("/nglm-configadaptor/getSegmentationDimension", new APISimpleHandler(API.configAdaptorSegmentationDimension));
+        restServer.createContext("/nglm-configadaptor/getCampaign", new APISimpleHandler(API.configAdaptorCampaign));
+        restServer.createContext("/nglm-configadaptor/getJourneyObjective", new APISimpleHandler(API.configAdaptorJourneyObjective));
+        restServer.createContext("/nglm-configadaptor/getProductType", new APISimpleHandler(API.configAdaptorProductType));
+        restServer.createContext("/nglm-configadaptor/getOfferObjective", new APISimpleHandler(API.configAdaptorOfferObjective));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -2651,6 +2679,62 @@ public class GUIManager
 
                 case configAdaptorSubscriberMessageTemplate:
                   jsonResponse = processConfigAdaptorSubscriberMessageTemplate(jsonRoot);
+                  break;
+
+                case configAdaptorOffer:
+                  jsonResponse = processConfigAdaptorOffer(jsonRoot);
+                  break;
+
+                case configAdaptorProduct:
+                  jsonResponse = processConfigAdaptorProduct(jsonRoot);
+                  break;
+
+                case configAdaptorPresentationStrategy:
+                  jsonResponse = processConfigAdaptorPresentationStrategy(jsonRoot);
+                  break;
+
+                case configAdaptorScoringStrategy:
+                  jsonResponse = processConfigAdaptorScoringStrategy(jsonRoot);
+                  break;
+
+                case configAdaptorCallingChannel:
+                  jsonResponse = processConfigAdaptorCallingChannel(jsonRoot);
+                  break;
+
+                case configAdaptorSalesChannel:
+                  jsonResponse = processConfigAdaptorSalesChannel(jsonRoot);
+                  break;
+
+                case configAdaptorCommunicationChannel:
+                  jsonResponse = processConfigAdaptorCommunicationChannel(jsonRoot);
+                  break;
+
+                case configAdaptorBlackoutPeriods:
+                  jsonResponse = processConfigAdaptorBlackoutPeriods(jsonRoot);
+                  break;
+
+                case configAdaptorContactPolicy:
+                  jsonResponse = processConfigAdaptorContactPolicy(jsonRoot);
+                  break;
+                  
+                case configAdaptorSegmentationDimension:
+                  jsonResponse = processConfigAdaptorSegmentationDimension(jsonRoot);
+                  break;
+
+                case configAdaptorCampaign:
+                  jsonResponse = processConfigAdaptorCampaign(jsonRoot);
+                  break;
+
+                case configAdaptorJourneyObjective:
+                  jsonResponse = processConfigAdaptorJourneyObjective(jsonRoot);
+                  break;
+
+                case configAdaptorProductType:
+                  jsonResponse = processConfigAdaptorProductType(jsonRoot);
+                  break;
+
+                case configAdaptorOfferObjective:
+                  jsonResponse = processConfigAdaptorOfferObjective(jsonRoot);
                   break;
               }
           }
@@ -16116,6 +16200,774 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processConfigAdaptorOffer
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorOffer(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate offer
+    *
+    *****************************************/
+
+    GUIManagedObject offer = offerService.getStoredOffer(offerID);
+    JSONObject offerJSON = offerService.generateResponseJSON(offer, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    offerJSON.remove("readOnly");
+    offerJSON.remove("accepted");
+    offerJSON.remove("valid");
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (offer != null) ? "ok" : "offerNotFound");
+    if (offer != null) response.put("offer", offerJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorProduct
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorProduct(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String productID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject product = productService.getStoredProduct(productID);
+    JSONObject productJSON = productService.generateResponseJSON(product, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    productJSON.remove("readOnly");
+    productJSON.remove("accepted");
+    productJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (product != null) ? "ok" : "productNotFound");
+    if (product != null) response.put("product", productJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorPresentationStrategy
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorPresentationStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate presentation strategy
+    *
+    *****************************************/
+
+    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+    JSONObject presentationStrategyJSON = presentationStrategyService.generateResponseJSON(presentationStrategy, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    presentationStrategyJSON.remove("readOnly");
+    presentationStrategyJSON.remove("accepted");
+    presentationStrategyJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (presentationStrategy != null) ? "ok" : "presentationStrategyNotFound");
+    if (presentationStrategy != null) response.put("presentationStrategy", presentationStrategyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorScoringStrategy
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorScoringStrategy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+    JSONObject scoringStrategyJSON = scoringStrategyService.generateResponseJSON(scoringStrategy, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    scoringStrategyJSON.remove("readOnly");
+    scoringStrategyJSON.remove("accepted");
+    scoringStrategyJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (scoringStrategy != null) ? "ok" : "scoringStrategyNotFound");
+    if (scoringStrategy != null) response.put("scoringStrategy", scoringStrategyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorCallingChannel
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorCallingChannel(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+    JSONObject callingChannelJSON = callingChannelService.generateResponseJSON(callingChannel, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    callingChannelJSON.remove("readOnly");
+    callingChannelJSON.remove("accepted");
+    callingChannelJSON.remove("valid");
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (callingChannel != null) ? "ok" : "callingChannelNotFound");
+    if (callingChannel != null) response.put("callingChannel", callingChannelJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorSalesChannel
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorSalesChannel(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+    JSONObject salesChannelJSON = salesChannelService.generateResponseJSON(salesChannel, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    salesChannelJSON.remove("readOnly");
+    salesChannelJSON.remove("accepted");
+    salesChannelJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (salesChannel != null) ? "ok" : "salesChannelNotFound");
+    if (salesChannel != null) response.put("salesChannel", salesChannelJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorCommunicationChannel
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorCommunicationChannel(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate communication channel
+    *
+    *****************************************/
+
+    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+    JSONObject communicationChannelJSON = communicationChannelService.generateResponseJSON(communicationChannel, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    communicationChannelJSON.remove("readOnly");
+    communicationChannelJSON.remove("accepted");
+    communicationChannelJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
+    if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorBlackoutPeriods
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorBlackoutPeriods(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String communicationChannelBlackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /**************************************************************
+    *
+    *  retrieve and decorate communication channel blackout period
+    *
+    ***************************************************************/
+
+    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
+    JSONObject communicationChannelBlackoutPeriodJSON = communicationChannelBlackoutService.generateResponseJSON(communicationChannelBlackoutPeriod, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    communicationChannelBlackoutPeriodJSON.remove("readOnly");
+    communicationChannelBlackoutPeriodJSON.remove("accepted");
+    communicationChannelBlackoutPeriodJSON.remove("valid");
+  
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (communicationChannelBlackoutPeriod != null) ? "ok" : "communicationChannelBlackoutPeriodNotFound");
+    if (communicationChannelBlackoutPeriod != null) response.put("blackoutPeriods", communicationChannelBlackoutPeriodJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorContactPolicy(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+    JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(contactPolicy, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    contactPolicyJSON.remove("readOnly");
+    contactPolicyJSON.remove("accepted");
+    contactPolicyJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (contactPolicy != null) ? "ok" : "contactPolicyNotFound");
+    if (contactPolicy != null) response.put("contactPolicy", contactPolicyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorSegmentationDimension
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorSegmentationDimension(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate segmentationDimension
+    *
+    *****************************************/
+
+    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    segmentationDimensionJSON.remove("readOnly");
+    segmentationDimensionJSON.remove("accepted");
+    segmentationDimensionJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (segmentationDimension != null) ? "ok" : "segmentationDimensionNotFound");
+    if (segmentationDimension != null) response.put("segmentationDimension", segmentationDimensionJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorCampaign
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorCampaign(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve
+    *
+    *****************************************/
+
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign) ? journey : null;
+    JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
+
+    //
+    //  config adapter specific
+    //
+    
+    if(journeyJSON.get("status").equals("Running"))
+      {
+        journeyJSON.put("active", true);
+      }
+    else
+      {
+        journeyJSON.put("active", false);
+      }
+    
+    //
+    //  remove gui specific fields
+    //
+    
+    journeyJSON.remove("readOnly");
+    journeyJSON.remove("accepted");
+    journeyJSON.remove("valid");
+    journeyJSON.remove("effectiveEndDate");
+    journeyJSON.remove("targetNoOfConversions");
+    journeyJSON.remove("targetingEvent");
+    journeyJSON.remove("effectiveEntryPeriodEndDate");
+    journeyJSON.remove("maxNoOfCustomers");
+    journeyJSON.remove("description");
+    journeyJSON.remove("nodes");
+    journeyJSON.remove("name");
+    journeyJSON.remove("processing");
+    journeyJSON.remove("effectiveStartDate");
+    journeyJSON.remove("eligibilityCriteria");
+    journeyJSON.remove("targetingType");
+    journeyJSON.remove("links");
+    journeyJSON.remove("status");
+    journeyJSON.remove("targetingCriteria");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (journey != null) ? "ok" : "campaignNotFound");
+    if (journey != null) response.put("campaign", journeyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorJourneyObjective
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorJourneyObjective(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+    JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
+
+    //
+    //  remove gui specific fields
+    //
+    
+    journeyObjectiveJSON.remove("readOnly");
+    journeyObjectiveJSON.remove("accepted");
+    journeyObjectiveJSON.remove("valid");
+    journeyObjectiveJSON.remove("targetingLimitWaitingPeriodDuration");
+    journeyObjectiveJSON.remove("targetingLimitMaxSimultaneous");
+    journeyObjectiveJSON.remove("display");
+    journeyObjectiveJSON.remove("targetingLimitMaxOccurrence");
+    journeyObjectiveJSON.remove("targetingLimitSlidingWindowTimeUnit");
+    journeyObjectiveJSON.remove("targetingLimitWaitingPeriodTimeUnit");
+    journeyObjectiveJSON.remove("targetingLimitSlidingWindowDuration");
+    journeyObjectiveJSON.remove("name");
+    journeyObjectiveJSON.remove("processing");
+    journeyObjectiveJSON.remove("catalogCharacteristics");        
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (journeyObjective != null) ? "ok" : "journeyObjectiveNotFound");
+    if (journeyObjective != null) response.put("journeyObjective", journeyObjectiveJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorProductType
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorProductType(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String productTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate product type
+    *
+    *****************************************/
+
+    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
+    JSONObject productTypeJSON = productTypeService.generateResponseJSON(productType, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    productTypeJSON.remove("readOnly");
+    productTypeJSON.remove("accepted");
+    productTypeJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (productType != null) ? "ok" : "productTypeNotFound");
+    if (productType != null) response.put("productType", productTypeJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorOfferObjective
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorOfferObjective(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+    JSONObject offerObjectiveJSON = offerObjectiveService.generateResponseJSON(offerObjective, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    offerObjectiveJSON.remove("readOnly");
+    offerObjectiveJSON.remove("accepted");
+    offerObjectiveJSON.remove("valid");
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
+    if (offerObjective != null) response.put("offerObjective", offerObjectiveJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processPutFile
