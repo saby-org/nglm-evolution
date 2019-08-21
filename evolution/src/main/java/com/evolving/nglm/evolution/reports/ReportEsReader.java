@@ -36,6 +36,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.Scroll;
@@ -183,7 +184,7 @@ public class ReportEsReader {
           searchRequest.source().size(getScrollSize());
           searchRequest.scroll(scroll);
           SearchResponse searchResponse;
-          searchResponse = elasticsearchReaderClient.search(searchRequest);
+          searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
 
           String scrollId = searchResponse.getScrollId();
           SearchHit[] searchHits = searchResponse.getHits().getHits();
@@ -235,7 +236,7 @@ public class ReportEsReader {
             //log.trace("processing next scroll");
             SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
             scrollRequest.scroll(scroll);
-            searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest);
+            searchResponse = elasticsearchReaderClient.searchScroll(scrollRequest, RequestOptions.DEFAULT);
             scrollId = searchResponse.getScrollId();
             searchHits = searchResponse.getHits().getHits();
           }
@@ -259,7 +260,7 @@ public class ReportEsReader {
           }
           ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
           clearScrollRequest.addScrollId(scrollId);
-          elasticsearchReaderClient.clearScroll(clearScrollRequest);
+          elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
           e.printStackTrace();
         }

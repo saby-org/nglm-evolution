@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
@@ -194,7 +195,6 @@ public class UCGEngine
     try
       {
         RestClientBuilder builder = RestClient.builder(new HttpHost(args[2], Integer.parseInt(args[3]), "http")).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() { @Override public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) { return builder.setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout); } } );
-        builder.setMaxRetryTimeoutMillis(maxRetryTimeout);
         elasticsearchRestClient = new RestHighLevelClient(builder);
         subscriberGroupField = CriterionContext.Profile.getCriterionFields().get("subscriber.segments").getESField();
       }
@@ -521,9 +521,9 @@ public class UCGEngine
   
         //search in ES
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticsearchRestClient.search(searchRequest);
+        SearchResponse searchResponse = elasticsearchRestClient.search(searchRequest, RequestOptions.DEFAULT);
   
-        segmentCount = (int)searchResponse.getHits().getTotalHits();
+        segmentCount = (int)searchResponse.getHits().getTotalHits().value;
   
         Filters aggResultFilters = searchResponse.getAggregations().get("SubscriberStateBucket");
         ucgCount = (int)aggResultFilters.getBucketByKey("ucgSubscribers").getDocCount();
@@ -588,7 +588,7 @@ public class UCGEngine
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(QueryBuilders.matchAllQuery()).aggregation(aggregation).size(0);
         //search in ES
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticsearchRestClient.search(searchRequest);
+        SearchResponse searchResponse = elasticsearchRestClient.search(searchRequest, RequestOptions.DEFAULT);
         Filters agg = searchResponse.getAggregations().get("SubscriberStateBucket");
         agg.getBuckets().size();
         //      Filters subAgg = agg.getBuckets().get(0).getAggregations().get("SubscriberState");

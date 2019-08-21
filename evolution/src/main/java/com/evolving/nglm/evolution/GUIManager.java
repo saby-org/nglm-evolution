@@ -63,6 +63,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -6084,7 +6085,7 @@ public class GUIManager
     SearchResponse searchResponse = null;
     try
       {
-        searchResponse = elasticsearch.search(searchRequest);
+        searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
       }
     catch (IOException e)
       {
@@ -6271,7 +6272,7 @@ public class GUIManager
         //
 
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
-        SearchResponse searchResponse = elasticsearch.search(searchRequest);
+        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
         Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
         for (Filters.Bucket entry : aggResultFilters.getBuckets())
           {
@@ -6404,8 +6405,8 @@ public class GUIManager
     try
       {
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(query).size(0));
-        SearchResponse searchResponse = elasticsearch.search(searchRequest);
-        result = searchResponse.getHits().getTotalHits();
+        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+        result = searchResponse.getHits().getTotalHits().value;
       }
     catch (IOException e)
       {
