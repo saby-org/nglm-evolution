@@ -984,6 +984,28 @@ public class GUIManager
       }
 
     //
+    //  journeyTemplates
+    //
+    
+    if (journeyTemplateService.getStoredJourneyTemplates().size() == 0)
+      {
+        try
+        {
+          JSONArray initialJourneyTemplatesJSONArray = Deployment.getInitialJourneyTemplatesJSONArray();
+          for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
+            {
+              JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+              processPutJourneyTemplate("0", journeyTemplateJSON);
+            }
+        }
+      catch (JSONUtilitiesException e)
+        {
+          throw new ServerRuntimeException("deployment", e);
+        }
+      }
+    
+    
+    //
     //  journeyObjectives
     //
 
@@ -18089,6 +18111,27 @@ public class GUIManager
             }
           break;
 
+        case "smsTemplates":
+          if (includeDynamic)
+            {
+              for (SubscriberMessageTemplate messageTemplate : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now))
+                {
+                  if (messageTemplate.getAccepted())
+                    {
+                      switch (messageTemplate.getTemplateType())
+                        {
+                          case "sms":
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
+                            availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+          
         case "supportedShortCodes":
           for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
             {

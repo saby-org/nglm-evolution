@@ -129,6 +129,7 @@ public class Deployment
   private static JSONArray initialReportsJSONArray = null;
   private static JSONArray initialCatalogCharacteristicsJSONArray = null;
   private static JSONArray initialContactPoliciesJSONArray = null;
+  private static JSONArray initialJourneyTemplatesJSONArray = null;
   private static JSONArray initialJourneyObjectivesJSONArray = null;
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
@@ -304,6 +305,7 @@ public class Deployment
   public static JSONArray getInitialReportsJSONArray() { return initialReportsJSONArray; }
   public static JSONArray getInitialCatalogCharacteristicsJSONArray() { return initialCatalogCharacteristicsJSONArray; }
   public static JSONArray getInitialContactPoliciesJSONArray() { return initialContactPoliciesJSONArray; }
+  public static JSONArray getInitialJourneyTemplatesJSONArray() { return initialJourneyTemplatesJSONArray; }
   public static JSONArray getInitialJourneyObjectivesJSONArray() { return initialJourneyObjectivesJSONArray; }
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
@@ -1665,6 +1667,12 @@ public class Deployment
     //
 
     initialContactPoliciesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialContactPolicies", new JSONArray());
+
+    //
+    //  initialJourneyTemplatesJSONArray
+    //
+    
+    initialJourneyTemplatesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialJourneyTemplates", new JSONArray());
 
     //
     //  initialJourneyObjectivesJSONArray
