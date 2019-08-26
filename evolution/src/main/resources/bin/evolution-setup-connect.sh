@@ -25,6 +25,48 @@
     }' &
 
   #
+  #  sink connector -- subscriberProfile (elasticsearch)
+  #
+
+  export CONNECT_URL_SUBSCRIBERPROFILE_ES=${CONNECT_URL_SUBSCRIBERPROFILE_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "subscriberprofile_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "${connector.sink.elasticsearch.subscriberprofile}",
+        "tasks.max" : '$CONNECT_ES_SUBSCRIBERPROFILE_SINK_TASKS',
+        "topics" : "${changelog.evolutionengine.subscriberstate.topic}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "indexName" : "subscriberprofile",
+	"batchRecordCount" : "'$CONNECT_ES_SUBSCRIBERPROFILE_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_SUBSCRIBERPROFILE_BATCHSIZEMB'"
+        }
+    }' &
+  
+  #
+  #  sink connector -- extendedSubscriberProfile (elasticsearch)
+  #
+
+  export CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES=${CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "extendedsubscriberprofile_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "${connector.sink.elasticsearch.extendedsubscriberprofile}",
+        "tasks.max" : '$CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_SINK_TASKS',
+        "topics" : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "indexName" : "subscriberprofile",
+	"batchRecordCount" : "'$CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHSIZEMB'"
+        }
+    }' &
+    
+  #
   #  sink connector -- journeyStatistic (elasticsearch)
   #
 
