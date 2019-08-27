@@ -52,15 +52,15 @@
     <nglm.core.version>4.7.1-build190821a-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>1.0.25</gui-fwk.version>
-    <gui-csr.version>1.0.20</gui-csr.version>
+    <gui-fwk.version>1.0.27</gui-fwk.version>
+    <gui-csr.version>1.0.21</gui-csr.version>
     <gui-itm.version>1.0.14</gui-itm.version>
-    <gui-jmr.version>1.0.50</gui-jmr.version>
-    <gui-opc.version>1.2.8</gui-opc.version>
+    <gui-jmr.version>1.0.52</gui-jmr.version>
+    <gui-opc.version>1.2.10</gui-opc.version>
     <gui-iar.version>1.0.21</gui-iar.version>
     <gui-opr.version>1.0.37</gui-opr.version>
-    <gui-stg.version>1.0.46</gui-stg.version>
-    <gui-sbm.version>1.0.42</gui-sbm.version>
+    <gui-stg.version>1.0.48</gui-stg.version>
+    <gui-sbm.version>1.0.44</gui-sbm.version>
     <gui-csrmockup.version>1.0.2</gui-csrmockup.version>
 
     <!-- dependencies - mysql -->
