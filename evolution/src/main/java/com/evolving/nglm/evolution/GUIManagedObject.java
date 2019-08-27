@@ -174,6 +174,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(LoyaltyProgram.serde());
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
+    guiManagedObjectSerdes.add(DNBOMatrix.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

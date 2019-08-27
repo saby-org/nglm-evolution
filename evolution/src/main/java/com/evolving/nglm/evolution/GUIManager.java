@@ -251,6 +251,13 @@ public class GUIManager
     getScoringStrategy("getScoringStrategy"),
     putScoringStrategy("putScoringStrategy"),
     removeScoringStrategy("removeScoringStrategy"),
+    getDNBOMatrixList("getDNBOMatrixList"),
+    getDNBOMatrixSummaryList("getDNBOMatrixSummaryList"),
+    getDNBOMatrix("getDNBOMatrix"),
+    putDNBOMatrix("putDNBOMatrix"),
+    removeDNBOMatrix("removeDNBOMatrix"),
+    getScoringTypesList("getScoringTypesList"),
+    getDNBOMatrixVariablesList("getDNBOMatrixVariablesList"),
     getCallingChannelList("getCallingChannelList"),
     getCallingChannelSummaryList("getCallingChannelSummaryList"),
     getCallingChannel("getCallingChannel"),
@@ -462,6 +469,7 @@ public class GUIManager
   private PaymentMeanService paymentMeanService;
   private ScoringStrategyService scoringStrategyService;
   private PresentationStrategyService presentationStrategyService;
+  private DNBOMatrixService dnboMatrixService;
   private CallingChannelService callingChannelService;
   private SalesChannelService salesChannelService;
   private SupplierService supplierService;
@@ -548,6 +556,7 @@ public class GUIManager
     String reportTopic = Deployment.getReportTopic();
     String paymentMeanTopic = Deployment.getPaymentMeanTopic();
     String presentationStrategyTopic = Deployment.getPresentationStrategyTopic();
+    String dnboMatrixTopic = Deployment.getDNBOMatrixTopic();
     String scoringStrategyTopic = Deployment.getScoringStrategyTopic();
     String callingChannelTopic = Deployment.getCallingChannelTopic();
     String salesChannelTopic = Deployment.getSalesChannelTopic();
@@ -628,6 +637,7 @@ public class GUIManager
     paymentMeanService = new PaymentMeanService(bootstrapServers, "guimanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, true);
     scoringStrategyService = new ScoringStrategyService(bootstrapServers, "guimanager-scoringstrategyservice-" + apiProcessKey, scoringStrategyTopic, true);
     presentationStrategyService = new PresentationStrategyService(bootstrapServers, "guimanager-presentationstrategyservice-" + apiProcessKey, presentationStrategyTopic, true);
+    dnboMatrixService = new DNBOMatrixService(bootstrapServers, "guimanager-dnbomatrixservice-" + apiProcessKey, dnboMatrixTopic, true);
     callingChannelService = new CallingChannelService(bootstrapServers, "guimanager-callingchannelservice-" + apiProcessKey, callingChannelTopic, true);
     salesChannelService = new SalesChannelService(bootstrapServers, "guimanager-saleschannelservice-" + apiProcessKey, salesChannelTopic, true);
     supplierService = new SupplierService(bootstrapServers, "guimanager-supplierservice-" + apiProcessKey, supplierTopic, true);
@@ -1272,6 +1282,7 @@ public class GUIManager
     paymentMeanService.start();
     scoringStrategyService.start();
     presentationStrategyService.start();
+    dnboMatrixService.start();
     callingChannelService.start();
     salesChannelService.start();
     supplierService.start();
@@ -1387,6 +1398,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getPresentationStrategy", new APISimpleHandler(API.getPresentationStrategy));
         restServer.createContext("/nglm-guimanager/putPresentationStrategy", new APISimpleHandler(API.putPresentationStrategy));
         restServer.createContext("/nglm-guimanager/removePresentationStrategy", new APISimpleHandler(API.removePresentationStrategy));
+        restServer.createContext("/nglm-guimanager/getDNBOMatrixList", new APISimpleHandler(API.getDNBOMatrixList));
+        restServer.createContext("/nglm-guimanager/getDNBOMatrixSummaryList", new APISimpleHandler(API.getDNBOMatrixSummaryList));
+        restServer.createContext("/nglm-guimanager/getDNBOMatrix", new APISimpleHandler(API.getDNBOMatrix));
+        restServer.createContext("/nglm-guimanager/putDNBOMatrix", new APISimpleHandler(API.putDNBOMatrix));
+        restServer.createContext("/nglm-guimanager/removeDNBOMatrix", new APISimpleHandler(API.removeDNBOMatrix));
+        restServer.createContext("/nglm-guimanager/getScoringTypesList", new APISimpleHandler(API.getScoringTypesList));
+        restServer.createContext("/nglm-guimanager/getDNBOMatrixVariablesList", new APISimpleHandler(API.getDNBOMatrixVariablesList));
         restServer.createContext("/nglm-guimanager/getScoringStrategyList", new APISimpleHandler(API.getScoringStrategyList));
         restServer.createContext("/nglm-guimanager/getScoringStrategySummaryList", new APISimpleHandler(API.getScoringStrategySummaryList));
         restServer.createContext("/nglm-guimanager/getScoringStrategy", new APISimpleHandler(API.getScoringStrategy));
@@ -1561,7 +1579,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService));
 
     /*****************************************
     *
@@ -1588,6 +1606,7 @@ public class GUIManager
     private HttpServer restServer;
     private JourneyService journeyService;
     private SegmentationDimensionService segmentationDimensionService;
+    private DNBOMatrixService dnboMatrixService;
     private PointService pointService;
     private OfferService offerService;
     private ReportService reportService;
@@ -1622,7 +1641,7 @@ public class GUIManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1657,6 +1676,7 @@ public class GUIManager
       this.loyaltyProgramService = loyaltyProgramService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.partnerService = partnerService;
+      this.dnboMatrixService = dnboMatrixService;
     }
 
     //
@@ -1705,6 +1725,7 @@ public class GUIManager
       if (loyaltyProgramService != null) loyaltyProgramService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
       if (partnerService != null) partnerService.stop();
+      if (dnboMatrixService != null) dnboMatrixService.stop();
 
       //
       //  rest server
@@ -2156,6 +2177,34 @@ public class GUIManager
                   jsonResponse = processRemovePresentationStrategy(userID, jsonRoot);
                   break;
 
+                case getDNBOMatrixList:
+                  jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, true);
+                  break;
+
+                case getDNBOMatrixSummaryList:
+                  jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, false);
+                  break;
+
+                case getDNBOMatrix:
+                  jsonResponse = processGetDNBOMatrix(userID, jsonRoot);
+                  break;
+
+                case putDNBOMatrix:
+                  jsonResponse = processPutDNBOMatrix(userID, jsonRoot);
+                  break;
+
+                case removeDNBOMatrix:
+                  jsonResponse = processRemoveDNBOMatrix(userID, jsonRoot);
+                  break;
+                  
+                case getScoringTypesList:
+                  jsonResponse = processGetScoringTypesList(userID, jsonRoot);
+                  break;
+                  
+                case getDNBOMatrixVariablesList:
+                  jsonResponse = processGetDNBOMatrixVariablesList(userID, jsonRoot);
+                  break;
+                  
                 case getScoringStrategyList:
                   jsonResponse = processGetScoringStrategyList(userID, jsonRoot, true);
                   break;
@@ -4151,6 +4200,73 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("offerOptimizationAlgorithms", JSONUtilities.encodeArray(offerOptimizationAlgorithms));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetScoringTypesList
+  *
+  *****************************************/
+
+  private JSONObject processGetScoringTypesList(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve offerOptimizationAlgorithms
+    *
+    *****************************************/
+
+    List<JSONObject> scoringTypes = new ArrayList<JSONObject>();
+    for (ScoringType scoringType : Deployment.getScoringTypes().values())
+      {
+        JSONObject scoringTypeJSON = scoringType.getJSONRepresentation();
+        scoringTypes.add(scoringTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("scoringTypes", JSONUtilities.encodeArray(scoringTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  
+  /*****************************************
+  *
+  *  processGetDNBOMatrixVariablesList
+  *
+  *****************************************/
+
+  private JSONObject processGetDNBOMatrixVariablesList(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve dnboMatrixVariables
+    *
+    *****************************************/
+
+    List<JSONObject> dnboMatrixVariables = new ArrayList<JSONObject>();
+    for (DNBOMatrixVariable dnboMatrixVariable : Deployment.getDNBOMatrixVariables().values())
+      {
+        JSONObject dnboMatrixVariableJSON = dnboMatrixVariable.getJSONRepresentation();
+        dnboMatrixVariables.add(dnboMatrixVariableJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("dnboMatrixVariables", JSONUtilities.encodeArray(dnboMatrixVariables));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -7511,6 +7627,266 @@ public class GUIManager
       responseCode = "failedReadOnly";
     else
       responseCode = "presentationStrategyNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetDNBOMatrixList
+  *
+  *****************************************/
+
+  private JSONObject processGetDNBOMatrixList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert DNBOMatrixList
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> dnboMatrixes = new ArrayList<JSONObject>();
+    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes())
+      {
+        dnboMatrixes.add(presentationStrategyService.generateResponseJSON(dnboMatrix, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("dnboMatrixes", JSONUtilities.encodeArray(dnboMatrixes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetDNBOMatrix
+  *
+  *****************************************/
+
+  private JSONObject processGetDNBOMatrix(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate DNBOMatrix
+    *
+    *****************************************/
+
+    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+    JSONObject dnboMatrixJSON = dnboMatrixService.generateResponseJSON(dnboMatrix, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (dnboMatrix != null) ? "ok" : "dnboMatrixNotFound");
+    if (dnboMatrix != null) response.put("dnboMatrix", dnboMatrixJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutDNBOMatrix
+  *
+  *****************************************/
+
+  private JSONObject processPutDNBOMatrix(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  dnboMatrixID
+    *
+    *****************************************/
+
+    String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (dnboMatrixID == null)
+      {
+        dnboMatrixID = dnboMatrixService.generateDNBOMatrixID();
+        jsonRoot.put("id", dnboMatrixID);
+      }
+
+    /*****************************************
+    *
+    *  existing dnboMatrix
+    *
+    *****************************************/
+
+    GUIManagedObject existingDNBOMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingDNBOMatrix != null && existingDNBOMatrix.getReadOnly())
+      {
+        response.put("id", existingDNBOMatrix.getGUIManagedObjectID());
+        response.put("accepted", existingDNBOMatrix.getAccepted());
+        response.put("valid", existingDNBOMatrix.getAccepted());
+        response.put("processing", dnboMatrixService.isActiveDNBOMatrix(existingDNBOMatrix, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process dnboMatrix
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate DNBOMatrix
+        *
+        ****************************************/
+
+        DNBOMatrix dnboMatrix = new DNBOMatrix(jsonRoot, epoch, existingDNBOMatrix);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        dnboMatrixService.putDNBOMatrix(dnboMatrix, (existingDNBOMatrix == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", dnboMatrix.getGUIManagedObjectID());
+        response.put("accepted", dnboMatrix.getAccepted());
+        response.put("valid", dnboMatrix.getAccepted());
+        response.put("processing", dnboMatrixService.isActiveDNBOMatrix(dnboMatrix, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        dnboMatrixService.putDNBOMatrix(incompleteObject, (existingDNBOMatrix == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "dnboMatrixNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveDNBOMatrix
+  *
+  *****************************************/
+
+  private JSONObject processRemoveDNBOMatrix(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+    if (dnboMatrix != null && ! dnboMatrix.getReadOnly()) dnboMatrixService.removeDNBOMatrix(dnboMatrixID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (dnboMatrix != null && ! dnboMatrix.getReadOnly())
+      responseCode = "ok";
+    else if (dnboMatrix != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "dnboMatrixNotFound";
 
     /*****************************************
     *
@@ -12604,6 +12980,7 @@ public class GUIManager
     response.put("offerCount", offerService.getStoredOffers().size());
     response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
     response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
+    response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes().size());
     response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
     response.put("salesChannelCount", salesChannelService.getStoredSalesChannels().size());
     response.put("supplierCount", supplierService.getStoredSuppliers().size());

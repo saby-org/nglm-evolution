@@ -248,6 +248,16 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCr
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 
+
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dnboMatrix.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putDNBOMatrix; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrix; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeDNBOMatrix; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getScoringTypesList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixVariablesList; echo
+
 --
 --  configAdaptor
 -- 

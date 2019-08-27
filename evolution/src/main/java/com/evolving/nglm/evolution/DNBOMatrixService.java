@@ -1,0 +1,172 @@
+/****************************************************************************
+*
+*  DNBOMatrixService.java
+*
+****************************************************************************/
+
+package com.evolving.nglm.evolution;
+
+import java.util.Collection;
+import java.util.Date;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+
+public class DNBOMatrixService extends GUIService
+{
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(DNBOMatrixService.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+
+  private DNBOMatrixListener dnboMatrixListener = null;
+
+  /*****************************************
+  *
+  *  constructor
+  *
+  *****************************************/
+
+  public DNBOMatrixService(String bootstrapServers, String groupID, String dnboMatrixTopic, boolean masterService, DNBOMatrixListener dnboMatrixListener, boolean notifyOnSignificantChange)
+  {
+    super(bootstrapServers, "DNBOMatrixService", groupID, dnboMatrixTopic, masterService, getSuperListener(dnboMatrixListener), "putDNBOMatrix", "removeDNBOMatrix", notifyOnSignificantChange);
+  }
+
+  //
+  //  constructor
+  //
+
+  public DNBOMatrixService(String bootstrapServers, String groupID, String dnboMatrixTopic, boolean masterService, DNBOMatrixListener dnboMatrixListener)
+  {
+    this(bootstrapServers, groupID, dnboMatrixTopic, masterService, dnboMatrixListener, true);
+  }
+
+  //
+  //  constructor
+  //
+
+  public DNBOMatrixService(String bootstrapServers, String groupID, String dnboMatrixTopic, boolean masterService)
+  {
+    this(bootstrapServers, groupID, dnboMatrixTopic, masterService, (DNBOMatrixListener) null, true);
+  }
+
+  //
+  //  getSuperListener
+  //
+
+  private static GUIManagedObjectListener getSuperListener(DNBOMatrixListener dnboMatrixListener)
+  {
+    GUIManagedObjectListener superListener = null;
+    if (dnboMatrixListener != null)
+      {
+        superListener = new GUIManagedObjectListener()
+        {
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { dnboMatrixListener.dnboMatrixActivated((DNBOMatrix) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { dnboMatrixListener.dnboMatrixDeactivated(guiManagedObjectID); }
+        };
+      }
+    return superListener;
+  }
+
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+  @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  generateDNBOMatrixID
+  *
+  *****************************************/
+
+  public String generateDNBOMatrixID() { return generateGUIManagedObjectID(); }
+  public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID) { return getStoredGUIManagedObject(dnboMatrixID); }
+  public Collection<GUIManagedObject> getStoredDNBOMatrixes() { return getStoredGUIManagedObjects(); }
+  public boolean isActiveDNBOMatrix(GUIManagedObject dnboMatrixUnchecked, Date date) { return isActiveGUIManagedObject(dnboMatrixUnchecked, date); }
+  public DNBOMatrix getActiveDNBOMatrix(String dnboMatrixID, Date date) { return (DNBOMatrix) getActiveGUIManagedObject(dnboMatrixID, date); }
+  public Collection<DNBOMatrix> getActiveDNBOMatrixes(Date date) { return (Collection<DNBOMatrix>) getActiveGUIManagedObjects(date); }
+
+  /*****************************************
+  *
+  *  putDNBOMatrix
+  *
+  *****************************************/
+
+  public void putDNBOMatrix(GUIManagedObject dnboMatrix, boolean newObject, String userID) throws GUIManagerException
+  {
+    //
+    //  now
+    //
+
+    Date now = SystemTime.getCurrentTime();
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(dnboMatrix, now, newObject, userID);
+  }
+
+  /*****************************************
+  *
+  *  putDNBOMatrix
+  *
+  *****************************************/
+
+  public void putDNBOMatrix(IncompleteObject dnboMatrix, boolean newObject, String userID)
+  {
+    try
+      {
+        putDNBOMatrix((GUIManagedObject) dnboMatrix, newObject, userID);
+      }
+    catch (GUIManagerException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  removeDNBOMatrix
+  *
+  *****************************************/
+
+  public void removeDNBOMatrix(String dnboMatrixID, String userID) { removeGUIManagedObject(dnboMatrixID, SystemTime.getCurrentTime(), userID); }
+
+  /*****************************************
+  *
+  *  interface DNBOMatrixListener
+  *
+  *****************************************/
+
+  public interface DNBOMatrixListener
+  {
+    public void dnboMatrixActivated(DNBOMatrix dnboMatrix);
+    public void dnboMatrixDeactivated(String guiManagedObjectID);
+  }
+}

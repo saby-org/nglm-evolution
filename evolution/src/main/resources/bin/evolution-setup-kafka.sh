@@ -24,6 +24,7 @@
   echo create_topic ${topic.report}                                                   $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.paymentMean}                                              $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.presentationstrategy}                                     $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
+  echo create_topic ${topic.dnbomatrix}                                               $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.scoringstrategy}                                          $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.callingchannel}                                           $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.saleschannel}                                             $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution

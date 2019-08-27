@@ -134,6 +134,7 @@ public class Deployment
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialTokenTypesJSONArray = null;
+  private static JSONArray initialScoringTypesJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static JSONArray initialCommunicationChannelsJSONArray = null;
   private static boolean generateSimpleProfileDimensions;
@@ -148,6 +149,8 @@ public class Deployment
   private static Map<String,OfferProperty> offerProperties = new LinkedHashMap<String,OfferProperty>();
   private static Map<String,ScoringEngine> scoringEngines = new LinkedHashMap<String,ScoringEngine>();
   private static Map<String,OfferOptimizationAlgorithm> offerOptimizationAlgorithms = new LinkedHashMap<String,OfferOptimizationAlgorithm>();
+  private static Map<String,ScoringType> scoringTypes = new LinkedHashMap<String,ScoringType>();
+  private static Map<String,DNBOMatrixVariable> dnboMatrixVariables = new LinkedHashMap<String,DNBOMatrixVariable>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
   private static int journeyDefaultTargetingWindowDuration;
@@ -183,6 +186,7 @@ public class Deployment
   private static int ucgEngineESSocketTimeout;
   private static int ucgEngineESMasRetryTimeout;
   private static String exclusionInclusionTargetTopic;
+  private static String dnboMatrixTopic;
 
   /*****************************************
   *
@@ -324,6 +328,8 @@ public class Deployment
   public static Map<String,OfferProperty> getOfferProperties() { return offerProperties; }
   public static Map<String,ScoringEngine> getScoringEngines() { return scoringEngines; }
   public static Map<String,OfferOptimizationAlgorithm> getOfferOptimizationAlgorithms() { return offerOptimizationAlgorithms; }
+  public static Map<String,ScoringType> getScoringTypes() { return scoringTypes; }
+  public static Map<String,DNBOMatrixVariable> getDNBOMatrixVariables() { return dnboMatrixVariables; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
   public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; }
   public static int getJourneyDefaultTargetingWindowDuration() { return journeyDefaultTargetingWindowDuration; }
@@ -359,6 +365,7 @@ public class Deployment
   public static int getUcgEngineESSocketTimeout(){ return ucgEngineESSocketTimeout; }
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
+  public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
 
   /*****************************************
   *
@@ -1084,6 +1091,19 @@ public class Deployment
     try
       {
         exclusionInclusionTargetTopic = JSONUtilities.decodeString(jsonRoot, "exclusionInclusionTargetTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  dnboMatrixTopic
+    //
+
+    try
+      {
+        dnboMatrixTopic = JSONUtilities.decodeString(jsonRoot, "dnboMatrixTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1949,6 +1969,48 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+    
+
+    //
+    //  scoringTypes
+    //
+
+    try
+      {
+        JSONArray scoringTypesValues = JSONUtilities.decodeJSONArray(jsonRoot, "scoringTypes", new JSONArray());
+        for (int i=0; i<scoringTypesValues.size(); i++)
+          {
+            JSONObject scoringTypeJSON = (JSONObject) scoringTypesValues.get(i);
+            ScoringType scoringType = new ScoringType(scoringTypeJSON);
+            scoringTypes.put(scoringType.getID(), scoringType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    
+
+    //
+    //  dnboMatrixVariable
+    //
+
+    try
+      {
+        JSONArray dnboMatrixVariableValues = JSONUtilities.decodeJSONArray(jsonRoot, "dnboMatrixVariables", new JSONArray());
+        for (int i=0; i<dnboMatrixVariableValues.size(); i++)
+          {
+            JSONObject dnboMatrixJSON = (JSONObject) dnboMatrixVariableValues.get(i);
+            DNBOMatrixVariable dnboMatrixvariable = new DNBOMatrixVariable(dnboMatrixJSON);
+            dnboMatrixVariables.put(dnboMatrixvariable.getID(), dnboMatrixvariable);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     
     //
     //  deliveryManagers
