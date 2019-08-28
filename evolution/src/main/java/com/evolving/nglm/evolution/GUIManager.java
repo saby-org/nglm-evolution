@@ -409,8 +409,10 @@ public class GUIManager
     configAdaptorCampaign("configAdaptorCampaign"),
     configAdaptorJourneyObjective("configAdaptorJourneyObjective"),
     configAdaptorProductType("configAdaptorProductType"),
-    configAdaptorOfferObjective("configAdaptorOfferObjective"),        
-    
+    configAdaptorOfferObjective("configAdaptorOfferObjective"),
+    configAdaptorScoringEngines("configAdaptorScoringEngines"),
+    configAdaptorPresentationCriterionFields("configAdaptorPresentationCriterionFields"),
+    configAdaptorDefaultNoftificationDailyWindows("configAdaptorDefaultNoftificationDailyWindows"),
     //
     //  structor
     //
@@ -1557,6 +1559,9 @@ public class GUIManager
         restServer.createContext("/nglm-configadaptor/getJourneyObjective", new APISimpleHandler(API.configAdaptorJourneyObjective));
         restServer.createContext("/nglm-configadaptor/getProductType", new APISimpleHandler(API.configAdaptorProductType));
         restServer.createContext("/nglm-configadaptor/getOfferObjective", new APISimpleHandler(API.configAdaptorOfferObjective));
+        restServer.createContext("/nglm-configadaptor/getScoringEngines", new APISimpleHandler(API.configAdaptorScoringEngines));
+        restServer.createContext("/nglm-configadaptor/getPresentationCriterionFields", new APISimpleHandler(API.configAdaptorPresentationCriterionFields));
+        restServer.createContext("/nglm-configadaptor/getDefaultNoftificationDailyWindows", new APISimpleHandler(API.configAdaptorDefaultNoftificationDailyWindows));        
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -2807,6 +2812,18 @@ public class GUIManager
 
                 case configAdaptorOfferObjective:
                   jsonResponse = processConfigAdaptorOfferObjective(jsonRoot);
+                  break;
+
+                case configAdaptorScoringEngines:
+                  jsonResponse = processConfigAdaptorScoringEngines(jsonRoot);
+                  break;
+
+                case configAdaptorPresentationCriterionFields:
+                  jsonResponse = processConfigAdaptorPresentationCriterionFields(jsonRoot);
+                  break;
+
+                case configAdaptorDefaultNoftificationDailyWindows:
+                  jsonResponse = processConfigAdaptorDefaultNoftificationDailyWindows(jsonRoot);
                   break;
               }
           }
@@ -17365,6 +17382,82 @@ public class GUIManager
 
     response.put("responseCode", (offerObjective != null) ? "ok" : "offerObjectiveNotFound");
     if (offerObjective != null) response.put("offerObjective", offerObjectiveJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorScoringEngines
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorScoringEngines(JSONObject jsonRoot)
+  {
+    return processGetScoringEngines(null, jsonRoot);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorPresentationCriterionFields
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorPresentationCriterionFields(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve presentation criterion fields
+    *
+    *****************************************/
+
+    List<JSONObject> presentationCriterionFields = processCriterionFields(CriterionContext.Presentation.getCriterionFields(), false);
+
+    //
+    //  remove gui specific objects
+    //
+
+    for(JSONObject jSONObject : presentationCriterionFields)
+      {
+        jSONObject.remove("minValue");
+        jSONObject.remove("operators");
+        jSONObject.remove("maxValue");
+        jSONObject.remove("display");
+        jSONObject.remove("singletonComparableFields");
+        jSONObject.remove("tagMaxLength");
+        jSONObject.remove("availableValues");
+        jSONObject.remove("setValuedComparableFields");
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("presentationCriterionFields", JSONUtilities.encodeArray(presentationCriterionFields));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processConfigAdaptorDefaultNoftificationDailyWindows
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorDefaultNoftificationDailyWindows(JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    NotificationDailyWindows notifWindows = Deployment.getNotificationDailyWindows().get("0");
+    response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     return JSONUtilities.encodeObject(response);
   }
   
