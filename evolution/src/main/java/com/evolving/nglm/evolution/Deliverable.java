@@ -41,8 +41,9 @@ public class Deliverable extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("externalAccountID", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
+    schemaBuilder.field("generatedFromAccount", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -66,8 +67,9 @@ public class Deliverable extends GUIManagedObject
   *****************************************/
 
   private String fulfillmentProviderID;
-  private String commodityID;
+  private String externalAccountID;
   private int unitaryCost;
+  private boolean generatedFromAccount;
 
   /*****************************************
   *
@@ -78,8 +80,9 @@ public class Deliverable extends GUIManagedObject
   public String getDeliverableID() { return getGUIManagedObjectID(); }
   public String getDeliverableName() { return getGUIManagedObjectName(); }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
-  public String getCommodityID() { return commodityID; }
+  public String getExternalAccountID() { return externalAccountID; }
   public int getUnitaryCost() { return unitaryCost; }
+  public boolean getGeneratedFromAccount() { return generatedFromAccount; }
   
   /*****************************************
   *
@@ -87,12 +90,13 @@ public class Deliverable extends GUIManagedObject
   *
   *****************************************/
 
-  public Deliverable(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String commodityID, int unitaryCost)
+  public Deliverable(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String externalAccountID, int unitaryCost, boolean generatedFromAccount)
   {
     super(schemaAndValue);
     this.fulfillmentProviderID = fulfillmentProviderID;
-    this.commodityID = commodityID;
+    this.externalAccountID = externalAccountID;
     this.unitaryCost = unitaryCost;
+    this.generatedFromAccount = generatedFromAccount;
   }
   
   /*****************************************
@@ -107,8 +111,9 @@ public class Deliverable extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, deliverable);
     struct.put("fulfillmentProviderID", deliverable.getFulfillmentProviderID());
-    struct.put("commodityID", deliverable.getCommodityID());
+    struct.put("externalAccountID", deliverable.getExternalAccountID());
     struct.put("unitaryCost", deliverable.getUnitaryCost());
+    struct.put("generatedFromAccount", deliverable.getGeneratedFromAccount());
     return struct;
   }
 
@@ -134,14 +139,15 @@ public class Deliverable extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     String fulfillmentProviderID = valueStruct.getString("fulfillmentProviderID");
-    String commodityID = (schemaVersion >= 2) ? valueStruct.getString("commodityID") : fulfillmentProviderID;
+    String externalAccountID = (schemaVersion >= 2) ? valueStruct.getString("externalAccountID") : fulfillmentProviderID;
     int unitaryCost = valueStruct.getInt32("unitaryCost");
+    boolean generatedFromAccount = valueStruct.getBoolean("generatedFromAccount");
     
     //
     //  return
     //
 
-    return new Deliverable(schemaAndValue, fulfillmentProviderID, commodityID, unitaryCost);
+    return new Deliverable(schemaAndValue, fulfillmentProviderID, externalAccountID, unitaryCost, generatedFromAccount);
   }
 
   /*****************************************
@@ -175,8 +181,9 @@ public class Deliverable extends GUIManagedObject
     *****************************************/
 
     this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, "fulfillmentProviderID", true);
-    this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
+    this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
+    this.generatedFromAccount = JSONUtilities.decodeBoolean(jsonRoot, "generatedFromAccount", Boolean.FALSE);
 
     /*****************************************
     *
@@ -215,8 +222,9 @@ public class Deliverable extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingDeliverable.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(fulfillmentProviderID, existingDeliverable.getFulfillmentProviderID());
-        epochChanged = epochChanged || ! Objects.equals(commodityID, existingDeliverable.getCommodityID());
+        epochChanged = epochChanged || ! Objects.equals(externalAccountID, existingDeliverable.getExternalAccountID());
         epochChanged = epochChanged || ! (unitaryCost == existingDeliverable.getUnitaryCost());
+        epochChanged = epochChanged || ! (generatedFromAccount == existingDeliverable.getGeneratedFromAccount());
         return epochChanged;
       }
     else

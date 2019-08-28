@@ -223,7 +223,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("paymentMeanID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("externalAccountID", Schema.STRING_SCHEMA);
       schemaBuilder.field("operation", Schema.STRING_SCHEMA);
       schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("validityPeriodType", Schema.OPTIONAL_STRING_SCHEMA);
@@ -252,21 +253,13 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-//  private String deliveryRequestID;
-//  private String deliveryRequestSource;
-//  private String deliveryType;
-//  private String eventID;
-//  private String moduleID;
-//  private String featureID;
-//  private String subscriberID;
-//  private boolean control;
-  
     private String providerID;
-    private String paymentMeanID;
+    private String commodityID;
+    private String externalAccountID;
     private INFulfillmentOperation operation;
     private int amount;
     private TimeUnit validityPeriodType;
-    private int validityPeriodQuantity;
+    private Integer validityPeriodQuantity;
     private int returnCode;
     private INFulfillmentStatus status;
     private String returnCodeDetails;
@@ -276,11 +269,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     //
 
     public String getProviderID() { return providerID; }
-    public String getPaymentMeanID() { return paymentMeanID; }
+    public String getCommodityID() { return commodityID; }
+    public String getExternalAccountID() { return externalAccountID; }
     public INFulfillmentOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public TimeUnit getValidityPeriodType() { return validityPeriodType; }
-    public int getValidityPeriodQuantity() { return validityPeriodQuantity; }
+    public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }
     public Integer getReturnCode() { return returnCode; }
     public INFulfillmentStatus getStatus() { return status; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
@@ -299,11 +293,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String paymentMeanID, INFulfillmentOperation operation, int amount, TimeUnit validityPeriodType, int validityPeriodQuantity)
+    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String externalAccountID, INFulfillmentOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.providerID = providerID;
-      this.paymentMeanID = paymentMeanID;
+      this.commodityID = commodityID;
+      this.externalAccountID = externalAccountID;
       this.operation = operation;
       this.amount = amount;
       this.validityPeriodType = validityPeriodType;
@@ -323,7 +318,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     {
       super(jsonRoot);
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
-      this.paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", true);
+      this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
+      this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
       this.operation = INFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
       this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
       this.validityPeriodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityPeriodType", false));
@@ -339,11 +335,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String paymentMeanID, INFulfillmentOperation operation, int amount, TimeUnit validityPeriodType, int validityPeriodQuantity, INFulfillmentStatus status)
+    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, String externalAccountID, INFulfillmentOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, INFulfillmentStatus status)
     {
       super(schemaAndValue);
       this.providerID = providerID;
-      this.paymentMeanID = paymentMeanID;
+      this.commodityID = commodityID;
+      this.externalAccountID = externalAccountID;
       this.operation = operation;
       this.amount = amount;
       this.validityPeriodType = validityPeriodType;
@@ -362,7 +359,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     {
       super(inFulfillmentRequest);
       this.providerID = inFulfillmentRequest.getProviderID();
-      this.paymentMeanID = inFulfillmentRequest.getPaymentMeanID();
+      this.commodityID = inFulfillmentRequest.getCommodityID();
+      this.externalAccountID = inFulfillmentRequest.getExternalAccountID();
       this.operation = inFulfillmentRequest.getOperation();
       this.amount = inFulfillmentRequest.getAmount();
       this.validityPeriodType = inFulfillmentRequest.getValidityPeriodType();
@@ -395,7 +393,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       Struct struct = new Struct(schema);
       packCommon(struct, inFulfillmentRequest);
       struct.put("providerID", inFulfillmentRequest.getProviderID());
-      struct.put("paymentMeanID", inFulfillmentRequest.getPaymentMeanID());
+      struct.put("commodityID", inFulfillmentRequest.getCommodityID());
+      struct.put("externalAccountID", inFulfillmentRequest.getExternalAccountID());
       struct.put("operation", inFulfillmentRequest.getOperation().getExternalRepresentation());
       struct.put("amount", inFulfillmentRequest.getAmount());
       struct.put("validityPeriodType", (inFulfillmentRequest.getValidityPeriodType() != null ? inFulfillmentRequest.getValidityPeriodType().getExternalRepresentation() : null));
@@ -431,11 +430,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
       Struct valueStruct = (Struct) value;
       String providerID = valueStruct.getString("providerID");
-      String paymentMeanID = valueStruct.getString("paymentMeanID");
+      String commodityID = valueStruct.getString("commodityID");
+      String externalAccountID = valueStruct.getString("externalAccountID");
       INFulfillmentOperation operation = INFulfillmentOperation.fromExternalRepresentation(valueStruct.getString("operation"));
       int amount = valueStruct.getInt32("amount");
       TimeUnit validityPeriodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("validityPeriodType"));
-      int validityPeriodQuantity = valueStruct.getInt32("validityPeriodQuantity");
+      Integer validityPeriodQuantity = valueStruct.getInt32("validityPeriodQuantity");
       Integer returnCode = valueStruct.getInt32("return_code");
       INFulfillmentStatus status = INFulfillmentStatus.fromReturnCode(returnCode);
 
@@ -443,7 +443,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       //  return
       //
 
-      return new INFulfillmentRequest(schemaAndValue, providerID, paymentMeanID, operation, amount, validityPeriodType, validityPeriodQuantity, status);
+      return new INFulfillmentRequest(schemaAndValue, providerID, commodityID, externalAccountID, operation, amount, validityPeriodType, validityPeriodQuantity, status);
     }
 
     /*****************************************
@@ -459,7 +459,8 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       b.append(super.toStringFields());
       b.append("," + getSubscriberID());
       b.append("," + providerID);
-      b.append("," + paymentMeanID);
+      b.append("," + commodityID);
+      b.append("," + externalAccountID);
       b.append("," + operation);
       b.append("," + amount);
       b.append("," + validityPeriodType);
@@ -482,7 +483,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     {
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PROVIDERID, getProviderID());
-      guiPresentationMap.put(DELIVERABLEID, getPaymentMeanID());
+      guiPresentationMap.put(DELIVERABLEID, getCommodityID());
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().toString());
       guiPresentationMap.put(MODULEID, getModuleID());
@@ -497,7 +498,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     {
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
-      thirdPartyPresentationMap.put(DELIVERABLEID, getPaymentMeanID());
+      thirdPartyPresentationMap.put(DELIVERABLEID, getCommodityID());
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
@@ -523,91 +524,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     public INFulfillmentStatus activate(INFulfillmentRequest inFulfillmentRequest);
     public INFulfillmentStatus deactivate(INFulfillmentRequest inFulfillmentRequest);
     public INFulfillmentStatus set(INFulfillmentRequest inFulfillmentRequest);
-  }
-
-  /*****************************************
-  *
-  *  class ActionManager
-  *
-  *****************************************/
-
-  public static class ActionManager extends com.evolving.nglm.evolution.ActionManager
-  {
-    /*****************************************
-    *
-    *  data
-    *
-    *****************************************/
-
-    private String moduleID;
-    private String deliveryType;
-    private String providerID;
-    private CommodityDeliveryOperation operation;
-    
-    /*****************************************
-    *
-    *  constructor
-    *
-    *****************************************/
-
-    public ActionManager(JSONObject configuration)
-    {
-      super(configuration);
-      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
-      this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
-      this.providerID = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(this.deliveryType).getJSONRepresentation(), "providerID", true);
-      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
-    }
-
-    /*****************************************
-    *
-    *  execute
-    *
-    *****************************************/
-
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
-    {
-      /*****************************************
-      *
-      *  parameters
-      *
-      *****************************************/
-
-      String accountID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.deliverableid");
-      int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
-      String validityPeriodType = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodType");
-      int validityPeriodQuantity = 0;
-      Number validityPeriodQuantityNumber = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.periodQuantity"));
-      if(validityPeriodQuantityNumber != null){
-        validityPeriodQuantity = validityPeriodQuantityNumber.intValue();
-      }
-      
-      /*****************************************
-      *
-      *  request arguments
-      *
-      *****************************************/
-
-      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-
-      /*****************************************
-      *
-      *  request
-      *
-      *****************************************/
-
-      CommodityDeliveryRequest request = new CommodityDeliveryRequest(evolutionEventContext, deliveryRequestSource, null/*diplomaticBriefcase*/, providerID, accountID, operation, amount, TimeUnit.fromExternalRepresentation(validityPeriodType), validityPeriodQuantity);
-      request.setModuleID(moduleID);
-      request.setFeatureID(deliveryRequestSource);
-
-      /*****************************************
-      *
-      *  return
-      *
-      *****************************************/
-
-      return request;
-    }
   }
 
   /*****************************************

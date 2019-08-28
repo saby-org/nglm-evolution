@@ -85,7 +85,7 @@ public class DeliveryManagerAccount
     *
     *****************************************/
 
-    private String accountID;
+    private String externalAccountID;
     private String name;
     private boolean creditable;
     private boolean debitable;
@@ -94,7 +94,7 @@ public class DeliveryManagerAccount
     //  accessors
     //
 
-    public String getAccountID() { return accountID; }
+    public String getExternalAccountID() { return externalAccountID; }
     public String getName() { return name; }
     public boolean getCreditable() { return creditable; }
     public boolean getDebitable() { return debitable; }
@@ -105,9 +105,9 @@ public class DeliveryManagerAccount
     *
     *****************************************/
 
-    public Account(String accountID, String name, boolean creditable, boolean debitable)
+    public Account(String externalAccountID, String name, boolean creditable, boolean debitable)
     {
-      this.accountID = accountID;
+      this.externalAccountID = externalAccountID;
       this.name = name;
       this.creditable = creditable;
       this.debitable = debitable;
@@ -121,7 +121,7 @@ public class DeliveryManagerAccount
 
     public Account(JSONObject jsonRoot)
     {
-      this.accountID = JSONUtilities.decodeString(jsonRoot, "accountID", true);
+      this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
       this.creditable = JSONUtilities.decodeBoolean(jsonRoot, "creditable", true);
       this.debitable = JSONUtilities.decodeBoolean(jsonRoot, "debitable", true);

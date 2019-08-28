@@ -23,19 +23,6 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class PaymentMean extends GUIManagedObject 
 {
-
-  /*****************************************
-  *
-  *  variables
-  *
-  *****************************************/
-
-  private static final String FULFILLMENT_PROVIDER_ID = "fulfillmentProviderID";
-  private static final String COMMODITY_ID = "commodityID";
-  private static final String DISPLAY = "display";
-  private static final String ACTION_MANAGER_CLASS = "actionManagerClass";
-  private static final String OTHERCONFIG = "otherconfig";
-
   /*****************************************
   *
   *  schema
@@ -53,11 +40,12 @@ public class PaymentMean extends GUIManagedObject
     schemaBuilder.name("paymentMean");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field(FULFILLMENT_PROVIDER_ID, Schema.STRING_SCHEMA);
-    schemaBuilder.field(COMMODITY_ID, Schema.STRING_SCHEMA);
-    schemaBuilder.field(DISPLAY, Schema.STRING_SCHEMA);
-    schemaBuilder.field(ACTION_MANAGER_CLASS, Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field(OTHERCONFIG, Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("externalAccountID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("display", Schema.STRING_SCHEMA);
+    schemaBuilder.field("actionManagerClass", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("otherConfig", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("generatedFromAccount", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -79,23 +67,13 @@ public class PaymentMean extends GUIManagedObject
   *  data
   *
   ****************************************/
-  /*
-   *  { 
-   *    "id"                    : "1", 
-   *    "fulfillmentProviderID" : "3", 
-   *    "commodityID"           : "6", 
-   *    "name"                  : "na", 
-   *    "display"               : "(not used)", 
-   *    "actionManagerClass"    : "", 
-   *    "otherconfig"           : ""
-   *  }
-   */
 
-  private String fulfillmentProviderID = "";
-  private String commodityID = "";
-  private String display = "";
-  private String actionManagerClass = "";
-  private String otherconfig = "";
+  private String fulfillmentProviderID;
+  private String externalAccountID;
+  private String display;
+  private String actionManagerClass;
+  private String otherConfig;
+  private boolean generatedFromAccount;
 
   /****************************************
   *
@@ -103,17 +81,14 @@ public class PaymentMean extends GUIManagedObject
   *
   ****************************************/
 
-  //
-  //  public
-  //
-
   public String getPaymentMeanID() { return getGUIManagedObjectID(); }
   public String getPaymentMeanName() { return getGUIManagedObjectName(); }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
-  public String getCommodityID() { return commodityID; }
+  public String getExternalAccountID() { return externalAccountID; }
   public String getDisplay() { return display; }
   public String getActionManagerClass() { return actionManagerClass; }
-  public String getOtherconfig() { return otherconfig; }
+  public String getOtherConfig() { return otherConfig; }
+  public boolean getGeneratedFromAccount() { return generatedFromAccount; }
 
   /*****************************************
   *
@@ -121,13 +96,15 @@ public class PaymentMean extends GUIManagedObject
   *
   *****************************************/
   
-  public PaymentMean(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String commodityID, String display, String actionManagerClass, String otherconfig) {
+  public PaymentMean(SchemaAndValue schemaAndValue, String fulfillmentProviderID, String externalAccountID, String display, String actionManagerClass, String otherConfig, boolean generatedFromAccount)
+  {
     super(schemaAndValue);
     this.fulfillmentProviderID = fulfillmentProviderID;
-    this.commodityID = commodityID;
+    this.externalAccountID = externalAccountID;
     this.display = display;
     this.actionManagerClass = actionManagerClass;
-    this.otherconfig = otherconfig;
+    this.otherConfig = otherConfig;
+    this.generatedFromAccount = generatedFromAccount;
   }
 
   /*****************************************
@@ -160,11 +137,12 @@ public class PaymentMean extends GUIManagedObject
     *
     *****************************************/
 
-    this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, FULFILLMENT_PROVIDER_ID, true);
-    this.commodityID = JSONUtilities.decodeString(jsonRoot, COMMODITY_ID, true);
-    this.display = JSONUtilities.decodeString(jsonRoot, DISPLAY, false);
-    this.actionManagerClass = JSONUtilities.decodeString(jsonRoot, ACTION_MANAGER_CLASS, false);
-    this.otherconfig = JSONUtilities.decodeString(jsonRoot, OTHERCONFIG, false);
+    this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, "fulfillmentProviderID", true);
+    this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
+    this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
+    this.actionManagerClass = JSONUtilities.decodeString(jsonRoot, "actionManagerClass", false);
+    this.otherConfig = JSONUtilities.decodeString(jsonRoot, "otherConfig", false);
+    this.generatedFromAccount = JSONUtilities.decodeBoolean(jsonRoot, "generatedFromAccount", Boolean.FALSE);
     
     /*****************************************
     *
@@ -188,11 +166,12 @@ public class PaymentMean extends GUIManagedObject
     PaymentMean paymentMean = (PaymentMean) value;
     Struct struct = new Struct(schema);
     packCommon(struct, paymentMean);
-    struct.put(FULFILLMENT_PROVIDER_ID, paymentMean.getFulfillmentProviderID());
-    struct.put(COMMODITY_ID, paymentMean.getCommodityID());
-    struct.put(DISPLAY, paymentMean.getDisplay());
-    struct.put(ACTION_MANAGER_CLASS, paymentMean.getActionManagerClass());
-    struct.put(OTHERCONFIG, paymentMean.getOtherconfig());
+    struct.put("fulfillmentProviderID", paymentMean.getFulfillmentProviderID());
+    struct.put("externalAccountID", paymentMean.getExternalAccountID());
+    struct.put("display", paymentMean.getDisplay());
+    struct.put("actionManagerClass", paymentMean.getActionManagerClass());
+    struct.put("otherConfig", paymentMean.getOtherConfig());
+    struct.put("generatedFromAccount", paymentMean.getGeneratedFromAccount());
     return struct;
   }
 
@@ -217,17 +196,18 @@ public class PaymentMean extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    String fulfillmentProviderID = valueStruct.getString(FULFILLMENT_PROVIDER_ID);
-    String commodityID = valueStruct.getString(COMMODITY_ID);
-    String display = valueStruct.getString(DISPLAY);
-    String actionManagerClass = valueStruct.getString(ACTION_MANAGER_CLASS);
-    String otherconfig = valueStruct.getString(OTHERCONFIG);
+    String fulfillmentProviderID = valueStruct.getString("fulfillmentProviderID");
+    String externalAccountID = valueStruct.getString("externalAccountID");
+    String display = valueStruct.getString("display");
+    String actionManagerClass = valueStruct.getString("actionManagerClass");
+    String otherConfig = valueStruct.getString("otherConfig");
+    boolean generatedFromAccount = valueStruct.getBoolean("generatedFromAccount");
 
     //
     //  return
     //
 
-    return new PaymentMean(schemaAndValue, fulfillmentProviderID, commodityID, display, actionManagerClass, otherconfig);
+    return new PaymentMean(schemaAndValue, fulfillmentProviderID, externalAccountID, display, actionManagerClass, otherConfig, generatedFromAccount);
   }
 
 
@@ -245,10 +225,11 @@ public class PaymentMean extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getPaymentMeanID(), existingPaymentMean.getPaymentMeanID());
         epochChanged = epochChanged || ! Objects.equals(getPaymentMeanName(), existingPaymentMean.getPaymentMeanName());
         epochChanged = epochChanged || ! Objects.equals(getFulfillmentProviderID(), existingPaymentMean.getFulfillmentProviderID());
-        epochChanged = epochChanged || ! Objects.equals(getCommodityID(), existingPaymentMean.getCommodityID());
+        epochChanged = epochChanged || ! Objects.equals(getExternalAccountID(), existingPaymentMean.getExternalAccountID());
         epochChanged = epochChanged || ! Objects.equals(getDisplay(), existingPaymentMean.getDisplay());
         epochChanged = epochChanged || ! Objects.equals(getActionManagerClass(), existingPaymentMean.getActionManagerClass());
-        epochChanged = epochChanged || ! Objects.equals(getOtherconfig(), existingPaymentMean.getOtherconfig());
+        epochChanged = epochChanged || ! Objects.equals(getOtherConfig(), existingPaymentMean.getOtherConfig());
+        epochChanged = epochChanged || ! generatedFromAccount == existingPaymentMean.getGeneratedFromAccount();
         return epochChanged;
       }
     else
@@ -263,17 +244,17 @@ public class PaymentMean extends GUIManagedObject
   *
   *****************************************/
 
-  @Override
-  public String toString() {
+  @Override public String toString()
+  {
     return "PaymentMean ["
         + "id=" + getPaymentMeanID()
         + ", name=" + getPaymentMeanName()
         + ", fulfillmentProviderID=" + getFulfillmentProviderID() 
-        + ", commodityID=" + getCommodityID() 
+        + ", externalAccountID=" + getExternalAccountID() 
         + ", display=" + getDisplay()
         + ", actionManagerClass=" + getActionManagerClass() 
-        + ", otherconfig=" + getOtherconfig()
+        + ", otherConfig=" + getOtherConfig()
+        + ", generatedFromAccount=" + getGeneratedFromAccount()
         + "]";
   }
-
 }

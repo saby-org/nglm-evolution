@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Objects;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -104,17 +105,31 @@ public class PaymentMeanService extends GUIService
   public PaymentMean getActivePaymentMean(String paymentMeanID, Date date) { return (PaymentMean) getActiveGUIManagedObject(paymentMeanID, date); }
   public Collection<PaymentMean> getActivePaymentMeans(Date date) { return (Collection<PaymentMean>) getActiveGUIManagedObjects(date); }
   
+  //
+  //  getStoredPaymentMeanByName
+  //
+  
+  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName)
+  {
+    GUIManagedObject result = null;
+    for (GUIManagedObject guiManagedObject : getStoredPaymentMeans())
+      {
+        if (Objects.equals(paymentMeanName, guiManagedObject.getGUIManagedObjectName()))
+          {
+            result = guiManagedObject;
+            break;
+          }
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  putPaymentMean
   *
   *****************************************/
 
-  public void putPaymentMean(PaymentMean paymentMean, boolean newObject, String userID) throws GUIManagerException
-  {
-    Date now = SystemTime.getCurrentTime();
-    putGUIManagedObject(paymentMean, now, newObject, userID);
-  }
+  public void putPaymentMean(PaymentMean paymentMean, boolean newObject, String userID) { putGUIManagedObject(paymentMean, SystemTime.getCurrentTime(), newObject, userID); }
 
   /*****************************************
   *

@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryGuarantee;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 
@@ -44,6 +45,8 @@ public class DeliveryManagerDeclaration
   private int retries;
   private int acknowledgementTimeoutSeconds;
   private int correlatorUpdateTimeoutSeconds;
+  private String providerID;
+  private String providerName;
 
   /*****************************************
   *
@@ -63,6 +66,8 @@ public class DeliveryManagerDeclaration
   public int getRetries() { return retries; }
   public int getAcknowledgementTimeoutSeconds() { return acknowledgementTimeoutSeconds; }
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
+  public String getProviderID() { return providerID; }
+  public String getProviderName() { return providerName; }
 
   //
   // derived
@@ -70,6 +75,7 @@ public class DeliveryManagerDeclaration
 
   public String getDefaultRequestTopic() { return (requestTopics.size() > 0) ? requestTopics.get(0) : null; }
   public String getRequestTopic(DeliveryPriority deliveryPriority) { return requestTopics.get(Math.min(requestTopics.size()-1,deliveryPriority.getTopicIndex())); }
+  public CommodityType getProviderType() { return CommodityType.fromExternalRepresentation(getRequestClassName()); }
 
   //
   //  getRequestSerde
@@ -114,6 +120,8 @@ public class DeliveryManagerDeclaration
     this.retries = JSONUtilities.decodeInteger(jsonRoot, "retries", 0);
     this.acknowledgementTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "acknowledgementTimeoutSeconds", 60);
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 600);
+    this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", false);
+    this.providerName = JSONUtilities.decodeString(jsonRoot, "providerName", false);
   }
 
   /*****************************************

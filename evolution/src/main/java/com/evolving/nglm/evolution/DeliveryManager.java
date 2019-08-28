@@ -396,6 +396,7 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
+    if (deliveryManagerDeclaration == null) throw new RuntimeException("invalid delivery manager (no such delivery manager)");
     if (deliveryManagerDeclaration.getRequestTopics().size() == 0) throw new RuntimeException("invalid delivery manager (no request topic)");
 
     /*****************************************

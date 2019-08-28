@@ -221,7 +221,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductUnchecked, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  public Product(JSONObject jsonRoot, long epoch, GUIManagedObject existingProductUnchecked, DeliverableService deliverableService, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
     /*****************************************
     *
@@ -246,10 +246,23 @@ public class Product extends GUIManagedObject implements StockableItem
     *****************************************/
 
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
-    this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
     this.stock = JSONUtilities.decodeInteger(jsonRoot, "stock", false);
     this.productTypes = decodeProductTypes(JSONUtilities.decodeJSONArray(jsonRoot, "productTypes", true), catalogCharacteristicService);
     this.stockableItemID = "product-" + getProductID();
+
+    //
+    //  deliverable
+    //
+
+    this.deliverableID = JSONUtilities.decodeString(jsonRoot, "deliverableID", false);
+    if (deliverableID == null)
+      {
+        String deliverableName = JSONUtilities.decodeString(jsonRoot, "deliverableName", true);
+        GUIManagedObject deliverableUnchecked = deliverableService.getStoredDeliverableByName(deliverableName);
+        Deliverable deliverable = (deliverableUnchecked != null && deliverableUnchecked.getAccepted()) ? (Deliverable) deliverableUnchecked : null;
+        if (deliverable == null) JSONUtilities.decodeString(jsonRoot, "deliverableID", true);
+        this.deliverableID = deliverable.getDeliverableID();
+      }
 
     /*****************************************
     *

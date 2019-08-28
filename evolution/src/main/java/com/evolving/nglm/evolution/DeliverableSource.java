@@ -71,7 +71,7 @@ public class DeliverableSource
     schemaBuilder.field("effectiveStartDate", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("effectiveEndDate", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("externalAccountID", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -102,7 +102,7 @@ public class DeliverableSource
   private String effectiveStartDate;
   private String effectiveEndDate;
   private String fulfillmentProviderID;
-  private String commodityID;
+  private String externalAccountID;
   private int unitaryCost;
 
   /*****************************************
@@ -118,7 +118,7 @@ public class DeliverableSource
   String getEffectiveStartDate() { return effectiveStartDate; }
   String getEffectiveEndDate() { return effectiveEndDate; }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
-  public String getCommodityID() { return commodityID; }
+  public String getCommodityID() { return externalAccountID; }
   public int getUnitaryCost() { return unitaryCost; }
 
   /*****************************************
@@ -137,7 +137,7 @@ public class DeliverableSource
     deliverableJSON.put("effectiveStartDate", effectiveStartDate);
     deliverableJSON.put("effectiveEndDate", effectiveEndDate);
     deliverableJSON.put("fulfillmentProviderID", fulfillmentProviderID);
-    deliverableJSON.put("commodityID", commodityID);
+    deliverableJSON.put("externalAccountID", externalAccountID);
     deliverableJSON.put("unitaryCost", new Integer(unitaryCost));
     return JSONUtilities.encodeObject(deliverableJSON);
   }
@@ -165,7 +165,7 @@ public class DeliverableSource
     this.effectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false);
     this.effectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false);
     this.fulfillmentProviderID = JSONUtilities.decodeString(jsonRoot, "fulfillmentProviderID", true);
-    this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
+    this.externalAccountID = (jsonRoot.get("externalAccountID") != null) ? JSONUtilities.decodeString(jsonRoot, "externalAccountID", true) : JSONUtilities.decodeString(jsonRoot, "commodityID", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
   }
   
@@ -175,7 +175,7 @@ public class DeliverableSource
   *
   *****************************************/
 
-  public DeliverableSource(String name, String display, boolean active, String effectiveStartDate, String effectiveEndDate, String fulfillmentProviderID, String commodityID, int unitaryCost)
+  public DeliverableSource(String name, String display, boolean active, String effectiveStartDate, String effectiveEndDate, String fulfillmentProviderID, String externalAccountID, int unitaryCost)
   {
     this.id = null;
     this.name = name;
@@ -184,7 +184,7 @@ public class DeliverableSource
     this.effectiveStartDate = effectiveStartDate;
     this.effectiveEndDate = effectiveEndDate;
     this.fulfillmentProviderID = fulfillmentProviderID;
-    this.commodityID = commodityID;
+    this.externalAccountID = externalAccountID;
     this.unitaryCost = unitaryCost;
   }
   
@@ -204,7 +204,7 @@ public class DeliverableSource
     struct.put("effectiveStartDate", deliverableSource.getEffectiveStartDate());
     struct.put("effectiveEndDate", deliverableSource.getEffectiveEndDate());
     struct.put("fulfillmentProviderID", deliverableSource.getFulfillmentProviderID());
-    struct.put("commodityID", deliverableSource.getCommodityID());
+    struct.put("externalAccountID", deliverableSource.getCommodityID());
     struct.put("unitaryCost", deliverableSource.getUnitaryCost());
     return struct;
   }
@@ -236,13 +236,13 @@ public class DeliverableSource
     String effectiveStartDate = valueStruct.getString("effectiveStartDate");
     String effectiveEndDate = valueStruct.getString("effectiveEndDate");
     String fulfillmentProviderID = valueStruct.getString("fulfillmentProviderID");
-    String commodityID = (schemaVersion >= 2) ? valueStruct.getString("commodityID") : fulfillmentProviderID; 
+    String externalAccountID = (schemaVersion >= 2) ? valueStruct.getString("externalAccountID") : fulfillmentProviderID; 
     int unitaryCost = valueStruct.getInt32("unitaryCost");
     
     //
     //  return
     //
 
-    return new DeliverableSource(name, display, active, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, commodityID, unitaryCost);
+    return new DeliverableSource(name, display, active, effectiveStartDate, effectiveEndDate, fulfillmentProviderID, externalAccountID, unitaryCost);
   }
 }

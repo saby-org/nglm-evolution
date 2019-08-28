@@ -686,101 +686,182 @@ public class GUIManager
     *
     *****************************************/
 
-    Map<String, DeliveryManagerDeclaration> providersMap = new HashMap<String, DeliveryManagerDeclaration>();
-    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
-      CommodityType commodityType = CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
-      if(commodityType != null){
-        switch (commodityType) {
-            case IN:
-            case EMPTY:
+    long providerEpoch = epochServer.getKey();
+    for (DeliveryManagerAccount deliveryManagerAccount : Deployment.getDeliveryManagerAccounts().values())
+      {
+        /*****************************************
+        *
+        *  provider
+        *
+        *****************************************/
 
-              JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-              String providerID = (String) deliveryManagerJSON.get("providerID");
-              providersMap.put(providerID, deliveryManager);
+        String providerID = deliveryManagerAccount.getProviderID();
+        DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(providerID);
+        if (provider == null)
+          {
+            throw new ServerRuntimeException("Delivery manager accounts : could not retrieve provider with ID " + providerID);
+          }
 
-              break;
-            default:
-              break;
-        }
+        /*****************************************
+        *
+        *  accounts
+        *
+        *****************************************/
+
+        Set<String> configuredDeliverableIDs = new HashSet<String>();
+        Set<String> configuredPaymentMeanIDs = new HashSet<String>();
+        for (Account account : deliveryManagerAccount.getAccounts())
+          {
+            /*****************************************
+            *
+            *  create/update deliverable 
+            *
+            *****************************************/
+
+            if (account.getCreditable())
+              {
+                //
+                //  find existing deliverable (by name) and use/generate deliverableID
+                //
+
+                GUIManagedObject existingDeliverable = deliverableService.getStoredDeliverableByName(account.getName());
+                String deliverableID = (existingDeliverable != null) ? existingDeliverable.getGUIManagedObjectID() : deliverableService.generateDeliverableID();
+                configuredDeliverableIDs.add(deliverableID);
+
+                //
+                //  deliverable
+                //
+
+                Deliverable deliverable = null;
+                try
+                  {
+                    Map<String, Object> deliverableMap = new HashMap<String, Object>();
+                    deliverableMap.put("id", deliverableID);
+                    deliverableMap.put("fulfillmentProviderID", providerID);
+                    deliverableMap.put("externalAccountID", account.getExternalAccountID());
+                    deliverableMap.put("name", account.getName());
+                    deliverableMap.put("display", account.getName());
+                    deliverableMap.put("active", true);
+                    deliverableMap.put("unitaryCost", 0);
+                    deliverableMap.put("readOnly", true);
+                    deliverableMap.put("generatedFromAccount", true);
+                    deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), providerEpoch, null);
+                  }
+                catch (GUIManagerException e)
+                  {
+                    throw new ServerRuntimeException("could not add deliverable related to provider "+providerID+" (account "+account.getName()+")", e);
+                  }
+
+                //
+                //  create/update deliverable if necessary)
+                //
+
+                if (existingDeliverable == null || ! Objects.equals(existingDeliverable, deliverable))
+                  {
+                    //
+                    //  log
+                    //
+
+                    log.info("provider deliverable {} {}", deliverableID, (existingDeliverable == null) ? "create" : "update");
+
+                    //
+                    //  create/update deliverable
+                    //
+
+                    deliverableService.putDeliverable(deliverable, (existingDeliverable == null), "0");
+                  }
+              }
+
+            /*****************************************
+            *
+            *  create/update paymentMean
+            *
+            *****************************************/
+
+            if (account.getDebitable())
+              {
+                //
+                //  find existing paymentMean (by name) and use/generate paymentMeanID
+                //
+
+                GUIManagedObject existingPaymentMean = paymentMeanService.getStoredPaymentMeanByName(account.getName());
+                String paymentMeanID = (existingPaymentMean != null) ? existingPaymentMean.getGUIManagedObjectID() : paymentMeanService.generatePaymentMeanID();
+                configuredPaymentMeanIDs.add(paymentMeanID);
+
+                //
+                //  paymentMean
+                //
+
+                PaymentMean paymentMean = null;
+                try
+                  {
+                    Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
+                    paymentMeanMap.put("id", paymentMeanID);
+                    paymentMeanMap.put("fulfillmentProviderID", providerID);
+                    paymentMeanMap.put("externalAccountID", account.getExternalAccountID());
+                    paymentMeanMap.put("name", account.getName());
+                    paymentMeanMap.put("display", account.getName());
+                    paymentMeanMap.put("active", true);
+                    paymentMeanMap.put("readOnly", true);
+                    paymentMeanMap.put("generatedFromAccount", true);
+                    paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), providerEpoch, null);
+                  }
+                catch (GUIManagerException e)
+                  {
+                    throw new ServerRuntimeException("could not add paymentMean related to provider "+providerID+" (account "+account.getName()+")", e);
+                  }
+
+                // 
+                //  create/update paymentMean (if ncessary)
+                //
+
+                if (existingPaymentMean == null || ! Objects.equals(existingPaymentMean, paymentMean))
+                  {
+                    //
+                    //  log
+                    //
+
+                    log.info("provider paymentMean {} {}", paymentMeanID, (existingPaymentMean == null) ? "create" : "update");
+
+                    //
+                    //  create/update paymentMean
+                    //
+
+                    paymentMeanService.putPaymentMean(paymentMean, (existingPaymentMean == null), "0");
+                  }
+              }
+          }
+
+        /*****************************************
+        *
+        *  remove unused deliverables
+        *
+        *****************************************/
+
+        for (Deliverable deliverable : deliverableService.getActiveDeliverables(SystemTime.getCurrentTime()))
+          {
+            if (Objects.equals(providerID, deliverable.getFulfillmentProviderID()) && deliverable.getGeneratedFromAccount() && ! configuredDeliverableIDs.contains(deliverable.getDeliverableID()))
+              {
+                deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
+                log.info("provider deliverable {} {}", deliverable.getDeliverableID(), "remove");
+              }
+          }
+        
+        /*****************************************
+        *
+        *  remove unused paymentMeans
+        *
+        *****************************************/
+
+        for (PaymentMean paymentMean : paymentMeanService.getActivePaymentMeans(SystemTime.getCurrentTime()))
+          {
+            if (Objects.equals(providerID, paymentMean.getFulfillmentProviderID()) && paymentMean.getGeneratedFromAccount() && ! configuredPaymentMeanIDs.contains(paymentMean.getPaymentMeanID()))
+              {
+                paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
+                log.info("provider paymentMean {} {}", paymentMean.getPaymentMeanID(), "remove");
+              }
+          }
       }
-    }
-
-    for(DeliveryManagerAccount deliveryManagerAccount : Deployment.getDeliveryManagerAccounts().values()){
-      String providerID = deliveryManagerAccount.getProviderID();
-      DeliveryManagerDeclaration deliveryManagerDeclaration = providersMap.get(providerID);
-      if(deliveryManagerDeclaration == null){
-        throw new ServerRuntimeException("Delivery manager accounts : could not retrieve provider with ID "+providerID);
-      }
-
-      //
-      // remove all paymentMeans related to this provider
-      //
-
-      Collection<GUIManagedObject> paymentMeanList = paymentMeanService.getStoredPaymentMeans();
-      for(GUIManagedObject paymentMeanObject : paymentMeanList){
-        PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
-        if(paymentMean.getFulfillmentProviderID().equals(providerID)){
-          paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
-        }
-      }
-
-      //
-      // remove all deliverables related to this provider
-      //
-
-      Collection<GUIManagedObject> deliverableList = deliverableService.getStoredDeliverables();
-      for(GUIManagedObject deliverableObject : deliverableList){
-        Deliverable deliverable = (Deliverable) deliverableObject;
-        if(deliverable.getFulfillmentProviderID().equals(providerID)){
-          deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
-        }
-      }
-
-      //
-      // add new paymentMeans and new deliverables
-      //
-      long epoch = epochServer.getKey();
-      List<Account> accounts = deliveryManagerAccount.getAccounts();
-      for (Account account : accounts) {
-        if(account.getDebitable()){
-          Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
-          paymentMeanMap.put("id", account.getAccountID());
-          paymentMeanMap.put("fulfillmentProviderID", providerID);
-          paymentMeanMap.put("commodityID", account.getAccountID());
-          paymentMeanMap.put("name", account.getName());
-          paymentMeanMap.put("display", account.getName());
-          paymentMeanMap.put("active", true);
-          paymentMeanMap.put("readOnly", true);
-          try
-            {
-              PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
-              paymentMeanService.putPaymentMean(paymentMean, true, "0");
-            } catch (GUIManagerException e)
-            {
-              throw new ServerRuntimeException("could not add paymentMean related to provider "+providerID+" (account "+account.getName()+")", e);
-            }
-        }
-        if(account.getCreditable()){
-          Map<String, Object> deliverableMap = new HashMap<String, Object>();
-          deliverableMap.put("id", account.getAccountID());
-          deliverableMap.put("fulfillmentProviderID", providerID);
-          deliverableMap.put("commodityID", account.getAccountID());
-          deliverableMap.put("name", account.getName());
-          deliverableMap.put("display", account.getName());
-          deliverableMap.put("active", true);
-          deliverableMap.put("unitaryCost", 0);
-          deliverableMap.put("readOnly", true);
-          try
-            {
-              Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-              deliverableService.putDeliverable(deliverable, true, "0");
-            } catch (GUIManagerException e)
-            {
-              throw new ServerRuntimeException("could not add deliverable related to provider "+providerID+" (account "+account.getName()+")", e);
-            }
-        }
-      }
-    }
 
     /*****************************************
     *
@@ -4560,48 +4641,52 @@ public class GUIManager
         *
         *****************************************/
 
-        if(GUIManagedObjectType.Campaign.equals(objectType)){
-          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-          String providerID = (String) deliveryManagerJSON.get("providerID");
-          if(journey.getTargetingType().equals(TargetingType.Manual))
-            {
+        if (GUIManagedObjectType.Campaign.equals(objectType))
+          {
+            DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+            JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+            String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+            if (providerID != null)
+              {
+                if (journey.getTargetingType().equals(TargetingType.Manual))
+                  {
 
-              //
-              // create deliverable  --  only if campaign has "manual provisioning"
-              //
+                    //
+                    // create deliverable  --  only if campaign has "manual provisioning"
+                    //
 
-              Map<String, Object> deliverableMap = new HashMap<String, Object>();
-              deliverableMap.put("id", "journey-" + journey.getJourneyID());
-              deliverableMap.put("fulfillmentProviderID", providerID);
-              deliverableMap.put("commodityID", journey.getJourneyID());
-              deliverableMap.put("name", journey.getJourneyName());
-              deliverableMap.put("display", journey.getJourneyName());
-              deliverableMap.put("active", true);
-              deliverableMap.put("unitaryCost", 0);
-              Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-              deliverableService.putDeliverable(deliverable, true, userID);
-            }
-          else
-            {
+                    Map<String, Object> deliverableMap = new HashMap<String, Object>();
+                    deliverableMap.put("id", "journey-" + journey.getJourneyID());
+                    deliverableMap.put("fulfillmentProviderID", providerID);
+                    deliverableMap.put("externalAccountID", journey.getJourneyID());
+                    deliverableMap.put("name", journey.getJourneyName());
+                    deliverableMap.put("display", journey.getJourneyName());
+                    deliverableMap.put("active", true);
+                    deliverableMap.put("unitaryCost", 0);
+                    Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+                    deliverableService.putDeliverable(deliverable, true, userID);
+                  }
+                else
+                  {
 
-              //
-              // delete deliverable  --  only if campaign does NOT have "manual provisioning"
-              //
+                    //
+                    // delete deliverable  --  only if campaign does NOT have "manual provisioning"
+                    //
 
-              // TODO SCH : may need to check that deliverable is not used in any offer
+                    // TODO SCH : may need to check that deliverable is not used in any offer
 
-              for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-                {
-                  Deliverable deliverable = (Deliverable)deliverableOgbject;
-                  if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journey.getJourneyID()))
-                    {
-                      deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-                    }
-                }
+                    for(GUIManagedObject deliverableObject : deliverableService.getStoredDeliverables())
+                      {
+                        Deliverable deliverable = (Deliverable) deliverableObject;
+                        if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(journey.getJourneyID()))
+                          {
+                            deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                          }
+                      }
 
-            }
-        }
+                  }
+              }
+          }
 
         /*****************************************
         *
@@ -4720,21 +4805,27 @@ public class GUIManager
         // remove related deliverable
         //
 
-        if(GUIManagedObjectType.Campaign.equals(objectType)){
-          // TODO SCH : what if deliverable is used in an offer ?
-          DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
-          JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-          String providerID = (String) deliveryManagerJSON.get("providerID");
-          for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
-            {
-              Deliverable deliverable = (Deliverable)deliverableOgbject;
-              if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(journeyID))
-                {
-                  deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
-                }
-            }
-        }
-
+        if(GUIManagedObjectType.Campaign.equals(objectType))
+          {
+            //
+            // TODO SCH : what if deliverable is used in an offer ?
+            //
+            
+            DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("journeyFulfillment");
+            JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+            String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+            if (providerID != null)
+              {
+                for(GUIManagedObject deliverableOgbject : deliverableService.getStoredDeliverables())
+                  {
+                    Deliverable deliverable = (Deliverable)deliverableOgbject;
+                    if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(journeyID))
+                      {
+                        deliverableService.removeDeliverable(deliverable.getDeliverableID(), userID);
+                      }
+                  }
+              }
+          }
       }
 
     /*****************************************
@@ -6805,40 +6896,43 @@ public class GUIManager
         *****************************************/
 
         DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
-        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-        String providerID = (String) deliveryManagerJSON.get("providerID");
+        JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+        String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
 
         //
         // deliverable
         //
-        if(point.getCreditable()){
-          Map<String, Object> deliverableMap = new HashMap<String, Object>();
-          deliverableMap.put("id", "point-" + point.getPointID());
-          deliverableMap.put("fulfillmentProviderID", providerID);
-          deliverableMap.put("commodityID", point.getPointID());
-          deliverableMap.put("name", point.getPointName());
-          deliverableMap.put("display", point.getDisplay());
-          deliverableMap.put("active", true);
-          deliverableMap.put("unitaryCost", 0);
-          Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
-          deliverableService.putDeliverable(deliverable, true, userID);
-        }
+
+        if (providerID != null && point.getCreditable())
+          {
+            Map<String, Object> deliverableMap = new HashMap<String, Object>();
+            deliverableMap.put("id", "point-" + point.getPointID());
+            deliverableMap.put("fulfillmentProviderID", providerID);
+            deliverableMap.put("externalAccountID", point.getPointID());
+            deliverableMap.put("name", point.getPointName());
+            deliverableMap.put("display", point.getDisplay());
+            deliverableMap.put("active", true);
+            deliverableMap.put("unitaryCost", 0);
+            Deliverable deliverable = new Deliverable(JSONUtilities.encodeObject(deliverableMap), epoch, null);
+            deliverableService.putDeliverable(deliverable, true, userID);
+          }
 
         //
         // paymentMean
         //
 
-        if(point.getDebitable()){
-          Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
-          paymentMeanMap.put("id", "point-" + point.getPointID());
-          paymentMeanMap.put("fulfillmentProviderID", providerID);
-          paymentMeanMap.put("commodityID", point.getPointID());
-          paymentMeanMap.put("name", point.getPointName());
-          paymentMeanMap.put("display", point.getDisplay());
-          paymentMeanMap.put("active", true);
-          PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
-          paymentMeanService.putPaymentMean(paymentMean, true, userID);
-        }
+        if (providerID != null && point.getDebitable())
+          {
+            Map<String, Object> paymentMeanMap = new HashMap<String, Object>();
+            paymentMeanMap.put("id", "point-" + point.getPointID());
+            paymentMeanMap.put("fulfillmentProviderID", providerID);
+            paymentMeanMap.put("externalAccountID", point.getPointID());
+            paymentMeanMap.put("name", point.getPointName());
+            paymentMeanMap.put("display", point.getDisplay());
+            paymentMeanMap.put("active", true);
+            PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
+            paymentMeanService.putPaymentMean(paymentMean, true, userID);
+          }
 
         /*****************************************
         *
@@ -6918,28 +7012,44 @@ public class GUIManager
     *****************************************/
 
     DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
-    JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-    String providerID = (String) deliveryManagerJSON.get("providerID");
+    JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+    String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+    if (providerID != null)
+      {
+        //
+        //  deliverable
+        //
 
-    Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables();
-    for(GUIManagedObject deliverableObject : deliverableObjects){
-      if(deliverableObject instanceof Deliverable){
-        Deliverable deliverable = (Deliverable) deliverableObject;
-        if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getCommodityID().equals(pointID)){
-          deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
-        }
-      }
-    }
+        Collection<GUIManagedObject> deliverableObjects = deliverableService.getStoredDeliverables();
+        for (GUIManagedObject deliverableObject : deliverableObjects)
+          {
+            if(deliverableObject instanceof Deliverable)
+              {
+                Deliverable deliverable = (Deliverable) deliverableObject;
+                if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(pointID))
+                  {
+                    deliverableService.removeDeliverable(deliverable.getDeliverableID(), "0");
+                  }
+              }
+          }
 
-    Collection<GUIManagedObject> paymentMeanObjects = paymentMeanService.getStoredPaymentMeans();
-    for(GUIManagedObject paymentMeanObject : paymentMeanObjects){
-      if(paymentMeanObject instanceof PaymentMean){
-        PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
-        if(paymentMean.getFulfillmentProviderID().equals(providerID) && paymentMean.getCommodityID().equals(pointID)){
-          paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
-        }
+        //
+        //  paymentMean
+        //
+
+        Collection<GUIManagedObject> paymentMeanObjects = paymentMeanService.getStoredPaymentMeans();
+        for(GUIManagedObject paymentMeanObject : paymentMeanObjects)
+          {
+            if(paymentMeanObject instanceof PaymentMean)
+              {
+                PaymentMean paymentMean = (PaymentMean) paymentMeanObject;
+                if(paymentMean.getFulfillmentProviderID().equals(providerID) && paymentMean.getExternalAccountID().equals(pointID))
+                  {
+                    paymentMeanService.removePaymentMean(paymentMean.getPaymentMeanID(), "0");
+                  }
+              }
+          }
       }
-    }
 
     /*****************************************
     *
@@ -9224,7 +9334,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Product product = new Product(jsonRoot, epoch, existingProduct, catalogCharacteristicService);
+        Product product = new Product(jsonRoot, epoch, existingProduct, deliverableService, catalogCharacteristicService);
 
         /*****************************************
         *
@@ -12680,20 +12790,16 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> fulfillmentProviders = new ArrayList<JSONObject>();
-    for(DeliveryManagerDeclaration deliveryManager : Deployment.getDeliveryManagers().values()){
-      CommodityType commodityType = CommodityType.fromExternalRepresentation(deliveryManager.getRequestClassName());
-      if(commodityType != null){
-        JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
+    for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
+      {
         Map<String, String> providerJSON = new HashMap<String, String>();
-        providerJSON.put("id", (String) deliveryManagerJSON.get("providerID"));
-        providerJSON.put("name", (String) deliveryManagerJSON.get("providerName"));
-        providerJSON.put("providerType", commodityType.toString());
+        providerJSON.put("id", deliveryManager.getProviderID());
+        providerJSON.put("name", deliveryManager.getProviderName());
+        providerJSON.put("providerType", (deliveryManager.getProviderType() != null) ? deliveryManager.getProviderType().toString() : null);
         providerJSON.put("deliveryType", deliveryManager.getDeliveryType());
-        providerJSON.put("url", (String) deliveryManagerJSON.get("url"));
-        FulfillmentProvider provider = new FulfillmentProvider(JSONUtilities.encodeObject(providerJSON));
-        fulfillmentProviders.add(provider.getJSONRepresentation());
+        providerJSON.put("url", (String) deliveryManager.getJSONRepresentation().get("url"));
+        fulfillmentProviders.add(JSONUtilities.encodeObject(providerJSON));
       } 
-    }
 
     /*****************************************
     *
@@ -18436,21 +18542,24 @@ public class GUIManager
           if (includeDynamic)
             {
               DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
-              JSONObject deliveryManagerJSON = deliveryManager.getJSONRepresentation();
-              String providerID = (String) deliveryManagerJSON.get("providerID");
-              for (GUIManagedObject deliverableUnchecked : deliverableService.getStoredDeliverables())
+              JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+              String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+              if (providerID != null)
                 {
-                  if (deliverableUnchecked.getAccepted())
+                  for (GUIManagedObject deliverableUnchecked : deliverableService.getStoredDeliverables())
                     {
-                      Deliverable deliverable = (Deliverable) deliverableUnchecked;
-                      if(deliverable.getFulfillmentProviderID().equals(providerID)){
-                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                        availableValue.put("id", deliverable.getDeliverableID());
-                        availableValue.put("display", deliverable.getDeliverableName());
-                        result.add(JSONUtilities.encodeObject(availableValue));
-                      }
+                      if (deliverableUnchecked.getAccepted())
+                        {
+                          Deliverable deliverable = (Deliverable) deliverableUnchecked;
+                          if(deliverable.getFulfillmentProviderID().equals(providerID)){
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", deliverable.getDeliverableID());
+                            availableValue.put("display", deliverable.getDeliverableName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                          }
+                        }
                     }
-                }
+               }
             }
           break;
 
@@ -19020,7 +19129,7 @@ public class GUIManager
         GUIManagedObject modifiedProduct;
         try
           {
-            Product product = new Product(existingProduct.getJSONRepresentation(), epoch, existingProduct, catalogCharacteristicService);
+            Product product = new Product(existingProduct.getJSONRepresentation(), epoch, existingProduct, deliverableService, catalogCharacteristicService);
             product.validate(supplierService, productTypeService, deliverableService, date);
             modifiedProduct = product;
           }

@@ -152,6 +152,7 @@ public class Deployment
   private static Map<String,ScoringType> scoringTypes = new LinkedHashMap<String,ScoringType>();
   private static Map<String,DNBOMatrixVariable> dnboMatrixVariables = new LinkedHashMap<String,DNBOMatrixVariable>();
   private static Map<String,DeliveryManagerDeclaration> deliveryManagers = new LinkedHashMap<String,DeliveryManagerDeclaration>();
+  private static Map<String,DeliveryManagerDeclaration> fulfillmentProviders = new LinkedHashMap<String,DeliveryManagerDeclaration>();
   private static Map<String,DeliveryManagerAccount> deliveryManagerAccounts = new HashMap<String,DeliveryManagerAccount>();
   private static int journeyDefaultTargetingWindowDuration;
   private static TimeUnit journeyDefaultTargetingWindowUnit;
@@ -331,6 +332,7 @@ public class Deployment
   public static Map<String,ScoringType> getScoringTypes() { return scoringTypes; }
   public static Map<String,DNBOMatrixVariable> getDNBOMatrixVariables() { return dnboMatrixVariables; }
   public static Map<String,DeliveryManagerDeclaration> getDeliveryManagers() { return deliveryManagers; }
+  public static Map<String,DeliveryManagerDeclaration> getFulfillmentProviders() { return fulfillmentProviders; }
   public static Map<String,DeliveryManagerAccount> getDeliveryManagerAccounts() { return deliveryManagerAccounts; }
   public static int getJourneyDefaultTargetingWindowDuration() { return journeyDefaultTargetingWindowDuration; }
   public static TimeUnit getJourneyDefaultTargetingWindowUnit() { return journeyDefaultTargetingWindowUnit; }
@@ -2013,7 +2015,7 @@ public class Deployment
 
     
     //
-    //  deliveryManagers
+    //  deliveryManagers/fulfillmentProviders
     //
 
     try
@@ -2024,6 +2026,10 @@ public class Deployment
             JSONObject deliveryManagerJSON = (JSONObject) deliveryManagerValues.get(i);
             DeliveryManagerDeclaration deliveryManagerDeclaration = new DeliveryManagerDeclaration(deliveryManagerJSON);
             deliveryManagers.put(deliveryManagerDeclaration.getDeliveryType(), deliveryManagerDeclaration);
+            if (deliveryManagerDeclaration.getProviderID() != null)
+              {
+                fulfillmentProviders.put(deliveryManagerDeclaration.getProviderID(), deliveryManagerDeclaration);
+              }
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

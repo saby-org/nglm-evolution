@@ -187,6 +187,15 @@ public class GUIService
     readGUIManagedObjects(guiManagedObjectsConsumer, true);
 
     //
+    //  close consumer (if master)
+    //
+
+    if (masterService)
+      {
+        guiManagedObjectsConsumer.close();
+      }
+
+    //
     //  initialize listenerQueue
     //
 
