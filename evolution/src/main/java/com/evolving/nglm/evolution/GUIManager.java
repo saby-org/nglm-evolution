@@ -13118,7 +13118,12 @@ public class GUIManager
     response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true).size());
     response.put("reportsCount", reportService.getStoredReports().size());
     response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
-    response.put("ucgRuleCount",ucgRuleService.getStoredUCGRules().size());
+    response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules().size());
+    response.put("targetCount", targetService.getStoredTargets().size());
+    response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets().size());
+    response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies().size());
+    response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels().size());
+    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());    
     return JSONUtilities.encodeObject(response);
   }
 
