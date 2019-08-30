@@ -303,6 +303,51 @@
   echo
 
   #
+  #  manually create journeytraffic index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/journeytraffic -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "journeyID" : { "type" : "keyword" },
+                  "lastUpdateDate" : { "type" : "date" },
+                  "lastArchivedDataDate" : { "type" : "date" },
+                  "archivePeriodInSeconds" : { "type" : "integer" },
+                  "maxNumberOfPeriods" : { "type" : "integer" },
+                  "currentData" : { "type" : "object" },
+                  "archivedData" : { "type" : "object" }
+                }
+        }
+    }'
+  echo
+
+  #
   #  manually create journeymetric index
   #   - these settings are for index heavy load
   #

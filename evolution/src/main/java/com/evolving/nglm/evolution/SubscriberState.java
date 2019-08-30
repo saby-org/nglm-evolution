@@ -69,7 +69,7 @@ public class SubscriberState implements SubscriberStreamOutput
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
     schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -83,7 +83,7 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("journeyResponses", SchemaBuilder.array(JourneyRequest.schema()).schema());
     schemaBuilder.field("pointFulfillmentResponses", SchemaBuilder.array(PointFulfillmentRequest.schema()).schema());
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
-    schemaBuilder.field("journeyStatistics", SchemaBuilder.array(JourneyStatistic.schema()).schema());
+    schemaBuilder.field("journeyStatisticWrappers", SchemaBuilder.array(JourneyStatisticWrapper.schema()).schema());
     schemaBuilder.field("journeyMetrics", SchemaBuilder.array(JourneyMetric.schema()).schema());
     schemaBuilder.field("propensityOutputs", SchemaBuilder.array(PropensityEventOutput.schema()).defaultValue(Collections.<PropensityEventOutput>emptyList()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
@@ -122,7 +122,7 @@ public class SubscriberState implements SubscriberStreamOutput
   private List<JourneyRequest> journeyResponses;
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
-  private List<JourneyStatistic> journeyStatistics;
+  private List<JourneyStatisticWrapper> journeyStatisticWrappers;
   private List<JourneyMetric> journeyMetrics;
   private List<PropensityEventOutput> propensityOutputs;
   private SubscriberTrace subscriberTrace;
@@ -146,7 +146,7 @@ public class SubscriberState implements SubscriberStreamOutput
   public List<JourneyRequest> getJourneyResponses() { return journeyResponses; }
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
-  public List<JourneyStatistic> getJourneyStatistics() { return journeyStatistics; }
+  public List<JourneyStatisticWrapper> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<PropensityEventOutput> getPropensityOutputs() { return propensityOutputs; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
@@ -194,7 +194,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyResponses = new ArrayList<JourneyRequest>();
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
-        this.journeyStatistics = new ArrayList<JourneyStatistic>();
+        this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.propensityOutputs = new ArrayList<PropensityEventOutput>();
         this.subscriberTrace = null;
@@ -215,7 +215,7 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatistic> journeyStatistics, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -230,7 +230,7 @@ public class SubscriberState implements SubscriberStreamOutput
     this.journeyResponses = journeyResponses;
     this.pointFulfillmentResponses = pointFulfillmentResponses;
     this.deliveryRequests = deliveryRequests;
-    this.journeyStatistics = journeyStatistics;
+    this.journeyStatisticWrappers = journeyStatisticWrappers;
     this.journeyMetrics = journeyMetrics;
     this.propensityOutputs = propensityOutputs;
     this.subscriberTrace = subscriberTrace;
@@ -277,13 +277,13 @@ public class SubscriberState implements SubscriberStreamOutput
           }
         
         //
-        //  deep copy of journey statistics
+        //  deep copy of journey statistic wrappers
         //
-        
-        this.journeyStatistics = new ArrayList<JourneyStatistic>();
-        for(JourneyStatistic journeyStatistic : subscriberState.getJourneyStatistics())
+
+        this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
+        for(JourneyStatisticWrapper journeyStatisticWrapper : subscriberState.getJourneyStatisticWrappers())
           {
-            this.journeyStatistics.add(new JourneyStatistic(journeyStatistic));
+            this.journeyStatisticWrappers.add(new JourneyStatisticWrapper(journeyStatisticWrapper));
           }
       }
     catch (InvocationTargetException e)
@@ -319,7 +319,7 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("journeyResponses", packJourneyRequests(subscriberState.getJourneyResponses()));
     struct.put("pointFulfillmentResponses", packPointFulfillmentResponses(subscriberState.getPointFulfillmentResponses()));
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
-    struct.put("journeyStatistics", packJourneyStatistics(subscriberState.getJourneyStatistics()));
+    struct.put("journeyStatisticWrappers", packJourneyStatisticWrappers(subscriberState.getJourneyStatisticWrappers()));
     struct.put("journeyMetrics", packJourneyMetrics(subscriberState.getJourneyMetrics()));
     struct.put("propensityOutputs", packPropensityOutputs(subscriberState.getPropensityOutputs()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
@@ -408,16 +408,16 @@ public class SubscriberState implements SubscriberStreamOutput
 
   /*****************************************
   *
-  *  packJourneyStatistics
+  *  packJourneyStatisticWrappers
   *
   *****************************************/
 
-  private static List<Object> packJourneyStatistics(List<JourneyStatistic> journeyStatistics)
+  private static List<Object> packJourneyStatisticWrappers(List<JourneyStatisticWrapper> journeyStatisticWrappers)
   {
     List<Object> result = new ArrayList<Object>();
-    for (JourneyStatistic journeyStatistic : journeyStatistics)
+    for (JourneyStatisticWrapper journeyStatisticWrapper : journeyStatisticWrappers)
       {
-        result.add(JourneyStatistic.pack(journeyStatistic));
+        result.add(JourneyStatisticWrapper.pack(journeyStatisticWrapper));
       }
     return result;
   }
@@ -488,7 +488,7 @@ public class SubscriberState implements SubscriberStreamOutput
     List<JourneyRequest> journeyResponses = unpackJourneyRequests(schema.field("journeyResponses").schema(), valueStruct.get("journeyResponses"));
     List<PointFulfillmentRequest> pointFulfillmentResponses = (schemaVersion >= 2) ? unpackPointFulfillmentResponses(schema.field("pointFulfillmentResponses").schema(), valueStruct.get("pointFulfillmentResponses")) : Collections.<PointFulfillmentRequest>emptyList();
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
-    List<JourneyStatistic> journeyStatistics = unpackJourneyStatistics(schema.field("journeyStatistics").schema(), valueStruct.get("journeyStatistics"));
+    List<JourneyStatisticWrapper> journeyStatisticWrappers = (schemaVersion >= 3) ?unpackJourneyStatisticWrappers(schema.field("journeyStatisticWrappers").schema(), valueStruct.get("journeyStatisticWrappers")) : new ArrayList<JourneyStatisticWrapper>();
     List<JourneyMetric> journeyMetrics = (schemaVersion >= 2) ? unpackJourneyMetrics(schema.field("journeyMetrics").schema(), valueStruct.get("journeyMetrics")) : new ArrayList<JourneyMetric>();
     List<PropensityEventOutput> propensityOutputs = (schemaVersion >= 2) ? unpackPropensityOutputs(schema.field("propensityOutputs").schema(), valueStruct.get("propensityOutputs")) : new ArrayList<PropensityEventOutput>();
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
@@ -497,7 +497,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, pointFulfillmentResponses, deliveryRequests, journeyStatistics, journeyMetrics, propensityOutputs, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, subscriberTrace);
   }
 
   /*****************************************
@@ -670,24 +670,24 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private static List<JourneyStatistic> unpackJourneyStatistics(Schema schema, Object value)
+  private static List<JourneyStatisticWrapper> unpackJourneyStatisticWrappers(Schema schema, Object value)
   {
     //
-    //  get schema for JourneyStatistic
+    //  get schema for JourneyStatisticWrapper
     //
 
-    Schema journeyStatisticSchema = schema.valueSchema();
+    Schema journeyStatisticWrapperSchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    List<JourneyStatistic> result = new ArrayList<JourneyStatistic>();
+    List<JourneyStatisticWrapper> result = new ArrayList<JourneyStatisticWrapper>();
     List<Object> valueArray = (List<Object>) value;
     for (Object statistic : valueArray)
       {
-        JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticSchema, statistic));
-        result.add(journeyStatistic);
+        JourneyStatisticWrapper journeyStatisticWrapper = JourneyStatisticWrapper.unpack(new SchemaAndValue(journeyStatisticWrapperSchema, statistic));
+        result.add(journeyStatisticWrapper);
       }
 
     //

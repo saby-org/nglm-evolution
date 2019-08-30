@@ -72,7 +72,6 @@ import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.CustomerStatusInJourney;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;

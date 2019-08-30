@@ -13,8 +13,6 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

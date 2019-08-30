@@ -108,8 +108,12 @@ public class Deployment
   private static String propensityRepartitioningTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
+  private static String journeyTrafficChangeLog;
+  private static String journeyTrafficChangeLogTopic;
   private static String subscriberProfileRegistrySubject;
   private static CompressionType subscriberProfileCompressionType;
+  private static int journeyTrafficArchivePeriodInSeconds;
+  private static int journeyTrafficArchiveMaxNumberOfPeriods;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static String baseLanguageID;
@@ -289,8 +293,12 @@ public class Deployment
   public static String getPropensityRepartitioningTopic() { return propensityRepartitioningTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
+  public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
+  public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
+  public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
+  public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static String getBaseLanguageID() { return baseLanguageID; }
@@ -1425,6 +1433,32 @@ public class Deployment
       }
 
     //
+    //  journeyTrafficChangeLog
+    //
+
+    try
+      {
+        journeyTrafficChangeLog = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLog", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  journeyTrafficChangeLogTopic
+    //
+
+    try
+      {
+        journeyTrafficChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLogTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
     //  subscriberProfileRegistrySubject
     //
 
@@ -1450,6 +1484,32 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     if (subscriberProfileCompressionType == CompressionType.Unknown) throw new ServerRuntimeException("unsupported compression type");
+
+    //
+    //  journeyTrafficArchivePeriodInSeconds
+    //
+
+    try
+      {
+        journeyTrafficArchivePeriodInSeconds = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchivePeriodInSeconds", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  journeyTrafficArchiveMaxNumberOfPeriods
+    //
+
+    try
+      {
+        journeyTrafficArchiveMaxNumberOfPeriods = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchiveMaxNumberOfPeriods", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
     
     //
     //  propensityRule

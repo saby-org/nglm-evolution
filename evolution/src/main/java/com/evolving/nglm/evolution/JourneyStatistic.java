@@ -11,6 +11,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
@@ -23,6 +24,8 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -147,6 +150,14 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
       return SubscriberJourneyStatus.Notified;
     else
       return SubscriberJourneyStatus.Eligible;
+  }
+  
+  //
+  //  getSubscriberJourneyAggregatedStatus
+  //
+  
+  public SubscriberJourneyAggregatedStatus getSubscriberJourneyAggregatedStatus() {
+    return SubscriberJourneyAggregatedStatus.fromJourneyStatus(statusControlGroup, statusNotified, statusConverted);
   }
 
   /*****************************************
@@ -306,6 +317,48 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     for(RewardHistory reward : journeyStatistic.getJourneyRewardHistory())
       {
         this.journeyRewardHistory.add(reward);
+      }
+  }
+  
+  public StatusHistory getPreviousJourneyStatus()
+  {
+    if(this.journeyStatusHistory == null) 
+      {
+        return null;
+      }
+    else if(this.journeyStatusHistory.size() <= 1)
+      {
+        return null;
+      }
+    else 
+      {
+        StatusHistory max = null;
+        StatusHistory previous = null;
+        for(StatusHistory status : this.journeyStatusHistory) 
+          {
+            if(max == null) 
+              {
+                max = status;
+              } 
+            else
+              {
+                if(status.getDate().compareTo(max.getDate()) > 0) 
+                  {
+                    previous = max;
+                    max = status;
+                  } 
+                else if (previous == null)
+                  {
+                    previous = status;
+                  }
+                else if (status.getDate().compareTo(previous.getDate()) > 0)
+                  {
+                    previous = status;
+                  }
+              }
+            
+          }
+        return previous;
       }
   }
 
@@ -618,7 +671,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
               {
                 result.add(rewardHistory);
               }
-          }
+          }        
       }
     return result;
   }

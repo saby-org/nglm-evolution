@@ -38,6 +38,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 
 public class Journey extends GUIManagedObject
 {
@@ -119,6 +120,57 @@ public class Journey extends GUIManagedObject
     public static SubscriberJourneyStatusField fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatusField enumeratedValue : SubscriberJourneyStatusField.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
+  //
+  //  SubscriberJourneyStatus
+  //
+
+  public enum SubscriberJourneyAggregatedStatus
+  {
+    ControlGroup_Entered("controlGroup_entered"),
+    ControlGroup_Converted("controlGroup_converted"),
+    Entered("entered"),
+    Notified("notified"),
+    Unnotified_Converted("unnotified_converted"),
+    Notified_Converted("notified_converted"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private SubscriberJourneyAggregatedStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static SubscriberJourneyAggregatedStatus fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyAggregatedStatus enumeratedValue : SubscriberJourneyAggregatedStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+    public static SubscriberJourneyAggregatedStatus fromJourneyStatus(boolean statusControlGroup, boolean statusNotified, boolean statusConverted) {
+      if (statusControlGroup) 
+        {
+          if(statusConverted) 
+            {
+              return SubscriberJourneyAggregatedStatus.ControlGroup_Converted;
+            } 
+          else 
+            {
+              return SubscriberJourneyAggregatedStatus.ControlGroup_Entered;
+            }
+        }
+      else if (statusConverted)
+        {
+          if(statusNotified) 
+            {
+              return SubscriberJourneyAggregatedStatus.Notified_Converted;
+            }
+          else 
+            {
+              return SubscriberJourneyAggregatedStatus.Unnotified_Converted;
+            }
+        }
+      else if (statusNotified) 
+        {
+          return SubscriberJourneyAggregatedStatus.Notified;
+        }
+      else 
+        {
+          return SubscriberJourneyAggregatedStatus.Entered;
+        }
+    }
+  }
+  
   //
   //  TargetingType
   //

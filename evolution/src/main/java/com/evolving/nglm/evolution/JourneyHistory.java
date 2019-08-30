@@ -19,6 +19,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -392,7 +393,11 @@ public class JourneyHistory
   *
   *****************************************/
   
-  public void addStatusInformation(Date now, JourneyState journeyState, boolean journeyComplete) 
+  /**
+   * 
+   * @return true if a new status has been published in status history
+   */
+  public boolean addStatusInformation(Date now, JourneyState journeyState, boolean journeyComplete) 
   { 
     boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
     boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
@@ -402,7 +407,10 @@ public class JourneyHistory
     if(!this.statusHistory.contains(statusHistory)) 
       {
         this.statusHistory.add(statusHistory);
+        return true;
       }
+
+    return false;
   }
 
   /*****************************************
@@ -824,6 +832,10 @@ public class JourneyHistory
         return SubscriberJourneyStatus.Notified;
       else
         return SubscriberJourneyStatus.Eligible;
+    }
+
+    public SubscriberJourneyAggregatedStatus getSubscriberJourneyAggregatedStatus() {
+      return SubscriberJourneyAggregatedStatus.fromJourneyStatus(statusControlGroup, statusNotified, statusConverted);
     }
     
     /*****************************************

@@ -86,6 +86,26 @@
     }' &
 
   #
+  #  sink connector -- journeyTraffic (elasticsearch)
+  #
+
+  export CONNECT_URL_JOURNEYTRAFFIC_ES=${CONNECT_URL_JOURNEYTRAFFIC_ES:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_JOURNEYTRAFFIC_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "journeytraffic_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.JourneyTrafficESSinkConnector",
+        "tasks.max" : 1,
+        "topics" : "${changelog.evolutionengine.journeytraffic.topic}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "indexName" : "journeytraffic"
+        }
+    }' &
+    
+
+  #
   #  sink connector -- journeyMetric (elasticsearch)
   #
 

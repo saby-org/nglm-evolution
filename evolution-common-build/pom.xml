@@ -176,6 +176,8 @@
     <changelog.evolutionengine.subscriberhistory.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberhistory}-changelog</changelog.evolutionengine.subscriberhistory.topic>
     <changelog.evolutionengine.propensitystate>propensitystate</changelog.evolutionengine.propensitystate>
     <changelog.evolutionengine.propensitystate.topic>streams-evolutionengine-${changelog.evolutionengine.propensitystate}-changelog</changelog.evolutionengine.propensitystate.topic>
+    <changelog.evolutionengine.journeytraffic>journeytraffic</changelog.evolutionengine.journeytraffic>
+    <changelog.evolutionengine.journeytraffic.topic>streams-evolutionengine-${changelog.evolutionengine.journeytraffic}-changelog</changelog.evolutionengine.journeytraffic.topic>
     <topic.evolutionengine.pointfulfillment.repartition>pointfulfillmentrequest-repartition</topic.evolutionengine.pointfulfillment.repartition>
     <topic.evolutionengine.propensityoutput.repartition>propensityoutput-repartition</topic.evolutionengine.propensityoutput.repartition>
 
