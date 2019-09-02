@@ -740,7 +740,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof LoyaltyProgramRequest), 
         (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
         (key,value) -> (value instanceof DeliveryRequest), 
-        (key,value) -> (value instanceof JourneyStatistic), 
+        (key,value) -> (value instanceof JourneyStatisticWrapper), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
         (key,value) -> (value instanceof PropensityEventOutput));
@@ -750,7 +750,7 @@ public class EvolutionEngine
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramRequestStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[3];
     KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[4];
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[5];
-    KStream<StringKey, JourneyStatisticWrapper> journeyStatisticWrapperStream = (KStream<StringKey, JourneyStatisticWrapper>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, JourneyStatisticWrapper> journeyStatisticWrapperStream = (KStream<StringKey, JourneyStatisticWrapper>) branchedEvolutionEngineOutputs[6];
     KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[7];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[8];
     KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[9];
@@ -1566,7 +1566,6 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
-
 
     /*****************************************
     *
