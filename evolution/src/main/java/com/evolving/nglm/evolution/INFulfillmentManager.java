@@ -23,7 +23,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
   
@@ -34,24 +33,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *  enum
   *
   *****************************************/
-
-  //
-  //  INFulfillmentOperation
-  //
-
-  public enum INFulfillmentOperation
-  {
-    Credit("credit"),
-    Debit("debit"),
-    Set("set"),
-    Activate("activate"),
-    Deactivate("deactivate"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private INFulfillmentOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static INFulfillmentOperation fromExternalRepresentation(String externalRepresentation) { for (INFulfillmentOperation enumeratedValue : INFulfillmentOperation.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
 
   //
   //  INFulfillmentStatus
@@ -256,7 +237,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     private String providerID;
     private String commodityID;
     private String externalAccountID;
-    private INFulfillmentOperation operation;
+    private CommodityDeliveryOperation operation;
     private int amount;
     private TimeUnit validityPeriodType;
     private Integer validityPeriodQuantity;
@@ -271,7 +252,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     public String getProviderID() { return providerID; }
     public String getCommodityID() { return commodityID; }
     public String getExternalAccountID() { return externalAccountID; }
-    public INFulfillmentOperation getOperation() { return operation; }
+    public CommodityDeliveryOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public TimeUnit getValidityPeriodType() { return validityPeriodType; }
     public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }
@@ -293,7 +274,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String externalAccountID, INFulfillmentOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
+    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.providerID = providerID;
@@ -320,7 +301,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
       this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
       this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
-      this.operation = INFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
+      this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
       this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
       this.validityPeriodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityPeriodType", false));
       this.validityPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, "validityPeriodQuantity", false);
@@ -335,7 +316,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, String externalAccountID, INFulfillmentOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, INFulfillmentStatus status)
+    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, INFulfillmentStatus status)
     {
       super(schemaAndValue);
       this.providerID = providerID;
@@ -432,7 +413,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       String providerID = valueStruct.getString("providerID");
       String commodityID = valueStruct.getString("commodityID");
       String externalAccountID = valueStruct.getString("externalAccountID");
-      INFulfillmentOperation operation = INFulfillmentOperation.fromExternalRepresentation(valueStruct.getString("operation"));
+      CommodityDeliveryOperation operation = CommodityDeliveryOperation.fromExternalRepresentation(valueStruct.getString("operation"));
       int amount = valueStruct.getInt32("amount");
       TimeUnit validityPeriodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("validityPeriodType"));
       Integer validityPeriodQuantity = valueStruct.getInt32("validityPeriodQuantity");
@@ -552,7 +533,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         *****************************************/
         
         INFulfillmentStatus status = null;
-        INFulfillmentOperation operation = ((INFulfillmentRequest)deliveryRequest).getOperation();
+        CommodityDeliveryOperation operation = ((INFulfillmentRequest)deliveryRequest).getOperation();
         switch (operation) {
         case Credit:
           status = inPlugin.credit((INFulfillmentRequest)deliveryRequest);

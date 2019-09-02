@@ -97,6 +97,8 @@ public class Deployment
   private static String subscriberHistoryChangeLogTopic;
   private static String journeyRequestTopic;
   private static String journeyResponseTopic;
+  private static String loyaltyProgramRequestTopic;
+  private static String loyaltyProgramResponseTopic;
   private static String journeyStatisticTopic;
   private static String journeyMetricTopic;
   private static String deliverableSourceTopic;
@@ -282,6 +284,8 @@ public class Deployment
   public static String getSubscriberHistoryChangeLogTopic() { return subscriberHistoryChangeLogTopic; }
   public static String getJourneyRequestTopic() { return journeyRequestTopic; }
   public static String getJourneyResponseTopic() { return journeyResponseTopic; }
+  public static String getLoyaltyProgramRequestTopic() { return loyaltyProgramRequestTopic; }
+  public static String getLoyaltyProgramResponseTopic() { return loyaltyProgramResponseTopic; }
   public static String getJourneyStatisticTopic() { return journeyStatisticTopic; }
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getDeliverableSourceTopic() { return deliverableSourceTopic; }
@@ -1283,6 +1287,32 @@ public class Deployment
     try
       {
         journeyResponseTopic = JSONUtilities.decodeString(jsonRoot, "journeyResponseTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  loyaltyProgramRequestTopic
+    //
+
+    try
+      {
+        loyaltyProgramRequestTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  loyaltyProgramResponseTopic
+    //
+
+    try
+      {
+        loyaltyProgramResponseTopic = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramResponseTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

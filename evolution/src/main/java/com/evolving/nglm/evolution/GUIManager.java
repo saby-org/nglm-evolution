@@ -13177,7 +13177,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(segmentationDimensionService, targetService, pointService, exclusionInclusionTargetService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(loyaltyProgramService, segmentationDimensionService, targetService, pointService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
@@ -18596,6 +18596,23 @@ public class GUIManager
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", productType.getProductTypeID());
                       availableValue.put("display", productType.getProductTypeName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "callableLoyaltyPrograms":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject loyaltyProgramUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
+                {
+                  if (loyaltyProgramUnchecked.getAccepted())
+                    {
+                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }

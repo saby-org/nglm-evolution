@@ -471,7 +471,6 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     *****************************************/
 
     private String deliveryType;
-//    private String providerID;
     private EmptyFulfillmentOperation operation;
     
     /*****************************************
@@ -484,7 +483,6 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     {
       super(configuration);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
-//      this.providerID = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(this.deliveryType).getJSONRepresentation(), "providerID", true);
       this.operation = EmptyFulfillmentOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
     }
 

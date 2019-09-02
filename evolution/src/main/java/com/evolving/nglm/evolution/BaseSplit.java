@@ -130,7 +130,7 @@ public class BaseSplit
       }
     else
       {
-        throw new GUIManagerException("unsupported range variable", this.variableName);
+        throw new GUIManagerException("unsupported range variable ", this.variableName);
       }
 
     //
@@ -140,10 +140,11 @@ public class BaseSplit
     switch (rangeVariable.getFieldDataType())
       {
         case IntegerCriterion:
+        case DoubleCriterion:
           break;
 
         default:
-          throw new GUIManagerException("unsupported range variable type", this.variableName);
+          throw new GUIManagerException("unsupported range variable type ("+rangeVariable.getFieldDataType()+") ", this.variableName);
       }
 
     //

@@ -36,7 +36,6 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentOperation;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -59,6 +58,9 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   {
     Credit("credit"),
     Debit("debit"),
+    Set("set"),
+    Activate("activate"),
+    Deactivate("deactivate"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private CommodityDeliveryOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -1168,8 +1170,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       inRequestData.put("commodityID", commodityDeliveryRequest.getCommodityID());
       inRequestData.put("externalAccountID", externalAccountID);
       
-      //TODO SCH : remove INFulfillmentOperation (only one list of operations -> keep CommodityDeliveryOperation)
-      inRequestData.put("operation", INFulfillmentOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
+      inRequestData.put("operation", CommodityDeliveryOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
       inRequestData.put("amount", commodityDeliveryRequest.getAmount());
       inRequestData.put("validityPeriodType", (commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null));
       inRequestData.put("validityPeriodQuantity", commodityDeliveryRequest.getValidityPeriodQuantity());

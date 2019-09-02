@@ -6,43 +6,28 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SubscriberTrace;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import org.json.simple.JSONObject;
-
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
-import java.lang.reflect.InvocationTargetException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.core.SubscriberTrace;
 
 public class SubscriberState implements SubscriberStreamOutput
 {
@@ -81,6 +66,8 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("lastEvaluationDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("journeyRequests", SchemaBuilder.array(JourneyRequest.schema()).schema());
     schemaBuilder.field("journeyResponses", SchemaBuilder.array(JourneyRequest.schema()).schema());
+    schemaBuilder.field("loyaltyProgramRequests", SchemaBuilder.array(LoyaltyProgramRequest.schema()).schema());
+    schemaBuilder.field("loyaltyProgramResponses", SchemaBuilder.array(LoyaltyProgramRequest.schema()).schema());
     schemaBuilder.field("pointFulfillmentResponses", SchemaBuilder.array(PointFulfillmentRequest.schema()).schema());
     schemaBuilder.field("deliveryRequests", SchemaBuilder.array(DeliveryRequest.commonSerde().schema()).schema());
     schemaBuilder.field("journeyStatisticWrappers", SchemaBuilder.array(JourneyStatisticWrapper.schema()).schema());
@@ -120,6 +107,8 @@ public class SubscriberState implements SubscriberStreamOutput
   private Date lastEvaluationDate;
   private List<JourneyRequest> journeyRequests;
   private List<JourneyRequest> journeyResponses;
+  private List<LoyaltyProgramRequest> loyaltyProgramRequests;
+  private List<LoyaltyProgramRequest> loyaltyProgramResponses;
   private List<PointFulfillmentRequest> pointFulfillmentResponses;
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyStatisticWrapper> journeyStatisticWrappers;
@@ -144,6 +133,8 @@ public class SubscriberState implements SubscriberStreamOutput
   public Date getLastEvaluationDate() { return lastEvaluationDate; }
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
   public List<JourneyRequest> getJourneyResponses() { return journeyResponses; }
+  public List<LoyaltyProgramRequest> getLoyaltyProgramRequests() { return loyaltyProgramRequests; }
+  public List<LoyaltyProgramRequest> getLoyaltyProgramResponses() { return loyaltyProgramResponses; }
   public List<PointFulfillmentRequest> getPointFulfillmentResponses() { return pointFulfillmentResponses; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyStatisticWrapper> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
@@ -192,6 +183,8 @@ public class SubscriberState implements SubscriberStreamOutput
         this.lastEvaluationDate = null;
         this.journeyRequests = new ArrayList<JourneyRequest>();
         this.journeyResponses = new ArrayList<JourneyRequest>();
+        this.loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>();
+        this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>();
         this.pointFulfillmentResponses = new ArrayList<PointFulfillmentRequest>();
         this.deliveryRequests = new ArrayList<DeliveryRequest>();
         this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
@@ -215,7 +208,7 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -228,6 +221,8 @@ public class SubscriberState implements SubscriberStreamOutput
     this.lastEvaluationDate = lastEvaluationDate;
     this.journeyRequests = journeyRequests;
     this.journeyResponses = journeyResponses;
+    this.loyaltyProgramRequests = loyaltyProgramRequests;
+    this.loyaltyProgramResponses = loyaltyProgramResponses;
     this.pointFulfillmentResponses = pointFulfillmentResponses;
     this.deliveryRequests = deliveryRequests;
     this.journeyStatisticWrappers = journeyStatisticWrappers;
@@ -260,6 +255,8 @@ public class SubscriberState implements SubscriberStreamOutput
         this.lastEvaluationDate = subscriberState.getLastEvaluationDate();
         this.journeyRequests = new ArrayList<JourneyRequest>(subscriberState.getJourneyRequests());
         this.journeyResponses = new ArrayList<JourneyRequest>(subscriberState.getJourneyResponses());
+        this.loyaltyProgramRequests = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramRequests());
+        this.loyaltyProgramResponses = new ArrayList<LoyaltyProgramRequest>(subscriberState.getLoyaltyProgramResponses());
         this.pointFulfillmentResponses= new ArrayList<PointFulfillmentRequest>(subscriberState.getPointFulfillmentResponses());
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
@@ -317,6 +314,8 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("lastEvaluationDate", subscriberState.getLastEvaluationDate());
     struct.put("journeyRequests", packJourneyRequests(subscriberState.getJourneyRequests()));
     struct.put("journeyResponses", packJourneyRequests(subscriberState.getJourneyResponses()));
+    struct.put("loyaltyProgramRequests", packLoyaltyProgramRequests(subscriberState.getLoyaltyProgramRequests()));
+    struct.put("loyaltyProgramResponses", packLoyaltyProgramRequests(subscriberState.getLoyaltyProgramResponses()));
     struct.put("pointFulfillmentResponses", packPointFulfillmentResponses(subscriberState.getPointFulfillmentResponses()));
     struct.put("deliveryRequests", packDeliveryRequests(subscriberState.getDeliveryRequests()));
     struct.put("journeyStatisticWrappers", packJourneyStatisticWrappers(subscriberState.getJourneyStatisticWrappers()));
@@ -370,6 +369,22 @@ public class SubscriberState implements SubscriberStreamOutput
     for (JourneyRequest journeyRequest : journeyRequests)
       {
         result.add(JourneyRequest.pack(journeyRequest));
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  packLoyaltyProgramRequests
+  *
+  *****************************************/
+
+  private static List<Object> packLoyaltyProgramRequests(List<LoyaltyProgramRequest> loyaltyProgramRequests)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (LoyaltyProgramRequest loyaltyProgramRequest : loyaltyProgramRequests)
+      {
+        result.add(LoyaltyProgramRequest.pack(loyaltyProgramRequest));
       }
     return result;
   }
@@ -486,6 +501,8 @@ public class SubscriberState implements SubscriberStreamOutput
     Date lastEvaluationDate = (Date) valueStruct.get("lastEvaluationDate");
     List<JourneyRequest> journeyRequests = unpackJourneyRequests(schema.field("journeyRequests").schema(), valueStruct.get("journeyRequests"));
     List<JourneyRequest> journeyResponses = unpackJourneyRequests(schema.field("journeyResponses").schema(), valueStruct.get("journeyResponses"));
+    List<LoyaltyProgramRequest> loyaltyProgramRequests = unpackLoyaltyProgramRequests(schema.field("loyaltyProgramRequests").schema(), valueStruct.get("loyaltyProgramRequests"));
+    List<LoyaltyProgramRequest> loyaltyProgramResponses = unpackLoyaltyProgramRequests(schema.field("loyaltyProgramResponses").schema(), valueStruct.get("loyaltyProgramResponses"));
     List<PointFulfillmentRequest> pointFulfillmentResponses = (schemaVersion >= 2) ? unpackPointFulfillmentResponses(schema.field("pointFulfillmentResponses").schema(), valueStruct.get("pointFulfillmentResponses")) : Collections.<PointFulfillmentRequest>emptyList();
     List<DeliveryRequest> deliveryRequests = unpackDeliveryRequests(schema.field("deliveryRequests").schema(), valueStruct.get("deliveryRequests"));
     List<JourneyStatisticWrapper> journeyStatisticWrappers = (schemaVersion >= 3) ?unpackJourneyStatisticWrappers(schema.field("journeyStatisticWrappers").schema(), valueStruct.get("journeyStatisticWrappers")) : new ArrayList<JourneyStatisticWrapper>();
@@ -497,7 +514,7 @@ public class SubscriberState implements SubscriberStreamOutput
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, subscriberTrace);
   }
 
   /*****************************************
@@ -589,6 +606,39 @@ public class SubscriberState implements SubscriberStreamOutput
       {
         JourneyRequest journeyRequest = JourneyRequest.unpack(new SchemaAndValue(journeyRequestSchema, request));
         result.add(journeyRequest);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackLoyaltyProgramRequests
+  *
+  *****************************************/
+
+  private static List<LoyaltyProgramRequest> unpackLoyaltyProgramRequests(Schema schema, Object value)
+  {
+    //
+    //  get schema for LoyaltyProgramRequest
+    //
+
+    Schema loyaltyProgramRequestSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    List<LoyaltyProgramRequest> result = new ArrayList<LoyaltyProgramRequest>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object request : valueArray)
+      {
+        LoyaltyProgramRequest loyaltyProgramRequest = LoyaltyProgramRequest.unpack(new SchemaAndValue(loyaltyProgramRequestSchema, request));
+        result.add(loyaltyProgramRequest);
       }
 
     //

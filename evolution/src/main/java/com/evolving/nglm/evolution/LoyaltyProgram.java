@@ -31,6 +31,27 @@ import java.util.Set;
 public class LoyaltyProgram extends GUIManagedObject
 {
   /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+
+  //
+  //  LoyaltyProgramOperation
+  //
+
+  public enum LoyaltyProgramOperation
+  {
+    Optin("opt-in"),
+    Optout("opt-out"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private LoyaltyProgramOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static LoyaltyProgramOperation fromExternalRepresentation(String externalRepresentation) { for (LoyaltyProgramOperation enumeratedValue : LoyaltyProgramOperation.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  /*****************************************
    *
    *  schema
    *
@@ -86,6 +107,8 @@ public class LoyaltyProgram extends GUIManagedObject
    *
    *****************************************/
 
+  public String getLoyaltyProgramID() { return getGUIManagedObjectID(); }
+  public String getLoyaltyProgramName() { return getGUIManagedObjectName(); }
   public String getProgramType() { return programType; }
   public String getRewardPointsID() { return rewardPointID; }
   public String getStatusPointsID() { return statusPointID; }

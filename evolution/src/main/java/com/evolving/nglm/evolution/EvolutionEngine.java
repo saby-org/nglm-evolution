@@ -104,6 +104,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
@@ -166,6 +167,7 @@ public class EvolutionEngine
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
   private static JourneyService journeyService;
+  private static LoyaltyProgramService loyaltyProgramService;
   private static TargetService targetService;
   private static JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService;
@@ -250,6 +252,7 @@ public class EvolutionEngine
     String journeyRequestTopic = Deployment.getJourneyRequestTopic();
     String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
     String journeyMetricTopic = Deployment.getJourneyMetricTopic();
+    String loyaltyProgramRequestTopic = Deployment.getLoyaltyProgramRequestTopic();
     String recordSubscriberIDTopic = Deployment.getRecordSubscriberIDTopic();
     String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
@@ -265,6 +268,7 @@ public class EvolutionEngine
     String propensityLogTopic = Deployment.getPropensityLogTopic();
     String pointFulfillmentResponseTopic = Deployment.getPointFulfillmentResponseTopic();
     String journeyResponseTopic = Deployment.getJourneyResponseTopic();
+    String loyaltyProgramResponseTopic = Deployment.getLoyaltyProgramResponseTopic();
 
     //
     //  changelogs
@@ -301,7 +305,14 @@ public class EvolutionEngine
 
     journeyService = new JourneyService(bootstrapServers, "evolutionengine-journeyservice-" + evolutionEngineKey, Deployment.getJourneyTopic(), false);
     journeyService.start();
-
+    
+    //
+    //  loyaltyProgramService
+    // 
+    
+    loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "evolutionengine-loyaltyProgramService-" + evolutionEngineKey, Deployment.getLoyaltyProgramTopic(), false);
+    loyaltyProgramService.start();
+    
     //
     //  targetService
     //
@@ -498,6 +509,7 @@ public class EvolutionEngine
     final ConnectSerde<JourneyStatisticWrapper> journeyStatisticWrapperSerde = JourneyStatisticWrapper.serde();
     final ConnectSerde<JourneyTrafficHistory> journeyTrafficHistorySerde = JourneyTrafficHistory.serde();
     final ConnectSerde<JourneyMetric> journeyMetricSerde = JourneyMetric.serde();
+    final ConnectSerde<LoyaltyProgramRequest> loyaltyProgramRequestSerde = LoyaltyProgramRequest.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberState> subscriberStateSerde = SubscriberState.serde();
@@ -524,6 +536,7 @@ public class EvolutionEngine
     evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(journeyRequestSerde);
     evolutionEventSerdes.add(journeyStatisticSerde);
+    evolutionEventSerdes.add(loyaltyProgramRequestSerde);
     evolutionEventSerdes.add(subscriberGroupSerde);
     evolutionEventSerdes.add(subscriberTraceControlSerde);
     evolutionEventSerdes.addAll(evolutionEngineEventSerdes.values());
@@ -561,6 +574,7 @@ public class EvolutionEngine
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
     KStream<StringKey, JourneyRequest> journeyRequestSourceStream = builder.stream(journeyRequestTopic, Consumed.with(stringKeySerde, journeyRequestSerde));
     KStream<StringKey, JourneyStatistic> journeyStatisticSourceStream = builder.stream(journeyStatisticTopic, Consumed.with(stringKeySerde, journeyStatisticSerde));
+    KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramRequestSourceStream = builder.stream(loyaltyProgramRequestTopic, Consumed.with(stringKeySerde, loyaltyProgramRequestSerde));
     KStream<StringKey, SubscriberGroup> subscriberGroupSourceStream = builder.stream(subscriberGroupTopic, Consumed.with(stringKeySerde, subscriberGroupSerde));
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
@@ -680,6 +694,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyStatisticSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) loyaltyProgramRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberGroupSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) presentationLogSourceStream);
@@ -718,15 +733,27 @@ public class EvolutionEngine
     //  branch output streams
     //
 
-    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch((key,value) -> (value instanceof JourneyRequest && !((JourneyRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), (key,value) -> (value instanceof JourneyRequest), (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), (key,value) -> (value instanceof DeliveryRequest), (key,value) -> (value instanceof JourneyStatisticWrapper), (key,value) -> (value instanceof JourneyMetric), (key,value) -> (value instanceof SubscriberTrace), (key,value) -> (value instanceof PropensityEventOutput));
+    KStream<StringKey, ? extends SubscriberStreamOutput>[] branchedEvolutionEngineOutputs = evolutionEngineOutputs.branch(
+        (key,value) -> (value instanceof JourneyRequest && !((JourneyRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
+        (key,value) -> (value instanceof JourneyRequest), 
+        (key,value) -> (value instanceof LoyaltyProgramRequest && !((LoyaltyProgramRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
+        (key,value) -> (value instanceof LoyaltyProgramRequest), 
+        (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
+        (key,value) -> (value instanceof DeliveryRequest), 
+        (key,value) -> (value instanceof JourneyStatistic), 
+        (key,value) -> (value instanceof JourneyMetric), 
+        (key,value) -> (value instanceof SubscriberTrace),
+        (key,value) -> (value instanceof PropensityEventOutput));
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
-    KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[2];
-    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[3];
-    KStream<StringKey, JourneyStatisticWrapper> journeyStatisticWrapperStream = (KStream<StringKey, JourneyStatisticWrapper>) branchedEvolutionEngineOutputs[4];
-    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[5];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[6];
-    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[7];
+    KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
+    KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramRequestStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[3];
+    KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[4];
+    KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[5];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[6];
+    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[7];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[8];
+    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[9];
 
     //
     //  build predicates for delivery requests
@@ -763,6 +790,12 @@ public class EvolutionEngine
     //
 
     KStream<StringKey, JourneyRequest> rekeyedJourneyResponseStream = journeyResponseStream.map(EvolutionEngine::rekeyJourneyResponseStream);
+
+    //
+    //  rekey loyalty programs responses 
+    //
+
+    KStream<StringKey, LoyaltyProgramRequest> rekeyedLoyaltyProgramResponseStream = loyaltyProgramResponseStream.map(EvolutionEngine::rekeyLoyaltyProgramResponseStream);
 
     //
     //  rekey points responses 
@@ -864,6 +897,8 @@ public class EvolutionEngine
 
     journeyRequestStream.to(journeyRequestTopic, Produced.with(stringKeySerde, journeyRequestSerde));
     rekeyedJourneyResponseStream.to(journeyResponseTopic, Produced.with(stringKeySerde, journeyRequestSerde));
+    loyaltyProgramRequestStream.to(loyaltyProgramRequestTopic, Produced.with(stringKeySerde, loyaltyProgramRequestSerde));
+    rekeyedLoyaltyProgramResponseStream.to(loyaltyProgramResponseTopic, Produced.with(stringKeySerde, loyaltyProgramRequestSerde));
     rekeyedPointResponseStream.to(pointFulfillmentResponseTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
     journeyStatisticStream.to(journeyStatisticTopic, Produced.with(stringKeySerde, journeyStatisticSerde));
     journeyMetricStream.to(journeyMetricTopic, Produced.with(stringKeySerde, journeyMetricSerde));
@@ -1429,6 +1464,26 @@ public class EvolutionEngine
       }
 
     //
+    //  loyaltyProgramRequests
+    //
+
+    if (subscriberState.getLoyaltyProgramRequests().size() > 0)
+      {
+        subscriberState.getLoyaltyProgramRequests().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  loyaltyProgramResponses
+    //
+
+    if (subscriberState.getLoyaltyProgramResponses().size() > 0)
+      {
+        subscriberState.getLoyaltyProgramResponses().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
     //  pointFulfillmentResponses
     //
 
@@ -1511,6 +1566,7 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
+
 
     /*****************************************
     *
@@ -1877,7 +1933,7 @@ public class EvolutionEngine
               }
           }
       }
-
+    
     /*****************************************
     *
     *  update point balance
@@ -1977,7 +2033,107 @@ public class EvolutionEngine
             subscriberProfileUpdated = true;
           }
       }
-    
+
+    /*****************************************
+    *
+    *  update loyalty program
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof LoyaltyProgramRequest && ((LoyaltyProgramRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
+      {
+
+        //
+        //  LoyaltyProgramRequest
+        //
+
+        LoyaltyProgramRequest loyaltyProgramRequest = (LoyaltyProgramRequest) evolutionEvent;
+        LoyaltyProgramRequest loyaltyProgramResponse = loyaltyProgramRequest.copy();
+
+        //
+        //  loyaltyProgram
+        //
+
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramRequest.getLoyaltyProgramID(), now);
+        if (loyaltyProgram == null)
+          {
+            log.info("loyaltyProgramRequest failed (no such loyalty program): {}", loyaltyProgramRequest.getLoyaltyProgramID());
+            loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Failed);
+          }
+
+        //
+        //  update
+        //
+
+        if (loyaltyProgram != null)
+          {
+
+            //
+            //  determine tier
+            //
+            
+            //TODO SCH : EVCOR-119 : a implementer !!! !!! !!! !!! !!! !!! !!! !!! 
+            String tierID = "TODO tier ID";
+            String tierName = "TODO tier Name";
+            
+            //
+            //  get (or create) loyalty program
+            //
+
+            LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+            if (loyaltyProgramState == null)
+              {
+                log.info("loyaltyProgramRequest : new state ("+loyaltyProgram.getEpoch()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+now+", "+tierID+", "+tierName+", "+now+")");
+                loyaltyProgramState = new LoyaltyProgramState(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, tierID, tierName, now);
+              }
+
+            //
+            //  copy the loyalty program
+            //
+
+            loyaltyProgramState = new LoyaltyProgramState(loyaltyProgramState);
+
+            //
+            //  update
+            //
+            
+            boolean success = loyaltyProgramState.update(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), tierID, tierName, now);
+
+            //
+            //  update loyalty programs
+            //
+
+            subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), loyaltyProgramState);
+
+            //
+            //  response
+            //
+
+            if (success)
+              {
+                loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+                loyaltyProgramResponse.setDeliveryDate(now);
+              }
+            else
+              {
+                loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Failed);
+              }
+
+            //
+            //  return delivery response
+            //
+
+            context.getSubscriberState().getLoyaltyProgramResponses().add(loyaltyProgramResponse);
+
+            //
+            //  subscriberProfileUpdated
+            //
+
+            subscriberProfileUpdated = true;
+          }
+
+      }
+
     /*****************************************
     *
     *  re-evaluate subscriberGroups for epoch changes and eligibility/range segmentation dimensions
@@ -2100,7 +2256,7 @@ public class EvolutionEngine
             subscriberProfileUpdated = true;
           }
       }
-
+    
     /*****************************************
     *
     *  process file-sourced subscriberGroup event
@@ -3765,6 +3921,8 @@ public class EvolutionEngine
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     result.addAll(subscriberState.getJourneyResponses());
     result.addAll(subscriberState.getJourneyRequests());
+    result.addAll(subscriberState.getLoyaltyProgramResponses());
+    result.addAll(subscriberState.getLoyaltyProgramRequests());
     result.addAll(subscriberState.getPointFulfillmentResponses());
     result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatisticWrappers());
@@ -3826,10 +3984,22 @@ public class EvolutionEngine
   *
   ****************************************/
 
-  private static KeyValue<StringKey, JourneyRequest> rekeyJourneyResponseStream(StringKey key, JourneyRequest value)
+  private static KeyValue<StringKey, JourneyRequest> rekeyJourneyResponseStream(StringKey key, JourneyRequest value) 
   {
     StringKey rekey = value.getOriginatingRequest() ? new StringKey(value.getSubscriberID()) : new StringKey(value.getDeliveryRequestID());
     return new KeyValue<StringKey, JourneyRequest>(rekey, value);
+  }
+
+  /****************************************
+  *
+  *  rekeyLoyaltyProgramResponseStream
+  *
+  ****************************************/
+
+  private static KeyValue<StringKey, LoyaltyProgramRequest> rekeyLoyaltyProgramResponseStream(StringKey key, LoyaltyProgramRequest value) 
+  {
+    StringKey rekey = value.getOriginatingRequest() ? new StringKey(value.getSubscriberID()) : new StringKey(value.getDeliveryRequestID());
+    return new KeyValue<StringKey, LoyaltyProgramRequest>(rekey, value);
   }
 
   /****************************************
@@ -4873,5 +5043,75 @@ public class EvolutionEngine
 
       return request;
     }
-  }  
+  }
+  
+  /*****************************************
+  *
+  *  class OptAction
+  *
+  *****************************************/
+
+  public static class LoyaltyProgramAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private String moduleID;
+    private LoyaltyProgramOperation operation;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public LoyaltyProgramAction(JSONObject configuration)
+    {
+      super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+      this.operation = LoyaltyProgramOperation.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public LoyaltyProgramRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      String loyaltyProgramID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.loyaltyProgramId");
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, loyaltyProgramID);
+      request.setModuleID(moduleID);
+      request.setFeatureID(deliveryRequestSource);
+
+      /*****************************************
+      *
+      *  return request
+      *
+      *****************************************/
+
+      return request;
+      
+    }
+  }
+
 }
