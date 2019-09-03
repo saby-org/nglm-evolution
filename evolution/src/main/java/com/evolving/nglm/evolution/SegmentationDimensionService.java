@@ -212,7 +212,6 @@ public class SegmentationDimensionService extends GUIService
     result.put("status",guiManagedObject.getJSONRepresentation().get("status"));
     result.put("targetingType", guiManagedObject.getJSONRepresentation().get("targetingType"));
     result.put("noOfSegments",guiManagedObject.getJSONRepresentation().get("numberOfSegments"));
-    result.put("usingContactPolicy",guiManagedObject.getJSONRepresentation().get("usingContactPolicy"));
     return result;
   }
 

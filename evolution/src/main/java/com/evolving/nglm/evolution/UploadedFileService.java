@@ -101,11 +101,16 @@ public class UploadedFileService extends GUIService
 
   @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
   {
-    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    JSONObject result = new JSONObject();
+    result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
     result.put("destinationFilename", guiManagedObject.getJSONRepresentation().get("destinationFilename"));
     result.put("fileType", guiManagedObject.getJSONRepresentation().get("fileType"));
     result.put("fileSize", guiManagedObject.getJSONRepresentation().get("fileSize"));
     result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));
+    result.put("accepted", guiManagedObject.getAccepted());
+    result.put("valid", guiManagedObject.getAccepted());
+    result.put("processing", isActiveGUIManagedObject(guiManagedObject, SystemTime.getActualCurrentTime()));
+    result.put("readOnly", guiManagedObject.getReadOnly());
     return result;
   }
 

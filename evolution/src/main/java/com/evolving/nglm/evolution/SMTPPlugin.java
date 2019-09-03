@@ -97,7 +97,7 @@ public class SMTPPlugin implements MailNotificationInterface
     String sql_date_format = JSONUtilities.decodeString(mailNotifSharedConfiguration, "sql.date.format", false);
     String mail_smtp_socketFactory_port = JSONUtilities.decodeString(mailNotifSharedConfiguration, "mail.smtp.socketFactory.port", false);
     String feedback_polling_try_constant_delay = JSONUtilities.decodeString(mailNotifSharedConfiguration, "feedback.polling.try.constant.delay", false);
-
+    boolean usingFakeEmulator = JSONUtilities.decodeBoolean(mailNotifSharedConfiguration, "using.fake.emulator", Boolean.FALSE);
 
     if(initial_duration_days == null) { 
       initial_duration_days= SMTPConstants.initial_duration_days;
@@ -243,20 +243,17 @@ public class SMTPPlugin implements MailNotificationInterface
             //                  SnmpTrapType.COMMUNICATION_SERVER_CONNECTION, "SMTP3rdPartyConnection", "SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host "+getSystemInfo());
             if (logger.isInfoEnabled())
               {
-                if (logger.isInfoEnabled())
-                  {
-                    logger.info("SMTPDriver3rdPartyNDM.init SMTP3rdPartyConnection SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host ");
-                  }                   
+                logger.info("SMTPDriver3rdPartyNDM.init SMTP3rdPartyConnection SMTPConnection to 3rdParty SMTPServer Loaded Successfully on host ");                  
               }
           }
-      }
+    }
     catch(Exception ex)
       {
         logger.error("Exception occured in SMTPDriver.asyncCall() : "+ex);
         throw new RuntimeException("SMTP Driver Load Finished : Driver loading Failure. ");
       }
 
-    ft = new FeedbackThread(mailNotificationManager);
+    ft = new FeedbackThread(mailNotificationManager, usingFakeEmulator);
     ft.start();    
   }
 

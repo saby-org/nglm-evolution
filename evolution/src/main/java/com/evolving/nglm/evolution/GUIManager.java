@@ -389,6 +389,11 @@ public class GUIManager
     putExclusionInclusionTarget("putExclusionInclusionTarget"),
     getExclusionInclusionTarget("getExclusionInclusionTarget"),
     removeExclusionInclusionTarget("removeExclusionInclusionTarget"),
+    getSegmentContactPolicyList("getSegmentContactPolicyList"),
+    getSegmentContactPolicySummaryList("getSegmentContactPolicySummaryList"),
+    putSegmentContactPolicy("putSegmentContactPolicy"),
+    getSegmentContactPolicy("getSegmentContactPolicy"),
+    removeSegmentContactPolicy("removeSegmentContactPolicy"),
 
     //
     //  configAdaptor APIs
@@ -497,6 +502,7 @@ public class GUIManager
   private LoyaltyProgramService loyaltyProgramService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
   private PartnerService partnerService;
+  private SegmentContactPolicyService segmentContactPolicyService;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -584,6 +590,7 @@ public class GUIManager
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     String partnerTopic = Deployment.getPartnerTopic();
+    String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -664,7 +671,8 @@ public class GUIManager
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     partnerService = new PartnerService(bootstrapServers, "guimanager-partnerservice-"+apiProcessKey, partnerTopic, true);
-
+    segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
+    
     /*****************************************
     *
     *  Elasticsearch -- client
@@ -1388,6 +1396,7 @@ public class GUIManager
     loyaltyProgramService.start();
     exclusionInclusionTargetService.start();
     partnerService.start();
+    segmentContactPolicyService.start();
 
     /*****************************************
     *
@@ -1624,6 +1633,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putExclusionInclusionTarget", new APISimpleHandler(API.putExclusionInclusionTarget));
         restServer.createContext("/nglm-guimanager/getExclusionInclusionTarget", new APISimpleHandler(API.getExclusionInclusionTarget));
         restServer.createContext("/nglm-guimanager/removeExclusionInclusionTarget", new APISimpleHandler(API.removeExclusionInclusionTarget));
+        restServer.createContext("/nglm-guimanager/getSegmentContactPolicyList", new APISimpleHandler(API.getSegmentContactPolicyList));
+        restServer.createContext("/nglm-guimanager/getSegmentContactPolicySummaryList", new APISimpleHandler(API.getSegmentContactPolicySummaryList));
+        restServer.createContext("/nglm-guimanager/putSegmentContactPolicy", new APISimpleHandler(API.putSegmentContactPolicy));
+        restServer.createContext("/nglm-guimanager/getSegmentContactPolicy", new APISimpleHandler(API.getSegmentContactPolicy));
+        restServer.createContext("/nglm-guimanager/removeSegmentContactPolicy", new APISimpleHandler(API.removeSegmentContactPolicy));     
         restServer.createContext("/nglm-configadaptor/getSupportedLanguages", new APISimpleHandler(API.configAdaptorSupportedLanguages));
         restServer.createContext("/nglm-configadaptor/getSubscriberMessageTemplate", new APISimpleHandler(API.configAdaptorSubscriberMessageTemplate));
         restServer.createContext("/nglm-configadaptor/getOffer", new APISimpleHandler(API.configAdaptorOffer));
@@ -1657,7 +1671,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, segmentContactPolicyService);
 
     /*****************************************
     *
@@ -1665,7 +1679,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService));
 
     /*****************************************
     *
@@ -1722,12 +1736,13 @@ public class GUIManager
     private LoyaltyProgramService loyaltyProgramService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private PartnerService partnerService;
+    private SegmentContactPolicyService segmentContactPolicyService;
 
     //
     //  constructor
     //
-
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService)
+    
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1763,6 +1778,7 @@ public class GUIManager
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.partnerService = partnerService;
       this.dnboMatrixService = dnboMatrixService;
+      this.segmentContactPolicyService = segmentContactPolicyService;
     }
 
     //
@@ -1812,6 +1828,7 @@ public class GUIManager
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
       if (partnerService != null) partnerService.stop();
       if (dnboMatrixService != null) dnboMatrixService.stop();
+      if (segmentContactPolicyService != null) segmentContactPolicyService.stop();
 
       //
       //  rest server
@@ -2831,6 +2848,26 @@ public class GUIManager
                   jsonResponse = processRemoveExclusionInclusionTarget(userID, jsonRoot);
                   break;
                   
+                case getSegmentContactPolicyList:  
+                  jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, true);
+                  break;
+                  
+                case getSegmentContactPolicySummaryList:
+                  jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, false);
+                  break;
+                  
+                case putSegmentContactPolicy:
+                  jsonResponse = processPutSegmentContactPolicy(userID, jsonRoot);
+                  break;
+                  
+                case getSegmentContactPolicy:
+                  jsonResponse = processGetSegmentContactPolicy(userID, jsonRoot);
+                  break;
+                  
+                case removeSegmentContactPolicy:
+                  jsonResponse = processRemoveSegmentContactPolicy(userID, jsonRoot);
+                  break;
+
                 case configAdaptorSupportedLanguages:
                   jsonResponse = processConfigAdaptorSupportedLanguages(jsonRoot);
                   break;
@@ -13121,6 +13158,7 @@ public class GUIManager
     response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules().size());
     response.put("targetCount", targetService.getStoredTargets().size());
     response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets().size());
+    response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys().size());
     response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies().size());
     response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());    
@@ -16355,7 +16393,271 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
   }
+  
+  /*****************************************
+  *
+  *  processGetSegmentContactPolicyList
+  *
+  *****************************************/
 
+  private JSONObject processGetSegmentContactPolicyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert SegmentContactPolicys
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> segmentContactPolicys = new ArrayList<JSONObject>();
+    for (GUIManagedObject segmentContactPolicy : segmentContactPolicyService.getStoredSegmentContactPolicys())
+      {
+        segmentContactPolicys.add(segmentContactPolicyService.generateResponseJSON(segmentContactPolicy, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("segmentContactPolicys", JSONUtilities.encodeArray(segmentContactPolicys));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutSegmentContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processPutSegmentContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  segmentContactPolicyID -- there is only one -- add the hardwired ID to the requestb
+    *
+    *****************************************/
+
+
+    jsonRoot.put("id", SegmentContactPolicy.singletonID);
+
+    /*****************************************
+    *
+    *  existing existingSegmentContactPolicy
+    *
+    *****************************************/
+
+    GUIManagedObject existingSegmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(SegmentContactPolicy.singletonID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingSegmentContactPolicy != null && existingSegmentContactPolicy.getReadOnly())
+      {
+        response.put("id", existingSegmentContactPolicy.getGUIManagedObjectID());
+        response.put("accepted", existingSegmentContactPolicy.getAccepted());
+        response.put("valid", existingSegmentContactPolicy.getAccepted());
+        response.put("processing", segmentContactPolicyService.isActiveSegmentContactPolicy(existingSegmentContactPolicy, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process existingSegmentContactPolicy
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate existingSegmentContactPolicy
+        *
+        ****************************************/
+
+        SegmentContactPolicy segmentContactPolicy = new SegmentContactPolicy(jsonRoot, epoch, existingSegmentContactPolicy);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        segmentContactPolicyService.putSegmentContactPolicy(segmentContactPolicy, contactPolicyService, segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", segmentContactPolicy.getGUIManagedObjectID());
+        response.put("accepted", segmentContactPolicy.getAccepted());
+        response.put("valid", segmentContactPolicy.getAccepted());
+        response.put("processing", segmentContactPolicyService.isActiveSegmentContactPolicy(segmentContactPolicy, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        segmentContactPolicyService.putSegmentContactPolicy(incompleteObject, contactPolicyService, segmentationDimensionService, (existingSegmentContactPolicy == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "segmentContactPolicyNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processGetSegmentContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processGetSegmentContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String segmentContactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate segmentContactPolicy
+    *
+    *****************************************/
+
+    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
+    JSONObject segmentContactPolicyJSON = segmentContactPolicyService.generateResponseJSON(segmentContactPolicy, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (segmentContactPolicy != null) ? "ok" : "segmentContactPolicyNotFound");
+    if (segmentContactPolicy != null) response.put("exclusionInclusionTarget", segmentContactPolicyJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processRemoveSegmentContactPolicy
+  *
+  *****************************************/
+
+  private JSONObject processRemoveSegmentContactPolicy(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String segmentContactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
+    if (segmentContactPolicy != null && ! segmentContactPolicy.getReadOnly()) segmentContactPolicyService.removeSegmentContactPolicy(segmentContactPolicyID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (segmentContactPolicy != null && ! segmentContactPolicy.getReadOnly())
+      responseCode = "ok";
+    else if (segmentContactPolicy != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "segmentContactPolicyNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processRemoveExclusionInclusionTarget
@@ -17883,7 +18185,7 @@ public class GUIManager
                   log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                 }
               }else {
-                responseCode = "Report is empty";
+                responseCode = "Report is empty or being processed";
               }
           }
         catch (GUIManagerException e)
@@ -20074,6 +20376,7 @@ public class GUIManager
     private LoyaltyProgramService loyaltyProgramService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private PartnerService partnerService;
+    private SegmentContactPolicyService segmentContactPolicyService;
 
     /*****************************************
     *
@@ -20112,6 +20415,7 @@ public class GUIManager
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
     public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
     public PartnerService getPartnerService() { return partnerService; }
+    public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
 
     /*****************************************
     *
@@ -20119,7 +20423,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -20152,6 +20456,7 @@ public class GUIManager
       this.loyaltyProgramService = loyaltyProgramService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.partnerService = partnerService;
+      this.segmentContactPolicyService = segmentContactPolicyService;
     }
   }
 

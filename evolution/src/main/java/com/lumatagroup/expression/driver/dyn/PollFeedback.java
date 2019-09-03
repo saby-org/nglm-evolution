@@ -212,10 +212,10 @@ public class PollFeedback {
 					logger.info(PollFeedback.class.getName() + ".checkOpen2 : REST API returned empty string");
 				}
 			} else {
-				logger.info(PollFeedback.class.getName() + ".checkOpen2 : REST API returned null string");
+			  logger.info(PollFeedback.class.getName() + ".checkOpen2 : REST API returned null string");
 			}
 		} catch (Exception e) {
-			logger.error(PollFeedback.class.getName() + ".checkOpen2 : REST API exception : " + e);
+		  logger.error(PollFeedback.class.getName() + ".checkOpen2 : REST API exception : " + e);
 		}
 		if (logger.isDebugEnabled()) logger.debug("PollFeedback.checkOpen2() end ");
 	}

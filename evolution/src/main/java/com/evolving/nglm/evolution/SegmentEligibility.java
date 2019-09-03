@@ -64,7 +64,6 @@ public class SegmentEligibility implements Segment
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("dependentOnExtendedSubscriberProfile", SchemaBuilder.bool().defaultValue(false).schema());
-    schemaBuilder.field("contactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -84,7 +83,6 @@ public class SegmentEligibility implements Segment
   private String name;
   private List<EvaluationCriterion> profileCriteria;
   private boolean dependentOnExtendedSubscriberProfile;
-  private String contactPolicyID;
 
   /*****************************************
   *
@@ -92,13 +90,12 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  private SegmentEligibility(String id, String name, List<EvaluationCriterion> profileCriteria, boolean dependentOnExtendedSubscriberProfile, String contactPolicyID)
+  private SegmentEligibility(String id, String name, List<EvaluationCriterion> profileCriteria, boolean dependentOnExtendedSubscriberProfile)
   {
     this.id = id;
     this.name = name;
     this.profileCriteria = profileCriteria;
     this.dependentOnExtendedSubscriberProfile = dependentOnExtendedSubscriberProfile;
-    this.contactPolicyID = contactPolicyID;
   }
 
   /*****************************************
@@ -111,7 +108,6 @@ public class SegmentEligibility implements Segment
   {
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.contactPolicyID = JSONUtilities.decodeString(jsonRoot, "contactPolicyID", false);
 
     //
     //  profileCritera -- attempt to construct with standard SubscriberProfile
@@ -154,7 +150,6 @@ public class SegmentEligibility implements Segment
   public String getID() { return id; }
   public String getName() { return name; }
   public List<EvaluationCriterion> getProfileCriteria() { return profileCriteria; }
-  public String getContactPolicyID() { return contactPolicyID; }
   public boolean getDependentOnExtendedSubscriberProfile() { return dependentOnExtendedSubscriberProfile; }
   
   /*****************************************
@@ -182,7 +177,6 @@ public class SegmentEligibility implements Segment
     struct.put("name", segment.getName());
     struct.put("profileCriteria", packProfileCriteria(segment.getProfileCriteria()));
     struct.put("dependentOnExtendedSubscriberProfile", segment.getDependentOnExtendedSubscriberProfile());
-    struct.put("contactPolicyID", segment.getContactPolicyID());
     return struct;
   }
 
@@ -228,13 +222,12 @@ public class SegmentEligibility implements Segment
     String name = valueStruct.getString("name");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
     boolean dependentOnExtendedSubscriberProfile = (schemaVersion >= 2) ? valueStruct.getBoolean("dependentOnExtendedSubscriberProfile") : false;
-    String contactPolicyID = valueStruct.getString("contactPolicyID");
     
     //
     //  construct
     //
 
-    SegmentEligibility result = new SegmentEligibility(id, name, profileCriteria, dependentOnExtendedSubscriberProfile, contactPolicyID);
+    SegmentEligibility result = new SegmentEligibility(id, name, profileCriteria, dependentOnExtendedSubscriberProfile);
 
     //
     //  return

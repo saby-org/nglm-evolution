@@ -126,10 +126,9 @@
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
-	          "eventID" : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date" },
 	          "providerID" : { "type" : "keyword" },
 	          "deliverableID" : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date" },
 	          "deliverableQty" : { "type" : "integer", "index" : "false" },
 	          "operation" : { "type" : "keyword" },
 	          "moduleID" : { "type" : "keyword" },
@@ -177,9 +176,8 @@
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
-	          "eventID" : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date" },
 	          "purchaseID" : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date" },
 	          "offerID" : { "type" : "keyword" },
 	          "offerQty" : { "type" : "integer", "index" : "false" },
 	          "salesChannelID" : { "type" : "keyword" },

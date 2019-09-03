@@ -55,7 +55,6 @@ public class SegmentFileImport implements Segment
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
-    schemaBuilder.field("contactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -73,7 +72,6 @@ public class SegmentFileImport implements Segment
 
   private String id;
   private String name;
-  private String contactPolicyID;
 
   /*****************************************
   *
@@ -81,11 +79,10 @@ public class SegmentFileImport implements Segment
   *
   *****************************************/
 
-  public SegmentFileImport(String id, String name, String contactPolicyID)
+  public SegmentFileImport(String id, String name)
   {
     this.id = id;
     this.name = name;
-    this.contactPolicyID = contactPolicyID;
   }
 
   /*****************************************
@@ -98,7 +95,6 @@ public class SegmentFileImport implements Segment
   {
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.contactPolicyID = JSONUtilities.decodeString(jsonRoot, "contactPolicyID", false);
   }
 
   /*****************************************
@@ -109,7 +105,6 @@ public class SegmentFileImport implements Segment
   
   public String getID() { return id; }
   public String getName() { return name; }
-  public String getContactPolicyID() { return contactPolicyID; }
   public boolean getDependentOnExtendedSubscriberProfile() { return false; }
 
   /*****************************************
@@ -135,7 +130,6 @@ public class SegmentFileImport implements Segment
     Struct struct = new Struct(schema);
     struct.put("id", segment.getID());
     struct.put("name", segment.getName());
-    struct.put("contactPolicyID", segment.getContactPolicyID());
     return struct;
   }
 
@@ -165,13 +159,12 @@ public class SegmentFileImport implements Segment
     Struct valueStruct = (Struct) value;
     String id = valueStruct.getString("id");
     String name = valueStruct.getString("name");
-    String contactPolicyID = valueStruct.getString("contactPolicyID");
 
     //
     //  construct
     //
 
-    SegmentFileImport result = new SegmentFileImport(id, name, contactPolicyID);
+    SegmentFileImport result = new SegmentFileImport(id, name);
 
     //
     //  return

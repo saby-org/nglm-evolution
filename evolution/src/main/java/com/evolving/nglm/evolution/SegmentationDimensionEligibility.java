@@ -45,7 +45,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(SegmentationDimension.commonSchema().version(),1));
     for (Field field : SegmentationDimension.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("segments", SchemaBuilder.array(SegmentEligibility.schema()).schema());
-    schemaBuilder.field("usingContactPolicy", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -69,15 +68,12 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   ****************************************/
 
   private List<SegmentEligibility> segments;
-  private boolean usingContactPolicy;
 
   /****************************************
   *
   *  accessors
   *
   ****************************************/
-
-  public boolean isUsingContactPolicy() { return usingContactPolicy; }
 
   //
   //  abstract
@@ -91,11 +87,10 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionEligibility(SchemaAndValue schemaAndValue, List<SegmentEligibility> segments, boolean usingContactPolicy)
+  public SegmentationDimensionEligibility(SchemaAndValue schemaAndValue, List<SegmentEligibility> segments)
   {
     super(schemaAndValue);
     this.segments = segments;
-    this.usingContactPolicy = usingContactPolicy;
   }
 
   /*****************************************
@@ -110,7 +105,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     Struct struct = new Struct(schema);
     SegmentationDimension.packCommon(struct, segmentationDimension);
     struct.put("segments", packSegments(segmentationDimension.getSegments()));
-    struct.put("usingContactPolicy", segmentationDimension.isUsingContactPolicy());
     return struct;
   }
 
@@ -152,13 +146,12 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
 
     Struct valueStruct = (Struct) value;
     List<SegmentEligibility> segments = unpackSegments(schema.field("segments").schema(), valueStruct.get("segments"));
-    boolean usingContactPolicy = valueStruct.getBoolean("usingContactPolicy");
 
     //
     //  return
     //
 
-    return new SegmentationDimensionEligibility(schemaAndValue, segments, usingContactPolicy);
+    return new SegmentationDimensionEligibility(schemaAndValue, segments);
   }
   
   /*****************************************
@@ -224,7 +217,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     *****************************************/
 
     this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true));
-    this.usingContactPolicy = JSONUtilities.decodeBoolean(jsonRoot, "usingContactPolicy", Boolean.FALSE);
     
     /*****************************************
     *
@@ -276,7 +268,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
         epochChanged = epochChanged || ! Objects.equals(getSegmentationDimensionName(), existingSegmentationDimension.getSegmentationDimensionName());
         epochChanged = epochChanged || ! Objects.equals(getTargetingType(), existingSegmentationDimension.getTargetingType());
         epochChanged = epochChanged || ! Objects.equals(segments, existingSegmentationDimension.getSegments());
-        epochChanged = epochChanged || ! Objects.equals(usingContactPolicy, existingSegmentationDimension.isUsingContactPolicy());
         return epochChanged;
       }
     else

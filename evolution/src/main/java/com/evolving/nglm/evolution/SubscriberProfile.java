@@ -441,6 +441,21 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     return result;
   }
 
+  /*****************************************
+  *
+  *  accessors -- segmentContactPolicy
+  *
+  *****************************************/
+
+  public String getSegmentContactPolicyID(SegmentContactPolicyService segmentContactPolicyService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  {
+    SegmentContactPolicy segmentContactPolicy = segmentContactPolicyService.getSingletonSegmentContactPolicy();
+    SegmentationDimension segmentationDimension = (segmentContactPolicy != null) ? segmentationDimensionService.getActiveSegmentationDimension(segmentContactPolicy.getDimensionID(), SystemTime.getCurrentTime()) : null;
+    String segmentID = (segmentationDimension != null) ? getSegmentsMap(subscriberGroupEpochReader).get(segmentationDimension.getSegmentationDimensionID()) : null;
+    String segmentContactPolicyID = (segmentContactPolicy != null && segmentID != null) ? segmentContactPolicy.getSegments().get(segmentID) : null;
+    return segmentContactPolicyID;
+  }
+
   /****************************************
   *
   *  presentation utilities

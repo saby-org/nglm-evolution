@@ -194,6 +194,7 @@ public class Deployment
   private static int ucgEngineESMasRetryTimeout;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
+  private static String segmentContactPolicyTopic;
 
   /*****************************************
   *
@@ -380,6 +381,7 @@ public class Deployment
   public static int getUcgEngineESMasRetryTimeout() { return ucgEngineESMasRetryTimeout; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
+  public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
 
   /*****************************************
   *
@@ -1430,6 +1432,19 @@ public class Deployment
     try
       {
         propensityRepartitioningTopic = JSONUtilities.decodeString(jsonRoot, "propensityRepartitioningTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  segmentContactPolicyTopic
+    //
+
+    try
+      {
+        segmentContactPolicyTopic = JSONUtilities.decodeString(jsonRoot, "segmentContactPolicyTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

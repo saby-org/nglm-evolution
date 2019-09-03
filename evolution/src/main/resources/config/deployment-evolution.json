@@ -1,0 +1,758 @@
+{
+  --
+  --  basic configuration
+  -- 
+
+  "baseTimeZone"       : "<_DEPLOYMENT_TIMEZONE_>",
+  "baseLanguage"       : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
+  "baseCountry"        : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
+  "generateNumericIDs" : true,
+
+  --
+  --  APIresponseDateFormat
+  --
+
+  "APIresponseDateFormat" : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
+
+  --
+  --  topics -- evolution
+  --
+
+  "emptyTopic"                                           : "${topic.empty}",
+  "journeyTopic"                                         : "${topic.journey}",
+  "journeyTemplateTopic"                                 : "${topic.journeytemplate}",
+  "segmentationDimensionTopic"                           : "${topic.segmentationdimension}",
+  "pointTopic"                                           : "${topic.point}",
+  "paymentMeanTopic"                                     : "${topic.paymentMean}",
+  "offerTopic"                                           : "${topic.offer}",
+  "presentationStrategyTopic"                            : "${topic.presentationstrategy}",
+  "scoringStrategyTopic"                                 : "${topic.scoringstrategy}",
+  "callingChannelTopic"                                  : "${topic.callingchannel}",
+  "salesChannelTopic"                                    : "${topic.saleschannel}",
+  "supplierTopic"                                        : "${topic.supplier}",
+  "partnerTopic"                                         : "${topic.partner}",
+  "productTopic"                                         : "${topic.product}",
+  "catalogCharacteristicTopic"                           : "${topic.catalogcharacteristic}",
+  "contactPolicyTopic"                                   : "${topic.contactpolicy}",
+  "journeyObjectiveTopic"                                : "${topic.journeyobjective}",
+  "offerObjectiveTopic"                                  : "${topic.offerobjective}",
+  "productTypeTopic"                                     : "${topic.producttype}",
+  "ucgRuleTopic"                                         : "${topic.ucgrule}",
+  "deliverableTopic"                                     : "${topic.deliverable}",
+  "tokenTypeTopic"                                       : "${topic.tokentype}",  
+  "guiAuditTopic"                                        : "${topic.guiaudit}",
+  "reportTopic"                                          : "${topic.report}",
+  "subscriberUpdateTopic"                                : "subscriberupdate",
+  "assignSubscriberIDsTopic"                             : "${topic.assignsubscriberids}",
+  "updateExternalSubscriberIDTopic"                      : "${topic.updateexternalsubscriberid}",
+  "assignExternalSubscriberIDsTopic"                     : "${topic.assignexternalsubscriberids}",
+  "recordSubscriberIDTopic"                              : "${topic.recordsubscriberid}",
+  "recordAlternateIDTopic"                               : "${topic.recordalternateid}",
+  "subscriberGroupTopic"                                 : "${topic.subscribergroup}",
+  "subscriberGroupAssignSubscriberIDTopic"               : "${topic.subscribergroup.assignsubscriberid}",
+  "subscriberGroupEpochTopic"                            : "${topic.subscribergroupepoch}",
+  "ucgStateTopic"                                        : "${topic.ucgstate}",
+  "timedEvaluationTopic"                                 : "${topic.timedevaluation}",
+  "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
+  "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
+  "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
+  "extendedSubscriberProfileChangeLog"                   : "${changelog.evolutionengine.extendedsubscriberprofile}",
+  "extendedSubscriberProfileChangeLogTopic"              : "${changelog.evolutionengine.extendedsubscriberprofile.topic}",
+  "subscriberHistoryChangeLog"                           : "${changelog.evolutionengine.subscriberhistory}",
+  "subscriberHistoryChangeLogTopic"                      : "${changelog.evolutionengine.subscriberhistory.topic}",
+  "propensityStateChangeLog"                             : "${changelog.evolutionengine.propensitystate}",
+  "propensityStateChangeLogTopic"                        : "${changelog.evolutionengine.propensitystate.topic}",
+  "propensityRepartitioningTopic"                        : "${topic.evolutionengine.propensityoutput.repartition}",
+  "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
+  "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
+  "rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic" : "${rekeyed.subscribermanager.autoprovisionedsubscriber.topic}",
+  "subscriberTraceControlTopic"                          : "${topic.subscribertracecontrol}",
+  "subscriberTraceControlAssignSubscriberIDTopic"        : "${topic.subscribertracecontrol.assignsubscriberid}",
+  "subscriberTraceTopic"                                 : "${topic.subscribertrace}",
+  "journeyRequestTopic"                                  : "${topic.journeyrequest}",
+  "journeyResponseTopic"                                 : "${topic.journeyresponse}",
+  "journeyStatisticTopic"                                : "${topic.journeystatistic}",
+  "journeyMetricTopic"                                   : "${topic.journeymetric}",
+  "deliverableSourceTopic"                               : "${topic.deliverable.source}",
+  "presentationLogTopic"                                 : "${topic.presentationlog}",
+  "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
+  "propensityLogTopic"                                   : "${topic.propensitylog}",
+  "subscriberMessageTemplateTopic"                       : "${topic.template.subscribermessage}",
+  "uploadedFileTopic"                                    : "${topic.uploadedfile}",
+  "targetTopic"                                          : "${topic.target}",
+  "pointFulfillmentRequestTopic"                         : "${topic.pointfulfillment.request}",
+  "pointFulfillmentResponseTopic"                        : "${topic.pointfulfillment.response}",
+  "pointFufillmentRepartitioningTopic"                   : "${topic.evolutionengine.pointfulfillment.repartition}",
+  "communicationChannelTopic"                            : "${topic.communicationchannel}",
+  "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
+  "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
+  "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
+  "dnboMatrixTopic"                                      : "${topic.dnbomatrix}",
+  "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
+  
+  --
+  --  registry "topics" -- fake topic names used to register Avro schemas when objects are serialized/deserialized to non-Kafka places (e.g., Redis)
+  --
+
+  "subscriberProfileRegistrySubject"                     : "${registrysubject.subscriberprofile}",
+
+  --
+  --  subscriberProfileCompressionType
+  --
+
+  "subscriberProfileCompressionType"                     : "<_REDIS_SUBSCRIBERPROFILE_COMPRESSION_>",
+
+  -- 
+  --  supportedDataTypes
+  --
+  --   http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes
+  --
+
+  "supportedDataTypes" :
+    [
+      { 
+        "id" : "string",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false },
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "is in set",   "display" : "is contained in",     "argumentRequired" : true,    "argumentSet" : true }, 
+            { "id" : "not in set",  "display" : "is not contained in", "argumentRequired" : true,    "argumentSet" : true }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      },
+      {
+        "id" : "boolean",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      },
+      {
+        "id" : "integer",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">",           "display" : "is greater than",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">=",          "display" : "is at least",         "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<",           "display" : "is less than",        "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<=",          "display" : "is at most",          "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "is in set",   "display" : "is contained in",     "argumentRequired" : true,    "argumentSet" : true }, 
+            { "id" : "not in set",  "display" : "is not contained in", "argumentRequired" : true,    "argumentSet" : true }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX,number,integer}", "display" : "standard" }
+          ]
+      },
+      {
+        "id" : "double",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">",           "display" : "is greater than",     "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : ">=",          "display" : "is at least",         "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<",           "display" : "is less than",        "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<=",          "display" : "is at most",          "argumentRequired" : true,    "argumentSet" : false }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX,number,#.#}", "display" : "decimal (1 decimal point)" },
+            { "format" : "{INDEX,number,#.##}", "display" : "decimal (2 decimal points)" },
+            { "format" : "{INDEX,number,percent}", "display" : "decimal (percent)" }
+          ]
+      },
+      {
+        "id" : "date",
+        "operators" : 
+          [ 
+            { "id" : "is null",     "display" : "is not known",        "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null", "display" : "is known",            "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "==",          "display" : "equals",              "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "<>",          "display" : "is not equal to",     "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<",           "display" : "is before",           "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : "<=",          "display" : "is on or before",     "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : ">",           "display" : "is after",            "argumentRequired" : true,    "argumentSet" : false }, 
+            { "id" : ">=",          "display" : "is on or after",      "argumentRequired" : true,    "argumentSet" : false }
+          ],
+       "formats" :
+          [
+            { "format" : "{INDEX,date,dd-mmm-yyyy}", "display" : "date (12-Oct-2016)" },
+            { "format" : "{INDEX,number,dd/mm/yyyy}", "display" : "date (12/10/2016)" }
+          ]
+      },
+      {
+        "id" : "stringSet",
+        "operators" : 
+          [ 
+            { "id" : "is null",                 "display" : "is not known",             "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "is not null",             "display" : "is known",                 "argumentRequired" : false,   "argumentSet" : false }, 
+            { "id" : "contains",                "display" : "contains",                 "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "does not contain",        "display" : "does not contain",         "argumentRequired" : true,    "argumentSet" : false },
+            { "id" : "non empty intersection",  "display" : "contains at least one of", "argumentRequired" : true,    "argumentSet" : true },
+            { "id" : "empty intersection",      "display" : "does not contain any of",  "argumentRequired" : true,    "argumentSet" : true }
+          ],
+        "formats" :
+          [
+            { "format" : "{INDEX}", "display" : "standard" }
+          ]
+      }
+    ],
+
+  -- 
+  -- supported time units
+  -- 
+  --   http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTimeUnits
+  -- 
+  
+  "supportedTimeUnits" :
+    [ 
+      { "id" : "instant", "display" : "Instant" },
+      { "id" : "hour",    "display" : "Hour" },
+      { "id" : "day",     "display" : "Day" },
+      { "id" : "month",   "display" : "Month" },
+      { "id" : "year",    "display" : "Year" }
+    ],
+
+    -- 
+    -- supported Token Codes Formats
+    -- 
+    --   http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenCodesFormats
+    -- 
+          
+    "supportedTokenCodesFormats" :
+      [ 
+          { "id" : "c1-5", "display" : "[ACDEFGHJKMNPQRTWXY34679]{5}" },
+          { "id" : "c1-6", "display" : "[ACDEFGHJKMNPQRTWXY34679]{6}" },
+          { "id" : "c1-7", "display" : "[ACDEFGHJKMNPQRTWXY34679]{7}" },
+          { "id" : "c2-5", "display" : "[0123456789abcdef]{5}" },
+          { "id" : "c2-6", "display" : "[0123456789abcdef]{6}" }
+     ],
+
+  --
+  --  initialJourneyTemplates
+  --
+
+  "initialJourneyTemplates" :
+    [
+      {
+		"apiVersion": 1,
+		"id": "journeyTemplate_1",
+		"name": "SMS journey template",
+		"description": "journey template sending a SMS notification",
+		"effectiveStartDate": "2019-05-01T00:00:00-04:00",
+		"effectiveEndDate": "2050-01-01T00:00:00-05:00",
+		"effectiveEntryPeriodEndDate": null,
+		"eligibilityCriteria": [],
+		"targetingType": "criteria",
+		"journeyParameters": [
+		  {
+		    "id": "journey.contactpolicy",
+		    "dataType": "string",
+		    "availableValues": [
+		      {
+		        "id": "callToAction",
+		        "display": "Call To Action"
+		      },
+		      {
+		        "id": "response",
+		        "display": "Response"
+		      },
+		      {
+		        "id": "reminder",
+		        "display": "Reminder"
+		      }
+		    ]
+		  },
+		  {
+		    "id": "journey.message",
+		    "dataType": "smsMessage",
+		    "availableValues": [
+		      "#smsTemplates#"
+		    ]
+		  },
+		  {
+		    "id": "journey.smssource",
+		    "dataType": "string"
+		  }
+		],
+		"nodes": [
+		  {
+		    "nodeTypeName": "start",
+		    "display": "Start",
+		    "outputConnectors": [
+		      {
+		        "display": "Start",
+		        "name": "start",
+		        "evaluateContextVariables": true,
+		        "transitionCriteria": []
+		      }
+		    ],
+		    "guiDetails": {
+		      "color": "#c72285",
+		      "icon": "jmr_components/styles/images/objects/1-1-start.png",
+		      "width": 70,
+		      "x": 9,
+		      "y": 96,
+		      "height": 70
+		    },
+		    "name": "Start",
+		    "id": "1",
+		    "nodeTypeID": "101",
+		    "parameters": [],
+		    "contextVariables": []
+		  },
+		  {
+		    "nodeTypeName": "sms",
+		    "display": "SMS",
+		    "outputConnectors": [
+		      {
+		        "display": "Delivered",
+		        "name": "delivered",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "[ 'delivered' ]"
+		            },
+		            "criterionField": "node.action.deliverystatus",
+		            "criterionOperator": "is in set"
+		          }
+		        ]
+		      },
+		      {
+		        "display": "Failed",
+		        "name": "failed",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "[ 'failed', 'indeterminate', 'failedTimeout' ]"
+		            },
+		            "criterionField": "node.action.deliverystatus",
+		            "criterionOperator": "is in set"
+		          }
+		        ]
+		      },
+		      {
+		        "display": "Timeout",
+		        "name": "timeout",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "dateAdd(node.entryDate, 1, 'minute')",
+		              "timeUnit": "instant"
+		            },
+		            "criterionField": "evaluation.date",
+		            "criterionOperator": ">="
+		          }
+		        ]
+		      },
+		      {
+		        "display": "UnknownMSISDN",
+		        "name": "unknown",
+		        "transitionCriteria": [
+		          {
+		            "criterionField": "subscriber.msisdn",
+		            "criterionOperator": "is null"
+		          }
+		        ]
+		      }
+		    ],
+		    "guiDetails": {
+		      "color": "#A2A18D",
+		      "icon": "jmr_components/styles/images/objects/4-1-sms.png",
+		      "width": 70,
+		      "x": 432,
+		      "y": 81,
+		      "height": 70
+		    },
+		    "name": "SMS",
+		    "id": "2",
+		    "nodeTypeID": "141",
+		    "parameters": [
+		      {
+		        "parameterName": "node.parameter.confirmationexpected",
+		        "value": false
+		      },
+		      {
+		        "parameterName": "node.parameter.flashsms",
+		        "value": false
+		      },
+		      {
+		        "parameterName": "node.parameter.contacttype",
+		        "value": {
+		          "expression": "journey.contactpolicy"
+		        }
+		      },
+		      {
+		        "parameterName": "node.parameter.message",
+		        "value": {
+		          "expression": "journey.message"
+		        }
+		      },
+		      {
+		        "parameterName": "node.parameter.source",
+		        "value": {
+		          "expression": "journey.smssource"
+		        }
+		      }
+		    ]
+		  },
+		  {
+		    "nodeTypeName": "end",
+		    "display": "End",
+		    "outputConnectors": [],
+		    "guiDetails": {
+		      "color": "#B63482",
+		      "icon": "jmr_components/styles/images/objects/1-4-stop.png",
+		      "width": 70,
+		      "x": 1050,
+		      "y": 60,
+		      "height": 70
+		    },
+		    "name": "End",
+		    "id": "3",
+		    "nodeTypeID": "102",
+		    "parameters": []
+		  }
+		],
+		"links": [
+		  {
+		    "destinationNodeID": "3",
+		    "sourceConnectionPoint": 0,
+		    "sourceNodeID": "2",
+		    "display": ""
+		  },
+		  {
+		    "destinationNodeID": "2",
+		    "sourceConnectionPoint": 0,
+		    "sourceNodeID": "1",
+		    "display": ""
+		  }
+		]
+      },
+
+      {
+		"apiVersion": 1,
+		"id": "journeyTemplate_2",
+		"name": "Reward and SMS journey template",
+		"description": "journey template giving points and sending a SMS notification",
+		"effectiveStartDate": "2019-05-01T00:00:00-04:00",
+		"effectiveEndDate": "2050-01-01T00:00:00-05:00",
+		"effectiveEntryPeriodEndDate": null,
+		"eligibilityCriteria": [],
+		"targetingType": "criteria",
+		"journeyParameters": [
+		  {
+		    "id": "journey.contactpolicy",
+		    "dataType": "string",
+		    "availableValues": [
+		      {
+		        "id": "callToAction",
+		        "display": "Call To Action"
+		      },
+		      {
+		        "id": "response",
+		        "display": "Response"
+		      },
+		      {
+		        "id": "reminder",
+		        "display": "Reminder"
+		      }
+		    ]
+		  },
+		  {
+		    "id": "journey.message",
+		    "dataType": "smsMessage",
+		    "availableValues": [
+		      "#smsTemplates#"
+		    ]
+		  },
+		  {
+		    "id": "journey.smssource",
+		    "dataType": "string"
+		  },
+		  {
+		    "id": "journey.deliverableID",
+		    "dataType": "string"
+		  },
+		  {
+		    "id": "journey.amount",
+		    "dataType": "integer"
+		  }
+		],
+		"nodes": [
+		  {
+		    "nodeTypeName": "start",
+		    "display": "Start",
+		    "outputConnectors": [
+		      {
+		        "display": "Start",
+		        "name": "start",
+		        "evaluateContextVariables": true,
+		        "transitionCriteria": []
+		      }
+		    ],
+		    "guiDetails": {
+		      "color": "#c72285",
+		      "icon": "jmr_components/styles/images/objects/1-1-start.png",
+		      "width": 70,
+		      "x": 9,
+		      "y": 96,
+		      "height": 70
+		    },
+		    "name": "Start",
+		    "id": "1",
+		    "nodeTypeID": "101",
+		    "parameters": []
+		  },
+		  {
+		    "nodeTypeName": "bonus.point.credit",
+		    "display": "Bonus Point - Credit",
+		    "outputConnectors": [
+		      {
+		        "display": "Credited",
+		        "name": "credited",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "[ 'delivered' ]"
+		            },
+		            "criterionField": "node.action.deliverystatus",
+		            "criterionOperator": "is in set"
+		          }
+		        ]
+		      },
+		      {
+		        "display": "Failed",
+		        "name": "failed",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "[ 'failed', 'indeterminate', 'failedTimeout' ]"
+		            },
+		            "criterionField": "node.action.deliverystatus",
+		            "criterionOperator": "is in set"
+		          }
+		        ]
+		      },
+		      {
+		        "display": "Timeout",
+		        "name": "timeout",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "dateAdd(node.entryDate, 1, 'minute')",
+		              "timeUnit": "instant"
+		            },
+		            "criterionField": "evaluation.date",
+		            "criterionOperator": ">="
+		          }
+		        ]
+		      }
+		    ],
+		    "guiDetails": {
+		      "color": "#549D9F",
+		      "icon": "jmr_components/styles/images/objects/5-2-bonus.png",
+		      "width": 70,
+		      "x": 621,
+		      "y": 69,
+		      "height": 70
+		    },
+		    "name": "Bonus Point - Credit",
+		    "id": "2",
+		    "nodeTypeID": "133",
+		    "parameters": [
+		      {
+		        "parameterName": "node.parameter.commodityid",
+		        "value": {
+		          "expression": "journey.deliverableID"
+		        }
+		      },
+		      {
+		        "parameterName": "node.parameter.amount",
+		        "value": {
+		          "valueType": "simple",
+		          "valueAdd": null,
+		          "valueMultiply": null,
+		          "value": "journey.amount",
+		          "timeUnit": null,
+		          "expression": "journey.amount"
+		        }
+		      },
+		      {
+		        "parameterName": "node.parameter.validity.period.type",
+		        "value": null
+		      },
+		      {
+		        "parameterName": "node.parameter.validity.period.quantity",
+		        "value": null
+		      }
+		    ]
+		  },
+		  {
+		    "nodeTypeName": "sms",
+		    "display": "SMS",
+		    "outputConnectors": [
+		      {
+		        "display": "Delivered",
+		      "name": "delivered",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "[ 'delivered' ]"
+		            },
+		            "criterionField": "node.action.deliverystatus",
+		            "criterionOperator": "is in set"
+		          }
+		        ]
+		      },
+		      {
+		        "display": "Failed",
+		        "name": "failed",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "[ 'failed', 'indeterminate', 'failedTimeout' ]"
+		            },
+		            "criterionField": "node.action.deliverystatus",
+		            "criterionOperator": "is in set"
+		          }
+		        ]
+		      },
+		      {
+		        "display": "Timeout",
+		        "name": "timeout",
+		        "transitionCriteria": [
+		          {
+		            "argument": {
+		              "expression": "dateAdd(node.entryDate, 1, 'minute')",
+		              "timeUnit": "instant"
+		            },
+		            "criterionField": "evaluation.date",
+		            "criterionOperator": ">="
+		          }
+		        ]
+		      },
+		      {
+		        "display": "UnknownMSISDN",
+		        "name": "unknown",
+		        "transitionCriteria": [
+		          {
+		            "criterionField": "subscriber.msisdn",
+		            "criterionOperator": "is null"
+		          }
+		        ]
+		      }
+		    ],
+		    "guiDetails": {
+		      "color": "#A2A18D",
+		      "icon": "jmr_components/styles/images/objects/4-1-sms.png",
+		      "width": 70,
+		      "x": 432,
+		      "y": 81,
+		      "height": 70
+		    },
+		    "name": "SMS",
+		    "id": "3",
+		    "nodeTypeID": "141",
+		    "parameters": [
+		      {
+		        "parameterName": "node.parameter.confirmationexpected",
+		        "value": false
+		      },
+		      {
+		        "parameterName": "node.parameter.flashsms",
+		        "value": false
+		      },
+		      {
+		        "parameterName": "node.parameter.contacttype",
+		        "value": {
+		          "expression": "journey.contactpolicy"
+		        }
+		      },
+		      {
+		        "parameterName": "node.parameter.message",
+		        "value": {
+		          "expression": "journey.message"
+		        }
+		      },
+		      {
+		        "parameterName": "node.parameter.source",
+		        "value": {
+		          "expression": "journey.smssource"
+		        }
+		      }
+		    ],
+		    "contextVariables": [
+		      {
+		        "name": "Bonus Amount",
+		        "value": {
+		          "valueType": "simple",
+		          "valueAdd": null,
+		          "valueMultiply": null,
+		          "value": "journey.amount",
+		          "timeUnit": null,
+		          "expression": "journey.amount"
+		        }
+		      }
+		    ]
+		  },
+		  {
+		    "nodeTypeName": "end",
+		    "display": "End",
+		    "outputConnectors": [],
+		    "guiDetails": {
+		      "color": "#B63482",
+		      "icon": "jmr_components/styles/images/objects/1-4-stop.png",
+		      "width": 70,
+		      "x": 1050,
+		      "y": 60,
+		      "height": 70
+		    },
+		    "name": "End",
+		    "id": "4",
+		    "nodeTypeID": "102",
+		    "parameters": []
+		  }
+		],
+		"links": [
+		  {
+		    "destinationNodeID": "4",
+		    "sourceConnectionPoint": 0,
+		    "sourceNodeID": "3",
+		    "display": ""
+		  },
+		  {
+		    "destinationNodeID": "3",
+		    "sourceConnectionPoint": 0,
+		    "sourceNodeID": "2",
+		    "display": ""
+		  },
+		  {
+		    "destinationNodeID": "2",
+		    "sourceConnectionPoint": 0,
+		    "sourceNodeID": "1",
+		    "display": ""
+		  }
+		]
+	  }
+    ]
+}

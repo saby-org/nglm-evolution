@@ -176,7 +176,7 @@ public class ReportService extends GUIService
     try
       { 
         if (getZKConnection()) {
-          stat = zk.exists(znode, null);
+          stat = zk.exists(znode, false);
           result = (stat != null);
         }else {
           log.info("There was a major issue connecting to zookeeper");
@@ -199,7 +199,7 @@ public class ReportService extends GUIService
 		  int nbLoop = 0;
 		  do {
 			  try {
-				  zk = new ZooKeeper(Deployment.getZookeeperConnect(), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
+				  zk = new ZooKeeper(System.getProperty("zookeeper.connect"), 3000, new Watcher() { @Override public void process(WatchedEvent event) {} }, false);
                   try { Thread.sleep(1*1000); } catch (InterruptedException e) {}
 				  if (!isConnectionValid(zk)) {
 					  log.info("Could not get a zookeeper connection, waiting... ("+(NB_TIMES_TO_TRY-nbLoop)+" more times to go)");

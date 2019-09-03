@@ -128,7 +128,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
-        documentMap.put("eventID", smsNotification.getDeliveryRequestID());
+        documentMap.put("eventID", smsNotification.getEventID());
         documentMap.put("eventDatetime", smsNotification.getEventDate());
         documentMap.put("moduleID", smsNotification.getModuleID());
         documentMap.put("featureID", smsNotification.getFeatureID());

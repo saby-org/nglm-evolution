@@ -121,9 +121,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       if(purchaseManager != null){
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", purchaseManager.getSubscriberID());
-        documentMap.put("eventID", purchaseManager.getEventID());
-        documentMap.put("eventDatetime", purchaseManager.getEventDate());
         documentMap.put("purchaseID", purchaseManager.getEventID());
+        documentMap.put("eventDatetime", purchaseManager.getEventDate());
         documentMap.put("offerID", purchaseManager.getOfferID());
         documentMap.put("offerQty", purchaseManager.getQuantity());
         documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
@@ -144,7 +143,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
               Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(product!=null?product.getGUIManagedObjectName():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+              sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
             }
           }
           String offerContent = sb.toString().substring(0, sb.toString().length()-1);

@@ -174,6 +174,7 @@ public class EvolutionEngine
   private static TokenTypeService tokenTypeService;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   private static DeliverableService deliverableService;
+  private static SegmentContactPolicyService segmentContactPolicyService;
   private static EvolutionEngineStatistics evolutionEngineStatistics;
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
@@ -360,6 +361,13 @@ public class EvolutionEngine
 
     deliverableService = new DeliverableService(bootstrapServers, "evolutionengine-deliverableservice-" + evolutionEngineKey, Deployment.getDeliverableTopic(), false);
     deliverableService.start();
+
+    //
+    //  segmentContactPolicyService
+    //
+
+    segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "evolutionengine-segmentcontactpolicyservice-" + evolutionEngineKey, Deployment.getSegmentContactPolicyTopic(), false);
+    segmentContactPolicyService.start();
 
     //
     // pointService
@@ -1401,7 +1409,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, deliverableService, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, segmentContactPolicyService, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -4247,6 +4255,8 @@ public class EvolutionEngine
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
+    private SegmentationDimensionService segmentationDimensionService;
+    private SegmentContactPolicyService segmentContactPolicyService;
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
     private List<String> subscriberTraceDetails;
@@ -4257,13 +4267,15 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, SegmentContactPolicyService segmentContactPolicyService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.deliverableService = deliverableService;
+      this.segmentationDimensionService = segmentationDimensionService;
+      this.segmentContactPolicyService = segmentContactPolicyService;
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
@@ -4280,6 +4292,8 @@ public class EvolutionEngine
     public ReferenceDataReader<String,SubscriberGroupEpoch> getSubscriberGroupEpochReader() { return subscriberGroupEpochReader; }
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
+    public SegmentationDimensionService getSegmentationDimensionService() { return segmentationDimensionService; }
+    public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
     public KStreamsUniqueKeyServer getUniqueKeyServer() { return uniqueKeyServer; }
     public List<String> getSubscriberTraceDetails() { return subscriberTraceDetails; }
     public Date now() { return now; }

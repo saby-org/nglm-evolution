@@ -58,7 +58,6 @@ public class SegmentRanges implements Segment
     schemaBuilder.field("range_min", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("range_max", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("dependentOnExtendedSubscriberProfile", SchemaBuilder.bool().defaultValue(false).schema());
-    schemaBuilder.field("contactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -79,7 +78,6 @@ public class SegmentRanges implements Segment
   private Integer range_min;
   private Integer range_max;
   private boolean dependentOnExtendedSubscriberProfile;
-  private String contactPolicyID;
 
   /*****************************************
   *
@@ -87,14 +85,13 @@ public class SegmentRanges implements Segment
   *
   *****************************************/
 
-  private SegmentRanges(String id, String name, Integer range_min, Integer range_max, boolean dependentOnExtendedSubscriberProfile, String contactPolicyID)
+  private SegmentRanges(String id, String name, Integer range_min, Integer range_max, boolean dependentOnExtendedSubscriberProfile)
   {
     this.id = id;
     this.name = name;
     this.range_min = range_min;
     this.range_max = range_max;
     this.dependentOnExtendedSubscriberProfile = dependentOnExtendedSubscriberProfile;
-    this.contactPolicyID = contactPolicyID;
   }
 
   /*****************************************
@@ -110,7 +107,6 @@ public class SegmentRanges implements Segment
     this.range_min = JSONUtilities.decodeInteger(jsonRoot, "range_min", false);
     this.range_max = JSONUtilities.decodeInteger(jsonRoot, "range_max", false);
     this.dependentOnExtendedSubscriberProfile = dependentOnExtendedSubscriberProfile;
-    this.contactPolicyID = JSONUtilities.decodeString(jsonRoot, "contactPolicyID", false);
   }
 
   /*****************************************
@@ -123,7 +119,6 @@ public class SegmentRanges implements Segment
   public String getName() { return name; }
   public Integer getRangeMin() { return range_min; }
   public Integer getRangeMax() { return range_max; }
-  public String getContactPolicyID() { return contactPolicyID; }
   public boolean getDependentOnExtendedSubscriberProfile() { return dependentOnExtendedSubscriberProfile; }
 
   /*****************************************
@@ -152,7 +147,6 @@ public class SegmentRanges implements Segment
     struct.put("range_min", segment.getRangeMin());
     struct.put("range_max", segment.getRangeMax());
     struct.put("dependentOnExtendedSubscriberProfile", segment.getDependentOnExtendedSubscriberProfile());
-    struct.put("contactPolicyID", segment.getContactPolicyID());
     return struct;
   }
 
@@ -185,13 +179,12 @@ public class SegmentRanges implements Segment
     Integer range_min = valueStruct.getInt32("range_min");
     Integer range_max = valueStruct.getInt32("range_max");
     boolean dependentOnExtendedSubscriberProfile = (schemaVersion >= 2) ? valueStruct.getBoolean("dependentOnExtendedSubscriberProfile") : false;
-    String contactPolicyID = valueStruct.getString("contactPolicyID");
 
     //
     //  construct
     //
 
-    SegmentRanges result = new SegmentRanges(id, name, range_min, range_max, dependentOnExtendedSubscriberProfile, contactPolicyID);
+    SegmentRanges result = new SegmentRanges(id, name, range_min, range_max, dependentOnExtendedSubscriberProfile);
 
     //
     //  return

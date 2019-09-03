@@ -14,6 +14,7 @@ import ie.omk.smpp.util.EncodingFactory;
 import ie.omk.smpp.util.HPRoman8Encoding;
 import ie.omk.smpp.util.MessageEncoding;
 import ie.omk.smpp.util.PacketStatus;
+import ie.omk.smpp.util.UCS2Encoding;
 import ie.omk.smpp.util.UTF16Encoding;
 
 import java.io.IOException;
@@ -48,6 +49,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SystemTime;
 
 /**
  * Recommended reading: http://www.developershome.com/sms/gsmAlphabet.asp
@@ -99,7 +101,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	protected final Integer source_addr_npi;
 	protected final Integer dest_addr_ton;
 	protected final Integer dest_addr_npi;
-	protected final MessageEncoding encoding;
+	protected MessageEncoding encoding;
 	protected String encoding_charset; // for example, "UTF-8"
 	protected final boolean data_packing;
 	protected final Integer expiration_period;
@@ -236,6 +238,9 @@ public class SimpleSMSSender extends SMSSenderListener {
 
 			}
 		}
+		
+		//add flashsms encoding
+		EncodingFactory.getInstance().addEncoding(new UCS2Encoding());
 
 		MessageEncoding encoding = EncodingFactory.getInstance().getEncoding(Integer.parseInt(data_coding));
 		if (encoding == null) {
@@ -431,36 +436,40 @@ public class SimpleSMSSender extends SMSSenderListener {
 			logger.info("SimpleSMSSender.sendSMS dest_addr_ton="+dest_addr_ton+", dest_addr_npi="+dest_addr_npi+", dest_addr="+desination);
 			Address destination = new Address(dest_addr_ton, dest_addr_npi, desination);
 
-			byte[] message;
-			if (encoding instanceof AlphabetEncoding) {
-				if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with alphabet charset "+((AlphabetEncoding)encoding).getCharset());
-				// The AlphabetEncoding applies its own conversion algo and charset
-
-				message = ((AlphabetEncoding)encoding).encodeString(text);
-			} else {
-				if (encoding_charset != null) {
-					if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with charset "+encoding_charset);
-					message = text.getBytes(encoding_charset);
-				} else {
-					message = text.getBytes();
-					if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with default charset");
-				}
+			byte[] message = null;
+			//Cant be multiple flashsms
+			if(deliveryRequest.getFlashSMS() && !this.support_sar && !this.support_udh) {
+			  encoding = new UCS2Encoding();
+			}else {
+			  if (encoding instanceof AlphabetEncoding) {
+			    if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with alphabet charset "+((AlphabetEncoding)encoding).getCharset());
+			    // The AlphabetEncoding applies its own conversion algo and charset
+			    message = ((AlphabetEncoding)encoding).encodeString(text);
+			  } else {
+			    if (encoding_charset != null) {
+			      if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with charset "+encoding_charset);
+			      message = text.getBytes(encoding_charset);
+			    } else {
+			      message = text.getBytes();
+			      if (logger.isTraceEnabled()) logger.trace("SimpleSMSSender.sendSMS encode with default charset");
+			    }
+			  }
 			}
 			
-			//TODO:Change for expiration time from config
-			Date d = new Date();
-			Calendar c = Calendar.getInstance();
-			c.setTime(d);
-			c.add(Calendar.DATE, 1);  // number of days to add
-			d = c.getTime();
-			Date[] expiryDateTimeStamp = SMPPUtil.getExpirationTimestamps(SMPPUtil.getCurrent(), this.expiration_period, d, true, 0);
-			logger.info("SimpleSMSSender.sendSMS expiration period of "+this.expiration_period+" hours, set the expiration date to "+expiryDateTimeStamp[0]+" // "+expiryDateTimeStamp[1]);
+			Calendar c = SystemTime.getCalendar();
+	        Date expiryDateTimeStamp = null;
+			if(this.expiration_period != 0) {
+			  c.add(Calendar.HOUR_OF_DAY, this.expiration_period);
+			  expiryDateTimeStamp = c.getTime();
+			}
+			
+			logger.info("SimpleSMSSender.sendSMS expiration period of "+this.expiration_period+" hours, set the expiration date to "+expiryDateTimeStamp);
 			//sms.setExpiration_timestamp(d[0]); // mostly for SMSC
 
 			if (!this.support_sar && !this.support_udh) {
-				sendSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp[0], receipt, dest_addr_subunit, isSendToPayload);
+				sendSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload);
 			} else {
-				sendMultipleSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp[0], receipt, dest_addr_subunit, isSendToPayload);
+				sendMultipleSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload);
 			}
 
 			return true;
@@ -755,6 +764,13 @@ public class SimpleSMSSender extends SMSSenderListener {
 		if (this.service_type != null) {
 			sm.setServiceType(this.service_type);
 		}
+		
+	    if (source != null) {
+            sm.setSource(source);
+        }
+        if (destination != null) {
+            sm.setDestination(destination);
+        }
 
 		if (dest_addr_subunit != null) {
 			// The subcomponent in the destination device for which	the user data is intended.
@@ -768,12 +784,6 @@ public class SimpleSMSSender extends SMSSenderListener {
 			sm.setOptionalParameter(Tag.DEST_ADDR_SUBUNIT/*0x05*/, dest_addr_subunit);
 		}
 
-		if (source != null) {
-			sm.setSource(source);
-		}
-		if (destination != null) {
-			sm.setDestination(destination);
-		}
 		//To handle the payload functionality. Note: To send the message on payload then isSendToPayload should be true and supportSar should be false.
 		if(isSendToPayload && !this.support_sar){
 			if(logger.isDebugEnabled()){
@@ -782,6 +792,11 @@ public class SimpleSMSSender extends SMSSenderListener {
 			sm.setOptionalParameter(Tag.MESSAGE_PAYLOAD, message);
 		}else{
 			sm.setMessage(message, encoding);
+			
+			if(deliveryRequest.getFlashSMS()) {
+			  sm.setDataCoding(24);
+			  sm.setEsmClass(3);
+			}
 		}
 		/*
 	     * Set the expiry time of the message. If the message is not delivered by

@@ -8,11 +8,12 @@ import com.lumatagroup.expression.driver.dyn.PollFeedback;
 public class FeedbackThread extends Thread {
 	private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(FeedbackThread.class);
 	private boolean mustStop = false;
+	private boolean usingFakeEmulator = false;
 	private Date from;
 	private String messageIdentifierMagic;
 	private MailNotificationManager mailNotificationManager;
 	
-	public FeedbackThread(MailNotificationManager mailNotificationManager) {
+	public FeedbackThread(MailNotificationManager mailNotificationManager, boolean usingFakeEmulator) {
 		logger.debug("FeedbackThread constructor");
 		if (logger.isDebugEnabled()) logger.debug("FeedbackThread messageIdentifierMagic = "+messageIdentifierMagic);
 		long now = new Date().getTime();
@@ -20,6 +21,7 @@ public class FeedbackThread extends Thread {
 		from = new Date(now-1000L*dayInSeconds*Conf.getInitialDurationDays());
 		if (logger.isDebugEnabled()) logger.debug("FeedbackThread now = "+now+" et "+from.getTime());
 		this.mailNotificationManager = mailNotificationManager;
+		this.usingFakeEmulator = usingFakeEmulator;
 	}
 
 	public void run() {
@@ -80,14 +82,13 @@ public class FeedbackThread extends Thread {
 //		if (logger.isDebugEnabled()) logger.debug("::::::::::::::::::::: FeedbackThread.releaseLock END th=" + thread);
 	}
 
-	/*
-	 * We hold the DB lock
-	 */
 	private void processResponsesFromDyn() {
 		logger.info("FeedbackThread.processResponsesFromDyn START "+Thread.currentThread().getId());
 		Date to = new Date();
 		// gather responses from Dyn REST API
-		PollFeedback.checkOpen2(from, to, mailNotificationManager);
+		if(!usingFakeEmulator) {
+		  PollFeedback.checkOpen2(from, to, mailNotificationManager);
+		}
 		logger.info("FeedbackThread.processResponsesFromDyn END "+Thread.currentThread().getId());	
 	}
 

@@ -165,6 +165,7 @@
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
+    <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>
@@ -290,6 +291,14 @@
                   <fileset dir="${project.basedir}/src/assembly/resources/docker" includes="upgrade-environment.yml"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker" includes="upgrade-postamble.yml"/>
                 </concat>
+                <copy todir="${project.build.directory}/assembled-resources/config">
+                  <fileset dir="${project.build.directory}/nglm-evolution-resources/config">
+                    <include name="deployment-*.json"/>
+                  </fileset>
+                </copy>
+                <replaceregexp match="(--.*$)|${line.separator}" replace="" flags="gm">
+                  <fileset dir="${project.build.directory}/assembled-resources/config" includes="deployment*.json"/>
+                </replaceregexp>
                 <copy todir="${project.build.directory}/assembled-resources/docker">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/docker">
                     <include name="*.yml"/>

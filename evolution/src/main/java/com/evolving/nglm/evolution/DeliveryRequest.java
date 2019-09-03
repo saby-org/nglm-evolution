@@ -39,7 +39,6 @@ import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
 public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, Comparable
 {
-  
   /*****************************************
   *
   *  presentation-keys
@@ -201,6 +200,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("timeout", Timestamp.builder().optional().schema());
     schemaBuilder.field("correlator", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("control", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("segmentContactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("deliveryType", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Timestamp.builder().optional().schema());
@@ -259,6 +259,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private Date timeout;
   private String correlator;
   private boolean control;
+  private String segmentContactPolicyID;
   private String deliveryType;
   private DeliveryStatus deliveryStatus;
   private Date deliveryDate;
@@ -284,6 +285,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public Date getTimeout() { return timeout; }
   public String getCorrelator() { return correlator; }
   public boolean getControl() { return control; }
+  public String getSegmentContactPolicyID() { return segmentContactPolicyID; }
   public String getDeliveryType() { return deliveryType; }
   public DeliveryStatus getDeliveryStatus() { return deliveryStatus; }
   public Date getDeliveryDate() { return deliveryDate; }
@@ -349,6 +351,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.timeout = null;
     this.correlator = null;
     this.control = context.getSubscriberState().getSubscriberProfile().getUniversalControlGroup();
+    this.segmentContactPolicyID = context.getSubscriberState().getSubscriberProfile().getSegmentContactPolicyID(context.getSegmentContactPolicyService(), context.getSegmentationDimensionService(), context.getSubscriberGroupEpochReader());
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
@@ -382,6 +385,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.timeout = null;
     this.correlator = null;
     this.control = universalControlGroup;
+    this.segmentContactPolicyID = null;
     this.deliveryType = deliveryType;
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
@@ -410,6 +414,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.timeout = deliveryRequest.getTimeout();
     this.correlator = deliveryRequest.getCorrelator();
     this.control = deliveryRequest.getControl();
+    this.segmentContactPolicyID = deliveryRequest.getSegmentContactPolicyID();
     this.deliveryType = deliveryRequest.getDeliveryType();
     this.deliveryStatus = deliveryRequest.getDeliveryStatus();
     this.deliveryDate = deliveryRequest.getDeliveryDate();
@@ -444,6 +449,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.timeout = null;
     this.correlator = null;
     this.control = JSONUtilities.decodeBoolean(jsonRoot, "control", Boolean.FALSE);
+    this.segmentContactPolicyID = null;
     this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", true);
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
@@ -472,6 +478,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("timeout", deliveryRequest.getTimeout()); 
     struct.put("correlator", deliveryRequest.getCorrelator()); 
     struct.put("control", deliveryRequest.getControl());
+    struct.put("segmentContactPolicyID", deliveryRequest.getSegmentContactPolicyID());
     struct.put("deliveryType", deliveryRequest.getDeliveryType());
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate());
@@ -513,10 +520,11 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     Date timeout = (Date) valueStruct.get("timeout");
     String correlator = valueStruct.getString("correlator");
     boolean control = valueStruct.getBoolean("control");
+    String segmentContactPolicyID = valueStruct.getString("segmentContactPolicyID");
     String deliveryType = valueStruct.getString("deliveryType");
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
     Date deliveryDate = (Date) valueStruct.get("deliveryDate");
-    Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");;
+    Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
 
     //
     //  return
@@ -536,6 +544,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.timeout = timeout;
     this.correlator = correlator;
     this.control = control;
+    this.segmentContactPolicyID = segmentContactPolicyID;
     this.deliveryType = deliveryType;
     this.deliveryStatus = deliveryStatus;
     this.deliveryDate = deliveryDate;
@@ -624,6 +633,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append("," + timeout);
     b.append("," + correlator);
     b.append("," + control);
+    b.append("," + segmentContactPolicyID);
     b.append("," + deliveryType);
     b.append("," + deliveryStatus);
     b.append("," + deliveryDate);
