@@ -63,6 +63,8 @@
   "propensityStateChangeLog"                             : "${changelog.evolutionengine.propensitystate}",
   "propensityStateChangeLogTopic"                        : "${changelog.evolutionengine.propensitystate.topic}",
   "propensityRepartitioningTopic"                        : "${topic.evolutionengine.propensityoutput.repartition}",
+  "journeyTrafficChangeLog"                              : "${changelog.evolutionengine.journeytraffic}",
+  "journeyTrafficChangeLogTopic"                         : "${changelog.evolutionengine.journeytraffic.topic}",
   "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
   "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
   "rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic" : "${rekeyed.subscribermanager.autoprovisionedsubscriber.topic}",
@@ -73,6 +75,8 @@
   "journeyResponseTopic"                                 : "${topic.journeyresponse}",
   "journeyStatisticTopic"                                : "${topic.journeystatistic}",
   "journeyMetricTopic"                                   : "${topic.journeymetric}",
+  "loyaltyProgramRequestTopic"                           : "${topic.loyaltyprogramrequest}",
+  "loyaltyProgramResponseTopic"                          : "${topic.loyaltyprogramresponse}",
   "deliverableSourceTopic"                               : "${topic.deliverable.source}",
   "presentationLogTopic"                                 : "${topic.presentationlog}",
   "acceptanceLogTopic"                                   : "${topic.acceptancelog}",
@@ -102,6 +106,13 @@
 
   "subscriberProfileCompressionType"                     : "<_REDIS_SUBSCRIBERPROFILE_COMPRESSION_>",
 
+  --
+  --  journeyTrafficArchive default values
+  --
+
+  "journeyTrafficArchivePeriodInSeconds"                 : 10,
+  "journeyTrafficArchiveMaxNumberOfPeriods"              : 48,
+  
   -- 
   --  supportedDataTypes
   --
