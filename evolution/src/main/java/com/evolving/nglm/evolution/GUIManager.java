@@ -19128,9 +19128,12 @@ public class GUIManager
                 {
                   result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
                 }
-              catch (IllegalAccessException|InvocationTargetException e)
+              catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
                 {
-                  throw new RuntimeException(e);
+                  log.error("failed deployment evaluate enumerated values for reference {}", reference);
+                  StringWriter stackTraceWriter = new StringWriter();
+                  e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                  log.error(stackTraceWriter.toString());
                 }
             }
           break;

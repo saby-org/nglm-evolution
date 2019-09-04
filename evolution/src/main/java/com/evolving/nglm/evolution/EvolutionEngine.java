@@ -2038,9 +2038,12 @@ public class EvolutionEngine
       {
         subscriberProfileUpdated = ((Boolean) evolutionEngineExtensionUpdateSubscriberMethod.invoke(null, context, evolutionEvent)).booleanValue() || subscriberProfileUpdated;
       }
-    catch (IllegalAccessException|InvocationTargetException e)
+    catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
       {
-        throw new RuntimeException(e);
+        log.error("failed deployment update subscriber");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
       }
 
     /*****************************************
@@ -3368,12 +3371,7 @@ public class EvolutionEngine
 
                             journeyState.setJourneyExitDate(now);
                             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
-                                subscriberState.getSubscriberProfile(),
-                                subscriberGroupEpochReader,
-                                ucgStateReader,
-                                statusUpdated,
-                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
+                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -3397,9 +3395,19 @@ public class EvolutionEngine
 
                 if (journeyNode.getNodeType().getActionManager() != null)
                   {
-                    SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
-                    journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
-                    context.getSubscriberTraceDetails().addAll(exitActionEvaluationRequest.getTraceDetails());
+                    try
+                      {
+                        SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
+                        journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
+                        context.getSubscriberTraceDetails().addAll(exitActionEvaluationRequest.getTraceDetails());
+                      }
+                    catch (RuntimeException e)
+                      {
+                        log.error("failed action");
+                        StringWriter stackTraceWriter = new StringWriter();
+                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                        log.error(stackTraceWriter.toString());
+                      }
                   }
 
                 /*****************************************
@@ -3499,34 +3507,44 @@ public class EvolutionEngine
 
                 if (journeyNode.getNodeType().getActionManager() != null)
                   {
-                    //
-                    //  evaluate action
-                    //
-
-                    SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                    Action action = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
-                    context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
-
-                    //
-                    //  execute action
-                    //
-
-                    if (action != null)
+                    try
                       {
-                        switch (action.getActionType())
-                          {
-                            case DeliveryRequest:
-                              DeliveryRequest deliveryRequest = (DeliveryRequest) action;
-                              subscriberState.getDeliveryRequests().add(deliveryRequest);
-                              journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
-                              break;
+                        //
+                        //  evaluate action
+                        //
 
-                            case JourneyRequest:
-                              JourneyRequest journeyRequest = (JourneyRequest) action;
-                              subscriberState.getJourneyRequests().add(journeyRequest);
-                              journeyState.setJourneyOutstandingJourneyRequestID(journeyRequest.getJourneyRequestID());
-                              break;
+                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                        Action action = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
+                        context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
+
+                        //
+                        //  execute action
+                        //
+
+                        if (action != null)
+                          {
+                            switch (action.getActionType())
+                              {
+                                case DeliveryRequest:
+                                  DeliveryRequest deliveryRequest = (DeliveryRequest) action;
+                                  subscriberState.getDeliveryRequests().add(deliveryRequest);
+                                  journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
+                                  break;
+
+                                case JourneyRequest:
+                                  JourneyRequest journeyRequest = (JourneyRequest) action;
+                                  subscriberState.getJourneyRequests().add(journeyRequest);
+                                  journeyState.setJourneyOutstandingJourneyRequestID(journeyRequest.getJourneyRequestID());
+                                  break;
+                              }
                           }
+                      }
+                    catch (RuntimeException e)
+                      {
+                        log.error("failed action");
+                        StringWriter stackTraceWriter = new StringWriter();
+                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                        log.error(stackTraceWriter.toString());
                       }
                   }
 
