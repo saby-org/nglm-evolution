@@ -54,6 +54,7 @@ public class Deployment
   private static String guiManagerExtensionClassName;
   private static String subscriberProfileClassName;
   private static String extendedSubscriberProfileClassName;
+  private static String evolutionEngineExternalAPIClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static String emptyTopic;
   private static String journeyTopic;
@@ -118,7 +119,7 @@ public class Deployment
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
-  private static String baseLanguageID;
+  private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();private static String baseLanguageID;
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
@@ -306,6 +307,7 @@ public class Deployment
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
+  public static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
   public static String getBaseLanguageID() { return baseLanguageID; }
   public static Map<String,SupportedCurrency> getSupportedCurrencies() { return supportedCurrencies; }
   public static Map<String,SupportedTimeUnit> getSupportedTimeUnits() { return supportedTimeUnits; }
@@ -480,6 +482,45 @@ public class Deployment
 
   /*****************************************
   *
+  *  getEvolutionEngineExternalAPIClass
+  *
+  *****************************************/
+
+  public static Class<ExternalAPI> getEvolutionEngineExternalAPIClass()
+  {
+    try
+      {
+        Class<ExternalAPI> evolutionEngineExternalAPIClass = (Class<ExternalAPI>) Class.forName(evolutionEngineExternalAPIClassName);
+        return evolutionEngineExternalAPIClass;
+      }
+    catch (ClassNotFoundException e)
+      {
+        throw new RuntimeException(e);
+      }
+  }
+
+  /*****************************************
+  *
+  *  getEvolutionEngineExternalAPITopicID
+  *
+  *****************************************/
+
+  public static String getEvolutionEngineExternalAPITopicID(String topic)
+  {
+    String evolutionEngineExternalAPITopicID = null;
+    for (ExternalAPITopic externalAPITopic : externalAPITopics.values())
+      {
+        if (Objects.equals(topic, externalAPITopic.getName()))
+          {
+            evolutionEngineExternalAPITopicID = externalAPITopic.getID();
+            break;
+          }
+      }
+    return evolutionEngineExternalAPITopicID;
+  }
+  
+  /*****************************************
+  *
   *  getSupportedLanguageID
   *
   *****************************************/
@@ -625,6 +666,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  evolutionEngineExternalAPIClassName
+    //
+
+    try
+      {
+        evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  evolutionEngineEvents
     //
@@ -1566,6 +1620,25 @@ public class Deployment
         propensityRule = new PropensityRule(propensityRuleJSON);
       }
     catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  externalAPITopics
+    //
+
+    try
+      {
+        JSONArray externalAPITopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "externalAPITopics", true);
+        for (int i=0; i<externalAPITopicValues.size(); i++)
+          {
+            JSONObject externalAPITopicJSON = (JSONObject) externalAPITopicValues.get(i);
+            ExternalAPITopic externalAPITopic = new ExternalAPITopic(externalAPITopicJSON);
+            externalAPITopics.put(externalAPITopic.getID(), externalAPITopic);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
       {
         throw new ServerRuntimeException("deployment", e);
       }

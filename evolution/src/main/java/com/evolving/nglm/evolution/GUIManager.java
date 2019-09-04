@@ -96,12 +96,15 @@ import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
@@ -117,6 +120,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -503,6 +507,8 @@ public class GUIManager
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
   private PartnerService partnerService;
   private SegmentContactPolicyService segmentContactPolicyService;
+  private static Method externalAPIMethodJourneyActivated;
+  private static Method externalAPIMethodJourneyDeactivated;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -618,6 +624,20 @@ public class GUIManager
         throw new RuntimeException(e);
       }
 
+    //
+    //  externalAPIMethodJourneyActivated
+    //
+
+    try
+      {
+        externalAPIMethodJourneyActivated = Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataJourneyActivated", Journey.class);
+        externalAPIMethodJourneyDeactivated = Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataJourneyDeactivated", String.class, JourneyService.class);
+      }
+    catch (NoSuchMethodException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
     /*****************************************
     *
     *  kafka producer for the segmentationDimensionListener
@@ -637,7 +657,53 @@ public class GUIManager
     *
     *****************************************/
 
-    journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true);
+    JourneyListener journeyListener = new JourneyListener()
+    {
+      @Override public void journeyActivated(Journey journey) {
+          log.debug("journey activated: " + journey.getJourneyID()+" "+journey.getJourneyName());
+          try
+            {
+              Pair<String, JSONObject> result = (Pair<String,JSONObject>) externalAPIMethodJourneyActivated.invoke(null, journey);
+              JSONObject json = result.getSecondElement();
+              if (json != null)
+                {
+                  String topic = Deployment.getExternalAPITopics().get(result.getFirstElement()).getName();
+                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+                      topic,
+                      StringKey.serde().serializer().serialize(topic, new StringKey(journey.getJourneyID())),
+                      StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
+
+                }
+            }
+          catch (IllegalAccessException|InvocationTargetException e)
+            {
+              throw new RuntimeException(e);
+            }
+        }
+      @Override public void journeyDeactivated(String guiManagedObjectID)
+      {
+        log.debug("journey deactivated: " + guiManagedObjectID);
+        try
+          {
+            Pair<String, JSONObject> result = (Pair<String,JSONObject>) externalAPIMethodJourneyDeactivated.invoke(null, guiManagedObjectID, journeyService);
+            JSONObject json = result.getSecondElement();
+            if (json != null)
+              {
+                String topic = Deployment.getExternalAPITopics().get(result.getFirstElement()).getName();
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+                    topic,
+                    StringKey.serde().serializer().serialize(topic, new StringKey(guiManagedObjectID)),
+                    StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
+
+              }
+          }
+        catch (IllegalAccessException|InvocationTargetException e)
+          {
+            throw new RuntimeException(e);
+          }
+      }
+    };
+    journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true, journeyListener);
     journeyTemplateService = new JourneyTemplateService(bootstrapServers, "guimanager-journeytemplateservice-" + apiProcessKey, journeyTemplateTopic, true);
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);

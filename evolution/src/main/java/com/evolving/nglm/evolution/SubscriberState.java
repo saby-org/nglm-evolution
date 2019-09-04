@@ -74,6 +74,7 @@ public class SubscriberState implements SubscriberStreamOutput
     schemaBuilder.field("journeyMetrics", SchemaBuilder.array(JourneyMetric.schema()).schema());
     schemaBuilder.field("propensityOutputs", SchemaBuilder.array(PropensityEventOutput.schema()).defaultValue(Collections.<PropensityEventOutput>emptyList()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("externalAPIOutput", ExternalAPIOutput.serde().optionalSchema()); // TODO : check this 
     schema = schemaBuilder.build();
   };
 
@@ -115,6 +116,7 @@ public class SubscriberState implements SubscriberStreamOutput
   private List<JourneyMetric> journeyMetrics;
   private List<PropensityEventOutput> propensityOutputs;
   private SubscriberTrace subscriberTrace;
+  private ExternalAPIOutput externalAPIOutput;
 
   /****************************************
   *
@@ -141,6 +143,7 @@ public class SubscriberState implements SubscriberStreamOutput
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<PropensityEventOutput> getPropensityOutputs() { return propensityOutputs; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
+  public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; } 
 
   /****************************************
   *
@@ -150,6 +153,7 @@ public class SubscriberState implements SubscriberStreamOutput
 
   public void setLastEvaluationDate(Date lastEvaluationDate) { this.lastEvaluationDate = lastEvaluationDate; }
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
+  public void setExternalAPIOutput(ExternalAPIOutput externalAPIOutput) { this.externalAPIOutput = externalAPIOutput; }
   
   //
   //  setUCGState
@@ -191,6 +195,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.propensityOutputs = new ArrayList<PropensityEventOutput>();
         this.subscriberTrace = null;
+        this.externalAPIOutput = null;
       }
     catch (InvocationTargetException e)
       {
@@ -208,7 +213,7 @@ public class SubscriberState implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -229,6 +234,7 @@ public class SubscriberState implements SubscriberStreamOutput
     this.journeyMetrics = journeyMetrics;
     this.propensityOutputs = propensityOutputs;
     this.subscriberTrace = subscriberTrace;
+    this.externalAPIOutput = externalAPIOutput;
   }
 
   /*****************************************
@@ -262,6 +268,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
         this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
+        this.externalAPIOutput = subscriberState.getExternalAPIOutput();
 
         //
         //  deep copy of journey states
@@ -322,6 +329,7 @@ public class SubscriberState implements SubscriberStreamOutput
     struct.put("journeyMetrics", packJourneyMetrics(subscriberState.getJourneyMetrics()));
     struct.put("propensityOutputs", packPropensityOutputs(subscriberState.getPropensityOutputs()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
+    struct.put("externalAPIOutput", subscriberState.getExternalAPIOutput() != null ? ExternalAPIOutput.serde().packOptional(subscriberState.getExternalAPIOutput()) : null);
     return struct;
   }
 
@@ -509,12 +517,13 @@ public class SubscriberState implements SubscriberStreamOutput
     List<JourneyMetric> journeyMetrics = (schemaVersion >= 2) ? unpackJourneyMetrics(schema.field("journeyMetrics").schema(), valueStruct.get("journeyMetrics")) : new ArrayList<JourneyMetric>();
     List<PropensityEventOutput> propensityOutputs = (schemaVersion >= 2) ? unpackPropensityOutputs(schema.field("propensityOutputs").schema(), valueStruct.get("propensityOutputs")) : new ArrayList<PropensityEventOutput>();
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
+    ExternalAPIOutput externalAPIOutput = valueStruct.get("externalAPIOutput") != null ? ExternalAPIOutput.unpack(new SchemaAndValue(schema.field("externalAPIOutput").schema(), valueStruct.get("externalAPIOutput"))) : null;
 
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, subscriberTrace);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, subscriberTrace, externalAPIOutput);
   }
 
   /*****************************************

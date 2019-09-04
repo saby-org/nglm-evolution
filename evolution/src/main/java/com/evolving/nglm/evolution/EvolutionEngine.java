@@ -81,12 +81,14 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.RecordSubscriberID;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -179,6 +181,7 @@ public class EvolutionEngine
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
   private static Method evolutionEngineExtensionUpdateSubscriberMethod;
   private static Method evolutionEngineExtensionUpdateExtendedSubscriberMethod;
+  private static Method evolutionEngineExternalAPIMethod;
   private static TimerService timerService;
   private static PointService pointService;
   private static KafkaStreams streams = null;
@@ -443,6 +446,19 @@ public class EvolutionEngine
         throw new RuntimeException(e);
       }
 
+    //
+    //  evolutionEngineExternalAPIMethod
+    //
+
+    try
+      {
+        evolutionEngineExternalAPIMethod = Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataSubscriber", SubscriberState.class, SubscriberState.class, SubscriberStreamEvent.class, JourneyService.class);
+      }
+    catch (NoSuchMethodException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+
     /*****************************************
     *
     *  stream properties
@@ -528,6 +544,7 @@ public class EvolutionEngine
     final ConnectSerde<PropensityKey> propensityKeySerde = PropensityKey.serde();
     final ConnectSerde<PropensityState> propensityStateSerde = PropensityState.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
+    final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
 
     /*****************************************
     *
@@ -751,7 +768,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyStatisticWrapper), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
-        (key,value) -> (value instanceof PropensityEventOutput));
+        (key,value) -> (value instanceof PropensityEventOutput),
+        (key,value) -> (value instanceof ExternalAPIOutput));
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
@@ -762,6 +780,7 @@ public class EvolutionEngine
     KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[7];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[8];
     KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[9];
+    KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[10];
 
     //
     //  build predicates for delivery requests
@@ -958,6 +977,43 @@ public class EvolutionEngine
           }
       }
 
+    //
+    //  ExternalAPIOutput stream
+    //
+
+    Map<String, ExternalAPITopic> externalAPITopics = Deployment.getExternalAPITopics();
+    ExternalAPIOutputPredicate[] externalAPIOutputPredicates = new ExternalAPIOutputPredicate[externalAPITopics.values().size()];
+    String[] externalAPIOutputTopics = new String[externalAPITopics.values().size()];
+    int j = 0;
+    for (String topicId : externalAPITopics.keySet())
+      {
+        externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicId);
+        externalAPIOutputTopics[j] = externalAPITopics.get(topicId).getName();
+        log.info("MK Building output "+topicId+","+externalAPIOutputTopics[j]);
+        j += 1;
+      }
+
+    //
+    // ExternalAPIOutput branch
+    //
+
+    KStream<StringKey, ExternalAPIOutput>[] branchedExternalAPIStreamsByTopic = externalAPIOutputsStream.branch(externalAPIOutputPredicates);
+
+    //
+    // ExternalAPIOutput sink
+    //
+
+    for (int k = 0; k < externalAPIOutputPredicates.length; k++)
+      {
+        KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
+        log.info("MK sinking output to "+externalAPIOutputTopics[k]);
+        // Only send the json part to the output topic 
+        KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
+            (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
+        externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, StringValue.serde()));
+      }
+    
+    
     /*****************************************
     *
     *  runtime
@@ -1287,6 +1343,39 @@ public class EvolutionEngine
     }
   }
 
+  /****************************************
+  *
+  *  class ExternalAPIOutputPredicate
+  *
+  ****************************************/
+
+  private static class ExternalAPIOutputPredicate implements Predicate<StringKey, ExternalAPIOutput>
+  {
+    //
+    //  data
+    //
+
+    String topicId;
+
+    //
+    //  constructor
+    //
+
+    private ExternalAPIOutputPredicate(String topicId)
+    {
+      this.topicId = topicId;
+    }
+
+    //
+    //  test (predicate interface)
+    //
+
+    @Override public boolean test(StringKey stringKey, ExternalAPIOutput externalAPIOutput)
+    {
+      return topicId.equals(externalAPIOutput.getTopicID());
+    }
+  }
+
   /*****************************************
   *
   *  class ShutdownHook
@@ -1551,6 +1640,16 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
+    //
+    //  externalAPIOutput
+    //
+
+    if (subscriberState.getExternalAPIOutput() != null)
+      {
+        subscriberState.setExternalAPIOutput(null);
+        subscriberStateUpdated = true;
+      }
+
     /*****************************************
     *
     *  update SubscriberProfile
@@ -1620,6 +1719,20 @@ public class EvolutionEngine
     if (subscriberProfile.getSubscriberTraceEnabled())
       {
         subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentSubscriberState, subscriberState, context.getSubscriberTraceDetails())));
+        subscriberStateUpdated = true;
+      }
+
+    /*****************************************
+    *
+    *  externalAPI
+    *
+    *****************************************/
+
+    Pair<String,JSONObject> resExternalAPI = callExternalAPI(evolutionEvent, currentSubscriberState, subscriberState);
+    JSONObject jsonObject = resExternalAPI.getSecondElement();
+    if (jsonObject != null)
+      {
+        subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject.toJSONString()));
         subscriberStateUpdated = true;
       }
 
@@ -1840,7 +1953,42 @@ public class EvolutionEngine
     
     return history;
   }
-  
+
+  /*****************************************
+  * 
+  *  callExternalAPI
+  *
+  *****************************************/
+
+  private static Pair<String,JSONObject> callExternalAPI(SubscriberStreamEvent evolutionEvent, SubscriberState currentSubscriberState, SubscriberState subscriberState)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    Pair<String,JSONObject> result;
+
+    /*****************************************
+    *
+    *  invoke evolution engine external API
+    *
+    *****************************************/
+
+    try
+      {
+        result = (Pair<String,JSONObject>) evolutionEngineExternalAPIMethod.invoke(null, currentSubscriberState, subscriberState, evolutionEvent, journeyService);
+      }
+    catch (IllegalAccessException|InvocationTargetException e)
+      {
+        throw new RuntimeException(e);
+      }
+    
+    return result;
+  }
+
   /*****************************************
   *
   *  updateSubscriberProfile
@@ -2929,7 +3077,7 @@ public class EvolutionEngine
 
                 /*****************************************
                 *
-                *  popluate journeyMetrics (prior and "during")
+                *  populate journeyMetrics (prior and "during")
                 *
                 *****************************************/
 
@@ -3619,6 +3767,9 @@ public class EvolutionEngine
         throw new RuntimeException(e);
       }
 
+    
+    
+    
     /*****************************************
     *
     *  subscriberTrace
@@ -3936,6 +4087,7 @@ public class EvolutionEngine
     result.addAll(subscriberState.getJourneyMetrics());
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     result.addAll(subscriberState.getPropensityOutputs());
+    result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
     return result;
   }
 
@@ -3985,6 +4137,17 @@ public class EvolutionEngine
     return new KeyValue<StringKey, DeliveryRequest>(new StringKey(value.getDeliveryRequestID()), value);
   }
   
+  /****************************************
+  *
+  *  rekeyExternalAPIOutputStream
+  *
+  ****************************************/
+
+  private static KeyValue<StringKey, ExternalAPIOutput> rekeyExternalAPIOutputStream(StringKey key, ExternalAPIOutput value)
+  {
+    return new KeyValue<StringKey, ExternalAPIOutput>(new StringKey(value.getTopicID()), value);
+  }
+
   /****************************************
   *
   *  rekeyJourneyResponseStream
