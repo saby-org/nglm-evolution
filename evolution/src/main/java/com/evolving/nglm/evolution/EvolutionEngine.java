@@ -978,18 +978,17 @@ public class EvolutionEngine
       }
 
     //
-    //  ExternalAPIOutput stream
+    //  sink -- externalAPI output stream
     //
 
     Map<String, ExternalAPITopic> externalAPITopics = Deployment.getExternalAPITopics();
     ExternalAPIOutputPredicate[] externalAPIOutputPredicates = new ExternalAPIOutputPredicate[externalAPITopics.values().size()];
     String[] externalAPIOutputTopics = new String[externalAPITopics.values().size()];
     int j = 0;
-    for (String topicId : externalAPITopics.keySet())
+    for (String topicID : externalAPITopics.keySet())
       {
-        externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicId);
-        externalAPIOutputTopics[j] = externalAPITopics.get(topicId).getName();
-        log.info("MK Building output "+topicId+","+externalAPIOutputTopics[j]);
+        externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicID);
+        externalAPIOutputTopics[j] = externalAPITopics.get(topicID).getName();
         j += 1;
       }
 
@@ -1012,7 +1011,6 @@ public class EvolutionEngine
             (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
         externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, StringValue.serde()));
       }
-    
     
     /*****************************************
     *

@@ -94,9 +94,6 @@
   echo create_topic ${topic.presentationlog_fileconnector}                            $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   echo create_topic ${topic.acceptancelog_fileconnector}                              $KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_LARGE         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
   
-  echo create_topic ${topic.externalAPI.jd}                              			  $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"   >> /app/setup/topics-evolution
-  echo create_topic ${topic.externalAPI.cj}                              			  $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_CHANGELOG_50MB"   >> /app/setup/topics-evolution
-  
   #
   #  regression topics  
   #
