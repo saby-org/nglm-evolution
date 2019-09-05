@@ -630,8 +630,8 @@ public class GUIManager
 
     try
       {
-        externalAPIMethodJourneyActivated = Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataJourneyActivated", Journey.class);
-        externalAPIMethodJourneyDeactivated = Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataJourneyDeactivated", String.class, JourneyService.class);
+        externalAPIMethodJourneyActivated = (Deployment.getEvolutionEngineExternalAPIClass() != null) ? Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataJourneyActivated", Journey.class) : null;
+        externalAPIMethodJourneyDeactivated = (Deployment.getEvolutionEngineExternalAPIClass() != null) ? Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataJourneyDeactivated", String.class, JourneyService.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -660,46 +660,68 @@ public class GUIManager
     JourneyListener journeyListener = new JourneyListener()
     {
       @Override public void journeyActivated(Journey journey) {
-          log.debug("journey activated: " + journey.getJourneyID()+" "+journey.getJourneyName());
-          try
+          log.debug("journeyActivated: " + journey.getJourneyID()+" "+journey.getJourneyName());
+          if (externalAPIMethodJourneyActivated != null)
             {
-              Pair<String, JSONObject> result = (Pair<String,JSONObject>) externalAPIMethodJourneyActivated.invoke(null, journey);
-              JSONObject json = result.getSecondElement();
-              if (json != null)
-                {
-                  String topic = Deployment.getExternalAPITopics().get(result.getFirstElement()).getName();
-                  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
-                      topic,
-                      StringKey.serde().serializer().serialize(topic, new StringKey(journey.getJourneyID())),
-                      StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
-
-                }
-            }
-          catch (IllegalAccessException|InvocationTargetException e)
-            {
-              throw new RuntimeException(e);
+              try
+              {
+                Pair<String, JSONObject> result = (Pair<String,JSONObject>) externalAPIMethodJourneyActivated.invoke(null, journey);
+                JSONObject json = result.getSecondElement();
+                if (json != null)
+                  {
+                    String topicID = result.getFirstElement();
+                    ExternalAPITopic apiTopic = Deployment.getExternalAPITopics().get(topicID);
+                    if (apiTopic != null)
+                      {
+                        String topic = apiTopic.getName();
+                        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+                            topic,
+                            StringKey.serde().serializer().serialize(topic, new StringKey(journey.getJourneyID())),
+                            StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
+                      }
+                    else
+                      {
+                        log.info("journeyActivated: unknown topicID" + topicID);
+                      }
+                  }
+              }
+              catch (IllegalAccessException|InvocationTargetException e)
+              {
+                throw new RuntimeException(e);
+              }
             }
         }
       @Override public void journeyDeactivated(String guiManagedObjectID)
       {
-        log.debug("journey deactivated: " + guiManagedObjectID);
-        try
+        log.debug("journeyDeactivated: " + guiManagedObjectID);
+        if (externalAPIMethodJourneyDeactivated != null)
           {
-            Pair<String, JSONObject> result = (Pair<String,JSONObject>) externalAPIMethodJourneyDeactivated.invoke(null, guiManagedObjectID, journeyService);
-            JSONObject json = result.getSecondElement();
-            if (json != null)
-              {
-                String topic = Deployment.getExternalAPITopics().get(result.getFirstElement()).getName();
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
-                    topic,
-                    StringKey.serde().serializer().serialize(topic, new StringKey(guiManagedObjectID)),
-                    StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
-
-              }
-          }
-        catch (IllegalAccessException|InvocationTargetException e)
-          {
-            throw new RuntimeException(e);
+            try
+            {
+              Pair<String, JSONObject> result = (Pair<String,JSONObject>) externalAPIMethodJourneyDeactivated.invoke(null, guiManagedObjectID, journeyService);
+              JSONObject json = result.getSecondElement();
+              if (json != null)
+                {
+                  String topicID = result.getFirstElement();
+                  ExternalAPITopic apiTopic = Deployment.getExternalAPITopics().get(topicID);
+                  if (apiTopic != null)
+                    {
+                      String topic = apiTopic.getName();
+                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+                          topic,
+                          StringKey.serde().serializer().serialize(topic, new StringKey(guiManagedObjectID)),
+                          StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
+                    }
+                  else
+                    {
+                      log.info("journeyDeactivated: unknown topicID" + topicID);
+                    }
+                }
+            }
+            catch (IllegalAccessException|InvocationTargetException e)
+            {
+              throw new RuntimeException(e);
+            }
           }
       }
     };

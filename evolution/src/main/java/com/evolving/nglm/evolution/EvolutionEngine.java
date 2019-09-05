@@ -1005,7 +1005,6 @@ public class EvolutionEngine
     for (int k = 0; k < externalAPIOutputPredicates.length; k++)
       {
         KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
-        log.info("MK sinking output to "+externalAPIOutputTopics[k]);
         // Only send the json part to the output topic 
         KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
             (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
@@ -1975,13 +1974,20 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    try
+    if (evolutionEngineExternalAPIMethod != null)
       {
-        result = (Pair<String,JSONObject>) evolutionEngineExternalAPIMethod.invoke(null, currentSubscriberState, subscriberState, evolutionEvent, journeyService);
+        try
+        {
+          result = (Pair<String,JSONObject>) evolutionEngineExternalAPIMethod.invoke(null, currentSubscriberState, subscriberState, evolutionEvent, journeyService);
+        }
+        catch (IllegalAccessException|InvocationTargetException e)
+        {
+          throw new RuntimeException(e);
+        }
       }
-    catch (IllegalAccessException|InvocationTargetException e)
+    else
       {
-        throw new RuntimeException(e);
+        result = new Pair<String,JSONObject>("",null);
       }
     
     return result;
