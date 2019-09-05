@@ -452,7 +452,7 @@ public class EvolutionEngine
 
     try
       {
-        evolutionEngineExternalAPIMethod = Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataSubscriber", SubscriberState.class, SubscriberState.class, SubscriberStreamEvent.class, JourneyService.class);
+        evolutionEngineExternalAPIMethod = (Deployment.getEvolutionEngineExternalAPIClass() != null) ? Deployment.getEvolutionEngineExternalAPIClass().getMethod("processDataSubscriber", SubscriberState.class, SubscriberState.class, SubscriberStreamEvent.class, JourneyService.class) : null;
       }
     catch (NoSuchMethodException e)
       {

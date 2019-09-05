@@ -119,7 +119,8 @@ public class Deployment
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
-  private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();private static String baseLanguageID;
+  private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
+  private static String baseLanguageID;
   private static Map<String,SupportedCurrency> supportedCurrencies = new LinkedHashMap<String,SupportedCurrency>();
   private static Map<String,SupportedTimeUnit> supportedTimeUnits = new LinkedHashMap<String,SupportedTimeUnit>();
   private static Map<String,SupportedTokenCodesFormat> supportedTokenCodesFormats = new LinkedHashMap<String,SupportedTokenCodesFormat>();
@@ -490,7 +491,7 @@ public class Deployment
   {
     try
       {
-        Class<ExternalAPI> evolutionEngineExternalAPIClass = (Class<ExternalAPI>) Class.forName(evolutionEngineExternalAPIClassName);
+        Class<ExternalAPI> evolutionEngineExternalAPIClass = (evolutionEngineExternalAPIClassName != null) ? (Class<ExternalAPI>) Class.forName(evolutionEngineExternalAPIClassName) : null;
         return evolutionEngineExternalAPIClass;
       }
     catch (ClassNotFoundException e)
@@ -672,7 +673,7 @@ public class Deployment
 
     try
       {
-        evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", true);
+        evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", false);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1630,12 +1631,15 @@ public class Deployment
 
     try
       {
-        JSONArray externalAPITopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "externalAPITopics", true);
-        for (int i=0; i<externalAPITopicValues.size(); i++)
+        JSONArray externalAPITopicValues = JSONUtilities.decodeJSONArray(jsonRoot, "externalAPITopics", false);
+        if (externalAPITopicValues != null)
           {
-            JSONObject externalAPITopicJSON = (JSONObject) externalAPITopicValues.get(i);
-            ExternalAPITopic externalAPITopic = new ExternalAPITopic(externalAPITopicJSON);
-            externalAPITopics.put(externalAPITopic.getID(), externalAPITopic);
+            for (int i=0; i<externalAPITopicValues.size(); i++)
+              {
+                JSONObject externalAPITopicJSON = (JSONObject) externalAPITopicValues.get(i);
+                ExternalAPITopic externalAPITopic = new ExternalAPITopic(externalAPITopicJSON);
+                externalAPITopics.put(externalAPITopic.getID(), externalAPITopic);
+              }
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
