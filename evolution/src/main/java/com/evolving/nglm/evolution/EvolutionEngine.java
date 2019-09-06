@@ -982,33 +982,36 @@ public class EvolutionEngine
     //
 
     Map<String, ExternalAPITopic> externalAPITopics = Deployment.getExternalAPITopics();
-    ExternalAPIOutputPredicate[] externalAPIOutputPredicates = new ExternalAPIOutputPredicate[externalAPITopics.values().size()];
-    String[] externalAPIOutputTopics = new String[externalAPITopics.values().size()];
-    int j = 0;
-    for (String topicID : externalAPITopics.keySet())
+    if (!externalAPITopics.values().isEmpty())
       {
-        externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicID);
-        externalAPIOutputTopics[j] = externalAPITopics.get(topicID).getName();
-        j += 1;
-      }
+        ExternalAPIOutputPredicate[] externalAPIOutputPredicates = new ExternalAPIOutputPredicate[externalAPITopics.values().size()];
+        String[] externalAPIOutputTopics = new String[externalAPITopics.values().size()];
+        int j = 0;
+        for (String topicID : externalAPITopics.keySet())
+          {
+            externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicID);
+            externalAPIOutputTopics[j] = externalAPITopics.get(topicID).getName();
+            j += 1;
+          }
 
-    //
-    // ExternalAPIOutput branch
-    //
+        //
+        // ExternalAPIOutput branch
+        //
 
-    KStream<StringKey, ExternalAPIOutput>[] branchedExternalAPIStreamsByTopic = externalAPIOutputsStream.branch(externalAPIOutputPredicates);
+        KStream<StringKey, ExternalAPIOutput>[] branchedExternalAPIStreamsByTopic = externalAPIOutputsStream.branch(externalAPIOutputPredicates);
 
-    //
-    // ExternalAPIOutput sink
-    //
+        //
+        // ExternalAPIOutput sink
+        //
 
-    for (int k = 0; k < externalAPIOutputPredicates.length; k++)
-      {
-        KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
-        // Only send the json part to the output topic 
-        KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
-            (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
-        externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, StringValue.serde()));
+        for (int k = 0; k < externalAPIOutputPredicates.length; k++)
+          {
+            KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
+            // Only send the json part to the output topic 
+            KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
+            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, StringValue.serde()));
+          }
       }
     
     /*****************************************
