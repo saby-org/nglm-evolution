@@ -422,6 +422,8 @@ public class GUIManager
     configAdaptorScoringEngines("configAdaptorScoringEngines"),
     configAdaptorPresentationCriterionFields("configAdaptorPresentationCriterionFields"),
     configAdaptorDefaultNoftificationDailyWindows("configAdaptorDefaultNoftificationDailyWindows"),
+    configAdaptorDeliverable("configAdaptorDeliverable"),
+    
     //
     //  structor
     //
@@ -1744,7 +1746,8 @@ public class GUIManager
         restServer.createContext("/nglm-configadaptor/getOfferObjective", new APISimpleHandler(API.configAdaptorOfferObjective));
         restServer.createContext("/nglm-configadaptor/getScoringEngines", new APISimpleHandler(API.configAdaptorScoringEngines));
         restServer.createContext("/nglm-configadaptor/getPresentationCriterionFields", new APISimpleHandler(API.configAdaptorPresentationCriterionFields));
-        restServer.createContext("/nglm-configadaptor/getDefaultNoftificationDailyWindows", new APISimpleHandler(API.configAdaptorDefaultNoftificationDailyWindows));        
+        restServer.createContext("/nglm-configadaptor/getDefaultNoftificationDailyWindows", new APISimpleHandler(API.configAdaptorDefaultNoftificationDailyWindows));
+        restServer.createContext("/nglm-configadaptor/getDeliverable", new APISimpleHandler(API.configAdaptorDeliverable));        
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -3030,6 +3033,10 @@ public class GUIManager
 
                 case configAdaptorDefaultNoftificationDailyWindows:
                   jsonResponse = processConfigAdaptorDefaultNoftificationDailyWindows(jsonRoot);
+                  break;
+
+                  case configAdaptorDeliverable:
+                  jsonResponse = processConfigAdaptorDeliverable(jsonRoot);
                   break;
               }
           }
@@ -17158,6 +17165,19 @@ public class GUIManager
     offerJSON.remove("readOnly");
     offerJSON.remove("accepted");
     offerJSON.remove("valid");
+    offerJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(offer.getActive() == true && offer.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    offerJSON.put("enabled" , enabled);
 
     /*****************************************
     *
@@ -17210,6 +17230,19 @@ public class GUIManager
     productJSON.remove("readOnly");
     productJSON.remove("accepted");
     productJSON.remove("valid");
+    productJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(product.getActive() == true && product.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    productJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17262,6 +17295,19 @@ public class GUIManager
     presentationStrategyJSON.remove("readOnly");
     presentationStrategyJSON.remove("accepted");
     presentationStrategyJSON.remove("valid");
+    presentationStrategyJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(presentationStrategy.getActive() == true && presentationStrategy.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    presentationStrategyJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17314,6 +17360,19 @@ public class GUIManager
     scoringStrategyJSON.remove("readOnly");
     scoringStrategyJSON.remove("accepted");
     scoringStrategyJSON.remove("valid");
+    scoringStrategyJSON.remove("active");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(scoringStrategy.getActive() == true && scoringStrategy.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    scoringStrategyJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17366,6 +17425,19 @@ public class GUIManager
     callingChannelJSON.remove("readOnly");
     callingChannelJSON.remove("accepted");
     callingChannelJSON.remove("valid");
+    callingChannelJSON.remove("active");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(callingChannel.getActive() == true && callingChannel.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    callingChannelJSON.put("enabled" , enabled);
 
     /*****************************************
     *
@@ -17418,6 +17490,19 @@ public class GUIManager
     salesChannelJSON.remove("readOnly");
     salesChannelJSON.remove("accepted");
     salesChannelJSON.remove("valid");
+    salesChannelJSON.remove("active");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(salesChannel.getActive() == true && salesChannel.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    salesChannelJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17470,6 +17555,19 @@ public class GUIManager
     communicationChannelJSON.remove("readOnly");
     communicationChannelJSON.remove("accepted");
     communicationChannelJSON.remove("valid");
+    communicationChannelJSON.remove("processing");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(communicationChannel.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    communicationChannelJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17522,6 +17620,19 @@ public class GUIManager
     communicationChannelBlackoutPeriodJSON.remove("readOnly");
     communicationChannelBlackoutPeriodJSON.remove("accepted");
     communicationChannelBlackoutPeriodJSON.remove("valid");
+    communicationChannelBlackoutPeriodJSON.remove("active");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(communicationChannelBlackoutPeriod.getActive() == true && communicationChannelBlackoutPeriod.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    communicationChannelBlackoutPeriodJSON.put("enabled" , enabled);
   
     /*****************************************
     *
@@ -17574,6 +17685,19 @@ public class GUIManager
     contactPolicyJSON.remove("readOnly");
     contactPolicyJSON.remove("accepted");
     contactPolicyJSON.remove("valid");
+    contactPolicyJSON.remove("active");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(contactPolicy.getActive() == true && contactPolicy.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    contactPolicyJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17626,6 +17750,19 @@ public class GUIManager
     segmentationDimensionJSON.remove("readOnly");
     segmentationDimensionJSON.remove("accepted");
     segmentationDimensionJSON.remove("valid");
+    segmentationDimensionJSON.remove("active");
+    
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(segmentationDimension.getActive() == true && segmentationDimension.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    segmentationDimensionJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17678,11 +17815,11 @@ public class GUIManager
     
     if(journeyJSON.get("status").equals("Running"))
       {
-        journeyJSON.put("active", true);
+        journeyJSON.put("enabled", true);
       }
     else
       {
-        journeyJSON.put("active", false);
+        journeyJSON.put("enabled", false);
       }
     
     //
@@ -17770,6 +17907,19 @@ public class GUIManager
     journeyObjectiveJSON.remove("name");
     journeyObjectiveJSON.remove("processing");
     journeyObjectiveJSON.remove("catalogCharacteristics");        
+    journeyObjectiveJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(journeyObjective.getActive() == true && journeyObjective.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    journeyObjectiveJSON.put("enabled" , enabled);
 
     /*****************************************
     *
@@ -17822,6 +17972,19 @@ public class GUIManager
     productTypeJSON.remove("readOnly");
     productTypeJSON.remove("accepted");
     productTypeJSON.remove("valid");
+    productTypeJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(productType.getActive() == true && productType.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    productTypeJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17874,6 +18037,19 @@ public class GUIManager
     offerObjectiveJSON.remove("readOnly");
     offerObjectiveJSON.remove("accepted");
     offerObjectiveJSON.remove("valid");
+    offerObjectiveJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(offerObjective.getActive() == true && offerObjective.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    offerObjectiveJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -17961,7 +18137,72 @@ public class GUIManager
     response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
     return JSONUtilities.encodeObject(response);
   }
-  
+
+  /*****************************************
+  *
+  *  processConfigAdaptorDeliverable
+  *
+  *****************************************/
+
+  private JSONObject processConfigAdaptorDeliverable(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
+
+    //
+    //  remove gui specific fields
+    //
+    
+    deliverableJSON.remove("readOnly");
+    deliverableJSON.remove("accepted");
+    deliverableJSON.remove("valid");
+    deliverableJSON.remove("active");
+
+    //
+    //  derived fields
+    //
+
+    Boolean enabled = false;
+    if(deliverable.getActive() == true && deliverable.getAccepted() == true)
+      {
+        enabled = true;
+      }
+      
+    deliverableJSON.put("enabled" , enabled);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (deliverable != null) ? "ok" : "deliverableNotFound");
+    if (deliverable != null) response.put("deliverable", deliverableJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
   /*****************************************
   *
   *  processPutFile
