@@ -4420,6 +4420,13 @@ public class GUIManager
         JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
         offerOptimizationAlgorithms.add(offerOptimizationAlgorithmJSON);
       }
+    
+    // Add DNBOMatrix Algorithm for gui
+    Date now = SystemTime.getCurrentTime();
+    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes())
+      {
+        offerOptimizationAlgorithms.add(presentationStrategyService.generateResponseJSON(dnboMatrix, false, now));
+      }
 
     /*****************************************
     *
