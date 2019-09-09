@@ -1660,6 +1660,14 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  update SubscriberLoyaltyProgram
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateSubscriberLoyaltyProgram(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
     *  update PropensityOutputs
     *
     *****************************************/
@@ -2201,106 +2209,6 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  update loyalty program
-    *
-    *****************************************/
-
-    if (evolutionEvent instanceof LoyaltyProgramRequest && ((LoyaltyProgramRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
-      {
-
-        //
-        //  LoyaltyProgramRequest
-        //
-
-        LoyaltyProgramRequest loyaltyProgramRequest = (LoyaltyProgramRequest) evolutionEvent;
-        LoyaltyProgramRequest loyaltyProgramResponse = loyaltyProgramRequest.copy();
-
-        //
-        //  loyaltyProgram
-        //
-
-        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramRequest.getLoyaltyProgramID(), now);
-        if (loyaltyProgram == null)
-          {
-            log.info("loyaltyProgramRequest failed (no such loyalty program): {}", loyaltyProgramRequest.getLoyaltyProgramID());
-            loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Failed);
-          }
-
-        //
-        //  update
-        //
-
-        if (loyaltyProgram != null)
-          {
-
-            //
-            //  determine tier
-            //
-            
-            //TODO SCH : EVCOR-119 : a implementer !!! !!! !!! !!! !!! !!! !!! !!! 
-            String tierID = "TODO tier ID";
-            String tierName = "TODO tier Name";
-            
-            //
-            //  get (or create) loyalty program
-            //
-
-            LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
-            if (loyaltyProgramState == null)
-              {
-                log.info("loyaltyProgramRequest : new state ("+loyaltyProgram.getEpoch()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+now+", "+tierID+", "+tierName+", "+now+")");
-                loyaltyProgramState = new LoyaltyProgramState(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, tierID, tierName, now);
-              }
-
-            //
-            //  copy the loyalty program
-            //
-
-            loyaltyProgramState = new LoyaltyProgramState(loyaltyProgramState);
-
-            //
-            //  update
-            //
-            
-            boolean success = loyaltyProgramState.update(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), tierID, tierName, now);
-
-            //
-            //  update loyalty programs
-            //
-
-            subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), loyaltyProgramState);
-
-            //
-            //  response
-            //
-
-            if (success)
-              {
-                loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Delivered);
-                loyaltyProgramResponse.setDeliveryDate(now);
-              }
-            else
-              {
-                loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Failed);
-              }
-
-            //
-            //  return delivery response
-            //
-
-            context.getSubscriberState().getLoyaltyProgramResponses().add(loyaltyProgramResponse);
-
-            //
-            //  subscriberProfileUpdated
-            //
-
-            subscriberProfileUpdated = true;
-          }
-
-      }
-
-    /*****************************************
-    *
     *  re-evaluate subscriberGroups for epoch changes and eligibility/range segmentation dimensions
     *
     *****************************************/
@@ -2572,6 +2480,161 @@ public class EvolutionEngine
     return subscriberProfileUpdated;
   }
 
+  /*****************************************
+  *
+  *  updateSubscriberLoyaltyProgram
+  *
+  *****************************************/
+
+  private static boolean updateSubscriberLoyaltyProgram(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberProfile subscriberProfile = context.getSubscriberState().getSubscriberProfile();
+    ExtendedSubscriberProfile extendedSubscriberProfile = context.getExtendedSubscriberProfile();
+    boolean subscriberProfileUpdated = false;
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = context.now();
+
+    /*****************************************
+    *
+    *  update loyalty program
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof LoyaltyProgramRequest && ((LoyaltyProgramRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
+      {
+
+        //
+        //  LoyaltyProgramRequest
+        //
+
+        LoyaltyProgramRequest loyaltyProgramRequest = (LoyaltyProgramRequest) evolutionEvent;
+        LoyaltyProgramRequest loyaltyProgramResponse = loyaltyProgramRequest.copy();
+
+        //
+        //  loyaltyProgram
+        //
+
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramRequest.getLoyaltyProgramID(), now);
+        if (loyaltyProgram == null)
+          {
+            log.info("loyaltyProgramRequest failed (no such loyalty program): {}", loyaltyProgramRequest.getLoyaltyProgramID());
+            loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Failed);
+          }
+
+        //
+        //  update
+        //
+
+        else
+          {
+
+            String tierID = null;
+            String tierName = null;
+            switch (loyaltyProgramRequest.getOperation()) {
+            case Optin:
+              
+              //
+              //  determine tier
+              //
+              
+              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
+              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
+              // !!! !!! !!! !!!     TODO SCH : EVCOR-119 : a implementer        !!! !!! !!! !!! 
+              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
+              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
+              
+              tierID = "TODO tier ID";
+              tierName = "TODO tier Name";
+              
+              break;
+
+            case Optout:
+              
+              //
+              //  determine tier
+              //
+
+              tierID = null;
+              tierName = null;
+              
+              break;
+
+            }
+            
+            //
+            //  get current loyalty program state
+            //
+
+            LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+            if (loyaltyProgramState == null)
+              {
+                LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
+                loyaltyProgramState = new LoyaltyProgramState(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierID, tierName, now, loyaltyProgramHistory);
+              }
+            
+            //
+            //  update
+            //
+            
+            log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+tierID+", "+tierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
+            boolean success = loyaltyProgramState.update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), tierID, tierName, now, loyaltyProgramRequest.getDeliveryRequestID());
+
+            //
+            //  update loyalty programs
+            //
+
+            subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), loyaltyProgramState);
+
+            //
+            //  response
+            //
+
+            if (success)
+              {
+                loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+                loyaltyProgramResponse.setDeliveryDate(now);
+              }
+            else
+              {
+                loyaltyProgramResponse.setDeliveryStatus(DeliveryStatus.Failed);
+              }
+
+            //
+            //  return delivery response
+            //
+
+            context.getSubscriberState().getLoyaltyProgramResponses().add(loyaltyProgramResponse);
+
+            //
+            //  subscriberProfileUpdated
+            //
+
+            subscriberProfileUpdated = true;
+          }
+
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return subscriberProfileUpdated;
+  }
+  
   /*****************************************
   *
   *  updatePropensity
@@ -5300,7 +5363,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, loyaltyProgramID);
+      LoyaltyProgramRequest request = new LoyaltyProgramRequest(evolutionEventContext, deliveryRequestSource, operation, loyaltyProgramID);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

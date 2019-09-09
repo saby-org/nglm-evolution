@@ -47,6 +47,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
 {
@@ -474,6 +475,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
     Date now = SystemTime.getCurrentTime();
 
+    //
     //  prepare points
     //
 
@@ -492,6 +494,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
           }
       }
 
+    //
     //  prepare loyalty programs
     //
 
@@ -501,13 +504,42 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
         LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
         if (loyaltyProgram != null)
           {
+            
             HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
+            
+            //
+            //  current tier
+            //
+            
             LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
             loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
             loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", loyaltyProgramState.getLoyaltyProgramEnrollmentDate());
-            loyaltyProgramPresentation.put("tierName", loyaltyProgramState.getTierName());
-            loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramState.getTierEnrollmentDate());
+            loyaltyProgramPresentation.put("loyaltyProgramExitDate", loyaltyProgramState.getLoyaltyProgramExitDate());
+            if(loyaltyProgramState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramState.getTierName()); }
+            if(loyaltyProgramState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramState.getTierEnrollmentDate()); }
+            
+            //
+            //  history
+            //
+            ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
+            LoyaltyProgramHistory history = loyaltyProgramState.getLoyaltyProgramHistory();
+            if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
+              for(TierHistory tier : history.getTierHistory()){
+                HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
+                tierHistoryJSON.put("fromTier", tier.getFromTierID());
+                tierHistoryJSON.put("toTier", tier.getToTierID());
+                tierHistoryJSON.put("transitionDate", tier.getTransitionDate());
+                loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+              }
+            }
+            loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
+            
+            //
+            //  
+            //
+            
             loyaltyProgramsPresentation.add(JSONUtilities.encodeObject(loyaltyProgramPresentation));
+            
           }
       }
 
@@ -920,7 +952,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     EvolutionSubscriberStatus evolutionSubscriberStatus = (valueStruct.getString("evolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("evolutionSubscriberStatus")) : null;
     Date evolutionSubscriberStatusChangeDate = (Date) valueStruct.get("evolutionSubscriberStatusChangeDate");
     EvolutionSubscriberStatus previousEvolutionSubscriberStatus = (valueStruct.getString("previousEvolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("previousEvolutionSubscriberStatus")) : null;
-
     Map<Pair<String,String>, Integer> segments = (schemaVersion >= 2) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
     Map<String, Integer> targets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("targets")) : new HashMap<String,Integer>();
     boolean universalControlGroup = valueStruct.getBoolean("universalControlGroup");
@@ -930,7 +961,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
-
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
 
     //

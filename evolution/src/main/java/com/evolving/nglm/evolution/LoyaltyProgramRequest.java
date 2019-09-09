@@ -27,6 +27,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 
 public class LoyaltyProgramRequest extends DeliveryRequest /*implements SubscriberStreamEvent, SubscriberStreamOutput, Action*/
 {
@@ -47,6 +48,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     schemaBuilder.name("loyalty_program_request");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.field("operation", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
@@ -73,37 +75,21 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   *
   *****************************************/
 
+  private LoyaltyProgramOperation operation;
   private String loyaltyProgramRequestID;
   private String loyaltyProgramID;
   private Date eventDate;
 
-//  //
-//  //  transient
-//  //
-//
-//  private boolean eligible;
-      
   /*****************************************
   *
   *  accessors
   *
   *****************************************/
 
+  public LoyaltyProgramOperation getOperation(){ return operation; }
   public String getLoyaltyProgramRequestID() { return loyaltyProgramRequestID; }
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getEventDate() { return eventDate; }
-//  public boolean getEligible() { return eligible; }
-//  public ActionType getActionType() { return ActionType.JourneyRequest; }
-
-//  //
-//  //  setters
-//  //
-//
-//  public void setEligible(boolean eligible) { this.eligible = eligible; }
-
-  //
-  //  structure
-  //
 
   @Override public Integer getActivityType() { return ActivityType.BDR.getExternalRepresentation(); }
   
@@ -113,30 +99,15 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   *
   *****************************************/
 
-  public LoyaltyProgramRequest(EvolutionEventContext context, String deliveryRequestSource, String loyaltyProgramID)
+  public LoyaltyProgramRequest(EvolutionEventContext context, String deliveryRequestSource, LoyaltyProgramOperation operation, String loyaltyProgramID)
   {
     super(context, "loyaltyProgramFulfillment", deliveryRequestSource);
+    this.operation = operation;
     this.loyaltyProgramRequestID = context.getUniqueKey();
     this.loyaltyProgramID = loyaltyProgramID;
     this.eventDate = context.now();
-//    this.eligible = false;
   }
   
-//  /*****************************************
-//  *
-//  *  constructor -- enterLoyaltyProgram
-//  *
-//  *****************************************/
-//
-//  public LoyaltyProgramRequest(String uniqueKey, String subscriberID, String deliveryRequestSource)
-//  {
-//    super(uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup);
-//    this.loyaltyProgramRequestID = uniqueKey;
-//    this.loyaltyProgramID = deliveryRequestSource;
-//    this.eventDate = SystemTime.getCurrentTime();
-////    this.eligible = false;
-//  }
-
   /*****************************************
   *
   *  constructor -- external
@@ -146,10 +117,10 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   public LoyaltyProgramRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
   {
     super(jsonRoot);
+    this.operation = LoyaltyProgramOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
     this.loyaltyProgramRequestID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestID", true);
     this.loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramID", true);
     this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
-//    this.eligible = false;
   }
 
   /*****************************************
@@ -158,13 +129,13 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   *
   *****************************************/
 
-  public LoyaltyProgramRequest(SchemaAndValue schemaAndValue, String loyaltyProgramRequestID, String loyaltyProgramID, Date eventDate)
+  public LoyaltyProgramRequest(SchemaAndValue schemaAndValue, LoyaltyProgramOperation operation, String loyaltyProgramRequestID, String loyaltyProgramID, Date eventDate)
   {
     super(schemaAndValue);
+    this.operation = operation;
     this.loyaltyProgramRequestID = loyaltyProgramRequestID;
     this.loyaltyProgramID = loyaltyProgramID;
     this.eventDate = eventDate;
-//    this.eligible = false;
   }
 
   /*****************************************
@@ -173,13 +144,13 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   *
   *****************************************/
 
-  private LoyaltyProgramRequest(LoyaltyProgramRequest journeyRequest)
+  private LoyaltyProgramRequest(LoyaltyProgramRequest loyaltyProgramRequest)
   {
-    super(journeyRequest);
-    this.loyaltyProgramRequestID = journeyRequest.getLoyaltyProgramRequestID();
-    this.loyaltyProgramID = journeyRequest.getLoyaltyProgramID();
-    this.eventDate = journeyRequest.getEventDate();
-//    this.eligible = journeyRequest.getEligible();
+    super(loyaltyProgramRequest);
+    this.operation = loyaltyProgramRequest.getOperation();
+    this.loyaltyProgramRequestID = loyaltyProgramRequest.getLoyaltyProgramRequestID();
+    this.loyaltyProgramID = loyaltyProgramRequest.getLoyaltyProgramID();
+    this.eventDate = loyaltyProgramRequest.getEventDate();
   }
 
   /*****************************************
@@ -201,12 +172,13 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
 
   public static Object pack(Object value)
   {
-    LoyaltyProgramRequest journeyRequest = (LoyaltyProgramRequest) value;
+    LoyaltyProgramRequest loyaltyProgramRequest = (LoyaltyProgramRequest) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, journeyRequest);
-    struct.put("loyaltyProgramRequestID", journeyRequest.getLoyaltyProgramRequestID());
-    struct.put("loyaltyProgramID", journeyRequest.getLoyaltyProgramID());
-    struct.put("eventDate", journeyRequest.getEventDate());
+    packCommon(struct, loyaltyProgramRequest);
+    struct.put("operation", loyaltyProgramRequest.getOperation().getExternalRepresentation());
+    struct.put("loyaltyProgramRequestID", loyaltyProgramRequest.getLoyaltyProgramRequestID());
+    struct.put("loyaltyProgramID", loyaltyProgramRequest.getLoyaltyProgramID());
+    struct.put("eventDate", loyaltyProgramRequest.getEventDate());
     return struct;
   }
 
@@ -237,6 +209,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     //
 
     Struct valueStruct = (Struct) value;
+    LoyaltyProgramOperation operation = LoyaltyProgramOperation.fromExternalRepresentation(valueStruct.getString("operation"));
     String loyaltyProgramRequestID = valueStruct.getString("loyaltyProgramRequestID");
     String loyaltyProgramID = valueStruct.getString("loyaltyProgramID");
     Date eventDate = (Date) valueStruct.get("eventDate");
@@ -246,7 +219,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     //  return
     //
 
-    return new LoyaltyProgramRequest(schemaAndValue, loyaltyProgramRequestID, loyaltyProgramID, eventDate);
+    return new LoyaltyProgramRequest(schemaAndValue, operation, loyaltyProgramRequestID, loyaltyProgramID, eventDate);
   }
   
   /****************************************
@@ -260,7 +233,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
     guiPresentationMap.put(DELIVERABLEID, getLoyaltyProgramID());
     guiPresentationMap.put(DELIVERABLEQTY, 1);
-    guiPresentationMap.put(OPERATION, CommodityDeliveryOperation.Credit.toString());
+    guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
     guiPresentationMap.put(MODULEID, getModuleID());
     guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
@@ -272,7 +245,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getLoyaltyProgramID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, 1);
-    thirdPartyPresentationMap.put(OPERATION, CommodityDeliveryOperation.Credit.toString());
+    thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
     thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());

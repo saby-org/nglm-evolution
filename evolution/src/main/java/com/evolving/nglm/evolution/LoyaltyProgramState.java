@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 
 import org.apache.kafka.connect.data.Schema;
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -46,9 +49,11 @@ public class LoyaltyProgramState
     schemaBuilder.field("loyaltyProgramEpoch", Schema.INT64_SCHEMA);
     schemaBuilder.field("loyaltyProgramName", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramEnrollmentDate", Timestamp.builder().schema());
-    schemaBuilder.field("tierID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("tierName", Schema.STRING_SCHEMA);
-    schemaBuilder.field("tierEnrollmentDate", Timestamp.builder().schema());
+    schemaBuilder.field("loyaltyProgramExitDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("tierID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tierName", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("tierEnrollmentDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("loyaltyProgramHistory", LoyaltyProgramHistory.schema());
 
     schema = schemaBuilder.build();
   };
@@ -75,10 +80,12 @@ public class LoyaltyProgramState
   private long loyaltyProgramEpoch;
   private String loyaltyProgramName;
   private Date loyaltyProgramEnrollmentDate;
+  private Date loyaltyProgramExitDate;
   private String tierID;
   private String tierName;
   private Date tierEnrollmentDate;
-
+  private LoyaltyProgramHistory loyaltyProgramHistory;
+  
   /*****************************************
   *
   *  accessors
@@ -88,9 +95,11 @@ public class LoyaltyProgramState
   public long getLoyaltyProgramEpoch() { return loyaltyProgramEpoch; }
   public String getLoyaltyProgramName() { return loyaltyProgramName; }
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
+  public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
   public String getTierID() { return tierID; }
   public String getTierName() { return tierName; }
   public Date getTierEnrollmentDate() { return tierEnrollmentDate; }
+  public LoyaltyProgramHistory getLoyaltyProgramHistory() { return loyaltyProgramHistory; }
 
   /*****************************************
   *
@@ -98,14 +107,16 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramState(long loyaltyProgramEpoch, String loyaltyProgramName, Date loyaltyProgramEnrollmentDate, String tierID, String tierName, Date tierEnrollmentDate)
+  public LoyaltyProgramState(long loyaltyProgramEpoch, String loyaltyProgramName, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String tierID, String tierName, Date tierEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
   {
     this.loyaltyProgramEpoch = loyaltyProgramEpoch;
     this.loyaltyProgramName = loyaltyProgramName;
     this.loyaltyProgramEnrollmentDate = loyaltyProgramEnrollmentDate;
+    this.loyaltyProgramExitDate = loyaltyProgramExitDate;
     this.tierID = tierID;
     this.tierName = tierName;
     this.tierEnrollmentDate = tierEnrollmentDate;
+    this.loyaltyProgramHistory = loyaltyProgramHistory;
   }
 
   /*****************************************
@@ -119,9 +130,11 @@ public class LoyaltyProgramState
     this.loyaltyProgramEpoch = subscriberState.getLoyaltyProgramEpoch();
     this.loyaltyProgramName = subscriberState.getLoyaltyProgramName();
     this.loyaltyProgramEnrollmentDate = subscriberState.getLoyaltyProgramEnrollmentDate();
+    this.loyaltyProgramExitDate = subscriberState.getLoyaltyProgramExitDate();
     this.tierID = subscriberState.getTierID();
     this.tierName = subscriberState.getTierName();
     this.tierEnrollmentDate = subscriberState.getTierEnrollmentDate();
+    this.loyaltyProgramHistory = subscriberState.getLoyaltyProgramHistory();
   }
 
   /*****************************************
@@ -130,13 +143,74 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public boolean update(long loyaltyProgramEpoch, String loyaltyProgramName, String tierID, String tierName, Date tierEnrollmentDate)
+  public boolean update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String tierID, String tierName, Date enrollmentDate, String deliveryRequestID)
   {
-    this.loyaltyProgramEpoch = loyaltyProgramEpoch;
-    this.loyaltyProgramName = loyaltyProgramName;
-    this.tierID = tierID;
-    this.tierName = tierName;
-    this.tierEnrollmentDate = tierEnrollmentDate;
+    
+    //
+    //  get previous state
+    //
+    
+    TierHistory lastTierEntered = null;
+    if(loyaltyProgramHistory != null){
+      lastTierEntered = loyaltyProgramHistory.getLastTierEntered();
+    }
+    String fromTier = (lastTierEntered == null ? null : lastTierEntered.getToTierID());
+    
+
+    switch (operation) {
+    case Optin:
+
+      //
+      //  update current state
+      //
+      
+      this.loyaltyProgramEpoch = loyaltyProgramEpoch;
+      this.loyaltyProgramName = loyaltyProgramName;
+      if(this.loyaltyProgramEnrollmentDate == null){ this.loyaltyProgramEnrollmentDate = enrollmentDate; }
+      
+      this.tierID = tierID;
+      this.tierName = tierName;
+      this.tierEnrollmentDate = enrollmentDate;
+
+      //
+      //  update history
+      //
+      
+      loyaltyProgramHistory.addTierHistory(fromTier, tierID, enrollmentDate, deliveryRequestID);
+      
+      break;
+
+    case Optout:
+      
+      //
+      //  update current state
+      //
+      
+      this.loyaltyProgramEpoch = loyaltyProgramEpoch;
+      this.loyaltyProgramName = loyaltyProgramName;
+      if(this.loyaltyProgramEnrollmentDate == null){ this.loyaltyProgramEnrollmentDate = enrollmentDate; }
+      this.loyaltyProgramExitDate = enrollmentDate;
+      
+      this.tierID = null;
+      this.tierName = null;
+      this.tierEnrollmentDate = null;
+
+      //
+      //  update history
+      //
+      
+      loyaltyProgramHistory.addTierHistory(fromTier, tierID, enrollmentDate, deliveryRequestID);
+      
+      break;
+
+    default:
+      break;
+    }
+    
+    //
+    //  return
+    //
+    
     return true;
   }
 
@@ -153,9 +227,11 @@ public class LoyaltyProgramState
     struct.put("loyaltyProgramEpoch", subscriberState.getLoyaltyProgramEpoch());
     struct.put("loyaltyProgramName", subscriberState.getLoyaltyProgramName());
     struct.put("loyaltyProgramEnrollmentDate", subscriberState.getLoyaltyProgramEnrollmentDate());
+    struct.put("loyaltyProgramExitDate", subscriberState.getLoyaltyProgramExitDate());
     struct.put("tierID", subscriberState.getTierID());
     struct.put("tierName", subscriberState.getTierName());
     struct.put("tierEnrollmentDate", subscriberState.getTierEnrollmentDate());
+    struct.put("loyaltyProgramHistory", LoyaltyProgramHistory.serde().pack(subscriberState.getLoyaltyProgramHistory()));
     return struct;
   }
 
@@ -183,14 +259,16 @@ public class LoyaltyProgramState
     long loyaltyProgramEpoch = valueStruct.getInt64("loyaltyProgramEpoch");
     String loyaltyProgramName = valueStruct.getString("loyaltyProgramName");
     Date loyaltyProgramEnrollmentDate = (Date) valueStruct.get("loyaltyProgramEnrollmentDate");
+    Date loyaltyProgramExitDate = (Date) valueStruct.get("loyaltyProgramExitDate");
     String tierID = valueStruct.getString("tierID");
     String tierName = valueStruct.getString("tierName");
     Date tierEnrollmentDate = (Date) valueStruct.get("tierEnrollmentDate");
+    LoyaltyProgramHistory loyaltyProgramHistory = LoyaltyProgramHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramHistory").schema(), valueStruct.get("loyaltyProgramHistory")));
     
     //  
     //  return
     //
 
-    return new LoyaltyProgramState(loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramEnrollmentDate, tierID, tierName, tierEnrollmentDate);
+    return new LoyaltyProgramState(loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate, tierID, tierName, tierEnrollmentDate, loyaltyProgramHistory);
   }
 }
