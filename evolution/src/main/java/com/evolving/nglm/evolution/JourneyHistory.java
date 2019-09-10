@@ -339,8 +339,12 @@ public class JourneyHistory
   *  addRewardInformation
   *
   *****************************************/
-  
-  public void addRewardInformation(DeliveryRequest deliveryRequest) 
+
+  /**
+   * 
+   * @return RewardHistory if a reward has been added in reward history, null otherwise
+   */
+  public RewardHistory addRewardInformation(DeliveryRequest deliveryRequest) 
   {
     RewardHistory history = null;
     if(deliveryRequest instanceof CommodityDeliveryRequest)
@@ -372,6 +376,8 @@ public class JourneyHistory
       {
         this.rewardHistory.add(history);
       }
+    
+    return history;
   }
   
   /*****************************************
@@ -543,6 +549,19 @@ public class JourneyHistory
       struct.put("amount", rewardHistory.getAmount());
       struct.put("rewardDate", rewardHistory.getRewardDate());
       return struct;
+    }
+    
+    /*****************************************
+    *
+    *  constructor -- copy
+    *
+    *****************************************/
+
+    public RewardHistory(RewardHistory rewardHistory)
+    {
+      this.rewardID = new String(rewardHistory.getRewardID());
+      this.amount = rewardHistory.getAmount();
+      this.rewardDate = new Date(rewardHistory.getRewardDate().getTime());
     }
     
     /*****************************************

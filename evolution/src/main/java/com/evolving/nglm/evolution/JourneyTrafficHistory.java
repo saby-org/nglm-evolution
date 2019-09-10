@@ -20,9 +20,10 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.ReferenceDataValue;
 import com.evolving.nglm.core.SchemaUtilities;
 
-public class JourneyTrafficHistory
+public class JourneyTrafficHistory implements ReferenceDataValue<String>
 {
 
   /*****************************************
@@ -41,6 +42,7 @@ public class JourneyTrafficHistory
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("JourneyTrafficHistory");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(0));
+    schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("lastUpdateDate", Timestamp.SCHEMA);
     schemaBuilder.field("lastArchivedDataDate", Timestamp.SCHEMA);
     schemaBuilder.field("archivePeriodInSeconds", Schema.INT32_SCHEMA);
@@ -68,7 +70,8 @@ public class JourneyTrafficHistory
   *  data
   *
   ****************************************/
-  
+
+  private String journeyID;
   private Date lastUpdateDate;
   private Date lastArchivedDataDate;
   private Integer archivePeriodInSeconds;
@@ -82,6 +85,7 @@ public class JourneyTrafficHistory
   *
   ****************************************/
 
+  public String getJourneyID() { return journeyID; }
   public Date getLastUpdateDate() { return lastUpdateDate; }
   public Date getLastArchivedDataDate() { return lastArchivedDataDate; }
   public Integer getArchivePeriodInSeconds() { return archivePeriodInSeconds; }
@@ -95,6 +99,7 @@ public class JourneyTrafficHistory
   *
   ****************************************/
 
+  public void setJourneyID(String journeyID) { this.journeyID = journeyID; }
   public void setLastUpdateDate(Date date) { lastUpdateDate = date; }
   public void setLastArchivedDataDate(Date date) { lastArchivedDataDate = date; }
   public void setArchivePeriodInSeconds(Integer integer) { archivePeriodInSeconds = integer; }
@@ -102,14 +107,27 @@ public class JourneyTrafficHistory
   public void setCurrentData(JourneyTrafficSnapshot journeyTrafficByNode) { currentData = journeyTrafficByNode; }
   public void setArchivedData(Map<Integer,JourneyTrafficSnapshot> map) { archivedData = map; }
 
+  /****************************************
+  *
+  *  ReferenceDataValue
+  *
+  ****************************************/
+  
+  @Override
+  public String getKey()
+  {
+    return getJourneyID();
+  }
+
   /*****************************************
   *
   *  constructor
   *
   *****************************************/
 
-  public JourneyTrafficHistory(Date lastUpdateDate, Date lastArchivedDataDate, Integer archivePeriodInSeconds, Integer maxNumberOfPeriods, JourneyTrafficSnapshot currentData, Map<Integer,JourneyTrafficSnapshot> archivedData)
+  public JourneyTrafficHistory(String journeyID, Date lastUpdateDate, Date lastArchivedDataDate, Integer archivePeriodInSeconds, Integer maxNumberOfPeriods, JourneyTrafficSnapshot currentData, Map<Integer,JourneyTrafficSnapshot> archivedData)
   {
+    this.journeyID = journeyID;
     this.lastUpdateDate = lastUpdateDate;
     this.lastArchivedDataDate = lastArchivedDataDate;
     this.archivePeriodInSeconds = archivePeriodInSeconds;
@@ -127,6 +145,7 @@ public class JourneyTrafficHistory
   public JSONObject getJSONRepresentation()
   {
     HashMap<String,Object> json = new HashMap<String,Object>();
+    json.put("journeyID", journeyID);
     json.put("lastUpdateDate", lastUpdateDate);
     json.put("lastArchivedDataDate", lastArchivedDataDate);
     json.put("archivePeriodInSeconds", archivePeriodInSeconds);
@@ -163,6 +182,7 @@ public class JourneyTrafficHistory
   {
     JourneyTrafficHistory obj = (JourneyTrafficHistory) value;
     Struct struct = new Struct(schema);
+    struct.put("journeyID", obj.getJourneyID());
     struct.put("lastUpdateDate", obj.getLastUpdateDate());
     struct.put("lastArchivedDataDate", obj.getLastArchivedDataDate());
     struct.put("archivePeriodInSeconds", obj.getArchivePeriodInSeconds());
@@ -210,6 +230,7 @@ public class JourneyTrafficHistory
     //
 
     Struct valueStruct = (Struct) value;
+    String journeyID = valueStruct.getString("journeyID");
     Date lastUpdateDate = (Date) valueStruct.get("lastUpdateDate");
     Date lastArchivedDataDate = (Date) valueStruct.get("lastArchivedDataDate");
     Integer archivePeriodInSeconds = valueStruct.getInt32("archivePeriodInSeconds");
@@ -221,7 +242,7 @@ public class JourneyTrafficHistory
     //  return
     //
 
-    return new JourneyTrafficHistory(lastUpdateDate, lastArchivedDataDate, archivePeriodInSeconds, maxNumberOfPeriods, currentData, archivedData);
+    return new JourneyTrafficHistory(journeyID, lastUpdateDate, lastArchivedDataDate, archivePeriodInSeconds, maxNumberOfPeriods, currentData, archivedData);
   }
 
   /****************************************

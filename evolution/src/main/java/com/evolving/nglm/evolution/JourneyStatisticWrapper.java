@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.core.ReferenceDataReader;
 
 import org.apache.kafka.connect.data.Schema;
@@ -40,6 +41,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(0));
     schemaBuilder.field("subscriberStratum", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("statusUpdated", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("lastRewards", RewardHistory.serde().optionalSchema());
     schemaBuilder.field("journeyStatistic", JourneyStatistic.serde().schema());
     schema = schemaBuilder.build();
   };
@@ -70,6 +72,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
 
   private List<String> subscriberStratum;
   private boolean statusUpdated;
+  private RewardHistory lastRewards;
   private JourneyStatistic journeyStatistic;
 
   /*****************************************
@@ -80,6 +83,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
 
   public List<String> getSubscriberStratum() { return subscriberStratum; }
   public boolean isStatusUpdated() { return statusUpdated; }
+  public RewardHistory getLastRewards() { return lastRewards; }
   public JourneyStatistic getJourneyStatistic() { return journeyStatistic; }
 
   /*****************************************
@@ -90,10 +94,11 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
   *
   *****************************************/
 
-  public JourneyStatisticWrapper(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, boolean statusUpdated, JourneyStatistic journeyStatistic)
+  public JourneyStatisticWrapper(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, boolean statusUpdated, RewardHistory lastRewards, JourneyStatistic journeyStatistic)
   {
     this.subscriberStratum = new ArrayList<String>();
     this.statusUpdated = statusUpdated;
+    this.lastRewards = lastRewards;
     this.journeyStatistic = journeyStatistic;
     
     //
@@ -132,10 +137,11 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
   *  and must be maintained to keep the key unique.
   *
   *****************************************/
-  private JourneyStatisticWrapper(List<String> subscriberStratum, boolean statusUpdated, JourneyStatistic journeyStatistic)
+  private JourneyStatisticWrapper(List<String> subscriberStratum, boolean statusUpdated, RewardHistory lastRewards, JourneyStatistic journeyStatistic)
   {
     this.subscriberStratum = subscriberStratum;
     this.statusUpdated = statusUpdated;
+    this.lastRewards = lastRewards;
     this.journeyStatistic = journeyStatistic;
   }
 
@@ -157,7 +163,11 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
         this.subscriberStratum.add(segment);
       }
     this.statusUpdated = journeyStatisticWrapper.isStatusUpdated();
-    
+    this.lastRewards = null;
+    if(journeyStatisticWrapper.getLastRewards() != null)
+      {
+        this.lastRewards = new RewardHistory(journeyStatisticWrapper.getLastRewards());
+      }
     this.journeyStatistic = new JourneyStatistic(journeyStatisticWrapper.getJourneyStatistic());
   }
   
@@ -173,6 +183,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
     Struct struct = new Struct(schema);
     struct.put("subscriberStratum", journeyStatisticWrapper.getSubscriberStratum());
     struct.put("statusUpdated", journeyStatisticWrapper.isStatusUpdated());
+    struct.put("lastRewards", journeyStatisticWrapper.getLastRewards());
     struct.put("journeyStatistic", JourneyStatistic.serde().pack(journeyStatisticWrapper.getJourneyStatistic()));
     return struct;
   }
@@ -206,12 +217,13 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
     Struct valueStruct = (Struct) value;
     List<String> subscriberStratum = (List<String>) valueStruct.get("subscriberStratum");
     boolean statusUpdated = valueStruct.getBoolean("statusUpdated");
+    RewardHistory lastRewards = valueStruct.get("lastRewards") != null ? RewardHistory.serde().unpack(new SchemaAndValue(schema.field("lastRewards").schema(), valueStruct.get("lastRewards"))) : null;
     JourneyStatistic journeyStatistic = JourneyStatistic.serde().unpack(new SchemaAndValue(schema.field("journeyStatistic").schema(), valueStruct.get("journeyStatistic")));
 
     //
     //  return
     //
 
-    return new JourneyStatisticWrapper(subscriberStratum, statusUpdated, journeyStatistic);
+    return new JourneyStatisticWrapper(subscriberStratum, statusUpdated, lastRewards, journeyStatistic);
   }
 }

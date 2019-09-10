@@ -105,6 +105,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
@@ -1770,6 +1771,7 @@ public class EvolutionEngine
 
   public static JourneyTrafficHistory nullJourneyTrafficHistory() { 
     JourneyTrafficHistory history = new JourneyTrafficHistory(
+        "",
         SystemTime.getCurrentTime(),
         SystemTime.getCurrentTime(),
         Deployment.getJourneyTrafficArchivePeriodInSeconds(),
@@ -1840,13 +1842,13 @@ public class EvolutionEngine
 
     // 
     // update current data
-    // 
-    // TODO: Rewards must be added later !
     //
-
+    
     history.setLastUpdateDate(currentDate);
+    history.setJourneyID(journeyID.getKey());
     String fromNodeID = event.getJourneyStatistic().getFromNodeID();
     String toNodeID = event.getJourneyStatistic().getToNodeID();
+    RewardHistory lastRewards = event.getLastRewards();
     
     if(fromNodeID != null) 
       {
@@ -1861,10 +1863,23 @@ public class EvolutionEngine
     else 
       {
         //
-        // Update global entrance for this journey
+        // Update global entrance for this journey (traffic & rewards for global and byStratum)
         //
 
         history.getCurrentData().getGlobal().addInflow();
+        SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
+        if(stratumTraffic == null)
+          {
+            stratumTraffic = new SubscriberTraffic();
+            history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
+          }
+        stratumTraffic.addInflow();
+        
+        if(lastRewards != null && lastRewards.getAmount() > 0)
+          {
+            history.getCurrentData().getGlobal().addRewards(lastRewards.getRewardID(), lastRewards.getAmount());
+            stratumTraffic.addRewards(lastRewards.getRewardID(), lastRewards.getAmount());
+          }
       }
     if(toNodeID != null) 
       {
@@ -1878,7 +1893,7 @@ public class EvolutionEngine
       } 
     
     //
-    // Update global exit for this journey
+    // Update global exit for this journey (traffic for global and byStratum)
     //
     
     if (event.getJourneyStatistic().getJourneyComplete()) 
@@ -1888,6 +1903,13 @@ public class EvolutionEngine
         // 
 
         history.getCurrentData().getGlobal().addOutflow();
+        SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
+        if(stratumTraffic == null)
+          {
+            stratumTraffic = new SubscriberTraffic();
+            history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
+          }
+        stratumTraffic.addOutflow();
       }
     
     // 
@@ -1933,11 +1955,11 @@ public class EvolutionEngine
             //
             
             List<String> subscriberStratum = event.getSubscriberStratum();
-            Map<String, SubscriberTraffic> stratumTraffic = history.getCurrentData().getByStratum().get(subscriberStratum);
+            Map<String, SubscriberTraffic> stratumTraffic = history.getCurrentData().getByStatusByStratum().get(subscriberStratum);
             if(stratumTraffic == null) 
               {
                 stratumTraffic = new HashMap<String, SubscriberTraffic>();
-                history.getCurrentData().getByStratum().put(subscriberStratum, stratumTraffic);
+                history.getCurrentData().getByStatusByStratum().put(subscriberStratum, stratumTraffic);
               }
     
             if(previousStatus != null)
@@ -3134,6 +3156,7 @@ public class EvolutionEngine
                     subscriberGroupEpochReader,
                     ucgStateReader,
                     statusUpdated,
+                    null,
                     new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState)));
                 subscriberStateUpdated = true;
 
@@ -3271,13 +3294,14 @@ public class EvolutionEngine
         *
         *****************************************/
         
+        RewardHistory lastRewards = null;
         if(evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
           {
-          DeliveryRequest deliveryResponse = (DeliveryRequest)evolutionEvent;
-          if(deliveryResponse.getModuleID().equals(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && deliveryResponse.getFeatureID().equals(journeyState.getJourneyID())) 
-            {
-              journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);          
-            }
+            DeliveryRequest deliveryResponse = (DeliveryRequest)evolutionEvent;
+            if(deliveryResponse.getModuleID().equals(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && deliveryResponse.getFeatureID().equals(journeyState.getJourneyID())) 
+              {
+                lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
+              }
           }
         
         /*****************************************
@@ -3304,6 +3328,7 @@ public class EvolutionEngine
                 subscriberGroupEpochReader,
                 ucgStateReader,
                 statusUpdated,
+                lastRewards,
                 new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, now)));
             inactiveJourneyStates.add(journeyState);
             continue;
@@ -3441,7 +3466,13 @@ public class EvolutionEngine
 
                             journeyState.setJourneyExitDate(now);
                             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
+                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
+                                subscriberState.getSubscriberProfile(),
+                                subscriberGroupEpochReader,
+                                ucgStateReader,
+                                statusUpdated,
+                                null,
+                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -3553,6 +3584,7 @@ public class EvolutionEngine
                                 subscriberGroupEpochReader,
                                 ucgStateReader,
                                 statusUpdated,
+                                null,
                                 new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
@@ -3682,6 +3714,7 @@ public class EvolutionEngine
                     subscriberGroupEpochReader,
                     ucgStateReader,
                     statusUpdated,
+                    null,
                     new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted)));
               }
           }

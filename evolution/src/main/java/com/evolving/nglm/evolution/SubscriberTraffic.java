@@ -6,8 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -15,7 +13,6 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
@@ -43,8 +40,7 @@ public class SubscriberTraffic
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(0));
     schemaBuilder.field("subscriberInflow", Schema.INT32_SCHEMA);
     schemaBuilder.field("subscriberOutflow", Schema.INT32_SCHEMA);
-    schemaBuilder.field("rewardsInflow", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("map_string_integer").schema());
-    schemaBuilder.field("rewardsOutflow", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("map_string_integer").schema());
+    schemaBuilder.field("distributedRewards", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("map_string_integer").optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -69,8 +65,7 @@ public class SubscriberTraffic
   
   private Integer subscriberInflow;
   private Integer subscriberOutflow;
-  private Map<String,Integer> rewardsInflow;
-  private Map<String,Integer> rewardsOutflow;
+  private Map<String,Integer> distributedRewards;
 
   /****************************************
   *
@@ -80,8 +75,7 @@ public class SubscriberTraffic
 
   public Integer getSubscriberInflow() { return subscriberInflow; }
   public Integer getSubscriberOutflow() { return subscriberOutflow; }
-  public Map<String,Integer> getRewardsInflow() { return rewardsInflow; }
-  public Map<String,Integer> getRewardsOutflow() { return rewardsOutflow; }
+  public Map<String,Integer> getDistributedRewards() { return distributedRewards; }
 
   /****************************************
   *
@@ -91,6 +85,29 @@ public class SubscriberTraffic
 
   public void addInflow() { this.subscriberInflow++; }
   public void addOutflow() { this.subscriberOutflow++; }
+  public void addRewards(String rewardID, int amount) {
+    if(this.distributedRewards == null) 
+      {
+        this.distributedRewards = new HashMap<String, Integer>();
+      }
+    
+    Integer count = this.distributedRewards.get(rewardID);
+    if(count != null)
+      {
+        count += amount; // TODO does it works ?
+      }
+    else 
+      {
+        this.distributedRewards.put(rewardID, new Integer(amount));
+      }
+  }
+  
+  /*****************************************
+  *
+  *  getSubscriberCount
+  *
+  *****************************************/
+  public int getSubscriberCount() { return subscriberInflow - subscriberOutflow; }
 
   /*****************************************
   *
@@ -98,12 +115,11 @@ public class SubscriberTraffic
   *
   *****************************************/
 
-  public SubscriberTraffic(Integer subscriberInflow, Integer subscriberOutflow, Map<String,Integer> rewardsInflow, Map<String,Integer> rewardsOutflow)
+  public SubscriberTraffic(Integer subscriberInflow, Integer subscriberOutflow, Map<String,Integer> distributedRewards)
   {
     this.subscriberInflow = subscriberInflow;
     this.subscriberOutflow = subscriberOutflow;
-    this.rewardsInflow = rewardsInflow;
-    this.rewardsOutflow = rewardsOutflow;
+    this.distributedRewards = distributedRewards;
   }
 
   /*****************************************
@@ -114,7 +130,7 @@ public class SubscriberTraffic
 
   public SubscriberTraffic()
   {
-    this(0, 0, new HashMap<String, Integer>(), new HashMap<String, Integer>());
+    this(0, 0, null);
   }
 
   /*****************************************
@@ -127,16 +143,17 @@ public class SubscriberTraffic
   {
     this.subscriberInflow = new Integer(copy.getSubscriberInflow());
     this.subscriberOutflow = new Integer(copy.getSubscriberOutflow());
-    this.rewardsInflow = new HashMap<String,Integer>();
-    this.rewardsOutflow = new HashMap<String,Integer>();
-    // deep copy
-    for(String key : copy.getRewardsInflow().keySet()) {
-      this.rewardsInflow.put(key, new Integer(copy.getRewardsInflow().get(key)));
-    }
-    // deep copy
-    for(String key : copy.getRewardsOutflow().keySet()) {
-      this.rewardsOutflow.put(key, new Integer(copy.getRewardsOutflow().get(key)));
-    }
+    this.distributedRewards = null;
+    
+    if(copy.getDistributedRewards() != null)
+      {
+        this.distributedRewards = new HashMap<String,Integer>();
+        // deep copy
+        for(String key : copy.getDistributedRewards().keySet()) 
+          {
+            this.distributedRewards.put(key, new Integer(copy.getDistributedRewards().get(key)));
+          }
+      }
   }
   
   /*****************************************
@@ -150,11 +167,13 @@ public class SubscriberTraffic
     HashMap<String,Object> json = new HashMap<String,Object>();
     json.put("subscriberInflow", subscriberInflow);
     json.put("subscriberOutflow", subscriberOutflow);
-    json.put("rewardsInflow", JSONUtilities.encodeObject(rewardsInflow));
-    json.put("rewardsOutflow", JSONUtilities.encodeObject(rewardsOutflow));
+    if(distributedRewards != null)
+      {
+        json.put("distributedRewards", JSONUtilities.encodeObject(distributedRewards));
+      }
     return JSONUtilities.encodeObject(json);
   }
-
+  
   /*****************************************
   *
   *  pack
@@ -167,8 +186,7 @@ public class SubscriberTraffic
     Struct struct = new Struct(schema);
     struct.put("subscriberInflow", obj.getSubscriberInflow());
     struct.put("subscriberOutflow", obj.getSubscriberOutflow());
-    struct.put("rewardsInflow", obj.getRewardsInflow());
-    struct.put("rewardsOutflow", obj.getRewardsOutflow());
+    struct.put("distributedRewards", obj.getDistributedRewards());
     return struct;
   }
 
@@ -195,14 +213,13 @@ public class SubscriberTraffic
     Struct valueStruct = (Struct) value;
     Integer subscriberInflow = valueStruct.getInt32("subscriberInflow");
     Integer subscriberOutflow = valueStruct.getInt32("subscriberOutflow");
-    Map<String,Integer> rewardsInflow = (Map<String,Integer>) valueStruct.get("rewardsInflow");
-    Map<String,Integer> rewardsOutflow = (Map<String,Integer>) valueStruct.get("rewardsOutflow");
+    Map<String,Integer> distributedRewards = (Map<String,Integer>) valueStruct.get("distributedRewards");
     
     //
     //  return
     //
 
-    return new SubscriberTraffic(subscriberInflow, subscriberOutflow, rewardsInflow, rewardsOutflow);
+    return new SubscriberTraffic(subscriberInflow, subscriberOutflow, distributedRewards);
   }
 
 }

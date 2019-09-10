@@ -221,6 +221,7 @@ public class GUIManager
     getJourneyTemplate("getJourneyTemplate"),
     putJourneyTemplate("putJourneyTemplate"),
     removeJourneyTemplate("removeJourneyTemplate"),
+    getJourneyNodeCount("getJourneyNodeCount"),
     getSegmentationDimensionList("getSegmentationDimensionList"),
     getSegmentationDimensionSummaryList("getSegmentationDimensionSummaryList"),
     getSegmentationDimension("getSegmentationDimension"),
@@ -499,6 +500,7 @@ public class GUIManager
   private SubscriberProfileService subscriberProfileService;
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+  private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
   private DeliverableSourceService deliverableSourceService;
   private String getCustomerAlternateID;
   private UploadedFileService uploadedFileService;
@@ -588,6 +590,7 @@ public class GUIManager
     String tokenTypeTopic = Deployment.getTokenTypeTopic();
     String subscriberMessageTemplateTopic = Deployment.getSubscriberMessageTemplateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
+    String journeyTrafficChangeLogTopic = Deployment.getJourneyTrafficChangeLogTopic();
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
@@ -753,6 +756,7 @@ public class GUIManager
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
+    journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
@@ -1551,6 +1555,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJourneyTemplate", new APISimpleHandler(API.getJourneyTemplate));
         restServer.createContext("/nglm-guimanager/putJourneyTemplate", new APISimpleHandler(API.putJourneyTemplate));
         restServer.createContext("/nglm-guimanager/removeJourneyTemplate", new APISimpleHandler(API.removeJourneyTemplate));
+        restServer.createContext("/nglm-guimanager/getJourneyNodeCount", new APISimpleHandler(API.getJourneyNodeCount));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionList", new APISimpleHandler(API.getSegmentationDimensionList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimensionSummaryList", new APISimpleHandler(API.getSegmentationDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getSegmentationDimension", new APISimpleHandler(API.getSegmentationDimension));
@@ -1770,7 +1775,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService));
 
     /*****************************************
     *
@@ -1819,6 +1824,7 @@ public class GUIManager
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadedFileService;
     private TargetService targetService;
@@ -1833,7 +1839,7 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1860,6 +1866,7 @@ public class GUIManager
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+      this.journeyTrafficReader = journeyTrafficReader;
       this.deliverableSourceService = deliverableSourceService;
       this.uploadedFileService = uploadedFileService;
       this.targetService = targetService;
@@ -1883,6 +1890,7 @@ public class GUIManager
       //
 
       if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
+      if (journeyTrafficReader != null) journeyTrafficReader.close();
 
       //
       //  services 
@@ -2259,6 +2267,10 @@ public class GUIManager
                   jsonResponse = processRemoveJourneyTemplate(userID, jsonRoot);
                   break;
 
+                case getJourneyNodeCount:
+                  jsonResponse = processGetJourneyNodeCount(userID, jsonRoot);
+                  break;
+                  
                 case getSegmentationDimensionList:
                   jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true);
                   break;
@@ -5767,6 +5779,58 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }  
 
+  /*****************************************
+  *
+  *  processGetJourneyNodeCount
+  *
+  *****************************************/
+
+  private JSONObject processGetJourneyNodeCount(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
+
+    /*****************************************
+    *
+    *  retrieve corresponding JourneyTrafficHistory
+    *
+    *****************************************/
+    
+    JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+    
+    if(journeyTrafficHistory != null)
+      {
+        JSONObject byNodeMap = journeyTrafficHistory.getCurrentData().getJSONByNodeCount();
+        response.put("responseCode", "ok");
+        response.put("journeyNodeCount", byNodeMap);
+      }
+    else
+      {
+        response.put("responseCode", "journeyNotFound");
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }  
+  
   /*****************************************
   *
   *  processGetSegmentationDimensionList
