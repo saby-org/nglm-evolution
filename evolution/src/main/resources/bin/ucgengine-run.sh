@@ -47,7 +47,7 @@ for REGISTRY_SERVER in `echo $REGISTRY_SERVERS | sed 's/,/ /g' | uniq`
 do
   export REGISTRY_HOST=`echo $REGISTRY_SERVER | cut -d: -f1`
   export REGISTRY_PORT=`echo $REGISTRY_SERVER | cut -d: -f2`
-  cub sr-ready $REGISTRY_HOST $REGISTRY_PORT $CUB_SCHEMA_REGISTRY_TIMEOUT
+  /app/bin/ev-cub sr-ready $REGISTRY_HOST $REGISTRY_PORT $CUB_SCHEMA_REGISTRY_TIMEOUT
   echo schema registry $REGISTRY_SERVER ready
 done 
 echo schema registry cluster ready

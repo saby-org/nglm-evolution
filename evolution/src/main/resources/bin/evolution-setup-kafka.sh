@@ -125,7 +125,7 @@
   do
     export REGISTRY_HOST=`echo $REGISTRY_SERVER | cut -d: -f1`
     export REGISTRY_PORT=`echo $REGISTRY_SERVER | cut -d: -f2`
-    cub sr-ready $REGISTRY_HOST $REGISTRY_PORT $SETUP_CUB_REGISTRY_TIMEOUT
+    /app/bin/ev-cub sr-ready $REGISTRY_HOST $REGISTRY_PORT $SETUP_CUB_REGISTRY_TIMEOUT
     echo schema registry $REGISTRY_SERVER ready
   done 
   echo schema registry cluster ready

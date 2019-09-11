@@ -39,6 +39,8 @@ ENV CLASSPATH=/app/jars/log4j-1.2.17.jar:/app/jars/${project.artifactId}-${proje
 #  run.sh
 #
 
+COPY bin/ev-cub /app/bin/ev-cub
+RUN chmod 0755 /app/bin/ev-cub
 COPY bin/purchasefulfillmentmanager-run.sh /app/bin/purchasefulfillmentmanager-run.sh
 RUN chmod 0755 /app/bin/purchasefulfillmentmanager-run.sh
 

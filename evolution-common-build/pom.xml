@@ -39,14 +39,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.7.1-build190828-SNAPSHOT</version>
+    <version>4.7.1-build190911-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.7.1-build190828-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.7.1-build190911-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -426,6 +426,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -465,6 +472,13 @@
                   <includes>
                     <include>bin/thirdpartymanager-run.sh</include>
                     <include>config/thirdpartymanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -512,6 +526,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -551,6 +572,13 @@
                   <includes>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>config/evolutionengine_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -682,6 +710,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -721,6 +756,13 @@
                   <includes>
                     <include>bin/infulfillmentmanager-run.sh</include>
                     <include>config/infulfillmentmanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -768,6 +810,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -807,6 +856,13 @@
                   <includes>
                     <include>bin/commoditydeliverymanager-run.sh</include>
                     <include>config/commoditydeliverymanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -854,6 +910,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -893,6 +956,13 @@
                   <includes>
                     <include>bin/notificationmanagersms-run.sh</include>
                     <include>config/notificationmanagersms_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -940,6 +1010,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -983,6 +1060,13 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
                   <directory>${project.build.directory}/assembled-resources</directory>
                   <includes>
                     <include>config/log4j-evol.properties</include>
@@ -1022,6 +1106,13 @@
                   <includes>
                     <include>bin/reportscheduler-run.sh</include>
                     <include>config/reportscheduler_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
