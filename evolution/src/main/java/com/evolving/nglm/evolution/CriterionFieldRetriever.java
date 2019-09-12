@@ -158,7 +158,7 @@ public abstract class CriterionFieldRetriever
     if (awaitedJourneyEntry && ! ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
       return SubscriberJourneyStatus.NotEligible.getExternalRepresentation();
     else if (awaitedJourneyEntry && ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
-      return SubscriberJourneyStatus.Eligible.getExternalRepresentation();
+      return SubscriberJourneyStatus.Entered.getExternalRepresentation();
     else if (awaitedJourneyTransition)
       return ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getSubscriberJourneyStatus().getExternalRepresentation();
     else

@@ -19,7 +19,6 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -767,9 +766,14 @@ public class JourneyHistory
     
   }
   
+  /*****************************************
+  *
+  *  class StatusHistory
+  *
+  *****************************************/
+
   public static class StatusHistory
   {
-
     /*****************************************
     *
     *  schema
@@ -836,27 +840,8 @@ public class JourneyHistory
     public boolean getStatusControlGroup() { return statusControlGroup; }
     public boolean getStatusUniversalControlGroup() { return statusUniversalControlGroup; }
     public boolean getJourneyComplete() { return journeyComplete; }
-    
-    //
-    //  getSubscriberJourneyStatus
-    //
+    public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
 
-    public SubscriberJourneyStatus getSubscriberJourneyStatus()
-    {
-      if (journeyComplete && statusConverted)
-        return SubscriberJourneyStatus.Converted;
-      else if (journeyComplete && ! statusConverted)
-        return SubscriberJourneyStatus.NotConverted;
-      else if (statusNotified)
-        return SubscriberJourneyStatus.Notified;
-      else
-        return SubscriberJourneyStatus.Eligible;
-    }
-
-    public SubscriberJourneyAggregatedStatus getSubscriberJourneyAggregatedStatus() {
-      return SubscriberJourneyAggregatedStatus.fromJourneyStatus(statusControlGroup, statusNotified, statusConverted);
-    }
-    
     /*****************************************
     *
     *  pack

@@ -11,7 +11,6 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
@@ -135,30 +134,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public List<NodeHistory> getJourneyNodeHistory() { return journeyNodeHistory; }
   public List<StatusHistory> getJourneyStatusHistory() { return journeyStatusHistory; }
   public List<RewardHistory> getJourneyRewardHistory() { return journeyRewardHistory; }
-
-  //
-  //  getSubscriberJourneyStatus
-  //
-
-  public SubscriberJourneyStatus getSubscriberJourneyStatus()
-  {
-    if (journeyComplete && statusConverted)
-      return SubscriberJourneyStatus.Converted;
-    else if (journeyComplete && ! statusConverted)
-      return SubscriberJourneyStatus.NotConverted;
-    else if (statusNotified)
-      return SubscriberJourneyStatus.Notified;
-    else
-      return SubscriberJourneyStatus.Eligible;
-  }
-  
-  //
-  //  getSubscriberJourneyAggregatedStatus
-  //
-  
-  public SubscriberJourneyAggregatedStatus getSubscriberJourneyAggregatedStatus() {
-    return SubscriberJourneyAggregatedStatus.fromJourneyStatus(statusControlGroup, statusNotified, statusConverted);
-  }
+  public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
 
   /*****************************************
   *

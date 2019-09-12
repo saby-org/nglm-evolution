@@ -22,7 +22,7 @@ import org.json.simple.parser.ParseException;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public class JourneyTrafficSnapshot
 {
@@ -95,7 +95,7 @@ public class JourneyTrafficSnapshot
   public Map<String,SubscriberTraffic> getByStatus() { return byStatus; }
   public Map<List<String>,Map<String,SubscriberTraffic>> getByStatusByStratum() { return byStatusByStratum; }
   
-  public int getStatusSubscribersCount(SubscriberJourneyAggregatedStatus status)
+  public int getStatusSubscribersCount(SubscriberJourneyStatus status)
   {
     SubscriberTraffic traffic = byStatus.get(status.getExternalRepresentation());
     if (traffic != null) 

@@ -292,6 +292,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public Date getEventDate() { return (deliveryDate != null) ? deliveryDate : creationDate; }
   public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
   public ActionType getActionType() { return ActionType.DeliveryRequest; }
+  public boolean isPending() { return deliveryStatus == DeliveryStatus.Pending; }
 
   //
   //  setters

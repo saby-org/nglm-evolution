@@ -101,8 +101,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
@@ -1913,27 +1912,20 @@ public class EvolutionEngine
       }
     
     // 
-    // Update status map 
+    // update status map
     // 
     
-    if(event.isStatusUpdated()) 
+    if (event.isStatusUpdated()) 
       {
-        SubscriberJourneyAggregatedStatus previousStatus = null;
-        SubscriberJourneyAggregatedStatus currentStatus = event.getJourneyStatistic().getSubscriberJourneyAggregatedStatus();
-    
-        StatusHistory previousStatusHistory = event.getJourneyStatistic().getPreviousJourneyStatus();
-        if (previousStatusHistory != null)
-          {
-            previousStatus = previousStatusHistory.getSubscriberJourneyAggregatedStatus();
-          }
-        
-        if(previousStatus == null || currentStatus != previousStatus) 
+        SubscriberJourneyStatus previousStatus = (event.getJourneyStatistic().getPreviousJourneyStatus() != null) ? event.getJourneyStatistic().getPreviousJourneyStatus().getSubscriberJourneyStatus() : null;
+        SubscriberJourneyStatus currentStatus = event.getJourneyStatistic().getSubscriberJourneyStatus();
+        if (previousStatus == null || currentStatus != previousStatus)
           {
             //
             // by status map update
             //
     
-            if(previousStatus != null)
+            if (previousStatus != null)
               {
                 SubscriberTraffic previousStatusTraffic = history.getCurrentData().getByStatus().get(previousStatus.getExternalRepresentation());
                 if(previousStatusTraffic != null) 
@@ -1943,7 +1935,7 @@ public class EvolutionEngine
               }
     
             SubscriberTraffic currentStatusTraffic = history.getCurrentData().getByStatus().get(currentStatus.getExternalRepresentation());
-            if(currentStatusTraffic == null) 
+            if (currentStatusTraffic == null) 
               {
                 currentStatusTraffic = new SubscriberTraffic();
                 history.getCurrentData().getByStatus().put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
@@ -1956,23 +1948,23 @@ public class EvolutionEngine
             
             List<String> subscriberStratum = event.getSubscriberStratum();
             Map<String, SubscriberTraffic> stratumTraffic = history.getCurrentData().getByStatusByStratum().get(subscriberStratum);
-            if(stratumTraffic == null) 
+            if (stratumTraffic == null) 
               {
                 stratumTraffic = new HashMap<String, SubscriberTraffic>();
                 history.getCurrentData().getByStatusByStratum().put(subscriberStratum, stratumTraffic);
               }
     
-            if(previousStatus != null)
+            if (previousStatus != null)
               {
                 SubscriberTraffic previousStatusTraffic = stratumTraffic.get(previousStatus.getExternalRepresentation());
-                if(previousStatusTraffic != null) 
+                if (previousStatusTraffic != null) 
                   {
                     previousStatusTraffic.addOutflow();
                   }
               }
     
             currentStatusTraffic = stratumTraffic.get(currentStatus.getExternalRepresentation());
-            if(currentStatusTraffic == null) 
+            if (currentStatusTraffic == null) 
               {
                 currentStatusTraffic = new SubscriberTraffic();
                 stratumTraffic.put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
@@ -3244,32 +3236,24 @@ public class EvolutionEngine
             *
             *****************************************/
             
-            if(calledJourney)
+            if (calledJourney)
               {
-                
-                //
-                //  generate journey response
-                //
-
                 JourneyRequest journeyRequest = (JourneyRequest) evolutionEvent;
-                JourneyRequest journeyResponse = journeyRequest.copy();
-
-                if(enterJourney)
+                if (journeyRequest.isPending())
                   {
-                    journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
-                    journeyResponse.setDeliveryDate(now);
+                    JourneyRequest journeyResponse = journeyRequest.copy();
+                    if(enterJourney)
+                      {
+                        journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+                        journeyResponse.setDeliveryDate(now);
+                      }
+                    else
+                      {
+                        journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
+                      }
+                    context.getSubscriberState().getJourneyResponses().add(journeyResponse);
+                    subscriberStateUpdated = true;
                   }
-                else
-                  {
-                    journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
-                  }
-
-                //
-                //  return journey response
-                //
-
-                context.getSubscriberState().getJourneyResponses().add(journeyResponse);
-
               }
           }
       }
@@ -3287,7 +3271,6 @@ public class EvolutionEngine
     List<JourneyState> inactiveJourneyStates = new ArrayList<JourneyState>();
     for (JourneyState journeyState : subscriberState.getJourneyStates())
       {
-        
         /*****************************************
         *
         *   get reward information 
@@ -3295,10 +3278,10 @@ public class EvolutionEngine
         *****************************************/
         
         RewardHistory lastRewards = null;
-        if(evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
+        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
           {
-            DeliveryRequest deliveryResponse = (DeliveryRequest)evolutionEvent;
-            if(deliveryResponse.getModuleID().equals(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && deliveryResponse.getFeatureID().equals(journeyState.getJourneyID())) 
+            DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
+            if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
               {
                 lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
               }
@@ -4013,9 +3996,9 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    if (evolutionEvent instanceof JourneyStatisticWrapper)
+    if (evolutionEvent instanceof JourneyStatistic)
       {
-        subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics(((JourneyStatisticWrapper) evolutionEvent).getJourneyStatistic(), subscriberHistory) || subscriberHistoryUpdated;
+        subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics((JourneyStatistic) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
       }
 
     /****************************************
@@ -4044,6 +4027,17 @@ public class EvolutionEngine
     //
     //  TBD DEW
     //
+
+    /*****************************************
+    *
+    *  ignore journeyRequests
+    *
+    *****************************************/
+
+    if (deliveryRequest instanceof JourneyRequest)
+      {
+        return false;
+      }
 
     /*****************************************
     *

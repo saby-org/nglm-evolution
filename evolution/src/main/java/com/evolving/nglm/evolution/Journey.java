@@ -38,7 +38,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyAggregatedStatus;
+import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 
 public class Journey extends GUIManagedObject
 {
@@ -90,10 +90,12 @@ public class Journey extends GUIManagedObject
   public enum SubscriberJourneyStatus
   {
     NotEligible("notEligible"),
-    Eligible("eligible"),
+    Entered("entered"),
     Notified("notified"),
-    Converted("converted"),
-    NotConverted("notConverted"),
+    ConvertedNotNotified("unnotified_converted"),
+    ConvertedNotified("notified_converted"),
+    ControlGroupEntered("controlGroup_entered"),
+    ControlGroupConverted("controlGroup_converted"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private SubscriberJourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -120,56 +122,6 @@ public class Journey extends GUIManagedObject
     public static SubscriberJourneyStatusField fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatusField enumeratedValue : SubscriberJourneyStatusField.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
-  //
-  //  SubscriberJourneyStatus
-  //
-
-  public enum SubscriberJourneyAggregatedStatus
-  {
-    ControlGroup_Entered("controlGroup_entered"),
-    ControlGroup_Converted("controlGroup_converted"),
-    Entered("entered"),
-    Notified("notified"),
-    Unnotified_Converted("unnotified_converted"),
-    Notified_Converted("notified_converted"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private SubscriberJourneyAggregatedStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static SubscriberJourneyAggregatedStatus fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyAggregatedStatus enumeratedValue : SubscriberJourneyAggregatedStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-    public static SubscriberJourneyAggregatedStatus fromJourneyStatus(boolean statusControlGroup, boolean statusNotified, boolean statusConverted) {
-      if (statusControlGroup) 
-        {
-          if(statusConverted) 
-            {
-              return SubscriberJourneyAggregatedStatus.ControlGroup_Converted;
-            } 
-          else 
-            {
-              return SubscriberJourneyAggregatedStatus.ControlGroup_Entered;
-            }
-        }
-      else if (statusConverted)
-        {
-          if(statusNotified) 
-            {
-              return SubscriberJourneyAggregatedStatus.Notified_Converted;
-            }
-          else 
-            {
-              return SubscriberJourneyAggregatedStatus.Unnotified_Converted;
-            }
-        }
-      else if (statusNotified) 
-        {
-          return SubscriberJourneyAggregatedStatus.Notified;
-        }
-      else 
-        {
-          return SubscriberJourneyAggregatedStatus.Entered;
-        }
-    }
-  }
   
   //
   //  TargetingType
@@ -426,6 +378,52 @@ public class Journey extends GUIManagedObject
           }
       }
     return result;
+  }
+
+  /*****************************************
+  *
+  *  getSubscriberJourneyStatus
+  *
+  *****************************************/
+
+  //
+  //  base
+  //
+
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(boolean journeyComplete, boolean statusConverted, boolean statusNotified, boolean statusControlGroup)
+  {
+    if (! statusControlGroup && ! statusNotified && ! statusConverted)
+      return SubscriberJourneyStatus.Entered;
+    else if (! statusControlGroup && ! statusNotified && statusConverted)
+      return SubscriberJourneyStatus.ConvertedNotNotified;
+    else if (! statusControlGroup && statusNotified && ! statusConverted)
+      return SubscriberJourneyStatus.Notified;
+    else if (! statusControlGroup && statusNotified && statusConverted)
+      return SubscriberJourneyStatus.ConvertedNotified;
+    else if (statusControlGroup && ! statusConverted)
+      return SubscriberJourneyStatus.ControlGroupEntered;
+    else if (statusControlGroup && statusConverted)
+      return SubscriberJourneyStatus.ControlGroupConverted;
+    else
+      return SubscriberJourneyStatus.Unknown;
+  }
+
+  //
+  //  journeyStatistic
+  //
+
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyStatistic journeyStatistic)
+  {
+    return getSubscriberJourneyStatus(journeyStatistic.getJourneyComplete(), journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusControlGroup());
+  }
+
+  //
+  // statusHistory
+  //
+
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(StatusHistory statusHistory)
+  {
+    return getSubscriberJourneyStatus(statusHistory.getJourneyComplete(), statusHistory.getStatusConverted(), statusHistory.getStatusNotified(), statusHistory.getStatusControlGroup());
   }
   
   /*****************************************
