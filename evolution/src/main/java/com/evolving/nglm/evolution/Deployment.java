@@ -2141,7 +2141,9 @@ public class Deployment
 
     try
       {
+        JSONArray offerOptimizationAlgorithmValuesCommon = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithmsCommon", new JSONArray());
         JSONArray offerOptimizationAlgorithmValues = JSONUtilities.decodeJSONArray(jsonRoot, "offerOptimizationAlgorithms", new JSONArray());
+        offerOptimizationAlgorithmValues.addAll(offerOptimizationAlgorithmValuesCommon);
         for (int i=0; i<offerOptimizationAlgorithmValues.size(); i++)
           {
             JSONObject offerOptimizationAlgorithmJSON = (JSONObject) offerOptimizationAlgorithmValues.get(i);

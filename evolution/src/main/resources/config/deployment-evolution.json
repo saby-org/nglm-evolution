@@ -257,7 +257,21 @@
           { "id" : "c2-5", "display" : "[0123456789abcdef]{5}" },
           { "id" : "c2-6", "display" : "[0123456789abcdef]{6}" }
      ],
+  --
+  --  offerOptimizationAlgorithmsCommon
+  --
 
+	"offerOptimizationAlgorithmsCommon": [
+		{
+			"id": "M-Random",
+			"name": "Random",
+			"display": "Random",
+			"parameters": [
+			],
+			"javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
+		}
+	],
+  
   --
   --  initialJourneyTemplates
   --
