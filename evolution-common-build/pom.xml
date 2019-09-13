@@ -124,6 +124,7 @@
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>
     <topic.subscribergroupepoch>subscribergroupepoch</topic.subscribergroupepoch>
     <topic.ucgstate>ucgstate</topic.ucgstate>
+    <topic.renamedprofilecriterionfield>renamedprofilecriterionfield</topic.renamedprofilecriterionfield>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
     <topic.periodicevaluation_fileconnector>periodicevaluation-fileconnector</topic.periodicevaluation_fileconnector>
     <topic.subscriberprofileforceupdate>subscriberprofileforceupdate</topic.subscriberprofileforceupdate>

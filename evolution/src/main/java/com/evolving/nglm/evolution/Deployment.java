@@ -88,6 +88,7 @@ public class Deployment
   private static String subscriberGroupAssignSubscriberIDTopic;
   private static String subscriberGroupEpochTopic;
   private static String ucgStateTopic;
+  private static String renamedProfileCriterionFieldTopic;
   private static String timedEvaluationTopic;
   private static String subscriberProfileForceUpdateTopic;
   private static String subscriberStateChangeLog;
@@ -277,6 +278,7 @@ public class Deployment
   public static String getSubscriberGroupAssignSubscriberIDTopic() { return subscriberGroupAssignSubscriberIDTopic; }
   public static String getSubscriberGroupEpochTopic() { return subscriberGroupEpochTopic; }
   public static String getUCGStateTopic() { return ucgStateTopic; }
+  public static String getRenamedProfileCriterionFieldTopic() { return renamedProfileCriterionFieldTopic; }
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
   public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
@@ -1123,6 +1125,19 @@ public class Deployment
     try
       {
         ucgStateTopic = JSONUtilities.decodeString(jsonRoot, "ucgStateTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  renamedProfileCriterionFieldTopic
+    //
+
+    try
+      {
+        renamedProfileCriterionFieldTopic = JSONUtilities.decodeString(jsonRoot, "renamedProfileCriterionFieldTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

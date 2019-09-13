@@ -99,6 +99,7 @@ import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.ReferenceDataValue;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
@@ -501,6 +502,7 @@ public class GUIManager
   private SubscriberIDService subscriberIDService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
+  private ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
   private DeliverableSourceService deliverableSourceService;
   private String getCustomerAlternateID;
   private UploadedFileService uploadedFileService;
@@ -591,6 +593,7 @@ public class GUIManager
     String subscriberMessageTemplateTopic = Deployment.getSubscriberMessageTemplateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String journeyTrafficChangeLogTopic = Deployment.getJourneyTrafficChangeLogTopic();
+    String renamedProfileCriterionFieldTopic = Deployment.getRenamedProfileCriterionFieldTopic();
     String deliverableSourceTopic = Deployment.getDeliverableSourceTopic();
     String redisServer = Deployment.getRedisSentinels();
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
@@ -757,6 +760,7 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
+    renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
@@ -1775,7 +1779,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService));
 
     /*****************************************
     *
@@ -1825,6 +1829,7 @@ public class GUIManager
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
+    private ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
     private DeliverableSourceService deliverableSourceService;
     private UploadedFileService uploadedFileService;
     private TargetService targetService;
@@ -1839,7 +1844,7 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1867,6 +1872,7 @@ public class GUIManager
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.journeyTrafficReader = journeyTrafficReader;
+      this.renamedProfileCriterionFieldReader = renamedProfileCriterionFieldReader;
       this.deliverableSourceService = deliverableSourceService;
       this.uploadedFileService = uploadedFileService;
       this.targetService = targetService;
@@ -1886,12 +1892,12 @@ public class GUIManager
     @Override public void shutdown(boolean normalShutdown)
     {
       //
-      //  reference data reader
+      //  reference data readers
       //
 
       if (subscriberGroupEpochReader != null) subscriberGroupEpochReader.close();
       if (journeyTrafficReader != null) journeyTrafficReader.close();
-
+      if (renamedProfileCriterionFieldReader != null) renamedProfileCriterionFieldReader.close();
       //
       //  services 
       //
@@ -18744,6 +18750,16 @@ public class GUIManager
               }
 
             //
+            //  rename fields
+            //
+
+            RenamedProfileCriterionField renamedProfileCriterionField = renamedProfileCriterionFieldReader.get(criterionField.getID());
+            if (renamedProfileCriterionField != null) 
+              {
+                criterionFieldJSON.put("display", renamedProfileCriterionField.getDisplay());
+              }
+            
+            //
             //  add
             //
 
@@ -20734,6 +20750,87 @@ public class GUIManager
     return featureName;
   }
 
+  /*****************************************
+  *
+  *  class RenamedProfileCriterionField
+  *
+  *****************************************/
+
+  public static class RenamedProfileCriterionField implements ReferenceDataValue<String>
+  {
+    /****************************************
+    *
+    *  data
+    *
+    ****************************************/
+
+    private String criterionFieldID;
+    private String display;
+    private boolean deleted;
+
+    /****************************************
+    *
+    *  accessors - basic
+    *
+    ****************************************/
+
+    public String getCriterionFieldID() { return criterionFieldID; }
+    public String getDisplay() { return display; }
+    public boolean getDeleted() { return deleted; }
+
+    //
+    //  ReferenceDataValue
+    //
+
+    @Override public String getKey() { return criterionFieldID; }
+
+    /*****************************************
+    *
+    *  constructor (unpack)
+    *
+    *****************************************/
+
+    private RenamedProfileCriterionField(String criterionFieldID, String display, boolean deleted)
+    {
+      this.criterionFieldID = criterionFieldID;
+      this.display = display;
+      this.deleted = deleted;
+    }
+
+    /*****************************************
+    *
+    *  unpack
+    *
+    *****************************************/
+
+    public static RenamedProfileCriterionField unpack(org.apache.kafka.connect.data.SchemaAndValue schemaAndValue)
+    {
+      //
+      //  data
+      //
+
+      org.apache.kafka.connect.data.Schema schema = schemaAndValue.schema();
+      Object value = schemaAndValue.value();
+      Integer schemaVersion = (schema != null) ? com.evolving.nglm.core.SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+      //
+      //  unpack
+      //
+
+      org.apache.kafka.connect.data.Struct valueStruct = (org.apache.kafka.connect.data.Struct) value;
+
+      String criterionFieldID = valueStruct.getString("criterion_field_id");
+      String display = valueStruct.getString("display");
+      boolean deleted = valueStruct.getInt8("deleted").intValue() != 0;
+
+      //
+      //  return
+      //
+
+      return new RenamedProfileCriterionField(criterionFieldID, display, deleted);
+    }
+  }
+  
   /*****************************************
   *
   *  class GUIManagerContext

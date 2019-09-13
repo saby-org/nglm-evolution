@@ -52,6 +52,7 @@
   "subscriberGroupAssignSubscriberIDTopic"               : "${topic.subscribergroup.assignsubscriberid}",
   "subscriberGroupEpochTopic"                            : "${topic.subscribergroupepoch}",
   "ucgStateTopic"                                        : "${topic.ucgstate}",
+  "renamedProfileCriterionFieldTopic"                    : "${topic.renamedprofilecriterionfield}",
   "timedEvaluationTopic"                                 : "${topic.timedevaluation}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
