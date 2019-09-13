@@ -85,21 +85,15 @@ public class SubscriberTraffic
 
   public void addInflow() { this.subscriberInflow++; }
   public void addOutflow() { this.subscriberOutflow++; }
+  public void setEmptyRewardsMap() { this.distributedRewards = new HashMap<String, Integer>(); }
   public void addRewards(String rewardID, int amount) {
     if(this.distributedRewards == null) 
       {
         this.distributedRewards = new HashMap<String, Integer>();
       }
     
-    Integer count = this.distributedRewards.get(rewardID);
-    if(count != null)
-      {
-        count += amount; // TODO does it works ?
-      }
-    else 
-      {
-        this.distributedRewards.put(rewardID, new Integer(amount));
-      }
+    int currentCount = (this.distributedRewards.get(rewardID) != null)? this.distributedRewards.get(rewardID) : 0;
+    this.distributedRewards.put(rewardID, new Integer(currentCount + amount));
   }
   
   /*****************************************

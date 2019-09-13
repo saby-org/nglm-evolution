@@ -761,6 +761,7 @@ public class EvolutionEngine
         (key,value) -> (value instanceof PointFulfillmentRequest && !((PointFulfillmentRequest)value).getDeliveryStatus().equals(DeliveryStatus.Pending)), 
         (key,value) -> (value instanceof DeliveryRequest), 
         (key,value) -> (value instanceof JourneyStatisticWrapper), 
+        (key,value) -> (value instanceof JourneyStatistic), 
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
         (key,value) -> (value instanceof PropensityEventOutput),
@@ -772,10 +773,11 @@ public class EvolutionEngine
     KStream<StringKey, PointFulfillmentRequest> pointResponseStream = (KStream<StringKey, PointFulfillmentRequest>) branchedEvolutionEngineOutputs[4];
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[5];
     KStream<StringKey, JourneyStatisticWrapper> journeyStatisticWrapperStream = (KStream<StringKey, JourneyStatisticWrapper>) branchedEvolutionEngineOutputs[6];
-    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[7];
-    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[8];
-    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[9];
-    KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[10];
+    KStream<StringKey, JourneyStatistic> journeyStatisticStream = (KStream<StringKey, JourneyStatistic>) branchedEvolutionEngineOutputs[7];
+    KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[8];
+    KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[9];
+    KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[10];
+    KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[11];
 
     //
     //  build predicates for delivery requests
@@ -830,9 +832,6 @@ public class EvolutionEngine
     *  JourneyStatistics
     *
     *****************************************/
-    
-    KStream<StringKey, JourneyStatistic> journeyStatisticStream = journeyStatisticWrapperStream.mapValues(EvolutionEngine::getJourneyStatisticFromWrapper);
-    
     KStream<StringKey, JourneyStatisticWrapper> rekeyedJourneyStatisticStream = journeyStatisticWrapperStream.map(EvolutionEngine::rekeyByJourneyID);
     
     KeyValueBytesStoreSupplier journeyTrafficSupplier = Stores.persistentKeyValueStore(journeyTrafficChangeLog);
@@ -1833,139 +1832,155 @@ public class EvolutionEngine
       }
 
     history.setLastArchivedDataDate(RLMDateUtils.addSeconds(history.getLastArchivedDataDate(), history.getArchivePeriodInSeconds() * periodsSinceLastArchivedData));
-
+    history.setLastUpdateDate(currentDate);
+    history.setJourneyID(journeyID.getKey());
+    
     // 
     // update current data
     //
     
-    history.setLastUpdateDate(currentDate);
-    history.setJourneyID(journeyID.getKey());
-    String fromNodeID = event.getJourneyStatistic().getFromNodeID();
-    String toNodeID = event.getJourneyStatistic().getToNodeID();
-    RewardHistory lastRewards = event.getLastRewards();
-    
-    if(fromNodeID != null) 
+    if(event.getJourneyStatistic() != null)
       {
-        SubscriberTraffic traffic = history.getCurrentData().getByNode().get(fromNodeID);
-        if(traffic == null) 
-          {
-            traffic = new SubscriberTraffic();
-            history.getCurrentData().getByNode().put(fromNodeID, traffic);
-          }
-        traffic.addOutflow();
+      String fromNodeID = event.getJourneyStatistic().getFromNodeID();
+      String toNodeID = event.getJourneyStatistic().getToNodeID();
+      
+      if(fromNodeID != null) 
+        {
+          SubscriberTraffic traffic = history.getCurrentData().getByNode().get(fromNodeID);
+          if(traffic == null) 
+            {
+              traffic = new SubscriberTraffic();
+              history.getCurrentData().getByNode().put(fromNodeID, traffic);
+            }
+          traffic.addOutflow();
+        }
+      else 
+        {
+          //
+          // Update global entrance for this journey (global and byStratum)
+          //
+  
+          history.getCurrentData().getGlobal().addInflow();
+          SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
+          if(stratumTraffic == null)
+            {
+              stratumTraffic = new SubscriberTraffic();
+              stratumTraffic.setEmptyRewardsMap();
+              history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
+            }
+          stratumTraffic.addInflow();
+        }
+      
+      if(toNodeID != null) 
+        {
+          SubscriberTraffic traffic = history.getCurrentData().getByNode().get(toNodeID);
+          if(traffic == null) 
+            {
+              traffic = new SubscriberTraffic();
+              history.getCurrentData().getByNode().put(toNodeID, traffic);
+            }
+          traffic.addInflow();
+        } 
+      
+      //
+      // Update global exit for this journey (traffic for global and byStratum)
+      //
+      
+      if (event.getJourneyStatistic().getJourneyComplete()) 
+        {
+          // 
+          // Journey exit 
+          // 
+  
+          history.getCurrentData().getGlobal().addOutflow();
+          SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
+          if(stratumTraffic == null)
+            {
+              stratumTraffic = new SubscriberTraffic();
+              stratumTraffic.setEmptyRewardsMap();
+              history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
+            }
+          stratumTraffic.addOutflow();
+        }
+      
+      // 
+      // update status map
+      // 
+      
+      if (event.isStatusUpdated()) 
+        {
+          SubscriberJourneyStatus previousStatus = (event.getJourneyStatistic().getPreviousJourneyStatus() != null) ? event.getJourneyStatistic().getPreviousJourneyStatus().getSubscriberJourneyStatus() : null;
+          SubscriberJourneyStatus currentStatus = event.getJourneyStatistic().getSubscriberJourneyStatus();
+          if (previousStatus == null || currentStatus != previousStatus)
+            {
+              //
+              // by status map update
+              //
+      
+              if (previousStatus != null)
+                {
+                  SubscriberTraffic previousStatusTraffic = history.getCurrentData().getByStatus().get(previousStatus.getExternalRepresentation());
+                  if(previousStatusTraffic != null) 
+                    {
+                      previousStatusTraffic.addOutflow();
+                    }
+                }
+      
+              SubscriberTraffic currentStatusTraffic = history.getCurrentData().getByStatus().get(currentStatus.getExternalRepresentation());
+              if (currentStatusTraffic == null) 
+                {
+                  currentStatusTraffic = new SubscriberTraffic();
+                  history.getCurrentData().getByStatus().put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
+                }
+              currentStatusTraffic.addInflow();
+              
+              //
+              // by stratum map update
+              //
+              
+              List<String> subscriberStratum = event.getSubscriberStratum();
+              Map<String, SubscriberTraffic> stratumTraffic = history.getCurrentData().getByStatusByStratum().get(subscriberStratum);
+              if (stratumTraffic == null) 
+                {
+                  stratumTraffic = new HashMap<String, SubscriberTraffic>();
+                  history.getCurrentData().getByStatusByStratum().put(subscriberStratum, stratumTraffic);
+                }
+      
+              if (previousStatus != null)
+                {
+                  SubscriberTraffic previousStatusTraffic = stratumTraffic.get(previousStatus.getExternalRepresentation());
+                  if (previousStatusTraffic != null) 
+                    {
+                      previousStatusTraffic.addOutflow();
+                    }
+                }
+      
+              currentStatusTraffic = stratumTraffic.get(currentStatus.getExternalRepresentation());
+              if (currentStatusTraffic == null) 
+                {
+                  currentStatusTraffic = new SubscriberTraffic();
+                  stratumTraffic.put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
+                }
+              currentStatusTraffic.addInflow();
+            }
+        }
       }
-    else 
+    
+    // 
+    // Update rewards
+    // 
+    else if (event.getLastRewards() != null && event.getLastRewards().getAmount() > 0)
       {
-        //
-        // Update global entrance for this journey (traffic & rewards for global and byStratum)
-        //
-
-        history.getCurrentData().getGlobal().addInflow();
+        RewardHistory rewards = event.getLastRewards();
+        history.getCurrentData().getGlobal().addRewards(rewards.getRewardID(), rewards.getAmount());
         SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
         if(stratumTraffic == null)
           {
             stratumTraffic = new SubscriberTraffic();
+            stratumTraffic.setEmptyRewardsMap();
             history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
           }
-        stratumTraffic.addInflow();
-        
-        if(lastRewards != null && lastRewards.getAmount() > 0)
-          {
-            history.getCurrentData().getGlobal().addRewards(lastRewards.getRewardID(), lastRewards.getAmount());
-            stratumTraffic.addRewards(lastRewards.getRewardID(), lastRewards.getAmount());
-          }
-      }
-    if(toNodeID != null) 
-      {
-        SubscriberTraffic traffic = history.getCurrentData().getByNode().get(toNodeID);
-        if(traffic == null) 
-          {
-            traffic = new SubscriberTraffic();
-            history.getCurrentData().getByNode().put(toNodeID, traffic);
-          }
-        traffic.addInflow();
-      } 
-    
-    //
-    // Update global exit for this journey (traffic for global and byStratum)
-    //
-    
-    if (event.getJourneyStatistic().getJourneyComplete()) 
-      {
-        // 
-        // Journey exit 
-        // 
-
-        history.getCurrentData().getGlobal().addOutflow();
-        SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
-        if(stratumTraffic == null)
-          {
-            stratumTraffic = new SubscriberTraffic();
-            history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
-          }
-        stratumTraffic.addOutflow();
-      }
-    
-    // 
-    // update status map
-    // 
-    
-    if (event.isStatusUpdated()) 
-      {
-        SubscriberJourneyStatus previousStatus = (event.getJourneyStatistic().getPreviousJourneyStatus() != null) ? event.getJourneyStatistic().getPreviousJourneyStatus().getSubscriberJourneyStatus() : null;
-        SubscriberJourneyStatus currentStatus = event.getJourneyStatistic().getSubscriberJourneyStatus();
-        if (previousStatus == null || currentStatus != previousStatus)
-          {
-            //
-            // by status map update
-            //
-    
-            if (previousStatus != null)
-              {
-                SubscriberTraffic previousStatusTraffic = history.getCurrentData().getByStatus().get(previousStatus.getExternalRepresentation());
-                if(previousStatusTraffic != null) 
-                  {
-                    previousStatusTraffic.addOutflow();
-                  }
-              }
-    
-            SubscriberTraffic currentStatusTraffic = history.getCurrentData().getByStatus().get(currentStatus.getExternalRepresentation());
-            if (currentStatusTraffic == null) 
-              {
-                currentStatusTraffic = new SubscriberTraffic();
-                history.getCurrentData().getByStatus().put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
-              }
-            currentStatusTraffic.addInflow();
-            
-            //
-            // by stratum map update
-            //
-            
-            List<String> subscriberStratum = event.getSubscriberStratum();
-            Map<String, SubscriberTraffic> stratumTraffic = history.getCurrentData().getByStatusByStratum().get(subscriberStratum);
-            if (stratumTraffic == null) 
-              {
-                stratumTraffic = new HashMap<String, SubscriberTraffic>();
-                history.getCurrentData().getByStatusByStratum().put(subscriberStratum, stratumTraffic);
-              }
-    
-            if (previousStatus != null)
-              {
-                SubscriberTraffic previousStatusTraffic = stratumTraffic.get(previousStatus.getExternalRepresentation());
-                if (previousStatusTraffic != null) 
-                  {
-                    previousStatusTraffic.addOutflow();
-                  }
-              }
-    
-            currentStatusTraffic = stratumTraffic.get(currentStatus.getExternalRepresentation());
-            if (currentStatusTraffic == null) 
-              {
-                currentStatusTraffic = new SubscriberTraffic();
-                stratumTraffic.put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
-              }
-            currentStatusTraffic.addInflow();
-          }
+        stratumTraffic.addRewards(rewards.getRewardID(), rewards.getAmount());
       }
     
     return history;
@@ -3279,7 +3294,6 @@ public class EvolutionEngine
                     subscriberGroupEpochReader,
                     ucgStateReader,
                     statusUpdated,
-                    null,
                     new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState)));
                 subscriberStateUpdated = true;
 
@@ -3407,14 +3421,21 @@ public class EvolutionEngine
         *   get reward information 
         *
         *****************************************/
-        
-        RewardHistory lastRewards = null;
         if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
           {
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
             if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
               {
-                lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
+                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
+                if(lastRewards != null)
+                  {
+                    subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
+                        subscriberState.getSubscriberProfile(),
+                        subscriberGroupEpochReader,
+                        ucgStateReader,
+                        new RewardHistory(lastRewards),
+                        journeyState.getJourneyID()));
+                  }
               }
           }
         
@@ -3442,7 +3463,6 @@ public class EvolutionEngine
                 subscriberGroupEpochReader,
                 ucgStateReader,
                 statusUpdated,
-                lastRewards,
                 new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, now)));
             inactiveJourneyStates.add(journeyState);
             continue;
@@ -3585,7 +3605,6 @@ public class EvolutionEngine
                                 subscriberGroupEpochReader,
                                 ucgStateReader,
                                 statusUpdated,
-                                null,
                                 new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
@@ -3698,7 +3717,6 @@ public class EvolutionEngine
                                 subscriberGroupEpochReader,
                                 ucgStateReader,
                                 statusUpdated,
-                                null,
                                 new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
@@ -3828,7 +3846,6 @@ public class EvolutionEngine
                     subscriberGroupEpochReader,
                     ucgStateReader,
                     statusUpdated,
-                    null,
                     new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted)));
               }
           }
@@ -4330,6 +4347,13 @@ public class EvolutionEngine
     result.addAll(subscriberState.getPointFulfillmentResponses());
     result.addAll(subscriberState.getDeliveryRequests());
     result.addAll(subscriberState.getJourneyStatisticWrappers());
+    for (JourneyStatisticWrapper wrapper: subscriberState.getJourneyStatisticWrappers()) 
+      {
+        if (wrapper.getJourneyStatistic() != null)
+          {
+            result.add(wrapper.getJourneyStatistic());
+          }
+      }
     result.addAll(subscriberState.getJourneyMetrics());
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     result.addAll(subscriberState.getPropensityOutputs());
@@ -4369,7 +4393,7 @@ public class EvolutionEngine
 
   private static KeyValue<StringKey, JourneyStatisticWrapper> rekeyByJourneyID(StringKey key, JourneyStatisticWrapper value)
   {
-    return new KeyValue<StringKey, JourneyStatisticWrapper>(new StringKey(value.getJourneyStatistic().getJourneyID()), value);
+    return new KeyValue<StringKey, JourneyStatisticWrapper>(new StringKey(value.getJourneyID()), value);
   }
   
   /****************************************

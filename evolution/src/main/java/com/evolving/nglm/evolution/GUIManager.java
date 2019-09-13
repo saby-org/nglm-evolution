@@ -5881,26 +5881,66 @@ public class GUIManager
     *  argument
     *
     ****************************************/
-
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
-
-    /*****************************************
-    *
-    *  retrieve corresponding JourneyTrafficHistory
-    *
-    *****************************************/
     
-    JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+    String journeyID = null;
+
+    // 
+    // We support "campaignID" as an entry for "journeyID" but both can not be filled at the same time
+    //
     
-    if(journeyTrafficHistory != null)
+    String campaignID = JSONUtilities.decodeString(jsonRoot, "campaignID", false);
+    if(campaignID != null && campaignID != "") 
       {
-        JSONObject byNodeMap = journeyTrafficHistory.getCurrentData().getJSONByNodeCount();
-        response.put("responseCode", "ok");
-        response.put("journeyNodeCount", byNodeMap);
+        journeyID = campaignID;
+        Object previousValue = jsonRoot.put("journeyID", campaignID);
+        if (previousValue != null) 
+          {
+            response.put("responseCode", "improperlyFormattedRequest");
+            response.put("responseMessage", "both fields campaignID and journeyID must not be filled at the same time.");
+            return JSONUtilities.encodeObject(response);
+          }
       }
     else
       {
-        response.put("responseCode", "journeyNotFound");
+        journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
+      }
+    
+
+    /*****************************************
+    *
+    *  retrieve corresponding Journey & JourneyTrafficHistory
+    *
+    *****************************************/
+    Map<String,Object> result = new HashMap<String,Object>();
+    JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+    if(journeyTrafficHistory != null)
+      {
+        Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
+        for (String key : byNodeMap.keySet())
+          {
+            result.put(key, byNodeMap.get(key).getSubscriberCount());
+          }
+      }
+    else 
+      {
+        GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+        if (journey instanceof Journey) 
+          {
+            //
+            // return empty KPI: journey exist but no statistics has been generated yet.
+            //
+            
+            Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
+            for (String key : nodeIDs)
+              {
+                result.put(key, 0);
+              }
+          }
+        else
+          {
+            response.put("responseCode", "journeyNotFound");
+            return JSONUtilities.encodeObject(response);
+          }
       }
     
     /*****************************************
@@ -5909,6 +5949,8 @@ public class GUIManager
     *
     *****************************************/
 
+    response.put("responseCode", "ok");
+    response.put("journeyNodeCount", JSONUtilities.encodeObject(result));
     return JSONUtilities.encodeObject(response);
   }  
   

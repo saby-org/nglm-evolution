@@ -154,6 +154,8 @@ public class JourneyTrafficSnapshot
         new HashMap<List<String>, SubscriberTraffic>(),                 // byStratum
         new HashMap<String, SubscriberTraffic>(),                       // byStatus
         new HashMap<List<String>, Map<String, SubscriberTraffic>>());   // byStatusByStratum
+    
+    this.global.setEmptyRewardsMap();
   }
 
   /*****************************************
@@ -222,17 +224,6 @@ public class JourneyTrafficSnapshot
     json.put("byStatusByStratum", getJSONByStatusByStratum(byStatusByStratum));
     return JSONUtilities.encodeObject(json);
   }
-  
-  /*****************************************
-  *
-  *  getJSONByNodeCount
-  *
-  *****************************************/
-    
-  public JSONObject getJSONByNodeCount()
-  {
-    return getJSONByNodeCountMap(byNode);
-  }
 
   /****************************************
   *
@@ -280,23 +271,6 @@ public class JourneyTrafficSnapshot
     for (List<String> stratum : javaObject.keySet())
       {
         result.put(JSONUtilities.encodeArray(stratum).toJSONString(), getJSONSubscriberTrafficMap(javaObject.get(stratum)));
-      }
-    
-    return JSONUtilities.encodeObject(result);
-  }
-
-  /****************************************
-  *
-  *  getJSONByNodeCountMap
-  *
-  ****************************************/
-
-  private static JSONObject getJSONByNodeCountMap(Map<String,SubscriberTraffic> javaObject)
-  {
-    Map<String,Object> result = new HashMap<String,Object>();
-    for (String key : javaObject.keySet())
-      {
-        result.put(key, javaObject.get(key).getSubscriberCount());
       }
     
     return JSONUtilities.encodeObject(result);
