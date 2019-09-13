@@ -2053,6 +2053,18 @@ public class GUIManager
 
         /*****************************************
         *
+        *  userID
+        *
+        *****************************************/
+
+        String jsonUserID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+        if (jsonUserID == null && userID != null)
+          {
+            jsonRoot.put("userID", userID);
+          }
+
+        /*****************************************
+        *
         *  process
         *
         *****************************************/
@@ -3219,6 +3231,18 @@ public class GUIManager
             case Block:
               allowAccess = false;
               break;
+          }
+
+        /*****************************************
+        *
+        *  userID
+        *
+        *****************************************/
+
+        String jsonUserID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+        if (jsonUserID == null && userID != null)
+          {
+            jsonRoot.put("userID", userID);
           }
 
         /*****************************************
@@ -13424,6 +13448,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
+    response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign));
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
     response.put("pointCount", pointService.getStoredPoints().size());
     response.put("offerCount", offerService.getStoredOffers().size());
@@ -13450,8 +13475,8 @@ public class GUIManager
     response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys().size());
     response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies().size());
     response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels().size());
-    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());  
-    response.put("partnerCount", partnerService.getStoredGUIManagedObjects().size());    
+    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());
+    response.put("partnerCount", partnerService.getStoredPartners().size());
     return JSONUtilities.encodeObject(response);
   }
 

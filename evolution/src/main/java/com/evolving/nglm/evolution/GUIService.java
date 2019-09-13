@@ -874,6 +874,10 @@ public class GUIService
     result.put("active", guiManagedObject.getJSONRepresentation().get("active"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
+    result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));
+    result.put("userName", guiManagedObject.getJSONRepresentation().get("userName"));
+    result.put("groupID", guiManagedObject.getJSONRepresentation().get("groupID"));
+    result.put("createdDate", guiManagedObject.getJSONRepresentation().get("createdDate"));
     return result;
   }
   

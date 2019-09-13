@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import org.json.simple.JSONObject;
@@ -118,7 +119,7 @@ public abstract class GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("guimanager_managed_object");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectID", Schema.STRING_SCHEMA);
     schemaBuilder.field("guiManagedObjectName", Schema.OPTIONAL_STRING_SCHEMA);
@@ -129,6 +130,10 @@ public abstract class GUIManagedObject
     schemaBuilder.field("readOnly", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("internalOnly", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("userID", SchemaBuilder.string().optional().defaultValue(null).schema());
+    schemaBuilder.field("userName", SchemaBuilder.string().optional().defaultValue(null).schema());
+    schemaBuilder.field("groupID", SchemaBuilder.string().optional().defaultValue(null).schema());
+    schemaBuilder.field("createdDate", Timestamp.builder().optional().defaultValue(null).schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -204,6 +209,10 @@ public abstract class GUIManagedObject
   private boolean readOnly;
   private boolean internalOnly;
   private boolean active;
+  private String userID;
+  private String userName;
+  private String groupID;
+  private Date createdDate;
 
   /****************************************
   *
@@ -230,6 +239,10 @@ public abstract class GUIManagedObject
   boolean getReadOnly() { return readOnly; }
   boolean getInternalOnly() { return internalOnly; }
   boolean getActive() { return active; }
+  String getUserID() { return userID; }
+  String getUserName() { return userName; }
+  String getGroupID() { return groupID; }
+  Date getCreatedDate() { return createdDate; }
 
   //
   //  private
@@ -273,6 +286,10 @@ public abstract class GUIManagedObject
     struct.put("readOnly", guiManagedObject.getReadOnly());
     struct.put("internalOnly", guiManagedObject.getInternalOnly());
     struct.put("active", guiManagedObject.getActive());
+    struct.put("userID", guiManagedObject.getUserID());
+    struct.put("userName", guiManagedObject.getUserName());
+    struct.put("groupID", guiManagedObject.getGroupID());
+    struct.put("createdDate", guiManagedObject.getCreatedDate());
   }
 
   /*****************************************
@@ -293,6 +310,10 @@ public abstract class GUIManagedObject
     this.readOnly = false;
     this.internalOnly = false;
     this.active = false;
+    this.userID = null;
+    this.userName = null;
+    this.groupID = null;
+    this.createdDate = null;
   }
                              
   /*****************************************
@@ -326,6 +347,10 @@ public abstract class GUIManagedObject
     boolean readOnly = valueStruct.getBoolean("readOnly");
     boolean internalOnly = (schemaVersion >= 2) ? valueStruct.getBoolean("internalOnly") : false;
     boolean active = valueStruct.getBoolean("active");
+    String userID = (schemaVersion >= 3) ? valueStruct.getString("userID") : null;
+    String userName = (schemaVersion >= 3) ? valueStruct.getString("userName") : null;
+    String groupID = (schemaVersion >= 3) ? valueStruct.getString("groupID") : null;
+    Date createdDate = (schemaVersion >= 3) ? (Date) valueStruct.get("createdDate") : null;
 
     //
     //  return
@@ -341,6 +366,10 @@ public abstract class GUIManagedObject
     this.readOnly = readOnly;
     this.internalOnly = internalOnly;
     this.active = active;
+    this.userID = userID;
+    this.userName = userName;
+    this.groupID = groupID;
+    this.createdDate = createdDate;
   }
 
   /*****************************************
@@ -361,6 +390,16 @@ public abstract class GUIManagedObject
     this.readOnly = JSONUtilities.decodeBoolean(jsonRoot, "readOnly", Boolean.FALSE);
     this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.TRUE);
+    this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+    this.userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+    this.groupID = JSONUtilities.decodeString(jsonRoot, "groupID", false);
+    this.createdDate = SystemTime.getCurrentTime();
+
+    //
+    //  add to json
+    //
+
+    this.jsonRepresentation.put("createdDate", formatDateField(this.createdDate));
   }
 
   //
@@ -450,6 +489,17 @@ public abstract class GUIManagedObject
     //
 
     return result;
+  }
+
+  /*****************************************
+  *
+  *  formatDateField
+  *
+  *****************************************/
+
+  public static String formatDateField(Date date) throws JSONUtilitiesException
+  {
+    return (date != null) ? standardDateFormats.get(0).format(date) : null;
   }
 
   /*****************************************
