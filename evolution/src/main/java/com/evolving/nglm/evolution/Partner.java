@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -48,8 +47,8 @@ public class Partner extends GUIManagedObject
     schemaBuilder.field("address", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("mobile", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("alternateMobile", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("partnerType", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("billingMode", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("partnerTypeID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("billingModeID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("contractNumber", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("billingCode", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("paymentDetails", Schema.OPTIONAL_STRING_SCHEMA);
@@ -82,8 +81,8 @@ public class Partner extends GUIManagedObject
   private String address; 
   private String mobile; 
   private String alternateMobile; 
-  private String partnerType; 
-  private String billingMode; 
+  private String partnerTypeID; 
+  private String billingModeID; 
   private String contractNumber; 
   private String billingCode; 
   private String paymentDetails; 
@@ -103,8 +102,8 @@ public class Partner extends GUIManagedObject
   public String getAddress(){ return address; }
   public String getMobile(){ return mobile; }
   public String getAlternateMobile(){ return alternateMobile; }
-  public String getPartnerType(){ return partnerType; }
-  public String getBillingMode(){ return billingMode; }
+  public String getPartnerTypeID(){ return partnerTypeID; }
+  public String getBillingModeID(){ return billingModeID; }
   public String getContractNumber() { return contractNumber; }
   public String getBillingCode() { return billingCode; }
   public String getPaymentDetails() { return paymentDetails; }
@@ -115,7 +114,7 @@ public class Partner extends GUIManagedObject
   *
   *****************************************/
 
-  public Partner(SchemaAndValue schemaAndValue, String website, String phone, String email, String contactPerson, String address, String mobile, String alternateMobile, String partnerType, String billingMode, String contractNumber, String billingCode, String paymentDetails)
+  public Partner(SchemaAndValue schemaAndValue, String website, String phone, String email, String contactPerson, String address, String mobile, String alternateMobile, String partnerTypeID, String billingModeID, String contractNumber, String billingCode, String paymentDetails)
   {
     super(schemaAndValue);
     this.website = website;
@@ -125,8 +124,8 @@ public class Partner extends GUIManagedObject
     this.address = address;
     this.mobile = mobile;
     this.alternateMobile = alternateMobile;
-    this.partnerType = partnerType;
-    this.billingMode = billingMode;
+    this.partnerTypeID = partnerTypeID;
+    this.billingModeID = billingModeID;
     this.contractNumber = contractNumber;
     this.billingCode = billingCode;
     this.paymentDetails = paymentDetails;
@@ -150,8 +149,8 @@ public class Partner extends GUIManagedObject
     struct.put("address", partner.getAddress());
     struct.put("mobile", partner.getMobile());
     struct.put("alternateMobile", partner.getAlternateMobile());
-    struct.put("partnerType", partner.getPartnerType());
-    struct.put("billingMode", partner.getBillingMode());
+    struct.put("partnerTypeID", partner.getPartnerTypeID());
+    struct.put("billingModeID", partner.getBillingModeID());
     struct.put("contractNumber", partner.getContractNumber());
     struct.put("billingCode", partner.getBillingCode());
     struct.put("paymentDetails", partner.getPaymentDetails());
@@ -186,8 +185,8 @@ public class Partner extends GUIManagedObject
     String address = valueStruct.getString("address");
     String mobile = valueStruct.getString("mobile");
     String alternateMobile = valueStruct.getString("alternateMobile");
-    String partnerType = valueStruct.getString("partnerType");
-    String billingMode = valueStruct.getString("billingMode");
+    String partnerTypeID = valueStruct.getString("partnerTypeID");
+    String billingModeID = valueStruct.getString("billingModeID");
     String contractNumber = valueStruct.getString("contractNumber");
     String billingCode = valueStruct.getString("billingCode");
     String paymentDetails = valueStruct.getString("paymentDetails");
@@ -195,7 +194,7 @@ public class Partner extends GUIManagedObject
     //  return
     //
 
-    return new Partner(schemaAndValue, website, phone, email, contactPerson, address, mobile, alternateMobile, partnerType, billingMode, contractNumber, billingCode, paymentDetails);
+    return new Partner(schemaAndValue, website, phone, email, contactPerson, address, mobile, alternateMobile, partnerTypeID, billingModeID, contractNumber, billingCode, paymentDetails);
   }
   
   /*****************************************
@@ -235,8 +234,8 @@ public class Partner extends GUIManagedObject
     this.address = JSONUtilities.decodeString(jsonRoot, "address", false);
     this.mobile = JSONUtilities.decodeString(jsonRoot, "mobile", false);
     this.alternateMobile = JSONUtilities.decodeString(jsonRoot, "alternateMobile", false);
-    this.partnerType = JSONUtilities.decodeString(jsonRoot, "partnerType", false);
-    this.billingMode = JSONUtilities.decodeString(jsonRoot, "billingMode", false);
+    this.partnerTypeID = JSONUtilities.decodeString(jsonRoot, "partnerTypeID", false);
+    this.billingModeID = JSONUtilities.decodeString(jsonRoot, "billingModeID", false);
     this.contractNumber = JSONUtilities.decodeString(jsonRoot, "contractNumber", false);
     this.billingCode = JSONUtilities.decodeString(jsonRoot, "billingCode", false);
     this.paymentDetails = JSONUtilities.decodeString(jsonRoot, "paymentDetails", false);
@@ -272,8 +271,8 @@ public class Partner extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(getAddress(), existingPartner.getAddress());
         epochChanged = epochChanged || ! Objects.equals(getMobile(), existingPartner.getMobile());
         epochChanged = epochChanged || ! Objects.equals(getAlternateMobile(), existingPartner.getAlternateMobile());
-        epochChanged = epochChanged || ! Objects.equals(getPartnerType(), existingPartner.getPartnerType());
-        epochChanged = epochChanged || ! Objects.equals(getBillingMode(), existingPartner.getBillingMode());
+        epochChanged = epochChanged || ! Objects.equals(getPartnerTypeID(), existingPartner.getPartnerTypeID());
+        epochChanged = epochChanged || ! Objects.equals(getBillingModeID(), existingPartner.getBillingModeID());
         epochChanged = epochChanged || ! Objects.equals(getContractNumber(), existingPartner.getContractNumber());
         epochChanged = epochChanged || ! Objects.equals(getBillingCode(), existingPartner.getBillingCode());
         epochChanged = epochChanged || ! Objects.equals(getPaymentDetails(), existingPartner.getPaymentDetails());
@@ -298,6 +297,25 @@ public class Partner extends GUIManagedObject
     *  validate
     *
     *****************************************/
-
+    
+    //
+    //  ensure partnerTypeID (if specified)
+    //
+    
+    if (partnerTypeID != null)
+      {
+        PartnerType partnerType = Deployment.getPartnerTypes().get(partnerTypeID);
+        if (partnerType == null) throw new GUIManagerException("unknown partnerTypeID ", partnerTypeID);
+      }
+    
+    //
+    //  ensure billingModeID (if specified)
+    //
+    
+    if (billingModeID != null)
+      {
+        BillingMode billingMode = Deployment.getBillingModes().get(billingModeID);
+        if (billingMode == null) throw new GUIManagerException("unknown billingModeID ", billingModeID);
+      } 
   }
 }

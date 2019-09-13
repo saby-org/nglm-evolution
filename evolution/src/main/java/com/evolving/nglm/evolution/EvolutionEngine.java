@@ -2160,6 +2160,13 @@ public class EvolutionEngine
             }
             
             //
+            // set the validity in the response
+            //
+            pointFulfillmentResponse.setValidityPeriodType(newPoint.getValidity().getPeriodType());
+            pointFulfillmentResponse.setValidityPeriodQuantity(newPoint.getValidity().getPeriodQuantity());
+
+            
+            //
             //  get (or create) balance
             //
 

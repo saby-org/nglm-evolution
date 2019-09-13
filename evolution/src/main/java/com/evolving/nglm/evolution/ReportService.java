@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -167,30 +168,30 @@ public class ReportService extends GUIService
   }
   
   public boolean isReportRunning(String reportName) {
-    String znode = ReportManager.getLockDir() + File.separator + "launchReport-" + reportName + "-";
-    Stat stat = null;
-    // 
-    // return false if anything goes wrong
-    //
-    boolean result = false;
     try
       { 
-        if (getZKConnection()) {
-          stat = zk.exists(znode, false);
-          result = (stat != null);
-        }else {
-          log.info("There was a major issue connecting to zookeeper");
-        }
-        
+        if (getZKConnection()) 
+          {
+            List<String> children = zk.getChildren(ReportManager.getControlDir(), false);
+            for(String child : children) 
+              {
+                if(child.contains(reportName)) 
+                  {
+                    String znode = ReportManager.getControlDir() + File.separator+child;
+                    return (zk.exists(znode, false) != null);
+                  }
+              }
+          }else {
+            log.info("There was a major issue connecting to zookeeper");
+          } 
       } catch (KeeperException e)
-      {
-        e.printStackTrace();
-      } catch (InterruptedException e)
-      {
-        e.printStackTrace();
-      }
-    
-    return result;
+    {
+      e.printStackTrace();
+    } catch (InterruptedException e)
+    {
+      e.printStackTrace();
+    }
+    return false;
   }
   
   private boolean getZKConnection()  {

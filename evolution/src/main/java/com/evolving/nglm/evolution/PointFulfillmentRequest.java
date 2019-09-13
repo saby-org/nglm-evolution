@@ -116,6 +116,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
   //  
 
   public void setResultValidityDate(Date resultValidityDate) { this.resultValidityDate = resultValidityDate; }
+  public void setValidityPeriodType(TimeUnit validityPeriodType) { this.validityPeriodType = validityPeriodType; }
+  public void setValidityPeriodQuantity(Integer validityPeriodQuantity) { this.validityPeriodQuantity = validityPeriodQuantity; } 
 
   //
   //  structure

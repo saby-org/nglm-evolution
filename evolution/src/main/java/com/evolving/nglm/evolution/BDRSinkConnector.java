@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentStatus;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
+import com.evolving.nglm.core.SystemTime;
 
 public class BDRSinkConnector extends SimpleESSinkConnector
 {
@@ -110,23 +112,25 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Object commodityRequestValue = sinkRecord.value();
       Schema commodityRequestValueSchema = sinkRecord.valueSchema();
       CommodityDeliveryRequest commodityRequest = CommodityDeliveryRequest.unpack(new SchemaAndValue(commodityRequestValueSchema, commodityRequestValue));
-      
       Map<String,Object> documentMap = null;
-
+      
       if(commodityRequest != null){
+        Date expirationDate = EvolutionUtilities.addTime(SystemTime.getCurrentTime(), commodityRequest.getValidityPeriodQuantity(), commodityRequest.getValidityPeriodType(), Deployment.getBaseTimeZone());
+        
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
         documentMap.put("eventDatetime", commodityRequest.getEventDate());
+        documentMap.put("deliverableExpiration", expirationDate);
         documentMap.put("providerID", commodityRequest.getProviderID());
         documentMap.put("deliverableID", commodityRequest.getCommodityID());
         documentMap.put("deliverableQty", commodityRequest.getAmount());
-        documentMap.put("operation", commodityRequest.getOperation().toString());
+        documentMap.put("operation", commodityRequest.getOperation().toString().toUpperCase());
         documentMap.put("moduleID", commodityRequest.getModuleID());
         documentMap.put("featureID", commodityRequest.getFeatureID());
         documentMap.put("origin", commodityRequest.getDeliveryRequestSource());
-        documentMap.put("returnCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
+        documentMap.put("responseCode", commodityRequest.getCommodityDeliveryStatus().getReturnCode());
         documentMap.put("deliveryStatus", commodityRequest.getDeliveryStatus());
-        documentMap.put("returnCodeDetails", commodityRequest.getCommodityDeliveryStatus());
+        documentMap.put("responseMessage", commodityRequest.getCommodityDeliveryStatus());
          
       }
       log.info("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());

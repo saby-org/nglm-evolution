@@ -130,6 +130,8 @@ public class Deployment
   private static Map<String,SupportedEmailAddress> supportedEmailAddresses = new LinkedHashMap<String,SupportedEmailAddress>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
+  private static Map<String,PartnerType> partnerTypes = new LinkedHashMap<String,PartnerType>();
+  private static Map<String,BillingMode> billingModes = new LinkedHashMap<String,BillingMode>();
   private static JSONArray initialCallingChannelsJSONArray = null;
   private static JSONArray initialSalesChannelsJSONArray = null;
   private static JSONArray initialSuppliersJSONArray = null;
@@ -385,6 +387,8 @@ public class Deployment
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
+  public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
+  public static Map<String,BillingMode> getBillingModes() { return billingModes; }
 
   /*****************************************
   *
@@ -1672,6 +1676,44 @@ public class Deployment
             JSONObject supportedLanguageJSON = (JSONObject) supportedLanguageValues.get(i);
             SupportedLanguage supportedLanguage = new SupportedLanguage(supportedLanguageJSON);
             supportedLanguages.put(supportedLanguage.getID(), supportedLanguage);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  partnerTypes
+    //
+
+    try
+      {
+        JSONArray partnerTypeValues = JSONUtilities.decodeJSONArray(jsonRoot, "partnerTypes", true);
+        for (int i=0; i<partnerTypeValues.size(); i++)
+          {
+            JSONObject partnerTypesJSON = (JSONObject) partnerTypeValues.get(i);
+            PartnerType partnerType = new PartnerType(partnerTypesJSON);
+            partnerTypes.put(partnerType.getID(), partnerType);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  billingModes
+    //
+
+    try
+      {
+        JSONArray billingModeValues = JSONUtilities.decodeJSONArray(jsonRoot, "billingModes", true);
+        for (int i=0; i<billingModeValues.size(); i++)
+          {
+            JSONObject billingModesJSON = (JSONObject) billingModeValues.get(i);
+            BillingMode billingMode = new BillingMode(billingModesJSON);
+            billingModes.put(billingMode.getID(), billingMode);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

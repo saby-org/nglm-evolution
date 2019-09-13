@@ -129,14 +129,15 @@
 	          "providerID" : { "type" : "keyword" },
 	          "deliverableID" : { "type" : "keyword" },
 	          "eventDatetime" : { "type" : "date" },
+	          "deliverableExpiration" : { "type" : "date" },
 	          "deliverableQty" : { "type" : "integer", "index" : "false" },
 	          "operation" : { "type" : "keyword" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "returnCode" : { "type" : "keyword" },
+	          "responseCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
+	          "responseMessage" : { "type" : "text", "index" : "false" }
                 }
         }
     }'
@@ -187,9 +188,9 @@
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "returnCode" : { "type" : "keyword" },
+	          "responseCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "returnCodeDetails" : { "type" : "text", "index" : "false" },
+	          "responseMessage" : { "type" : "text", "index" : "false" },
 	          "voucherCode" : { "type" : "keyword" },
 	          "voucherPartnerID" : { "type" : "keyword" }
                 }
@@ -237,9 +238,9 @@
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "returnCode" : { "type" : "keyword" },
+	          "responseCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
+	          "responseMessage" : { "type" : "text", "index" : "false" }
                 }
         }
     }'

@@ -397,6 +397,8 @@ public class GUIManager
     putSegmentContactPolicy("putSegmentContactPolicy"),
     getSegmentContactPolicy("getSegmentContactPolicy"),
     removeSegmentContactPolicy("removeSegmentContactPolicy"),
+    getBillingModes("getBillingModes"),
+    getPartnerTypes("getPartnerTypes"),
 
     //
     //  configAdaptor APIs
@@ -1753,7 +1755,9 @@ public class GUIManager
         restServer.createContext("/nglm-configadaptor/getScoringEngines", new APISimpleHandler(API.configAdaptorScoringEngines));
         restServer.createContext("/nglm-configadaptor/getPresentationCriterionFields", new APISimpleHandler(API.configAdaptorPresentationCriterionFields));
         restServer.createContext("/nglm-configadaptor/getDefaultNoftificationDailyWindows", new APISimpleHandler(API.configAdaptorDefaultNoftificationDailyWindows));
-        restServer.createContext("/nglm-configadaptor/getDeliverable", new APISimpleHandler(API.configAdaptorDeliverable));        
+        restServer.createContext("/nglm-configadaptor/getDeliverable", new APISimpleHandler(API.configAdaptorDeliverable));
+        restServer.createContext("/nglm-guimanager/getBillingModes", new APISimpleHandler(API.getBillingModes));
+        restServer.createContext("/nglm-guimanager/getPartnerTypes", new APISimpleHandler(API.getPartnerTypes));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -2973,6 +2977,14 @@ public class GUIManager
                 case removeSegmentContactPolicy:
                   jsonResponse = processRemoveSegmentContactPolicy(userID, jsonRoot);
                   break;
+                  
+                case getBillingModes:
+                  jsonResponse = processGetBillingModes(userID, jsonRoot);
+                  break;
+
+                case getPartnerTypes:
+                  jsonResponse = processGetPartnerTypes(userID, jsonRoot);
+                  break;
 
                 case configAdaptorSupportedLanguages:
                   jsonResponse = processConfigAdaptorSupportedLanguages(jsonRoot);
@@ -3557,7 +3569,73 @@ public class GUIManager
     response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  getBillingModes
+  *
+  *****************************************/
 
+  private JSONObject processGetBillingModes(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve BillingModes
+    *
+    *****************************************/
+
+    List<JSONObject> billingModes = new ArrayList<JSONObject>();
+    for (BillingMode billingMode : Deployment.getBillingModes().values())
+      {
+        JSONObject billingModeJSON = billingMode.getJSONRepresentation();
+        billingModes.add(billingModeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("billingModes", JSONUtilities.encodeArray(billingModes));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  getPartnerTypes
+  *
+  *****************************************/
+
+  private JSONObject processGetPartnerTypes(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve PartnerTypes
+    *
+    *****************************************/
+
+    List<JSONObject> partnerTypes = new ArrayList<JSONObject>();
+    for (PartnerType partnerType : Deployment.getPartnerTypes().values())
+      {
+        JSONObject partnerTypeJSON = partnerType.getJSONRepresentation();
+        partnerTypes.add(partnerTypeJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("partnerTypes", JSONUtilities.encodeArray(partnerTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  getSupportedCurrencies
@@ -13330,7 +13408,8 @@ public class GUIManager
     response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys().size());
     response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies().size());
     response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels().size());
-    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());    
+    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());  
+    response.put("partnerCount", partnerService.getStoredGUIManagedObjects().size());    
     return JSONUtilities.encodeObject(response);
   }
 
@@ -16973,28 +17052,57 @@ public class GUIManager
     Journey journey = null;
     if(responseCode == null)
       {
-        String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", true);
+        String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", false);
+        String campaignID = JSONUtilities.decodeString(jsonRoot, "campaignID", false);
         Collection<Journey> allJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
         if(allJourneys != null)
           {
             for(Journey activeJourney : allJourneys)
               {
-                if(activeJourney.getJourneyName().equals(campaignName))
+                if(campaignName != null)
                   {
-                    if(activeJourney.getTargetingType().equals(TargetingType.Manual))
+                    if(activeJourney.getJourneyName().equalsIgnoreCase(campaignName))
                       {
-                        journey = activeJourney;
-                        responseCode = null;
-                        break;
+                        if(activeJourney.getTargetingType().equals(TargetingType.Manual))
+                          {
+                            journey = activeJourney;
+                            responseCode = null;
+                            break;
+                          }
+                        else
+                          {
+                            responseCode = "Campaign is not manual targeting";
+                          }
                       }
                     else
                       {
-                        responseCode = "Campaign is not manual targeting";
+                        responseCode = "Campaign not found";
                       }
                   }
-                else
+                else if(campaignID != null)
                   {
-                    responseCode = "Campaign not found";
+                    if(activeJourney.getJourneyID().equals(campaignID))
+                      {
+                        if(activeJourney.getTargetingType().equals(TargetingType.Manual))
+                          {
+                            journey = activeJourney;
+                            responseCode = null;
+                            break;
+                          }
+                        else
+                          {
+                            responseCode = "Campaign is not manual targeting";
+                          }
+                      }
+                    else
+                      {
+                        responseCode = "Campaign not found";
+                      }
+                  }
+                else 
+                  {
+                    responseCode = "campaignName or campaignID must be provided";
+                    break;
                   }
               }
           }
@@ -18448,7 +18556,6 @@ public class GUIManager
                         *
                         *****************************************/
 
-                        jsonResponse.put("fileID", fileID);
                         jsonResponse.put("id", fileID);
                         jsonResponse.put("accepted", true);
                         jsonResponse.put("valid", true);

@@ -378,6 +378,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.originatingRequest = true;
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = subscriberID;
+    this.deliveryPriority = DeliveryPriority.Standard;
     this.eventID = this.deliveryRequestID;
     this.moduleID = null;
     this.featureID = null;
