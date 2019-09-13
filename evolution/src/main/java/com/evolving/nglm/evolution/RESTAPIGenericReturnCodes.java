@@ -39,6 +39,7 @@ public enum RESTAPIGenericReturnCodes
   LOYALTY_PROJECT_NOT_FOUND(300, "LOYALTY_PROJECT_NOT_FOUND", "Loyalty project not found"),
   CUSTOMER_NOT_IN_PROJECT(301, "CUSTOMER_NOT_IN_PROJECT", "Customer not in project"),
   LOYALTY_CLASS_NOT_IN_PROJECT(302, "LOYALTY_CLASS_NOT_IN_PROJECT", "Loyalty class not found in project"),
+  LOYALTY_TYPE_NOT_FOUND(303, "LOYALTY_TYPE_NOT_FOUND", "Loyalty type not found"),
   OFFER_NOT_FOUND(400, "OFFER_NOT_FOUND", "Offer not found"),
   PRODUCT_NOT_FOUND(401, "PRODUCT_NOT_FOUND", "Offer content items not found"),
   INVALID_PRODUCT(402, "INVALID_PRODUCT", "Product not available"),

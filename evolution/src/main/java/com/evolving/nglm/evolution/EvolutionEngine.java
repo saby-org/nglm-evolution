@@ -35,7 +35,6 @@ import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -48,7 +47,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.streams.KafkaStreams;
@@ -63,10 +61,8 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.processor.StateStore;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
-import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.apache.kafka.streams.state.Stores;
@@ -103,10 +99,9 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
-import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
-import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
@@ -2522,7 +2517,7 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  update loyalty program
+    *  enter/exit loyalty program
     *
     *****************************************/
 
@@ -2530,14 +2525,14 @@ public class EvolutionEngine
       {
 
         //
-        //  LoyaltyProgramRequest
+        //  get loyaltyProgramRequest
         //
 
         LoyaltyProgramRequest loyaltyProgramRequest = (LoyaltyProgramRequest) evolutionEvent;
         LoyaltyProgramRequest loyaltyProgramResponse = loyaltyProgramRequest.copy();
 
         //
-        //  loyaltyProgram
+        //  get loyaltyProgram
         //
 
         LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramRequest.getLoyaltyProgramID(), now);
@@ -2554,24 +2549,51 @@ public class EvolutionEngine
         else
           {
 
-            String tierID = null;
             String tierName = null;
             switch (loyaltyProgramRequest.getOperation()) {
             case Optin:
-              
-              //
-              //  determine tier
-              //
-              
-              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
-              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
-              // !!! !!! !!! !!!     TODO SCH : EVCOR-119 : a implementer        !!! !!! !!! !!! 
-              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
-              // !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!
-              
-              tierID = "TODO tier ID";
-              tierName = "TODO tier Name";
-              
+
+
+              switch (loyaltyProgram.getLoyaltyProgramType()) {
+              case POINTS:
+                
+                //
+                //  get loyaltyProgramPoints
+                //
+                
+                LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+                
+                //
+                //  determine tier
+                //
+
+                log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : DETERMINE TIER ...");
+
+
+                int currentStatusPointBalance = 0;
+                if(subscriberProfile.getPointBalances() != null && subscriberProfile.getPointBalances().get(loyaltyProgramPoints.getStatusPointsID()) != null){
+                  currentStatusPointBalance = subscriberProfile.getPointBalances().get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now);
+                }
+
+                log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : currentStatusPointBalance = "+currentStatusPointBalance);
+
+                for(Tier tier : loyaltyProgramPoints.getTiers()){
+                  log.info("            "+currentStatusPointBalance+" "+(currentStatusPointBalance >= tier.getStatusPointLevel() ? ">=" : "<")+" "+tier.getStatusPointLevel());
+                  if(currentStatusPointBalance >= tier.getStatusPointLevel()){
+                    tierName = tier.getTierName();
+                    log.info("                 => tierName = "+tier.getTierName());
+                  }
+                }
+
+                log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : tierName = "+tierName);
+
+                log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : DETERMINE TIER DONE");
+                break;
+
+              default:
+                break;
+              }
+
               break;
 
             case Optout:
@@ -2580,7 +2602,6 @@ public class EvolutionEngine
               //  determine tier
               //
 
-              tierID = null;
               tierName = null;
               
               break;
@@ -2591,19 +2612,19 @@ public class EvolutionEngine
             //  get current loyalty program state
             //
 
-            LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+            LoyaltyProgramPointsState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
             if (loyaltyProgramState == null)
               {
                 LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
-                loyaltyProgramState = new LoyaltyProgramState(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierID, tierName, now, loyaltyProgramHistory);
+                loyaltyProgramState = new LoyaltyProgramPointsState(loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierName, now, loyaltyProgramHistory);
               }
             
             //
             //  update
             //
             
-            log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+tierID+", "+tierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
-            boolean success = loyaltyProgramState.update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), tierID, tierName, now, loyaltyProgramRequest.getDeliveryRequestID());
+            log.info("loyaltyProgramRequest : for subscriber '"+subscriberProfile.getSubscriberID()+"' : loyaltyProgramState.update("+loyaltyProgram.getEpoch()+", "+loyaltyProgramRequest.getOperation()+", "+loyaltyProgram.getLoyaltyProgramName()+", "+tierName+", "+now+", "+loyaltyProgramRequest.getDeliveryRequestID()+")");
+            boolean success = loyaltyProgramState.update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), tierName, now, loyaltyProgramRequest.getDeliveryRequestID());
 
             //
             //  update loyalty programs
@@ -2638,6 +2659,109 @@ public class EvolutionEngine
             subscriberProfileUpdated = true;
           }
 
+      }
+    
+    /*****************************************
+    *
+    *  update loyalty program
+    *
+    *****************************************/
+
+    else 
+      {
+      
+        //
+        //  check all subscriber loyalty program
+        //
+        
+        for(String loyaltyProgramID : subscriberProfile.getLoyaltyPrograms().keySet()){
+          
+          
+          
+          LoyaltyProgramPointsState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID);
+          if(subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramID).getLoyaltyProgramExitDate() == null){
+            
+            //
+            //  get loyalty program definition
+            //
+            
+            LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
+            
+            if(loyaltyProgram != null){
+              
+              
+              switch (loyaltyProgram.getLoyaltyProgramType()) {
+              case POINTS:
+                
+                //
+                //  get loyaltyProgramPoints
+                //
+                
+                LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+
+                //
+                //  get subscriber current tier
+                //
+                
+                Tier subscriberCurrentTierDefinition = null;
+                for(Tier tier : loyaltyProgramPoints.getTiers()){
+                  if(tier.getTierName().equals(loyaltyProgramState.getTierName())){
+                    subscriberCurrentTierDefinition = tier;
+                  }
+                }
+
+                //
+                //  update loyalty program status 
+                //
+
+                EvolutionEngineEventDeclaration statusEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentTierDefinition.getStatusEventName()) ;
+                if (statusEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()))
+                  {
+
+                    log.info("      update loyalty program STATUS : "+statusEventDeclaration.getEventClassName()+".equals("+evolutionEvent.getClass().getName()+") !!! !!! !!!");
+
+                    //  update status points
+                    //TODO SCH : evcor-119
+
+                    //  update tier
+                    //TODO SCH : evcor-119
+
+                  }
+                else
+                  {
+                    log.info("      update loyalty program STATUS : "+statusEventDeclaration.getEventClassName()+".NOTequals("+evolutionEvent.getClass().getName()+") :(   :(   :( ");
+                  }
+
+                //
+                //  update loyalty program reward
+                //
+
+                EvolutionEngineEventDeclaration rewardEventDeclaration = Deployment.getEvolutionEngineEvents().get(subscriberCurrentTierDefinition.getRewardEventName()) ;
+                if(rewardEventDeclaration.getEventClassName().equals(evolutionEvent.getClass().getName()))
+                  {
+
+                    log.info("      update loyalty program REWARD : "+rewardEventDeclaration.getEventClassName()+".equals("+evolutionEvent.getClass().getName()+") !!! !!! !!!");
+
+                    //  update reward points
+                    //TODO SCH : evcor-119
+
+                  }
+                else
+                  {
+                    log.info("      update loyalty program REWARD : "+rewardEventDeclaration.getEventClassName()+".NOTequals("+evolutionEvent.getClass().getName()+") :(   :(   :( ");
+                  }
+                break;
+
+              default:
+                break;
+              }
+              
+            }
+            
+          }
+          
+        }
+        
       }
 
     /*****************************************

@@ -14,7 +14,6 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
 
 public class LoyaltyProgramHistory 
 {
@@ -211,9 +210,9 @@ public class LoyaltyProgramHistory
   *
   *****************************************/
   
-  public void addTierHistory(String fromTierID, String toTierID, Date enrollmentDate, String deliveryRequestID) 
+  public void addTierHistory(String fromTier, String toTier, Date enrollmentDate, String deliveryRequestID) 
   {
-    TierHistory tierHistory = new TierHistory(fromTierID, toTierID, enrollmentDate, deliveryRequestID);
+    TierHistory tierHistory = new TierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID);
     this.tierHistory.add(tierHistory);
 
   }
@@ -293,8 +292,8 @@ public class LoyaltyProgramHistory
     *
     *****************************************/
     
-    public String getFromTierID() { return fromTier; }
-    public String getToTierID() { return toTier; }
+    public String getFromTier() { return fromTier; }
+    public String getToTier() { return toTier; }
     public Date getTransitionDate() { return transitionDate; }
     public String getDeliveryRequestID() { return deliveryRequestID; }
     
@@ -308,8 +307,8 @@ public class LoyaltyProgramHistory
     {
       TierHistory tierHistory = (TierHistory) value;
       Struct struct = new Struct(schema);
-      struct.put("fromTier", tierHistory.getFromTierID());
-      struct.put("toTier", tierHistory.getToTierID());
+      struct.put("fromTier", tierHistory.getFromTier());
+      struct.put("toTier", tierHistory.getToTier());
       struct.put("transitionDate", tierHistory.getTransitionDate());
       struct.put("deliveryRequestID", tierHistory.getDeliveryRequestID());
       return struct;

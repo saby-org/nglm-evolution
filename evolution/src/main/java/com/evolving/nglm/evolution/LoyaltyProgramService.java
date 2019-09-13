@@ -33,21 +33,13 @@ public class LoyaltyProgramService extends GUIService
 
   /*****************************************
   *
-  *  data
-  *
-  *****************************************/
-
-  private LoyaltyProgramServiceListener loyaltyProgramListener = null;
-
-  /*****************************************
-  *
   *  constructor
   *
   *****************************************/
   
-  public LoyaltyProgramService(String bootstrapServers, String groupID, String catalogObjectiveTopic, boolean masterService, LoyaltyProgramServiceListener loyaltyProgramListener, boolean notifyOnSignificantChange)
+  public LoyaltyProgramService(String bootstrapServers, String groupID, String loyaltyProgramTopic, boolean masterService, LoyaltyProgramServiceListener loyaltyProgramListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "LoyaltyProgramService", groupID, catalogObjectiveTopic, masterService, getSuperListener(loyaltyProgramListener), "getLoyaltyProgram", "putLoyaltyProgram", notifyOnSignificantChange);
+    super(bootstrapServers, "loyaltyProgramService", groupID, loyaltyProgramTopic, masterService, getSuperListener(loyaltyProgramListener), "putLoyaltyProgram", "removeLoyaltyProgram", notifyOnSignificantChange);
   }
   //
   //  constructor
@@ -87,7 +79,7 @@ public class LoyaltyProgramService extends GUIService
 
   /*****************************************
   *
-  *  getLoyaltyProgram
+  *  getLoyaltyPrograms
   *
   *****************************************/
 
@@ -104,17 +96,14 @@ public class LoyaltyProgramService extends GUIService
   *
   *****************************************/
 
-  public void putLoyaltyProgram(GUIManagedObject loyaltyProgram, boolean newObject, String userID) throws GUIManagerException
+  public void putLoyaltyProgram(LoyaltyProgram loyaltyProgram, boolean newObject, String userID) throws GUIManagerException
   {
     
     //
     //  validate
     //
 
-    if (loyaltyProgram instanceof LoyaltyProgram)
-      {
-        ((LoyaltyProgram) loyaltyProgram).validate();
-      }
+    loyaltyProgram.validate();
 
     //
     //  put
@@ -125,20 +114,13 @@ public class LoyaltyProgramService extends GUIService
 
   /*****************************************
   *
-  *  putLoyaltyProgram
+  *  putIncompleteLoyaltyProgram
   *
   *****************************************/
 
   public void putLoyaltyProgram(IncompleteObject loyaltyProgram, boolean newObject, String userID)
   {
-    try
-      {
-        putLoyaltyProgram((GUIManagedObject) loyaltyProgram, newObject, userID);
-      }
-    catch (GUIManagerException e)
-      {
-        throw new RuntimeException(e);
-      }
+    putGUIManagedObject(loyaltyProgram, SystemTime.getCurrentTime(), newObject, userID);
   }
   
   /*****************************************
@@ -147,7 +129,10 @@ public class LoyaltyProgramService extends GUIService
   *
   *****************************************/
 
-  public void removeLoyaltyProgram(String loyaltyProgramID, String userID) { removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID); }
+  public void removeLoyaltyProgram(String loyaltyProgramID, String userID) 
+  { 
+    removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID);
+  }
 
   /*****************************************
   *

@@ -44,12 +44,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.http.HttpHost;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUpload;
 import org.apache.commons.fileupload.RequestContext;
 import org.apache.commons.fileupload.util.Streams;
+import org.apache.http.HttpHost;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -58,16 +58,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.zookeeper.ZooKeeper;
-
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
@@ -105,12 +104,9 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityType;
-import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
@@ -122,6 +118,7 @@ import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -15875,10 +15872,14 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> programTypeList = new ArrayList<JSONObject>();
-    for (ProgramType programType : Deployment.getProgramTypes().values())
+    for (LoyaltyProgramType programType : LoyaltyProgramType.values())
       {
-        JSONObject programTypeJSON = programType.getJSONRepresentation();
-        programTypeList.add(programTypeJSON);
+        if(!programType.equals(LoyaltyProgramType.Unknown)){
+          Map<String, Object> programTypeJSON = new HashMap<String, Object>();
+          programTypeJSON.put("display", programType.getExternalRepresentation());
+          programTypeJSON.put("name", programType.getExternalRepresentation());
+          programTypeList.add(JSONUtilities.encodeObject(programTypeJSON));
+        }
       }
 
     /*****************************************
@@ -15889,7 +15890,7 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    response.put("programTypes", JSONUtilities.encodeArray(programTypeList));
+    response.put("loyaltyProgramTypes", JSONUtilities.encodeArray(programTypeList));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -16040,8 +16041,20 @@ public class GUIManager
         *
         ****************************************/
 
-        LoyaltyProgram loyaltyProgram = new LoyaltyProgram(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
+        LoyaltyProgram loyaltyProgram = null;
+        switch (LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true)))
+        {
+          case POINTS:
+            loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
+            break;
 
+          case BADGES:
+            // TODO
+            break;
+
+          case Unknown:
+            throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));
+        }
         /*****************************************
         *
         *  store

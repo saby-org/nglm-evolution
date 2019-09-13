@@ -6,10 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -18,23 +18,33 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public class LoyaltyProgram extends GUIManagedObject
+public abstract class LoyaltyProgram extends GUIManagedObject
 {
   /*****************************************
   *
   *  enum
   *
   *****************************************/
+
+  //
+  //  LoyaltyProgramType
+  //
+
+  public enum LoyaltyProgramType
+  {
+    POINTS("POINTS"),
+    BADGES("BADGES"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private LoyaltyProgramType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static LoyaltyProgramType fromExternalRepresentation(String externalRepresentation) { for (LoyaltyProgramType enumeratedValue : LoyaltyProgramType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
 
   //
   //  LoyaltyProgramOperation
@@ -61,33 +71,24 @@ public class LoyaltyProgram extends GUIManagedObject
   //  schema
   //
 
-  private static Schema schema = null;
+  private static Schema commonSchema = null;
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("programType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("rewardPointID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("statusPointID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("tiers", SchemaBuilder.array(Tiers.schema()).schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),1));
+    for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.field("loyaltyProgramType", Schema.STRING_SCHEMA);
+    schemaBuilder.field("loyaltyProgramDescription", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("characteristics", SchemaBuilder.array(CatalogCharacteristicInstance.schema()).optional().schema());
-    schema = schemaBuilder.build();
+    commonSchema = schemaBuilder.build();
   };
-
-  //
-  //  serde
-  //
-
-  private static ConnectSerde<LoyaltyProgram> serde = new ConnectSerde<LoyaltyProgram>(schema, false, LoyaltyProgram.class, LoyaltyProgram::pack, LoyaltyProgram::unpack);
 
   //
   //  accessor
   //
 
-  public static Schema schema() { return schema; }
-  public static ConnectSerde<LoyaltyProgram> serde() { return serde; }
+  public static Schema commonSchema() { return commonSchema; }
 
   /*****************************************
    *
@@ -95,10 +96,8 @@ public class LoyaltyProgram extends GUIManagedObject
    *
    *****************************************/
 
-  private String programType = null;
-  private String rewardPointID = null;
-  private String statusPointID = null;
-  private Set<Tiers> tiers = null;
+  private LoyaltyProgramType loyaltyProgramType = null;
+  private String loyaltyProgramDescription = null;
   private Set<CatalogCharacteristicInstance> characteristics = null;
 
   /*****************************************
@@ -109,10 +108,8 @@ public class LoyaltyProgram extends GUIManagedObject
 
   public String getLoyaltyProgramID() { return getGUIManagedObjectID(); }
   public String getLoyaltyProgramName() { return getGUIManagedObjectName(); }
-  public String getProgramType() { return programType; }
-  public String getRewardPointsID() { return rewardPointID; }
-  public String getStatusPointsID() { return statusPointID; }
-  public Set<Tiers> getTiers() { return tiers; }
+  public LoyaltyProgramType getLoyaltyProgramType() { return loyaltyProgramType; }
+  public String getLoyaltyProgramDescription() { return loyaltyProgramDescription; }
   public Set<CatalogCharacteristicInstance> getCharacteristics() { return characteristics; }
 
   /*****************************************
@@ -121,75 +118,14 @@ public class LoyaltyProgram extends GUIManagedObject
    *
    *****************************************/
 
-  public LoyaltyProgram(SchemaAndValue schemaAndValue, String programType, String rewardPointsID, String statusPointsID, Set<Tiers> tiers, Set<CatalogCharacteristicInstance> characteristics)
+  public LoyaltyProgram(SchemaAndValue schemaAndValue)
   {
+    //
+    //  superclass
+    //
+    
     super(schemaAndValue);
-    this.programType = programType;
-    this.rewardPointID = rewardPointsID;
-    this.statusPointID = statusPointsID;
-    this.tiers = tiers;
-    this.characteristics = characteristics;
-  }
-
-  /*****************************************
-   *
-   *  pack
-   *
-   *****************************************/
-
-  public static Object pack(Object value)
-  {
-    LoyaltyProgram loyaltyProgram = (LoyaltyProgram) value;
-    Struct struct = new Struct(schema);
-    packCommon(struct, loyaltyProgram);
-    struct.put("programType", loyaltyProgram.getProgramType());
-    struct.put("rewardPointID", loyaltyProgram.getRewardPointsID());
-    struct.put("statusPointID", loyaltyProgram.getStatusPointsID());
-    struct.put("tiers", packLoyaltyProgramTiers(loyaltyProgram.getTiers()));
-    struct.put("characteristics", packLoyaltyProgramCharacteristics(loyaltyProgram.getCharacteristics()));
-    return struct;
-  }
-  
-  /****************************************
-  *
-  *  packCatalogCharacteristics
-  *
-  ****************************************/
-
-  private static List<Object> packLoyaltyProgramCharacteristics(Set<CatalogCharacteristicInstance> catalogCharacteristics)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (CatalogCharacteristicInstance catalogCharacteristic : catalogCharacteristics)
-      {
-        result.add(CatalogCharacteristicInstance.pack(catalogCharacteristic));
-      }
-    return result;
-  }
-  
-  /****************************************
-  *
-  *  packLoyaltyProgramTiers
-  *
-  ****************************************/
-
-  private static List<Object> packLoyaltyProgramTiers(Set<Tiers> tiers)
-  {
-    List<Object> result = new ArrayList<Object>();
-    for (Tiers tier : tiers)
-      {
-        result.add(Tiers.pack(tier));
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  unpack
-   *
-   *****************************************/
-
-  public static LoyaltyProgram unpack(SchemaAndValue schemaAndValue)
-  {
+    
     //
     //  data
     //
@@ -203,19 +139,19 @@ public class LoyaltyProgram extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    
-    String programType = valueStruct.getString("programType");
-    String rewardPointsID = valueStruct.getString("rewardPointID");
-    String statusPointsID = valueStruct.getString("statusPointID");
-    Set<Tiers> tiers = unpackLoyaltyProgramTiers(schema.field("tiers").schema(), valueStruct.get("tiers"));
+    LoyaltyProgramType loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(valueStruct.getString("loyaltyProgramType"));
+    String loyaltyProgramDescription = valueStruct.getString("loyaltyProgramDescription");
     Set<CatalogCharacteristicInstance> characteristics = unpackLoyaltyProgramCharacteristics(schema.field("characteristics").schema(), valueStruct.get("characteristics"));
+
     //
     //  return
     //
-
-    return new LoyaltyProgram(schemaAndValue, programType, rewardPointsID, statusPointsID, tiers, characteristics);
+    
+    this.loyaltyProgramType = loyaltyProgramType;
+    this.loyaltyProgramDescription = loyaltyProgramDescription;
+    this.characteristics = characteristics;
   }
-  
+
   /*****************************************
   *
   *  unpackLoyaltyProgramCharacteristics
@@ -249,40 +185,39 @@ public class LoyaltyProgram extends GUIManagedObject
   }
   
   /*****************************************
-  *
-  *  unpackLoyaltyProgramTiers
-  *
-  *****************************************/
+   *
+   *  packCommon
+   *
+   *****************************************/
 
-  private static Set<Tiers> unpackLoyaltyProgramTiers(Schema schema, Object value)
+  public static Object packCommon(Struct struct, LoyaltyProgram loyaltyProgram)
   {
-    //
-    //  get schema for LoyaltyProgramTiers
-    //
+    GUIManagedObject.packCommon(struct, loyaltyProgram);
+    struct.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
+    struct.put("loyaltyProgramDescription", loyaltyProgram.getLoyaltyProgramDescription());
+    struct.put("characteristics", packLoyaltyProgramCharacteristics(loyaltyProgram.getCharacteristics()));
+    return struct;
+  }
+  
+  /****************************************
+  *
+  *  packCatalogCharacteristics
+  *
+  ****************************************/
 
-    Schema propertySchema = schema.valueSchema();
-    
-    //
-    //  unpack
-    //
-
-    Set<Tiers> result = new HashSet<Tiers>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object property : valueArray)
+  private static List<Object> packLoyaltyProgramCharacteristics(Set<CatalogCharacteristicInstance> catalogCharacteristics)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (CatalogCharacteristicInstance catalogCharacteristic : catalogCharacteristics)
       {
-        result.add(Tiers.unpack(new SchemaAndValue(propertySchema, property)));
+        result.add(CatalogCharacteristicInstance.pack(catalogCharacteristic));
       }
-
-    //
-    //  return
-    //
-
     return result;
   }
-
+  
   /*****************************************
    *
-   *  constructor
+   *  constructor -- JSON
    *
    *****************************************/
 
@@ -298,34 +233,14 @@ public class LoyaltyProgram extends GUIManagedObject
 
     /*****************************************
      *
-     *  existingLoyaltyProgram
-     *
-     *****************************************/
-
-    LoyaltyProgram existingContactPolicy = (existingLoyaltyProgramUnchecked != null && existingLoyaltyProgramUnchecked instanceof LoyaltyProgram) ? (LoyaltyProgram) existingLoyaltyProgramUnchecked : null;
-
-    /*****************************************
-     *
      *  attributes
      *
      *****************************************/
-    this.programType = JSONUtilities.decodeString(jsonRoot, "programType", true);
-    this.rewardPointID = JSONUtilities.decodeString(jsonRoot, "rewardPointID", true);
-    this.statusPointID = JSONUtilities.decodeString(jsonRoot, "statusPointID", true);
-    this.tiers = decodeLoyaltyProgramTiers(JSONUtilities.decodeJSONArray(jsonRoot, "tiers", true));
+    
+    this.loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true));
+    this.loyaltyProgramDescription = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramDescription", false);
     this.characteristics = decodeLoyaltyProgramCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "characteristics", false), catalogCharacteristicService);
     
-    
-    /*****************************************
-     *
-     *  epoch
-     *
-     *****************************************/
-
-    if (epochChanged(existingContactPolicy))
-      {
-        this.setEpoch(epoch);
-      }
   }
   
   /*****************************************
@@ -346,250 +261,13 @@ public class LoyaltyProgram extends GUIManagedObject
       }
     return result;
   }
-  
+
   /*****************************************
   *
-  *  decodeLoyaltyProgramTiers
+  *  validation
   *
   *****************************************/
-
-  private Set<Tiers> decodeLoyaltyProgramTiers(JSONArray jsonArray) throws GUIManagerException
-  {
-    Set<Tiers> result = new HashSet<Tiers>();
-    if (jsonArray != null)
-      {
-        for (int i=0; i<jsonArray.size(); i++)
-          {
-            result.add(new Tiers((JSONObject) jsonArray.get(i)));
-          }
-      }
-    return result;
-  }
-
-  /*****************************************
-   *
-   *  schedule
-   *
-   *****************************************/
-
-  public Date schedule(String touchPointID, Date now)
-  {
-    return now;
-  }
-
-  /*****************************************
-   *
-   *  epochChanged
-   *
-   *****************************************/
-
-  private boolean epochChanged(LoyaltyProgram existingLoyaltyProgram)
-  {
-    if (existingLoyaltyProgram != null && existingLoyaltyProgram.getAccepted())
-      {
-        boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingLoyaltyProgram.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectName(), existingLoyaltyProgram.getGUIManagedObjectName());
-        epochChanged = epochChanged || ! Objects.equals(getProgramType(), existingLoyaltyProgram.getProgramType());
-        epochChanged = epochChanged || ! Objects.equals(getRewardPointsID(), existingLoyaltyProgram.getRewardPointsID());
-        epochChanged = epochChanged || ! Objects.equals(getStatusPointsID(), existingLoyaltyProgram.getStatusPointsID());
-        epochChanged = epochChanged || ! Objects.equals(getTiers(), existingLoyaltyProgram.getTiers());
-        epochChanged = epochChanged || ! Objects.equals(getCharacteristics(), existingLoyaltyProgram.getCharacteristics());
-        return epochChanged;
-      }
-    else
-      {
-        return true;
-      }
-  }
   
-  /****************************************
-  *
-  *  validate
-  *
-  ****************************************/
+  public abstract boolean validate() throws GUIManagerException;
   
-  public void validate() throws GUIManagerException 
-  {
-    //
-    //  ensure file exists if specified
-    //
-
-    if (this.programType != null)
-      {
-        ProgramType programType = Deployment.getProgramTypes().get(this.programType);
-        if (programType == null)
-          { 
-            throw new GUIManagerException("unknown program type ", this.programType);
-          }
-      }
-  }
-
-  public static class Tiers
-  {
-    //
-    //  logger
-    //
-
-    private static final Logger log = LoggerFactory.getLogger(Tiers.class);
-
-    /*****************************************
-     *
-     *  schema
-     *
-     *****************************************/
-
-    //
-    //  schema
-    //
-
-    private static Schema schema = null;
-    static
-    {
-      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-      schemaBuilder.name("tiers");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("tierName", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("statusPointLevel", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("statusEventName", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("numberOfStatusPointsPerUnit", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("rewardEventName", Schema.OPTIONAL_STRING_SCHEMA);
-      schemaBuilder.field("numberOfRewardPointsPerUnit", Schema.OPTIONAL_STRING_SCHEMA);
-      schema = schemaBuilder.build();
-    };
-
-    //
-    //  serde
-    //
-
-    private static ConnectSerde<Tiers> serde = new ConnectSerde<Tiers>(schema, false, Tiers.class, Tiers::pack, Tiers::unpack);
-
-    //
-    //  accessor
-    //
-
-    public static Schema schema() { return schema; }
-    public static ConnectSerde<Tiers> serde() { return serde; }
-
-    /*****************************************
-     *
-     *  data
-     *
-     *****************************************/
-
-    private String tierName = null;
-    private String statusPointLevel = null;
-    private String statusEventName = null;
-    private String numberOfStatusPointsPerUnit = null;
-    private String rewardEventName = null;
-    private String numberOfRewardPointsPerUnit = null;
-
-
-    /*****************************************
-     *
-     *  accessors
-     *
-     *****************************************/
-
-    public String getTierName() { return tierName; }
-    public String getStatusPointLevel() { return statusPointLevel; }
-    public String getStatusEventName() { return statusEventName; }
-    public String getNumberOfStatusPointsPerUnit() { return numberOfStatusPointsPerUnit; }
-    public String getRewardEventName() { return rewardEventName; }
-    public String getNumberOfRewardPointsPerUnit() { return numberOfRewardPointsPerUnit; }
-
-
-    /*****************************************
-     *
-     *  constructor -- unpack
-     *
-     *****************************************/
-
-    public Tiers(String tierName, String statusPointLevel, String statusEventName, String numberOfStatusPointsPerUnit, String rewardEventName, String numberOfRewardPointsPerUnit)
-    {
-      this.tierName = tierName;
-      this.statusPointLevel = statusPointLevel;
-      this.statusEventName = statusEventName;
-      this.numberOfStatusPointsPerUnit = numberOfStatusPointsPerUnit;
-      this.rewardEventName = rewardEventName;
-      this.numberOfRewardPointsPerUnit = numberOfRewardPointsPerUnit;
-    }
-
-    /*****************************************
-     *
-     *  pack
-     *
-     *****************************************/
-
-    public static Object pack(Object value)
-    {
-      Tiers tier = (Tiers) value;
-      Struct struct = new Struct(schema);
-      struct.put("tierName", tier.getTierName());
-      struct.put("statusPointLevel", tier.getStatusPointLevel());
-      struct.put("statusEventName", tier.getStatusEventName());
-      struct.put("numberOfStatusPointsPerUnit", tier.getNumberOfStatusPointsPerUnit());
-      struct.put("rewardEventName", tier.getRewardEventName());
-      struct.put("numberOfRewardPointsPerUnit", tier.getNumberOfRewardPointsPerUnit());
-      return struct;
-    }
-
-    /*****************************************
-     *
-     *  unpack
-     *
-     *****************************************/
-
-    public static Tiers unpack(SchemaAndValue schemaAndValue)
-    {
-      //
-      //  data
-      //
-
-      Schema schema = schemaAndValue.schema();
-      Object value = schemaAndValue.value();
-      Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
-
-      //
-      //  unpack
-      //
-
-      Struct valueStruct = (Struct) value;
-      String tierName = valueStruct.getString("tierName");
-      String statusPointLevel = valueStruct.getString("statusPointLevel");
-      String statusEventName = valueStruct.getString("statusEventName");
-      String numberOfStatusPointsPerUnit = valueStruct.getString("numberOfStatusPointsPerUnit");
-      String rewardEventName = valueStruct.getString("rewardEventName");
-      String numberOfRewardPointsPerUnit = valueStruct.getString("numberOfRewardPointsPerUnit");
-
-      //
-      //  return
-      //
-
-      return new Tiers(tierName, statusPointLevel, statusEventName, numberOfStatusPointsPerUnit, rewardEventName, numberOfRewardPointsPerUnit);
-    }
-
-    /*****************************************
-     *
-     *  constructor -- JSON
-     *
-     *****************************************/
-
-    public Tiers(JSONObject jsonRoot) throws GUIManagerException
-    {
-
-      /*****************************************
-       *
-       *  attributes
-       *
-       *****************************************/
-      this.tierName = JSONUtilities.decodeString(jsonRoot, "tierName", true);
-      this.statusPointLevel = JSONUtilities.decodeString(jsonRoot, "statusPointLevel", true);
-      this.statusEventName = JSONUtilities.decodeString(jsonRoot, "statusEventName", true);
-      this.numberOfStatusPointsPerUnit = JSONUtilities.decodeString(jsonRoot, "numberOfStatusPointsPerUnit", true);
-      this.rewardEventName = JSONUtilities.decodeString(jsonRoot, "rewardEventName", true);
-      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeString(jsonRoot, "numberOfRewardPointsPerUnit", true);
-      
-    }
-  }
 }

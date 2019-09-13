@@ -21,9 +21,81 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 public class ThirdPartyJSONGenerator 
 {
+  
+  /*****************************************
+  *
+  *  generateLoyaltyProgramJSONForThirdParty
+  *
+  *****************************************/
+  
+  protected static JSONObject generateLoyaltyProgramJSONForThirdParty(LoyaltyProgram loyaltyProgram) 
+  {
+    HashMap<String, Object> loyaltyProgramMap = new HashMap<String, Object>();
+    if ( null == loyaltyProgram ) return JSONUtilities.encodeObject(loyaltyProgramMap);
+    
+    loyaltyProgramMap.put("loyaltyProgramID", loyaltyProgram.getLoyaltyProgramID());
+    loyaltyProgramMap.put("loyaltyProgramName", loyaltyProgram.getLoyaltyProgramName());
+    loyaltyProgramMap.put("loyaltyProgramDescription", loyaltyProgram.getLoyaltyProgramDescription());
+    loyaltyProgramMap.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
+    List<JSONObject> characteristics = loyaltyProgram.getCharacteristics().stream().map(characteristic -> ThirdPartyJSONGenerator.generateCharacteristicJSONForThirdParty(characteristic)).collect(Collectors.toList());
+    loyaltyProgramMap.put("characteristics", characteristics);
+
+    switch (loyaltyProgram.getLoyaltyProgramType()) {
+    case POINTS:
+      LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+      loyaltyProgramMap.put("statusPointsID", loyaltyProgramPoints.getStatusPointsID());
+      loyaltyProgramMap.put("rewardPointsID", loyaltyProgramPoints.getRewardPointsID());
+      List<JSONObject> tiers = loyaltyProgramPoints.getTiers().stream().map(tier -> ThirdPartyJSONGenerator.generateTierJSONForThirdParty(tier)).collect(Collectors.toList());
+      loyaltyProgramMap.put("tiers", tiers);
+      break;
+
+    case BADGES:
+      // TODO
+      break;
+      
+    default:
+      break;
+    }
+    return JSONUtilities.encodeObject(loyaltyProgramMap);
+  }
+  
+  /*****************************************
+  *
+  *  generateCharacteristicJSONForThirdParty
+  *
+  *****************************************/
+  
+  protected static JSONObject generateCharacteristicJSONForThirdParty(CatalogCharacteristicInstance characteristic) 
+  {
+    HashMap<String, Object> characteristicMap = new HashMap<String, Object>();
+    if ( null == characteristic ) return JSONUtilities.encodeObject(characteristicMap);
+    characteristicMap.put("characteristicID", characteristic.getCatalogCharacteristicID());
+    characteristicMap.put("value", characteristic.getValue());
+    return JSONUtilities.encodeObject(characteristicMap);
+  }
+  
+  /*****************************************
+  *
+  *  generateCharacteristicJSONForThirdParty
+  *
+  *****************************************/
+  
+  protected static JSONObject generateTierJSONForThirdParty(Tier tier) 
+  {
+    HashMap<String, Object> tierMap = new HashMap<String, Object>();
+    if ( null == tier ) return JSONUtilities.encodeObject(tierMap);
+    tierMap.put("tierName", tier.getTierName());
+    tierMap.put("statusEventName", tier.getStatusEventName());
+    tierMap.put("statusPointLevel", tier.getStatusPointLevel());
+    tierMap.put("numberOfStatusPointsPerUnit", tier.getNumberOfStatusPointsPerUnit());
+    tierMap.put("rewardEventName", tier.getRewardEventName());
+    tierMap.put("numberOfRewardPointsPerUnit", tier.getNumberOfRewardPointsPerUnit());
+    return JSONUtilities.encodeObject(tierMap);
+  }
   
   /*****************************************
   *

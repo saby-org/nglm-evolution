@@ -25,9 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -54,7 +52,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -66,15 +63,16 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.CustomerStatusInJourney;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.TargetingType;
-import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
@@ -110,6 +108,7 @@ public class ThirdPartyManager
   private SegmentationDimensionService segmentationDimensionService;
   private JourneyService journeyService;
   private JourneyObjectiveService journeyObjectiveService;
+  private LoyaltyProgramService loyaltyProgramService;
   private OfferObjectiveService offerObjectiveService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private SalesChannelService salesChannelService;
@@ -151,6 +150,9 @@ public class ThirdPartyManager
     getCustomerMessages,
     getCustomerJourneys,
     getCustomerCampaigns,
+    getCustomerLoyaltyPrograms,
+    getLoyaltyProgram,
+    getLoyaltyProgramsList,
     getOffersList,
     getActiveOffer,
     getActiveOffers,
@@ -219,6 +221,7 @@ public class ThirdPartyManager
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
+    String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
     String redisServer = Deployment.getRedisSentinels();
@@ -294,6 +297,7 @@ public class ThirdPartyManager
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "thirdpartymanager-segmentationDimensionservice-001", segmentationDimensionTopic, false);
     journeyService = new JourneyService(bootstrapServers, "thirdpartymanager-journeyservice-" + apiProcessKey, journeyTopic, false);
     journeyObjectiveService = new JourneyObjectiveService(bootstrapServers, "thirdpartymanager-journeyObjectiveService-" + apiProcessKey, journeyObjectiveTopic, false);
+    loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "thirdpartymanager-loyaltyprogramservice-" + apiProcessKey, loyaltyProgramTopic, false);
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "thirdpartymanager-offerObjectiveService-" + apiProcessKey, offerObjectiveTopic, false);
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "thirdpartymanager-subscribermessagetemplateservice-" + apiProcessKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     salesChannelService = new SalesChannelService(bootstrapServers, "thirdpartymanager-salesChannelService-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
@@ -309,6 +313,7 @@ public class ThirdPartyManager
     segmentationDimensionService.start();
     journeyService.start();
     journeyObjectiveService.start();
+    loyaltyProgramService.start();
     offerObjectiveService.start();
     subscriberMessageTemplateService.start();
     salesChannelService.start();
@@ -330,6 +335,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerLoyaltyPrograms", new APIHandler(API.getCustomerLoyaltyPrograms));
+      restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgram", new APIHandler(API.getLoyaltyProgram));
+      restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgramsList", new APIHandler(API.getLoyaltyProgramsList));
       restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
       restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
       restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
@@ -356,7 +364,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
 
     /*****************************************
      *
@@ -387,6 +395,7 @@ public class ThirdPartyManager
     private SegmentationDimensionService segmentationDimensionService;
     private JourneyService journeyService;
     private JourneyObjectiveService journeyObjectiveService;
+    private LoyaltyProgramService loyaltyProgramService;
     private OfferObjectiveService offerObjectiveService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SalesChannelService salesChannelService;
@@ -397,7 +406,7 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -406,6 +415,7 @@ public class ThirdPartyManager
       this.segmentationDimensionService = segmentationDimensionService;
       this.journeyService = journeyService;
       this.journeyObjectiveService = journeyObjectiveService;
+      this.loyaltyProgramService = loyaltyProgramService;
       this.offerObjectiveService = offerObjectiveService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.salesChannelService = salesChannelService;
@@ -434,6 +444,7 @@ public class ThirdPartyManager
       if (segmentationDimensionService != null) segmentationDimensionService.stop();
       if (journeyService != null) journeyService.stop();
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
+      if (loyaltyProgramService != null) loyaltyProgramService.stop();
       if (offerObjectiveService != null ) offerObjectiveService.stop();
       if (subscriberMessageTemplateService != null) subscriberMessageTemplateService.stop();
       if (salesChannelService != null) salesChannelService.stop();
@@ -585,6 +596,15 @@ public class ThirdPartyManager
               break;
             case getCustomerCampaigns:
               jsonResponse = processGetCustomerCampaigns(jsonRoot);
+              break;
+            case getCustomerLoyaltyPrograms:
+              jsonResponse = processGetCustomerLoyaltyPrograms(jsonRoot);
+              break;
+            case getLoyaltyProgram:
+              jsonResponse = processGetLoyaltyProgram(jsonRoot);
+              break;
+            case getLoyaltyProgramsList:
+              jsonResponse = processGetLoyaltyProgramsList(jsonRoot);
               break;
             case getOffersList:
               jsonResponse = processGetOffersList(jsonRoot);
@@ -2017,6 +2037,265 @@ public class ThirdPartyManager
   }
 
   /*****************************************
+  *
+  * processGetCustomerLoyaltyPrograms
+  *
+  *****************************************/
+
+ private JSONObject processGetCustomerLoyaltyPrograms(JSONObject jsonRoot) throws ThirdPartyManagerException
+ {
+
+   Map<String, Object> response = new HashMap<String, Object>();
+
+   /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+   String customerID = readString(jsonRoot, "customerID", true);
+   if (customerID == null)
+     {
+       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage()+"-{customerID is missing}");
+       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+       return JSONUtilities.encodeObject(response);
+     }
+   String searchedLoyaltyProgramID = readString(jsonRoot, "loyaltyProgramID", false);
+   if(searchedLoyaltyProgramID != null && searchedLoyaltyProgramID.isEmpty()){ searchedLoyaltyProgramID = null; }
+
+   /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID);
+   if (subscriberID == null)
+     {
+       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+     }
+   else
+     {
+       /*****************************************
+        *
+        *  getSubscriberProfile
+        *
+        *****************************************/
+       try
+       {
+         SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+         if (baseSubscriberProfile == null)
+           {
+             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+             if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+           }
+         else
+           {
+             
+             Date now = SystemTime.getCurrentTime();
+             Map<String,LoyaltyProgramPointsState> loyaltyPrograms = baseSubscriberProfile.getLoyaltyPrograms();
+             List<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
+             for (String loyaltyProgramID : loyaltyPrograms.keySet())
+               {
+                 
+                 //
+                 //  check loyalty program still exist
+                 //
+                 
+                 LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
+                 if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
+                   {
+
+                     HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
+
+                     //
+                     //  loyaltyProgram type
+                     //
+                     
+                     loyaltyProgramPresentation.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
+                     
+                     //
+                     //  current tier
+                     //
+
+                     LoyaltyProgramPointsState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
+                     loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
+                     loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", loyaltyProgramState.getLoyaltyProgramEnrollmentDate());
+                     loyaltyProgramPresentation.put("loyaltyProgramExitDate", loyaltyProgramState.getLoyaltyProgramExitDate());
+                     if(loyaltyProgramState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramState.getTierName()); }
+                     if(loyaltyProgramState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramState.getTierEnrollmentDate()); }
+
+                     //
+                     //  history
+                     //
+                     ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
+                     LoyaltyProgramHistory history = loyaltyProgramState.getLoyaltyProgramHistory();
+                     if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
+                       for(TierHistory tier : history.getTierHistory()){
+                         HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
+                         tierHistoryJSON.put("fromTier", tier.getFromTier());
+                         tierHistoryJSON.put("toTier", tier.getToTier());
+                         tierHistoryJSON.put("transitionDate", tier.getTransitionDate());
+                         loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                       }
+                     }
+                     loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
+
+                     //
+                     //  reward point informations
+                     //
+
+                     loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
+                     loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
+                     loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
+                     loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+
+                     //
+                     //  
+                     //
+                     
+                     loyaltyProgramsPresentation.add(JSONUtilities.encodeObject(loyaltyProgramPresentation));
+                     
+                   }
+               }
+
+             response.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramsPresentation));
+             response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+             response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+           }
+       } 
+       catch (SubscriberProfileServiceException e)
+       {
+         log.error("SubscriberProfileServiceException ", e.getMessage());
+         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+       }
+     }
+
+   /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+   return JSONUtilities.encodeObject(response);
+ }
+
+ /*****************************************
+ *
+ *  processGetActiveOffer
+ *
+ *****************************************/
+
+ private JSONObject processGetLoyaltyProgram(JSONObject jsonRoot) throws ThirdPartyManagerException
+ {
+   /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();
+
+   /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+   String loyaltyProgramID = readString(jsonRoot, "loyaltyProgramID", true);
+
+   /*****************************************
+    *
+    *  retrieve loyaltyProgram
+    *
+    *****************************************/
+
+   LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, SystemTime.getCurrentTime());
+
+   /*****************************************
+    *
+    *  decorate and response
+    *
+    *****************************************/
+
+   if (loyaltyProgram == null)
+     {
+       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseCode());
+       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseMessage());
+       return JSONUtilities.encodeObject(response);
+     }
+   else 
+     {
+       response.put("loyaltyProgram", ThirdPartyJSONGenerator.generateLoyaltyProgramJSONForThirdParty(loyaltyProgram));
+       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+       return JSONUtilities.encodeObject(response);
+     }
+ }
+
+  /*****************************************
+  *
+  *  processGetLoyaltyProgramsList
+  *
+  *****************************************/
+
+ private JSONObject processGetLoyaltyProgramsList(JSONObject jsonRoot) throws ThirdPartyManagerException
+ {
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+  HashMap<String,Object> response = new HashMap<String,Object>();
+
+  /****************************************
+  *
+  *  argument
+  *
+  ****************************************/
+
+  String type = readString(jsonRoot, "loyaltyProgramType", false);
+  LoyaltyProgramType loyaltyProgramType = null;
+  if(type != null){
+    loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(type);
+    if(loyaltyProgramType.equals(LoyaltyProgramType.Unknown)){
+      response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.LOYALTY_TYPE_NOT_FOUND.getGenericResponseCode());
+      response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.LOYALTY_TYPE_NOT_FOUND.getGenericResponseMessage());
+      return JSONUtilities.encodeObject(response);
+    }
+  }
+
+   /*****************************************
+   *
+   *  retrieve loyalty programs
+   *
+   *****************************************/
+
+  Collection<LoyaltyProgram> programs = loyaltyProgramService.getActiveLoyaltyPrograms(SystemTime.getCurrentTime());
+
+   /*****************************************
+   *
+   *  decorate and response
+   *
+   *****************************************/
+
+  List<JSONObject> loyaltyProgramsJson = new ArrayList<JSONObject>();
+  for(LoyaltyProgram program : programs){
+    if(loyaltyProgramType == null || program.getLoyaltyProgramType().equals(loyaltyProgramType)){
+      loyaltyProgramsJson.add(ThirdPartyJSONGenerator.generateLoyaltyProgramJSONForThirdParty(program));
+    }
+  }
+  
+  response.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramsJson));
+  response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+  response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+  return JSONUtilities.encodeObject(response);
+}
+   /*****************************************
    *
    *  processGetOffersList
    *
@@ -3019,6 +3298,10 @@ public class ThirdPartyManager
 
             case getOffersList:
               accessStatistics.updateGetOffersListCount(1);
+              break;
+
+            case getLoyaltyProgramsList:
+              accessStatistics.updateGetLoyaltyProgramsListCount(1);
               break;
 
             case getActiveOffer:

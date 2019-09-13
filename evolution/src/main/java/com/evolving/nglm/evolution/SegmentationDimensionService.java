@@ -31,16 +31,13 @@ import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
 import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
-import com.evolving.nglm.evolution.GUIService;
 
 public class SegmentationDimensionService extends GUIService
 {
@@ -289,6 +286,11 @@ public class SegmentationDimensionService extends GUIService
   *
   *****************************************/
   
+  public void removeSegmentationDimension(String segmentationDimensionID, String userID) 
+  { 
+    removeGUIManagedObject(segmentationDimensionID, SystemTime.getCurrentTime(), userID); 
+  }
+
   /*****************************************
   *
   *  notifyListener
@@ -417,8 +419,6 @@ public class SegmentationDimensionService extends GUIService
           }
       }
   }
-
-  public void removeSegmentationDimension(String segmentationDimensionID, String userID) { removeGUIManagedObject(segmentationDimensionID, SystemTime.getCurrentTime(), userID); }
 
   /*****************************************
   *

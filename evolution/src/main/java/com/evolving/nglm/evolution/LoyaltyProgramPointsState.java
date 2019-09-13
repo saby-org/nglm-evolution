@@ -6,12 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
-import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
-import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
+import java.util.Date;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -19,16 +14,13 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 
 
-public class LoyaltyProgramState
+public class LoyaltyProgramPointsState
 {
   /*****************************************
   *
@@ -50,7 +42,6 @@ public class LoyaltyProgramState
     schemaBuilder.field("loyaltyProgramName", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramEnrollmentDate", Timestamp.builder().schema());
     schemaBuilder.field("loyaltyProgramExitDate", Timestamp.builder().optional().schema());
-    schemaBuilder.field("tierID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tierName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tierEnrollmentDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("loyaltyProgramHistory", LoyaltyProgramHistory.schema());
@@ -62,14 +53,14 @@ public class LoyaltyProgramState
   //  serde
   //
 
-  private static ConnectSerde<LoyaltyProgramState> serde = new ConnectSerde<LoyaltyProgramState>(schema, false, LoyaltyProgramState.class, LoyaltyProgramState::pack, LoyaltyProgramState::unpack);
+  private static ConnectSerde<LoyaltyProgramPointsState> serde = new ConnectSerde<LoyaltyProgramPointsState>(schema, false, LoyaltyProgramPointsState.class, LoyaltyProgramPointsState::pack, LoyaltyProgramPointsState::unpack);
 
   //
   //  accessor
   //
 
   public static Schema schema() { return schema; }
-  public static ConnectSerde<LoyaltyProgramState> serde() { return serde; }
+  public static ConnectSerde<LoyaltyProgramPointsState> serde() { return serde; }
   
   /*****************************************
   *
@@ -81,7 +72,6 @@ public class LoyaltyProgramState
   private String loyaltyProgramName;
   private Date loyaltyProgramEnrollmentDate;
   private Date loyaltyProgramExitDate;
-  private String tierID;
   private String tierName;
   private Date tierEnrollmentDate;
   private LoyaltyProgramHistory loyaltyProgramHistory;
@@ -96,7 +86,6 @@ public class LoyaltyProgramState
   public String getLoyaltyProgramName() { return loyaltyProgramName; }
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
   public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
-  public String getTierID() { return tierID; }
   public String getTierName() { return tierName; }
   public Date getTierEnrollmentDate() { return tierEnrollmentDate; }
   public LoyaltyProgramHistory getLoyaltyProgramHistory() { return loyaltyProgramHistory; }
@@ -107,13 +96,12 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramState(long loyaltyProgramEpoch, String loyaltyProgramName, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String tierID, String tierName, Date tierEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
+  public LoyaltyProgramPointsState(long loyaltyProgramEpoch, String loyaltyProgramName, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String tierName, Date tierEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
   {
     this.loyaltyProgramEpoch = loyaltyProgramEpoch;
     this.loyaltyProgramName = loyaltyProgramName;
     this.loyaltyProgramEnrollmentDate = loyaltyProgramEnrollmentDate;
     this.loyaltyProgramExitDate = loyaltyProgramExitDate;
-    this.tierID = tierID;
     this.tierName = tierName;
     this.tierEnrollmentDate = tierEnrollmentDate;
     this.loyaltyProgramHistory = loyaltyProgramHistory;
@@ -125,13 +113,12 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramState(LoyaltyProgramState subscriberState)
+  public LoyaltyProgramPointsState(LoyaltyProgramPointsState subscriberState)
   {
     this.loyaltyProgramEpoch = subscriberState.getLoyaltyProgramEpoch();
     this.loyaltyProgramName = subscriberState.getLoyaltyProgramName();
     this.loyaltyProgramEnrollmentDate = subscriberState.getLoyaltyProgramEnrollmentDate();
     this.loyaltyProgramExitDate = subscriberState.getLoyaltyProgramExitDate();
-    this.tierID = subscriberState.getTierID();
     this.tierName = subscriberState.getTierName();
     this.tierEnrollmentDate = subscriberState.getTierEnrollmentDate();
     this.loyaltyProgramHistory = subscriberState.getLoyaltyProgramHistory();
@@ -143,7 +130,7 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public boolean update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String tierID, String tierName, Date enrollmentDate, String deliveryRequestID)
+  public boolean update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toTier, Date enrollmentDate, String deliveryRequestID)
   {
     
     //
@@ -154,7 +141,7 @@ public class LoyaltyProgramState
     if(loyaltyProgramHistory != null){
       lastTierEntered = loyaltyProgramHistory.getLastTierEntered();
     }
-    String fromTier = (lastTierEntered == null ? null : lastTierEntered.getToTierID());
+    String fromTier = (lastTierEntered == null ? null : lastTierEntered.getToTier());
     
 
     switch (operation) {
@@ -168,15 +155,14 @@ public class LoyaltyProgramState
       this.loyaltyProgramName = loyaltyProgramName;
       if(this.loyaltyProgramEnrollmentDate == null){ this.loyaltyProgramEnrollmentDate = enrollmentDate; }
       
-      this.tierID = tierID;
-      this.tierName = tierName;
+      this.tierName = toTier;
       this.tierEnrollmentDate = enrollmentDate;
 
       //
       //  update history
       //
       
-      loyaltyProgramHistory.addTierHistory(fromTier, tierID, enrollmentDate, deliveryRequestID);
+      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID);
       
       break;
 
@@ -191,7 +177,6 @@ public class LoyaltyProgramState
       if(this.loyaltyProgramEnrollmentDate == null){ this.loyaltyProgramEnrollmentDate = enrollmentDate; }
       this.loyaltyProgramExitDate = enrollmentDate;
       
-      this.tierID = null;
       this.tierName = null;
       this.tierEnrollmentDate = null;
 
@@ -199,7 +184,7 @@ public class LoyaltyProgramState
       //  update history
       //
       
-      loyaltyProgramHistory.addTierHistory(fromTier, tierID, enrollmentDate, deliveryRequestID);
+      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID);
       
       break;
 
@@ -222,13 +207,12 @@ public class LoyaltyProgramState
 
   public static Object pack(Object value)
   {
-    LoyaltyProgramState subscriberState = (LoyaltyProgramState) value;
+    LoyaltyProgramPointsState subscriberState = (LoyaltyProgramPointsState) value;
     Struct struct = new Struct(schema);
     struct.put("loyaltyProgramEpoch", subscriberState.getLoyaltyProgramEpoch());
     struct.put("loyaltyProgramName", subscriberState.getLoyaltyProgramName());
     struct.put("loyaltyProgramEnrollmentDate", subscriberState.getLoyaltyProgramEnrollmentDate());
     struct.put("loyaltyProgramExitDate", subscriberState.getLoyaltyProgramExitDate());
-    struct.put("tierID", subscriberState.getTierID());
     struct.put("tierName", subscriberState.getTierName());
     struct.put("tierEnrollmentDate", subscriberState.getTierEnrollmentDate());
     struct.put("loyaltyProgramHistory", LoyaltyProgramHistory.serde().pack(subscriberState.getLoyaltyProgramHistory()));
@@ -241,7 +225,7 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public static LoyaltyProgramState unpack(SchemaAndValue schemaAndValue)
+  public static LoyaltyProgramPointsState unpack(SchemaAndValue schemaAndValue)
   {
     //
     //  data
@@ -260,7 +244,6 @@ public class LoyaltyProgramState
     String loyaltyProgramName = valueStruct.getString("loyaltyProgramName");
     Date loyaltyProgramEnrollmentDate = (Date) valueStruct.get("loyaltyProgramEnrollmentDate");
     Date loyaltyProgramExitDate = (Date) valueStruct.get("loyaltyProgramExitDate");
-    String tierID = valueStruct.getString("tierID");
     String tierName = valueStruct.getString("tierName");
     Date tierEnrollmentDate = (Date) valueStruct.get("tierEnrollmentDate");
     LoyaltyProgramHistory loyaltyProgramHistory = LoyaltyProgramHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramHistory").schema(), valueStruct.get("loyaltyProgramHistory")));
@@ -269,6 +252,6 @@ public class LoyaltyProgramState
     //  return
     //
 
-    return new LoyaltyProgramState(loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate, tierID, tierName, tierEnrollmentDate, loyaltyProgramHistory);
+    return new LoyaltyProgramPointsState(loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate, tierName, tierEnrollmentDate, loyaltyProgramHistory);
   }
 }
