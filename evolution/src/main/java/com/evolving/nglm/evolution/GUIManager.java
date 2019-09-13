@@ -3183,32 +3183,57 @@ public class GUIManager
         *****************************************/
 
         JSONObject jsonRoot = null;
-        if(!api.equals(API.putUploadedFile)){
-          StringBuilder requestBodyStringBuilder = new StringBuilder();
-          BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
-          while (true)
-            {
-              String line = reader.readLine();
-              if (line == null) break;
-              requestBodyStringBuilder.append(line);
-            }
-          reader.close();
-          log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
-          jsonRoot = (JSONObject) (new JSONParser()).parse(requestBodyStringBuilder.toString());
+        switch (api)
+          {
+            case putUploadedFile:
+              break;
 
-          /*****************************************
-          *
-          *  validate
-          *
-          *****************************************/
+            default:
+              StringBuilder requestBodyStringBuilder = new StringBuilder();
+              BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+              while (true)
+                {
+                  String line = reader.readLine();
+                  if (line == null) break;
+                  requestBodyStringBuilder.append(line);
+                }
+              reader.close();
+              log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
+              jsonRoot = (JSONObject) (new JSONParser()).parse(requestBodyStringBuilder.toString());
 
-          int apiVersion = JSONUtilities.decodeInteger(jsonRoot, "apiVersion", true);
-          if (apiVersion > RESTAPIVersion)
-            {
-              throw new ServerRuntimeException("unknown api version " + apiVersion);
-            }
-          jsonRoot.remove("apiVersion");
-        }
+              /*****************************************
+              *
+              *  validate
+              *
+              *****************************************/
+
+              int apiVersion = JSONUtilities.decodeInteger(jsonRoot, "apiVersion", true);
+              if (apiVersion > RESTAPIVersion)
+                {
+                  throw new ServerRuntimeException("unknown api version " + apiVersion);
+                }
+              jsonRoot.remove("apiVersion");
+
+              /*****************************************
+              *
+              *  userID
+              *
+              *****************************************/
+
+              String jsonUserID = JSONUtilities.decodeString(jsonRoot, "userID", false);
+              if (jsonUserID == null && userID != null)
+                {
+                  jsonRoot.put("userID", userID);
+                }
+
+              /*****************************************
+              *
+              *  break
+              *
+              *****************************************/
+
+              break;
+          }
 
         /*****************************************
         *
@@ -3231,18 +3256,6 @@ public class GUIManager
             case Block:
               allowAccess = false;
               break;
-          }
-
-        /*****************************************
-        *
-        *  userID
-        *
-        *****************************************/
-
-        String jsonUserID = JSONUtilities.decodeString(jsonRoot, "userID", false);
-        if (jsonUserID == null && userID != null)
-          {
-            jsonRoot.put("userID", userID);
           }
 
         /*****************************************
