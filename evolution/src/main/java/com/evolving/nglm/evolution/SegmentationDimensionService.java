@@ -264,7 +264,7 @@ public class SegmentationDimensionService extends GUIService
     // add to queue
     //
     
-    if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE_IMPORT)) {
+    if(segmentationDimension.getTargetingType().equals(SegmentationDimensionTargetingType.FILE)) {
       notifyListenerOfSegmentationDimension((SegmentationDimensionFileImport) segmentationDimension);
     }
   }

@@ -32,7 +32,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
   public enum SegmentationDimensionTargetingType
   {
     ELIGIBILITY("ELIGIBILITY"),
-    FILE_IMPORT("FILE_IMPORT"),
+    FILE("FILE"),
     RANGES("RANGES"),
     Unknown("(unknown)");
     private String externalRepresentation;

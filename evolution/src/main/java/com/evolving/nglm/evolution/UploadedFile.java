@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -8,6 +10,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
@@ -33,7 +37,7 @@ public class UploadedFile extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("uploadedFile");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("applicationID", Schema.STRING_SCHEMA);
     schemaBuilder.field("customerAlternateID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -44,6 +48,7 @@ public class UploadedFile extends GUIManagedObject
     schemaBuilder.field("fileSize", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("numberOfLines", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("uploadDate", Timestamp.SCHEMA);
+    schemaBuilder.field("metaData", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -75,6 +80,7 @@ public class UploadedFile extends GUIManagedObject
   private int fileSize;
   private int numberOfLines;
   private Date uploadDate;
+  private Map<String, JSONObject> metaData;
   
   public static final String OUTPUT_FOLDER = "/app/uploaded/";
   
@@ -93,7 +99,13 @@ public class UploadedFile extends GUIManagedObject
   public int getFileSize() { return fileSize; }
   public int getNumberOfLines() { return numberOfLines; }
   public Date getUploadDate() { return uploadDate; }
+  public Map<String, JSONObject> getMetaData() { return metaData; }
   
+  //
+  //  setters
+  //
+
+  public void setMetaData(Map<String, JSONObject> metaData) { this.metaData = (metaData != null) ? metaData : new HashMap<String,JSONObject>(); }
   
   /*****************************************
   *
@@ -116,6 +128,7 @@ public class UploadedFile extends GUIManagedObject
     this.fileSize = JSONUtilities.decodeInteger(jsonRoot, "fileSize", false);
     this.numberOfLines = JSONUtilities.decodeInteger(jsonRoot, "numberOfLines", false);
     this.uploadDate = SystemTime.getCurrentTime();
+    this.metaData = new HashMap<String, JSONObject>();
 
     //
     //  destinationFilename
@@ -130,7 +143,7 @@ public class UploadedFile extends GUIManagedObject
   *
   *****************************************/
 
-  public UploadedFile(SchemaAndValue schemaAndValue, String applicationID, String customerAlternateID, String sourceFilename, String destinationFilename, String fileType, String fileEncoding, int fileSize, int numberOfLines, Date uploadDate)
+  public UploadedFile(SchemaAndValue schemaAndValue, String applicationID, String customerAlternateID, String sourceFilename, String destinationFilename, String fileType, String fileEncoding, int fileSize, int numberOfLines, Date uploadDate, Map<String, JSONObject> metaData)
   {
     super(schemaAndValue);
     this.applicationID = applicationID;
@@ -142,6 +155,7 @@ public class UploadedFile extends GUIManagedObject
     this.fileSize = fileSize;
     this.numberOfLines = numberOfLines;
     this.uploadDate = uploadDate;
+    setMetaData(metaData);
   }
 
   /*****************************************
@@ -164,8 +178,29 @@ public class UploadedFile extends GUIManagedObject
     struct.put("fileSize", uploadFile.getFileSize());
     struct.put("numberOfLines", uploadFile.getNumberOfLines());
     struct.put("uploadDate", uploadFile.getUploadDate());
+    struct.put("metaData", packMetaData(uploadFile.getMetaData()));
     return struct;
   }
+  
+  /****************************************
+  *
+  *  packMetaData
+  *
+  ****************************************/
+
+  private static Map<String, String> packMetaData(Map<String, JSONObject> metaData)
+  {
+    Map<String, String> result = new HashMap<String, String>();
+    if(metaData != null)
+      {
+        for (String parameterName : metaData.keySet())
+          {
+            JSONObject jsonObject = metaData.get(parameterName);
+            result.put(parameterName, jsonObject.toString());
+          }
+      }
+      return result;
+    }
   
   /*****************************************
   *
@@ -196,13 +231,38 @@ public class UploadedFile extends GUIManagedObject
     String fileEncoding = valueStruct.getString("fileEncoding");
     int fileSize = valueStruct.getInt32("fileSize");
     int numberOfLines = valueStruct.getInt32("numberOfLines");
-    Date uploadDate = (Date) valueStruct.get("uploadDate");
+    Date uploadDate = (Date) valueStruct.get("uploadDate");  
+    Map<String, JSONObject> metaData = (schemaVersion >= 2) ? unpackMetaData(schema.field("contextVariables").schema(), (Map<String,String>) valueStruct.get("metaData")) : new HashMap<String, JSONObject>();
     
     //
     //  return
     //
 
-    return new UploadedFile(schemaAndValue, applicationID, customerAlternateID, sourceFilename, destinationFilename, fileType, fileEncoding, fileSize, numberOfLines, uploadDate);
+    return new UploadedFile(schemaAndValue, applicationID, customerAlternateID, sourceFilename, destinationFilename, fileType, fileEncoding, fileSize, numberOfLines, uploadDate, metaData);
+  }
+  
+  /*****************************************
+  *
+  *  unpackMetaData
+  *
+  *****************************************/
+
+  private static Map<String,JSONObject> unpackMetaData(Schema schema, Map<String,String> metaData)
+  {
+    Map<String,JSONObject> result = new HashMap<String,JSONObject>();
+    JSONParser parser = new JSONParser();
+    try
+    {
+      for (String metaDataKey : metaData.keySet())
+        {
+          JSONObject jsonObject = (JSONObject) parser.parse(metaData.get(metaDataKey));
+          result.put(metaDataKey, jsonObject);
+        }        
+    } catch (ParseException e)
+    {
+      log.warn("UploadedFile.unpackMetaData(Issue unpacking metaData from string to JSONObject. Ignoring key"+metaData+")", e);
+    }
+    return result;
   }
 
   /****************************************
@@ -221,6 +281,20 @@ public class UploadedFile extends GUIManagedObject
       {
         AlternateID alternateID = Deployment.getAlternateIDs().get(customerAlternateID);
         if (alternateID == null) throw new GUIManagerException("unknown alternateid ", customerAlternateID);
+      }
+  }
+  
+  /****************************************
+  *
+  *  addMetaData
+  *
+  ****************************************/
+  
+  public void addMetaData(String key, JSONObject metaDataValue)
+  {
+    if(metaDataValue != null && !metaDataValue.isEmpty())
+      {
+        this.metaData.put(key, metaDataValue);
       }
   }
   

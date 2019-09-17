@@ -8,21 +8,34 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
+import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UploadedFileService extends GUIService
 {
@@ -45,6 +58,7 @@ public class UploadedFileService extends GUIService
   *****************************************/
 
   private UploadedFileListener uploadedFileListener = null;
+  public static final String basemanagementApplicationID = "101";
 
   /*****************************************
   *
@@ -133,7 +147,7 @@ public class UploadedFileService extends GUIService
   *
   *****************************************/
 
-  public void putUploadedFile(GUIManagedObject uploadedFile, InputStream inputStrm, String filename, boolean newObject, String userID) throws GUIManagerException, IOException
+  public void putUploadedFile(GUIManagedObject guiManagedObject, InputStream inputStrm, String filename, boolean newObject, String userID) throws GUIManagerException, IOException
   {
     //
     //  now
@@ -142,21 +156,6 @@ public class UploadedFileService extends GUIService
     Date now = SystemTime.getCurrentTime();
     FileOutputStream destFile = null;
     try {
-
-      //
-      //  validate
-      //
-
-      if (uploadedFile instanceof UploadedFile)
-        {
-          ((UploadedFile) uploadedFile).validate();
-        }
-      
-      //
-      //  put
-      //
-
-      putGUIManagedObject(uploadedFile, now, newObject, userID);
 
       //
       // store file
@@ -177,13 +176,71 @@ public class UploadedFileService extends GUIService
       StringWriter stackTraceWriter = new StringWriter();
       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
       log.error("Exception saving file: putUploadedFile API: {}", stackTraceWriter.toString());
-      removeGUIManagedObject(uploadedFile.getGUIManagedObjectID(), now, userID);
+      removeGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), now, userID);
     }finally {
       if(destFile != null) {
         destFile.flush();
         destFile.close();
       }
     }
+    
+    //
+    // validate 
+    //
+    if (guiManagedObject instanceof UploadedFile)
+      {
+        UploadedFile uploadededFile = (UploadedFile) guiManagedObject;
+        uploadededFile.validate();
+
+        //
+        // count segments
+        //
+        if(uploadededFile.getApplicationID().equals(basemanagementApplicationID))
+          {
+            Map<String, Integer> count = new HashMap<String,Integer>();
+            BufferedReader reader;
+            try
+            {
+              reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+filename));
+              for (String line; (line = reader.readLine()) != null && !line.isEmpty();)
+                {
+                  String split[] = line.split(Deployment.getUploadedFileSeparator());
+                  //Minimum two values (subscriberID;segment)
+                  if(split.length >=2)
+                    {   
+                      String subscriberIDFromFile = split[0];
+                      String segmentName = split[1];
+                      if(segmentName != null && subscriberIDFromFile != null)
+                        {
+                          //Valid
+                          count.put(segmentName, count.get(segmentName)!=null?count.get(segmentName)+1:1);
+                        }
+                    }
+                  else
+                    {
+                      log.warn("UploadedFileService.putUploadedFile(not two values, skip. line="+line+")");
+                    }
+                }
+              reader.close();
+            }
+            catch (IOException e)
+            {
+              log.warn("UploadedFileService.putUploadedFile(problem with file parsing)", e);
+            }
+            
+            //
+            // add metadata
+            //
+            
+            ((UploadedFile) guiManagedObject).addMetaData("segmentCounts", JSONUtilities.encodeObject(count));
+          }
+      }
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(guiManagedObject, now, newObject, userID);   
   }
   
   /*****************************************

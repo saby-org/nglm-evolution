@@ -116,6 +116,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.Journey.BulkType;
 import com.evolving.nglm.evolution.Journey.GUINode;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
@@ -137,29 +138,6 @@ public class GUIManager
   *****************************************/
 
   public static String ProductID = "Evolution-GUIManager";
-
-  /*****************************************
-  *
-  *  enum
-  *
-  *****************************************/
-
-  public enum CustomerStatusInJourney
-  {
-    ENTERED("ENTERED"), 
-    NOTIFIED("NOTIFIED"), 
-    CONVERTED("CONVERTED"),
-    CONTROL("CONTROL"), 
-    UCG("UCG"), 
-    NOTIFIED_CONVERTED("NOTIFIED CONVERTED"), 
-    CONTROL_CONVERTED("CONTROL CONVERTED"), 
-    COMPLETED("COMPLETED"),
-    UNKNOWN("UNKNOWN");
-    private String externalRepresentation;
-    private CustomerStatusInJourney(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static CustomerStatusInJourney fromExternalRepresentation(String externalRepresentation) { for (CustomerStatusInJourney enumeratedValue : CustomerStatusInJourney.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
-  }
 
   public enum API
   {
@@ -6209,7 +6187,7 @@ public class GUIManager
               segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
               break;
 
-            case FILE_IMPORT:
+            case FILE:
               segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
               break;
 
@@ -14369,38 +14347,32 @@ public class GUIManager
                         boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusControlGroup()).count() > 0L ;
                         boolean statusUniversalControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getStatusUniversalControlGroup()).count() > 0L ;
                         boolean journeyComplete = subsLatestStatistic.getStatusHistory().stream().filter(journeyStat -> journeyStat.getJourneyComplete()).count() > 0L ;
-                        
+
                         if (customerStatus != null)
                           {
-                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
+                            SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
                             boolean criteriaSatisfied = false;
                             switch (customerStatusInJourney)
                               {
-                                case ENTERED:
-                                  criteriaSatisfied = !journeyComplete;
+                                case Entered:
+                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
                                   break;
-                                case NOTIFIED:
-                                  criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
+                                case ConvertedNotNotified:
+                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
                                   break;
-                                case CONVERTED:
-                                  criteriaSatisfied = statusConverted && !statusNotified && !journeyComplete;
+                                case Notified:
+                                  criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
                                   break;
-                                case CONTROL:
-                                  criteriaSatisfied = statusControlGroup && !statusConverted && !journeyComplete;
+                                case ConvertedNotified:
+                                  criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
                                   break;
-                                case UCG:
-                                  criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
+                                case ControlGroupEntered:
+                                  criteriaSatisfied = statusControlGroup && ! statusConverted;
                                   break;
-                                case NOTIFIED_CONVERTED:
-                                  criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
+                                case ControlGroupConverted:
+                                  criteriaSatisfied = statusControlGroup && statusConverted;
                                   break;
-                                case CONTROL_CONVERTED:
-                                  criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
-                                  break;
-                                case COMPLETED:
-                                  criteriaSatisfied = journeyComplete;
-                                  break;
-                                case UNKNOWN:
+                                case Unknown:
                                   break;
                               }
                             if (!criteriaSatisfied) continue;
@@ -14515,7 +14487,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String campaignObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
+    String campaignObjectiveName = JSONUtilities.decodeString(jsonRoot, "objective", false);
     String campaignState = JSONUtilities.decodeString(jsonRoot, "campaignState", false);
     String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = JSONUtilities.decodeString(jsonRoot, "campaignStartDate", false);
@@ -14700,38 +14672,32 @@ public class GUIManager
 
                         if (customerStatus != null)
                           {
-                            CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
+                            SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
                             boolean criteriaSatisfied = false;
                             switch (customerStatusInJourney)
-                            {
-                              case ENTERED:
-                                criteriaSatisfied = !journeyComplete;
-                                break;
-                              case NOTIFIED:
-                                criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
-                                break;
-                              case CONVERTED:
-                                criteriaSatisfied = statusConverted && !statusNotified && !journeyComplete;
-                                break;
-                              case CONTROL:
-                                criteriaSatisfied = statusControlGroup && !statusConverted && !journeyComplete;
-                                break;
-                              case UCG:
-                                criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
-                                break;
-                              case NOTIFIED_CONVERTED:
-                                criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
-                                break;
-                              case CONTROL_CONVERTED:
-                                criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
-                                break;
-                              case COMPLETED:
-                                criteriaSatisfied = journeyComplete;
-                                break;
-                              case UNKNOWN:
-                                break;
-                            }
-                            if (! criteriaSatisfied) continue;
+                              {
+                                case Entered:
+                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
+                                  break;
+                                case ConvertedNotNotified:
+                                  criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
+                                  break;
+                                case Notified:
+                                  criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
+                                  break;
+                                case ConvertedNotified:
+                                  criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
+                                  break;
+                                case ControlGroupEntered:
+                                  criteriaSatisfied = statusControlGroup && ! statusConverted;
+                                  break;
+                                case ControlGroupConverted:
+                                  criteriaSatisfied = statusControlGroup && statusConverted;
+                                  break;
+                                case Unknown:
+                                  break;
+                              }
+                            if (!criteriaSatisfied) continue;
                           }
 
                         //
@@ -14900,7 +14866,12 @@ public class GUIManager
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
         if (Objects.equals(applicationID, fileApplicationID))
           {
-            uploadedFiles.add(uploadedFileService.generateResponseJSON(uploaded, fullDetails, now));
+            JSONObject jsonObject = uploadedFileService.generateResponseJSON(uploaded, fullDetails, now);
+            if(fullDetails && applicationID.equals(UploadedFileService.basemanagementApplicationID))
+              {
+                jsonObject.put("segmentCounts", ((UploadedFile)uploaded).getMetaData().get("segmentCounts"));
+              }
+            uploadedFiles.add(jsonObject);
           }
       }
 
@@ -18683,6 +18654,10 @@ public class GUIManager
                         jsonResponse.put("accepted", true);
                         jsonResponse.put("valid", true);
                         jsonResponse.put("processing", true);
+                        if(uploadedFile.getMetaData() != null && uploadedFile.getMetaData().get("segmentCounts") != null) 
+                          {
+                            jsonResponse.put("segmentCounts", uploadedFile.getMetaData().get("segmentCounts"));
+                          }
                         jsonResponse.put("responseCode", "ok");
                       }
                     catch (JSONUtilitiesException|GUIManagerException e)

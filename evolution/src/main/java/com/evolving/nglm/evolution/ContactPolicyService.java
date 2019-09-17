@@ -28,13 +28,16 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -177,6 +180,58 @@ public class ContactPolicyService extends GUIService
   *****************************************/
 
   public void removeContactPolicy(String contactPolicyID, String userID) { removeGUIManagedObject(contactPolicyID, SystemTime.getCurrentTime(), userID); }
+  
+  /***********************************************
+  *
+  *  getAllJourneyObjectiveNamesUsingContactPolicy
+  *
+  ***********************************************/
+  
+  public List<String> getAllJourneyObjectiveNamesUsingContactPolicy(String contactPolicyID, JourneyObjectiveService journeyObjectiveService)
+  {
+    List<String> result = new ArrayList<String>(); 
+    for(GUIManagedObject guiManagedObject : journeyObjectiveService.getStoredGUIManagedObjects())
+      {
+        if(guiManagedObject instanceof JourneyObjective)
+          {
+            JourneyObjective journeyObjective = (JourneyObjective) guiManagedObject;
+            if(journeyObjective.getContactPolicyID().equals(contactPolicyID))
+              {
+                result.add(journeyObjective.getGUIManagedObjectName());
+              }
+          }
+      }
+    return result;
+  }
+  
+  /**************************************
+  *
+  *  getAllSegmentNamesUsingContactPolicy
+  *
+  ***************************************/
+  
+  public List<String> getAllSegmentNamesUsingContactPolicy(String contactPolicyID, SegmentContactPolicyService segmentContactPolicyService)
+  {
+    List<String> result = new ArrayList<String>();
+    for(GUIManagedObject guiManagedObject : segmentContactPolicyService.getStoredGUIManagedObjects())
+      {
+        if(guiManagedObject instanceof SegmentContactPolicy)
+          {
+            SegmentContactPolicy policy = (SegmentContactPolicy) guiManagedObject;
+            if(policy.getSegments() != null)
+              {
+                for(Entry<String, String> segmentEntry : policy.getSegments().entrySet())
+                  {
+                    if(segmentEntry.getValue().equals(contactPolicyID))
+                      {
+                        result.add(segmentEntry.getKey());
+                      }
+                  }
+              }
+          }
+      }
+    return result;
+  }
 
   /*****************************************
   *

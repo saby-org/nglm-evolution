@@ -66,8 +66,8 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.CustomerStatusInJourney;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
@@ -1568,38 +1568,32 @@ public class ThirdPartyManager
 
                       if (customerStatus != null)
                         {
-                          CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
+                          SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
                           boolean criteriaSatisfied = false;
                           switch (customerStatusInJourney)
-                          {
-                            case ENTERED:
-                              criteriaSatisfied = !journeyComplete;
-                              break;
-                            case NOTIFIED:
-                              criteriaSatisfied = statusNotified && !statusConverted && !journeyComplete;
-                              break;
-                            case CONVERTED:
-                              criteriaSatisfied = statusConverted && !statusNotified && !journeyComplete;
-                              break;
-                            case CONTROL:
-                              criteriaSatisfied = statusControlGroup && !statusConverted && !journeyComplete;
-                              break;
-                            case UCG:
-                              criteriaSatisfied = statusUniversalControlGroup && !journeyComplete;
-                              break;
-                            case NOTIFIED_CONVERTED:
-                              criteriaSatisfied = statusNotified && statusConverted && !journeyComplete;
-                              break;
-                            case CONTROL_CONVERTED:
-                              criteriaSatisfied = statusControlGroup && statusConverted && !journeyComplete;
-                              break;
-                            case COMPLETED:
-                              criteriaSatisfied = journeyComplete;
-                              break;
-                            case UNKNOWN:
-                              break;
-                          }
-                          if (! criteriaSatisfied) continue;
+                            {
+                              case Entered:
+                                criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
+                                break;
+                              case ConvertedNotNotified:
+                                criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
+                                break;
+                              case Notified:
+                                criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
+                                break;
+                              case ConvertedNotified:
+                                criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
+                                break;
+                              case ControlGroupEntered:
+                                criteriaSatisfied = statusControlGroup && ! statusConverted;
+                                break;
+                              case ControlGroupConverted:
+                                criteriaSatisfied = statusControlGroup && statusConverted;
+                                break;
+                              case Unknown:
+                                break;
+                            }
+                          if (!criteriaSatisfied) continue;
                         }
 
                       //
@@ -1908,38 +1902,32 @@ public class ThirdPartyManager
 
                       if (customerStatus != null)
                         {
-                          CustomerStatusInJourney customerStatusInJourney = CustomerStatusInJourney.fromExternalRepresentation(customerStatus);
+                          SubscriberJourneyStatus customerStatusInJourney = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
                           boolean criteriaSatisfied = false;
                           switch (customerStatusInJourney)
-                          {
-                            case ENTERED:
-                              criteriaSatisfied = !campaignComplete;
-                              break;
-                            case NOTIFIED:
-                              criteriaSatisfied = statusNotified && !statusConverted && !campaignComplete;
-                              break;
-                            case CONVERTED:
-                              criteriaSatisfied = statusConverted && !statusNotified && !campaignComplete;
-                              break;
-                            case CONTROL:
-                              criteriaSatisfied = statusControlGroup && !statusConverted && !campaignComplete;
-                              break;
-                            case UCG:
-                              criteriaSatisfied = statusUniversalControlGroup && !campaignComplete;
-                              break;
-                            case NOTIFIED_CONVERTED:
-                              criteriaSatisfied = statusNotified && statusConverted && !campaignComplete;
-                              break;
-                            case CONTROL_CONVERTED:
-                              criteriaSatisfied = statusControlGroup && statusConverted && !campaignComplete;
-                              break;
-                            case COMPLETED:
-                              criteriaSatisfied = campaignComplete;
-                              break;
-                            case UNKNOWN:
-                              break;
-                          }
-                          if (! criteriaSatisfied) continue;
+                            {
+                              case Entered:
+                                criteriaSatisfied = ! statusControlGroup && ! statusNotified && ! statusConverted;
+                                break;
+                              case ConvertedNotNotified:
+                                criteriaSatisfied = ! statusControlGroup && ! statusNotified && statusConverted;
+                                break;
+                              case Notified:
+                                criteriaSatisfied = ! statusControlGroup && statusNotified && ! statusConverted;
+                                break;
+                              case ConvertedNotified:
+                                criteriaSatisfied = ! statusControlGroup && statusNotified && statusConverted;
+                                break;
+                              case ControlGroupEntered:
+                                criteriaSatisfied = statusControlGroup && ! statusConverted;
+                                break;
+                              case ControlGroupConverted:
+                                criteriaSatisfied = statusControlGroup && statusConverted;
+                                break;
+                              case Unknown:
+                                break;
+                            }
+                          if (!criteriaSatisfied) continue;
                         }
 
                       //

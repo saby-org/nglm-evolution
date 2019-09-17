@@ -75,6 +75,7 @@ public class SegmentContactPolicy extends GUIManagedObject
 
   private String dimensionID;
   private Map<String, String> segments;
+  //<segmentID,contactPolicyID>
 
   /*****************************************
   *

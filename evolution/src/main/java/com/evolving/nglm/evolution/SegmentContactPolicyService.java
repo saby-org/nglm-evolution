@@ -6,36 +6,15 @@
 
 package com.evolving.nglm.evolution;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
-import com.evolving.nglm.evolution.SubscriberGroup.SubscriberGroupType;
-import com.evolving.nglm.evolution.SubscriberGroupLoader.LoadType;
-import com.evolving.nglm.evolution.TargetService.TargetListener;
 
 public class SegmentContactPolicyService extends GUIService
 {
