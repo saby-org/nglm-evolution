@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -29,7 +30,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
 
-public class SubscriberState implements SubscriberStreamOutput
+public class SubscriberState implements SubscriberStreamOutput, StateStore
 {
   /*****************************************
   *
@@ -83,6 +84,7 @@ public class SubscriberState implements SubscriberStreamOutput
   //
 
   private static ConnectSerde<SubscriberState> serde = new ConnectSerde<SubscriberState>(schema, false, SubscriberState.class, SubscriberState::pack, SubscriberState::unpack);
+  private static StateStoreSerde<SubscriberState> stateStoreSerde = new StateStoreSerde<SubscriberState>(serde);
 
   //
   //  accessor
@@ -90,6 +92,7 @@ public class SubscriberState implements SubscriberStreamOutput
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<SubscriberState> serde() { return serde; }
+  public static StateStoreSerde<SubscriberState> stateStoreSerde() { return stateStoreSerde; }
 
   /****************************************
   *
@@ -118,6 +121,12 @@ public class SubscriberState implements SubscriberStreamOutput
   private SubscriberTrace subscriberTrace;
   private ExternalAPIOutput externalAPIOutput;
 
+  //
+  //  in memory only
+  //
+
+  private byte[] kafkaRepresentation = null;
+
   /****************************************
   *
   *  accessors - basic
@@ -143,7 +152,14 @@ public class SubscriberState implements SubscriberStreamOutput
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<PropensityEventOutput> getPropensityOutputs() { return propensityOutputs; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
-  public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; } 
+  public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; }
+
+  //
+  //  kafkaRepresentation
+  //
+
+  @Override public void setKafkaRepresentation(byte[] kafkaRepresentation) { this.kafkaRepresentation = kafkaRepresentation; }
+  @Override public byte[] getKafkaRepresentation() { return kafkaRepresentation; }
 
   /****************************************
   *
@@ -196,6 +212,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.propensityOutputs = new ArrayList<PropensityEventOutput>();
         this.subscriberTrace = null;
         this.externalAPIOutput = null;
+        this.kafkaRepresentation = null;
       }
     catch (InvocationTargetException e)
       {
@@ -235,6 +252,7 @@ public class SubscriberState implements SubscriberStreamOutput
     this.propensityOutputs = propensityOutputs;
     this.subscriberTrace = subscriberTrace;
     this.externalAPIOutput = externalAPIOutput;
+    this.kafkaRepresentation = null;
   }
 
   /*****************************************
@@ -269,6 +287,7 @@ public class SubscriberState implements SubscriberStreamOutput
         this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
         this.externalAPIOutput = subscriberState.getExternalAPIOutput();
+        this.kafkaRepresentation = null;
 
         //
         //  deep copy of journey states

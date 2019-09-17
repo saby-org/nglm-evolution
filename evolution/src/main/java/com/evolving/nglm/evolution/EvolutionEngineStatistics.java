@@ -33,6 +33,9 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   int eventProcessedCount;
   int presentationCount;
   int acceptanceCount;
+  Histogram subscriberStateSize;
+  Histogram subscriberHistorySize;
+  Histogram extendedProfileSize;
 
   //
   //  profile event counts, profile counts
@@ -47,6 +50,9 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   public int getEventProcessedCount() { return eventProcessedCount; }
   public int getPresentationCount() { return presentationCount; }
   public int getAcceptanceCount() { return acceptanceCount; }
+  public Histogram getSubscriberStateSize() { return subscriberStateSize; }
+  public Histogram getSubscriberHistorySize() { return subscriberHistorySize; }
+  public Histogram getExtendedProfileSize() { return extendedProfileSize; }
 
   //
   // Interface: NGLMMonitoringObject
@@ -71,6 +77,9 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
     this.evolutionEventCounts = new HashMap<String,EvolutionEventStatistics>();
     this.presentationCount = 0;
     this.acceptanceCount = 0;
+    this.subscriberStateSize = new Histogram("subscriberStateSize", 10, 20, 1000, "KB");
+    this.subscriberHistorySize = new Histogram("subscriberHistorySize", 10, 20, 1000, "KB");
+    this.extendedProfileSize = new Histogram("extendedProfileSize", 10, 20, 1000, "KB");
     this.objectNameForManagement = BaseJMXObjectName + ",name=" + name;
 
     //
@@ -116,6 +125,39 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
         evolutionEventCounts.put(simpleName, stats);
       }
     stats.updateEvolutionEventCount(1);
+  }
+
+  /*****************************************
+  *
+  *  updateSubscriberStateSize
+  *
+  *****************************************/
+
+  synchronized void updateSubscriberStateSize(byte[] kafkaRepresentation)
+  {
+    subscriberStateSize.logData(kafkaRepresentation.length);
+  }
+
+  /*****************************************
+  *
+  *  updateSubscriberHistorySize
+  *
+  *****************************************/
+
+  synchronized void updateSubscriberHistorySize(byte[] kafkaRepresentation)
+  {
+    subscriberHistorySize.logData(kafkaRepresentation.length);
+  }
+
+  /*****************************************
+  *
+  *  updateExtendedProfileSize
+  *
+  *****************************************/
+
+  synchronized void updateExtendedProfileSize(byte[] kafkaRepresentation)
+  {
+    extendedProfileSize.logData(kafkaRepresentation.length);
   }
 
   /*****************************************

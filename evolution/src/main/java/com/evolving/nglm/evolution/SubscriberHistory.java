@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -17,7 +18,7 @@ import org.apache.kafka.connect.data.Struct;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SubscriberHistory
+public class SubscriberHistory implements StateStore
 {
   /*****************************************
   *
@@ -46,6 +47,7 @@ public class SubscriberHistory
   //
 
   private static ConnectSerde<SubscriberHistory> serde = new ConnectSerde<SubscriberHistory>(schema, false, SubscriberHistory.class, SubscriberHistory::pack, SubscriberHistory::unpack);
+  private static StateStoreSerde<SubscriberHistory> stateStoreSerde = new StateStoreSerde<SubscriberHistory>(serde);
 
   //
   //  accessor
@@ -53,6 +55,7 @@ public class SubscriberHistory
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<SubscriberHistory> serde() { return serde; }
+  public static StateStoreSerde<SubscriberHistory> stateStoreSerde() { return stateStoreSerde; }
   
   /*****************************************
   *
@@ -64,6 +67,12 @@ public class SubscriberHistory
   private List<DeliveryRequest> deliveryRequests;
   private List<JourneyHistory> journeyHistory;
 
+  //
+  //  in memory only
+  //
+
+  private byte[] kafkaRepresentation = null;
+
   /*****************************************
   *
   *  accessors
@@ -73,6 +82,13 @@ public class SubscriberHistory
   public String getSubscriberID() { return subscriberID; }
   public List<DeliveryRequest> getDeliveryRequests() { return deliveryRequests; }
   public List<JourneyHistory> getJourneyHistory() { return journeyHistory; }
+
+  //
+  //  kafkaRepresentation
+  //
+
+  @Override public void setKafkaRepresentation(byte[] kafkaRepresentation) { this.kafkaRepresentation = kafkaRepresentation; }
+  @Override public byte[] getKafkaRepresentation() { return kafkaRepresentation; }
 
   /*****************************************
   *
@@ -85,6 +101,7 @@ public class SubscriberHistory
     this.subscriberID = subscriberID;
     this.deliveryRequests = new ArrayList<DeliveryRequest>();
     this.journeyHistory = new ArrayList<JourneyHistory>();
+    this.kafkaRepresentation = null;
   }
 
   /*****************************************
@@ -98,6 +115,7 @@ public class SubscriberHistory
     this.subscriberID = subscriberID;
     this.deliveryRequests = deliveryRequests;
     this.journeyHistory = journeyHistory;
+    this.kafkaRepresentation = null;
   }
 
   /*****************************************
@@ -110,6 +128,7 @@ public class SubscriberHistory
   {
     this.subscriberID = subscriberHistory.getSubscriberID();
     this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberHistory.getDeliveryRequests());
+    this.kafkaRepresentation = null;
     
     //
     //  deep copy of journey statistics

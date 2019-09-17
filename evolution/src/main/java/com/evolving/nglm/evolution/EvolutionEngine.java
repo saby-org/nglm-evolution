@@ -531,15 +531,20 @@ public class EvolutionEngine
     final ConnectSerde<LoyaltyProgramRequest> loyaltyProgramRequestSerde = LoyaltyProgramRequest.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
-    final ConnectSerde<SubscriberState> subscriberStateSerde = SubscriberState.serde();
-    final ConnectSerde<SubscriberHistory> subscriberHistorySerde = SubscriberHistory.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
-    final ConnectSerde<ExtendedSubscriberProfile> extendedSubscriberProfileSerde = ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde();
     final ConnectSerde<PropensityEventOutput> propensityEventOutputSerde = PropensityEventOutput.serde();
     final ConnectSerde<PropensityKey> propensityKeySerde = PropensityKey.serde();
     final ConnectSerde<PropensityState> propensityStateSerde = PropensityState.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
     final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
+
+    //
+    //  special serdes
+    //
+
+    final Serde<SubscriberState> subscriberStateSerde = SubscriberState.stateStoreSerde();
+    final Serde<SubscriberHistory> subscriberHistorySerde = SubscriberHistory.stateStoreSerde();
+    final Serde<ExtendedSubscriberProfile> extendedSubscriberProfileSerde = ExtendedSubscriberProfile.stateStoreSerde();
 
     /*****************************************
     *
@@ -679,7 +684,7 @@ public class EvolutionEngine
     //
 
     KeyValueBytesStoreSupplier extendedProfileSupplier = Stores.persistentKeyValueStore(extendedSubscriberProfileChangeLog);
-    Materialized extendedProfileStoreSchema = Materialized.<StringKey, ExtendedSubscriberProfile>as(extendedProfileSupplier).withKeySerde(stringKeySerde).withValueSerde(extendedSubscriberProfileSerde.optionalSerde());
+    Materialized extendedProfileStoreSchema = Materialized.<StringKey, ExtendedSubscriberProfile>as(extendedProfileSupplier).withKeySerde(stringKeySerde).withValueSerde(extendedSubscriberProfileSerde);
     KTable<StringKey, ExtendedSubscriberProfile> extendedProfile = extendedProfileEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullExtendedSubscriberProfile, EvolutionEngine::updateExtendedSubscriberProfile, extendedProfileStoreSchema);
 
     //
@@ -734,7 +739,7 @@ public class EvolutionEngine
     //
 
     KeyValueBytesStoreSupplier subscriberStateSupplier = Stores.persistentKeyValueStore(subscriberStateChangeLog);
-    Materialized subscriberStateStoreSchema = Materialized.<StringKey, SubscriberState>as(subscriberStateSupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde.optionalSerde());
+    Materialized subscriberStateStoreSchema = Materialized.<StringKey, SubscriberState>as(subscriberStateSupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberStateSerde);
     KTable<StringKey, SubscriberState> subscriberState = evolutionEventStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberState, EvolutionEngine::updateSubscriberState, subscriberStateStoreSchema);
 
     //
@@ -832,8 +837,8 @@ public class EvolutionEngine
     *  JourneyStatistics
     *
     *****************************************/
+
     KStream<StringKey, JourneyStatisticWrapper> rekeyedJourneyStatisticStream = journeyStatisticWrapperStream.map(EvolutionEngine::rekeyByJourneyID);
-    
     KeyValueBytesStoreSupplier journeyTrafficSupplier = Stores.persistentKeyValueStore(journeyTrafficChangeLog);
     Materialized journeyTrafficStore = Materialized.<StringKey, JourneyTrafficHistory>as(journeyTrafficSupplier).withKeySerde(stringKeySerde).withValueSerde(journeyTrafficHistorySerde);
     KTable<StringKey, JourneyTrafficHistory> unusedJourneyTraffic = rekeyedJourneyStatisticStream.groupByKey(Serialized.with(stringKeySerde, journeyStatisticWrapperSerde)).aggregate(EvolutionEngine::nullJourneyTrafficHistory, EvolutionEngine::updateJourneyTrafficHistory, journeyTrafficStore);
@@ -903,7 +908,7 @@ public class EvolutionEngine
     //
 
     KeyValueBytesStoreSupplier subscriberHistorySupplier = Stores.persistentKeyValueStore(subscriberHistoryChangeLog);
-    Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde.optionalSerde());
+    Materialized subscriberHistoryStoreSchema = Materialized.<StringKey, SubscriberHistory>as(subscriberHistorySupplier).withKeySerde(stringKeySerde).withValueSerde(subscriberHistorySerde);
     KTable<StringKey, SubscriberHistory> subscriberHistory = subscriberHistoryStream.groupByKey(Serialized.with(stringKeySerde, evolutionEventSerde)).aggregate(EvolutionEngine::nullSubscriberHistory, EvolutionEngine::updateSubscriberHistory, subscriberHistoryStoreSchema);
 
     /*****************************************
@@ -1201,6 +1206,16 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  start periodic logger
+    *
+    *****************************************/
+
+    Runnable periodicLogger = new Runnable() { @Override public void run() { runPeriodicLogger(); } };
+    Thread periodicLoggerThread = new Thread(periodicLogger, "PeriodicLogger");
+    periodicLoggerThread.start();
+
+    /*****************************************
+    *
     *  log
     *
     *****************************************/
@@ -1214,10 +1229,12 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  public static TokenType getExternalTokenType() {
-    if(externalTokenType == null) {
-      externalTokenType = (TokenType) tokenTypeService.getStoredTokenType(externalTokenTypeID);
-    }
+  public static TokenType getExternalTokenType()
+  {
+    if(externalTokenType == null)
+      {
+        externalTokenType = (TokenType) tokenTypeService.getStoredTokenType(externalTokenTypeID);
+      }
     return externalTokenType;
   }
 
@@ -1509,6 +1526,153 @@ public class EvolutionEngine
     *
     *****************************************/
 
+    subscriberStateUpdated = cleanSubscriberState(subscriberState, now) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  update SubscriberProfile
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateSubscriberProfile(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  update SubscriberLoyaltyProgram
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateSubscriberLoyaltyProgram(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update PropensityOutputs
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updatePropensity(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  update journeyStates
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  scheduledEvaluations
+    *
+    *****************************************/
+
+    //
+    //  previously scheduled
+    //
+
+    Set<TimedEvaluation> previouslyScheduledEvaluations = (currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet();
+
+    //
+    //  deschedule no longer required events
+    //
+
+    for (TimedEvaluation scheduledEvaluation : previouslyScheduledEvaluations)
+      {
+        if (! subscriberState.getScheduledEvaluations().contains(scheduledEvaluation))
+          {
+            timerService.deschedule(scheduledEvaluation);
+          }
+      }
+
+    //
+    //  schedule new events
+    //
+
+    for (TimedEvaluation scheduledEvaluation : subscriberState.getScheduledEvaluations())
+      {
+        if (! previouslyScheduledEvaluations.contains(scheduledEvaluation))
+          {
+            timerService.schedule(scheduledEvaluation);
+          }
+      }
+
+    /*****************************************
+    *
+    *  subscriberTrace
+    *
+    *****************************************/
+
+    if (subscriberProfile.getSubscriberTraceEnabled())
+      {
+        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentSubscriberState, subscriberState, context.getSubscriberTraceDetails())));
+        subscriberStateUpdated = true;
+      }
+
+    /*****************************************
+    *
+    *  externalAPI
+    *
+    *****************************************/
+
+    Pair<String,JSONObject> resExternalAPI = callExternalAPI(evolutionEvent, currentSubscriberState, subscriberState);
+    JSONObject jsonObject = resExternalAPI.getSecondElement();
+    if (jsonObject != null)
+      {
+        subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject.toJSONString()));
+        subscriberStateUpdated = true;
+      }
+
+    /*****************************************
+    *
+    *  lastEvaluationDate
+    *
+    *****************************************/
+
+    subscriberState.setLastEvaluationDate(now);
+    subscriberStateUpdated = true;
+
+    /*****************************************
+    *
+    *  stateStoreSerde
+    *
+    *****************************************/
+
+    if (subscriberStateUpdated)
+      {
+        subscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+        evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
+        if (subscriberState.getKafkaRepresentation().length > 1000000)
+          {
+            log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
+            cleanSubscriberState(currentSubscriberState, now);
+            currentSubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
+            subscriberStateUpdated = false;
+          }
+      }
+
+    /****************************************
+    *
+    *  return
+    *
+    ****************************************/
+
+    return subscriberStateUpdated ? subscriberState : currentSubscriberState;
+  }
+
+  /*****************************************
+  *
+  *  cleanSubscriberState
+  *
+  *****************************************/
+
+  private static boolean cleanSubscriberState(SubscriberState subscriberState, Date now)
+  {
+    //
+    //  subscriberStateUpdated
+    //
+
+    boolean subscriberStateUpdated = false;
+
     //
     //  recentJourneyStates
     //
@@ -1644,116 +1808,11 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
-    /*****************************************
-    *
-    *  update SubscriberProfile
-    *
-    *****************************************/
-
-    subscriberStateUpdated = updateSubscriberProfile(context, evolutionEvent) || subscriberStateUpdated;
-
-    /*****************************************
-    *
-    *  update SubscriberLoyaltyProgram
-    *
-    *****************************************/
-
-    subscriberStateUpdated = updateSubscriberLoyaltyProgram(context, evolutionEvent) || subscriberStateUpdated;
-    
-    /*****************************************
-    *
-    *  update PropensityOutputs
-    *
-    *****************************************/
-
-    subscriberStateUpdated = updatePropensity(context, evolutionEvent) || subscriberStateUpdated;
-
-    /*****************************************
-    *
-    *  update journeyStates
-    *
-    *****************************************/
-
-    subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
-
-    /*****************************************
-    *
-    *  scheduledEvaluations
-    *
-    *****************************************/
-
     //
-    //  previously scheduled
+    //  return
     //
 
-    Set<TimedEvaluation> previouslyScheduledEvaluations = (currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet();
-
-    //
-    //  deschedule no longer required events
-    //
-
-    for (TimedEvaluation scheduledEvaluation : previouslyScheduledEvaluations)
-      {
-        if (! subscriberState.getScheduledEvaluations().contains(scheduledEvaluation))
-          {
-            timerService.deschedule(scheduledEvaluation);
-          }
-      }
-
-    //
-    //  schedule new events
-    //
-
-    for (TimedEvaluation scheduledEvaluation : subscriberState.getScheduledEvaluations())
-      {
-        if (! previouslyScheduledEvaluations.contains(scheduledEvaluation))
-          {
-            timerService.schedule(scheduledEvaluation);
-          }
-      }
-
-    /*****************************************
-    *
-    *  subscriberTrace
-    *
-    *****************************************/
-
-    if (subscriberProfile.getSubscriberTraceEnabled())
-      {
-        subscriberState.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentSubscriberState, subscriberState, context.getSubscriberTraceDetails())));
-        subscriberStateUpdated = true;
-      }
-
-    /*****************************************
-    *
-    *  externalAPI
-    *
-    *****************************************/
-
-    Pair<String,JSONObject> resExternalAPI = callExternalAPI(evolutionEvent, currentSubscriberState, subscriberState);
-    JSONObject jsonObject = resExternalAPI.getSecondElement();
-    if (jsonObject != null)
-      {
-        subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject.toJSONString()));
-        subscriberStateUpdated = true;
-      }
-
-    /*****************************************
-    *
-    *  lastEvaluationDate
-    *
-    *****************************************/
-
-    subscriberState.setLastEvaluationDate(now);
-    subscriberStateUpdated = true;
-
-    /****************************************
-    *
-    *  return
-    *
-    ****************************************/
-
-    return subscriberStateUpdated ? subscriberState : currentSubscriberState;
+    return subscriberStateUpdated;
   }
 
   /*****************************************
@@ -3965,7 +4024,7 @@ public class EvolutionEngine
 
     ExtendedSubscriberProfile extendedSubscriberProfile = (currentExtendedSubscriberProfile != null) ? ExtendedSubscriberProfile.copy(currentExtendedSubscriberProfile) : ExtendedSubscriberProfile.create(evolutionEvent.getSubscriberID());
     ExtendedProfileContext context = new ExtendedProfileContext(extendedSubscriberProfile, subscriberGroupEpochReader, uniqueKeyServer, SystemTime.getCurrentTime());
-    boolean extendedSubscrberProfileUpdated = (currentExtendedSubscriberProfile != null) ? false : true;
+    boolean extendedSubscriberProfileUpdated = (currentExtendedSubscriberProfile != null) ? false : true;
 
     /*****************************************
     *
@@ -3981,15 +4040,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    //
-    //  subscriberTrace
-    //
-
-    if (extendedSubscriberProfile.getSubscriberTrace() != null)
-      {
-        extendedSubscriberProfile.setSubscriberTrace(null);
-        extendedSubscrberProfileUpdated = true;
-      }
+    extendedSubscriberProfileUpdated = cleanExtendedSubscriberProfile(extendedSubscriberProfile, now) || extendedSubscriberProfileUpdated;
 
     /*****************************************
     *
@@ -4001,7 +4052,7 @@ public class EvolutionEngine
       {
         SubscriberTraceControl subscriberTraceControl = (SubscriberTraceControl) evolutionEvent;
         extendedSubscriberProfile.setSubscriberTraceEnabled(subscriberTraceControl.getSubscriberTraceEnabled());
-        extendedSubscrberProfileUpdated = true;
+        extendedSubscriberProfileUpdated = true;
       }
 
     /*****************************************
@@ -4012,16 +4063,13 @@ public class EvolutionEngine
 
     try
       {
-        extendedSubscrberProfileUpdated = ((Boolean) evolutionEngineExtensionUpdateExtendedSubscriberMethod.invoke(null, context, evolutionEvent)).booleanValue() || extendedSubscrberProfileUpdated;
+        extendedSubscriberProfileUpdated = ((Boolean) evolutionEngineExtensionUpdateExtendedSubscriberMethod.invoke(null, context, evolutionEvent)).booleanValue() || extendedSubscriberProfileUpdated;
       }
     catch (IllegalAccessException|InvocationTargetException e)
       {
         throw new RuntimeException(e);
       }
 
-    
-    
-    
     /*****************************************
     *
     *  subscriberTrace
@@ -4031,7 +4079,26 @@ public class EvolutionEngine
     if (extendedSubscriberProfile.getSubscriberTraceEnabled())
       {
         extendedSubscriberProfile.setSubscriberTrace(new SubscriberTrace(generateSubscriberTraceMessage(evolutionEvent, currentExtendedSubscriberProfile, extendedSubscriberProfile, context.getSubscriberTraceDetails())));
-        extendedSubscrberProfileUpdated = true;
+        extendedSubscriberProfileUpdated = true;
+      }
+
+    /*****************************************
+    *
+    *  stateStoreSerde
+    *
+    *****************************************/
+
+    if (extendedSubscriberProfileUpdated)
+      {
+        extendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile);
+        evolutionEngineStatistics.updateExtendedProfileSize(extendedSubscriberProfile.getKafkaRepresentation());
+        if (extendedSubscriberProfile.getKafkaRepresentation().length > 1000000)
+          {
+            log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.getKafkaRepresentation().length);
+            cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
+            currentExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
+            extendedSubscriberProfileUpdated = false;
+          }
       }
 
     /****************************************
@@ -4040,7 +4107,38 @@ public class EvolutionEngine
     *
     ****************************************/
 
-    return extendedSubscrberProfileUpdated ? extendedSubscriberProfile : currentExtendedSubscriberProfile;
+    return extendedSubscriberProfileUpdated ? extendedSubscriberProfile : currentExtendedSubscriberProfile;
+  }
+
+  /*****************************************
+  *
+  *  cleanExtendedSubscriberProfile
+  *
+  *****************************************/
+
+  private static boolean cleanExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile, Date now)
+  {
+    //
+    //  extendedSubscrberProfileUpdated
+    //
+
+    boolean extendedSubscriberProfileUpdated = false;
+
+    //
+    //  subscriberTrace
+    //
+
+    if (extendedSubscriberProfile.getSubscriberTrace() != null)
+      {
+        extendedSubscriberProfile.setSubscriberTrace(null);
+        extendedSubscriberProfileUpdated = true;
+      }
+
+    //
+    //  return
+    //
+
+    return extendedSubscriberProfileUpdated;
   }
 
   /*****************************************
@@ -4129,6 +4227,22 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /*****************************************
+    *
+    *  clear state
+    *
+    *****************************************/
+
+    subscriberHistoryUpdated = cleanSubscriberHistory(subscriberHistory, now) || subscriberHistoryUpdated;
+
+    /*****************************************
+    *
     *  deliveryRequest
     *
     *****************************************/
@@ -4149,6 +4263,25 @@ public class EvolutionEngine
         subscriberHistoryUpdated = updateSubscriberHistoryJourneyStatistics((JourneyStatistic) evolutionEvent, subscriberHistory) || subscriberHistoryUpdated;
       }
 
+    /*****************************************
+    *
+    *  stateStoreSerde
+    *
+    *****************************************/
+
+    if (subscriberHistoryUpdated)
+      {
+        subscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
+        evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
+        if (subscriberHistory.getKafkaRepresentation().length > 1000000)
+          {
+            log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
+            cleanSubscriberHistory(currentSubscriberHistory, now);
+            currentSubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
+            subscriberHistoryUpdated = false;
+          }
+      }
+
     /****************************************
     *
     *  return
@@ -4156,6 +4289,27 @@ public class EvolutionEngine
     ****************************************/
 
     return subscriberHistoryUpdated ? subscriberHistory : currentSubscriberHistory;
+  }
+
+  /*****************************************
+  *
+  *  cleanSubscriberHistory
+  *
+  *****************************************/
+
+  private static boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory, Date now)
+  {
+    //
+    //  subscriberHistoryUpdated
+    //
+
+    boolean subscriberHistoryUpdated = false;
+
+    //
+    //  return
+    //
+
+    return subscriberHistoryUpdated;
   }
 
   /*****************************************
@@ -5439,6 +5593,54 @@ public class EvolutionEngine
 
   /*****************************************
   *
+  *  runPeriodicLogger
+  *
+  *****************************************/
+
+  private void runPeriodicLogger()
+  {
+    Date nextProcessingTime = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), 300);
+    while (true)
+      {
+        synchronized (evolutionEngineStatistics)
+          {
+            //
+            //  wait
+            //
+
+            Date now = SystemTime.getCurrentTime();
+            while (now.before(nextProcessingTime))
+              {
+                try
+                  {
+                    evolutionEngineStatistics.wait(nextProcessingTime.getTime() - now.getTime());
+                  }
+                catch (InterruptedException e)
+                  {
+                    // ignore
+                  }
+                now = SystemTime.getCurrentTime();
+              }
+
+            //
+            //  log
+            //
+
+            log.info("SubscriberStateSize: {}", evolutionEngineStatistics.getSubscriberStateSize().toString());
+            log.info("SubscriberHistorySize: {}", evolutionEngineStatistics.getSubscriberHistorySize().toString());
+            log.info("ExtendedProfileSize: {}", evolutionEngineStatistics.getExtendedProfileSize().toString());
+
+            //
+            //  nextProcessingTime
+            //
+
+            nextProcessingTime = RLMDateUtils.addSeconds(nextProcessingTime, 300);
+          }
+      }
+  }
+
+  /*****************************************
+  *
   *  class EnterJourneyAction
   *
   *****************************************/
@@ -5559,5 +5761,4 @@ public class EvolutionEngine
       
     }
   }
-
 }

@@ -50,7 +50,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
 
-public abstract class ExtendedSubscriberProfile
+public abstract class ExtendedSubscriberProfile implements StateStore
 {
   /*****************************************
   *
@@ -125,12 +125,19 @@ public abstract class ExtendedSubscriberProfile
   }
 
   //
+  //
+  //
+
+  private static StateStoreSerde<ExtendedSubscriberProfile> stateStoreSerde = new StateStoreSerde<ExtendedSubscriberProfile>(extendedSubscriberProfileSerde);
+
+  //
   //  accessors
   //
 
   static Constructor getExtendedSubscriberProfileConstructor() { return extendedSubscriberProfileConstructor; }
   static Constructor getExtendedSubscriberProfileCopyConstructor() { return extendedSubscriberProfileCopyConstructor; }
   static ConnectSerde<ExtendedSubscriberProfile> getExtendedSubscriberProfileSerde() { return extendedSubscriberProfileSerde; }
+  static StateStoreSerde<ExtendedSubscriberProfile> stateStoreSerde() { return stateStoreSerde; }
 
   /****************************************
   *
@@ -142,6 +149,12 @@ public abstract class ExtendedSubscriberProfile
   private boolean subscriberTraceEnabled;
   private SubscriberTrace subscriberTrace;
 
+  //
+  //  in memory only
+  //
+
+  private byte[] kafkaRepresentation = null;
+
   /****************************************
   *
   *  accessors - basic
@@ -151,6 +164,13 @@ public abstract class ExtendedSubscriberProfile
   public String getSubscriberID() { return subscriberID; }
   public boolean getSubscriberTraceEnabled() { return subscriberTraceEnabled; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
+
+  //
+  //  kafkaRepresentation
+  //
+
+  @Override public void setKafkaRepresentation(byte[] kafkaRepresentation) { this.kafkaRepresentation = kafkaRepresentation; }
+  @Override public byte[] getKafkaRepresentation() { return kafkaRepresentation; }
 
   /*****************************************
   *
@@ -379,6 +399,7 @@ public abstract class ExtendedSubscriberProfile
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = false;
     this.subscriberTrace = null;
+    this.kafkaRepresentation = null;
   }
 
   /*****************************************
@@ -413,6 +434,7 @@ public abstract class ExtendedSubscriberProfile
     this.subscriberID = subscriberID;
     this.subscriberTraceEnabled = subscriberTraceEnabled;
     this.subscriberTrace = subscriberTrace;
+    this.kafkaRepresentation = null;
   }
 
   /*****************************************
@@ -426,6 +448,7 @@ public abstract class ExtendedSubscriberProfile
     this.subscriberID = extendedSubscriberProfile.getSubscriberID();
     this.subscriberTraceEnabled = extendedSubscriberProfile.getSubscriberTraceEnabled();
     this.subscriberTrace = extendedSubscriberProfile.getSubscriberTrace();
+    this.kafkaRepresentation = null;
   }
 
   /*****************************************
