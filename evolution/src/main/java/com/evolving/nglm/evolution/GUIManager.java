@@ -114,6 +114,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.Journey.BulkType;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
@@ -5470,12 +5471,42 @@ public class GUIManager
     *
     *****************************************/
 
-    String bulkCampaignTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", true);
-    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(bulkCampaignTemplateID, now);
+    //
+    //  get journey template
+    //
+    
+    BulkType bulkType = BulkType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "bulkType", false));
+    String journeyTemplateID = null;
+    if(bulkType != BulkType.Unknown){
+      switch (bulkType) {
+      case Bulk_SMS:
+        journeyTemplateID = "Bulk_SMS";
+        break;
+
+      case Bulk_Bonus:
+        journeyTemplateID = "Bulk_Bonus";
+        break;
+
+      default:
+        break;
+      }
+    }else{
+      journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "journeyTemplateID", true);
+    }
+    if(journeyTemplateID == null || journeyTemplateID.isEmpty()){
+      response.put("responseCode", "missingJourneyTemplate");
+      return JSONUtilities.encodeObject(response);
+    }
+    Journey journeyTemplate = journeyTemplateService.getActiveJourneyTemplate(journeyTemplateID, now);
     if(journeyTemplate == null){
       response.put("responseCode", "journeyTemplateNotFound");
       return JSONUtilities.encodeObject(response);
     }
+    
+    //
+    //  get campaign parameters
+    //
+    
     String bulkCampaignID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (bulkCampaignID == null)
       {
@@ -5486,9 +5517,14 @@ public class GUIManager
     String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", true);
     String bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
     String bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
-    String bulkCampaignTargetID = JSONUtilities.decodeString(jsonRoot, "targetID", true);
+    JSONArray bulkCampaignTargetIDs = JSONUtilities.decodeJSONArray(jsonRoot, "targetID", true);
     JSONArray bulkCampaignBoundParameters = JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", true);
-
+    boolean appendUCG = JSONUtilities.decodeBoolean(jsonRoot, "appendUCG", true);
+    boolean appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", true);
+    boolean appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", true);
+    String userIdentifier = JSONUtilities.decodeString(jsonRoot, "userID", "");
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", "");
+    
     /*****************************************
     *
     *  existing journey
@@ -5543,14 +5579,20 @@ public class GUIManager
         //  override with bulkCampaign attributes
         //
 
+        campaignJSONRepresentation.put("journeyTemplateID", journeyTemplateID);
         campaignJSONRepresentation.put("id", bulkCampaignID);
         campaignJSONRepresentation.put("name", bulkCampaignName);
         campaignJSONRepresentation.put("description", bulkCampaignDescription);
         campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
         campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
         campaignJSONRepresentation.put("targetingType", "criteria");
-        campaignJSONRepresentation.put("targetID", bulkCampaignTargetID);
+        campaignJSONRepresentation.put("targetID", bulkCampaignTargetIDs);
         campaignJSONRepresentation.put("boundParameters", bulkCampaignBoundParameters);
+        campaignJSONRepresentation.put("appendUCG", appendUCG);
+        campaignJSONRepresentation.put("appendInclusionLists", appendInclusionLists);
+        campaignJSONRepresentation.put("appendExclusionLists", appendExclusionLists);
+        campaignJSONRepresentation.put("userID", userIdentifier);
+        campaignJSONRepresentation.put("userName", userName);
 
         //
         //  campaignJSON
@@ -14536,7 +14578,7 @@ public class GUIManager
                     // filter campaigns
                     //
 
-                    storeCampaigns = storeCampaigns.stream().filter(campaign -> campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList()); 
+                    storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || campaign.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)).collect(Collectors.toList()); 
 
                     //
                     // filter on campaignStartDate

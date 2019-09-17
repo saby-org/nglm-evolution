@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
@@ -134,6 +135,9 @@ public class JourneyService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
+    if(guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign)){
+      result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
+    }
     return result;
   }
   

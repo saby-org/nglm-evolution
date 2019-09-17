@@ -121,7 +121,6 @@ public class Journey extends GUIManagedObject
     public String getJourneyParameterName() { return journeyParameterName; }
     public static SubscriberJourneyStatusField fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatusField enumeratedValue : SubscriberJourneyStatusField.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
-
   
   //
   //  TargetingType
@@ -139,6 +138,21 @@ public class Journey extends GUIManagedObject
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getDisplay() { return display; }
     public static TargetingType fromExternalRepresentation(String externalRepresentation) { for (TargetingType enumeratedValue : TargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  //
+  //  BulkType
+  //
+  
+  public enum BulkType
+  {
+    Bulk_SMS("Bulk_SMS"),
+    Bulk_Bonus("Bulk_Bonus"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private BulkType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static BulkType fromExternalRepresentation(String externalRepresentation) { for (BulkType enumeratedValue : BulkType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
   /*****************************************
@@ -164,7 +178,7 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("eligibilityCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
-    schemaBuilder.field("targetID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("targetID", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
     schemaBuilder.field("startNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("endNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyObjectives", SchemaBuilder.array(JourneyObjectiveInstance.schema()).schema());
@@ -199,7 +213,7 @@ public class Journey extends GUIManagedObject
   private TargetingType targetingType;
   private List<EvaluationCriterion> eligibilityCriteria;
   private List<EvaluationCriterion> targetingCriteria;
-  private String targetID;
+  private List<String> targetID;
   private String startNodeID;
   private String endNodeID;
   private Set<JourneyObjectiveInstance> journeyObjectiveInstances; 
@@ -224,7 +238,7 @@ public class Journey extends GUIManagedObject
   public TargetingType getTargetingType() { return targetingType; }
   public List<EvaluationCriterion> getEligibilityCriteria() { return eligibilityCriteria; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
-  public String getTargetID() { return targetID; }
+  public List<String> getTargetID() { return targetID; }
   public String getStartNodeID() { return startNodeID; }
   public String getEndNodeID() { return endNodeID; }
   public Set<JourneyObjectiveInstance> getJourneyObjectiveInstances() { return journeyObjectiveInstances;  }
@@ -296,52 +310,56 @@ public class Journey extends GUIManagedObject
         //  target
         //
 
-        if (targetID != null)
+        if (targetID != null && !targetID.isEmpty())
           {
-            //
-            //  get the target
-            //
+            
+            for(String currentTargetID : targetID){
+              
+              //
+              //  get the target
+              //
 
-            Target target = targetService.getActiveTarget(targetID, now);
+              Target target = targetService.getActiveTarget(currentTargetID, now);
 
-            //
-            //  target not active -- automatic false criteria
-            //
+              //
+              //  target not active -- automatic false criteria
+              //
 
-            if (target == null)
-              {
-                Map<String,Object> falseCriterionArgumentJSON = new LinkedHashMap<String,Object>();
-                Map<String,Object> falseCriterionJSON = new LinkedHashMap<String,Object>();
-                falseCriterionArgumentJSON.put("expression", "false");
-                falseCriterionJSON.put("criterionField", "internal.false");
-                falseCriterionJSON.put("criterionOperator", "<>");
-                falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
-                result.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile));
-              }
+              if (target == null)
+                {
+                  Map<String,Object> falseCriterionArgumentJSON = new LinkedHashMap<String,Object>();
+                  Map<String,Object> falseCriterionJSON = new LinkedHashMap<String,Object>();
+                  falseCriterionArgumentJSON.put("expression", "false");
+                  falseCriterionJSON.put("criterionField", "internal.false");
+                  falseCriterionJSON.put("criterionOperator", "<>");
+                  falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
+                  result.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile));
+                }
 
-            //
-            //  target critera
-            //
+              //
+              //  target critera
+              //
 
-            if (target != null)
-              {
-                result.addAll(target.getTargetingCriteria());
-              }
+              if (target != null)
+                {
+                  result.addAll(target.getTargetingCriteria());
+                }
 
-            //
-            // target "file" criteria
-            //
+              //
+              // target "file" criteria
+              //
 
-            if (target != null && target.getTargetFileID() != null)
-              {
-                Map<String,Object> targetCriterionArgumentJSON = new LinkedHashMap<String,Object>();
-                Map<String,Object> targetCriterionJSON = new LinkedHashMap<String,Object>();
-                targetCriterionArgumentJSON.put("expression", "'" + target.getTargetID() + "'");
-                targetCriterionJSON.put("criterionField", "internal.targets");
-                targetCriterionJSON.put("criterionOperator", "contains");
-                targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
-                result.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile));
-              }
+              if (target != null && target.getTargetFileID() != null)
+                {
+                  Map<String,Object> targetCriterionArgumentJSON = new LinkedHashMap<String,Object>();
+                  Map<String,Object> targetCriterionJSON = new LinkedHashMap<String,Object>();
+                  targetCriterionArgumentJSON.put("expression", "'" + currentTargetID + "'");
+                  targetCriterionJSON.put("criterionField", "internal.targets");
+                  targetCriterionJSON.put("criterionOperator", "contains");
+                  targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
+                  result.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile));
+                }
+            }
           }
 
         //
@@ -443,7 +461,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, String targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -617,7 +635,7 @@ public class Journey extends GUIManagedObject
     TargetingType targetingType = TargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     List<EvaluationCriterion> eligibilityCriteria = unpackCriteria(schema.field("eligibilityCriteria").schema(), valueStruct.get("eligibilityCriteria"));
     List<EvaluationCriterion> targetingCriteria = unpackCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
-    String targetID = valueStruct.getString("targetID");
+    List<String> targetID = (List<String>) valueStruct.get("targetID");
     String startNodeID = valueStruct.getString("startNodeID");
     String endNodeID = valueStruct.getString("endNodeID");
     Set<JourneyObjectiveInstance> journeyObjectiveInstances = unpackJourneyObjectiveInstances(schema.field("journeyObjectives").schema(), valueStruct.get("journeyObjectives"));
@@ -887,7 +905,7 @@ public class Journey extends GUIManagedObject
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
     this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), Deployment.getJourneyUniversalEligibilityCriteria());
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
-    this.targetID = JSONUtilities.decodeString(jsonRoot, "targetID", false);
+    this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
@@ -1384,6 +1402,22 @@ public class Journey extends GUIManagedObject
 
   /*****************************************
   *
+  *  decodeTargetIDs
+  *
+  *****************************************/
+
+  private List<String> decodeTargetIDs(JSONArray jsonArray)
+  {
+    List<String> targetIDs = new ArrayList<String>();
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        targetIDs.add((String) jsonArray.get(i));
+      }
+    return targetIDs;
+  }
+
+  /*****************************************
+  *
   *  decodeJourneyParameters
   *
   *****************************************/
@@ -1747,21 +1781,27 @@ public class Journey extends GUIManagedObject
 
     if (targetID != null)
       {
-        //
-        //  retrieve target
-        //
         
-        Target target = targetService.getActiveTarget(targetID, date);
+        for(String currentTargetID : targetID){
+          
+          //
+          //  retrieve target
+          //
+          
+          Target target = targetService.getActiveTarget(currentTargetID, date);
 
-        //
-        //  validate the target exists and is active
-        //
+          //
+          //  validate the target exists and is active
+          //
+          
+          if (target == null)
+            {
+              log.info("journey {} uses unknown/inactive target: {}", getJourneyID(), currentTargetID);
+              throw new GUIManagerException("journey uses unknown target", currentTargetID);
+            }
+          
+        }
         
-        if (target == null)
-          {
-            log.info("journey {} uses unknown/inactive target: {}", getJourneyID(), targetID);
-            throw new GUIManagerException("journey uses unknown target", targetID);
-          }
       }
   }
 

@@ -231,6 +231,8 @@ public abstract class GUIManagedObject
   public long getEpoch() { return epoch; }
   public Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   public Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
+  public String getUserID() { return userID; }
+  public String getUserName() { return userName; }
   public Date getCreatedDate() { return createdDate; }
 
   //
@@ -240,8 +242,6 @@ public abstract class GUIManagedObject
   boolean getReadOnly() { return readOnly; }
   boolean getInternalOnly() { return internalOnly; }
   boolean getActive() { return active; }
-  String getUserID() { return userID; }
-  String getUserName() { return userName; }
   String getGroupID() { return groupID; }
 
   //

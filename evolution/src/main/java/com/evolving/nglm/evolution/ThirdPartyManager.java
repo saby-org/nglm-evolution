@@ -1783,7 +1783,7 @@ public class ThirdPartyManager
                   // filter campaigns
                   //
 
-                  storeCampaigns = storeCampaigns.stream().filter(campaign -> campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign).collect(Collectors.toList()); 
+                  storeCampaigns = storeCampaigns.stream().filter(campaign -> (campaign.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || campaign.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)).collect(Collectors.toList()); 
 
                   //
                   // filter on campaignStartDate
@@ -3666,7 +3666,7 @@ public class ThirdPartyManager
     {
       case Journey_Manager:
         GUIManagedObject journey = journeyService.getStoredJourney(featureId);
-        journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
+        journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
         featureName = journey == null ? null : journey.getGUIManagedObjectName();
         break;
 
