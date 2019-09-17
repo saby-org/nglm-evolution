@@ -5579,6 +5579,7 @@ public class GUIManager
         //  override with bulkCampaign attributes
         //
 
+        campaignJSONRepresentation.put("bulkType", bulkType.getExternalRepresentation());
         campaignJSONRepresentation.put("journeyTemplateID", journeyTemplateID);
         campaignJSONRepresentation.put("id", bulkCampaignID);
         campaignJSONRepresentation.put("name", bulkCampaignName);
