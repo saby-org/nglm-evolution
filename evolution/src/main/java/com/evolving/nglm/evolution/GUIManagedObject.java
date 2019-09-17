@@ -231,7 +231,8 @@ public abstract class GUIManagedObject
   public long getEpoch() { return epoch; }
   public Date getEffectiveStartDate() { return (effectiveStartDate != null) ? effectiveStartDate : NGLMRuntime.BEGINNING_OF_TIME; }
   public Date getEffectiveEndDate() { return (effectiveEndDate != null) ? effectiveEndDate : NGLMRuntime.END_OF_TIME; }
-  
+  public Date getCreatedDate() { return createdDate; }
+
   //
   //  package protected
   //
@@ -242,7 +243,6 @@ public abstract class GUIManagedObject
   String getUserID() { return userID; }
   String getUserName() { return userName; }
   String getGroupID() { return groupID; }
-  Date getCreatedDate() { return createdDate; }
 
   //
   //  private
