@@ -2188,6 +2188,40 @@ public class EvolutionEngine
                 subscriberProfileUpdated = true;
               }
           }
+
+        //
+        //  Hierarchy modifications 
+        //
+        
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("subscriberRelationsUpdateMethod"))
+          {
+            SubscriberRelationsUpdateMethod method = SubscriberRelationsUpdateMethod.fromExternalRepresentation((String) subscriberProfileForceUpdate.getParameterMap().get("subscriberRelationsUpdateMethod"));
+            String relationshipID = (String) subscriberProfileForceUpdate.getParameterMap().get("relationshipID");
+            String relativeSubscriberID = (String) subscriberProfileForceUpdate.getParameterMap().get("relativeSubscriberID");
+            SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+            
+            if(relatives == null) {
+              relatives = new SubscriberRelatives();
+              subscriberProfile.getRelations().put(relationshipID, relatives);
+              subscriberProfileUpdated = true;
+            }
+            
+            if (method == SubscriberRelationsUpdateMethod.SetParent)
+              {
+                relatives.setParentSubscriberID(relativeSubscriberID);
+                subscriberProfileUpdated = true;
+              }
+            else if (method == SubscriberRelationsUpdateMethod.AddChild)
+              {
+                relatives.addChildSubscriberID(relativeSubscriberID);
+                subscriberProfileUpdated = true;
+              }
+            else if (method == SubscriberRelationsUpdateMethod.RemoveChild)
+              {
+                relatives.removeChildSubscriberID(relativeSubscriberID);
+                subscriberProfileUpdated = true;
+              }
+          }
       }
     
     /*****************************************

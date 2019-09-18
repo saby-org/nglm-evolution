@@ -139,7 +139,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -149,6 +149,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("loyaltyPrograms", SchemaBuilder.map(Schema.STRING_SCHEMA, LoyaltyProgramPointsState.schema()).name("subscriber_profile_loyaltyPrograms").schema());
     schemaBuilder.field("targets", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_targets").schema());
     schemaBuilder.field("exclusionInclusionTargets", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_exclusion_inclusion_targets").schema());
+    schemaBuilder.field("relations", SchemaBuilder.map(Schema.STRING_SCHEMA, SubscriberRelatives.serde().schema()).name("subscriber_profile_relations").schema());
     schemaBuilder.field("universalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tokens", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
     schemaBuilder.field("pointBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, PointBalance.schema()).name("subscriber_profile_balances").schema());
@@ -218,7 +219,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private EvolutionSubscriberStatus previousEvolutionSubscriberStatus;
   private Map<Pair<String,String>,Integer> segments; // Map<Pair<dimensionID,segmentID> epoch>>
   private Map<String,LoyaltyProgramPointsState> loyaltyPrograms; //Map<loyaltyProgID,<loyaltyProgramState>>
-  private Map<String,Integer> targets;               
+  private Map<String,Integer> targets;
+  private Map<String, SubscriberRelatives> relations; // Map<RelationshipID, SubscrbierRelatives(Parent & Children)>
   private boolean universalControlGroup;
   private List<Token> tokens;
   private Map<String,PointBalance> pointBalances;
@@ -241,6 +243,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Map<Pair<String, String>, Integer> getSegments() { return segments; }
   public Map<String, LoyaltyProgramPointsState> getLoyaltyPrograms() { return loyaltyPrograms; }
   public Map<String, Integer> getTargets() { return targets; }
+  public Map<String, SubscriberRelatives> getRelations() { return relations; }
   public boolean getUniversalControlGroup() { return universalControlGroup; }
   public List<Token> getTokens(){ return tokens; }
   public Map<String,PointBalance> getPointBalances() { return pointBalances; }
@@ -493,6 +496,20 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             pointsPresentation.add(JSONUtilities.encodeObject(pointPresentation));
           }
       }
+    
+    //
+    // prepare hierarchy
+    //
+    
+    ArrayList<JSONObject> hierarchyRelations = new ArrayList<JSONObject>();
+    for (String relationshipID : this.relations.keySet())
+      {
+        SubscriberRelatives relatives = this.relations.get(relationshipID);
+        if (relatives != null)
+          {
+            hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID));
+          }
+      }
 
     //
     //  prepare loyalty programs
@@ -554,6 +571,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("segments", JSONUtilities.encodeArray(new ArrayList<String>(getSegmentNames(segmentationDimensionService, subscriberGroupEpochReader))));
     generalDetailsPresentation.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramsPresentation));
     generalDetailsPresentation.put("targets", JSONUtilities.encodeArray(new ArrayList<String>(getTargetNames(targetService, subscriberGroupEpochReader))));
+    generalDetailsPresentation.put("relations", JSONUtilities.encodeArray(hierarchyRelations));
     generalDetailsPresentation.put("points", JSONUtilities.encodeArray(pointsPresentation));
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
@@ -917,6 +935,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.segments = new HashMap<Pair<String,String>, Integer>();
     this.loyaltyPrograms = new HashMap<String,LoyaltyProgramPointsState>();
     this.targets = new HashMap<String, Integer>();
+    this.relations = new HashMap<String, SubscriberRelatives>();
     this.universalControlGroup = false;
     this.tokens = new ArrayList<Token>();
     this.pointBalances = new HashMap<String,PointBalance>();
@@ -954,6 +973,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     EvolutionSubscriberStatus previousEvolutionSubscriberStatus = (valueStruct.getString("previousEvolutionSubscriberStatus") != null) ? EvolutionSubscriberStatus.fromExternalRepresentation(valueStruct.getString("previousEvolutionSubscriberStatus")) : null;
     Map<Pair<String,String>, Integer> segments = (schemaVersion >= 2) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
     Map<String, Integer> targets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("targets")) : new HashMap<String,Integer>();
+    Map<String, SubscriberRelatives> relations = (schemaVersion >= 3) ? unpackRelations(schema.field("relations").schema(), valueStruct.get("relations")) : new HashMap<String,SubscriberRelatives>();
     boolean universalControlGroup = valueStruct.getBoolean("universalControlGroup");
     List<Token> tokens = (schemaVersion >= 2) ? unpackTokens(schema.field("tokens").schema(), valueStruct.get("tokens")) : Collections.<Token>emptyList();
     Map<String,PointBalance> pointBalances = (schemaVersion >= 2) ? unpackPointBalances(schema.field("pointBalances").schema(), (Map<String,Object>) valueStruct.get("pointBalances")): Collections.<String,PointBalance>emptyMap();
@@ -975,6 +995,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.segments = segments;
     this.loyaltyPrograms = loyaltyPrograms;
     this.targets = targets;
+    this.relations = relations;
     this.universalControlGroup = universalControlGroup;
     this.tokens = tokens;
     this.pointBalances = pointBalances;
@@ -1082,6 +1103,27 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return result;
   }
+  
+
+
+  /*****************************************
+  *
+  *  unpackRelations
+  *
+  *****************************************/
+
+  private static Map<String, SubscriberRelatives> unpackRelations(Schema schema, Object value)
+  {
+    Schema mapSchema = schema.valueSchema();
+    Map<String, SubscriberRelatives> result = new HashMap<String, SubscriberRelatives>();
+    Map<String, Object> valueMap = (Map<String, Object>) value;
+    for (String relationshipID : valueMap.keySet())
+      {
+        result.put(relationshipID, SubscriberRelatives.serde().unpack(
+            new SchemaAndValue(mapSchema, valueMap.get(relationshipID))));
+      }
+    return result;
+  }
 
   /*****************************************
   *
@@ -1162,6 +1204,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.segments = new HashMap<Pair<String,String>, Integer>(subscriberProfile.getSegments());
     this.loyaltyPrograms = new HashMap<String,LoyaltyProgramPointsState>(subscriberProfile.getLoyaltyPrograms());
     this.targets = new HashMap<String, Integer>(subscriberProfile.getTargets());
+    this.relations = new HashMap<String, SubscriberRelatives>(subscriberProfile.getRelations());
     this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
     this.tokens = new ArrayList<Token>(subscriberProfile.getTokens());
     this.pointBalances = new HashMap<String,PointBalance>(subscriberProfile.getPointBalances()); // WARNING:  NOT a deep copy, PointBalance must be copied before update
@@ -1187,6 +1230,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("segments", packSegments(subscriberProfile.getSegments()));
     struct.put("loyaltyPrograms", packLoyaltyPrograms(subscriberProfile.getLoyaltyPrograms()));
     struct.put("targets", packTargets(subscriberProfile.getTargets()));
+    struct.put("relations", packRelations(subscriberProfile.getRelations()));
     struct.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
     struct.put("tokens", packTokens(subscriberProfile.getTokens()));
     struct.put("pointBalances", packPointBalances(subscriberProfile.getPointBalances()));
@@ -1252,6 +1296,22 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     return result;
   }
 
+  /****************************************
+  *
+  *  packRelations
+  *
+  ****************************************/
+
+  private static Object packRelations(Map<String, SubscriberRelatives> relations)
+  {
+    Map<String,Object> result = new HashMap<String,Object>();
+    for (String relationshipID : relations.keySet())
+      {
+        result.put(relationshipID, SubscriberRelatives.pack(relations.get(relationshipID)));
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  packTokens

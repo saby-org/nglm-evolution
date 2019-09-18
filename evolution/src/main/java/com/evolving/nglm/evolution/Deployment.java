@@ -128,6 +128,7 @@ public class Deployment
   private static Map<String,ServiceType> serviceTypes = new LinkedHashMap<String,ServiceType>();
   private static Map<String,SupportedShortCode> supportedShortCodes = new LinkedHashMap<String,SupportedShortCode>();
   private static Map<String,SupportedEmailAddress> supportedEmailAddresses = new LinkedHashMap<String,SupportedEmailAddress>();
+  private static Map<String,SupportedRelationship> supportedRelationships = new LinkedHashMap<String,SupportedRelationship>();
   private static Map<String,CallingChannelProperty> callingChannelProperties = new LinkedHashMap<String,CallingChannelProperty>();
   private static Map<String,CatalogCharacteristicUnit> catalogCharacteristicUnits = new LinkedHashMap<String,CatalogCharacteristicUnit>();
   private static Map<String,PartnerType> partnerTypes = new LinkedHashMap<String,PartnerType>();
@@ -319,6 +320,7 @@ public class Deployment
   public static Map<String,ServiceType> getServiceTypes() { return serviceTypes; }
   public static Map<String,SupportedShortCode> getSupportedShortCodes() { return supportedShortCodes; }
   public static Map<String,SupportedEmailAddress> getSupportedEmailAddresses() { return supportedEmailAddresses; }
+  public static Map<String,SupportedRelationship> getSupportedRelationships() { return supportedRelationships; }
   public static Map<String,CallingChannelProperty> getCallingChannelProperties() { return callingChannelProperties; }
   public static Map<String,CatalogCharacteristicUnit> getCatalogCharacteristicUnits() { return catalogCharacteristicUnits; }
   public static JSONArray getInitialCallingChannelsJSONArray() { return initialCallingChannelsJSONArray; }
@@ -1834,6 +1836,25 @@ public class Deployment
             JSONObject supportedEmailAddressJSON = (JSONObject) supportedEmailAddressValues.get(i);
             SupportedEmailAddress supportedEmailAddress = new SupportedEmailAddress(supportedEmailAddressJSON);
             supportedEmailAddresses.put(supportedEmailAddress.getID(), supportedEmailAddress);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  supportedRelationships
+    //
+
+    try
+      {
+        JSONArray supportedRelationshipValues = JSONUtilities.decodeJSONArray(jsonRoot, "supportedRelationships", new JSONArray());
+        for (int i=0; i<supportedRelationshipValues.size(); i++)
+          {
+            JSONObject supportedRelationshipJSON = (JSONObject) supportedRelationshipValues.get(i);
+            SupportedRelationship supportedRelationship = new SupportedRelationship(supportedRelationshipJSON);
+            supportedRelationships.put(supportedRelationship.getID(), supportedRelationship);
           }
       }
     catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)

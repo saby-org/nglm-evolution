@@ -149,6 +149,7 @@ public class GUIManager
     getSupportedLanguages("getSupportedLanguages"),
     getSupportedCurrencies("getSupportedCurrencies"),
     getSupportedTimeUnits("getSupportedTimeUnits"),
+    getSupportedRelationships("getSupportedRelationships"),
     getServiceTypes("getServiceTypes"),
     getCallingChannelProperties("getCallingChannelProperties"),
     getCatalogCharacteristicUnits("getCatalogCharacteristicUnits"),
@@ -344,6 +345,8 @@ public class GUIManager
     getTarget("getTarget"),
     removeTarget("removeTarget"),
     updateCustomer("updateCustomer"),
+    updateCustomerParent("updateCustomerParent"),
+    removeCustomerParent("removeCustomerParent"),
     getCommunicationChannelsList("getCommunicationChannelsList"),
     getCommunicationChannelsSummaryList("getCommunicationChannelsSummaryList"),
     getCommunicationChannel("getCommunicationChannel"),
@@ -1488,6 +1491,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getSupportedLanguages", new APISimpleHandler(API.getSupportedLanguages));
         restServer.createContext("/nglm-guimanager/getSupportedCurrencies", new APISimpleHandler(API.getSupportedCurrencies));
         restServer.createContext("/nglm-guimanager/getSupportedTimeUnits", new APISimpleHandler(API.getSupportedTimeUnits));
+        restServer.createContext("/nglm-guimanager/getSupportedRelationships", new APISimpleHandler(API.getSupportedRelationships));
         restServer.createContext("/nglm-guimanager/getServiceTypes", new APISimpleHandler(API.getServiceTypes));
         restServer.createContext("/nglm-guimanager/getCallingChannelProperties", new APISimpleHandler(API.getCallingChannelProperties));
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicUnits", new APISimpleHandler(API.getCatalogCharacteristicUnits));
@@ -1683,6 +1687,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTarget", new APISimpleHandler(API.getTarget));
         restServer.createContext("/nglm-guimanager/removeTarget", new APISimpleHandler(API.removeTarget));
         restServer.createContext("/nglm-guimanager/updateCustomer", new APISimpleHandler(API.updateCustomer));
+        restServer.createContext("/nglm-guimanager/updateCustomerParent", new APISimpleHandler(API.updateCustomerParent));
+        restServer.createContext("/nglm-guimanager/removeCustomerParent", new APISimpleHandler(API.removeCustomerParent));
         restServer.createContext("/nglm-guimanager/getCommunicationChannelsList", new APISimpleHandler(API.getCommunicationChannelsList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannelsSummaryList", new APISimpleHandler(API.getCommunicationChannelsSummaryList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannel", new APISimpleHandler(API.getCommunicationChannel));
@@ -2067,6 +2073,10 @@ public class GUIManager
 
                 case getSupportedTimeUnits:
                   jsonResponse = processGetSupportedTimeUnits(userID, jsonRoot);
+                  break;
+
+                case getSupportedRelationships:
+                  jsonResponse = processGetSupportedRelationships(userID, jsonRoot);
                   break;
 
                 case getServiceTypes:
@@ -2841,6 +2851,14 @@ public class GUIManager
                   jsonResponse = processUpdateCustomer(userID, jsonRoot);
                   break;
 
+                case updateCustomerParent:
+                  jsonResponse = processUpdateCustomerParent(userID, jsonRoot);
+                  break;
+
+                case removeCustomerParent:
+                  jsonResponse = processRemoveCustomerParent(userID, jsonRoot);
+                  break;
+                  
                 case getCommunicationChannelsList:
                   jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, true);
                   break;
@@ -3364,6 +3382,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve supportedRelationships
+    *
+    *****************************************/
+
+    List<JSONObject> supportedRelationships = new ArrayList<JSONObject>();
+    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+      {
+        JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
+        supportedRelationships.add(supportedRelationshipJSON);
+      }
+    
+    /*****************************************
+    *
     *  retrieve serviceTypes
     *
     *****************************************/
@@ -3539,6 +3570,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("supportedLanguages", JSONUtilities.encodeArray(supportedLanguages));
     response.put("supportedCurrencies", JSONUtilities.encodeArray(supportedCurrencies));
+    response.put("supportedRelationships", JSONUtilities.encodeArray(supportedRelationships));
     response.put("callingChannelProperties", JSONUtilities.encodeArray(callingChannelProperties));
     response.put("supportedDataTypes", JSONUtilities.encodeArray(supportedDataTypes));
     response.put("profileCriterionFields", JSONUtilities.encodeArray(profileCriterionFields));
@@ -3715,6 +3747,39 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("supportedTimeUnits", JSONUtilities.encodeArray(supportedTimeUnits));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getSupportedRelationships
+  *
+  *****************************************/
+
+  private JSONObject processGetSupportedRelationships(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve supportedRelationships
+    *
+    *****************************************/
+
+    List<JSONObject> supportedRelationships = new ArrayList<JSONObject>();
+    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+      {
+        JSONObject supportedRelationshipJSON = supportedRelationship.getJSONRepresentation();
+        supportedRelationships.add(supportedRelationshipJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("supportedRelationships", JSONUtilities.encodeArray(supportedRelationships));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -15435,6 +15500,245 @@ public class GUIManager
     *****************************************/
 
     response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processUpdateCustomerParent
+  *
+  *****************************************/
+
+  private JSONObject processUpdateCustomerParent(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
+    String newParentCustomerID = JSONUtilities.decodeString(jsonRoot, "newParentCustomerID", true);
+
+    /*****************************************
+    *
+    * resolve relationship
+    *
+    *****************************************/
+      
+    boolean isRelationshipSupported = false;
+    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+      {
+        if (supportedRelationship.getID().equals(relationshipID))
+          {
+            isRelationshipSupported = true;
+            break;
+          }
+      }
+    
+    if(!isRelationshipSupported)
+      {
+        response.put("responseCode", "RelationshipNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    String newParentSubscriberID = resolveSubscriberID(newParentCustomerID);
+    if (subscriberID == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      } 
+    else if (newParentSubscriberID == null)
+      {
+        response.put("responseCode", "ParentNotFound");
+      } 
+    else if (subscriberID.equals(newParentSubscriberID))
+      {
+        response.put("responseCode", "InvalidRequest");
+        response.put("responseMessage", "A customer can not be its own parent.");
+      }
+    else
+      {
+        try
+          {
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+            String previousParentSubscriberID = null;
+            SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+            if(relatives != null) 
+              {
+                previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
+              }
+            
+            if(! newParentSubscriberID.equals(previousParentSubscriberID)) 
+              {
+                if(previousParentSubscriberID != null)
+                  {
+                    //
+                    // Delete child for the parent 
+                    // 
+                    
+                    jsonRoot.put("subscriberID", previousParentSubscriberID);
+                    SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                    ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
+                    previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+                    previousParentParameterMap.put("relationshipID", relationshipID);
+                    previousParentParameterMap.put("relativeSubscriberID", subscriberID);
+                    
+                    //
+                    // submit to kafka 
+                    //
+                      
+                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+                    
+                  }
+                
+    
+                //
+                // Set child for the new parent 
+                //
+                
+                jsonRoot.put("subscriberID", newParentSubscriberID);
+                SubscriberProfileForceUpdate newParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
+                newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
+                newParentParameterMap.put("relationshipID", relationshipID);
+                newParentParameterMap.put("relativeSubscriberID", subscriberID);
+                  
+                //
+                // Set parent 
+                //
+                
+                jsonRoot.put("subscriberID", subscriberID);
+                SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
+                subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
+                subscriberParameterMap.put("relationshipID", relationshipID);
+                subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+                
+                //
+                // submit to kafka 
+                //
+                  
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(newParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), newParentProfileForceUpdate)));
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+              }
+            
+            response.put("responseCode", "ok");
+          } 
+        catch (SubscriberProfileServiceException e)
+          {
+            response.put("responseCode", "UnableToRetrieveCustomer");
+          }
+      }
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processDeleteCustomerParent
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCustomerParent(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
+
+    /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        try
+          {
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+            String previousParentSubscriberID = null;
+            SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+            if(relatives != null) 
+              {
+                previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
+              }
+            
+            if(previousParentSubscriberID != null)
+              {
+                //
+                // Delete child for the parent 
+                // 
+                
+                jsonRoot.put("subscriberID", previousParentSubscriberID);
+                SubscriberProfileForceUpdate parentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                ParameterMap parentParameterMap = parentProfileForceUpdate.getParameterMap();
+                parentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+                parentParameterMap.put("relationshipID", relationshipID);
+                parentParameterMap.put("relativeSubscriberID", subscriberID);
+                
+                
+                //
+                // Set parent null 
+                //
+                
+                jsonRoot.put("subscriberID", subscriberID);
+                SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
+                subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
+                subscriberParameterMap.put("relationshipID", relationshipID);
+                // "relativeSubscriberID" must stay null
+                
+                //
+                // submit to kafka 
+                //
+                
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+              }
+            
+            response.put("responseCode", "ok");
+            
+          } 
+        catch (SubscriberProfileServiceException e)
+          {
+            response.put("responseCode", "UnableToRetrieveCustomer");
+          }
+      }
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
     return JSONUtilities.encodeObject(response);
   }
 

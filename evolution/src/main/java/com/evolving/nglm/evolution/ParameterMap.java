@@ -145,7 +145,7 @@ public class ParameterMap extends HashMap<String,Object>
     Map<String,SMSMessage> smsMessageParameters = new HashMap<String,SMSMessage>();
     Map<String,EmailMessage> emailMessageParameters = new HashMap<String,EmailMessage>();
     Map<String,PushMessage> pushMessageParameters = new HashMap<String,PushMessage>();
-    Map<String,ParameterExpression> parameterExpressionParameters = new HashMap<String,ParameterExpression>();;
+    Map<String,ParameterExpression> parameterExpressionParameters = new HashMap<String,ParameterExpression>();
 
     //
     //  partition

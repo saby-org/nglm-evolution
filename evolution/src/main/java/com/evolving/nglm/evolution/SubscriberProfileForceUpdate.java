@@ -10,6 +10,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
@@ -106,7 +107,15 @@ public class SubscriberProfileForceUpdate implements SubscriberStreamEvent
     *****************************************/
 
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    this.eventDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "eventDate", true));
+    String date = JSONUtilities.decodeString(jsonRoot, "eventDate", false);
+    if(date != null)
+      {
+        this.eventDate = GUIManagedObject.parseDateField(date);
+      }
+    else
+      {
+        this.eventDate = SystemTime.getCurrentTime();
+      }
 
     /*****************************************
     *
