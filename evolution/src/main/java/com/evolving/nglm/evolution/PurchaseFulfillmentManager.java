@@ -30,6 +30,7 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.SubscriberProfileService.RedisSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
@@ -462,13 +463,20 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
     {
+      Module module = Module.fromExternalRepresentation(getModuleID());
       //
       //  salesChannel
       //
 
       SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime());
+      
+      //
+      //  offer
+      //
+
+      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
 
       //
       //  presentation
@@ -477,12 +485,37 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PURCHASEID, getEventID());
       guiPresentationMap.put(OFFERID, getOfferID());
+      guiPresentationMap.put(OFFERNAME, offer.getGUIManagedObjectName());
       guiPresentationMap.put(OFFERQTY, getQuantity());
+      guiPresentationMap.put(OFFERSTOCK, offer.getStock());
+      if(offer.getOfferSalesChannelsAndPrices() != null){
+        for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
+          if(channel.getSalesChannelIDs() != null) {
+            for(String salesChannelID : channel.getSalesChannelIDs()) {
+              if(salesChannelID.equals(getSalesChannelID())) {
+                guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+              }
+            }
+          }
+        }
+      }
+      
+      StringBuilder sb = new StringBuilder();
+      if(offer.getOfferProducts() != null) {
+        for(OfferProduct offerProduct : offer.getOfferProducts()) {
+          Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+          sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+        }
+      }
+      String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+      guiPresentationMap.put(OFFERCONTENT, offerContent);
+      
       guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
       guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
       guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
+      guiPresentationMap.put(MODULENAME, module.toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
+      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
       guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
@@ -490,13 +523,22 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(VOUCHERPARTNERID, "");
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService) 
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
     {
+      
+      Module module = Module.fromExternalRepresentation(getModuleID());
+      
       //
       //  salesChannel
       //
 
       SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(getSalesChannelID(), SystemTime.getCurrentTime());
+      
+      //
+      //  offer
+      //
+
+      Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
 
       //
       //  presentation
@@ -505,12 +547,37 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(PURCHASEID, getEventID());
       thirdPartyPresentationMap.put(OFFERID, getOfferID());
+      thirdPartyPresentationMap.put(OFFERNAME, offer.getGUIManagedObjectName());
       thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
+      thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
+      if(offer.getOfferSalesChannelsAndPrices() != null){
+        for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
+          if(channel.getSalesChannelIDs() != null) {
+            for(String salesChannelID : channel.getSalesChannelIDs()) {
+              if(salesChannelID.equals(getSalesChannelID())) {
+                thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+              }
+            }
+          }
+        }
+      }
+      
+      StringBuilder sb = new StringBuilder();
+      if(offer.getOfferProducts() != null) {
+        for(OfferProduct offerProduct : offer.getOfferProducts()) {
+          Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+          sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+        }
+      }
+      String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+      thirdPartyPresentationMap.put(OFFERCONTENT, offerContent);
+      
       thirdPartyPresentationMap.put(SALESCHANNELID, getSalesChannelID());
       thirdPartyPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
-      thirdPartyPresentationMap.put(MODULENAME, Module.fromExternalRepresentation(getModuleID()).toString());
+      thirdPartyPresentationMap.put(MODULENAME, module.toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
       thirdPartyPresentationMap.put(ORIGIN, getDeliveryRequestSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());

@@ -3171,8 +3171,18 @@ public class EvolutionEngine
 
     List<Journey> activeJourneys = new ArrayList<Journey>(journeyService.getActiveJourneys(now));
     Collections.shuffle(activeJourneys, ThreadLocalRandom.current());
-    boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
-    boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
+    
+    /*****************************************
+    *
+    *  inclusion/exclusion lists
+    *
+    *****************************************/
+
+    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+    boolean inclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
+    boolean exclusionList = (activeJourneys.size() > 0) ? subscriberState.getSubscriberProfile().getInExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now) : false;
+    context.getSubscriberTraceDetails().addAll(inclusionExclusionEvaluationRequest.getTraceDetails());
+    
     for (Journey journey : activeJourneys)
       {
         //

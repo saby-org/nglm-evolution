@@ -1350,14 +1350,37 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
   
-  public boolean getInInclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
+  public boolean getInInclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     boolean result = false;
     for (ExclusionInclusionTarget inclusionTarget : exclusionInclusionTargetService.getActiveInclusionTargets(now))
       {
-        if (subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID()) != null)
+        if (inclusionTarget.getFileID() != null)
           {
-            if (Objects.equals(subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID())))
+            /*****************************************
+            *
+            *  file-based inclusion/exclusion target
+            *
+            *****************************************/
+
+            if (subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID()) != null)
+              {
+                if (Objects.equals(subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID())))
+                  {
+                    result = true;
+                    break;
+                  }
+              }
+          }
+        else if (inclusionTarget.getCriteriaList().size() > 0)
+          {
+            /*****************************************
+            *
+            *  criteria-based inclusion/exclusion target
+            *
+            *****************************************/
+
+            if (EvaluationCriterion.evaluateCriteria(evaluationRequest, inclusionTarget.getCriteriaList()))
               {
                 result = true;
                 break;
@@ -1373,14 +1396,36 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
   
-  public boolean getInExclusionList(ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
+  public boolean getInExclusionList(SubscriberEvaluationRequest evaluationRequest, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, Date now)
   {
     boolean result = false;
     for (ExclusionInclusionTarget exclusionTarget : exclusionInclusionTargetService.getActiveExclusionTargets(now))
       {
-        if (subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID()) != null)
+        if (exclusionTarget.getFileID() != null)
           {
-            if (Objects.equals(subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID())))
+            /*****************************************
+             *
+             *  file-based inclusion/exclusion target
+             *
+             *****************************************/
+            if (subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID()) != null)
+              {
+                if (Objects.equals(subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID())))
+                  {
+                    result = true;
+                    break;
+                  }
+              }
+          }
+        else if (exclusionTarget.getCriteriaList().size() > 0)
+          {
+            /*****************************************
+             *
+             *  criteria-based inclusion/exclusion target
+             *
+             *****************************************/
+
+            if (EvaluationCriterion.evaluateCriteria(evaluationRequest, exclusionTarget.getCriteriaList()))
               {
                 result = true;
                 break;

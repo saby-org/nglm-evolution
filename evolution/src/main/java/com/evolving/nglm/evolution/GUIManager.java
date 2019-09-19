@@ -13799,7 +13799,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService))).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService))).collect(Collectors.toList());
                   }
 
                 //
@@ -13912,21 +13912,11 @@ public class GUIManager
                     // filter and prepare json
                     //
 
-                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
                     for (DeliveryRequest bdr : BDRs)
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
-                            DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(bdrMap.get(DeliveryRequest.MODULEID).toString());
-                            if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
-                              {
-                                bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
-                              }
-                            else
-                              {
-                                bdrMap.put(DeliveryRequest.FEATURENAME, null);
-                              }
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
                             BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                           }
                       }
@@ -14046,26 +14036,7 @@ public class GUIManager
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService);
-                            String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
-                            if (offerID != null)
-                              {
-                                Offer offer = (Offer) offerService.getStoredOffer(offerID);
-                                if (offer != null)
-                                  {
-                                    if (offer.getOfferSalesChannelsAndPrices() != null)
-                                      {
-                                        for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
-                                          {
-                                            presentationMap.put(DeliveryRequest.SALESCHANNELID, channel.getSalesChannelIDs());
-                                            presentationMap.put(DeliveryRequest.OFFERPRICE, channel.getPrice().getAmount());
-                                          }
-                                      }
-                                    presentationMap.put(DeliveryRequest.OFFERNAME, offer.getGUIManagedObjectName());
-                                    presentationMap.put(DeliveryRequest.OFFERSTOCK, "");
-                                    presentationMap.put(DeliveryRequest.OFFERCONTENT, offer.getOfferProducts().toString());
-                                  }
-                              }
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
                             ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                           }
                       }
@@ -14181,12 +14152,12 @@ public class GUIManager
                     // filter using dates and prepare json
                     //
 
-                    List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
                     for (DeliveryRequest message : messages)
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            messagesJson.add(JSONUtilities.encodeObject(message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService)));
+                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+                            messagesJson.add(JSONUtilities.encodeObject(messageMap));
                           }
                       }
                   }
@@ -21233,43 +21204,6 @@ public class GUIManager
         }
       while (!stopRequested);
     }
-  }
-
-  /*****************************************
-  *
-  *  getFeatureName
-  *
-  *****************************************/
-
-  private String getFeatureName(DeliveryRequest.Module module, String featureId)
-  {
-    String featureName = null;
-
-    switch (module)
-      {
-        case Journey_Manager:
-          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
-          journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey) ? journey : null;
-          featureName = journey == null ? null : journey.getGUIManagedObjectName();
-          break;
-
-        case Offer_Catalog:
-          featureName = offerService.getStoredOffer(featureId).getGUIManagedObjectName();
-          break;
-
-        case Delivery_Manager:
-          featureName = "Delivery_Manager-its temp"; //To DO
-          break;
-
-        case REST_API:
-          featureName = "REST_API-its temp"; //To DO
-          break;
-
-        case Unknown:
-          featureName = "Unknown";
-          break;
-      }
-    return featureName;
   }
 
   /*****************************************

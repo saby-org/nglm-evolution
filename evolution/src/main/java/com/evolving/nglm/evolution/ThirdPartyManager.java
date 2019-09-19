@@ -113,6 +113,8 @@ public class ThirdPartyManager
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private SalesChannelService salesChannelService;
   private SubscriberIDService subscriberIDService;
+  private ProductService productService;
+  private DeliverableService deliverableService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
@@ -303,7 +305,9 @@ public class ThirdPartyManager
     salesChannelService = new SalesChannelService(bootstrapServers, "thirdpartymanager-salesChannelService-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
-
+    productService = new ProductService(bootstrapServers, "thirdpartymanager-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
+    deliverableService = new DeliverableService(bootstrapServers, "thirdpartymanager-deliverableservice-" + apiProcessKey, Deployment.getDeliverableTopic(), false);
+    
     //
     //  start
     //
@@ -317,6 +321,8 @@ public class ThirdPartyManager
     offerObjectiveService.start();
     subscriberMessageTemplateService.start();
     salesChannelService.start();
+    productService.start();
+    deliverableService.start();
 
     /*****************************************
      *
@@ -364,7 +370,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
 
     /*****************************************
      *
@@ -401,12 +407,14 @@ public class ThirdPartyManager
     private SalesChannelService salesChannelService;
     private SubscriberIDService subscriberIDService;
     private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private ProductService productService;
+    private DeliverableService deliverableService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -421,6 +429,8 @@ public class ThirdPartyManager
       this.salesChannelService = salesChannelService;
       this.subscriberIDService = subscriberIDService;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+      this.productService = productService;
+      this.deliverableService = deliverableService;
     }
 
     //
@@ -449,6 +459,8 @@ public class ThirdPartyManager
       if (subscriberMessageTemplateService != null) subscriberMessageTemplateService.stop();
       if (salesChannelService != null) salesChannelService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
+      if (productService != null) productService.stop();
+      if (deliverableService != null) deliverableService.stop();
 
       //
       //  rest server
@@ -1073,16 +1085,7 @@ public class ThirdPartyManager
                     {
                       if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                         {
-                          Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService);
-                          DeliveryRequest.Module deliveryModule = DeliveryRequest.Module.fromExternalRepresentation(String.valueOf(bdrMap.get(DeliveryRequest.MODULEID)));
-                          if (bdrMap.get(DeliveryRequest.FEATUREID) != null)
-                            {
-                              bdrMap.put(DeliveryRequest.FEATURENAME, getFeatureName(deliveryModule, String.valueOf(bdrMap.get(DeliveryRequest.FEATUREID))));
-                            }
-                          else 
-                            {
-                              bdrMap.put(DeliveryRequest.FEATURENAME, null);
-                            }
+                          Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
                           BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                         }
                     }
@@ -1204,26 +1207,7 @@ public class ThirdPartyManager
                     {
                       if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                         {
-                          Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService);
-                          String offerID = presentationMap.get(DeliveryRequest.OFFERID) == null ? null : presentationMap.get(DeliveryRequest.OFFERID).toString();
-                          if (offerID != null)
-                            {
-                              Offer offer = (Offer) offerService.getStoredOffer(offerID);
-                              if (offer != null)
-                                {
-                                  if (offer.getOfferSalesChannelsAndPrices() != null)
-                                    {
-                                      for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
-                                        {
-                                          presentationMap.put(DeliveryRequest.SALESCHANNELID, channel.getSalesChannelIDs());
-                                          presentationMap.put(DeliveryRequest.OFFERPRICE, channel.getPrice().getAmount());
-                                        }
-                                    }
-                                  presentationMap.put(DeliveryRequest.OFFERNAME, offer.getGUIManagedObjectName());
-                                  presentationMap.put(DeliveryRequest.OFFERSTOCK, "");
-                                  presentationMap.put(DeliveryRequest.OFFERCONTENT, offer.getOfferProducts().toString());
-                                }
-                            }
+                          Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
                           ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                         }
                     }
@@ -1345,7 +1329,7 @@ public class ThirdPartyManager
                     {
                       if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                         {
-                          messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService)));
+                          messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService)));
                         }
                     }
                 }

@@ -36,6 +36,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 
 public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, Comparable
 {
@@ -74,7 +75,9 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //
   
   public static final String PROVIDERID = "providerId";
+  public static final String PROVIDERNAME = "providerName";
   public static final String DELIVERABLEID = "deliverableId";
+  public static final String DELIVERABLENAME = "deliverableName";
   public static final String DELIVERABLEQTY = "deliverableQty";
   public static final String OPERATION = "operation";
   public static final String VALIDITYPERIODTYPE = "validityPeriodType";
@@ -320,8 +323,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
-  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService);
-  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService);
   public abstract Integer getActivityType();
 
   /*****************************************
@@ -563,7 +566,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getGUIPresentationMap
   //
 
-  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
+  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
@@ -572,7 +575,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     guiPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService);
+    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
     return guiPresentationMap;
   }
   
@@ -580,7 +583,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getThirdPartyPresentationMap
   //
 
-  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService)
+  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
@@ -589,8 +592,47 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     thirdPartyPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
     return thirdPartyPresentationMap;
+  }
+  
+  //
+  //  getFeatureName
+  //
+
+  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService)
+  {
+    String featureName = null;
+
+    switch (module)
+      {
+        case Journey_Manager:
+          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
+          journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign) ? journey : null;
+          featureName = journey == null ? null : journey.getGUIManagedObjectName();
+          break;
+
+        case Offer_Catalog:
+          featureName = offerService.getStoredOffer(featureId).getGUIManagedObjectName();
+          break;
+
+        case Delivery_Manager:
+          featureName = "Delivery_Manager-its temp"; //To DO
+          break;
+
+        case REST_API:
+          featureName = "REST_API-its temp"; //To DO
+          break;
+          
+        case Customer_Care:
+          featureName = "Customer_Care-its temp"; //To DO
+          break;
+
+        case Unknown:
+          featureName = "Unknown";
+          break;
+      }
+    return featureName;
   }
 
   /*****************************************
