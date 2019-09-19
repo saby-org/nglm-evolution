@@ -8,24 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.evolving.nglm.evolution.*;
 import org.apache.log4j.Logger;
 
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.CatalogCharacteristicService;
-import com.evolving.nglm.evolution.Deployment;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
-import com.evolving.nglm.evolution.OfferSalesChannelsAndPrice;
-import com.evolving.nglm.evolution.ProductService;
-import com.evolving.nglm.evolution.ProductTypeService;
-import com.evolving.nglm.evolution.PropensityKey;
-import com.evolving.nglm.evolution.PropensityState;
-import com.evolving.nglm.evolution.SegmentationDimensionService;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
-import com.evolving.nglm.evolution.SubscriberGroupEpoch;
-import com.evolving.nglm.evolution.SubscriberProfile;
 
 
 /**
@@ -62,8 +50,8 @@ public class OfferOptimizerAlgoManager {
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader,
-      ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, 
-      SegmentationDimensionService segmentationDimensionService, StringBuffer returnedLog) {
+      ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader,
+      SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,StringBuffer returnedLog) {
 
     if (offers == null || offers.size() == 0) 
       {
@@ -157,7 +145,7 @@ public class OfferOptimizerAlgoManager {
                         salesChannelID,
                         currentPropensity, salesChannelAndPrice.getPrice() != null
                         ? salesChannelAndPrice.getPrice().getAmount() : 0,
-                            subscriberEvaluationRequest, algoDefinitions, productService, productTypeService, catalogCharacteristicService);
+                            subscriberEvaluationRequest, algoDefinitions, productService, productTypeService, catalogCharacteristicService,dnboMatrixAlgorithmParameters);
 
                     if (logger.isDebugEnabled()) 
                       {

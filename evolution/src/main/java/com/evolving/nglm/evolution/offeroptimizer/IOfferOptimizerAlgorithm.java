@@ -2,13 +2,8 @@ package com.evolving.nglm.evolution.offeroptimizer;
 
 import java.util.Map;
 
-import com.evolving.nglm.evolution.CatalogCharacteristicService;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
+import com.evolving.nglm.evolution.*;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
-import com.evolving.nglm.evolution.ProductService;
-import com.evolving.nglm.evolution.ProductTypeService;
-import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 
 public interface IOfferOptimizerAlgorithm
 {
@@ -33,5 +28,6 @@ public interface IOfferOptimizerAlgorithm
 		OfferOptimizationAlgorithm algoDefinition,
 		ProductService productService,
 	    ProductTypeService productTypeService,
-	    CatalogCharacteristicService catalogCharacteristicService);   
+	    CatalogCharacteristicService catalogCharacteristicService,
+        DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters);
 }

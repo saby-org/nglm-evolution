@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -119,6 +120,7 @@ public class DNBOProxy
   private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = null;
   private SegmentationDimensionService segmentationDimensionService;
+  private DNBOMatrixService dnboMatrixService;
 
   /*****************************************
   *
@@ -174,6 +176,7 @@ public class DNBOProxy
     propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey,
         Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
     segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
+    dnboMatrixService = new DNBOMatrixService(Deployment.getBrokerServers(),"dnboproxy-matrixservice"+apiProcessKey,Deployment.getDNBOMatrixTopic(),false);
     
     /*****************************************
     *
@@ -189,6 +192,7 @@ public class DNBOProxy
     salesChannelService.start();
     subscriberProfileService.start();
     segmentationDimensionService.start();
+    dnboMatrixService.start();
 
     /*****************************************
     *
@@ -215,7 +219,7 @@ public class DNBOProxy
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, productService, productTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, productService, productTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService,segmentationDimensionService,dnboMatrixService));
 
     /*****************************************
     *
@@ -246,6 +250,8 @@ public class DNBOProxy
     private ScoringStrategyService scoringStrategyService;
     private SalesChannelService salesChannelService;
     private SubscriberProfileService subscriberProfileService;
+    private SegmentationDimensionService segmentationDimensionService;
+    private DNBOMatrixService dnboMatrixService;
 
     //
     //  constructor
@@ -254,7 +260,7 @@ public class DNBOProxy
     private ShutdownHook(HttpServer restServer, OfferService offerService, ProductService productService,
         ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
         ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService,
-        SubscriberProfileService subscriberProfileService)
+        SubscriberProfileService subscriberProfileService,SegmentationDimensionService segmentationDimensionService,DNBOMatrixService dnboMatrixService)
     {
       this.restServer = restServer;
       this.offerService = offerService;
@@ -264,6 +270,8 @@ public class DNBOProxy
       this.scoringStrategyService = scoringStrategyService;
       this.salesChannelService = salesChannelService;
       this.subscriberProfileService = subscriberProfileService;
+      this.segmentationDimensionService = segmentationDimensionService;
+      this.dnboMatrixService = dnboMatrixService;
     }
 
     //
@@ -283,6 +291,8 @@ public class DNBOProxy
       if (scoringStrategyService != null) scoringStrategyService.stop();
       if (salesChannelService != null) salesChannelService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
+      if (segmentationDimensionService != null) segmentationDimensionService.stop();
+      if (dnboMatrixService != null) dnboMatrixService.stop();
 
       //
       //  rest server
@@ -431,6 +441,20 @@ public class DNBOProxy
                 jsonRoot.put("salesChannelID", matcher.group(2));
               }
           }
+
+        //
+        //  salesChannelID
+        //
+
+        if (JSONUtilities.decodeString(jsonRoot, "rangeValue", false) == null && exchange.getRequestURI().getQuery() != null)
+        {
+          Pattern pattern = Pattern.compile("^(.*\\&rangeValue|rangeValue)=(.*?)(\\&.*$|$)");
+          Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+          if (matcher.matches())
+          {
+            jsonRoot.put("rangeValue", Double.parseDouble(matcher.group(2)));
+          }
+        }
         
         /*****************************************
         *
@@ -542,6 +566,7 @@ public class DNBOProxy
     Date now = SystemTime.getCurrentTime();
     String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
+    double rangeValue = JSONUtilities.decodeDouble(jsonRoot,"rangeValue",true);
 
     List<String> scoringStrategyIDList;
     boolean multipleStrategies = true;
@@ -607,7 +632,7 @@ public class DNBOProxy
           }
         try
         {
-          JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy, salesChannel);
+          JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy, salesChannel,rangeValue);
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
         }
@@ -683,7 +708,7 @@ public class DNBOProxy
   *****************************************/
 
   private JSONObject getOffers(Date now, String subscriberID, String scoringStrategyID, String salesChannelID,
-      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy, SalesChannel salesChannel)
+      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy, SalesChannel salesChannel,double rangeValue)
       throws DNBOProxyException
   {
 
@@ -737,6 +762,8 @@ public class DNBOProxy
       {
         log.debug(logFragment);
       }
+
+      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
       
       // This returns an ordered Collection (and sorted by offerScore)
       Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
@@ -744,7 +771,7 @@ public class DNBOProxy
               algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
               productService, productTypeService, catalogCharacteristicService,
               propensityDataReader, subscriberGroupEpochReader,
-              segmentationDimensionService, returnedLog);
+              segmentationDimensionService,dnboMatrixAlgorithmParameters,returnedLog);
 
       if (offerAvailabilityFromPropensityAlgo == null)
         {

@@ -203,6 +203,7 @@ public class StoreConfiguration
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getScoringStrategyList", "scoringStrategies", "putScoringStrategy"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPresentationStrategyList", "presentationStrategies", "putPresentationStrategy"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getReportList", "reports", "putReport"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getDNBOMatrixList", "dnboMatrixes", "putDNBOMatrix"));
 
     /*****************************************
     *

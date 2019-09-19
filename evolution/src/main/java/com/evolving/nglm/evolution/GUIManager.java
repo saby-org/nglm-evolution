@@ -4590,17 +4590,22 @@ public class GUIManager
 
     List<JSONObject> offerOptimizationAlgorithms = new ArrayList<JSONObject>();
     for (OfferOptimizationAlgorithm offerOptimizationAlgorithm : Deployment.getOfferOptimizationAlgorithms().values())
+    {
+      if(!offerOptimizationAlgorithm.getID().equals("matrix-algorithm"))
       {
         JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
         offerOptimizationAlgorithms.add(offerOptimizationAlgorithmJSON);
       }
+    }
     
     // Add DNBOMatrix Algorithm for gui
     Date now = SystemTime.getCurrentTime();
     for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes())
-      {
-        offerOptimizationAlgorithms.add(presentationStrategyService.generateResponseJSON(dnboMatrix, false, now));
-      }
+    {
+      JSONObject matrixObject = presentationStrategyService.generateResponseJSON(dnboMatrix, false, now);
+      matrixObject.replace("id", "DNBO" + JSONUtilities.decodeString(matrixObject, "id", true));
+      offerOptimizationAlgorithms.add(matrixObject);
+    }
 
     /*****************************************
     *

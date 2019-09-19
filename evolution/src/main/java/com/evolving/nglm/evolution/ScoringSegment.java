@@ -312,8 +312,19 @@ public class ScoringSegment
       //
 
       this.segmentIDs = decodeSegmentIDs(JSONUtilities.decodeJSONArray(jsonRoot, "segmentIDs", false));
-      this.offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(JSONUtilities.decodeString(jsonRoot, "offerOptimizationAlgorithmID", true));
-      this.parameters = decodeParameters(JSONUtilities.decodeJSONObject(jsonRoot, "parameters", false));
+      String scoringAlgoId = JSONUtilities.decodeString(jsonRoot, "offerOptimizationAlgorithmID", true);
+      if(scoringAlgoId.startsWith("DNBO"))
+        {
+          this.parameters = new HashMap<OfferOptimizationAlgorithmParameter,String>();
+          this.offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get("matrix-algorithm");
+          this.parameters.put(new OfferOptimizationAlgorithmParameter("matrixID"),scoringAlgoId.replace("DNBO",""));
+        }
+      else
+        {
+          this.offerOptimizationAlgorithm = Deployment.getOfferOptimizationAlgorithms().get(scoringAlgoId);
+          this.parameters = decodeParameters(JSONUtilities.decodeJSONObject(jsonRoot, "parameters", false));
+        }
+
       this.offerObjectiveIDs = decodeOfferObjectiveIDs(JSONUtilities.decodeJSONArray(jsonRoot, "offerObjectiveIDs", true));
       this.alwaysAppendOfferObjectiveIDs = decodeAlwaysAppendOfferObjectiveIDs(JSONUtilities.decodeJSONArray(jsonRoot, "alwaysAppendOfferObjectiveIDs", false));
 

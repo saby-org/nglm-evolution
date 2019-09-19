@@ -28,7 +28,8 @@ public class RandomAlgo implements IOfferOptimizerAlgorithm {
       OfferOptimizationAlgorithm algoDefinition,
       ProductService productService, 
       ProductTypeService productTypeService,
-      CatalogCharacteristicService catalogCharacteristicService)
+      CatalogCharacteristicService catalogCharacteristicService,
+      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameterser)
   {
     if (logger.isTraceEnabled())
       {
