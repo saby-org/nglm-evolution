@@ -2068,7 +2068,7 @@ public class ThirdPartyManager
            {
              
              Date now = SystemTime.getCurrentTime();
-             Map<String,LoyaltyProgramPointsState> loyaltyPrograms = baseSubscriberProfile.getLoyaltyPrograms();
+             Map<String,LoyaltyProgramState> loyaltyPrograms = baseSubscriberProfile.getLoyaltyPrograms();
              List<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
              for (String loyaltyProgramID : loyaltyPrograms.keySet())
                {
@@ -2084,47 +2084,63 @@ public class ThirdPartyManager
                      HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
 
                      //
-                     //  loyaltyProgram type
+                     //  loyalty program informations
                      //
-                     
+
+                     LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
                      loyaltyProgramPresentation.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
-                     
-                     //
-                     //  current tier
-                     //
-
-                     LoyaltyProgramPointsState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
                      loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
-                     loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", loyaltyProgramState.getLoyaltyProgramEnrollmentDate());
-                     loyaltyProgramPresentation.put("loyaltyProgramExitDate", loyaltyProgramState.getLoyaltyProgramExitDate());
-                     if(loyaltyProgramState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramState.getTierName()); }
-                     if(loyaltyProgramState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramState.getTierEnrollmentDate()); }
+                     loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate()));
+                     loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate()));
+                     
+                     
+                     switch (loyaltyProgramState.getLoyaltyProgramType()) {
+                     case POINTS:
 
-                     //
-                     //  history
-                     //
-                     ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
-                     LoyaltyProgramHistory history = loyaltyProgramState.getLoyaltyProgramHistory();
-                     if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
-                       for(TierHistory tier : history.getTierHistory()){
-                         HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
-                         tierHistoryJSON.put("fromTier", tier.getFromTier());
-                         tierHistoryJSON.put("toTier", tier.getToTier());
-                         tierHistoryJSON.put("transitionDate", tier.getTransitionDate());
-                         loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                       LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+                       
+                       //
+                       //  current tier
+                       //
+                       
+                       if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
+                       if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate())); }
+
+                       //
+                       //  reward point informations
+                       //
+
+                       loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
+                       loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
+                       loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
+                       loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+
+                       //
+                       //  history
+                       //
+                       ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
+                       LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
+                       if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
+                         for(TierHistory tier : history.getTierHistory()){
+                           HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
+                           tierHistoryJSON.put("fromTier", tier.getFromTier());
+                           tierHistoryJSON.put("toTier", tier.getToTier());
+                           tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate()));
+                           loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                         }
                        }
+                       loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
+
+                       break;
+
+                     case BADGES:
+                       // TODO
+                       break;
+
+                     default:
+                       break;
                      }
-                     loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
-
-                     //
-                     //  reward point informations
-                     //
-
-                     loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
-                     loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
-                     loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
-                     loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
-
+                     
                      //
                      //  
                      //

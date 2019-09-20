@@ -155,6 +155,7 @@ public class GUIManager
     getCatalogCharacteristicUnits("getCatalogCharacteristicUnits"),
     getSupportedDataTypes("getSupportedDataTypes"),
     getSupportedEvents("getSupportedEvents"),
+    getLoyaltyProgramPointsEvents("getLoyaltyProgramPointsEvents"),
     getSupportedTargetingTypes("getSupportedTargetingTypes"),
     getProfileCriterionFields("getProfileCriterionFields"),
     getProfileCriterionFieldIDs("getProfileCriterionFieldIDs"),
@@ -1497,6 +1498,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCatalogCharacteristicUnits", new APISimpleHandler(API.getCatalogCharacteristicUnits));
         restServer.createContext("/nglm-guimanager/getSupportedDataTypes", new APISimpleHandler(API.getSupportedDataTypes));
         restServer.createContext("/nglm-guimanager/getSupportedEvents", new APISimpleHandler(API.getSupportedEvents));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramPointsEvents", new APISimpleHandler(API.getLoyaltyProgramPointsEvents));
         restServer.createContext("/nglm-guimanager/getSupportedTargetingTypes", new APISimpleHandler(API.getSupportedTargetingTypes));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFields", new APISimpleHandler(API.getProfileCriterionFields));
         restServer.createContext("/nglm-guimanager/getProfileCriterionFieldIDs", new APISimpleHandler(API.getProfileCriterionFieldIDs));
@@ -2097,6 +2099,10 @@ public class GUIManager
 
                 case getSupportedEvents:
                   jsonResponse = processGetSupportedEvents(userID, jsonRoot);
+                  break;
+
+                case getLoyaltyProgramPointsEvents:
+                  jsonResponse = processGetLoyaltyProgramPointsEvents(userID, jsonRoot);
                   break;
 
                 case getSupportedTargetingTypes:
@@ -3940,6 +3946,34 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("events", JSONUtilities.encodeArray(events));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getLoyaltyProgramPointsEvents
+  *
+  *****************************************/
+
+  private JSONObject processGetLoyaltyProgramPointsEvents(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve events
+    *
+    *****************************************/
+
+    List<JSONObject> events = evaluateEnumeratedValues("loyaltyProgramPointsEventNames", SystemTime.getCurrentTime(), true);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("loyaltyProgramPointsEvents", JSONUtilities.encodeArray(events));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -19705,6 +19739,27 @@ public class GUIManager
               availableValue.put("id", evolutionEngineEventDeclaration.getName());
               availableValue.put("display", evolutionEngineEventDeclaration.getName());
               result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "loyaltyProgramPointsEventNames":
+          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
+            {
+              try
+                {
+                  Class eventClass = Class.forName(evolutionEngineEventDeclaration.getEventClassName());
+                  for(Class currentInterface : eventClass.getInterfaces()){
+                    if(currentInterface.equals(LoyaltyProgramPointsEvent.class)){
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", evolutionEngineEventDeclaration.getName());
+                      availableValue.put("display", evolutionEngineEventDeclaration.getName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                      break;
+                    }
+                  }
+                } catch (Exception e)
+                {
+                }
             }
           break;
 

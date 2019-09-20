@@ -146,7 +146,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("evolutionSubscriberStatusChangeDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("previousEvolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_segments").schema());
-    schemaBuilder.field("loyaltyPrograms", SchemaBuilder.map(Schema.STRING_SCHEMA, LoyaltyProgramPointsState.schema()).name("subscriber_profile_loyaltyPrograms").schema());
+    schemaBuilder.field("loyaltyPrograms", SchemaBuilder.map(Schema.STRING_SCHEMA, LoyaltyProgramState.commonSerde().schema()));
     schemaBuilder.field("targets", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_targets").schema());
     schemaBuilder.field("exclusionInclusionTargets", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("subscriber_profile_exclusion_inclusion_targets").schema());
     schemaBuilder.field("relations", SchemaBuilder.map(Schema.STRING_SCHEMA, SubscriberRelatives.serde().schema()).name("subscriber_profile_relations").schema());
@@ -218,8 +218,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private Date evolutionSubscriberStatusChangeDate;
   private EvolutionSubscriberStatus previousEvolutionSubscriberStatus;
   private Map<Pair<String,String>,Integer> segments; // Map<Pair<dimensionID,segmentID> epoch>>
-  private Map<String,LoyaltyProgramPointsState> loyaltyPrograms; //Map<loyaltyProgID,<loyaltyProgramState>>
-  private Map<String,Integer> targets;
+  private Map<String,LoyaltyProgramState> loyaltyPrograms; //Map<loyaltyProgID,<loyaltyProgramState>>
+  private Map<String,Integer> targets;               
   private Map<String, SubscriberRelatives> relations; // Map<RelationshipID, SubscrbierRelatives(Parent & Children)>
   private boolean universalControlGroup;
   private List<Token> tokens;
@@ -241,7 +241,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public Date getEvolutionSubscriberStatusChangeDate() { return evolutionSubscriberStatusChangeDate; }
   public EvolutionSubscriberStatus getPreviousEvolutionSubscriberStatus() { return previousEvolutionSubscriberStatus; }
   public Map<Pair<String, String>, Integer> getSegments() { return segments; }
-  public Map<String, LoyaltyProgramPointsState> getLoyaltyPrograms() { return loyaltyPrograms; }
+  public Map<String, LoyaltyProgramState> getLoyaltyPrograms() { return loyaltyPrograms; }
   public Map<String, Integer> getTargets() { return targets; }
   public Map<String, SubscriberRelatives> getRelations() { return relations; }
   public boolean getUniversalControlGroup() { return universalControlGroup; }
@@ -525,34 +525,54 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
             
             //
-            //  current tier
+            //  loyalty program basic information
             //
             
-            LoyaltyProgramPointsState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
+            LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
             loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
             loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", loyaltyProgramState.getLoyaltyProgramEnrollmentDate());
             loyaltyProgramPresentation.put("loyaltyProgramExitDate", loyaltyProgramState.getLoyaltyProgramExitDate());
-            if(loyaltyProgramState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramState.getTierName()); }
-            if(loyaltyProgramState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramState.getTierEnrollmentDate()); }
             
-            //
-            //  history
-            //
-            ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
-            LoyaltyProgramHistory history = loyaltyProgramState.getLoyaltyProgramHistory();
-            if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
-              for(TierHistory tier : history.getTierHistory()){
-                HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
-                tierHistoryJSON.put("fromTier", tier.getFromTier());
-                tierHistoryJSON.put("toTier", tier.getToTier());
-                tierHistoryJSON.put("transitionDate", tier.getTransitionDate());
-                loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+            switch (loyaltyProgramState.getLoyaltyProgramType()) {
+            case POINTS:
+
+              LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+              
+              //
+              //  current tier
+              //
+              
+              if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
+              if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
+              
+              //
+              //  history
+              //
+              ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
+              LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
+              if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
+                for(TierHistory tier : history.getTierHistory()){
+                  HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
+                  tierHistoryJSON.put("fromTier", tier.getFromTier());
+                  tierHistoryJSON.put("toTier", tier.getToTier());
+                  tierHistoryJSON.put("transitionDate", tier.getTransitionDate());
+                  loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                }
               }
+              loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
+
+              break;
+
+            case BADGES:
+              // TODO
+              break;
+
+            default:
+              break;
             }
-            loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
             
             //
-            //  
+            //  add loyalty program to the result list
             //
             
             loyaltyProgramsPresentation.add(JSONUtilities.encodeObject(loyaltyProgramPresentation));
@@ -664,15 +684,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   {
     return getSegments(subscriberGroupEpochReader).contains(requestedSegmentID);
   }
-
-//  //
-//  //  getInLoyaltyProgram
-//  //
-//
-//  public boolean getInLoyaltyProgram(String requestedLoyaltyProgramID, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
-//  {
-//    return getLoyaltyPrograms(subscriberGroupEpochReader).contains(requestedLoyaltyProgramID);
-//  }
 
   /****************************************
   *
@@ -933,7 +944,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatusChangeDate = null;
     this.previousEvolutionSubscriberStatus = null;
     this.segments = new HashMap<Pair<String,String>, Integer>();
-    this.loyaltyPrograms = new HashMap<String,LoyaltyProgramPointsState>();
+    this.loyaltyPrograms = new HashMap<String,LoyaltyProgramState>();
     this.targets = new HashMap<String, Integer>();
     this.relations = new HashMap<String, SubscriberRelatives>();
     this.universalControlGroup = false;
@@ -981,7 +992,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
-    Map<String,LoyaltyProgramPointsState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramPointsState>emptyMap();
+    Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
 
     //
     //  return
@@ -1056,7 +1067,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   *****************************************/
 
-  private static Map<String,LoyaltyProgramPointsState> unpackLoyaltyPrograms(Schema schema, Map<String,Object> value)
+  private static Map<String,LoyaltyProgramState> unpackLoyaltyPrograms(Schema schema, Map<String,Object> value)
   {
     //
     //  get schema for LoyaltyProgramState
@@ -1068,10 +1079,10 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     //  unpack
     //
 
-    Map<String,LoyaltyProgramPointsState> result = new HashMap<String,LoyaltyProgramPointsState>();
+    Map<String,LoyaltyProgramState> result = new HashMap<String,LoyaltyProgramState>();
     for (String key : value.keySet())
       {
-        result.put(key, LoyaltyProgramPointsState.unpack(new SchemaAndValue(loyaltyProgramStateSchema, value.get(key))));
+        result.put(key, LoyaltyProgramState.commonSerde().unpack(new SchemaAndValue(loyaltyProgramStateSchema, value.get(key))));
       }
 
     //
@@ -1202,7 +1213,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.evolutionSubscriberStatusChangeDate = subscriberProfile.getEvolutionSubscriberStatusChangeDate();
     this.previousEvolutionSubscriberStatus = subscriberProfile.getPreviousEvolutionSubscriberStatus();
     this.segments = new HashMap<Pair<String,String>, Integer>(subscriberProfile.getSegments());
-    this.loyaltyPrograms = new HashMap<String,LoyaltyProgramPointsState>(subscriberProfile.getLoyaltyPrograms());
+    this.loyaltyPrograms = new HashMap<String,LoyaltyProgramState>(subscriberProfile.getLoyaltyPrograms());
     this.targets = new HashMap<String, Integer>(subscriberProfile.getTargets());
     this.relations = new HashMap<String, SubscriberRelatives>(subscriberProfile.getRelations());
     this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
@@ -1267,12 +1278,12 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
 
-  private static Map<String,Object> packLoyaltyPrograms(Map<String,LoyaltyProgramPointsState> loyaltyPrograms)
+  private static Map<String,Object> packLoyaltyPrograms(Map<String,LoyaltyProgramState> loyaltyPrograms)
   {
     Map<String,Object> result = new HashMap<String,Object>();
     for (String loyaltyProgramID : loyaltyPrograms.keySet())
       {
-        result.put(loyaltyProgramID, LoyaltyProgramPointsState.pack(loyaltyPrograms.get(loyaltyProgramID)));
+        result.put(loyaltyProgramID, LoyaltyProgramState.commonSerde().pack(loyaltyPrograms.get(loyaltyProgramID)));
       }
     return result;
   }
