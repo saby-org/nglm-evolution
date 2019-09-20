@@ -18,13 +18,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,12 +40,26 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.WakeupException;
+
+import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RecordSubscriberID;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -74,6 +93,7 @@ public class DNBOProxy
   public enum API
   {
     getSubscriberOffers("getSubscriberOffers"),
+    provisionSubscriber("provisionSubscriber"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private API(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -121,6 +141,12 @@ public class DNBOProxy
   private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = null;
   private SegmentationDimensionService segmentationDimensionService;
   private DNBOMatrixService dnboMatrixService;
+  private SubscriberIDService subscriberIDService;
+  private KafkaProducer<byte[], byte[]> kafkaProducer;
+  private KafkaConsumer<byte[], byte[]> kafkaConsumer;
+  private Map<AssignSubscriberIDs,LinkedBlockingQueue<String>> outstandingRequests = Collections.synchronizedMap(new HashMap<>());
+  private Thread subscriberManagerTopicReaderThread = null;
+  private volatile boolean stopRequested = false;
 
   /*****************************************
   *
@@ -171,12 +197,11 @@ public class DNBOProxy
     scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "dnboproxy-scoringstrategyservice-" + apiProcessKey, Deployment.getScoringStrategyTopic(), false);
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "dnboproxy-saleschannelservice-" + apiProcessKey, Deployment.getSalesChannelTopic(), false);
     subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
-    subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy-subscribergroupepoch", "dnboproxy-subscribergroupepochreader-"+apiProcessKey,
-        Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
-    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey,
-        Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
+    subscriberGroupEpochReader = ReferenceDataReader.<String, SubscriberGroupEpoch>startReader("dnboproxy-subscribergroupepoch", "dnboproxy-subscribergroupepochreader-"+apiProcessKey, Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey, Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
     segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
     dnboMatrixService = new DNBOMatrixService(Deployment.getBrokerServers(),"dnboproxy-matrixservice"+apiProcessKey,Deployment.getDNBOMatrixTopic(),false);
+    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "dnboproxy-" + apiProcessKey);
     
     /*****************************************
     *
@@ -196,6 +221,45 @@ public class DNBOProxy
 
     /*****************************************
     *
+    *  subscriber provisioning
+    *
+    *****************************************/
+
+    //
+    //  kafka producer
+    //
+    
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
+    
+    //
+    // kafka consumer
+    //
+
+    Properties consumerProperties = new Properties();
+    consumerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+    consumerProperties.put("group.id", "dnboproxy-subscriberprovisioning-" + apiProcessKey);
+    consumerProperties.put("auto.offset.reset", "earliest");
+    consumerProperties.put("enable.auto.commit", "false");
+    consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    kafkaConsumer = new KafkaConsumer<>(consumerProperties);
+    kafkaConsumer.subscribe(Arrays.asList(Deployment.getRecordSubscriberIDTopic()));
+
+    //
+    // response processor
+    //
+
+    Runnable subscriberManagerTopicReader = new Runnable() { @Override public void run() { readSubscriberManagerTopic(kafkaConsumer, outstandingRequests); } };
+    subscriberManagerTopicReaderThread = new Thread(subscriberManagerTopicReader, "SubscriberManagerTopicReader");
+    subscriberManagerTopicReaderThread.start();
+    
+    /*****************************************
+    *
     *  REST interface -- server and handlers
     *
     *****************************************/
@@ -205,7 +269,8 @@ public class DNBOProxy
         InetSocketAddress addr = new InetSocketAddress(apiRestPort);
         restServer = HttpServer.create(addr, 0);
         restServer.createContext("/nglm-dnboproxy/getSubscriberOffers", new APIHandler(API.getSubscriberOffers));
-        restServer.setExecutor(Executors.newFixedThreadPool(10));
+        restServer.createContext("/nglm-dnboproxy/provisionSubscriber", new APIHandler(API.provisionSubscriber));
+        restServer.setExecutor(Executors.newFixedThreadPool(20));
         restServer.start();
       }
     catch (IOException e)
@@ -219,7 +284,7 @@ public class DNBOProxy
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(restServer, offerService, productService, productTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService,segmentationDimensionService,dnboMatrixService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this, restServer, offerService, productService, productTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService, segmentationDimensionService, dnboMatrixService, subscriberIDService, kafkaProducer, kafkaConsumer, subscriberManagerTopicReaderThread));
 
     /*****************************************
     *
@@ -242,6 +307,7 @@ public class DNBOProxy
     //  data
     //
 
+    private DNBOProxy dnboProxy;
     private HttpServer restServer;
     private OfferService offerService;
     private ProductService productService;   
@@ -252,16 +318,18 @@ public class DNBOProxy
     private SubscriberProfileService subscriberProfileService;
     private SegmentationDimensionService segmentationDimensionService;
     private DNBOMatrixService dnboMatrixService;
+    private SubscriberIDService subscriberIDService;
+    private KafkaProducer<byte[], byte[]> kafkaProducer;
+    private KafkaConsumer<byte[], byte[]> kafkaConsumer;
+    Thread subscriberManagerTopicReaderThread;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(HttpServer restServer, OfferService offerService, ProductService productService,
-        ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
-        ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService,
-        SubscriberProfileService subscriberProfileService,SegmentationDimensionService segmentationDimensionService,DNBOMatrixService dnboMatrixService)
+    private ShutdownHook(DNBOProxy dnboProxy, HttpServer restServer, OfferService offerService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, DNBOMatrixService dnboMatrixService, SubscriberIDService subscriberIDService, KafkaProducer<byte[], byte[]> kafkaProducer, KafkaConsumer<byte[], byte[]> kafkaConsumer, Thread subscriberManagerTopicReaderThread)
     {
+      this.dnboProxy = dnboProxy;
       this.restServer = restServer;
       this.offerService = offerService;
       this.productService = productService;
@@ -272,6 +340,10 @@ public class DNBOProxy
       this.subscriberProfileService = subscriberProfileService;
       this.segmentationDimensionService = segmentationDimensionService;
       this.dnboMatrixService = dnboMatrixService;
+      this.subscriberIDService = subscriberIDService;
+      this.kafkaProducer = kafkaProducer;
+      this.kafkaConsumer = kafkaConsumer;
+      this.subscriberManagerTopicReaderThread = subscriberManagerTopicReaderThread;
     }
 
     //
@@ -280,6 +352,18 @@ public class DNBOProxy
 
     @Override public void shutdown(boolean normalShutdown)
     {
+      //
+      //  mark stopped
+      //
+
+      dnboProxy.stopRequested = true;
+      
+      //
+      //  rest server
+      //
+
+      if (restServer != null) restServer.stop(1);
+      
       //
       //  services
       //
@@ -293,12 +377,21 @@ public class DNBOProxy
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (segmentationDimensionService != null) segmentationDimensionService.stop();
       if (dnboMatrixService != null) dnboMatrixService.stop();
+      if (subscriberIDService != null) subscriberIDService.stop();
 
       //
-      //  rest server
+      //  consumer thread
       //
 
-      if (restServer != null) restServer.stop(1);
+      subscriberManagerTopicReaderThread.interrupt();
+      try { subscriberManagerTopicReaderThread.join(); } catch (InterruptedException e) { }
+
+      //
+      //  kafka
+      //
+
+      if (kafkaConsumer != null) kafkaConsumer.close();
+      if (kafkaProducer != null) kafkaProducer.close();
     }
   }
 
@@ -420,7 +513,7 @@ public class DNBOProxy
 
         if (JSONUtilities.decodeString(jsonRoot, "subscriberID", false) == null && exchange.getRequestURI().getQuery() != null)
           {
-            Pattern pattern = Pattern.compile("^(.*\\&msisdn|msisdn)=(.*?)(\\&.*$|$)");
+            Pattern pattern = Pattern.compile("^(.*\\&msisdn|msisdn|\\&subscriberID|subscriberID)=(.*?)(\\&.*$|$)");
             Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
             if (matcher.matches())
               {
@@ -456,6 +549,52 @@ public class DNBOProxy
           }
         }
         
+        //
+        //  alternateIDs
+        //
+
+        if (jsonRoot.get("alternateIDs") == null && exchange.getRequestURI().getQuery() != null)
+          {
+            //
+            //  alternateIDName
+            //
+            
+            String alternateIDName = null;
+            Pattern pattern = Pattern.compile("^(.*\\&alternateIDName|alternateIDName)=(.*?)(\\&.*$|$)");
+            Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+            if (matcher.matches())
+              {
+                alternateIDName = matcher.group(2);
+              }
+            
+            //
+            //  alternateID
+            //
+            
+            String alternateID = null;
+            pattern = Pattern.compile("^(.*\\&alternateID|alternateID)=(.*?)(\\&.*$|$)");
+            matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+            if (matcher.matches())
+              {
+                alternateID = matcher.group(2);
+              }
+
+            //
+            //  construct alternateIDs JSON (array of array)
+            //
+            
+            if (alternateIDName != null && alternateID != null)
+              {
+                List<String> elements = new ArrayList<String>();
+                elements.add(alternateIDName);
+                elements.add(alternateID);
+                JSONArray singletonArray = JSONUtilities.encodeArray(elements);
+                List<JSONArray> topLevelArray = new ArrayList<JSONArray>();
+                topLevelArray.add(singletonArray);
+                jsonRoot.put("alternateIDs", JSONUtilities.encodeArray(topLevelArray));
+              }
+          }
+        
         /*****************************************
         *
         *  validate
@@ -480,6 +619,10 @@ public class DNBOProxy
           {
             case getSubscriberOffers:
               jsonResponse = processGetSubscriberOffers(userID, jsonRoot);
+              break;
+              
+            case provisionSubscriber:
+              jsonResponse = processProvisionSubscriber(userID, jsonRoot);
               break;
           }
 
@@ -877,6 +1020,259 @@ public class DNBOProxy
     return valueRes;
   }
 
+  /*****************************************
+  *
+  *  processProvisionSubscriber
+  *
+  *****************************************/
+
+  private JSONObject processProvisionSubscriber(String userID, JSONObject jsonRoot) throws DNBOProxyException, SubscriberProfileServiceException
+  {
+    /*****************************************
+    *
+    *  arguments
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", false);
+    JSONArray alternateIDsArray = JSONUtilities.decodeJSONArray(jsonRoot, "alternateIDs", true);
+    
+    /*****************************************
+    *
+    *  evaluate/validate alternate ids
+    *
+    *****************************************/
+
+    //
+    //  alternateIDsArray
+    //
+    
+    Map<String,String> assignAlternateIDs = new HashMap<String,String>();
+    for (int i = 0; i < alternateIDsArray.size(); i++)
+      {
+        //
+        //  get alternateID
+        //
+        
+        JSONArray alternateIDArray = (JSONArray) alternateIDsArray.get(i);
+        String alternateIDName = (String) alternateIDArray.get(0);
+        String alternateID = (String) alternateIDArray.get(1);
+
+        //
+        //  ensure alternateID
+        //
+
+        if (Deployment.getAlternateIDs().get(alternateIDName) == null)
+          {
+            throw new DNBOProxyException("unknown alternate id", alternateIDName);
+          }
+
+        //
+        //  update assignAlternateIDs
+        //
+        
+        assignAlternateIDs.put(alternateIDName, alternateID);
+      }
+
+    /*****************************************
+    *
+    *  resolve effectiveSubscriberID
+    *
+    *****************************************/
+
+    String effectiveSubscriberID;
+    boolean autoProvision;
+    if (subscriberID != null)
+      {
+        effectiveSubscriberID = subscriberID;
+        autoProvision = false;
+      }
+    else
+      {
+        effectiveSubscriberID = assignAlternateIDs.get(Deployment.getExternalSubscriberID());
+        autoProvision = true;
+      }
+
+    //
+    //  verify
+    //
+    
+    if (effectiveSubscriberID == null)
+      {
+        throw new DNBOProxyException("subscriberID not provided", Deployment.getExternalSubscriberID());
+      }
+
+    /*****************************************
+    *
+    *  submit to SubscriberManager
+    *
+    *****************************************/
+
+    String result = null;
+    try
+      {
+        //
+        //  submit to Kafka
+        //
+        
+        LinkedBlockingQueue<String> responseQueue = new LinkedBlockingQueue<String>();
+        AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), assignAlternateIDs);
+        String topic = autoProvision ? Deployment.getAssignExternalSubscriberIDsTopic() : Deployment.getAssignSubscriberIDsTopic();
+        outstandingRequests.put(assignSubscriberIDs, responseQueue);
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(effectiveSubscriberID)), AssignSubscriberIDs.serde().serializer().serialize(topic, assignSubscriberIDs)));
+
+        //
+        //  retrieve provisioned subscriberID once processing is complete - timing out if necessary
+        //
+
+        try
+          {
+            result = responseQueue.poll(10L, TimeUnit.SECONDS);
+          }
+        catch (InterruptedException e)
+          {
+            // ignore
+          }
+      }
+    finally
+      {
+        outstandingRequests.remove(effectiveSubscriberID);
+      }
+    
+    /*****************************************
+    *
+    *  if timed out, check subscriber in redis cache
+    *
+    *****************************************/
+
+    String timeoutSubscriberID = null;
+    if (result == null)
+      {
+        try
+          {
+            timeoutSubscriberID = subscriberIDService.getSubscriberID(Deployment.getExternalSubscriberID(), assignAlternateIDs.get(Deployment.getExternalSubscriberID()));
+          }
+        catch (SubscriberIDServiceException e)
+          {
+            log.error("SubscriberIDServiceException can not resolve subscriberID for {}: {}", assignAlternateIDs.get(Deployment.getExternalSubscriberID()), e.getMessage());
+          }
+      }
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", (result != null) ? "ok" : ((timeoutSubscriberID != null) ? "alreadyProvisioned" : "timeout"));
+    if (result != null) response.put("subscriberID", result);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  readSubscriberManagerTopic
+  *
+  *****************************************/
+
+  private void readSubscriberManagerTopic(KafkaConsumer<byte[], byte[]> kafkaConsumer, Map<AssignSubscriberIDs,LinkedBlockingQueue<String>> outstandingRequests)
+  {
+    String externalSubscriberIDName = Deployment.getExternalSubscriberID();
+    Map<String,LinkedBlockingQueue<String>> outstandingSubscriberIDs = new HashMap<String,LinkedBlockingQueue<String>>();
+    Map<String,LinkedBlockingQueue<String>> outstandingExternalSubscriberIDs = new HashMap<String,LinkedBlockingQueue<String>>();
+    while (! stopRequested)
+      {
+        //
+        // poll
+        //
+
+        ConsumerRecords<byte[], byte[]> recordSubscriberIDRecords;
+        try
+          {
+            recordSubscriberIDRecords = kafkaConsumer.poll(5000);
+          }
+        catch (WakeupException e)
+          {
+            recordSubscriberIDRecords = ConsumerRecords.<byte[], byte[]>empty();
+          }
+
+        //
+        //  processing?
+        //
+
+        if (stopRequested) continue;
+
+        //
+        //  identify the outstanding records to search for
+        //
+
+        outstandingSubscriberIDs.clear();
+        outstandingExternalSubscriberIDs.clear();
+        for (AssignSubscriberIDs assignSubscriberIDs : outstandingRequests.keySet())
+          {
+            String passedSubscriberID = assignSubscriberIDs.getSubscriberID();
+            String externalSubscriberID = assignSubscriberIDs.getAlternateIDs().get(externalSubscriberIDName);
+            if (! Objects.equals(passedSubscriberID, externalSubscriberID))
+              outstandingSubscriberIDs.put(passedSubscriberID, outstandingRequests.get(assignSubscriberIDs));
+            else
+              outstandingExternalSubscriberIDs.put(passedSubscriberID, outstandingRequests.get(assignSubscriberIDs));
+          }
+
+        //
+        //  process - only searching through the records if there are outstanding records to consider
+        //
+
+        if (outstandingRequests.size() > 0)
+          {
+            for (ConsumerRecord<byte[], byte[]> recordSubscriberIDRecord : recordSubscriberIDRecords)
+              {
+                //
+                //  parse
+                //
+
+                RecordSubscriberID recordSubscriberID = null;
+                try
+                  {
+                    recordSubscriberID = RecordSubscriberID.serde().deserializer().deserialize(Deployment.getRecordSubscriberIDTopic(), recordSubscriberIDRecord.value());
+                  }
+                catch (SerializationException e)
+                  {
+                    log.info("error reading recordSubscriberID: {}", e.getMessage());
+                  }
+
+                //
+                //  check for match, returning if we find a match
+                //
+                
+                if (recordSubscriberID != null)
+                  {
+                    //
+                    //  outstandingSubscriberIDs
+                    //
+                    
+                    LinkedBlockingQueue<String> outstandingSubscriberIDsResponseQueue = outstandingSubscriberIDs.get(recordSubscriberID.getSubscriberID());
+                    if (outstandingSubscriberIDsResponseQueue != null) outstandingSubscriberIDsResponseQueue.offer(recordSubscriberID.getSubscriberID());
+
+                    //
+                    //  outstandingExternalSubscriberIDs
+                    //
+
+                    LinkedBlockingQueue<String> outstandingExternalSubscriberIDsResponseQueue = Objects.equals(recordSubscriberID.getIDField(), externalSubscriberIDName) ? outstandingExternalSubscriberIDs.get(recordSubscriberID.getAlternateID()) : null;
+                    if (outstandingExternalSubscriberIDsResponseQueue != null) outstandingExternalSubscriberIDsResponseQueue.offer(recordSubscriberID.getSubscriberID());
+                  }
+              }
+          }
+
+        //
+        //  commit offsets
+        //
+
+        kafkaConsumer.commitSync();
+      }
+  }
+  
   /*****************************************
   *
   *  class APIHandler

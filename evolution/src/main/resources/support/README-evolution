@@ -369,6 +369,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "subscriberID" : "101", "scoringStrategyID" : "1", "salesChannelID" : "1" }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers; echo
 curl -X GET http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/getSubscriberOffers?strategy=1\&msisdn=101\&salesChannel=1; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "subscriberID" : "101", "alternateIDs" : [ ["msisdn", "19195551000" ] ] }' http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/provisionSubscriber; echo
+curl -X GET http://<_DNBOPROXY_SERVER_>/nglm-dnboproxy/provisionSubscriber?subscriberID=101\&alternateIDName=msisdn\&alternateID=19195551000; echo
 
 --
 --  zookeeper - stock
