@@ -24,6 +24,7 @@ public enum RESTAPIGenericReturnCodes
   LOCK_ERROR(25, "LOCK_ERROR", "Lock error"),
   CUSTOMER_ALREADY_EXISTS(50, "CUSTOMER_ALREADY_EXISTS", "Customer already exists"),
   CUSTOMER_NOT_ELIGIBLE(51, "CUSTOMER_NOT_ELIGIBLE", "Customer not eligible"),
+  RELATIONSHIP_NOT_FOUND(60, "RELATIONSHIP_NOT_FOUND", "Relationship not found"),
   ELEMENT_NOT_FOUND(80, "ELEMENT_NOT_FOUND", "Element not found"),
   ALREADY_APPROVED(81, "ALREADY_APPROVED", "Request already approved"),
   APPROBATION_EXPIRED(82, "APPROBATION_EXPIRED", "Approbation request expired"),

@@ -160,6 +160,8 @@ public class ThirdPartyManager
     getActiveOffers,
     getCustomerAvailableCampaigns,
     updateCustomer,
+    updateCustomerParent,
+    removeCustomerParent,
     getCustomerNBOs,
     getCustomerNBOsTokens,
     getTokensCodesList,
@@ -349,6 +351,8 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerAvailableCampaigns", new APIHandler(API.getCustomerAvailableCampaigns));
       restServer.createContext("/nglm-thirdpartymanager/updateCustomer", new APIHandler(API.updateCustomer));
+      restServer.createContext("/nglm-thirdpartymanager/updateCustomerParent", new APIHandler(API.updateCustomerParent));
+      restServer.createContext("/nglm-thirdpartymanager/removeCustomerParent", new APIHandler(API.removeCustomerParent));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOs", new APIHandler(API.getCustomerNBOs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOsTokens", new APIHandler(API.getCustomerNBOsTokens));
       restServer.createContext("/nglm-thirdpartymanager/getTokensCodesList", new APIHandler(API.getTokensCodesList));
@@ -632,6 +636,12 @@ public class ThirdPartyManager
               break;
             case updateCustomer:
               jsonResponse = processUpdateCustomer(jsonRoot);
+              break;
+            case updateCustomerParent:
+              jsonResponse = processUpdateCustomerParent(jsonRoot);
+              break;
+            case removeCustomerParent:
+              jsonResponse = processRemoveCustomerParent(jsonRoot);
               break;
             case getCustomerNBOs:
               jsonResponse = processGetCustomerNBOs(jsonRoot);
@@ -2748,6 +2758,269 @@ public class ThirdPartyManager
      * return
      *
      *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+
+
+  /*****************************************
+   *
+   *  processUpdateCustomerParent
+   *
+   *****************************************/
+
+  private JSONObject processUpdateCustomerParent(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    /****************************************
+    *
+    * /!\ this code is duplicated in GUImanager & ThirdPartyManager, do not forget to update both.
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
+    String newParentCustomerID = JSONUtilities.decodeString(jsonRoot, "newParentCustomerID", true);
+
+    /*****************************************
+    *
+    * resolve relationship
+    *
+    *****************************************/
+      
+    boolean isRelationshipSupported = false;
+    for (SupportedRelationship supportedRelationship : Deployment.getSupportedRelationships().values())
+      {
+        if (supportedRelationship.getID().equals(relationshipID))
+          {
+            isRelationshipSupported = true;
+            break;
+          }
+      }
+    
+    if(!isRelationshipSupported)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    String newParentSubscriberID = resolveSubscriberID(newParentCustomerID);
+    if (subscriberID == null)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
+            + "-{specified customerID do not relate to any customer}");
+        return JSONUtilities.encodeObject(response);
+      } 
+    else if (newParentSubscriberID == null)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
+            + "-{specified newParentCustomerID do not relate to any customer}");
+        return JSONUtilities.encodeObject(response);
+      } 
+    else if (subscriberID.equals(newParentSubscriberID))
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()
+            + "-{a customer cannot be its own parent}");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    try
+      {
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+        String previousParentSubscriberID = null;
+        SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+        if(relatives != null) 
+          {
+            previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
+          }
+        
+        if(! newParentSubscriberID.equals(previousParentSubscriberID)) 
+          {
+            if(previousParentSubscriberID != null)
+              {
+                //
+                // Delete child for the parent 
+                // 
+                
+                jsonRoot.put("subscriberID", previousParentSubscriberID);
+                SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
+                previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+                previousParentParameterMap.put("relationshipID", relationshipID);
+                previousParentParameterMap.put("relativeSubscriberID", subscriberID);
+                
+                //
+                // submit to kafka 
+                //
+                  
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+                
+              }
+            
+
+            //
+            // Set child for the new parent 
+            //
+            
+            jsonRoot.put("subscriberID", newParentSubscriberID);
+            SubscriberProfileForceUpdate newParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
+            newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
+            newParentParameterMap.put("relationshipID", relationshipID);
+            newParentParameterMap.put("relativeSubscriberID", subscriberID);
+              
+            //
+            // Set parent 
+            //
+            
+            jsonRoot.put("subscriberID", subscriberID);
+            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
+            subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
+            subscriberParameterMap.put("relationshipID", relationshipID);
+            subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+            
+            //
+            // submit to kafka 
+            //
+              
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(newParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), newParentProfileForceUpdate)));
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+          }
+
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+      } 
+    catch (GUIManagerException | SubscriberProfileServiceException e)
+      {
+        throw new ThirdPartyManagerException(e);
+      }
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processRemoveCustomerParent
+   *
+   *****************************************/
+
+  private JSONObject processRemoveCustomerParent(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    /****************************************
+    *
+    * /!\ this code is duplicated in GUImanager & ThirdPartyManager, do not forget to update both.
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
+
+    /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
+            + "-{specified customerID do not relate to any customer}");
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    try
+      {
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+        String previousParentSubscriberID = null;
+        SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+        if(relatives != null) 
+          {
+            previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
+          }
+        
+        if(previousParentSubscriberID != null)
+          {
+            //
+            // Delete child for the parent 
+            // 
+            
+            jsonRoot.put("subscriberID", previousParentSubscriberID);
+            SubscriberProfileForceUpdate parentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap parentParameterMap = parentProfileForceUpdate.getParameterMap();
+            parentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+            parentParameterMap.put("relationshipID", relationshipID);
+            parentParameterMap.put("relativeSubscriberID", subscriberID);
+            
+            
+            //
+            // Set parent null 
+            //
+            
+            jsonRoot.put("subscriberID", subscriberID);
+            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
+            subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
+            subscriberParameterMap.put("relationshipID", relationshipID);
+            // "relativeSubscriberID" must stay null
+            
+            //
+            // submit to kafka 
+            //
+            
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+          }
+
+
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+      } 
+    catch (GUIManagerException | SubscriberProfileServiceException e)
+      {
+        throw new ThirdPartyManagerException(e);
+      }
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
 
     return JSONUtilities.encodeObject(response);
   }

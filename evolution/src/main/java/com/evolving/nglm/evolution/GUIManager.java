@@ -6057,8 +6057,9 @@ public class GUIManager
         Object previousValue = jsonRoot.put("journeyID", campaignID);
         if (previousValue != null) 
           {
-            response.put("responseCode", "improperlyFormattedRequest");
-            response.put("responseMessage", "both fields campaignID and journeyID must not be filled at the same time.");
+            response.put("responseCode", RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseCode());
+            response.put("responseMessage", RESTAPIGenericReturnCodes.MALFORMED_REQUEST.getGenericResponseMessage() 
+                + "-{both fields campaignID and journeyID must not be filled at the same time}");
             return JSONUtilities.encodeObject(response);
           }
       }
@@ -6074,35 +6075,38 @@ public class GUIManager
     *
     *****************************************/
     Map<String,Object> result = new HashMap<String,Object>();
-    JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
-    if(journeyTrafficHistory != null)
+
+    //
+    // only return KPIs if the journey still exist.
+    //
+
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    if (journey instanceof Journey) 
       {
-        Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
-        for (String key : byNodeMap.keySet())
-          {
-            result.put(key, byNodeMap.get(key).getSubscriberCount());
-          }
-      }
-    else 
-      {
-        GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
-        if (journey instanceof Journey) 
-          {
-            //
-            // return empty KPI: journey exist but no statistics has been generated yet.
-            //
+        Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
+        JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journeyID);
+        for (String key : nodeIDs)
+        {
+          int subscriberCount = 0;
+          
+          if(journeyTrafficHistory != null)
+            {
+              Map<String, SubscriberTraffic> byNodeMap = journeyTrafficHistory.getCurrentData().getByNode();
+              if(byNodeMap.get(key) != null)
+                {
+                  subscriberCount = byNodeMap.get(key).getSubscriberCount();
+                }
+            }
             
-            Set<String> nodeIDs = ((Journey) journey).getJourneyNodes().keySet();
-            for (String key : nodeIDs)
-              {
-                result.put(key, 0);
-              }
-          }
-        else
-          {
-            response.put("responseCode", "journeyNotFound");
-            return JSONUtilities.encodeObject(response);
-          }
+          result.put(key, subscriberCount);
+        }
+      }
+    else
+      {
+        response.put("responseCode", RESTAPIGenericReturnCodes.CAMPAIGN_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.CAMPAIGN_NOT_FOUND.getGenericResponseMessage() 
+            + "-{could not find any journey (campaign) with the specified journeyID (campaignID)}");
+        return JSONUtilities.encodeObject(response);
       }
     
     /*****************************************
@@ -6110,8 +6114,9 @@ public class GUIManager
     *  response
     *
     *****************************************/
-
-    response.put("responseCode", "ok");
+    
+    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     response.put("journeyNodeCount", JSONUtilities.encodeObject(result));
     return JSONUtilities.encodeObject(response);
   }  
@@ -15521,6 +15526,12 @@ public class GUIManager
 
   private JSONObject processUpdateCustomerParent(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
+    /****************************************
+    *
+    * /!\ this code is duplicated in GUImanager & ThirdPartyManager, do not forget to update both.
+    *
+    ****************************************/
+    
     Map<String, Object> response = new HashMap<String, Object>();
 
     /****************************************
@@ -15551,7 +15562,8 @@ public class GUIManager
     
     if(!isRelationshipSupported)
       {
-        response.put("responseCode", "RelationshipNotFound");
+        response.put("responseCode", RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.RELATIONSHIP_NOT_FOUND.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
       }
 
@@ -15565,89 +15577,96 @@ public class GUIManager
     String newParentSubscriberID = resolveSubscriberID(newParentCustomerID);
     if (subscriberID == null)
       {
-        response.put("responseCode", "CustomerNotFound");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
+            + "-{specified customerID do not relate to any customer}");
+        return JSONUtilities.encodeObject(response);
       } 
     else if (newParentSubscriberID == null)
       {
-        response.put("responseCode", "ParentNotFound");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
+            + "-{specified newParentCustomerID do not relate to any customer}");
+        return JSONUtilities.encodeObject(response);
       } 
     else if (subscriberID.equals(newParentSubscriberID))
       {
-        response.put("responseCode", "InvalidRequest");
-        response.put("responseMessage", "A customer can not be its own parent.");
+        response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage()
+            + "-{a customer cannot be its own parent}");
+        return JSONUtilities.encodeObject(response);
       }
-    else
+
+    try
       {
-        try
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+        String previousParentSubscriberID = null;
+        SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+        if(relatives != null) 
           {
-            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-            String previousParentSubscriberID = null;
-            SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
-            if(relatives != null) 
+            previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
+          }
+        
+        if(! newParentSubscriberID.equals(previousParentSubscriberID)) 
+          {
+            if(previousParentSubscriberID != null)
               {
-                previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
-              }
-            
-            if(! newParentSubscriberID.equals(previousParentSubscriberID)) 
-              {
-                if(previousParentSubscriberID != null)
-                  {
-                    //
-                    // Delete child for the parent 
-                    // 
-                    
-                    jsonRoot.put("subscriberID", previousParentSubscriberID);
-                    SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-                    ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
-                    previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
-                    previousParentParameterMap.put("relationshipID", relationshipID);
-                    previousParentParameterMap.put("relativeSubscriberID", subscriberID);
-                    
-                    //
-                    // submit to kafka 
-                    //
-                      
-                    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
-                    
-                  }
+                //
+                // Delete child for the parent 
+                // 
                 
-    
-                //
-                // Set child for the new parent 
-                //
-                
-                jsonRoot.put("subscriberID", newParentSubscriberID);
-                SubscriberProfileForceUpdate newParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-                ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
-                newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
-                newParentParameterMap.put("relationshipID", relationshipID);
-                newParentParameterMap.put("relativeSubscriberID", subscriberID);
-                  
-                //
-                // Set parent 
-                //
-                
-                jsonRoot.put("subscriberID", subscriberID);
-                SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-                ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
-                subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
-                subscriberParameterMap.put("relationshipID", relationshipID);
-                subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+                jsonRoot.put("subscriberID", previousParentSubscriberID);
+                SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
+                previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+                previousParentParameterMap.put("relationshipID", relationshipID);
+                previousParentParameterMap.put("relativeSubscriberID", subscriberID);
                 
                 //
                 // submit to kafka 
                 //
                   
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(newParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), newParentProfileForceUpdate)));
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+                
               }
             
-            response.put("responseCode", "ok");
-          } 
-        catch (SubscriberProfileServiceException e)
-          {
-            response.put("responseCode", "UnableToRetrieveCustomer");
+
+            //
+            // Set child for the new parent 
+            //
+            
+            jsonRoot.put("subscriberID", newParentSubscriberID);
+            SubscriberProfileForceUpdate newParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
+            newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
+            newParentParameterMap.put("relationshipID", relationshipID);
+            newParentParameterMap.put("relativeSubscriberID", subscriberID);
+              
+            //
+            // Set parent 
+            //
+            
+            jsonRoot.put("subscriberID", subscriberID);
+            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
+            subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
+            subscriberParameterMap.put("relationshipID", relationshipID);
+            subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+            
+            //
+            // submit to kafka 
+            //
+              
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(newParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), newParentProfileForceUpdate)));
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
           }
+
+        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+      } 
+    catch (SubscriberProfileServiceException e)
+      {
+        throw new GUIManagerException(e);
       }
 
     /*****************************************
@@ -15667,6 +15686,12 @@ public class GUIManager
 
   private JSONObject processRemoveCustomerParent(String userID, JSONObject jsonRoot) throws GUIManagerException
   {
+    /****************************************
+    *
+    * /!\ this code is duplicated in GUImanager & ThirdPartyManager, do not forget to update both.
+    *
+    ****************************************/
+    
     Map<String, Object> response = new HashMap<String, Object>();
 
     /****************************************
@@ -15687,60 +15712,62 @@ public class GUIManager
     String subscriberID = resolveSubscriberID(customerID);
     if (subscriberID == null)
       {
-        response.put("responseCode", "CustomerNotFound");
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage()
+            + "-{specified customerID do not relate to any customer}");
+        return JSONUtilities.encodeObject(response);
       }
-    else
+    
+    try
       {
-        try
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+        String previousParentSubscriberID = null;
+        SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+        if(relatives != null) 
           {
-            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-            String previousParentSubscriberID = null;
-            SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
-            if(relatives != null) 
-              {
-                previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
-              }
-            
-            if(previousParentSubscriberID != null)
-              {
-                //
-                // Delete child for the parent 
-                // 
-                
-                jsonRoot.put("subscriberID", previousParentSubscriberID);
-                SubscriberProfileForceUpdate parentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-                ParameterMap parentParameterMap = parentProfileForceUpdate.getParameterMap();
-                parentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
-                parentParameterMap.put("relationshipID", relationshipID);
-                parentParameterMap.put("relativeSubscriberID", subscriberID);
-                
-                
-                //
-                // Set parent null 
-                //
-                
-                jsonRoot.put("subscriberID", subscriberID);
-                SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-                ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
-                subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
-                subscriberParameterMap.put("relationshipID", relationshipID);
-                // "relativeSubscriberID" must stay null
-                
-                //
-                // submit to kafka 
-                //
-                
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-              }
-            
-            response.put("responseCode", "ok");
-            
-          } 
-        catch (SubscriberProfileServiceException e)
-          {
-            response.put("responseCode", "UnableToRetrieveCustomer");
+            previousParentSubscriberID = relatives.getParentSubscriberID(); // can still be null if undefined (no parent)
           }
+        
+        if(previousParentSubscriberID != null)
+          {
+            //
+            // Delete child for the parent 
+            // 
+            
+            jsonRoot.put("subscriberID", previousParentSubscriberID);
+            SubscriberProfileForceUpdate parentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap parentParameterMap = parentProfileForceUpdate.getParameterMap();
+            parentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+            parentParameterMap.put("relationshipID", relationshipID);
+            parentParameterMap.put("relativeSubscriberID", subscriberID);
+            
+            
+            //
+            // Set parent null 
+            //
+            
+            jsonRoot.put("subscriberID", subscriberID);
+            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
+            subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
+            subscriberParameterMap.put("relationshipID", relationshipID);
+            // "relativeSubscriberID" must stay null
+            
+            //
+            // submit to kafka 
+            //
+            
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+          }
+
+
+        response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+      } 
+    catch (SubscriberProfileServiceException e)
+      {
+        throw new GUIManagerException(e);
       }
 
     /*****************************************
