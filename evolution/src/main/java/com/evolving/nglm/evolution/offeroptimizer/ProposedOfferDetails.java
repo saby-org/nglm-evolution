@@ -67,7 +67,21 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   @Override
   public int compareTo(ProposedOfferDetails o)
   {
-    return (int) (o.getOfferScore() - this.getOfferScore());
+    // Make this method "consistent with equals", so that ordering works
+    double res = (o.getOfferScore() - this.getOfferScore());
+    if (res != 0) return (int) (res*1_000_000_000d); // offerScore is [0...1], keep maximum precision
+    int result = o.getOfferId().compareTo(this.getOfferId());
+    if (result != 0) return result;
+    result = o.getSalesChannelId().compareTo(this.getSalesChannelId());
+    if (result != 0) return result;
+    result = o.getOfferRank() - this.getOfferRank();
+    if (result != 0) return result;
+    if (o.equals(this))
+      result = 0;
+    else
+      // Should not happen, by construction. Return anything
+      result = 1;
+    return result;
   }  
   
   /*****************************************

@@ -539,7 +539,7 @@ public class DNBOProxy
         //  salesChannelID
         //
 
-        if (JSONUtilities.decodeString(jsonRoot, "rangeValue", false) == null && exchange.getRequestURI().getQuery() != null)
+        if (JSONUtilities.decodeDouble(jsonRoot, "rangeValue", false) == null && exchange.getRequestURI().getQuery() != null)
         {
           Pattern pattern = Pattern.compile("^(.*\\&rangeValue|rangeValue)=(.*?)(\\&.*$|$)");
           Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
@@ -618,7 +618,10 @@ public class DNBOProxy
         switch (api)
           {
             case getSubscriberOffers:
-              jsonResponse = processGetSubscriberOffers(userID, jsonRoot);
+              jsonResponse = processGetSubscriberOffers(userID, jsonRoot,
+                  productService, productTypeService, catalogCharacteristicService,
+                  propensityDataReader, subscriberGroupEpochReader,
+                  segmentationDimensionService, offerService);
               break;
               
             case provisionSubscriber:
@@ -698,7 +701,10 @@ public class DNBOProxy
   *
   *****************************************/
 
-  private JSONObject processGetSubscriberOffers(String userID, JSONObject jsonRoot) throws DNBOProxyException, SubscriberProfileServiceException
+  private JSONObject processGetSubscriberOffers(String userID, JSONObject jsonRoot,
+      ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
+      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
+      SegmentationDimensionService segmentationDimensionService, OfferService offerService) throws DNBOProxyException, SubscriberProfileServiceException
   {
     /*****************************************
     *
@@ -775,7 +781,10 @@ public class DNBOProxy
           }
         try
         {
-          JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy, salesChannel,rangeValue);
+          JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
+              productService, productTypeService, catalogCharacteristicService,
+              propensityDataReader, subscriberGroupEpochReader,
+              segmentationDimensionService, offerService,rangeValue);
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
         }
@@ -851,7 +860,10 @@ public class DNBOProxy
   *****************************************/
 
   private JSONObject getOffers(Date now, String subscriberID, String scoringStrategyID, String salesChannelID,
-      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy, SalesChannel salesChannel,double rangeValue)
+      SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
+      ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService,
+      ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
+      SegmentationDimensionService segmentationDimensionService, OfferService offerService, double rangeValue)
       throws DNBOProxyException
   {
 
@@ -872,116 +884,18 @@ public class DNBOProxy
     JSONObject valueRes;
     
     try {
-      ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile);
-      logFragment = "DNBOProxy.getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
-      returnedLog.append(logFragment+", ");
-      if (log.isDebugEnabled())
-      {
-        log.debug(logFragment);
-      }
-
-      Set<Offer> offersForAlgo = getOffersToOptimize(msisdn, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile);
-
-      OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
-      if (algo == null)
-      {
-        log.warn("DNBOProxy.getOffers No Algo returned for selectedScoringSplit " + scoringStrategy.getScoringStrategyID());
-        throw new DNBOProxyException("No Algo returned for selectedScoringSplit ", scoringStrategy.getScoringStrategyID());
-      }
-
-      OfferOptimizationAlgorithmParameter thresholdParameter = new OfferOptimizationAlgorithmParameter("thresholdValue");
-
-      Map<OfferOptimizationAlgorithmParameter, String> algoParameters = selectedScoringSegment.getParameters(); 
-
-      double threshold = 0;
-      String thresholdString = selectedScoringSegment.getParameters().get(thresholdParameter);
-      if (thresholdString != null)
-      {
-        threshold = Double.parseDouble(thresholdString);
-      }
-      logFragment = "DNBOProxy.getOffers Threshold value " + threshold;
-      returnedLog.append(logFragment+", ");
-      if (log.isDebugEnabled())
-      {
-        log.debug(logFragment);
-      }
 
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
+      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = TokenUtils.getOffers(now, salesChannelID,
+          subscriberProfile, scoringStrategy, productService, productTypeService, catalogCharacteristicService,
+          propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog,
+          msisdn);
       
-      // This returns an ordered Collection (and sorted by offerScore)
-      Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
-          OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
-              algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
-              productService, productTypeService, catalogCharacteristicService,
-              propensityDataReader, subscriberGroupEpochReader,
-              segmentationDimensionService,dnboMatrixAlgorithmParameters,returnedLog);
-
       if (offerAvailabilityFromPropensityAlgo == null)
         {
-          offerAvailabilityFromPropensityAlgo = new ArrayList<>();
+          log.warn("DNBOProxy.getOffers Exception "+returnedLog);
+          throw new DNBOProxyException("Exception "+returnedLog, scoringStrategyID);          
         }
-
-      //
-      // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
-      //
-      Set<String> offerObjectiveIds = selectedScoringSegment.getAlwaysAppendOfferObjectiveIDs();
-      for(Offer offer : offerService.getActiveOffers(now))
-        {
-          boolean inList = true;
-          for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives()) 
-            {
-              if (!offerObjectiveIds.contains(offerObjective.getOfferObjectiveID())) 
-                {
-                  inList = false;
-                  break;
-                }
-            }
-          if (!inList) 
-            {
-              //
-              // not a single objective of this offer is in the list of the scoringSplit -> skip it
-              //
-              continue;
-            }
-          for (OfferSalesChannelsAndPrice salesChannelAndPrice : offer.getOfferSalesChannelsAndPrices())
-            {
-              for (String loopSalesChannelID : salesChannelAndPrice.getSalesChannelIDs()) 
-                {
-                  if (loopSalesChannelID.equals(salesChannelID)) 
-                    {
-                      String offerId = offer.getOfferID();
-                      boolean offerIsAlreadyInList = false;
-                      for (ProposedOfferDetails offerAvail : offerAvailabilityFromPropensityAlgo)
-                        {
-                          if (offerAvail.getOfferId().equals(offerId))
-                            {
-                              offerIsAlreadyInList = true;
-                              if (log.isTraceEnabled()) log.trace("DNBOProxy.getOffers offer "+offerId+" already in list, skip it");
-                              break;
-                            }
-                        }
-                      if (!offerIsAlreadyInList)
-                        {
-                          if (log.isTraceEnabled()) log.trace("DNBOProxy.getOffers offer "+offerId+" added to the list because its objective is in alwaysAppendOfferObjectiveIDs of ScoringStrategy");
-                          ProposedOfferDetails additionalDetails = new ProposedOfferDetails(offerId, salesChannelID, 0);
-                          offerAvailabilityFromPropensityAlgo.add(additionalDetails);
-                        }
-                    }
-                }
-            }
-        }
-
-      if (offerAvailabilityFromPropensityAlgo.isEmpty())
-        {
-          log.warn("DNBOProxy.getOffers Return empty list of offers");
-        }
-      
-      int index = 1;
-      for (ProposedOfferDetails current : offerAvailabilityFromPropensityAlgo)
-      {
-        current.setOfferRank(index);
-        index++;
-      }
 
       /*****************************************
        *
@@ -1020,6 +934,7 @@ public class DNBOProxy
     return valueRes;
   }
 
+ 
   /*****************************************
   *
   *  processProvisionSubscriber
@@ -1372,37 +1287,6 @@ public class DNBOProxy
     }
   }
   
-  private Set<Offer> getOffersToOptimize(String msisdn, Set<String> catalogObjectiveIDs, SubscriberProfile subscriberProfile)
-  {
-    // Browse all offers:
-    // - filter by offer objective coming from the split strategy
-    // - filter by profile of subscriber
-    // Return a set of offers that can be optimised
-    Collection<Offer> offers = offerService.getActiveOffers(Calendar.getInstance().getTime());
-    Set<Offer> result = new HashSet<>();
-    for (String currentSplitObjectiveID : catalogObjectiveIDs)
-    {
-      log.trace("currentSplitObjectiveID : "+currentSplitObjectiveID);
-      for (Offer currentOffer : offers)
-      {
-        for (OfferObjectiveInstance currentOfferObjective : currentOffer.getOfferObjectives())
-        {
-          log.trace("    offerID : "+currentOffer.getOfferID()+" offerObjectiveID : "+currentOfferObjective.getOfferObjectiveID());
-          if (currentOfferObjective.getOfferObjectiveID().equals(currentSplitObjectiveID))
-          {
-            // this offer is a good candidate for the moment, let's check the profile
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
-            if (currentOffer.evaluateProfileCriteria(evaluationRequest))
-            {
-              log.trace("        add offer : "+currentOffer.getOfferID());
-              result.add(currentOffer);
-            }
-          }
-        }
-      }
-    }
-    return result;
-  }
 
 //  private ScoringSplit getScoringSplit(String msisdn, ScoringGroup selectedScoringGroup) throws GetOfferException
 //  {
@@ -1450,36 +1334,7 @@ public class DNBOProxy
 //    return selectedScoringGroup;
 //  }
 
-  private ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile) throws GetOfferException
-  {
-    // let retrieve the first sub strategy that maps this user:
-    Date now = SystemTime.getCurrentTime();
-    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
-
-    // TODO MK TRACE BEGIN
-    List<ScoringSegment> ssl = strategy.getScoringSegments();
-    for (ScoringSegment ss : ssl) 
-      {
-        log.trace("scoring segment "+ss.toString()+" : segments IDs size : "+ss.getSegmentIDs().size()); 
-        for (String id : ss.getSegmentIDs())
-          {
-            log.trace("     scoring segment "+ss.toString()+" : segment id = "+id); 
-          }
-      }
-    // TODO MK TRACE END
-    
-    ScoringSegment selectedScoringSegment = strategy.evaluateScoringSegments(evaluationRequest);
-    if (log.isDebugEnabled())
-      {
-        log.debug("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
-      }
-
-    if (selectedScoringSegment == null)
-      {
-        throw new GetOfferException("Can't retrieve ScoringSegment for strategy " + strategy.getScoringStrategyID() + " and msisdn " + subscriberProfile.getSubscriberID());
-      }
-    return selectedScoringSegment;
-  }
+ 
 
   public static String display(List<EvaluationCriterion> profileCriteria) {
     StringBuffer res = new StringBuffer();

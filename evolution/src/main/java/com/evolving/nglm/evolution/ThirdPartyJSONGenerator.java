@@ -21,6 +21,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 public class ThirdPartyJSONGenerator 
@@ -193,31 +194,58 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService) 
   {
+    Date now = new Date();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
     if ( null == token ) return JSONUtilities.encodeObject(tokenMap);
     tokenMap.put("tokenStatus", token.getTokenStatus().getExternalRepresentation());
-    tokenMap.put("creationDate", token.getCreationDate());
-    tokenMap.put("boundDate", token.getBoundDate());
-    tokenMap.put("redeemedDate", token.getRedeemedDate());
-    tokenMap.put("tokenExpirationDate", token.getTokenExpirationDate());
+    tokenMap.put("creationDate", getDateString(token.getCreationDate()));
+    tokenMap.put("boundDate", getDateString(token.getBoundDate()));
+    tokenMap.put("redeemedDate", getDateString(token.getRedeemedDate()));
+    tokenMap.put("tokenExpirationDate", getDateString(token.getTokenExpirationDate()));
     tokenMap.put("boundCount", token.getBoundCount());
-    tokenMap.put("eventID", token.getEventID());
-    tokenMap.put("subscriberID", token.getSubscriberID());
+    //tokenMap.put("eventID", token.getEventID());
+    //tokenMap.put("subscriberID", token.getSubscriberID());
     tokenMap.put("tokenTypeID", token.getTokenTypeID());
-    tokenMap.put("moduleID", token.getModuleID());
-    tokenMap.put("featureID", token.getFeatureID());
+    Module module = Module.fromExternalRepresentation(token.getModuleID());
+    tokenMap.put("moduleName", module.toString());
+    Integer featureID = token.getFeatureID();
+    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : ThirdPartyManager.getFeatureName(module, featureID.toString(), journeyService, offerService));
+    tokenMap.put("tokenCode", token.getTokenCode());
     if (token instanceof DNBOToken)
       {
         DNBOToken dnboToken = (DNBOToken) token;
-        tokenMap.put("presentationStrategyID", dnboToken.getPresentationStrategyID());
+        //tokenMap.put("presentationStrategyID", dnboToken.getPresentationStrategyID());
         tokenMap.put("isAutoBounded", dnboToken.isAutoBounded());
         tokenMap.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
-        tokenMap.put("presentedOffersIDs", dnboToken.getPresentedOffersIDs());
-        tokenMap.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
+        
+        ArrayList<Object> presentedOffersList = new ArrayList<>();
+        for (String offerID : dnboToken.getPresentedOffersIDs())
+          {
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, now)));
+          }
+        tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
+        
+        String offerID = dnboToken.getAcceptedOfferID();
+        tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, now)));
       }
     return JSONUtilities.encodeObject(tokenMap);
+  }
+  
+  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, Date now) {
+    HashMap<String, Object> offerMap = new HashMap<String, Object>();
+    offerMap.put("id", offerID);
+    if (offerID == null)
+      {
+        offerMap.put("name",null);
+      }
+    else
+      {
+        Offer offer = offerService.getActiveOffer(offerID, now);
+        offerMap.put("name", (offer == null) ? "unknown offer" : offer.getDisplay());
+      }
+    return offerMap;
   }
   
   /*****************************************

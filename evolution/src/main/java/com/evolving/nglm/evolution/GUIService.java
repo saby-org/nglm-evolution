@@ -970,7 +970,7 @@ public class GUIService
     { 
       if (partitionsToBeAssigned.size() == 0)
         {
-          log.error("{} has multiple instacne with same key {}", serviceName, groupID);
+          log.error("{} has multiple instance with same key {}", serviceName, groupID);
         }
     }
   }

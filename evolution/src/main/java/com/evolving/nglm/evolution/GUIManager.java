@@ -17490,7 +17490,7 @@ public class GUIManager
     if(responseCode == null)
       {
         String campaignName = JSONUtilities.decodeString(jsonRoot, "campaignName", false);
-        String campaignID = JSONUtilities.decodeString(jsonRoot, "campaignID", false);
+        String campaignID = "" + JSONUtilities.decodeInteger(jsonRoot, "campaignId", false); // MK hack
         Collection<Journey> allJourneys = journeyService.getActiveJourneys(SystemTime.getCurrentTime());
         if(allJourneys != null)
           {
@@ -19984,6 +19984,23 @@ public class GUIManager
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", presentationStrategy.getPresentationStrategyID());
                       availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "scoringStrategies":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject scoringStrategyUnchecked : scoringStrategyService.getStoredScoringStrategies())
+                {
+                  if (scoringStrategyUnchecked.getAccepted())
+                    {
+                      ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", scoringStrategy.getScoringStrategyID());
+                      availableValue.put("display", scoringStrategy.getGUIManagedObjectName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }

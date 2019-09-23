@@ -134,11 +134,12 @@ public class OfferOptimizerAlgoManager {
           }
         // TODO END TRACE TO REMOVE
 
+        boolean skipRemaining = false;
         for (OfferSalesChannelsAndPrice salesChannelAndPrice : o.getOfferSalesChannelsAndPrices()) 
           {
             for (String salesChannelID : salesChannelAndPrice.getSalesChannelIDs()) 
               {
-                if (salesChannelID.equals(requestedSalesChannelId)) 
+                if ((requestedSalesChannelId == null) || (salesChannelID.equals(requestedSalesChannelId))) 
                   {
                     SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
                     ProposedOfferDetails scorePerChannel = algo.getOfferPropensityScore(algoParameters, o,
@@ -169,6 +170,12 @@ public class OfferOptimizerAlgoManager {
                         if (logger.isTraceEnabled()) logger.trace("*** Add offer " + o.getOfferID() + " with score " + scorePerChannel.getOfferScore() + " for channel " + requestedSalesChannelId);
                         returnedLog.append("[Proposed Offer:" + o.getOfferID() + ",channel:" + salesChannelID + ",score:" + scorePerChannel + ",threshold:" + minScoreThreshold +"], ");
                         result.add(scorePerChannel);
+                        // TODO Temporary : when scoring through multiple channels, only consider first channel, and skip all other ones 
+                        if (requestedSalesChannelId == null)
+                          {
+                            skipRemaining = true;
+                            break;
+                          }
                       } 
                     else 
                       {
@@ -189,6 +196,7 @@ public class OfferOptimizerAlgoManager {
                       }
                   }
               }
+            if (skipRemaining) break;
           }
       }
     // now sort it...

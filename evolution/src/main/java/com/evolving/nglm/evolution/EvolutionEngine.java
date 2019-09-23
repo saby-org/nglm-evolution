@@ -2224,6 +2224,77 @@ public class EvolutionEngine
                 subscriberProfileUpdated = true;
               }
           }
+
+        //
+        //  token
+        //
+
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("tokenCode"))
+          {
+            String tokenCode = (String) subscriberProfileForceUpdate.getParameterMap().get("tokenCode");
+            TokenType defaultDNBOTokenType = getExternalTokenType();
+            if(defaultDNBOTokenType == null) {
+              log.error("Could not find any default token type for external token. Check your configuration.");
+              return false;
+            }
+            DNBOToken subscriberStoredToken = new DNBOToken(tokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+            List<Token> currentTokens = subscriberProfile.getTokens();
+            for (Token token : currentTokens)
+              {
+                if (tokenCode.equals(token.getTokenCode()))
+                    {
+                      log.info("Duplicated token code {} for subscriber, ignore it.", tokenCode);
+                      return false;
+                    }
+              }
+            String strategyID = (String) subscriberProfileForceUpdate.getParameterMap().get("tokenStrategy");
+            subscriberStoredToken.setPresentationStrategyID(strategyID);            
+            subscriberStoredToken.setCreationDate(now);
+
+            //
+            // AutoBounded
+            //
+            
+            Boolean isAutoBoundedBoolean = (Boolean) subscriberProfileForceUpdate.getParameterMap().get("tokenAutoBounded");
+            boolean isAutoBounded = false; // default value 
+            if (isAutoBoundedBoolean != null)
+              {
+                isAutoBounded = isAutoBoundedBoolean;
+              }
+            subscriberStoredToken.setAutoBounded(isAutoBounded);
+
+            //
+            // AutoRedeemed
+            //
+
+            Boolean isAutoRedeemedBoolean = (Boolean) subscriberProfileForceUpdate.getParameterMap().get("tokenAutoRedeemed");
+            boolean isAutoRedeemed = false; // default value 
+            if (isAutoRedeemedBoolean != null)
+              {
+                isAutoRedeemed = isAutoRedeemedBoolean;
+              }
+            subscriberStoredToken.setAutoRedeemed(isAutoRedeemed);
+            
+            if (subscriberProfileForceUpdate.getParameterMap().containsKey("presentedOffersIDs"))
+              {
+                // this was sent by a journey with AutomaticAllocation or AutomaticRedeem
+                List<String> presentedOffersIDs = (List<String>) subscriberProfileForceUpdate.getParameterMap().get("presentedOffersIDs");
+                subscriberStoredToken.setPresentedOffersIDs(presentedOffersIDs);
+              }            
+            if (subscriberProfileForceUpdate.getParameterMap().containsKey("acceptedOffersID"))
+              {
+                // this was sent by a journey with AutomaticRedeem
+                String acceptedOfferID = (String) subscriberProfileForceUpdate.getParameterMap().get("acceptedOffersID");
+                subscriberStoredToken.setAcceptedOfferID(acceptedOfferID);
+              }            
+
+            //
+            // Store new token
+            //
+            
+            currentTokens.add(subscriberStoredToken);
+            subscriberProfileUpdated = true;
+          }
       }
     
     /*****************************************
