@@ -188,10 +188,10 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
-    schemaBuilder.field("creationDate", Timestamp.SCHEMA);
+    schemaBuilder.field("creationDate", Schema.INT64_SCHEMA);
     schemaBuilder.field("originatingRequest", SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryPriority", Schema.STRING_SCHEMA);
@@ -200,13 +200,13 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("deliveryPartition", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("retries", Schema.INT32_SCHEMA);
-    schemaBuilder.field("timeout", Timestamp.builder().optional().schema());
+    schemaBuilder.field("timeout", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("correlator", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("control", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("segmentContactPolicyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("deliveryType", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
-    schemaBuilder.field("deliveryDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
     commonSchema = schemaBuilder.build();
   };
@@ -472,7 +472,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryRequestID", deliveryRequest.getDeliveryRequestID());
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
     struct.put("originatingRequest", deliveryRequest.getOriginatingRequest());
-    struct.put("creationDate", deliveryRequest.getCreationDate());
+    struct.put("creationDate", deliveryRequest.getCreationDate().getTime());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("deliveryPriority", deliveryRequest.getDeliveryPriority().getExternalRepresentation());
     struct.put("eventID", deliveryRequest.getEventID());
@@ -480,13 +480,13 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("featureID", deliveryRequest.getFeatureID());
     struct.put("deliveryPartition", deliveryRequest.getDeliveryPartition()); 
     struct.put("retries", deliveryRequest.getRetries()); 
-    struct.put("timeout", deliveryRequest.getTimeout()); 
+    struct.put("timeout", deliveryRequest.getTimeout() != null ? deliveryRequest.getTimeout().getTime() : null); 
     struct.put("correlator", deliveryRequest.getCorrelator()); 
     struct.put("control", deliveryRequest.getControl());
     struct.put("segmentContactPolicyID", deliveryRequest.getSegmentContactPolicyID());
     struct.put("deliveryType", deliveryRequest.getDeliveryType());
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
-    struct.put("deliveryDate", deliveryRequest.getDeliveryDate());
+    struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
   }
 
@@ -514,7 +514,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
     boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
-    Date creationDate = (schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime();
+    Date creationDate = (schemaVersion >= 3) ? new Date(valueStruct.getInt64("creationDate")) : ((schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime());
     String subscriberID = valueStruct.getString("subscriberID");
     DeliveryPriority deliveryPriority = DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority"));
     String eventID = valueStruct.getString("eventID");
@@ -522,13 +522,13 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     String featureID = valueStruct.getString("featureID");
     Integer deliveryPartition = valueStruct.getInt32("deliveryPartition");
     int retries = valueStruct.getInt32("retries");
-    Date timeout = (Date) valueStruct.get("timeout");
+    Date timeout = (schemaVersion >= 3) ? (valueStruct.get("timeout") != null ? new Date(valueStruct.getInt64("timeout")) : null) : (Date) valueStruct.get("timeout");
     String correlator = valueStruct.getString("correlator");
     boolean control = valueStruct.getBoolean("control");
     String segmentContactPolicyID = valueStruct.getString("segmentContactPolicyID");
     String deliveryType = valueStruct.getString("deliveryType");
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
-    Date deliveryDate = (Date) valueStruct.get("deliveryDate");
+    Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
 
     //
@@ -608,7 +608,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
       {
         case Journey_Manager:
           GUIManagedObject journey = journeyService.getStoredJourney(featureId);
-          journey = (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign) ? journey : null;
+          journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureName = journey == null ? null : journey.getGUIManagedObjectName();
           break;
 
