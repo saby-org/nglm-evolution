@@ -201,7 +201,7 @@ public class BaseSplit
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
         if (segmentID == null)
           {
-            segmentID = segmentationDimensionService.generateSegmentationDimensionID();
+            segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);
           }
         result.add(new SegmentRanges(segment, dependentOnExtendedSubscriberProfile));

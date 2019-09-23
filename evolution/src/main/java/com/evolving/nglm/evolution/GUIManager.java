@@ -495,6 +495,7 @@ public class GUIManager
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
   private PartnerService partnerService;
   private SegmentContactPolicyService segmentContactPolicyService;
+  private SharedIDService subscriberGroupSharedIDService;
   private static Method externalAPIMethodJourneyActivated;
   private static Method externalAPIMethodJourneyDeactivated;
 
@@ -752,7 +753,8 @@ public class GUIManager
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     partnerService = new PartnerService(bootstrapServers, "guimanager-partnerservice-"+apiProcessKey, partnerTopic, true);
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
-    
+    subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
+
     /*****************************************
     *
     *  Elasticsearch -- client
@@ -6242,7 +6244,7 @@ public class GUIManager
     String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (segmentationDimensionID == null)
       {
-        segmentationDimensionID = segmentationDimensionService.generateSegmentationDimensionID();
+        segmentationDimensionID = subscriberGroupSharedIDService.generateID();
         jsonRoot.put("id", segmentationDimensionID);
       }
 
@@ -15298,7 +15300,7 @@ public class GUIManager
     String targetID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (targetID == null)
       {
-        targetID = targetService.generateTargetID();
+        targetID = subscriberGroupSharedIDService.generateID();
         jsonRoot.put("id", targetID);
       }
 
@@ -16993,7 +16995,7 @@ public class GUIManager
     String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", false);
     if (exclusionInclusionTargetID == null)
       {
-        exclusionInclusionTargetID = exclusionInclusionTargetService.generateExclusionInclusionTargetID();
+        exclusionInclusionTargetID = subscriberGroupSharedIDService.generateID();
         jsonRoot.put("id", exclusionInclusionTargetID);
       }
 
@@ -21049,6 +21051,68 @@ public class GUIManager
     public void handle(HttpExchange exchange) throws IOException
     {
       handleComplexAPI(api, exchange);
+    }
+  }
+
+  /*****************************************
+  *
+  *  class SharedIDService
+  *
+  *****************************************/
+
+  public static class SharedIDService
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private int lastGeneratedObjectID = 0;
+    private Set<GUIService> baseServices;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public SharedIDService(GUIService... baseServices)
+    {
+      this.baseServices = new HashSet<GUIService>();
+      for (GUIService guiService : baseServices)
+        {
+          this.baseServices.add(guiService);
+          lastGeneratedObjectID = Math.max(lastGeneratedObjectID, guiService.getLastGeneratedObjectID());
+        }
+    }
+
+    /*****************************************
+    *
+    *  generateGUIManagedObjectID
+    *
+    *****************************************/
+
+    public String generateID()
+    {
+      synchronized (this)
+        {
+          //
+          //  update lastGeneratedObjectID
+          //
+
+          for (GUIService guiService : baseServices)
+            {
+              lastGeneratedObjectID = Math.max(lastGeneratedObjectID, guiService.getLastGeneratedObjectID());
+            }
+
+          //
+          //  generate
+          //
+
+          lastGeneratedObjectID += 1;
+          return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedObjectID);
+        }
     }
   }
 

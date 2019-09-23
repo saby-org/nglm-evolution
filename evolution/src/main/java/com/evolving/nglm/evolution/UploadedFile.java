@@ -232,7 +232,7 @@ public class UploadedFile extends GUIManagedObject
     int fileSize = valueStruct.getInt32("fileSize");
     int numberOfLines = valueStruct.getInt32("numberOfLines");
     Date uploadDate = (Date) valueStruct.get("uploadDate");  
-    Map<String, JSONObject> metaData = (schemaVersion >= 2) ? unpackMetaData(schema.field("contextVariables").schema(), (Map<String,String>) valueStruct.get("metaData")) : new HashMap<String, JSONObject>();
+    Map<String, JSONObject> metaData = (schemaVersion >= 2) ? unpackMetaData(schema.field("metaData").schema(), (Map<String,String>) valueStruct.get("metaData")) : new HashMap<String, JSONObject>();
     
     //
     //  return

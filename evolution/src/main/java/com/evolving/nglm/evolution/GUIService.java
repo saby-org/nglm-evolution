@@ -328,6 +328,20 @@ public class GUIService
 
   /*****************************************
   *
+  *  getLastGeneratedObjectID
+  *
+  *****************************************/
+
+  int getLastGeneratedObjectID()
+  {
+    synchronized (this)
+      {
+        return lastGeneratedObjectID;
+      }
+  }
+
+  /*****************************************
+  *
   *  getStoredGUIManagedObject
   *
   *****************************************/

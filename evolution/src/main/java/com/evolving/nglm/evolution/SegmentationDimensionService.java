@@ -74,6 +74,7 @@ public class SegmentationDimensionService extends GUIService
   private UploadedFileService uploadedFileService = null; 
   private SubscriberIDService subscriberIDService = null;
   private String subscriberGroupTopic = Deployment.getSubscriberGroupTopic();
+  private int lastGeneratedSegmentID = 0;
   
   /*****************************************
   *
@@ -88,6 +89,29 @@ public class SegmentationDimensionService extends GUIService
     //  
 
     super(bootstrapServers, "segmentationDimensionService", groupID, segmentationDimensionTopic, masterService, getSuperListener(segmentationDimensionListener), "putSegmentationDimension", "removeSegmentationDimension", notifyOnSignificantChange);
+
+    //
+    //  (re-initialize lastGeneratedSegmentID)
+    //
+
+    for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions())
+      {
+        SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
+        if (segmentationDimension != null)
+          {
+            for (Segment segment : segmentationDimension.getSegments())
+              {
+                try
+                  {
+                    int segmentID = Integer.parseInt(segment.getID());
+                    lastGeneratedSegmentID = (segmentID > lastGeneratedSegmentID) ? segmentID : lastGeneratedSegmentID;
+                  }
+                catch (NumberFormatException e)
+                  {
+                  }
+              }
+          }
+      }
 
     //
     //  listener
@@ -230,6 +254,21 @@ public class SegmentationDimensionService extends GUIService
   //
 
   public Segment getSegment(String segmentID) { synchronized (this) { return segmentsByID.get(segmentID); } }
+
+  /*****************************************
+  *
+  *  generateSegmentID
+  *
+  *****************************************/
+
+  public String generateSegmentID()
+  {
+    synchronized (this)
+      {
+        lastGeneratedSegmentID += 1;
+        return String.format(Deployment.getGenerateNumericIDs() ? "%d" : "%03d", lastGeneratedSegmentID);
+      }
+  }
 
   /*****************************************
   *
@@ -416,6 +455,48 @@ public class SegmentationDimensionService extends GUIService
             StringWriter stackTraceWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(stackTraceWriter, true));
             log.warn("Exception processing listener: {}", stackTraceWriter.toString());
+          }
+      }
+  }
+
+  /*****************************************
+  *
+  *  processGUIManagedObject
+  *
+  *****************************************/
+
+  @Override protected void processGUIManagedObject(String guiManagedObjectID, GUIManagedObject guiManagedObject, Date date)
+  {
+    synchronized (this)
+      {
+        /*****************************************
+        *
+        *  super
+        *
+        *****************************************/
+
+        super.processGUIManagedObject(guiManagedObjectID, guiManagedObject, date);
+
+        /*****************************************
+        *
+        *  lastGeneratedSegmentID
+        *
+        *****************************************/
+
+        SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
+        if (segmentationDimension != null)
+          {
+            for (Segment segment : segmentationDimension.getSegments())
+              {
+                try
+                  {
+                    int segmentID = Integer.parseInt(segment.getID());
+                    lastGeneratedSegmentID = (segmentID > lastGeneratedSegmentID) ? segmentID : lastGeneratedSegmentID;
+                  }
+                catch (NumberFormatException e)
+                  {
+                  }
+              }
           }
       }
   }

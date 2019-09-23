@@ -254,7 +254,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
         if (segmentID == null)
           {
-            segmentID = this.getSegmentationDimensionID() + "-" + Integer.toString(i);
+            segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);
           }
         result.add(new SegmentFileImport(segment));
