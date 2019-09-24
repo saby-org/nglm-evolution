@@ -92,6 +92,7 @@
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
   "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
+  "profileLoyaltyProgramChangeEventTopic"                : "${topic.profileloyaltyprogramchangeevent}",
   "dnboMatrixTopic"                                      : "${topic.dnbomatrix}",
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
   

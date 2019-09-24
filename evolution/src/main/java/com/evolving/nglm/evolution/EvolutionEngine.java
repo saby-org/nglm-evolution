@@ -102,6 +102,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
@@ -250,6 +251,7 @@ public class EvolutionEngine
     String emptyTopic = Deployment.getEmptyTopic();
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
+    String profileLoyaltyProgramChangeEventTopic = Deployment.getProfileLoyaltyProgramChangeEventTopic();
     String journeyRequestTopic = Deployment.getJourneyRequestTopic();
     String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
     String journeyMetricTopic = Deployment.getJourneyMetricTopic();
@@ -524,6 +526,7 @@ public class EvolutionEngine
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
+    final ConnectSerde<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventSerde = ProfileLoyaltyProgramChangeEvent.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
     final ConnectSerde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
@@ -772,7 +775,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyMetric), 
         (key,value) -> (value instanceof SubscriberTrace),
         (key,value) -> (value instanceof PropensityEventOutput),
-        (key,value) -> (value instanceof ExternalAPIOutput));
+        (key,value) -> (value instanceof ExternalAPIOutput),
+        (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent)); 
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
@@ -784,7 +788,9 @@ public class EvolutionEngine
     KStream<StringKey, JourneyMetric> journeyMetricStream = (KStream<StringKey, JourneyMetric>) branchedEvolutionEngineOutputs[8];
     KStream<StringKey, SubscriberTrace> subscriberTraceStream = (KStream<StringKey, SubscriberTrace>) branchedEvolutionEngineOutputs[9];
     KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[10];
+
     KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[11];
+    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[12];
 
     //
     //  build predicates for delivery requests
@@ -933,6 +939,7 @@ public class EvolutionEngine
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     extendedProfileSubscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     propensityStateStream.to(propensityLogTopic, Produced.with(propensityKeySerde, propensityStateSerde));
+    profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
 
     //
     //  sink - delivery request streams
@@ -1803,6 +1810,16 @@ public class EvolutionEngine
     //
     //  externalAPIOutput
     //
+    //
+    //  profileLoayltyProgramChangeEvents cleaning
+    //
+
+    if (subscriberState.getProfileLoyaltyProgramChangeEvents() != null)
+      {
+        subscriberState.getProfileLoyaltyProgramChangeEvents().clear();
+        subscriberStateUpdated = true;
+      }
+    
 
     if (subscriberState.getExternalAPIOutput() != null)
       {
@@ -2714,7 +2731,8 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    SubscriberProfile subscriberProfile = context.getSubscriberState().getSubscriberProfile();
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = context.getExtendedSubscriberProfile();
     boolean subscriberProfileUpdated = false;
 
@@ -2803,10 +2821,26 @@ public class EvolutionEngine
                 ((LoyaltyProgramPointsState)currentLoyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), newTierName, now, loyaltyProgramRequest.getDeliveryRequestID());
 
                 //
-                //  update loyalty programs
+                //  update subscriber loyalty programs state
                 //
 
                 subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), currentLoyaltyProgramState);
+                
+                //
+                //  generate new event (opt-in)
+                //
+                
+                ParameterMap infos = new ParameterMap();
+                infos.put(LoyaltyProgramPointsEventInfos.ENTERING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
+                infos.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), null);
+                infos.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTierName);
+                ProfileLoyaltyProgramChangeEvent profileChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), infos);
+                subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileChangeEvent);
+                
+                //
+                //  return
+                //
+                
                 success = true;
 
                 break;
@@ -2829,6 +2863,7 @@ public class EvolutionEngine
                     LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
                     loyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierName, now, loyaltyProgramHistory);
                   }
+                String oldTier = ((LoyaltyProgramPointsState)loyaltyProgramState).getTierName();
 
                 //
                 //  update loyalty program state
@@ -2838,10 +2873,26 @@ public class EvolutionEngine
                 ((LoyaltyProgramPointsState)loyaltyProgramState).update(loyaltyProgram.getEpoch(), loyaltyProgramRequest.getOperation(), loyaltyProgram.getLoyaltyProgramName(), tierName, now, loyaltyProgramRequest.getDeliveryRequestID());
 
                 //
-                //  update loyalty programs
+                //  update subscriber loyalty programs state
                 //
 
                 subscriberProfile.getLoyaltyPrograms().put(loyaltyProgramRequest.getLoyaltyProgramID(), loyaltyProgramState);
+                
+                //
+                //  generate new event (opt-out)
+                //
+                
+                ParameterMap info = new ParameterMap();
+                info.put(LoyaltyProgramPointsEventInfos.LEAVING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
+                info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), oldTier);
+                info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), tierName);
+                ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
+                subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+                
+                //
+                //  return
+                //
+                
                 success = true;
 
                 break;
@@ -2973,9 +3024,21 @@ public class EvolutionEngine
                     //  update tier
                     //
                     
+                    String oldTier = ((LoyaltyProgramPointsState)loyaltyProgramState).getTierName();
                     String newTier = determineLoyaltyProgramPointsTier(subscriberProfile, loyaltyProgramPoints, now);
-                    if(!((LoyaltyProgramPointsState)loyaltyProgramState).getTierName().equals(newTier)){
+                    if(!oldTier.equals(newTier)){
                       ((LoyaltyProgramPointsState)loyaltyProgramState).update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newTier, now, evolutionEvent.getClass().getName());
+                      
+                      //
+                      //  generate new event (tier changed)
+                      //
+                      
+                      ParameterMap info = new ParameterMap();
+                      info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), oldTier);
+                      info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTier);
+                      ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
+                      subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+                      
                     }
 
                   }
@@ -4727,6 +4790,7 @@ public class EvolutionEngine
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     result.addAll(subscriberState.getPropensityOutputs());
     result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
+    result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
     return result;
   }
 

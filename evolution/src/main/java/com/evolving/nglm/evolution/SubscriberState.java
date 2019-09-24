@@ -74,6 +74,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     schemaBuilder.field("journeyStatisticWrappers", SchemaBuilder.array(JourneyStatisticWrapper.schema()).schema());
     schemaBuilder.field("journeyMetrics", SchemaBuilder.array(JourneyMetric.schema()).schema());
     schemaBuilder.field("propensityOutputs", SchemaBuilder.array(PropensityEventOutput.schema()).defaultValue(Collections.<PropensityEventOutput>emptyList()).schema());
+    schemaBuilder.field("profileLoyaltyProgramChangeEvents", SchemaBuilder.array(ProfileLoyaltyProgramChangeEvent.schema()).defaultValue(Collections.<ProfileLoyaltyProgramChangeEvent>emptyList()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("externalAPIOutput", ExternalAPIOutput.serde().optionalSchema()); // TODO : check this 
     schema = schemaBuilder.build();
@@ -118,6 +119,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private List<JourneyStatisticWrapper> journeyStatisticWrappers;
   private List<JourneyMetric> journeyMetrics;
   private List<PropensityEventOutput> propensityOutputs;
+  private List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents;
   private SubscriberTrace subscriberTrace;
   private ExternalAPIOutput externalAPIOutput;
 
@@ -151,6 +153,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public List<JourneyStatisticWrapper> getJourneyStatisticWrappers() { return journeyStatisticWrappers; }
   public List<JourneyMetric> getJourneyMetrics() { return journeyMetrics; }
   public List<PropensityEventOutput> getPropensityOutputs() { return propensityOutputs; }
+  public List<ProfileLoyaltyProgramChangeEvent> getProfileLoyaltyProgramChangeEvents() { return profileLoyaltyProgramChangeEvents; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
   public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; }
 
@@ -210,6 +213,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.propensityOutputs = new ArrayList<PropensityEventOutput>();
+        this.profileLoyaltyProgramChangeEvents = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
         this.subscriberTrace = null;
         this.externalAPIOutput = null;
         this.kafkaRepresentation = null;
@@ -230,7 +234,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -250,6 +254,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     this.journeyStatisticWrappers = journeyStatisticWrappers;
     this.journeyMetrics = journeyMetrics;
     this.propensityOutputs = propensityOutputs;
+    this.profileLoyaltyProgramChangeEvents = profileLoyaltyProgramChangeEvents;
     this.subscriberTrace = subscriberTrace;
     this.externalAPIOutput = externalAPIOutput;
     this.kafkaRepresentation = null;
@@ -285,6 +290,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.deliveryRequests = new ArrayList<DeliveryRequest>(subscriberState.getDeliveryRequests());
         this.journeyMetrics = new ArrayList<JourneyMetric>(subscriberState.getJourneyMetrics());
         this.propensityOutputs = new ArrayList<PropensityEventOutput>(subscriberState.getPropensityOutputs());
+        this.profileLoyaltyProgramChangeEvents= new ArrayList<ProfileLoyaltyProgramChangeEvent>(subscriberState.getProfileLoyaltyProgramChangeEvents());
         this.subscriberTrace = subscriberState.getSubscriberTrace();
         this.externalAPIOutput = subscriberState.getExternalAPIOutput();
         this.kafkaRepresentation = null;
@@ -347,6 +353,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     struct.put("journeyStatisticWrappers", packJourneyStatisticWrappers(subscriberState.getJourneyStatisticWrappers()));
     struct.put("journeyMetrics", packJourneyMetrics(subscriberState.getJourneyMetrics()));
     struct.put("propensityOutputs", packPropensityOutputs(subscriberState.getPropensityOutputs()));
+    struct.put("profileLoyaltyProgramChangeEvents", packProfileLoyaltyProgramChangeEvents(subscriberState.getProfileLoyaltyProgramChangeEvents()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
     struct.put("externalAPIOutput", subscriberState.getExternalAPIOutput() != null ? ExternalAPIOutput.serde().packOptional(subscriberState.getExternalAPIOutput()) : null);
     return struct;
@@ -495,6 +502,22 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
       }
     return result;
   }
+  
+  /*****************************************
+  *
+  *  packProfileLoyaltyProgramChangeEvents
+  *
+  *****************************************/
+
+  private static List<Object> packProfileLoyaltyProgramChangeEvents(List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent : profileLoyaltyProgramChangeEvents)
+      {
+        result.add(ProfileLoyaltyProgramChangeEvent.pack(profileLoyaltyProgramChangeEvent));
+      }
+    return result;
+  }
 
   /*****************************************
   *
@@ -535,6 +558,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     List<JourneyStatisticWrapper> journeyStatisticWrappers = (schemaVersion >= 3) ?unpackJourneyStatisticWrappers(schema.field("journeyStatisticWrappers").schema(), valueStruct.get("journeyStatisticWrappers")) : new ArrayList<JourneyStatisticWrapper>();
     List<JourneyMetric> journeyMetrics = (schemaVersion >= 2) ? unpackJourneyMetrics(schema.field("journeyMetrics").schema(), valueStruct.get("journeyMetrics")) : new ArrayList<JourneyMetric>();
     List<PropensityEventOutput> propensityOutputs = (schemaVersion >= 2) ? unpackPropensityOutputs(schema.field("propensityOutputs").schema(), valueStruct.get("propensityOutputs")) : new ArrayList<PropensityEventOutput>();
+    List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents = (schemaVersion >= 2) ? unpackProfileLoyaltyProgramChangeEvents(schema.field("profileLoyaltyProgramChangeEvents").schema(), valueStruct.get("profileLoyaltyProgramChangeEvents")) : Collections.<ProfileLoyaltyProgramChangeEvent>emptyList();
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
     ExternalAPIOutput externalAPIOutput = valueStruct.get("externalAPIOutput") != null ? ExternalAPIOutput.unpack(new SchemaAndValue(schema.field("externalAPIOutput").schema(), valueStruct.get("externalAPIOutput"))) : null;
 
@@ -542,7 +566,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, subscriberTrace, externalAPIOutput);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput);
   }
 
   /*****************************************
@@ -840,4 +864,38 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
     return result;
   }
+  /*****************************************
+  *
+  *  unpackProfileLoyaltyProgramChangeEvents
+  *
+  *****************************************/
+
+  private static List<ProfileLoyaltyProgramChangeEvent> unpackProfileLoyaltyProgramChangeEvents(Schema schema, Object value)
+  {
+    //
+    //  get schema for ProfileChangeEvent
+    //
+
+    Schema profileLoyaltyProgramChangeEventSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    List<ProfileLoyaltyProgramChangeEvent> result = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object event : valueArray)
+      {
+        ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = ProfileLoyaltyProgramChangeEvent.unpack(new SchemaAndValue(profileLoyaltyProgramChangeEventSchema, event));
+        result.add(profileLoyaltyProgramChangeEvent);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  
 }

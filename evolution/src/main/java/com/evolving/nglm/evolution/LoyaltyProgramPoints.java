@@ -10,6 +10,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -30,6 +31,29 @@ import java.util.Set;
 
 public class LoyaltyProgramPoints extends LoyaltyProgram
 {
+  
+  /*****************************************
+  *
+  *  enum
+  *
+  *****************************************/
+
+  //
+  //  LoyaltyProgramType
+  //
+
+  public enum LoyaltyProgramPointsEventInfos
+  {
+    ENTERING("entering"),
+    OLD_TIER("oldTier"),
+    NEW_TIER("newTier"),
+    LEAVING("leaving"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private LoyaltyProgramPointsEventInfos(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static LoyaltyProgramPointsEventInfos fromExternalRepresentation(String externalRepresentation) { for (LoyaltyProgramPointsEventInfos enumeratedValue : LoyaltyProgramPointsEventInfos.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
   
   /*****************************************
    *

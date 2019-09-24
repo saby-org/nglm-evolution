@@ -110,6 +110,7 @@ public class Deployment
   private static String propensityStateChangeLog;
   private static String propensityStateChangeLogTopic;
   private static String propensityRepartitioningTopic;
+  private static String profileLoyaltyProgramChangeEventTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
   private static String journeyTrafficChangeLog;
@@ -304,6 +305,7 @@ public class Deployment
   public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
   public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
   public static String getPropensityRepartitioningTopic() { return propensityRepartitioningTopic; }
+  public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
   public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
@@ -1527,6 +1529,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  profileLoyaltyProgramChangeEventTopic
+    //
+
+    try
+      {
+        profileLoyaltyProgramChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileLoyaltyProgramChangeEventTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  propensityInitialisationPresentationThreshold
     //

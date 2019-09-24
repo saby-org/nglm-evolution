@@ -142,6 +142,7 @@
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
     <topic.propensitylog>propensitylog</topic.propensitylog>
+    <topic.profileloyaltyprogramchangeevent>profileloyaltyprogramchangeevent</topic.profileloyaltyprogramchangeevent>
     <topic.uploadedfile>uploadedfile</topic.uploadedfile>
     <topic.pointfulfillment.request>pointfulfillment-request</topic.pointfulfillment.request>
     <topic.pointfulfillment.response>pointfulfillment-response</topic.pointfulfillment.response>
