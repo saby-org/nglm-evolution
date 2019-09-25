@@ -832,24 +832,20 @@ public class DNBOProxy
         msg += "well executed";
       }
     response.put("message", msg);
-    if (multipleStrategies)
+    //searching if one of the strategies returned in list match the requested strategy, and remove others
+    //in case list does not contain correct strategy will become empty and the second if will throw exception
+    if(!multipleStrategies && resArray.size() > 1)
       {
-        response.put("value", JSONUtilities.encodeArray(resArray));        
+        log.warn("DNBOproxy.processGetSubscriberOffers Internal error, list should contain exactly 1 element, not " + resArray.size() + ", Searching if correct strategy is present");
+        resArray.removeIf(p->!JSONUtilities.decodeString(p,"scoringStrategyID",true).equals((String) scoringStrategyObject));
       }
-    else if (resArray.size() == 1)
-      {
-        response.put("value", resArray.get(0));
-      }
-    else if (resArray.size() == 0)
-      {
-        log.info("DNBOproxy.processGetSubscriberOffers Internal error, list is empty");  
-        throw new DNBOProxyException("Unexpected error : list is empty", "");
-      }
-    else
-      {
-        log.warn("DNBOproxy.processGetSubscriberOffers Internal error, list should contain exactly 1 element, not " + resArray.size() + ", taking first one");
-        response.put("value", resArray.get(0));
-      }
+    if (resArray.size() == 0)
+    {
+      //aici ar trebui sa fie logat un error nu info
+      log.info("DNBOproxy.processGetSubscriberOffers Internal error, list is empty");
+      throw new DNBOProxyException("Unexpected error : list is empty", "");
+    }
+    response.put("value", JSONUtilities.encodeArray(resArray));
     return JSONUtilities.encodeObject(response);
   }
 
