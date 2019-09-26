@@ -963,9 +963,13 @@ do
    export HTTP_PORT=`echo $TUPLE | cut -d: -f5`
    if [ -z "$SMSC_CONNECTION_1" ]; then
      SMSC_CONNECTION_1="$HOST_IP:$SMPP_PORT"
+     SMSC_HOST="$HOST_IP"
+     SMSC_PORT="$SMPP_PORT"
    fi
 done
 export SMSC_CONNECTION_1
+export SMSC_HOST
+export SMSC_PORT
 
 #
 #  Fake SMTP -- configuration
