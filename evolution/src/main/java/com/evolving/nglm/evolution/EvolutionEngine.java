@@ -3227,30 +3227,34 @@ public class EvolutionEngine
 
         //
         // Presentation event update
-        // Because we do not know the actual creation date of the token (it has been created outside Evolution)
-        // we assume it has been created at the same time it was bound with offers
+        // If token created outside Evolution, we do not know its actual creation date, so assume created when it was bound with offers
         //
 
         PresentationLog presentationLog = (PresentationLog) evolutionEvent;
-        
-        if(subscriberStoredToken.getPresentedOffersIDs().size() > 0) {
-          log.error("Unexpected presentation record ("+ presentationLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already bound by a previous presentation record");
-          return subscriberStateUpdated;
-        } else {
-          if(subscriberStoredToken.getTokenStatus() == TokenStatus.New) {
-            subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
-          }
-          if(subscriberStoredToken.getCreationDate() == null) {
-            subscriberStoredToken.setCreationDate(presentationLog.getEventDate());
-            subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(presentationLog.getEventDate()));
-          }
-          if(subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(presentationLog.getEventDate())) {
-            subscriberStoredToken.setBoundDate(presentationLog.getEventDate());
-          }
-          subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount() + 1);
-          subscriberStoredToken.getPresentedOffersIDs().addAll(presentationLog.getOfferIDs());
+
+        if(subscriberStoredToken.getTokenStatus() == TokenStatus.New) {
+          subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
           subscriberStateUpdated = true;
         }
+        Date eventDate = presentationLog.getEventDate();
+        if(subscriberStoredToken.getCreationDate() == null) {
+          subscriberStoredToken.setCreationDate(eventDate);
+          subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate));
+          subscriberStateUpdated = true;
+        }
+        if(subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate)) {
+          subscriberStoredToken.setBoundDate(eventDate);
+          subscriberStateUpdated = true;
+        }
+        int boundCount = subscriberStoredToken.getBoundCount();
+        Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
+        int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
+        if (boundCount < maxNumberofPlays)
+          {
+            subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
+            subscriberStoredToken.setPresentedOffersIDs(presentationLog.getOfferIDs()); // replace whatever was there 
+            subscriberStateUpdated = true;
+          }
       } else if(evolutionEvent instanceof AcceptanceLog) {
 
         //

@@ -320,7 +320,7 @@ public class TokenUtils
         if (!inList) 
           {
             //
-            // not a single objective of this offer is in the list of the scoringSplit -> skip it
+            // not a single objective of this offer is in the list of the scoringSegment -> skip it
             //
             continue;
           }

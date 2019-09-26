@@ -173,7 +173,9 @@ public class DNBOUtils
       String tokenTypeId = map.containsKey(field) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,field) : null;
       if (tokenTypeId == null) throw new ServerRuntimeException("No Token Type Id");
       
-      String codeFormat = tokenTypeId; // the ID passed by the gui is the regexp, see GUIManager.evaluateEnumeratedValues()
+      // the ID passed by the gui is the regexp, see GUIManager.evaluateEnumeratedValues()
+      // TODO : replace with ID, and call TokenTypeService here to get the regexp (and pass ID to evolution engine)
+      String codeFormat = tokenTypeId;
       if (log.isTraceEnabled()) log.trace("codeFormat : "+codeFormat);
 
       field = "node.parameter.choice";
