@@ -715,7 +715,16 @@ public class DNBOProxy
     Date now = SystemTime.getCurrentTime();
     String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
-    double rangeValue = JSONUtilities.decodeDouble(jsonRoot,"rangeValue",true);
+
+    //range value extract and validation
+    Double rangeValue = JSONUtilities.decodeDouble(jsonRoot,"rangeValue",false);
+    if(rangeValue == null)
+    {
+      rangeValue = new Double(0);
+    }else if (rangeValue.isNaN())
+    {
+      throw new DNBOProxyException("Range value = "+rangeValue.toString()+" present but is not a number","");
+    }
 
     List<String> scoringStrategyIDList;
     boolean multipleStrategies = true;
@@ -784,7 +793,7 @@ public class DNBOProxy
           JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
               productService, productTypeService, catalogCharacteristicService,
               propensityDataReader, subscriberGroupEpochReader,
-              segmentationDimensionService, offerService,rangeValue);
+              segmentationDimensionService, offerService,rangeValue.doubleValue());
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
         }
@@ -841,8 +850,7 @@ public class DNBOProxy
       }
     if (resArray.size() == 0)
     {
-      //aici ar trebui sa fie logat un error nu info
-      log.info("DNBOproxy.processGetSubscriberOffers Internal error, list is empty");
+      log.error("DNBOproxy.processGetSubscriberOffers Internal error, list is empty");
       throw new DNBOProxyException("Unexpected error : list is empty", "");
     }
     response.put("value", JSONUtilities.encodeArray(resArray));
