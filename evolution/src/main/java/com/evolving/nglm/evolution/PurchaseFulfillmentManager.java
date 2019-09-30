@@ -477,6 +477,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
 
       Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
+      // TODO : should check if offer is still valid, ie (offer != null) 
 
       //
       //  presentation

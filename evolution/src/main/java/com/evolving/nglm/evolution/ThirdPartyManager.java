@@ -181,6 +181,7 @@ public class ThirdPartyManager
     getCustomerNBOs,
     getTokensCodesList,
     acceptOffer,
+    purchaseOffer,
     triggerEvent,
     enterCampaign;
   }
@@ -395,6 +396,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getCustomerNBOs", new APIHandler(API.getCustomerNBOs));
       restServer.createContext("/nglm-thirdpartymanager/getTokensCodesList", new APIHandler(API.getTokensCodesList));
       restServer.createContext("/nglm-thirdpartymanager/acceptOffer", new APIHandler(API.acceptOffer));
+      restServer.createContext("/nglm-thirdpartymanager/purchaseOffer", new APIHandler(API.purchaseOffer));
       restServer.createContext("/nglm-thirdpartymanager/triggerEvent", new APIHandler(API.triggerEvent));
       restServer.createContext("/nglm-thirdpartymanager/enterCampaign", new APIHandler(API.enterCampaign));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
@@ -689,6 +691,9 @@ public class ThirdPartyManager
               break;
             case acceptOffer:
               jsonResponse = processAcceptOffer(jsonRoot);
+              break;
+            case purchaseOffer:
+              jsonResponse = processPurchaseOffer(jsonRoot);
               break;
             case triggerEvent:
               jsonResponse = processTriggerEvent(jsonRoot);
@@ -3268,7 +3273,121 @@ public class ThirdPartyManager
     }
     catch (SubscriberProfileServiceException e) 
     {
-      log.error("unable to process request updateCustomer {} ", e.getMessage());
+      log.error("unable to process request acceptOffer {} ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
+    } 
+
+    /*****************************************
+     *
+     *  decorate and response
+     *
+     *****************************************/
+
+    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processPurchaseOffer
+   *
+   *****************************************/
+
+  private JSONObject processPurchaseOffer(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+
+    String subscriberID;
+    try {
+      subscriberID = resolveSubscriberID(jsonRoot, response);
+    } catch (ThirdPartyManagerException e) {
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    String offerName = JSONUtilities.decodeString(jsonRoot, "offerName", true);
+    String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
+    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+
+    /*****************************************
+     *
+     * getSubscriberProfile - no history
+     *
+     *****************************************/
+    try
+    {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      if (subscriberProfile == null)
+        {
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+          if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+          return JSONUtilities.encodeObject(response);
+        }
+
+      Date now = new Date();
+
+      String offerID = null;
+      for (Offer offer : offerService.getActiveOffers(now))
+        {
+          if (offer.getDisplay().equals(offerName))
+            {
+              offerID = offer.getGUIManagedObjectID();
+              break;
+            }
+        }
+      if (offerID == null)
+        {
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND .getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND .getGenericResponseMessage());
+          return JSONUtilities.encodeObject(response);          
+        }
+
+      String salesChannelID = null;
+      for (SalesChannel sc : salesChannelService.getActiveSalesChannels(now))
+        {
+          if (sc.getGUIManagedObjectName().equals(salesChannel))
+            {
+              salesChannelID = sc.getGUIManagedObjectID();
+              break;
+            }
+        }
+      if (salesChannelID == null)
+        {
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_DEACTIVATED.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_DEACTIVATED.getGenericResponseMessage());
+          return JSONUtilities.encodeObject(response);          
+        }
+      
+      String featureID = "purchaseOffer";
+      String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
+      String deliveryRequestID = "deliveryRequestID"; // TODO
+      String eventID = "eventID"; // TODO
+      String deliveryType = "deliveryType"; // TODO
+      purchaseOffer(subscriberID, offerID, salesChannelID, quantity, deliveryRequestID, eventID, moduleID, featureID, deliveryType, kafkaProducer);
+      
+      //
+      // TODO how do we deal with the offline errors ? 
+      //
+      
+      // TODO trigger event (for campaign) ?
+      
+    }
+    catch (SubscriberProfileServiceException e) 
+    {
+      log.error("unable to process request purchaseOffer {} ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
     } 
 
