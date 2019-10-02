@@ -753,6 +753,30 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   }
 
   //
+  //  getCountIfZeroPrevious90Days
+  //
+
+  protected Long getCountIfZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return metricHistory.countIf(startDay, endDay, MetricHistory.Criteria.IsZero);
+  }
+
+  //
+  //  getCountIfNonZeroPrevious90Days
+  //
+
+  protected Long getCountIfNonZeroPrevious90Days(MetricHistory metricHistory, Date evaluationDate)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -90, Deployment.getBaseTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getBaseTimeZone());
+    return metricHistory.countIf(startDay, endDay, MetricHistory.Criteria.IsNonZero);
+  }
+
+  //
   //  getAggregateIfZeroPrevious90Days
   //
 

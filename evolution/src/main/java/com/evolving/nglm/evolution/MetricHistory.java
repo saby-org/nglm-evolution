@@ -532,7 +532,7 @@ public class MetricHistory
   *
   ****************************************/
 
-  private static long[] unpackBuckets(BucketRepresentation bucketRepresentation, byte[] packedBuckets)
+  public static long[] unpackBuckets(BucketRepresentation bucketRepresentation, byte[] packedBuckets)
   {
     int numberOfBuckets;
     long[] buckets;
@@ -1500,6 +1500,109 @@ public class MetricHistory
                   result = (valueMin >= 0L) ? Math.min(valueMin, result) : result;
                   break;
               }
+          }
+        bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getBaseTimeZone());
+      }
+    
+    /*****************************************
+    *
+    *  return result
+    *
+    *****************************************/
+
+    return result;
+  }
+
+  /****************************************
+  *
+  *  countIf
+  *
+  ****************************************/
+
+  public synchronized Long countIf(Date startDay, Date endDay, Criteria criteria) throws IllegalArgumentException
+  {
+    /****************************************
+    *
+    *  validate input
+    *
+    ****************************************/
+
+    //
+    //  startDay
+    //
+
+    if (startDay == null || ! Objects.equals(startDay, RLMDateUtils.truncate(startDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+      {
+        throw new IllegalArgumentException("startDay must be on a day boundary");
+      }
+
+    //
+    //  endDay
+    //
+    
+    if (endDay == null || ! Objects.equals(endDay, RLMDateUtils.truncate(endDay, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone())))
+      {
+        throw new IllegalArgumentException("endDay must be on a day boundary");
+      }
+
+    //
+    //  startDay on/before endDay
+    //
+
+    if (startDay.after(endDay))
+      {
+        throw new IllegalArgumentException("startDay after endDay");
+      }
+
+    //
+    //  Standard mode
+    //
+
+    if (metricHistoryMode != MetricHistoryMode.Standard)
+      {
+        throw new IllegalArgumentException("metric history mode must be standard");
+      }
+    
+    /*****************************************
+    *
+    *  initialize result
+    *
+    *****************************************/
+    
+    long result = 0;
+
+    /*****************************************
+    *
+    *  aggregate result
+    *
+    *****************************************/
+    
+    Date bucketDay = startDay;
+    while (bucketDay.compareTo(endDay) <= 0)
+      {
+        //
+        //  criteria passes on provided day?
+        //
+        
+        boolean passesCriteria = false;
+        switch (criteria)
+          {
+            case IsZero:
+              passesCriteria = getValue(bucketDay, bucketDay) == 0;
+              break;
+              
+            case IsNonZero:
+              passesCriteria = getValue(bucketDay, bucketDay) > 0;
+              break;
+          }
+        
+        //
+        //  count (if necessary)
+        //
+        
+        if (passesCriteria)
+          {
+            result += 1;
           }
         bucketDay = RLMDateUtils.addDays(bucketDay, 1, Deployment.getBaseTimeZone());
       }

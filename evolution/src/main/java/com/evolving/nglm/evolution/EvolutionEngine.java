@@ -97,6 +97,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
@@ -109,8 +110,10 @@ import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Sets;
 import com.sun.net.httpserver.HttpExchange;
@@ -4965,6 +4968,15 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  reformat metric histories
+    *
+    *****************************************/
+
+    if (currentSubscriberStateNode != null) reformatMetricHistories((ObjectNode) currentSubscriberStateNode.get("subscriberProfile"));
+    reformatMetricHistories((ObjectNode) subscriberStateNode.get("subscriberProfile"));
+    
+    /*****************************************
+    *
     *  subscriberTraceDetails
     *
     *****************************************/
@@ -5070,6 +5082,15 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  reformat metric histories
+    *
+    *****************************************/
+
+    if (currentExtendedSubscriberProfileNode != null) reformatMetricHistories((ObjectNode) currentExtendedSubscriberProfileNode);
+    reformatMetricHistories((ObjectNode) extendedSubscriberProfileNode);
+    
+    /*****************************************
+    *
     *  subscriberTraceDetails
     *
     *****************************************/
@@ -5106,6 +5127,75 @@ public class EvolutionEngine
     return subscriberTraceMessageNode.toString();
   }
 
+  /*****************************************
+  *
+  *  reformatMetricHistories
+  *
+  *****************************************/
+
+  private static void reformatMetricHistories(ObjectNode objectNode)
+  {
+    //
+    //  break if null object
+    //
+    
+    if (objectNode == null) return;
+
+    //
+    //  iterate through all fields - reformatting/replacing byte arrays with arrays of longs for any member that looks like a MetricsHistory
+    //
+    
+    Iterator<String> fieldNames = objectNode.fieldNames();
+    while (fieldNames.hasNext())
+      {
+        String name = fieldNames.next();
+        JsonNode value = objectNode.get(name);
+        if (value.getNodeType() == JsonNodeType.OBJECT && value.hasNonNull("dailyRepresentation") && value.hasNonNull("dailyBuckets") && value.hasNonNull("monthlyRepresentation")  && value.hasNonNull("monthlyBuckets"))
+          {
+            try
+              {
+                //
+                //  replace dailyBuckets
+                //
+
+                JsonNode dailyRepresentationJson = value.get("dailyRepresentation");
+                BucketRepresentation dailyBucketRepresentation = dailyRepresentationJson.isInt() ? BucketRepresentation.fromExternalRepresentation(dailyRepresentationJson.intValue()) : null;
+                long[] dailyBuckets = (dailyBucketRepresentation != null && dailyBucketRepresentation != BucketRepresentation.UninitializedRepresentation) ? MetricHistory.unpackBuckets(dailyBucketRepresentation, value.get("dailyBuckets").binaryValue()) : null;
+                ArrayNode dailyBucketsArrayNode = new ObjectMapper().createArrayNode();
+                if (dailyBuckets != null)
+                  {
+                    for (int i = 0; i < dailyBuckets.length; i++)
+                      {
+                        dailyBucketsArrayNode.add(new Long(dailyBuckets[i]));
+                      }
+                  }
+                ((ObjectNode) value).put("dailyBuckets", dailyBucketsArrayNode);
+
+                //
+                //  replace monthlyBuckets
+                //
+
+                JsonNode monthlyRepresentationJson = value.get("monthlyRepresentation");
+                BucketRepresentation monthlyBucketRepresentation = monthlyRepresentationJson.isInt() ? BucketRepresentation.fromExternalRepresentation(monthlyRepresentationJson.intValue()) : null;
+                long[] monthlyBuckets = (monthlyBucketRepresentation != null && monthlyBucketRepresentation != BucketRepresentation.UninitializedRepresentation) ? MetricHistory.unpackBuckets(monthlyBucketRepresentation, value.get("monthlyBuckets").binaryValue()) : null;
+                ArrayNode monthlyBucketsArrayNode = new ObjectMapper().createArrayNode();
+                if (monthlyBuckets != null)
+                  {
+                    for (int i = 0; i < monthlyBuckets.length; i++)
+                      {
+                        monthlyBucketsArrayNode.add(new Long(monthlyBuckets[i]));
+                      }
+                  }
+                ((ObjectNode) value).put("monthlyBuckets", monthlyBucketsArrayNode);
+              }
+            catch (IOException e)
+              {
+                // ignore and continue
+              }
+          }
+      }
+  }
+  
   /*****************************************
   *
   *  class EvolutionEventContext
