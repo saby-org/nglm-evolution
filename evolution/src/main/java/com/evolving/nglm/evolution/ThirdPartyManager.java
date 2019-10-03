@@ -595,8 +595,10 @@ public class ThirdPartyManager
        *
        *****************************************/
 
-      authenticateAndCheckAccess(jsonRoot, api.name());
-
+      if (! Deployment.getRegressionMode())
+        {
+          authenticateAndCheckAccess(jsonRoot, api.name());
+        }
 
       /*****************************************
        *
