@@ -114,6 +114,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.Journey.BulkType;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -496,8 +497,10 @@ public class GUIManager
   private PartnerService partnerService;
   private SegmentContactPolicyService segmentContactPolicyService;
   private SharedIDService subscriberGroupSharedIDService;
+  private DynamicEventDeclarationsService dynamicEventDeclarationsService;
   private static Method externalAPIMethodJourneyActivated;
   private static Method externalAPIMethodJourneyDeactivated;
+
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -588,6 +591,7 @@ public class GUIManager
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     String partnerTopic = Deployment.getPartnerTopic();
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
+    String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -718,6 +722,7 @@ public class GUIManager
     };
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true, journeyListener);
     journeyTemplateService = new JourneyTemplateService(bootstrapServers, "guimanager-journeytemplateservice-" + apiProcessKey, journeyTemplateTopic, true);
+    dynamicEventDeclarationsService = new DynamicEventDeclarationsService(bootstrapServers, "guimanager-dynamiceventdeclarationsservice-"+apiProcessKey, dynamicEventDeclarationsTopic, true);
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "guimanager-segmentationDimensionservice-" + apiProcessKey, segmentationDimensionTopic, true);
     pointService = new PointService(bootstrapServers, "guimanager-pointservice-" + apiProcessKey, pointTopic, true);
     offerService = new OfferService(bootstrapServers, "guimanager-offerservice-" + apiProcessKey, offerTopic, true);
@@ -755,6 +760,27 @@ public class GUIManager
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
 
+
+    /*****************************************
+    *
+    *  Register Service Listener
+    *
+    *****************************************/
+    GUIManagedObjectListener dynamicEventDeclarationsListener = new GUIManagedObjectListener() {
+
+      @Override
+      public void guiManagedObjectActivated(GUIManagedObject guiManagedObject)
+      {
+        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);         
+      }
+
+      @Override
+      public void guiManagedObjectDeactivated(String objectID)
+      {
+        dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);         
+      }      
+    };
+    segmentationDimensionService.registerListener(dynamicEventDeclarationsListener);
     /*****************************************
     *
     *  Elasticsearch -- client
@@ -1479,6 +1505,9 @@ public class GUIManager
     exclusionInclusionTargetService.start();
     partnerService.start();
     segmentContactPolicyService.start();
+    dynamicEventDeclarationsService.start();
+    dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);
+
 
     /*****************************************
     *
@@ -4316,9 +4345,9 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
-    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
 
     /*****************************************
@@ -4369,9 +4398,9 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
-    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     boolean tagsOnly = JSONUtilities.decodeBoolean(jsonRoot, "tagsOnly", Boolean.FALSE);
 
     /*****************************************
@@ -4437,9 +4466,9 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     NodeType journeyNodeType = Deployment.getNodeTypes().get(JSONUtilities.decodeString(jsonRoot, "nodeTypeID", true));
-    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? Deployment.getEvolutionEngineEvents().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
+    EvolutionEngineEventDeclaration journeyNodeEvent = (JSONUtilities.decodeString(jsonRoot, "eventName", false) != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(JSONUtilities.decodeString(jsonRoot, "eventName", true)) : null;
     String id = JSONUtilities.decodeString(jsonRoot, "id", true);
     id = (id != null && id.trim().length() == 0) ? null : id;
 
@@ -4737,7 +4766,7 @@ public class GUIManager
     *****************************************/
 
     Map<String,CriterionField> journeyParameters = Journey.decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot,"journeyParameters", false));
-    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService);
+    Map<String,GUINode> contextVariableNodes = Journey.decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot,"contextVariableNodes", false), journeyParameters, Collections.<String,CriterionField>emptyMap(), false, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     Map<String,CriterionField> contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
 
     /*****************************************
@@ -4979,7 +5008,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -5304,7 +5333,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -5475,7 +5504,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -5691,7 +5720,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -5901,7 +5930,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
         /*****************************************
         *
@@ -19762,7 +19791,7 @@ public class GUIManager
           break;
 
         case "eventNames":
-          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
+          for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().values())
             {
               HashMap<String,Object> availableValue = new HashMap<String,Object>();
               availableValue.put("id", evolutionEngineEventDeclaration.getName());
@@ -20359,7 +20388,7 @@ public class GUIManager
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
             modifiedJourney = journey;
           }

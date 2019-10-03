@@ -110,6 +110,33 @@ public class EvolutionEngineEventDeclaration
         throw new GUIManagerException(e);
       }
   }
+  
+  public EvolutionEngineEventDeclaration(String name, String eventClassName, String eventTopic, EventRule eventRule, Map<String, CriterionField> eventCriterionFields) throws GUIManagerException
+  {
+    this.name = name;
+    this.eventClassName = eventClassName;
+    this.eventTopic = eventTopic;
+    this.eventRule = eventRule;
+    this.eventCriterionFields = eventCriterionFields;
+    
+
+    //
+    //  validate
+    //
+
+    try
+      {
+        Class<? extends EvolutionEngineEvent> eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventClassName);
+        if (! EvolutionEngineEvent.class.isAssignableFrom(eventClass)) throw new GUIManagerException("invalid EvolutionEngineEventDeclaration", eventClassName);
+        Method serdeMethod = eventClass.getMethod("serde");
+        this.eventSerde = (ConnectSerde<EvolutionEngineEvent>) serdeMethod.invoke(null);
+      }
+    catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException e)
+      {
+        throw new GUIManagerException(e);
+      }
+  }
+    
 
   /*****************************************
   *

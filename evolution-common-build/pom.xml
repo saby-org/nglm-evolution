@@ -103,6 +103,7 @@
     <topic.paymentMean>paymentMean</topic.paymentMean>
     <topic.presentationstrategy>presentationstrategy</topic.presentationstrategy>
     <topic.dnbomatrix>dnbomatrix</topic.dnbomatrix>
+    <topic.dynamiceventdeclarations>dynamiceventdeclarations</topic.dynamiceventdeclarations>
     <topic.scoringstrategy>scoringstrategy</topic.scoringstrategy>
     <topic.callingchannel>callingchannel</topic.callingchannel>
     <topic.saleschannel>saleschannel</topic.saleschannel>
@@ -142,6 +143,8 @@
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
     <topic.propensitylog>propensitylog</topic.propensitylog>
+    <topic.profilechangeevent>profilechangeevent</topic.profilechangeevent>
+    <topic.profilesegmentchangeevent>profilesegmentchangeevent</topic.profilesegmentchangeevent>
     <topic.profileloyaltyprogramchangeevent>profileloyaltyprogramchangeevent</topic.profileloyaltyprogramchangeevent>
     <topic.uploadedfile>uploadedfile</topic.uploadedfile>
     <topic.pointfulfillment.request>pointfulfillment-request</topic.pointfulfillment.request>

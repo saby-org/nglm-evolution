@@ -39,9 +39,11 @@ import java.lang.invoke.MethodType;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
@@ -88,6 +90,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("internalOnly", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tagFormat", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tagMaxLength", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
     schema = schemaBuilder.build();
   };
 
@@ -118,6 +121,7 @@ public class CriterionField extends DeploymentManagedObject
   private boolean internalOnly;
   private String tagFormat;
   private Integer tagMaxLength;
+  private boolean profileChangeEvent;
 
   //
   //  calculated
@@ -139,6 +143,7 @@ public class CriterionField extends DeploymentManagedObject
   public boolean getInternalOnly() { return internalOnly; }
   public String getTagFormat() { return tagFormat; }
   public Integer getTagMaxLength() { return tagMaxLength; }
+  public boolean getProfileChangeEvent() { return profileChangeEvent; }
 
   /*****************************************
   *
@@ -175,6 +180,7 @@ public class CriterionField extends DeploymentManagedObject
     this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
     this.tagFormat = JSONUtilities.decodeString(jsonRoot, "tagFormat", false);
     this.tagMaxLength = JSONUtilities.decodeInteger(jsonRoot, "tagMaxLength", false);
+    this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
 
     //
     //  expressionValuedParameter
@@ -337,7 +343,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, String tagFormat, Integer tagMaxLength)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, String tagFormat, Integer tagMaxLength, boolean profileChangeEvent)
   {
     //
     //  super
@@ -358,6 +364,7 @@ public class CriterionField extends DeploymentManagedObject
     this.internalOnly = internalOnly;
     this.tagFormat = tagFormat;
     this.tagMaxLength = tagMaxLength;
+    this.profileChangeEvent = profileChangeEvent;
 
     //
     //  retriever
@@ -397,6 +404,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("internalOnly", criterionField.getInternalOnly());
     struct.put("tagFormat", criterionField.getTagFormat());
     struct.put("tagMaxLength", criterionField.getTagMaxLength());
+    struct.put("profileChangeEvent", criterionField.getProfileChangeEvent());
     return struct;
   }
 
@@ -430,12 +438,13 @@ public class CriterionField extends DeploymentManagedObject
     boolean internalOnly = valueStruct.getBoolean("internalOnly");
     String tagFormat = valueStruct.getString("tagFormat");
     Integer tagMaxLength = valueStruct.getInt32("tagMaxLength");
+    boolean profileChangeEvent = (schemaVersion >= 2) ? valueStruct.getBoolean("profileChangeEvent") : false;
 
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, tagFormat, tagMaxLength);
+    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, tagFormat, tagMaxLength, profileChangeEvent);
   }
 
   /*****************************************
@@ -743,6 +752,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && internalOnly == criterionField.getInternalOnly();
         result = result && Objects.equals(tagFormat, criterionField.getTagFormat());
         result = result && Objects.equals(tagMaxLength, criterionField.getTagMaxLength());
+        result = result && profileChangeEvent == criterionField.getProfileChangeEvent();
       }
     return result;
   }

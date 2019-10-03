@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -254,6 +255,8 @@ public class EvolutionEngine
     String emptyTopic = Deployment.getEmptyTopic();
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
+    String profileChangeEventTopic = Deployment.getProfileChangeEventTopic();
+    String profileSegmentChangeEventTopic = Deployment.getProfileSegmentChangeEventTopic();
     String profileLoyaltyProgramChangeEventTopic = Deployment.getProfileLoyaltyProgramChangeEventTopic();
     String journeyRequestTopic = Deployment.getJourneyRequestTopic();
     String journeyStatisticTopic = Deployment.getJourneyStatisticTopic();
@@ -529,6 +532,8 @@ public class EvolutionEngine
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
+    final ConnectSerde<ProfileChangeEvent> profileChangeEventSerde = ProfileChangeEvent.serde();
+    final ConnectSerde<ProfileSegmentChangeEvent> profileSegmentChangeEventSerde = ProfileSegmentChangeEvent.serde();
     final ConnectSerde<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventSerde = ProfileLoyaltyProgramChangeEvent.serde();
     final ConnectSerde<RecordSubscriberID> recordSubscriberIDSerde = RecordSubscriberID.serde();
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
@@ -612,6 +617,8 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
+    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(profileSegmentChangeEventTopic, Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
+    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
 
     //
     //  timedEvaluationStreams
@@ -733,6 +740,8 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) presentationLogSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) acceptanceLogSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) rekeyedPointFulfillmentRequestSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileSegmentChangeEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream evolutionEventCompositeStream = null;
@@ -779,7 +788,9 @@ public class EvolutionEngine
         (key,value) -> (value instanceof SubscriberTrace),
         (key,value) -> (value instanceof PropensityEventOutput),
         (key,value) -> (value instanceof ExternalAPIOutput),
-        (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent)); 
+		(key,value) -> (value instanceof ProfileChangeEvent), 
+        (key,value) -> (value instanceof ProfileSegmentChangeEvent),
+        (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent));
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
@@ -793,7 +804,10 @@ public class EvolutionEngine
     KStream<StringKey, PropensityEventOutput> propensityOutputsStream = (KStream<StringKey, PropensityEventOutput>) branchedEvolutionEngineOutputs[10];
 
     KStream<StringKey, ExternalAPIOutput> externalAPIOutputsStream = (KStream<StringKey, ExternalAPIOutput>) branchedEvolutionEngineOutputs[11];
-    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[12];
+    KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[12];
+    KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[13];
+    KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[14];
+ 
 
     //
     //  build predicates for delivery requests
@@ -942,6 +956,8 @@ public class EvolutionEngine
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     extendedProfileSubscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     propensityStateStream.to(propensityLogTopic, Produced.with(propensityKeySerde, propensityStateSerde));
+    profileChangeEventsStream.to(profileChangeEventTopic, Produced.with(stringKeySerde, profileChangeEventSerde));
+    profileSegmentChangeEventsStream.to(profileSegmentChangeEventTopic, Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
     profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
 
     //
@@ -1542,6 +1558,23 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  profileChangeEvent get Old Values
+    *
+    *****************************************/
+    
+    SubscriberEvaluationRequest changeEventEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(changeEventEvaluationRequest); 
+    
+    /*****************************************
+    *
+    *  profileSegmentChangeEvent get Old Values
+    *
+    *****************************************/
+    
+    ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(changeEventEvaluationRequest); 
+    
+    /*****************************************
+    *
     *  update SubscriberProfile
     *
     *****************************************/
@@ -1571,6 +1604,22 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
+
+    /*****************************************
+    *
+    *  profile change detect changed values
+    *
+    *****************************************/
+        
+    updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues);
+    
+    /*****************************************
+    *
+    *  profile segment change detect changed segments
+    *
+    *****************************************/
+        
+    updateSegmentChangeEvents(subscriberState, subscriberProfile, now, changeEventEvaluationRequest, profileSegmentChangeOldValues);
 
     /*****************************************
     *
@@ -1810,10 +1859,29 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
+        
     //
-    //  externalAPIOutput
+    //  profileChangeEvents cleaning
     //
+
+    if (subscriberState.getProfileChangeEvents() != null)
+      {
+        subscriberState.getProfileChangeEvents().clear();
+        subscriberStateUpdated = true;
+      }
+    
+    
     //
+    //  profileSegmentChangeEvents cleaning
+    //
+
+    if (subscriberState.getProfileSegmentChangeEvents() != null)
+      {
+        subscriberState.getProfileSegmentChangeEvents().clear();
+        subscriberStateUpdated = true;
+      }
+
+	//
     //  profileLoayltyProgramChangeEvents cleaning
     //
 
@@ -1824,17 +1892,158 @@ public class EvolutionEngine
       }
     
 
-    if (subscriberState.getExternalAPIOutput() != null)
+    //
+    //  externalAPIOutput
+    //
+   if (subscriberState.getExternalAPIOutput() != null)
       {
         subscriberState.setExternalAPIOutput(null);
         subscriberStateUpdated = true;
       }
+	  
+
 
     //
     //  return
     //
 
     return subscriberStateUpdated;
+  }
+  
+  /*****************************************
+  *
+  *  saveProfileChangeOldValues
+  *
+  *****************************************/
+  
+  private static ParameterMap saveProfileChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
+  {
+    ParameterMap profileChangeOldValues = new ParameterMap();
+    for(String criterionFieldID: Deployment.getProfileChangeDetectionCriterionFields().keySet()) {
+      Object value = CriterionContext.Profile.getCriterionFields().get(criterionFieldID).retrieve(changeEventEvaluationRequest);
+      profileChangeOldValues.put(criterionFieldID, value);      
+    }
+    return profileChangeOldValues;
+  }
+  
+  /*****************************************
+  *
+  *  saveProfileSegmentChangeOldValues
+  *
+  *****************************************/
+  
+  private static ParameterMap saveProfileSegmentChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
+  {
+    ParameterMap oldSubscriberSegmentPerDimension = new ParameterMap();
+    for(Pair<String, String> currentSubscriberSegment : changeEventEvaluationRequest.getSubscriberProfile().getSegments().keySet()){
+      SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(currentSubscriberSegment.getFirstElement(), SystemTime.getCurrentTime());
+      if(dimension != null) {
+        oldSubscriberSegmentPerDimension.put(dimension.getSegmentationDimensionName(), currentSubscriberSegment.getSecondElement());
+      }
+    }
+    
+    // complete list with dimension not set so segment null
+    
+    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime())){
+      if(!oldSubscriberSegmentPerDimension.containsKey(dimension.getSegmentationDimensionName())) {
+        oldSubscriberSegmentPerDimension.put(dimension.getSegmentationDimensionName(), null);
+      }   
+    }
+    return oldSubscriberSegmentPerDimension;
+  }
+  
+  /*****************************************
+  *
+  *  updateChangeEvents
+  *
+  *****************************************/
+  
+  private static void updateChangeEvents(SubscriberState subscriberState, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileChangeOldValues)
+  {
+    ParameterMap profileChangeNewValues = new ParameterMap();
+    for(String criterionFieldID: Deployment.getProfileChangeDetectionCriterionFields().keySet()) {
+      Object value = CriterionContext.Profile.getCriterionFields().get(criterionFieldID).retrieve(changeEventEvaluationRequest);
+      if(!Objects.equals(profileChangeOldValues.get(criterionFieldID), value)) {
+        profileChangeNewValues.put(criterionFieldID, value);
+      }
+      else {
+        profileChangeOldValues.remove(criterionFieldID);
+      }
+    }
+    if(profileChangeNewValues.size() > 0) {
+      ProfileChangeEvent profileChangeEvent = new ProfileChangeEvent(changeEventEvaluationRequest.getSubscriberProfile().getSubscriberID(), now, profileChangeOldValues, profileChangeNewValues);
+      subscriberState.getProfileChangeEvents().add(profileChangeEvent);
+    }
+  }
+
+  /*****************************************
+  *
+  *  updateSegmentChangeEvents
+  *
+  *****************************************/
+  
+  private static void updateSegmentChangeEvents(SubscriberState subscriberState, SubscriberProfile subscriberProfile, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileSegmentChangeOldValues)
+  {
+    ParameterMap profileSegmentChangeNewValues = new ParameterMap();
+    for(Pair<String, String> currentSubscriberSegment : changeEventEvaluationRequest.getSubscriberProfile().getSegments().keySet())
+      {
+        SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(currentSubscriberSegment.getFirstElement(), SystemTime.getCurrentTime());
+        profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), currentSubscriberSegment.getSecondElement());
+      }
+    
+    // complete list with dimension not set so segment null
+    
+    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime()))
+      {
+        if(!profileSegmentChangeNewValues.containsKey(dimension.getSegmentationDimensionName())) 
+          {
+            profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), null);
+          }   
+      }
+    
+    // now compare entering, leaving, updating
+    
+    for(SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(SystemTime.getCurrentTime()))
+      {
+        if(profileSegmentChangeOldValues.get(dimension.getSegmentationDimensionName()) == null)
+          {
+            if(profileSegmentChangeNewValues.get(dimension.getSegmentationDimensionName()) != null)
+              {
+                profileSegmentChangeOldValues.put(dimension.getSegmentationDimensionName(), ProfileSegmentChangeEvent.SEGMENT_ENTERING_LEAVING.ENTERING.name());
+              }
+            else 
+              {
+                profileSegmentChangeNewValues.remove(dimension.getSegmentationDimensionName());
+              }
+            continue;
+          }
+        if(profileSegmentChangeOldValues.get(dimension.getSegmentationDimensionName()) != null)
+          {
+            if(profileSegmentChangeNewValues.get(dimension.getSegmentationDimensionName()) != null 
+                && profileSegmentChangeNewValues.get(dimension.getSegmentationDimensionName()).equals(profileSegmentChangeOldValues.get(dimension.getSegmentationDimensionName())))
+              {
+                profileSegmentChangeOldValues.remove(dimension.getSegmentationDimensionName());
+                profileSegmentChangeNewValues.remove(dimension.getSegmentationDimensionName());
+              }
+            continue;
+          }
+        if(profileSegmentChangeNewValues.get(dimension.getSegmentationDimensionName()) == null)
+          {
+            if(profileSegmentChangeOldValues.get(dimension.getSegmentationDimensionName()) != null)
+              {
+                profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), ProfileSegmentChangeEvent.SEGMENT_ENTERING_LEAVING.LEAVING.name());
+              }
+            else 
+              {
+                profileSegmentChangeOldValues.remove(dimension.getSegmentationDimensionName());
+              }
+            continue;
+          }        
+      }
+    if(profileSegmentChangeNewValues.size() > 0) {
+      ProfileSegmentChangeEvent profileSegmentChangeEvent = new ProfileSegmentChangeEvent(subscriberProfile.getSubscriberID(), now, profileSegmentChangeOldValues, profileSegmentChangeNewValues);
+      subscriberState.getProfileSegmentChangeEvents().add(profileSegmentChangeEvent);
+    }
   }
 
   /*****************************************
@@ -4797,6 +5006,8 @@ public class EvolutionEngine
     result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     result.addAll(subscriberState.getPropensityOutputs());
     result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
+    result.addAll(subscriberState.getProfileChangeEvents());
+    result.addAll(subscriberState.getProfileSegmentChangeEvents());
     result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
     return result;
   }

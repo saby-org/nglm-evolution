@@ -876,7 +876,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
   {
     /*****************************************
     *
@@ -907,7 +907,7 @@ public class Journey extends GUIManagedObject
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
     this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
-    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService);
+    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
     /*****************************************
@@ -932,7 +932,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, subscriberMessageTemplateService);
+    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     
     /*****************************************
     *
@@ -1498,7 +1498,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
   {
     Map<String,GUINode> nodes = new LinkedHashMap<String,GUINode>();
     if (jsonArray != null)
@@ -1510,7 +1510,7 @@ public class Journey extends GUIManagedObject
             //
 
             JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
-            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, subscriberMessageTemplateService);
+            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
             //
             //  validate (if required)
@@ -2046,7 +2046,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
     {
       /*****************************************
       *
@@ -2079,7 +2079,7 @@ public class Journey extends GUIManagedObject
       //
 
       String eventName = this.nodeParameters.containsKey("node.parameter.eventname") ? (String) this.nodeParameters.get("node.parameter.eventname") : null;
-      EvolutionEngineEventDeclaration nodeEvent = (eventName != null) ? Deployment.getEvolutionEngineEvents().get(eventName) : null;
+      EvolutionEngineEventDeclaration nodeEvent = (eventName != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(eventName) : null;
       if (eventName != null && nodeEvent == null) throw new GUIManagerException("unknown event", eventName);
 
       //

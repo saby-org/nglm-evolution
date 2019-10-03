@@ -426,16 +426,21 @@ public class JourneyHistory
   
   public NodeHistory getLastNodeEntered()
   {
-    Comparator<NodeHistory> cmp = new Comparator<NodeHistory>() 
-    {
-      @Override
-      public int compare(NodeHistory node1, NodeHistory node2) 
+    NodeHistory result = null;
+    for (NodeHistory nodeHistory : this.nodeHistory)
       {
-        return node1.getTransitionDate().compareTo(node2.getTransitionDate());
+        if (result != null)
+          {
+            int compare = nodeHistory.getTransitionDate().compareTo(result.getTransitionDate());
+            if (compare == 0) compare = 1; // in case of equality, let consider the one of the right is the good one
+            if (compare > 0) result = nodeHistory;
+          }
+        else
+          {
+            result = nodeHistory;
+          }
       }
-    };
-    
-    return this.nodeHistory!=null?Collections.max(this.nodeHistory, cmp):null;
+    return result;
   }
   
   /*****************************************
@@ -446,15 +451,21 @@ public class JourneyHistory
   
   public RewardHistory getLastestReward()
   {
-    Comparator<RewardHistory> cmp = new Comparator<RewardHistory>() 
-    {
-      @Override
-      public int compare(RewardHistory his1, RewardHistory his2) 
+    RewardHistory result = null;
+    for (RewardHistory rewardHistory : this.rewardHistory)
       {
-        return his1.getRewardDate().compareTo(his2.getRewardDate());
+        if (result != null)
+          {
+            int compare = rewardHistory.getRewardDate().compareTo(result.getRewardDate());
+            if (compare == 0) compare = 1; // in case of equality, let consider the one of the right is the good one
+            if (compare > 0) result = rewardHistory;
+          }
+        else 
+          {
+            result = rewardHistory;
+          }
       }
-    };
-    return this.rewardHistory!=null?Collections.max(this.rewardHistory, cmp):null;
+    return result;
   }
   
   /*****************************************
@@ -465,15 +476,21 @@ public class JourneyHistory
 
   public StatusHistory getLastestJourneyStatus()
   {
-    Comparator<StatusHistory> cmp = new Comparator<StatusHistory>() 
-    {
-      @Override
-      public int compare(StatusHistory status1, StatusHistory status2) 
+    StatusHistory result = null;
+    for (StatusHistory statusHistory : this.statusHistory)
       {
-        return status1.getDate().compareTo(status1.getDate());
+        if(result != null)
+          {
+            int compare = statusHistory.getDate().compareTo(result.getDate());
+            if (compare == 0) compare = 1; // in case of equality, let consider the one of the right is the good one
+            if (compare > 0) result = statusHistory;
+          }
+        else 
+          {
+            result = statusHistory;
+          }
       }
-    };
-    return this.statusHistory!=null?Collections.max(this.statusHistory, cmp):null;
+    return result;
   }
 
   public static class RewardHistory

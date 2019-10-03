@@ -22,6 +22,8 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
@@ -56,6 +58,8 @@ public class Deployment
   private static String extendedSubscriberProfileClassName;
   private static String evolutionEngineExternalAPIClassName;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
+  private static Map<String, CriterionField> profileChangeDetectionCriterionFields = new HashMap<>();
+  private static Map<String, CriterionField> profileChangeGeneratedCriterionFields = new HashMap<>();
   private static String emptyTopic;
   private static String journeyTopic;
   private static String journeyTemplateTopic;
@@ -111,6 +115,8 @@ public class Deployment
   private static String propensityStateChangeLogTopic;
   private static String propensityRepartitioningTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
+  private static String profileChangeEventTopic;
+  private static String profileSegmentChangeEventTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
   private static String journeyTrafficChangeLog;
@@ -201,6 +207,7 @@ public class Deployment
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
+  private static String dynamicEventDeclarationsTopic;
 
   /*****************************************
   *
@@ -305,6 +312,8 @@ public class Deployment
   public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
   public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
   public static String getPropensityRepartitioningTopic() { return propensityRepartitioningTopic; }
+  public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
+  public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
@@ -347,6 +356,8 @@ public class Deployment
   public static Map<String,JourneyMetricDeclaration> getJourneyMetricDeclarations() { return journeyMetricDeclarations; }
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; }
   public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
+  public static Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
+  public static Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
@@ -393,6 +404,7 @@ public class Deployment
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
+  public static String getDynamicEventDeclarationsTopic() { return dynamicEventDeclarationsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
 
@@ -471,6 +483,49 @@ public class Deployment
         throw new ServerRuntimeException(e);
       }
   }
+  
+  /*****************************************
+  *
+  *  generateProfileChangeCriterionFields
+  *
+  *****************************************/
+  
+  public static Map<String, CriterionField> generateProfileChangeCriterionFields(CriterionField originalCriterionField) throws GUIManagerException
+  {
+    HashMap<String, CriterionField> result = new HashMap<>();
+    JSONObject criterionFieldJSON = new JSONObject();
+    criterionFieldJSON.putAll(originalCriterionField.getJSONRepresentation());
+    criterionFieldJSON.put("id", ProfileChangeEvent.CRITERION_FIELD_NAME_OLD_PREFIX + originalCriterionField.getID());
+    criterionFieldJSON.put("display", "Old " + originalCriterionField.getID() + " value");
+    criterionFieldJSON.put("retriever", "getProfileChangeFieldOldValue");
+    criterionFieldJSON.put("mandatory", Boolean.FALSE);
+    criterionFieldJSON.put("esField", null);
+    criterionFieldJSON.put("expressionValuedParameter", Boolean.FALSE);
+    criterionFieldJSON.put("profileChangeEvent", Boolean.FALSE);    
+    CriterionField field = new CriterionField(criterionFieldJSON);
+    result.put(field.getID(), field);
+    
+    criterionFieldJSON = new JSONObject();
+    criterionFieldJSON.putAll(originalCriterionField.getJSONRepresentation());
+    criterionFieldJSON.put("id", ProfileChangeEvent.CRITERION_FIELD_NAME_NEW_PREFIX + originalCriterionField.getID());
+    criterionFieldJSON.put("display", "New " + originalCriterionField.getID() + " value");
+    criterionFieldJSON.put("retriever", "getProfileChangeFieldNewValue");
+    criterionFieldJSON.put("mandatory", Boolean.FALSE);
+    criterionFieldJSON.put("esField", null);
+    criterionFieldJSON.put("expressionValuedParameter", Boolean.FALSE);
+    criterionFieldJSON.put("profileChangeEvent", Boolean.FALSE);
+    field = new CriterionField(criterionFieldJSON);
+    result.put(field.getID(), field);
+    
+    criterionFieldJSON = new JSONObject();
+    criterionFieldJSON.put("id", ProfileChangeEvent.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX +  originalCriterionField.getID());
+    criterionFieldJSON.put("display", "Is " + originalCriterionField.getID() + " updated");
+    criterionFieldJSON.put("dataType", "boolean");
+    criterionFieldJSON.put("retriever", "getProfileChangeFieldsUpdated");
+    field = new CriterionField(criterionFieldJSON);
+    result.put(field.getID(), field);
+    return result;
+  } 
 
   /*****************************************
   *
@@ -703,6 +758,15 @@ public class Deployment
             EvolutionEngineEventDeclaration evolutionEngineEventDeclaration = new EvolutionEngineEventDeclaration(evolutionEngineEventJSON);
             evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
           }
+        
+        /*****************************************
+        *
+        *  add Profile Change Event
+        *
+        *****************************************/
+
+        // This is added when creating the profileCriterionFields
+        
       }
     catch (GUIManagerException | JSONUtilitiesException e)
       {
@@ -1204,6 +1268,20 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    
+    //
+    //  dynamicEventDeclarationsTopic
+    //
+
+    try
+      {
+        dynamicEventDeclarationsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicEventDeclarationsTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  communicationChannelBlackoutTopic
     //
@@ -1528,6 +1606,34 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+	  
+    //
+    //  profileChangeEventTopic
+    //
+
+    try
+      {
+        profileChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileChangeEventTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //
+    //  profileSegmentChangeEventTopic
+    //
+
+    try
+      {
+        profileSegmentChangeEventTopic = JSONUtilities.decodeString(jsonRoot, "profileSegmentChangeEventTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
 
     //
     //  profileLoyaltyProgramChangeEventTopic
@@ -2069,7 +2175,20 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             profileCriterionFields.put(criterionField.getID(), criterionField);
+            if(criterionField.getProfileChangeEvent()) {
+              profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
+              
+              //
+              // generation of CriterionFields related to oldValue, newValue and changedField 
+              //
+              
+              profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
+            }
           }
+        
+        EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profileChange", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
+        evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
+
       }
     catch (GUIManagerException | JSONUtilitiesException e)
       {
