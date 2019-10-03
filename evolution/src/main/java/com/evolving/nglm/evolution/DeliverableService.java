@@ -117,7 +117,9 @@ public class DeliverableService extends GUIService
 
   public String generateDeliverableID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredDeliverable(String deliverableID) { return getStoredGUIManagedObject(deliverableID); }
+  public GUIManagedObject getStoredDeliverable(String deliverableID, boolean includeArchived) { return getStoredGUIManagedObject(deliverableID, includeArchived); }
   public Collection<GUIManagedObject> getStoredDeliverables() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredDeliverables(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveDeliverableThroughInterval(GUIManagedObject deliverableUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(deliverableUnchecked, startDate, endDate); }
   public boolean isActiveDeliverable(GUIManagedObject deliverableUnchecked, Date date) { return isActiveGUIManagedObject(deliverableUnchecked, date); }
   public Deliverable getActiveDeliverable(String deliverableID, Date date) { return (Deliverable) getActiveGUIManagedObject(deliverableID, date); }
@@ -127,10 +129,10 @@ public class DeliverableService extends GUIService
   //  getStoredDeliverableByName
   //
   
-  public GUIManagedObject getStoredDeliverableByName(String deliverableName)
+  public GUIManagedObject getStoredDeliverableByName(String deliverableName, boolean includeArchived)
   {
     GUIManagedObject result = null;
-    for (GUIManagedObject guiManagedObject : getStoredDeliverables())
+    for (GUIManagedObject guiManagedObject : getStoredDeliverables(includeArchived))
       {
         if (Objects.equals(deliverableName, guiManagedObject.getGUIManagedObjectName()))
           {
@@ -141,6 +143,12 @@ public class DeliverableService extends GUIService
     return result;
   }
   
+  //
+  //  getStoredDeliverableByName
+  //
+  
+  public GUIManagedObject getStoredDeliverableByName(String deliverableName) { return getStoredDeliverableByName(deliverableName, false); }
+
   /*****************************************
   *
   *  putDeliverable

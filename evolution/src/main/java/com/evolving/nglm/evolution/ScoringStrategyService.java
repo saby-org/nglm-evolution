@@ -128,7 +128,9 @@ public class ScoringStrategyService extends GUIService
 
   public String generateScoringStrategyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID) { return getStoredGUIManagedObject(scoringStrategyID); }
+  public GUIManagedObject getStoredScoringStrategy(String scoringStrategyID, boolean includeArchived) { return getStoredGUIManagedObject(scoringStrategyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredScoringStrategies() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredScoringStrategies(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveScoringStrategy(GUIManagedObject scoringStrategyUnchecked, Date date) { return isActiveGUIManagedObject(scoringStrategyUnchecked, date); }
   public ScoringStrategy getActiveScoringStrategy(String scoringStrategyID, Date date) { return (ScoringStrategy) getActiveGUIManagedObject(scoringStrategyID, date); }
   public Collection<ScoringStrategy> getActiveScoringStrategies(Date date) { return (Collection<ScoringStrategy>) getActiveGUIManagedObjects(date); }

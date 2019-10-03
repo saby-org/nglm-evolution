@@ -114,7 +114,7 @@ public class UploadedFileService extends GUIService
     result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));
     result.put("accepted", guiManagedObject.getAccepted());
     result.put("valid", guiManagedObject.getAccepted());
-    result.put("processing", isActiveGUIManagedObject(guiManagedObject, SystemTime.getActualCurrentTime()));
+    result.put("processing", isActiveGUIManagedObject(guiManagedObject, SystemTime.getCurrentTime()));
     result.put("readOnly", guiManagedObject.getReadOnly());
     return result;
   }
@@ -127,7 +127,9 @@ public class UploadedFileService extends GUIService
 
   public String generateFileID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredUploadedFile(String fileID) { return getStoredGUIManagedObject(fileID); }
+  public GUIManagedObject getStoredUploadedFile(String fileID, boolean includeArchived) { return getStoredGUIManagedObject(fileID, includeArchived); }
   public Collection<GUIManagedObject> getStoredUploadedFiles() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredUploadedFiles(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveUploadedFile(GUIManagedObject uploadedFileUnchecked, Date date) { return isActiveGUIManagedObject(uploadedFileUnchecked, date); }
   public UploadedFile getActiveUploadedFile(String uploadedFileID, Date date) { return (UploadedFile) getActiveGUIManagedObject(uploadedFileID, date); }
   public Collection<UploadedFile> getActiveUploadedFiles(Date date) { return (Collection<UploadedFile>) getActiveGUIManagedObjects(date); }

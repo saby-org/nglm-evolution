@@ -100,7 +100,9 @@ public class PaymentMeanService extends GUIService
 
   public String generatePaymentMeanID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPaymentMean(String paymentMeanID) { return getStoredGUIManagedObject(paymentMeanID); }
+  public GUIManagedObject getStoredPaymentMean(String paymentMeanID, boolean includeArchived) { return getStoredGUIManagedObject(paymentMeanID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPaymentMeans() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredPaymentMeans(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActivePaymentMean(GUIManagedObject paymentMeanUnchecked, Date date) { return isActiveGUIManagedObject(paymentMeanUnchecked, date); }
   public PaymentMean getActivePaymentMean(String paymentMeanID, Date date) { return (PaymentMean) getActiveGUIManagedObject(paymentMeanID, date); }
   public Collection<PaymentMean> getActivePaymentMeans(Date date) { return (Collection<PaymentMean>) getActiveGUIManagedObjects(date); }
@@ -109,10 +111,10 @@ public class PaymentMeanService extends GUIService
   //  getStoredPaymentMeanByName
   //
   
-  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName)
+  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName, boolean includeArchived)
   {
     GUIManagedObject result = null;
-    for (GUIManagedObject guiManagedObject : getStoredPaymentMeans())
+    for (GUIManagedObject guiManagedObject : getStoredPaymentMeans(includeArchived))
       {
         if (Objects.equals(paymentMeanName, guiManagedObject.getGUIManagedObjectName()))
           {
@@ -122,6 +124,12 @@ public class PaymentMeanService extends GUIService
       }
     return result;
   }
+
+  //
+  //  getStoredPaymentMeanByName
+  //
+
+  public GUIManagedObject getStoredPaymentMeanByName(String paymentMeanName) { return getStoredPaymentMeanByName(paymentMeanName, false); }
 
   /*****************************************
   *

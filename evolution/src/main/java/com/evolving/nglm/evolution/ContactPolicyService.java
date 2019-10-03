@@ -120,7 +120,9 @@ public class ContactPolicyService extends GUIService
 
   public String generateContactPolicyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredContactPolicy(String contactPolicyID) { return getStoredGUIManagedObject(contactPolicyID); }
+  public GUIManagedObject getStoredContactPolicy(String contactPolicyID, boolean includeArchived) { return getStoredGUIManagedObject(contactPolicyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredContactPolicies() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredContactPolicies(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveContactPolicy(GUIManagedObject contactPolicyUnchecked, Date date) { return isActiveGUIManagedObject(contactPolicyUnchecked, date); }
   public ContactPolicy getActiveContactPolicy(String contactPolicyID, Date date) { return (ContactPolicy) getActiveGUIManagedObject(contactPolicyID, date); }
   public Collection<ContactPolicy> getActiveContactPolicies(Date date) { return (Collection<ContactPolicy>) getActiveGUIManagedObjects(date); }

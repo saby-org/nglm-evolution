@@ -94,7 +94,9 @@ public class SegmentContactPolicyService extends GUIService
 
   public String generateSegmentContactPolicyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSegmentContactPolicy(String segmentContactPolicyID) { return getStoredGUIManagedObject(segmentContactPolicyID); }
+  public GUIManagedObject getStoredSegmentContactPolicy(String segmentContactPolicyID, boolean includeArchived) { return getStoredGUIManagedObject(segmentContactPolicyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSegmentContactPolicys() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredSegmentContactPolicys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveSegmentContactPolicy(GUIManagedObject segmentContactPolicyUnchecked, Date date) { return isActiveGUIManagedObject(segmentContactPolicyUnchecked, date); }
   public SegmentContactPolicy getActiveSegmentContactPolicy(String segmentContactPolicyID, Date date) { return (SegmentContactPolicy) getActiveGUIManagedObject(segmentContactPolicyID, date); }
   public Collection<SegmentContactPolicy> getActiveSegmentContactPolicys(Date date) { return (Collection<SegmentContactPolicy>) getActiveGUIManagedObjects(date); }

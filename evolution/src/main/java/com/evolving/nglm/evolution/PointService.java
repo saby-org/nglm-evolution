@@ -104,7 +104,9 @@ public class PointService extends GUIService
 
   public String generatePointID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPoint(String pointID) { return getStoredGUIManagedObject(pointID); }
+  public GUIManagedObject getStoredPoint(String pointID, boolean includeArchived) { return getStoredGUIManagedObject(pointID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPoints() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredPoints(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActivePoint(GUIManagedObject pointUnchecked, Date date) { return isActiveGUIManagedObject(pointUnchecked, date); }
   public Point getActivePoint(String pointID, Date date) { return (Point) getActiveGUIManagedObject(pointID, date); }
   public Collection<Point> getActivePoints(Date date) { return (Collection<Point>) getActiveGUIManagedObjects(date); }

@@ -2083,6 +2083,14 @@ public class GUIManager
 
         /*****************************************
         *
+        *  includeArchived
+        *
+        *****************************************/
+
+        boolean includeArchived = JSONUtilities.decodeBoolean(jsonRoot, "includeArchived", Boolean.FALSE);
+
+        /*****************************************
+        *
         *  process
         *
         *****************************************/
@@ -2093,7 +2101,7 @@ public class GUIManager
             switch (api)
               {
                 case getStaticConfiguration:
-                  jsonResponse = processGetStaticConfiguration(userID, jsonRoot);
+                  jsonResponse = processGetStaticConfiguration(userID, jsonRoot, includeArchived);
                   break;
 
                 case getSupportedLanguages:
@@ -2201,7 +2209,7 @@ public class GUIManager
                   break;
 
                 case getOfferOptimizationAlgorithms:
-                  jsonResponse = processGetOfferOptimizationAlgorithms(userID, jsonRoot);
+                  jsonResponse = processGetOfferOptimizationAlgorithms(userID, jsonRoot, includeArchived);
                   break;
 
                 case getNodeTypes:
@@ -2213,15 +2221,15 @@ public class GUIManager
                   break;
 
                 case getJourneyList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, true);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, true, includeArchived);
                   break;
 
                 case getJourneySummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, false);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, false, includeArchived);
                   break;
 
                 case getJourney:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Journey);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Journey, includeArchived);
                   break;
 
                 case putJourney:
@@ -2245,15 +2253,15 @@ public class GUIManager
                   break;
 
                 case getCampaignList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, true);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, true, includeArchived);
                   break;
 
                 case getCampaignSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, false);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, false, includeArchived);
                   break;
 
                 case getCampaign:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Campaign);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Campaign, includeArchived);
                   break;
 
                 case putCampaign:
@@ -2273,15 +2281,15 @@ public class GUIManager
                   break;
 
                 case getBulkCampaignList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, includeArchived);
                   break;
 
                 case getBulkCampaignSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, false);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, false, includeArchived);
                   break;
 
                 case getBulkCampaign:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, includeArchived);
                   break;
 
                 case putBulkCampaign:
@@ -2293,15 +2301,15 @@ public class GUIManager
                   break;
 
                 case getJourneyTemplateList:
-                  jsonResponse = processGetJourneyTemplateList(userID, jsonRoot, true);
+                  jsonResponse = processGetJourneyTemplateList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getJourneyTemplateSummaryList:
-                  jsonResponse = processGetJourneyTemplateList(userID, jsonRoot, false);
+                  jsonResponse = processGetJourneyTemplateList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getJourneyTemplate:
-                  jsonResponse = processGetJourneyTemplate(userID, jsonRoot);
+                  jsonResponse = processGetJourneyTemplate(userID, jsonRoot, includeArchived);
                   break;
 
                 case putJourneyTemplate:
@@ -2317,15 +2325,15 @@ public class GUIManager
                   break;
                   
                 case getSegmentationDimensionList:
-                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true);
+                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getSegmentationDimensionSummaryList:
-                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, false);
+                  jsonResponse = processGetSegmentationDimensionList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getSegmentationDimension:
-                  jsonResponse = processGetSegmentationDimension(userID, jsonRoot);
+                  jsonResponse = processGetSegmentationDimension(userID, jsonRoot, includeArchived);
                   break;
 
                 case putSegmentationDimension:
@@ -2349,19 +2357,19 @@ public class GUIManager
                   break;
 
                 case getUCGDimensionSummaryList:
-                  jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false);
+                  jsonResponse = processGetUCGDimensionList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPointList:
-                  jsonResponse = processGetPointList(userID, jsonRoot, true);
+                  jsonResponse = processGetPointList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPointSummaryList:
-                  jsonResponse = processGetPointList(userID, jsonRoot, false);
+                  jsonResponse = processGetPointList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPoint:
-                  jsonResponse = processGetPoint(userID, jsonRoot);
+                  jsonResponse = processGetPoint(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPoint:
@@ -2373,15 +2381,15 @@ public class GUIManager
                   break;
 
                 case getOfferList:
-                  jsonResponse = processGetOfferList(userID, jsonRoot, true);
+                  jsonResponse = processGetOfferList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getOfferSummaryList:
-                  jsonResponse = processGetOfferList(userID, jsonRoot, false);
+                  jsonResponse = processGetOfferList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getOffer:
-                  jsonResponse = processGetOffer(userID, jsonRoot);
+                  jsonResponse = processGetOffer(userID, jsonRoot, includeArchived);
                   break;
 
                 case putOffer:
@@ -2397,7 +2405,7 @@ public class GUIManager
                   break;
 
                 case getReportList:
-                  jsonResponse = processGetReportList(userID, jsonRoot);
+                  jsonResponse = processGetReportList(userID, jsonRoot, includeArchived);
                   break;
 
                 case putReport:
@@ -2409,15 +2417,15 @@ public class GUIManager
                   break;
 
                 case getPresentationStrategyList:
-                  jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, true);
+                  jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPresentationStrategySummaryList:
-                  jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, false);
+                  jsonResponse = processGetPresentationStrategyList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPresentationStrategy:
-                  jsonResponse = processGetPresentationStrategy(userID, jsonRoot);
+                  jsonResponse = processGetPresentationStrategy(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPresentationStrategy:
@@ -2429,15 +2437,15 @@ public class GUIManager
                   break;
 
                 case getDNBOMatrixList:
-                  jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, true);
+                  jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getDNBOMatrixSummaryList:
-                  jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, false);
+                  jsonResponse = processGetDNBOMatrixList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getDNBOMatrix:
-                  jsonResponse = processGetDNBOMatrix(userID, jsonRoot);
+                  jsonResponse = processGetDNBOMatrix(userID, jsonRoot, includeArchived);
                   break;
 
                 case putDNBOMatrix:
@@ -2457,15 +2465,15 @@ public class GUIManager
                   break;
                   
                 case getScoringStrategyList:
-                  jsonResponse = processGetScoringStrategyList(userID, jsonRoot, true);
+                  jsonResponse = processGetScoringStrategyList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getScoringStrategySummaryList:
-                  jsonResponse = processGetScoringStrategyList(userID, jsonRoot, false);
+                  jsonResponse = processGetScoringStrategyList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getScoringStrategy:
-                  jsonResponse = processGetScoringStrategy(userID, jsonRoot);
+                  jsonResponse = processGetScoringStrategy(userID, jsonRoot, includeArchived);
                   break;
 
                 case putScoringStrategy:
@@ -2477,15 +2485,15 @@ public class GUIManager
                   break;
 
                 case getCallingChannelList:
-                  jsonResponse = processGetCallingChannelList(userID, jsonRoot, true);
+                  jsonResponse = processGetCallingChannelList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getCallingChannelSummaryList:
-                  jsonResponse = processGetCallingChannelList(userID, jsonRoot, false);
+                  jsonResponse = processGetCallingChannelList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getCallingChannel:
-                  jsonResponse = processGetCallingChannel(userID, jsonRoot);
+                  jsonResponse = processGetCallingChannel(userID, jsonRoot, includeArchived);
                   break;
 
                 case putCallingChannel:
@@ -2497,15 +2505,15 @@ public class GUIManager
                   break;
 
                 case getSalesChannelList:
-                  jsonResponse = processGetSalesChannelList(userID, jsonRoot, true);
+                  jsonResponse = processGetSalesChannelList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getSalesChannelSummaryList:
-                  jsonResponse = processGetSalesChannelList(userID, jsonRoot, false);
+                  jsonResponse = processGetSalesChannelList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getSalesChannel:
-                  jsonResponse = processGetSalesChannel(userID, jsonRoot);
+                  jsonResponse = processGetSalesChannel(userID, jsonRoot, includeArchived);
                   break;
 
                 case putSalesChannel:
@@ -2517,15 +2525,15 @@ public class GUIManager
                   break;
 
                 case getSupplierList:
-                  jsonResponse = processGetSupplierList(userID, jsonRoot, true);
+                  jsonResponse = processGetSupplierList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getSupplierSummaryList:
-                  jsonResponse = processGetSupplierList(userID, jsonRoot, false);
+                  jsonResponse = processGetSupplierList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getSupplier:
-                  jsonResponse = processGetSupplier(userID, jsonRoot);
+                  jsonResponse = processGetSupplier(userID, jsonRoot, includeArchived);
                   break;
 
                 case putSupplier:
@@ -2537,15 +2545,15 @@ public class GUIManager
                   break;
 
                 case getProductList:
-                  jsonResponse = processGetProductList(userID, jsonRoot, true);
+                  jsonResponse = processGetProductList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getProductSummaryList:
-                  jsonResponse = processGetProductList(userID, jsonRoot, false);
+                  jsonResponse = processGetProductList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getProduct:
-                  jsonResponse = processGetProduct(userID, jsonRoot);
+                  jsonResponse = processGetProduct(userID, jsonRoot, includeArchived);
                   break;
 
                 case putProduct:
@@ -2557,15 +2565,15 @@ public class GUIManager
                   break;
 
                 case getCatalogCharacteristicList:
-                  jsonResponse = processGetCatalogCharacteristicList(userID, jsonRoot, true);
+                  jsonResponse = processGetCatalogCharacteristicList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getCatalogCharacteristicSummaryList:
-                  jsonResponse = processGetCatalogCharacteristicList(userID, jsonRoot, false);
+                  jsonResponse = processGetCatalogCharacteristicList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getCatalogCharacteristic:
-                  jsonResponse = processGetCatalogCharacteristic(userID, jsonRoot);
+                  jsonResponse = processGetCatalogCharacteristic(userID, jsonRoot, includeArchived);
                   break;
 
                 case putCatalogCharacteristic:
@@ -2577,15 +2585,15 @@ public class GUIManager
                   break;
 
                 case getContactPolicyList:
-                  jsonResponse = processGetContactPolicyList(userID, jsonRoot, true);
+                  jsonResponse = processGetContactPolicyList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getContactPolicySummaryList:
-                  jsonResponse = processGetContactPolicyList(userID, jsonRoot, false);
+                  jsonResponse = processGetContactPolicyList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getContactPolicy:
-                  jsonResponse = processGetContactPolicy(userID, jsonRoot);
+                  jsonResponse = processGetContactPolicy(userID, jsonRoot, includeArchived);
                   break;
 
                 case putContactPolicy:
@@ -2597,15 +2605,15 @@ public class GUIManager
                   break;
 
                 case getJourneyObjectiveList:
-                  jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, true);
+                  jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getJourneyObjectiveSummaryList:
-                  jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, false);
+                  jsonResponse = processGetJourneyObjectiveList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getJourneyObjective:
-                  jsonResponse = processGetJourneyObjective(userID, jsonRoot);
+                  jsonResponse = processGetJourneyObjective(userID, jsonRoot, includeArchived);
                   break;
 
                 case putJourneyObjective:
@@ -2617,15 +2625,15 @@ public class GUIManager
                   break;
 
                 case getOfferObjectiveList:
-                  jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, true);
+                  jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getOfferObjectiveSummaryList:
-                  jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, false);
+                  jsonResponse = processGetOfferObjectiveList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getOfferObjective:
-                  jsonResponse = processGetOfferObjective(userID, jsonRoot);
+                  jsonResponse = processGetOfferObjective(userID, jsonRoot, includeArchived);
                   break;
 
                 case putOfferObjective:
@@ -2637,15 +2645,15 @@ public class GUIManager
                   break;
 
                 case getProductTypeList:
-                  jsonResponse = processGetProductTypeList(userID, jsonRoot, true);
+                  jsonResponse = processGetProductTypeList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getProductTypeSummaryList:
-                  jsonResponse = processGetProductTypeList(userID, jsonRoot, false);
+                  jsonResponse = processGetProductTypeList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getProductType:
-                  jsonResponse = processGetProductType(userID, jsonRoot);
+                  jsonResponse = processGetProductType(userID, jsonRoot, includeArchived);
                   break;
 
                 case putProductType:
@@ -2657,15 +2665,15 @@ public class GUIManager
                   break;
 
                 case getUCGRuleList:
-                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, true);
+                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getUCGRuleSummaryList:
-                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, false);
+                  jsonResponse = processGetUCGRuleList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getUCGRule:
-                  jsonResponse = processGetUCGRule(userID, jsonRoot);
+                  jsonResponse = processGetUCGRule(userID, jsonRoot, includeArchived);
                   break;
 
                 case putUCGRule:
@@ -2677,27 +2685,27 @@ public class GUIManager
                   break;
 
                 case getDeliverableList:
-                  jsonResponse = processGetDeliverableList(userID, jsonRoot, true);
+                  jsonResponse = processGetDeliverableList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getDeliverableSummaryList:
-                  jsonResponse = processGetDeliverableList(userID, jsonRoot, false);
+                  jsonResponse = processGetDeliverableList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getDeliverable:
-                  jsonResponse = processGetDeliverable(userID, jsonRoot);
+                  jsonResponse = processGetDeliverable(userID, jsonRoot, includeArchived);
                   break;
 
                 case getDeliverableByName:
-                  jsonResponse = processGetDeliverableByName(userID, jsonRoot);
+                  jsonResponse = processGetDeliverableByName(userID, jsonRoot, includeArchived);
                   break;
 
                 case getTokenTypeList:
-                  jsonResponse = processGetTokenTypeList(userID, jsonRoot, true);
+                  jsonResponse = processGetTokenTypeList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getTokenTypeSummaryList:
-                  jsonResponse = processGetTokenTypeList(userID, jsonRoot, false);
+                  jsonResponse = processGetTokenTypeList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case putTokenType:
@@ -2705,7 +2713,7 @@ public class GUIManager
                   break;
 
                 case getTokenType:
-                  jsonResponse = processGetTokenType(userID, jsonRoot);
+                  jsonResponse = processGetTokenType(userID, jsonRoot, includeArchived);
                   break;
 
                 case removeTokenType:
@@ -2717,15 +2725,15 @@ public class GUIManager
                   break;
 
                 case getMailTemplateList:
-                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true);
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getMailTemplateSummaryList:
-                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, false);
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getMailTemplate:
-                  jsonResponse = processGetMailTemplate(userID, jsonRoot);
+                  jsonResponse = processGetMailTemplate(userID, jsonRoot, includeArchived);
                   break;
 
                 case putMailTemplate:
@@ -2737,15 +2745,15 @@ public class GUIManager
                   break;
 
                 case getSMSTemplateList:
-                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true);
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getSMSTemplateSummaryList:
-                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false);
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getSMSTemplate:
-                  jsonResponse = processGetSMSTemplate(userID, jsonRoot);
+                  jsonResponse = processGetSMSTemplate(userID, jsonRoot, includeArchived);
                   break;
 
                 case putSMSTemplate:
@@ -2757,15 +2765,15 @@ public class GUIManager
                   break;
 
                 case getPushTemplateList:
-                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, true);
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPushTemplateSummaryList:
-                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, false);
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPushTemplate:
-                  jsonResponse = processGetPushTemplate(userID, jsonRoot);
+                  jsonResponse = processGetPushTemplate(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPushTemplate:
@@ -2781,19 +2789,19 @@ public class GUIManager
                   break;
 
                 case getPaymentMeans:
-                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
+                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPaymentMeanList:
-                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true);
+                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPaymentMeanSummaryList:
-                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, false);
+                  jsonResponse = processGetPaymentMeanList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPaymentMean:
-                  jsonResponse = processGetPaymentMean(userID, jsonRoot);
+                  jsonResponse = processGetPaymentMean(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPaymentMean:
@@ -2805,7 +2813,7 @@ public class GUIManager
                   break;
 
                 case getDashboardCounts:
-                  jsonResponse = processGetDashboardCounts(userID, jsonRoot);
+                  jsonResponse = processGetDashboardCounts(userID, jsonRoot, includeArchived);
                   break;
 
                 case getCustomer:
@@ -2845,11 +2853,11 @@ public class GUIManager
                   break;
 
                 case getUploadedFileList:
-                  jsonResponse = processGetFilesList(userID, jsonRoot, true);
+                  jsonResponse = processGetFilesList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getUploadedFileSummaryList:
-                  jsonResponse = processGetFilesList(userID, jsonRoot, false);
+                  jsonResponse = processGetFilesList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case removeUploadedFile:
@@ -2865,19 +2873,19 @@ public class GUIManager
                   break;
 
                 case getTargetList:
-                  jsonResponse = processGetTargetList(userID, jsonRoot, true);
+                  jsonResponse = processGetTargetList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getTargetSummaryList:
-                  jsonResponse = processGetTargetList(userID, jsonRoot, false);
+                  jsonResponse = processGetTargetList(userID, jsonRoot, false, includeArchived);
+                  break;
+
+                case getTarget:
+                  jsonResponse = processGetTarget(userID, jsonRoot, includeArchived);
                   break;
 
                 case putTarget:
                   jsonResponse = processPutTarget(userID, jsonRoot);
-                  break;
-
-                case getTarget:
-                  jsonResponse = processGetTarget(userID, jsonRoot);
                   break;
 
                 case removeTarget:
@@ -2897,15 +2905,15 @@ public class GUIManager
                   break;
                   
                 case getCommunicationChannelsList:
-                  jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, true);
+                  jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getCommunicationChannelsSummaryList:
-                  jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, false);
+                  jsonResponse = processGetCommunicationChannelsList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getCommunicationChannel:
-                  jsonResponse = processGetCommunicationChannel(userID, jsonRoot);
+                  jsonResponse = processGetCommunicationChannel(userID, jsonRoot, includeArchived);
                   break;
 
                 case putCommunicationChannel:
@@ -2917,15 +2925,15 @@ public class GUIManager
                   break;
 
                 case getBlackoutPeriodsList:
-                  jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true);
+                  jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getBlackoutPeriodsSummaryList:
-                  jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, false);
+                  jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getBlackoutPeriods:
-                  jsonResponse = processGetBlackoutPeriods(userID, jsonRoot);
+                  jsonResponse = processGetBlackoutPeriods(userID, jsonRoot, includeArchived);
                   break;
 
                 case putBlackoutPeriods:
@@ -2941,15 +2949,15 @@ public class GUIManager
                   break;
 
                 case getLoyaltyProgramsList:
-                  jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, true);
+                  jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getLoyaltyProgramsSummaryList:
-                  jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, false);
+                  jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getLoyaltyProgram:
-                  jsonResponse = processGetLoyaltyProgram(userID, jsonRoot);
+                  jsonResponse = processGetLoyaltyProgram(userID, jsonRoot, includeArchived);
                   break;
 
                 case putLoyaltyProgram:
@@ -2961,15 +2969,15 @@ public class GUIManager
                   break;
 
                 case getPartnerList:
-                  jsonResponse = processGetPartnerList(userID, jsonRoot, true);
+                  jsonResponse = processGetPartnerList(userID, jsonRoot, true, includeArchived);
                   break;
 
                 case getPartnerSummaryList:
-                  jsonResponse = processGetPartnerList(userID, jsonRoot, false);
+                  jsonResponse = processGetPartnerList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getPartner:
-                  jsonResponse = processGetPartner(userID, jsonRoot);
+                  jsonResponse = processGetPartner(userID, jsonRoot, includeArchived);
                   break;
 
                 case putPartner:
@@ -2985,19 +2993,19 @@ public class GUIManager
                   break;
                   
                 case getExclusionInclusionTargetList:  
-                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, true);
+                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, true, includeArchived);
                   break;
                   
                 case getExclusionInclusionTargetSummaryList:
-                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, false);
-                  break;
-                  
-                case putExclusionInclusionTarget:
-                  jsonResponse = processPutExclusionInclusionTarget(userID, jsonRoot);
+                  jsonResponse = processGetExclusionInclusionTargetList(userID, jsonRoot, false, includeArchived);
                   break;
                   
                 case getExclusionInclusionTarget:
-                  jsonResponse = processGetExclusionInclusionTarget(userID, jsonRoot);
+                  jsonResponse = processGetExclusionInclusionTarget(userID, jsonRoot, includeArchived);
+                  break;
+
+                case putExclusionInclusionTarget:
+                  jsonResponse = processPutExclusionInclusionTarget(userID, jsonRoot);
                   break;
                   
                 case removeExclusionInclusionTarget:
@@ -3005,19 +3013,19 @@ public class GUIManager
                   break;
                   
                 case getSegmentContactPolicyList:  
-                  jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, true);
+                  jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, true, includeArchived);
                   break;
                   
                 case getSegmentContactPolicySummaryList:
-                  jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, false);
+                  jsonResponse = processGetSegmentContactPolicyList(userID, jsonRoot, false, includeArchived);
+                  break;
+
+                case getSegmentContactPolicy:
+                  jsonResponse = processGetSegmentContactPolicy(userID, jsonRoot, includeArchived);
                   break;
                   
                 case putSegmentContactPolicy:
                   jsonResponse = processPutSegmentContactPolicy(userID, jsonRoot);
-                  break;
-                  
-                case getSegmentContactPolicy:
-                  jsonResponse = processGetSegmentContactPolicy(userID, jsonRoot);
                   break;
                   
                 case removeSegmentContactPolicy:
@@ -3376,7 +3384,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetStaticConfiguration(String userID, JSONObject jsonRoot)
+  private JSONObject processGetStaticConfiguration(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /*****************************************
     *
@@ -3450,7 +3458,7 @@ public class GUIManager
     *****************************************/
 
     List<JSONObject> communicationChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels())
+    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels(includeArchived))
       {
         JSONObject communicationChannelJSON = communicationChannel.getJSONRepresentation();
         communicationChannels.add(communicationChannelJSON);
@@ -4645,7 +4653,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferOptimizationAlgorithms(String userID, JSONObject jsonRoot)
+  private JSONObject processGetOfferOptimizationAlgorithms(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /*****************************************
     *
@@ -4665,7 +4673,7 @@ public class GUIManager
     
     // Add DNBOMatrix Algorithm for gui
     Date now = SystemTime.getCurrentTime();
-    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes())
+    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived))
     {
       JSONObject matrixObject = presentationStrategyService.generateResponseJSON(dnboMatrix, false, now);
       matrixObject.replace("id", "DNBO" + JSONUtilities.decodeString(matrixObject, "id", true));
@@ -4828,7 +4836,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails)
+  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -4838,7 +4846,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeys = new ArrayList<JSONObject>();
-    for (GUIManagedObject journey : journeyService.getStoredJourneys())
+    for (GUIManagedObject journey : journeyService.getStoredJourneys(includeArchived))
       {
         if (journey.getGUIManagedObjectType().equals(objectType))
           {
@@ -4880,7 +4888,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType)
+  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean includeArchived)
   {
     /****************************************
     *
@@ -4904,7 +4912,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
+    GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived);
     journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
@@ -5058,7 +5066,7 @@ public class GUIManager
 
                     // TODO SCH : may need to check that deliverable is not used in any offer
 
-                    for(GUIManagedObject deliverableObject : deliverableService.getStoredDeliverables())
+                    for (GUIManagedObject deliverableObject : deliverableService.getStoredDeliverables())
                       {
                         Deliverable deliverable = (Deliverable) deliverableObject;
                         if (deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(journey.getJourneyID()))
@@ -5783,7 +5791,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetJourneyTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -5793,7 +5801,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeyTemplates = new ArrayList<JSONObject>();
-    for (GUIManagedObject journeyTemplate : journeyTemplateService.getStoredJourneyTemplates())
+    for (GUIManagedObject journeyTemplate : journeyTemplateService.getStoredJourneyTemplates(includeArchived))
       {
         switch (journeyTemplate.getGUIManagedObjectType())
           {
@@ -5821,7 +5829,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyTemplate(String userID, JSONObject jsonRoot)
+  private JSONObject processGetJourneyTemplate(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -5845,7 +5853,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
+    GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived);
     journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate : null;
     JSONObject journeyTemplateJSON = journeyTemplateService.generateResponseJSON(journeyTemplate, true, SystemTime.getCurrentTime());
 
@@ -6158,7 +6166,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSegmentationDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -6168,7 +6176,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
+    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions(includeArchived))
       {
 
         //        SegmentationDimensionTargetingType targetingType = ((SegmentationDimension)segmentationDimension).getTargetingType();
@@ -6209,7 +6217,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentationDimension(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSegmentationDimension(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -6233,7 +6241,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
+    GUIManagedObject segmentationDimension = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID, includeArchived);
     JSONObject segmentationDimensionJSON = segmentationDimensionService.generateResponseJSON(segmentationDimension, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -7214,7 +7222,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetUCGDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetUCGDimensionList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -7224,7 +7232,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> segmentationDimensions = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions())
+    for (GUIManagedObject segmentationDimension : segmentationDimensionService.getStoredSegmentationDimensions(includeArchived))
       {
         SegmentationDimension dimension = (SegmentationDimension) segmentationDimension;
         if (dimension.getDefaultSegmentID() != null)
@@ -7251,7 +7259,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPointList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -7261,7 +7269,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> points = new ArrayList<JSONObject>();
-    for (GUIManagedObject point : pointService.getStoredPoints())
+    for (GUIManagedObject point : pointService.getStoredPoints(includeArchived))
       {
         points.add(pointService.generateResponseJSON(point, fullDetails, now));
       }
@@ -7284,7 +7292,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPoint(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPoint(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -7308,7 +7316,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject point = pointService.getStoredPoint(pointID);
+    GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived);
     JSONObject pointJSON = pointService.generateResponseJSON(point, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -7614,7 +7622,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetOfferList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -7624,7 +7632,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> offers = new ArrayList<JSONObject>();
-    for (GUIManagedObject offer : offerService.getStoredOffers())
+    for (GUIManagedObject offer : offerService.getStoredOffers(includeArchived))
       {
         offers.add(offerService.generateResponseJSON(offer, fullDetails, now));
       }
@@ -7647,7 +7655,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOffer(String userID, JSONObject jsonRoot)
+  private JSONObject processGetOffer(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -7671,7 +7679,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offer = offerService.getStoredOffer(offerID);
+    GUIManagedObject offer = offerService.getStoredOffer(offerID, includeArchived);
     JSONObject offerJSON = offerService.generateResponseJSON(offer, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -7896,12 +7904,12 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetReportList(String userID, JSONObject jsonRoot)
+  private JSONObject processGetReportList(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     log.trace("In processGetReportList : "+jsonRoot);
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> reports = new ArrayList<JSONObject>();
-    for (GUIManagedObject report : reportService.getStoredReports())
+    for (GUIManagedObject report : reportService.getStoredReports(includeArchived))
       {
         log.trace("In processGetReportList, adding : "+report);
         JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
@@ -8035,7 +8043,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationStrategyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPresentationStrategyList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -8045,7 +8053,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> presentationStrategies = new ArrayList<JSONObject>();
-    for (GUIManagedObject presentationStrategy : presentationStrategyService.getStoredPresentationStrategies())
+    for (GUIManagedObject presentationStrategy : presentationStrategyService.getStoredPresentationStrategies(includeArchived))
       {
         presentationStrategies.add(presentationStrategyService.generateResponseJSON(presentationStrategy, fullDetails, now));
       }
@@ -8068,7 +8076,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPresentationStrategy(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPresentationStrategy(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -8092,7 +8100,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
+    GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID, includeArchived);
     JSONObject presentationStrategyJSON = presentationStrategyService.generateResponseJSON(presentationStrategy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -8295,7 +8303,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDNBOMatrixList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetDNBOMatrixList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -8305,7 +8313,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> dnboMatrixes = new ArrayList<JSONObject>();
-    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes())
+    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived))
       {
         dnboMatrixes.add(presentationStrategyService.generateResponseJSON(dnboMatrix, fullDetails, now));
       }
@@ -8328,7 +8336,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDNBOMatrix(String userID, JSONObject jsonRoot)
+  private JSONObject processGetDNBOMatrix(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -8352,7 +8360,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
+    GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID, includeArchived);
     JSONObject dnboMatrixJSON = dnboMatrixService.generateResponseJSON(dnboMatrix, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -8555,7 +8563,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetScoringStrategyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetScoringStrategyList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -8565,7 +8573,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> scoringStrategies = new ArrayList<JSONObject>();
-    for (GUIManagedObject scoringStrategy : scoringStrategyService.getStoredScoringStrategies())
+    for (GUIManagedObject scoringStrategy : scoringStrategyService.getStoredScoringStrategies(includeArchived))
       {
         scoringStrategies.add(scoringStrategyService.generateResponseJSON(scoringStrategy, fullDetails, now));
       }
@@ -8588,7 +8596,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetScoringStrategy(String userID, JSONObject jsonRoot)
+  private JSONObject processGetScoringStrategy(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -8612,7 +8620,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
+    GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID, includeArchived);
     JSONObject scoringStrategyJSON = scoringStrategyService.generateResponseJSON(scoringStrategy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -8845,7 +8853,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCallingChannelList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCallingChannelList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -8855,7 +8863,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> callingChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject callingChannel : callingChannelService.getStoredCallingChannels())
+    for (GUIManagedObject callingChannel : callingChannelService.getStoredCallingChannels(includeArchived))
       {
         callingChannels.add(callingChannelService.generateResponseJSON(callingChannel, fullDetails, now));
       }
@@ -8878,7 +8886,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCallingChannel(String userID, JSONObject jsonRoot)
+  private JSONObject processGetCallingChannel(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -8902,7 +8910,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
+    GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID, includeArchived);
     JSONObject callingChannelJSON = callingChannelService.generateResponseJSON(callingChannel, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -9138,7 +9146,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSalesChannelList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSalesChannelList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -9148,7 +9156,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> salesChannels = new ArrayList<JSONObject>();
-    for (GUIManagedObject salesChannel : salesChannelService.getStoredSalesChannels())
+    for (GUIManagedObject salesChannel : salesChannelService.getStoredSalesChannels(includeArchived))
       {
         salesChannels.add(salesChannelService.generateResponseJSON(salesChannel, fullDetails, now));
       }
@@ -9171,7 +9179,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSalesChannel(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSalesChannel(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -9195,7 +9203,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
+    GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID, includeArchived);
     JSONObject salesChannelJSON = salesChannelService.generateResponseJSON(salesChannel, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -9428,7 +9436,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupplierList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSupplierList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -9438,7 +9446,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> suppliers = new ArrayList<JSONObject>();
-    for (GUIManagedObject supplier : supplierService.getStoredSuppliers())
+    for (GUIManagedObject supplier : supplierService.getStoredSuppliers(includeArchived))
       {
         suppliers.add(supplierService.generateResponseJSON(supplier, fullDetails, now));
       }
@@ -9461,7 +9469,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSupplier(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSupplier(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -9485,7 +9493,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
+    GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID, includeArchived);
     JSONObject supplierJSON = supplierService.generateResponseJSON(supplier, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -9718,7 +9726,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProductList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetProductList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -9728,7 +9736,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> products = new ArrayList<JSONObject>();
-    for (GUIManagedObject product : productService.getStoredProducts())
+    for (GUIManagedObject product : productService.getStoredProducts(includeArchived))
       {
         products.add(productService.generateResponseJSON(product, fullDetails, now));
       }
@@ -9751,7 +9759,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProduct(String userID, JSONObject jsonRoot)
+  private JSONObject processGetProduct(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -9775,7 +9783,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject product = productService.getStoredProduct(productID);
+    GUIManagedObject product = productService.getStoredProduct(productID, includeArchived);
     JSONObject productJSON = productService.generateResponseJSON(product, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -10008,7 +10016,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCatalogCharacteristicList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCatalogCharacteristicList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -10018,7 +10026,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> catalogCharacteristics = new ArrayList<JSONObject>();
-    for (GUIManagedObject catalogCharacteristic : catalogCharacteristicService.getStoredCatalogCharacteristics())
+    for (GUIManagedObject catalogCharacteristic : catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived))
       {
         catalogCharacteristics.add(catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, fullDetails, now));
       }
@@ -10041,7 +10049,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCatalogCharacteristic(String userID, JSONObject jsonRoot)
+  private JSONObject processGetCatalogCharacteristic(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -10065,7 +10073,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
+    GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID, includeArchived);
     JSONObject catalogCharacteristicJSON = catalogCharacteristicService.generateResponseJSON(catalogCharacteristic, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -10310,7 +10318,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetContactPolicyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetContactPolicyList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -10320,7 +10328,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> contactPolicies = new ArrayList<JSONObject>();
-    for (GUIManagedObject contactPolicy : contactPolicyService.getStoredContactPolicies())
+    for (GUIManagedObject contactPolicy : contactPolicyService.getStoredContactPolicies(includeArchived))
       {
         contactPolicies.add(contactPolicyService.generateResponseJSON(contactPolicy, fullDetails, now));
       }
@@ -10343,7 +10351,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetContactPolicy(String userID, JSONObject jsonRoot)
+  private JSONObject processGetContactPolicy(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -10367,7 +10375,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
+    GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID, includeArchived);
     JSONObject contactPolicyJSON = contactPolicyService.generateResponseJSON(contactPolicy, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -10600,7 +10608,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetJourneyObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -10610,7 +10618,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> journeyObjectives = new ArrayList<JSONObject>();
-    for (GUIManagedObject journeyObjective : journeyObjectiveService.getStoredJourneyObjectives())
+    for (GUIManagedObject journeyObjective : journeyObjectiveService.getStoredJourneyObjectives(includeArchived))
       {
         journeyObjectives.add(journeyObjectiveService.generateResponseJSON(journeyObjective, fullDetails, now));
       }
@@ -10633,7 +10641,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyObjective(String userID, JSONObject jsonRoot)
+  private JSONObject processGetJourneyObjective(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -10658,7 +10666,7 @@ public class GUIManager
     *****************************************/
 
     Date now = SystemTime.getCurrentTime();
-    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
+    GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID, includeArchived);
     JSONObject journeyObjectiveJSON = journeyObjectiveService.generateResponseJSON(journeyObjective, true, now);
 
     /*****************************************
@@ -10894,7 +10902,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetOfferObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -10904,7 +10912,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> offerObjectives = new ArrayList<JSONObject>();
-    for (GUIManagedObject offerObjective : offerObjectiveService.getStoredOfferObjectives())
+    for (GUIManagedObject offerObjective : offerObjectiveService.getStoredOfferObjectives(includeArchived))
       {
         offerObjectives.add(offerObjectiveService.generateResponseJSON(offerObjective, fullDetails, now));
       }
@@ -10927,7 +10935,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetOfferObjective(String userID, JSONObject jsonRoot)
+  private JSONObject processGetOfferObjective(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -10951,7 +10959,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
+    GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID, includeArchived);
     JSONObject offerObjectiveJSON = offerObjectiveService.generateResponseJSON(offerObjective, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11187,7 +11195,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProductTypeList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetProductTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -11197,7 +11205,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> productTypes = new ArrayList<JSONObject>();
-    for (GUIManagedObject productType : productTypeService.getStoredProductTypes())
+    for (GUIManagedObject productType : productTypeService.getStoredProductTypes(includeArchived))
       {
         productTypes.add(productTypeService.generateResponseJSON(productType, fullDetails, now));
       }
@@ -11220,7 +11228,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetProductType(String userID, JSONObject jsonRoot)
+  private JSONObject processGetProductType(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -11244,7 +11252,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
+    GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID, includeArchived);
     JSONObject productTypeJSON = productTypeService.generateResponseJSON(productType, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11477,7 +11485,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetUCGRuleList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetUCGRuleList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -11487,7 +11495,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> ucgRules = new ArrayList<JSONObject>();
-    for (GUIManagedObject ucgRule : ucgRuleService.getStoredUCGRules())
+    for (GUIManagedObject ucgRule : ucgRuleService.getStoredUCGRules(includeArchived))
       {
         ucgRules.add(ucgRuleService.generateResponseJSON(ucgRule, fullDetails, now));
       }
@@ -11510,7 +11518,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetUCGRule(String userID, JSONObject jsonRoot)
+  private JSONObject processGetUCGRule(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -11534,7 +11542,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
+    GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID, includeArchived);
     JSONObject productJSON = ucgRuleService.generateResponseJSON(ucgRule, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11757,7 +11765,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDeliverableList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetDeliverableList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -11767,7 +11775,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> deliverables = new ArrayList<JSONObject>();
-    for (GUIManagedObject deliverable : deliverableService.getStoredDeliverables())
+    for (GUIManagedObject deliverable : deliverableService.getStoredDeliverables(includeArchived))
       {
         deliverables.add(deliverableService.generateResponseJSON(deliverable, fullDetails, now));
       }
@@ -11790,7 +11798,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDeliverable(String userID, JSONObject jsonRoot)
+  private JSONObject processGetDeliverable(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -11814,7 +11822,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID, includeArchived);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -11834,7 +11842,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDeliverableByName(String userID, JSONObject jsonRoot)
+  private JSONObject processGetDeliverableByName(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -11858,7 +11866,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject deliverable = deliverableService.getStoredDeliverableByName(deliverableName);
+    GUIManagedObject deliverable = deliverableService.getStoredDeliverableByName(deliverableName, includeArchived);
     JSONObject deliverableJSON = deliverableService.generateResponseJSON(deliverable, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -12091,7 +12099,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetTokenTypeList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetTokenTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -12101,7 +12109,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> tokenTypes = new ArrayList<JSONObject>();
-    for (GUIManagedObject tokenType : tokenTypeService.getStoredTokenTypes())
+    for (GUIManagedObject tokenType : tokenTypeService.getStoredTokenTypes(includeArchived))
       {
         tokenTypes.add(tokenTypeService.generateResponseJSON(tokenType, fullDetails, now));
       }
@@ -12124,7 +12132,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetTokenType(String userID, JSONObject jsonRoot)
+  private JSONObject processGetTokenType(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -12148,7 +12156,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
+    GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID, includeArchived);
     JSONObject tokenTypeJSON = tokenTypeService.generateResponseJSON(tokenType, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -12414,7 +12422,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetMailTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetMailTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -12424,7 +12432,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredMailTemplates(true))
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived))
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -12447,7 +12455,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetMailTemplate(String userID, JSONObject jsonRoot)
+  private JSONObject processGetMailTemplate(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -12471,7 +12479,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -12711,7 +12719,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSMSTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSMSTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -12721,7 +12729,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSMSTemplates(true))
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived))
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -12744,7 +12752,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSMSTemplate(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSMSTemplate(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -12768,7 +12776,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -13008,7 +13016,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPushTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPushTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -13018,7 +13026,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(true))
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived))
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -13041,7 +13049,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPushTemplate(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPushTemplate(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -13065,7 +13073,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
+    GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID, includeArchived);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
     JSONObject templateJSON = subscriberMessageTemplateService.generateResponseJSON(template, true, SystemTime.getCurrentTime());
 
@@ -13343,7 +13351,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPaymentMeanList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPaymentMeanList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
 
     /*****************************************
@@ -13354,7 +13362,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> paymentMeans = new ArrayList<JSONObject>();
-    for (GUIManagedObject paymentMean : paymentMeanService.getStoredPaymentMeans())
+    for (GUIManagedObject paymentMean : paymentMeanService.getStoredPaymentMeans(includeArchived))
       {
         paymentMeans.add(paymentMeanService.generateResponseJSON(paymentMean, fullDetails, now));
       }
@@ -13377,7 +13385,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPaymentMean(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -13401,7 +13409,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+    GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID, includeArchived);
     JSONObject paymentMeanJSON = paymentMeanService.generateResponseJSON(paymentMean, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -13616,41 +13624,41 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot)
+  private JSONObject processGetDashboardCounts(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
     response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign));
-    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions().size());
-    response.put("pointCount", pointService.getStoredPoints().size());
-    response.put("offerCount", offerService.getStoredOffers().size());
-    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies().size());
-    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies().size());
-    response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes().size());
-    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels().size());
-    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels().size());
-    response.put("supplierCount", supplierService.getStoredSuppliers().size());
-    response.put("productCount", productService.getStoredProducts().size());
-    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics().size());
-    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives().size());
-    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives().size());
-    response.put("productTypeCount", productTypeService.getStoredProductTypes().size());
-    response.put("deliverableCount", deliverableService.getStoredDeliverables().size());
-    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true).size());
-    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true).size());
-    response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true).size());
-    response.put("reportsCount", reportService.getStoredReports().size());
-    response.put("walletsCount", pointService.getStoredPoints().size() + tokenTypeService.getStoredTokenTypes().size());
-    response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules().size());
-    response.put("targetCount", targetService.getStoredTargets().size());
-    response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets().size());
-    response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys().size());
-    response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies().size());
-    response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels().size());
-    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts().size());
-    response.put("partnerCount", partnerService.getStoredPartners().size());
+    response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived).size());
+    response.put("pointCount", pointService.getStoredPoints(includeArchived).size());
+    response.put("offerCount", offerService.getStoredOffers(includeArchived).size());
+    response.put("scoringStrategyCount", scoringStrategyService.getStoredScoringStrategies(includeArchived).size());
+    response.put("presentationStrategyCount", presentationStrategyService.getStoredPresentationStrategies(includeArchived).size());
+    response.put("dnboMatrixCount", dnboMatrixService.getStoredDNBOMatrixes(includeArchived).size());
+    response.put("callingChannelCount", callingChannelService.getStoredCallingChannels(includeArchived).size());
+    response.put("salesChannelCount", salesChannelService.getStoredSalesChannels(includeArchived).size());
+    response.put("supplierCount", supplierService.getStoredSuppliers(includeArchived).size());
+    response.put("productCount", productService.getStoredProducts(includeArchived).size());
+    response.put("catalogCharacteristicCount", catalogCharacteristicService.getStoredCatalogCharacteristics(includeArchived).size());
+    response.put("journeyObjectiveCount", journeyObjectiveService.getStoredJourneyObjectives(includeArchived).size());
+    response.put("offerObjectiveCount", offerObjectiveService.getStoredOfferObjectives(includeArchived).size());
+    response.put("productTypeCount", productTypeService.getStoredProductTypes(includeArchived).size());
+    response.put("deliverableCount", deliverableService.getStoredDeliverables(includeArchived).size());
+    response.put("mailTemplateCount", subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived).size());
+    response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
+    response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
+    response.put("reportsCount", reportService.getStoredReports(includeArchived).size());
+    response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size());
+    response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived).size());
+    response.put("targetCount", targetService.getStoredTargets(includeArchived).size());
+    response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived).size());
+    response.put("segmentContactPolicies",segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived).size());
+    response.put("contactPolicyCount", contactPolicyService.getStoredContactPolicies(includeArchived).size());
+    response.put("communicationChannelCount", communicationChannelService.getStoredCommunicationChannels(includeArchived).size());
+    response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived).size());
+    response.put("partnerCount", partnerService.getStoredPartners(includeArchived).size());
     return JSONUtilities.encodeObject(response);
   }
 
@@ -14330,7 +14338,7 @@ public class GUIManager
                     //  read campaigns
                     //
 
-                    Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys();
+                    Collection<GUIManagedObject> stroeRawJourneys = journeyService.getStoredJourneys(true);
                     List<Journey> storeJourneys = new ArrayList<Journey>();
                     for (GUIManagedObject storeJourney : stroeRawJourneys)
                       {
@@ -14651,7 +14659,7 @@ public class GUIManager
                     //  read campaigns
                     //
 
-                    Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys();
+                    Collection<GUIManagedObject> storeRawCampaigns = journeyService.getStoredJourneys(true);
                     List<Journey> storeCampaigns = new ArrayList<Journey>();
                     for (GUIManagedObject storeCampaign : storeRawCampaigns)
                       {
@@ -14961,7 +14969,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetFilesList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -14972,7 +14980,7 @@ public class GUIManager
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> uploadedFiles = new ArrayList<JSONObject>();
     String applicationID = JSONUtilities.decodeString(jsonRoot, "applicationID", true);
-    for (GUIManagedObject uploaded : uploadedFileService.getStoredGUIManagedObjects())
+    for (GUIManagedObject uploaded : uploadedFileService.getStoredGUIManagedObjects(includeArchived))
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
         if (Objects.equals(applicationID, fileApplicationID))
@@ -15273,7 +15281,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
 
     /*****************************************
@@ -15284,7 +15292,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> targetLists = new ArrayList<JSONObject>();
-    for (GUIManagedObject targetList : targetService.getStoredTargets())
+    for (GUIManagedObject targetList : targetService.getStoredTargets(includeArchived))
       {
         JSONObject targetResponse = targetService.generateResponseJSON(targetList, fullDetails, now);
         targetResponse.put("isRunning", targetService.isActiveTarget(targetList, now) ? targetService.isTargetFileBeingProcessed((Target) targetList) : false);
@@ -15449,7 +15457,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetTarget(String userID, JSONObject jsonRoot)
+  private JSONObject processGetTarget(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -15473,7 +15481,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject target = targetService.getStoredTarget(targetID);
+    GUIManagedObject target = targetService.getStoredTarget(targetID, includeArchived);
     JSONObject targetJSON = targetService.generateResponseJSON(target, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -15868,7 +15876,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCommunicationChannelsList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetCommunicationChannelsList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -15878,7 +15886,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> communicationChannelList = new ArrayList<JSONObject>();
-    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels())
+    for (GUIManagedObject communicationChannel : communicationChannelService.getStoredCommunicationChannels(includeArchived))
       {
         JSONObject channel = communicationChannelService.generateResponseJSON(communicationChannel, fullDetails, now);
         communicationChannelList.add(channel);
@@ -15906,7 +15914,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetCommunicationChannel(String userID, JSONObject jsonRoot)
+  private JSONObject processGetCommunicationChannel(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -15930,7 +15938,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+    GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID, includeArchived);
     JSONObject communicationChannelJSON = communicationChannelService.generateResponseJSON(communicationChannel, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -16138,7 +16146,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetBlackoutPeriodsList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetBlackoutPeriodsList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -16148,7 +16156,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> communicationChannelBlackoutList = new ArrayList<JSONObject>();
-    for (GUIManagedObject blackoutPeriods : communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts())
+    for (GUIManagedObject blackoutPeriods : communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived))
       {
         JSONObject blackoutPeriod = communicationChannelBlackoutService.generateResponseJSON(blackoutPeriods, fullDetails, now);
         communicationChannelBlackoutList.add(blackoutPeriod);
@@ -16172,7 +16180,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetBlackoutPeriods(String userID, JSONObject jsonRoot)
+  private JSONObject processGetBlackoutPeriods(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -16196,7 +16204,7 @@ public class GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID);
+    GUIManagedObject communicationChannelBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(communicationChannelBlackoutPeriodID, includeArchived);
     JSONObject communicationChannelBlackoutPeriodJSON = communicationChannelBlackoutService.generateResponseJSON(communicationChannelBlackoutPeriod, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -16445,7 +16453,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetLoyaltyProgramsList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetLoyaltyProgramsList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -16455,7 +16463,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> loyaltyProgramList = new ArrayList<JSONObject>();
-    for (GUIManagedObject loyaltyProgram : loyaltyProgramService.getStoredGUIManagedObjects())
+    for (GUIManagedObject loyaltyProgram : loyaltyProgramService.getStoredGUIManagedObjects(includeArchived))
       {
         JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(loyaltyProgram, fullDetails, now);
         loyaltyProgramList.add(loyaltyPro);
@@ -16479,7 +16487,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot)
+  private JSONObject processGetLoyaltyProgram(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -16503,7 +16511,7 @@ public class GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+    GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID, includeArchived);
     JSONObject loyaltyProgramJSON = loyaltyProgramService.generateResponseJSON(loyaltyProgram, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -16723,7 +16731,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPartnerList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetPartnerList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -16733,7 +16741,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> partnerList = new ArrayList<JSONObject>();
-    for (GUIManagedObject partner : partnerService.getStoredGUIManagedObjects())
+    for (GUIManagedObject partner : partnerService.getStoredGUIManagedObjects(includeArchived))
       {
         JSONObject loyaltyPro = loyaltyProgramService.generateResponseJSON(partner, fullDetails, now);
         partnerList.add(loyaltyPro);
@@ -16757,7 +16765,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPartner(String userID, JSONObject jsonRoot)
+  private JSONObject processGetPartner(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -16781,7 +16789,7 @@ public class GUIManager
     *
     ***************************************************************/
 
-    GUIManagedObject partner = partnerService.getStoredGUIManagedObject(partnerID);
+    GUIManagedObject partner = partnerService.getStoredGUIManagedObject(partnerID, includeArchived);
     JSONObject partnerJSON = partnerService.generateResponseJSON(partner, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -16927,7 +16935,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetExclusionInclusionTargetList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetExclusionInclusionTargetList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -16937,7 +16945,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> exclusionInclusionTargets = new ArrayList<JSONObject>();
-    for (GUIManagedObject exclusionInclusionTarget : exclusionInclusionTargetService.getStoredExclusionInclusionTargets())
+    for (GUIManagedObject exclusionInclusionTarget : exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived))
       {
         exclusionInclusionTargets.add(exclusionInclusionTargetService.generateResponseJSON(exclusionInclusionTarget, fullDetails, now));
       }
@@ -16960,7 +16968,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetExclusionInclusionTarget(String userID, JSONObject jsonRoot)
+  private JSONObject processGetExclusionInclusionTarget(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -16984,7 +16992,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
+    GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID, includeArchived);
     JSONObject exclusionInclusionTargetJSON = exclusionInclusionTargetService.generateResponseJSON(exclusionInclusionTarget, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -17130,7 +17138,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentContactPolicyList(String userID, JSONObject jsonRoot, boolean fullDetails)
+  private JSONObject processGetSegmentContactPolicyList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -17140,7 +17148,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> segmentContactPolicys = new ArrayList<JSONObject>();
-    for (GUIManagedObject segmentContactPolicy : segmentContactPolicyService.getStoredSegmentContactPolicys())
+    for (GUIManagedObject segmentContactPolicy : segmentContactPolicyService.getStoredSegmentContactPolicys(includeArchived))
       {
         segmentContactPolicys.add(segmentContactPolicyService.generateResponseJSON(segmentContactPolicy, fullDetails, now));
       }
@@ -17285,7 +17293,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSegmentContactPolicy(String userID, JSONObject jsonRoot)
+  private JSONObject processGetSegmentContactPolicy(String userID, JSONObject jsonRoot, boolean includeArchived)
   {
     /****************************************
     *
@@ -17309,7 +17317,7 @@ public class GUIManager
     *
     *****************************************/
 
-    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
+    GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID, includeArchived);
     JSONObject segmentContactPolicyJSON = segmentContactPolicyService.generateResponseJSON(segmentContactPolicy, true, SystemTime.getCurrentTime());
 
     /*****************************************

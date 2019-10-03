@@ -132,7 +132,9 @@ public class ProductService extends GUIService
 
   public String generateProductID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredProduct(String productID) { return getStoredGUIManagedObject(productID); }
+  public GUIManagedObject getStoredProduct(String productID, boolean includeArchived) { return getStoredGUIManagedObject(productID, includeArchived); }
   public Collection<GUIManagedObject> getStoredProducts() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredProducts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveProductThroughInterval(GUIManagedObject productUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(productUnchecked, startDate, endDate); }
   public boolean isActiveProduct(GUIManagedObject productUnchecked, Date date) { return isActiveGUIManagedObject(productUnchecked, date); }
   public Product getActiveProduct(String productID, Date date) { return (Product) getActiveGUIManagedObject(productID, date); }

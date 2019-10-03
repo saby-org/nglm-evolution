@@ -118,7 +118,9 @@ public class SalesChannelService extends GUIService
 
   public String generateSalesChannelID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSalesChannel(String salesChannelID) { return getStoredGUIManagedObject(salesChannelID); }
+  public GUIManagedObject getStoredSalesChannel(String salesChannelID, boolean includeArchived) { return getStoredGUIManagedObject(salesChannelID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSalesChannels() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredSalesChannels(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveSalesChannel(GUIManagedObject salesChannelUnchecked, Date date) { return isActiveGUIManagedObject(salesChannelUnchecked, date); }
   public SalesChannel getActiveSalesChannel(String salesChannelID, Date date) { return (SalesChannel) getActiveGUIManagedObject(salesChannelID, date); }
   public Collection<SalesChannel> getActiveSalesChannels(Date date) { return (Collection<SalesChannel>) getActiveGUIManagedObjects(date); }

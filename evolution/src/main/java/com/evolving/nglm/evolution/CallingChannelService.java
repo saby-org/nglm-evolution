@@ -115,7 +115,9 @@ public class CallingChannelService extends GUIService
 
   public String generateCallingChannelID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredCallingChannel(String callingChannelID) { return getStoredGUIManagedObject(callingChannelID); }
+  public GUIManagedObject getStoredCallingChannel(String callingChannelID, boolean includeArchived) { return getStoredGUIManagedObject(callingChannelID, includeArchived); }
   public Collection<GUIManagedObject> getStoredCallingChannels() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredCallingChannels(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveCallingChannelThroughInterval(GUIManagedObject deliverableUnchecked, Date startDate, Date endDate) { return isActiveThroughInterval(deliverableUnchecked, startDate, endDate); }
   public boolean isActiveCallingChannel(GUIManagedObject callingChannelUnchecked, Date date) { return isActiveGUIManagedObject(callingChannelUnchecked, date); }
   public CallingChannel getActiveCallingChannel(String callingChannelID, Date date) { return (CallingChannel) getActiveGUIManagedObject(callingChannelID, date); }

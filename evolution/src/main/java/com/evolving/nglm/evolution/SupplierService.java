@@ -115,7 +115,9 @@ public class SupplierService extends GUIService
 
   public String generateSupplierID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSupplier(String supplierID) { return getStoredGUIManagedObject(supplierID); }
+  public GUIManagedObject getStoredSupplier(String supplierID, boolean includeArchived) { return getStoredGUIManagedObject(supplierID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSuppliers() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredSuppliers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveSupplier(GUIManagedObject supplierUnchecked, Date date) { return isActiveGUIManagedObject(supplierUnchecked, date); }
   public Supplier getActiveSupplier(String supplierID, Date date) { return (Supplier) getActiveGUIManagedObject(supplierID, date); }
   public Collection<Supplier> getActiveSuppliers(Date date) { return (Collection<Supplier>) getActiveGUIManagedObjects(date); }

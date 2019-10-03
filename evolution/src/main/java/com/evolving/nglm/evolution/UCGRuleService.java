@@ -107,7 +107,9 @@ public class UCGRuleService extends GUIService
 
   public String generateUCGRuleID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredUCGRule(String ucgRuleId) { return getStoredGUIManagedObject(ucgRuleId); }
+  public GUIManagedObject getStoredUCGRule(String ucgRuleId, boolean includeArchived) { return getStoredGUIManagedObject(ucgRuleId, includeArchived); }
   public Collection<GUIManagedObject> getStoredUCGRules() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredUCGRules(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveUCGRule(GUIManagedObject ucgRuleUnchecked, Date date) { return isActiveGUIManagedObject(ucgRuleUnchecked, date); }
   public UCGRule getActiveUCGRule(String ucgRuleID, Date date) { return (UCGRule) getActiveGUIManagedObject(ucgRuleID, date); }
   public Collection<UCGRule> getActiveUCGRules(Date date) { return (Collection<UCGRule>) getActiveGUIManagedObjects(date); }

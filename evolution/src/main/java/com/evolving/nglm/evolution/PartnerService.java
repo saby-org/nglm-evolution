@@ -115,7 +115,9 @@ public class PartnerService extends GUIService
 
   public String generatePartnerID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPartner(String partnerID) { return getStoredGUIManagedObject(partnerID); }
+  public GUIManagedObject getStoredPartner(String partnerID, boolean includeArchived) { return getStoredGUIManagedObject(partnerID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPartners() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredPartners(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActivePartner(GUIManagedObject partnerUnchecked, Date date) { return isActiveGUIManagedObject(partnerUnchecked, date); }
   public Partner getActivePartner(String partnerID, Date date) { return (Partner) getActiveGUIManagedObject(partnerID, date); }
   public Collection<Partner> getActivePartners(Date date) { return (Collection<Partner>) getActiveGUIManagedObjects(date); }

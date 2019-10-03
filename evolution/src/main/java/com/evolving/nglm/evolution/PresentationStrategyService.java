@@ -131,7 +131,9 @@ public class PresentationStrategyService extends GUIService
 
   public String generatePresentationStrategyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID) { return getStoredGUIManagedObject(presentationStrategyID); }
+  public GUIManagedObject getStoredPresentationStrategy(String presentationStrategyID, boolean includeArchived) { return getStoredGUIManagedObject(presentationStrategyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredPresentationStrategies() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredPresentationStrategies(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActivePresentationStrategy(GUIManagedObject presentationStrategyUnchecked, Date date) { return isActiveGUIManagedObject(presentationStrategyUnchecked, date); }
   public PresentationStrategy getActivePresentationStrategy(String presentationStrategyID, Date date) { return (PresentationStrategy) getActiveGUIManagedObject(presentationStrategyID, date); }
   public Collection<PresentationStrategy> getActivePresentationStrategies(Date date) { return (Collection<PresentationStrategy>) getActiveGUIManagedObjects(date); }

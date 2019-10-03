@@ -143,7 +143,9 @@ public class ExclusionInclusionTargetService extends GUIService
 
   public String generateExclusionInclusionTargetID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredExclusionInclusionTarget(String exclusionInclusionTargetID) { return getStoredGUIManagedObject(exclusionInclusionTargetID); }
+  public GUIManagedObject getStoredExclusionInclusionTarget(String exclusionInclusionTargetID, boolean includeArchived) { return getStoredGUIManagedObject(exclusionInclusionTargetID, includeArchived); }
   public Collection<GUIManagedObject> getStoredExclusionInclusionTargets() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredExclusionInclusionTargets(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveExclusionInclusionTarget(GUIManagedObject exclusionInclusionTargetUnchecked, Date date) { return isActiveGUIManagedObject(exclusionInclusionTargetUnchecked, date); }
   public ExclusionInclusionTarget getActiveExclusionInclusionTarget(String exclusionInclusionTargetID, Date date) { return (ExclusionInclusionTarget) getActiveGUIManagedObject(exclusionInclusionTargetID, date); }
   public Collection<ExclusionInclusionTarget> getActiveExclusionInclusionTargets(Date date) { return (Collection<ExclusionInclusionTarget>) getActiveGUIManagedObjects(date); }

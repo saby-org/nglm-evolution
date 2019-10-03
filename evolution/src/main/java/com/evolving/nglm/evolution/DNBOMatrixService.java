@@ -106,7 +106,9 @@ public class DNBOMatrixService extends GUIService
 
   public String generateDNBOMatrixID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID) { return getStoredGUIManagedObject(dnboMatrixID); }
+  public GUIManagedObject getStoredDNBOMatrix(String dnboMatrixID, boolean includeArchived) { return getStoredGUIManagedObject(dnboMatrixID, includeArchived); }
   public Collection<GUIManagedObject> getStoredDNBOMatrixes() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredDNBOMatrixes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveDNBOMatrix(GUIManagedObject dnboMatrixUnchecked, Date date) { return isActiveGUIManagedObject(dnboMatrixUnchecked, date); }
   public DNBOMatrix getActiveDNBOMatrix(String dnboMatrixID, Date date) { return (DNBOMatrix) getActiveGUIManagedObject(dnboMatrixID, date); }
   public Collection<DNBOMatrix> getActiveDNBOMatrixes(Date date) { return (Collection<DNBOMatrix>) getActiveGUIManagedObjects(date); }

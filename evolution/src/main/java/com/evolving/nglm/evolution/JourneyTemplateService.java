@@ -121,7 +121,9 @@ public class JourneyTemplateService extends GUIService
 
   public String generateJourneyTemplateID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID) { return getStoredGUIManagedObject(journeyTemplateID); }
+  public GUIManagedObject getStoredJourneyTemplate(String journeyTemplateID, boolean includeArchived) { return getStoredGUIManagedObject(journeyTemplateID, includeArchived); }
   public Collection<GUIManagedObject> getStoredJourneyTemplates() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredJourneyTemplates(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveJourneyTemplate(GUIManagedObject journeyTemplateUnchecked, Date date) { return isActiveGUIManagedObject(journeyTemplateUnchecked, date); }
   public Journey getActiveJourneyTemplate(String journeyTemplateID, Date date) { return (Journey) getActiveGUIManagedObject(journeyTemplateID, date); }
   public Collection<Journey> getActiveJourneyTemplates(Date date) { return (Collection<Journey>) getActiveGUIManagedObjects(date); }

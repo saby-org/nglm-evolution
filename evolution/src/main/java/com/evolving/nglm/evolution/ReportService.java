@@ -110,7 +110,9 @@ public class ReportService extends GUIService
 
   public String generateReportID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredReport(String reportID) { return getStoredGUIManagedObject(reportID); }
+  public GUIManagedObject getStoredReport(String reportID, boolean includeArchived) { return getStoredGUIManagedObject(reportID, includeArchived); }
   public Collection<GUIManagedObject> getStoredReports() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredReports(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveReport(GUIManagedObject reportUnchecked, Date date) { return isActiveGUIManagedObject(reportUnchecked, date); }
   public Report getActiveReport(String reportID, Date date) { return (Report) getActiveGUIManagedObject(reportID, date); }
   public Collection<Report> getActiveReports(Date date) { return (Collection<Report>) getActiveGUIManagedObjects(date); }

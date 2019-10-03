@@ -130,10 +130,12 @@ public abstract class GUIManagedObject
     schemaBuilder.field("readOnly", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("internalOnly", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("active", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("deleted", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("userID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("userName", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("groupID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("createdDate", Timestamp.builder().optional().defaultValue(null).schema());
+    schemaBuilder.field("updatedDate", Timestamp.builder().optional().defaultValue(null).schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -210,10 +212,12 @@ public abstract class GUIManagedObject
   private boolean readOnly;
   private boolean internalOnly;
   private boolean active;
+  private boolean deleted;
   private String userID;
   private String userName;
   private String groupID;
   private Date createdDate;
+  private Date updatedDate;
 
   /****************************************
   *
@@ -235,6 +239,7 @@ public abstract class GUIManagedObject
   public String getUserID() { return userID; }
   public String getUserName() { return userName; }
   public Date getCreatedDate() { return createdDate; }
+  public Date getUpdatedDate() { return updatedDate; }
 
   //
   //  package protected
@@ -243,6 +248,7 @@ public abstract class GUIManagedObject
   boolean getReadOnly() { return readOnly; }
   boolean getInternalOnly() { return internalOnly; }
   boolean getActive() { return active; }
+  boolean getDeleted() { return deleted; }
   String getGroupID() { return groupID; }
 
   //
@@ -260,13 +266,15 @@ public abstract class GUIManagedObject
 
   /*****************************************
   *
-  *  setter
+  *  setters
   *
   *****************************************/
 
-  protected void setEpoch(long epoch)
+  protected void setEpoch(long epoch) { this.epoch = epoch; }
+  protected void markDeleted(boolean deleted)
   {
-    this.epoch = epoch;
+    jsonRepresentation.put("deleted", deleted);
+    this.deleted = deleted;
   }
 
   /*****************************************
@@ -287,10 +295,12 @@ public abstract class GUIManagedObject
     struct.put("readOnly", guiManagedObject.getReadOnly());
     struct.put("internalOnly", guiManagedObject.getInternalOnly());
     struct.put("active", guiManagedObject.getActive());
+    struct.put("deleted", guiManagedObject.getDeleted());
     struct.put("userID", guiManagedObject.getUserID());
     struct.put("userName", guiManagedObject.getUserName());
     struct.put("groupID", guiManagedObject.getGroupID());
     struct.put("createdDate", guiManagedObject.getCreatedDate());
+    struct.put("updatedDate", guiManagedObject.getUpdatedDate());
   }
 
   /*****************************************
@@ -311,10 +321,12 @@ public abstract class GUIManagedObject
     this.readOnly = false;
     this.internalOnly = false;
     this.active = false;
+    this.deleted = false;
     this.userID = null;
     this.userName = null;
     this.groupID = null;
     this.createdDate = null;
+    this.updatedDate = null;
   }
                              
   /*****************************************
@@ -348,10 +360,12 @@ public abstract class GUIManagedObject
     boolean readOnly = valueStruct.getBoolean("readOnly");
     boolean internalOnly = (schemaVersion >= 2) ? valueStruct.getBoolean("internalOnly") : false;
     boolean active = valueStruct.getBoolean("active");
+    boolean deleted = (schemaVersion >= 3) ? valueStruct.getBoolean("deleted") : false;
     String userID = (schemaVersion >= 3) ? valueStruct.getString("userID") : null;
     String userName = (schemaVersion >= 3) ? valueStruct.getString("userName") : null;
     String groupID = (schemaVersion >= 3) ? valueStruct.getString("groupID") : null;
     Date createdDate = (schemaVersion >= 3) ? (Date) valueStruct.get("createdDate") : null;
+    Date updatedDate = (schemaVersion >= 3) ? (Date) valueStruct.get("updatedDate") : null;
 
     //
     //  return
@@ -367,10 +381,12 @@ public abstract class GUIManagedObject
     this.readOnly = readOnly;
     this.internalOnly = internalOnly;
     this.active = active;
+    this.deleted = deleted;
     this.userID = userID;
     this.userName = userName;
     this.groupID = groupID;
     this.createdDate = createdDate;
+    this.updatedDate = updatedDate;
   }
 
   /*****************************************
@@ -391,16 +407,19 @@ public abstract class GUIManagedObject
     this.readOnly = JSONUtilities.decodeBoolean(jsonRoot, "readOnly", Boolean.FALSE);
     this.internalOnly = JSONUtilities.decodeBoolean(jsonRoot, "internalOnly", Boolean.FALSE);
     this.active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.TRUE);
+    this.deleted = JSONUtilities.decodeBoolean(jsonRoot, "deleted", Boolean.FALSE);
     this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
     this.userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     this.groupID = JSONUtilities.decodeString(jsonRoot, "groupID", false);
-    this.createdDate = SystemTime.getCurrentTime();
+    this.createdDate = (JSONUtilities.decodeString(jsonRoot, "createdDate", false) != null) ? parseDateField(JSONUtilities.decodeString(jsonRoot, "createdDate", true)) : SystemTime.getCurrentTime();
+    this.updatedDate = SystemTime.getCurrentTime();
 
     //
     //  add to json
     //
 
     this.jsonRepresentation.put("createdDate", formatDateField(this.createdDate));
+    this.jsonRepresentation.put("updatedDate", formatDateField(this.updatedDate));
   }
 
   //

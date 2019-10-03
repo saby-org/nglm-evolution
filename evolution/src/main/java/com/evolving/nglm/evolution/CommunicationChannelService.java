@@ -93,7 +93,9 @@ public class CommunicationChannelService extends GUIService
 
   public String generateCommunicationChannelID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredCommunicationChannel(String communicationChannelID) { return getStoredGUIManagedObject(communicationChannelID); }
+  public GUIManagedObject getStoredCommunicationChannel(String communicationChannelID, boolean includeArchived) { return getStoredGUIManagedObject(communicationChannelID, includeArchived); }
   public Collection<GUIManagedObject> getStoredCommunicationChannels() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredCommunicationChannels(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveCommunicationChannel(GUIManagedObject communicationChannelUnchecked, Date date) { return isActiveGUIManagedObject(communicationChannelUnchecked, date); }
   public CommunicationChannel getActiveCommunicationChannel(String communicationChannelID, Date date) { return (CommunicationChannel) getActiveGUIManagedObject(communicationChannelID, date); }
   public Collection<CommunicationChannel> getActiveContactPolicies(Date date) { return (Collection<CommunicationChannel>) getActiveGUIManagedObjects(date); }

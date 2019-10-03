@@ -85,7 +85,9 @@ public class LoyaltyProgramService extends GUIService
 
   public String generateLoyaltyProgramID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID) { return getStoredGUIManagedObject(loyaltyProgramID); }
+  public GUIManagedObject getStoredLoyaltyProgram(String loyaltyProgramID, boolean includeArchived) { return getStoredGUIManagedObject(loyaltyProgramID, includeArchived); }
   public Collection<GUIManagedObject> getStoredLoyaltyPrograms() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredLoyaltyPrograms(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveLoyaltyProgram(GUIManagedObject loyaltyProgramUnchecked, Date date) { return isActiveGUIManagedObject(loyaltyProgramUnchecked, date); }
   public LoyaltyProgram getActiveLoyaltyProgram(String loyaltyProgramID, Date date) { return (LoyaltyProgram) getActiveGUIManagedObject(loyaltyProgramID, date); }
   public Collection<LoyaltyProgram> getActiveLoyaltyPrograms(Date date) { return (Collection<LoyaltyProgram>) getActiveGUIManagedObjects(date); }

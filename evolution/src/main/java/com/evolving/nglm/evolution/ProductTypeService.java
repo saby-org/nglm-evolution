@@ -115,7 +115,9 @@ public class ProductTypeService extends GUIService
 
   public String generateProductTypeID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredProductType(String productTypeID) { return getStoredGUIManagedObject(productTypeID); }
+  public GUIManagedObject getStoredProductType(String productTypeID, boolean includeArchived) { return getStoredGUIManagedObject(productTypeID, includeArchived); }
   public Collection<GUIManagedObject> getStoredProductTypes() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredProductTypes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveProductType(GUIManagedObject productTypeUnchecked, Date date) { return isActiveGUIManagedObject(productTypeUnchecked, date); }
   public ProductType getActiveProductType(String productTypeID, Date date) { return (ProductType) getActiveGUIManagedObject(productTypeID, date); }
   public Collection<ProductType> getActiveProductTypes(Date date) { return (Collection<ProductType>) getActiveGUIManagedObjects(date); }

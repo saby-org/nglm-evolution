@@ -93,7 +93,9 @@ public class TokenTypeService extends GUIService
 
   public String generateTokenTypeID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredTokenType(String tokenTypeID) { return getStoredGUIManagedObject(tokenTypeID); }
+  public GUIManagedObject getStoredTokenType(String tokenTypeID, boolean includeArchived) { return getStoredGUIManagedObject(tokenTypeID, includeArchived); }
   public Collection<GUIManagedObject> getStoredTokenTypes() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredTokenTypes(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveTokenType(GUIManagedObject tokenTypeUnchecked, Date date) { return isActiveGUIManagedObject(tokenTypeUnchecked, date); }
   public TokenType getActiveTokenType(String tokenTypeID, Date date) { return (TokenType) getActiveGUIManagedObject(tokenTypeID, date); }
   public Collection<TokenType> getActiveTokenTypes(Date date) { return (Collection<TokenType>) getActiveGUIManagedObjects(date); }

@@ -149,7 +149,9 @@ public class JourneyService extends GUIService
 
   public String generateJourneyID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredJourney(String journeyID) { return getStoredGUIManagedObject(journeyID); }
+  public GUIManagedObject getStoredJourney(String journeyID, boolean includeArchived) { return getStoredGUIManagedObject(journeyID, includeArchived); }
   public Collection<GUIManagedObject> getStoredJourneys() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredJourneys(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveJourney(GUIManagedObject journeyUnchecked, Date date) { return isActiveGUIManagedObject(journeyUnchecked, date); }
   public Journey getActiveJourney(String journeyID, Date date) { return (Journey) getActiveGUIManagedObject(journeyID, date); }
   public Collection<Journey> getActiveJourneys(Date date) { return (Collection<Journey>) getActiveGUIManagedObjects(date); }

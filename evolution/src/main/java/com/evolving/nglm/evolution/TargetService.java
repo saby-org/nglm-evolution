@@ -141,7 +141,9 @@ public class TargetService extends GUIService
 
   public String generateTargetID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredTarget(String targetID) { return getStoredGUIManagedObject(targetID); }
+  public GUIManagedObject getStoredTarget(String targetID, boolean includeArchived) { return getStoredGUIManagedObject(targetID, includeArchived); }
   public Collection<GUIManagedObject> getStoredTargets() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredTargets(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveTarget(GUIManagedObject targetUnchecked, Date date) { return isActiveGUIManagedObject(targetUnchecked, date); }
   public Target getActiveTarget(String targetID, Date date) { return (Target) getActiveGUIManagedObject(targetID, date); }
   public Collection<Target> getActiveTargets(Date date) { return (Collection<Target>) getActiveGUIManagedObjects(date); }

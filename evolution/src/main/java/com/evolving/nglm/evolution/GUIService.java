@@ -346,13 +346,21 @@ public class GUIService
   *
   *****************************************/
 
-  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID)
+  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID, boolean includeArchived)
   {
     synchronized (this)
       {
-        return storedGUIManagedObjects.get(guiManagedObjectID);
+        GUIManagedObject result = storedGUIManagedObjects.get(guiManagedObjectID);
+        result = (result != null && (includeArchived || ! result.getDeleted())) ? result : null;
+        return result;
       }
   }
+
+  //
+  //  (w/o includeArchived)
+  //
+
+  protected GUIManagedObject getStoredGUIManagedObject(String guiManagedObjectID) { return getStoredGUIManagedObject(guiManagedObjectID, false); }
 
   /*****************************************
   *
@@ -360,13 +368,27 @@ public class GUIService
   *
   ****************************************/
 
-  protected Collection<GUIManagedObject> getStoredGUIManagedObjects()
+  protected Collection<GUIManagedObject> getStoredGUIManagedObjects(boolean includeArchived)
   {
     synchronized (this)
       {
-        return storedGUIManagedObjects.values();
+        List<GUIManagedObject> result = new ArrayList<GUIManagedObject>();
+        for (GUIManagedObject guiManagedObject : storedGUIManagedObjects.values())
+          {
+            if (includeArchived || ! guiManagedObject.getDeleted())
+              {
+                result.add(guiManagedObject);
+              }
+          }
+        return result;
       }
   }
+
+  //
+  //  (w/o includeArchived)
+  //
+
+  protected Collection<GUIManagedObject> getStoredGUIManagedObjects() { return getStoredGUIManagedObjects(false); }
 
   /*****************************************
   *
@@ -376,7 +398,7 @@ public class GUIService
 
   protected boolean isActiveThroughInterval(GUIManagedObject guiManagedObject, Date startDate, Date endDate)
   {
-    boolean active = (guiManagedObject != null) && guiManagedObject.getAccepted() && guiManagedObject.getActive();
+    boolean active = (guiManagedObject != null) && guiManagedObject.getAccepted() && guiManagedObject.getActive() && ! guiManagedObject.getDeleted();
     boolean activeThroughInterval = active && (guiManagedObject.getEffectiveStartDate().compareTo(startDate) <= 0) && (guiManagedObject.getEffectiveEndDate().compareTo(endDate) >= 0);
     return activeThroughInterval;
   }
@@ -452,6 +474,12 @@ public class GUIService
   public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID)
   {
     //
+    //  mark (not) deleted
+    //
+
+    guiManagedObject.markDeleted(false);
+
+    //
     //  submit to kafka
     //
 
@@ -482,10 +510,22 @@ public class GUIService
   protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID)
   {
     //
+    //  retrieve guiManagedObject (if available)
+    //
+
+    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(guiManagedObjectID, true);
+
+    //
+    //  mark deleted
+    //
+
+    if (guiManagedObject != null) guiManagedObject.markDeleted(true);
+
+    //
     //  submit to kafka
     //
 
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObjectID)), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, null)));
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObjectID)), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject)));
 
     //
     //  audit
@@ -500,7 +540,7 @@ public class GUIService
     //  process
     //
 
-    processGUIManagedObject(guiManagedObjectID, null, date);
+    processGUIManagedObject(guiManagedObjectID, guiManagedObject, date);
   }
 
   /****************************************
@@ -523,8 +563,9 @@ public class GUIService
         //  classify
         //
 
-        boolean active = accepted && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
-        boolean future = accepted && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
+        boolean active = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0) && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
+        boolean future = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive() && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
+        boolean deleted = (guiManagedObject == null) || guiManagedObject.getDeleted();
 
         //
         //  copy
@@ -541,7 +582,10 @@ public class GUIService
         if (guiManagedObject != null)
           {
             storedGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
-            serviceStatistics.updatePutCount(guiManagedObject.getGUIManagedObjectID());
+            if (! deleted)
+              serviceStatistics.updatePutCount(guiManagedObject.getGUIManagedObjectID());
+            else
+              serviceStatistics.updateRemoveCount(guiManagedObjectID);
           }
         else
           {
@@ -892,6 +936,8 @@ public class GUIService
     result.put("userName", guiManagedObject.getJSONRepresentation().get("userName"));
     result.put("groupID", guiManagedObject.getJSONRepresentation().get("groupID"));
     result.put("createdDate", guiManagedObject.getJSONRepresentation().get("createdDate"));
+    result.put("updatedDate", guiManagedObject.getJSONRepresentation().get("updatedDate"));
+    result.put("deleted", guiManagedObject.getJSONRepresentation().get("deleted") != null ? guiManagedObject.getJSONRepresentation().get("deleted") : false);
     return result;
   }
   

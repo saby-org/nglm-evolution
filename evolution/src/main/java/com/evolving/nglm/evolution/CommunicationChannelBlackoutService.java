@@ -93,7 +93,9 @@ public class CommunicationChannelBlackoutService extends GUIService
 
   public String generateCommunicationChannelBlackoutID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID) { return getStoredGUIManagedObject(blackoutPeriodID); }
+  public GUIManagedObject getStoredCommunicationChannelBlackout(String blackoutPeriodID, boolean includeArchived) { return getStoredGUIManagedObject(blackoutPeriodID, includeArchived); }
   public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredCommunicationChannelBlackouts(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveCommunicationChannelBlackout(GUIManagedObject blackoutPeriodUnchecked, Date date) { return isActiveGUIManagedObject(blackoutPeriodUnchecked, date); }
   public CommunicationChannelBlackoutPeriod getActiveCommunicationChannelBlackout(String communicationChannelID, Date date) { return (CommunicationChannelBlackoutPeriod) getActiveGUIManagedObject(communicationChannelID, date); }
   public Collection<CommunicationChannelBlackoutPeriod> getActiveCommunicationChannelBlackout(Date date) { return (Collection<CommunicationChannelBlackoutPeriod>) getActiveGUIManagedObjects(date); }

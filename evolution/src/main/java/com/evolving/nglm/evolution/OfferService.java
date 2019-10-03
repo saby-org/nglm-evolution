@@ -133,7 +133,9 @@ public class OfferService extends GUIService
 
   public String generateOfferID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredOffer(String offerID) { return getStoredGUIManagedObject(offerID); }
+  public GUIManagedObject getStoredOffer(String offerID, boolean includeArchived) { return getStoredGUIManagedObject(offerID, includeArchived); }
   public Collection<GUIManagedObject> getStoredOffers() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredOffers(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveOffer(GUIManagedObject offerUnchecked, Date date) { return isActiveGUIManagedObject(offerUnchecked, date); }
   public Offer getActiveOffer(String offerID, Date date) { return (Offer) getActiveGUIManagedObject(offerID, date); }
   public Collection<Offer> getActiveOffers(Date date) { return (Collection<Offer>) getActiveGUIManagedObjects(date); }

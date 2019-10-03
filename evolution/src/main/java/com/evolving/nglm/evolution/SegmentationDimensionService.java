@@ -94,7 +94,7 @@ public class SegmentationDimensionService extends GUIService
     //  (re-initialize lastGeneratedSegmentID)
     //
 
-    for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions())
+    for (GUIManagedObject guiManagedObject : this.getStoredSegmentationDimensions(true))
       {
         SegmentationDimension segmentationDimension = (guiManagedObject != null && guiManagedObject.getAccepted()) ? (SegmentationDimension) guiManagedObject : null;
         if (segmentationDimension != null)
@@ -244,7 +244,9 @@ public class SegmentationDimensionService extends GUIService
 
   public String generateSegmentationDimensionID() { return generateGUIManagedObjectID(); }
   public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID) { return getStoredGUIManagedObject(segmentationDimensionID); }
+  public GUIManagedObject getStoredSegmentationDimension(String segmentationDimensionID, boolean includeArchived) { return getStoredGUIManagedObject(segmentationDimensionID, includeArchived); }
   public Collection<GUIManagedObject> getStoredSegmentationDimensions() { return getStoredGUIManagedObjects(); }
+  public Collection<GUIManagedObject> getStoredSegmentationDimensions(boolean includeArchived) { return getStoredGUIManagedObjects(includeArchived); }
   public boolean isActiveSegmentationDimension(GUIManagedObject segmentationDimensionUnchecked, Date date) { return isActiveGUIManagedObject(segmentationDimensionUnchecked, date); }
   public SegmentationDimension getActiveSegmentationDimension(String segmentationDimensionID, Date date) { return (SegmentationDimension) getActiveGUIManagedObject(segmentationDimensionID, date); }
   public Collection<SegmentationDimension> getActiveSegmentationDimensions(Date date) { return (Collection<SegmentationDimension>) getActiveGUIManagedObjects(date); }
