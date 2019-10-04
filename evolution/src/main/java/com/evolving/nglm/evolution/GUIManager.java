@@ -6533,14 +6533,15 @@ public class GUIManager
 
             SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getSegmentationDimensionID());
 
-            /*****************************************
-            *
-            *  remove
-            *
-            *****************************************/
-
-            segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
           }
+
+        /*****************************************
+        *
+        *  remove
+        *
+        *****************************************/
+
+        segmentationDimensionService.removeSegmentationDimension(segmentationDimensionID, userID);
       }
 
     /*****************************************
