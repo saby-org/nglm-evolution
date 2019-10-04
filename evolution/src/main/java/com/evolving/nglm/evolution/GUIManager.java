@@ -17782,10 +17782,11 @@ public class GUIManager
         
         templateJSON.put("id", template.getSubscriberMessageTemplateID());
         templateJSON.put("name", template.getSubscriberMessageTemplateName());
-        templateJSON.put("active", template.getActive());
+        templateJSON.put("processing", subscriberMessageTemplateService.isActiveGUIManagedObject(template, SystemTime.getCurrentTime()));
         templateJSON.put("templateType", template.getTemplateType());
         templateJSON.put("message", JSONUtilities.encodeArray(messageJSON));
       }
+
     
     /*****************************************
     *
@@ -17840,18 +17841,6 @@ public class GUIManager
     offerJSON.remove("valid");
     offerJSON.remove("active");
 
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(offer.getActive() == true && offer.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    offerJSON.put("enabled" , enabled);
-
     /*****************************************
     *
     *  response
@@ -17905,18 +17894,6 @@ public class GUIManager
     productJSON.remove("valid");
     productJSON.remove("active");
 
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(product.getActive() == true && product.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    productJSON.put("enabled" , enabled);
-    
     /*****************************************
     *
     *  response
@@ -17970,18 +17947,6 @@ public class GUIManager
     presentationStrategyJSON.remove("valid");
     presentationStrategyJSON.remove("active");
 
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(presentationStrategy.getActive() == true && presentationStrategy.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    presentationStrategyJSON.put("enabled" , enabled);
-    
     /*****************************************
     *
     *  response
@@ -18034,18 +17999,6 @@ public class GUIManager
     scoringStrategyJSON.remove("accepted");
     scoringStrategyJSON.remove("valid");
     scoringStrategyJSON.remove("active");
-    
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(scoringStrategy.getActive() == true && scoringStrategy.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    scoringStrategyJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -18100,18 +18053,6 @@ public class GUIManager
     callingChannelJSON.remove("valid");
     callingChannelJSON.remove("active");
     
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(callingChannel.getActive() == true && callingChannel.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    callingChannelJSON.put("enabled" , enabled);
-
     /*****************************************
     *
     *  response
@@ -18165,18 +18106,6 @@ public class GUIManager
     salesChannelJSON.remove("valid");
     salesChannelJSON.remove("active");
     
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(salesChannel.getActive() == true && salesChannel.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    salesChannelJSON.put("enabled" , enabled);
-    
     /*****************************************
     *
     *  response
@@ -18228,19 +18157,6 @@ public class GUIManager
     communicationChannelJSON.remove("readOnly");
     communicationChannelJSON.remove("accepted");
     communicationChannelJSON.remove("valid");
-    communicationChannelJSON.remove("processing");
-    
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(communicationChannel.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    communicationChannelJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -18295,18 +18211,6 @@ public class GUIManager
     communicationChannelBlackoutPeriodJSON.remove("valid");
     communicationChannelBlackoutPeriodJSON.remove("active");
     
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(communicationChannelBlackoutPeriod.getActive() == true && communicationChannelBlackoutPeriod.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    communicationChannelBlackoutPeriodJSON.put("enabled" , enabled);
-  
     /*****************************************
     *
     *  response
@@ -18359,18 +18263,6 @@ public class GUIManager
     contactPolicyJSON.remove("accepted");
     contactPolicyJSON.remove("valid");
     contactPolicyJSON.remove("active");
-    
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(contactPolicy.getActive() == true && contactPolicy.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    contactPolicyJSON.put("enabled" , enabled);
     
     /*****************************************
     *
@@ -18425,18 +18317,6 @@ public class GUIManager
     segmentationDimensionJSON.remove("valid");
     segmentationDimensionJSON.remove("active");
     
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(segmentationDimension.getActive() == true && segmentationDimension.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    segmentationDimensionJSON.put("enabled" , enabled);
-    
     /*****************************************
     *
     *  response
@@ -18483,19 +18363,6 @@ public class GUIManager
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     //
-    //  config adapter specific
-    //
-    
-    if(journeyJSON.get("status").equals("Running"))
-      {
-        journeyJSON.put("enabled", true);
-      }
-    else
-      {
-        journeyJSON.put("enabled", false);
-      }
-    
-    //
     //  remove gui specific fields
     //
     
@@ -18510,7 +18377,6 @@ public class GUIManager
     journeyJSON.remove("description");
     journeyJSON.remove("nodes");
     journeyJSON.remove("name");
-    journeyJSON.remove("processing");
     journeyJSON.remove("effectiveStartDate");
     journeyJSON.remove("eligibilityCriteria");
     journeyJSON.remove("targetingType");
@@ -18578,21 +18444,8 @@ public class GUIManager
     journeyObjectiveJSON.remove("targetingLimitWaitingPeriodTimeUnit");
     journeyObjectiveJSON.remove("targetingLimitSlidingWindowDuration");
     journeyObjectiveJSON.remove("name");
-    journeyObjectiveJSON.remove("processing");
     journeyObjectiveJSON.remove("catalogCharacteristics");        
     journeyObjectiveJSON.remove("active");
-
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(journeyObjective.getActive() == true && journeyObjective.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    journeyObjectiveJSON.put("enabled" , enabled);
 
     /*****************************************
     *
@@ -18647,18 +18500,6 @@ public class GUIManager
     productTypeJSON.remove("valid");
     productTypeJSON.remove("active");
 
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(productType.getActive() == true && productType.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    productTypeJSON.put("enabled" , enabled);
-    
     /*****************************************
     *
     *  response
@@ -18712,18 +18553,6 @@ public class GUIManager
     offerObjectiveJSON.remove("valid");
     offerObjectiveJSON.remove("active");
 
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(offerObjective.getActive() == true && offerObjective.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    offerObjectiveJSON.put("enabled" , enabled);
-    
     /*****************************************
     *
     *  response
@@ -18852,18 +18681,6 @@ public class GUIManager
     deliverableJSON.remove("accepted");
     deliverableJSON.remove("valid");
     deliverableJSON.remove("active");
-
-    //
-    //  derived fields
-    //
-
-    Boolean enabled = false;
-    if(deliverable.getActive() == true && deliverable.getAccepted() == true)
-      {
-        enabled = true;
-      }
-      
-    deliverableJSON.put("enabled" , enabled);
 
     /*****************************************
     *

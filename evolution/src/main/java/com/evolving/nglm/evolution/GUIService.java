@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GUIService
 {
@@ -474,6 +476,14 @@ public class GUIService
   public void putGUIManagedObject(GUIManagedObject guiManagedObject, Date date, boolean newObject, String userID)
   {
     //
+    //  created/updated date
+    //
+
+    GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObject.getGUIManagedObjectID());
+    guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
+    guiManagedObject.setUpdatedDate(date);
+
+    //
     //  mark (not) deleted
     //
 
@@ -510,22 +520,24 @@ public class GUIService
   protected void removeGUIManagedObject(String guiManagedObjectID, Date date, String userID)
   {
     //
-    //  retrieve guiManagedObject (if available)
+    //  created/updated date
     //
 
-    GUIManagedObject guiManagedObject = getStoredGUIManagedObject(guiManagedObjectID, true);
+    GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObjectID);
+    existingStoredGUIManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
+    existingStoredGUIManagedObject.setUpdatedDate(date);
 
     //
     //  mark deleted
     //
 
-    if (guiManagedObject != null) guiManagedObject.markDeleted(true);
+    if (existingStoredGUIManagedObject != null) existingStoredGUIManagedObject.markDeleted(true);
 
     //
     //  submit to kafka
     //
 
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObjectID)), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, guiManagedObject)));
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(guiManagedObjectID)), guiManagedObjectSerde.optionalSerializer().serialize(guiManagedObjectTopic, existingStoredGUIManagedObject)));
 
     //
     //  audit
@@ -540,7 +552,7 @@ public class GUIService
     //  process
     //
 
-    processGUIManagedObject(guiManagedObjectID, guiManagedObject, date);
+    processGUIManagedObject(guiManagedObjectID, existingStoredGUIManagedObject, date);
   }
 
   /****************************************
@@ -558,6 +570,14 @@ public class GUIService
         //
 
         boolean accepted = (guiManagedObject != null) && guiManagedObject.getAccepted();
+
+        //
+        //  created/updated dates
+        //
+
+        GUIManagedObject existingStoredGUIManagedObject = storedGUIManagedObjects.get(guiManagedObjectID);
+        guiManagedObject.setCreatedDate((existingStoredGUIManagedObject != null && existingStoredGUIManagedObject.getCreatedDate() != null) ? existingStoredGUIManagedObject.getCreatedDate() : date);
+        guiManagedObject.setUpdatedDate(date);
 
         //
         //  classify
@@ -650,17 +670,10 @@ public class GUIService
         //  record guiManagedObjectID for autogenerate (if necessary)
         //
 
-        try
-          {
-            int objectID = Integer.parseInt(guiManagedObjectID);
-            lastGeneratedObjectID = (objectID > lastGeneratedObjectID) ? objectID : lastGeneratedObjectID;
-          }
-        catch (NumberFormatException e)
-          {
-            //
-            //  guiManagedObjectID is NOT a number, ignore
-            //
-          }
+        Pattern p = Pattern.compile("[0-9]+$");
+        Matcher m = p.matcher(guiManagedObjectID);
+        Integer objectID = m.find() ? Integer.parseInt(m.group(0)) : null;
+        lastGeneratedObjectID = (objectID != null && objectID.intValue() > lastGeneratedObjectID) ? objectID.intValue() : lastGeneratedObjectID;
 
         //
         //  statistics

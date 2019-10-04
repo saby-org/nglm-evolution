@@ -271,11 +271,9 @@ public abstract class GUIManagedObject
   *****************************************/
 
   protected void setEpoch(long epoch) { this.epoch = epoch; }
-  protected void markDeleted(boolean deleted)
-  {
-    jsonRepresentation.put("deleted", deleted);
-    this.deleted = deleted;
-  }
+  protected void setCreatedDate(Date createdDate) { this.createdDate = createdDate; jsonRepresentation.put("createdDate", formatDateField(createdDate)); }
+  protected void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; jsonRepresentation.put("updatedDate", formatDateField(updatedDate)); }
+  protected void markDeleted(boolean deleted) { this.deleted = deleted; jsonRepresentation.put("deleted", deleted); }
 
   /*****************************************
   *
@@ -411,15 +409,8 @@ public abstract class GUIManagedObject
     this.userID = JSONUtilities.decodeString(jsonRoot, "userID", false);
     this.userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     this.groupID = JSONUtilities.decodeString(jsonRoot, "groupID", false);
-    this.createdDate = (JSONUtilities.decodeString(jsonRoot, "createdDate", false) != null) ? parseDateField(JSONUtilities.decodeString(jsonRoot, "createdDate", true)) : SystemTime.getCurrentTime();
-    this.updatedDate = SystemTime.getCurrentTime();
-
-    //
-    //  add to json
-    //
-
-    this.jsonRepresentation.put("createdDate", formatDateField(this.createdDate));
-    this.jsonRepresentation.put("updatedDate", formatDateField(this.updatedDate));
+    this.createdDate = null;
+    this.updatedDate = null;
   }
 
   //
