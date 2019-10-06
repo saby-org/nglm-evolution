@@ -62,12 +62,13 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("presentationStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("transactionDurationMs", Schema.INT32_SCHEMA);
     schemaBuilder.field("offerIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("offerScores", SchemaBuilder.array(Schema.FLOAT64_SCHEMA));
     schemaBuilder.field("positions", SchemaBuilder.array(Schema.INT32_SCHEMA));
     schemaBuilder.field("controlGroupState", Schema.STRING_SCHEMA);
-    schemaBuilder.field("scoringStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("scoringGroup", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("scoringGroupID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("algorithmID", Schema.OPTIONAL_STRING_SCHEMA);        
+    schemaBuilder.field("scoringStrategyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("retailerMsisdn", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("rechargeAmount", Schema.OPTIONAL_FLOAT64_SCHEMA);
+    schemaBuilder.field("balance", Schema.OPTIONAL_FLOAT64_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -102,12 +103,13 @@ public class PresentationLog implements SubscriberStreamEvent
   private String presentationStrategyID;
   private Integer transactionDurationMs;
   private List<String> offerIDs;
+  private List<Double> offerScores;
   private List<Integer> positions;  
   private String controlGroupState;
-  private String scoringStrategyID;
-  private String scoringGroup;
-  private String scoringGroupID;
-  private String algorithmID;
+  private List<String> scoringStrategyIDs;
+  private String retailerMsisdn;
+  private Double rechargeAmount;
+  private Double balance;
   
   /****************************************
   *
@@ -126,12 +128,13 @@ public class PresentationLog implements SubscriberStreamEvent
   public String getPresentationStrategyID() { return presentationStrategyID; }
   public Integer getTransactionDurationMs() { return transactionDurationMs; }
   public List<String> getOfferIDs() { return offerIDs; }
-  public List<Integer> getPositions() { return positions; }
+  public List<Double> getOfferScores() { return offerScores; }
+  public List<Integer> getPositions() { return positions;   }
   public String getControlGroupState() { return controlGroupState; }
-  public String getScoringStrategyID() { return scoringStrategyID; }
-  public String getScoringGroup() { return scoringGroup; }
-  public String getScoringGroupID() { return scoringGroupID; }
-  public String getAlgorithmID() { return algorithmID; }
+  public List<String> getScoringStrategyIDs() { return scoringStrategyIDs; }
+  public String getRetailerMsisdn() { return retailerMsisdn; }
+  public Double getRechargeAmount() { return rechargeAmount; }
+  public Double getBalance() { return balance; }
   
   /*****************************************
   *
@@ -139,7 +142,7 @@ public class PresentationLog implements SubscriberStreamEvent
   *
   *****************************************/
 
-  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Integer> positions, String controlGroupState, String scoringStrategyID, String scoringGroup, String scoringGroupID, String algorithmID)
+  public PresentationLog(String msisdn, String subscriberID, Date eventDate, String callUniqueIdentifier, String channelID, String salesChannelID, String userID, String presentationToken, String presentationStrategyID, Integer transactionDurationMs, List<String> offerIDs, List<Double> offerScores, List<Integer> positions,   String controlGroupState, List<String> scoringStrategyIDs, String retailerMsisdn, Double rechargeAmount, Double balance)
   {
     this.msisdn = msisdn;
     this.subscriberID = subscriberID;
@@ -152,12 +155,13 @@ public class PresentationLog implements SubscriberStreamEvent
     this.presentationStrategyID = presentationStrategyID;
     this.transactionDurationMs = transactionDurationMs;
     this.offerIDs = offerIDs;
-    this.positions = positions;
+    this.offerScores = offerScores;
+    this.positions = positions;  
     this.controlGroupState = controlGroupState;
-    this.scoringStrategyID = scoringStrategyID;
-    this.scoringGroup = scoringGroup;
-    this.scoringGroupID = scoringGroupID;
-    this.algorithmID = algorithmID;
+    this.scoringStrategyIDs = scoringStrategyIDs;
+    this.retailerMsisdn = retailerMsisdn;
+    this.rechargeAmount = rechargeAmount;
+    this.balance = balance;
   }
 
   /*****************************************
@@ -182,16 +186,14 @@ public class PresentationLog implements SubscriberStreamEvent
     this.presentationToken = JSONUtilities.decodeString(jsonRoot, "presentationToken", false);
     this.presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", false);
     this.transactionDurationMs = JSONUtilities.decodeInteger(jsonRoot, "transactionDurationMs", true);
-    this.offerIDs = decodeOfferIDs(JSONUtilities.decodeJSONArray(jsonRoot, "offerIDs", false));
-    this.offerIDs = (this.offerIDs == null) ? Collections.<String>singletonList(JSONUtilities.decodeString(jsonRoot, "offerID", true)) : this.offerIDs;
-    this.positions = decodePositions(JSONUtilities.decodeJSONArray(jsonRoot, "positions", false));
-    this.positions = (this.positions == null) ? Collections.<Integer>singletonList(JSONUtilities.decodeInteger(jsonRoot, "position", false)) : this.positions;
+    this.offerIDs = decodeOfferIDs(JSONUtilities.decodeJSONArray(jsonRoot, "offerIDs", true));
+    this.offerScores = decodeOfferScores(JSONUtilities.decodeJSONArray(jsonRoot, "offerScores", true));
+    this.positions = decodePositions(JSONUtilities.decodeJSONArray(jsonRoot, "positions", true));
     this.controlGroupState = JSONUtilities.decodeString(jsonRoot, "controlGroupState", true);
-    this.scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "scoringStrategyID", false);
-    this.scoringGroup = JSONUtilities.decodeString(jsonRoot, "scoringGroup", false);
-    this.scoringGroupID = JSONUtilities.decodeString(jsonRoot, "scoringGroupID", false);
-    this.algorithmID = JSONUtilities.decodeString(jsonRoot, "algorithmID", false);
-
+    this.scoringStrategyIDs = decodeScoringStrategyIDs(JSONUtilities.decodeJSONArray(jsonRoot, "scoringStrategyIDs", true));
+    this.retailerMsisdn = JSONUtilities.decodeString(jsonRoot, "retailerMsisdn", false);
+    this.rechargeAmount = JSONUtilities.decodeDouble(jsonRoot, "rechargeAmount", false);
+    this.balance = JSONUtilities.decodeDouble(jsonRoot, "balance", false);
   }
 
   /*****************************************
@@ -202,10 +204,9 @@ public class PresentationLog implements SubscriberStreamEvent
 
   private List<String> decodeOfferIDs(JSONArray jsonArray)
   {
-    List<String> offerIDs = null;
+    List<String> offerIDs = new ArrayList<String>();
     if (jsonArray != null)
       {
-        offerIDs = new ArrayList<String>();
         for (int i=0; i<jsonArray.size(); i++)
           {
             String offerID = (String) jsonArray.get(i);
@@ -213,6 +214,26 @@ public class PresentationLog implements SubscriberStreamEvent
           }
       }
     return offerIDs;
+  }
+
+  /*****************************************
+  *
+  *  decodeOfferScores
+  *
+  *****************************************/
+
+  private List<Double> decodeOfferScores(JSONArray jsonArray)
+  {
+    List<Double> offerScores = new ArrayList<Double>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            Double score = ((Number) jsonArray.get(i)).doubleValue();
+            offerScores.add(score);
+          }
+      }
+    return offerScores;
   }
 
   /*****************************************
@@ -239,6 +260,26 @@ public class PresentationLog implements SubscriberStreamEvent
 
   /*****************************************
   *
+  *  decodeScoringStrategyIDs
+  *
+  *****************************************/
+
+  private List<String> decodeScoringStrategyIDs(JSONArray jsonArray)
+  {
+    List<String> scoringStrategyIDs = new ArrayList<String>();
+    if (jsonArray != null)
+      {
+        for (int i=0; i<jsonArray.size(); i++)
+          {
+            String scoringStrategyID = (String) jsonArray.get(i);
+            scoringStrategyIDs.add(scoringStrategyID);
+          }
+      }
+    return scoringStrategyIDs;
+  }
+
+  /*****************************************
+  *
   *  pack
   *
   *****************************************/
@@ -258,12 +299,13 @@ public class PresentationLog implements SubscriberStreamEvent
     struct.put("presentationStrategyID", presentationLog.getPresentationStrategyID());    
     struct.put("transactionDurationMs", presentationLog.getTransactionDurationMs());
     struct.put("offerIDs", presentationLog.getOfferIDs());
+    struct.put("offerScores", presentationLog.getOfferScores());
     struct.put("positions", presentationLog.getPositions());
     struct.put("controlGroupState", presentationLog.getControlGroupState());
-    struct.put("scoringStrategyID", presentationLog.getScoringStrategyID());
-    struct.put("scoringGroup", presentationLog.getScoringGroup());
-    struct.put("scoringGroupID", presentationLog.getScoringGroupID());
-    struct.put("algorithmID", presentationLog.getAlgorithmID());
+    struct.put("scoringStrategyIDs", presentationLog.getScoringStrategyIDs());
+    struct.put("retailerMsisdn", presentationLog.getRetailerMsisdn());
+    struct.put("rechargeAmount", presentationLog.getRechargeAmount());
+    struct.put("balance", presentationLog.getBalance());
     return struct;
   }
 
@@ -305,17 +347,18 @@ public class PresentationLog implements SubscriberStreamEvent
     String presentationStrategyID = valueStruct.getString("presentationStrategyID");
     Integer transactionDurationMs = valueStruct.getInt32("transactionDurationMs");
     List<String> offerIDs = (List<String>) valueStruct.get("offerIDs");
+    List<Double> offerScores = (List<Double>) valueStruct.get("offerScores");
     List<Integer> positions = (List<Integer>) valueStruct.get("positions");
     String controlGroupState = valueStruct.getString("controlGroupState");
-    String scoringStrategyID = valueStruct.getString("scoringStrategyID");
-    String scoringGroup = valueStruct.getString("scoringGroup");
-    String scoringGroupID = valueStruct.getString("scoringGroupID");
-    String algorithmID = valueStruct.getString("controlGroupState");    
+    List<String> scoringStrategyIDs = (List<String>) valueStruct.get("scoringStrategyIDs");
+    String retailerMsisdn = valueStruct.getString("retailerMsisdn");
+    Double rechargeAmount = valueStruct.getFloat64("rechargeAmount");
+    Double balance = valueStruct.getFloat64("balance");    
     
     //
     //  return
     //
 
-    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, positions, controlGroupState, scoringStrategyID, scoringGroup, scoringGroupID, algorithmID);
+    return new PresentationLog(msisdn, subscriberID, eventDate, callUniqueIdentifier, channelID, salesChannelID, userID, presentationToken, presentationStrategyID, transactionDurationMs, offerIDs, offerScores, positions, controlGroupState, scoringStrategyIDs, retailerMsisdn, rechargeAmount, balance);
   }
 }

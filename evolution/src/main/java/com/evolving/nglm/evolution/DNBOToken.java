@@ -47,7 +47,7 @@ public class DNBOToken extends Token {
     schemaBuilder.field("presentationStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("isAutoBounded", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isAutoRedeemed", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("presentedOffersIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("presentedOfferIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -74,7 +74,7 @@ public class DNBOToken extends Token {
   private String presentationStrategyID;        // reference to the {@link PresentationStrategy} used to configure the Token.
   private boolean isAutoBounded;
   private boolean isAutoRedeemed;
-  private List<String> presentedOffersIDs;      // list of offersIDs presented to the subscriber, in the same order they were presented.
+  private List<String> presentedOfferIDs;      // list of offersIDs presented to the subscriber, in the same order they were presented.
   private String acceptedOfferID;               // offer that has been accepted  if any, null otherwise.
 
   /****************************************
@@ -90,7 +90,7 @@ public class DNBOToken extends Token {
   public String getPresentationStrategyID() { return presentationStrategyID; }
   public boolean isAutoBounded() { return isAutoBounded; }
   public boolean isAutoRedeemed() { return isAutoRedeemed; }
-  public List<String> getPresentedOffersIDs() { return presentedOffersIDs; }
+  public List<String> getPresentedOfferIDs() { return presentedOfferIDs; }
   public String getAcceptedOfferID() { return acceptedOfferID; }
 
   //
@@ -100,7 +100,7 @@ public class DNBOToken extends Token {
   public void setPresentationStrategyID(String presentationStrategyID) { this.presentationStrategyID = presentationStrategyID; }
   public void setAutoBounded(boolean isAutoBounded) { this.isAutoBounded = isAutoBounded; }
   public void setAutoRedeemed(boolean isAutoRedeemed) { this.isAutoRedeemed = isAutoRedeemed; }
-  public void setPresentedOffersIDs(List<String> presentedOffersIDs) { this.presentedOffersIDs = presentedOffersIDs; }
+  public void setPresentedOfferIDs(List<String> presentedOfferIDs) { this.presentedOfferIDs = presentedOfferIDs; }
   public void setAcceptedOfferID(String acceptedOfferID) { this.acceptedOfferID = acceptedOfferID; }
 
   /*****************************************
@@ -113,13 +113,13 @@ public class DNBOToken extends Token {
       Date redeemedDate, Date tokenExpirationDate, int boundedCount, String eventID,
       String subscriberID, String tokenTypeID, String moduleID, Integer featureID,
       String presentationStrategyID, boolean isAutoBounded, boolean isAutoRedeemed,
-      List<String> presentedOffersIDs, String acceptedOfferID) {
+      List<String> presentedOfferIDs, String acceptedOfferID) {
     super(tokenCode, tokenStatus, creationDate, boundedDate, redeemedDate, tokenExpirationDate,
         boundedCount, eventID, subscriberID, tokenTypeID, moduleID, featureID);
     this.presentationStrategyID = presentationStrategyID;
     this.isAutoBounded = isAutoBounded;
     this.isAutoRedeemed = isAutoRedeemed;
-    this.presentedOffersIDs = presentedOffersIDs;
+    this.presentedOfferIDs = presentedOfferIDs;
     this.acceptedOfferID = acceptedOfferID;
   }
 
@@ -145,7 +145,7 @@ public class DNBOToken extends Token {
         null,                                                            // presentationStrategyID
         false,                                                           // isAutoBounded
         false,                                                           // isAutoRedeemed
-        new ArrayList<String>(),                                         // presentedOffersIDs
+        new ArrayList<String>(),                                         // presentedOfferIDs
         null);                                                           // acceptedOfferID
   }
 
@@ -156,13 +156,13 @@ public class DNBOToken extends Token {
    *****************************************/
 
   protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, boolean isAutoBounded, boolean isAutoRedeemed,
-      List<String> presentedOffersIDs, String acceptedOfferID)
+      List<String> presentedOfferIDs, String acceptedOfferID)
   {
     super(schemaAndValue);
     this.presentationStrategyID = presentationStrategyID;
     this.isAutoBounded = isAutoBounded;
     this.isAutoRedeemed = isAutoRedeemed;
-    this.presentedOffersIDs = presentedOffersIDs;
+    this.presentedOfferIDs = presentedOfferIDs;
     this.acceptedOfferID = acceptedOfferID;
 
   }
@@ -182,7 +182,7 @@ public class DNBOToken extends Token {
     struct.put("presentationStrategyID",dnboToken.getPresentationStrategyID());
     struct.put("isAutoBounded", dnboToken.isAutoBounded());
     struct.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
-    struct.put("presentedOffersIDs", dnboToken.getPresentedOffersIDs());
+    struct.put("presentedOfferIDs", dnboToken.getPresentedOfferIDs());
     struct.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
     return struct;
   }
@@ -211,7 +211,7 @@ public class DNBOToken extends Token {
     String presentationStrategyID = valueStruct.getString("presentationStrategyID");
     boolean isAutoBounded = valueStruct.getBoolean("isAutoBounded");
     boolean isAutoRedeemed = valueStruct.getBoolean("isAutoRedeemed");
-    List<String> presentedOffersIDs = (List<String>) valueStruct.get("presentedOffersIDs");
+    List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
     String acceptedOfferID = valueStruct.getString("acceptedOfferID");
 
     //
@@ -224,6 +224,6 @@ public class DNBOToken extends Token {
 
     return new DNBOToken(schemaAndValue,
         presentationStrategyID, isAutoBounded, isAutoRedeemed,
-        presentedOffersIDs, acceptedOfferID);
+        presentedOfferIDs, acceptedOfferID);
   }
 }

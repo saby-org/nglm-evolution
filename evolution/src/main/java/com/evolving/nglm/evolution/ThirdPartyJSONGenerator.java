@@ -221,7 +221,7 @@ public class ThirdPartyJSONGenerator
         tokenMap.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
         
         ArrayList<Object> presentedOffersList = new ArrayList<>();
-        for (String offerID : dnboToken.getPresentedOffersIDs())
+        for (String offerID : dnboToken.getPresentedOfferIDs())
           {
             presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, now)));
           }

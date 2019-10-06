@@ -241,21 +241,21 @@ public class DNBOUtils
                 throw new ServerRuntimeException("unknown offer while scoring : " + e.getLocalizedMessage()); 
               }
             //   store list of offerIds in parameterMap
-            ArrayList<String> presentedOffersIDs = new ArrayList<>();
+            ArrayList<String> presentedOfferIDs = new ArrayList<>();
             for (ProposedOfferDetails presentedOffer : presentedOffers)
               {
-                presentedOffersIDs.add(presentedOffer.getOfferId());
+                presentedOfferIDs.add(presentedOffer.getOfferId());
               }
-            parameterMap.put("presentedOffersIDs", presentedOffersIDs);
+            parameterMap.put("presentedOfferIDs", presentedOfferIDs);
 
             if (choiceField == ChoiceField.AutomaticRedeem)
               {
-                if (presentedOffersIDs.isEmpty())
+                if (presentedOfferIDs.isEmpty())
                   {
                     throw new ServerRuntimeException("cannot select first offer because list is empty");                           
                   }
                 //   select 1st offer of the list
-                String acceptedOfferID = presentedOffersIDs.get(0);
+                String acceptedOfferID = presentedOfferIDs.get(0);
                 parameterMap.put("acceptedOffersID", acceptedOfferID);
 
                 // TODO

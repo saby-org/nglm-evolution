@@ -3035,33 +3035,29 @@ public class ThirdPartyManager
       String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
       String presentationStrategyID = strategyID; // HACK, see above
       String controlGroupState = "controlGroupState";
-      String scoringGroup = "scoringGroup";
-      String scoringGroupeID = "scoringGroupeID";
-      String algorithmID = "algorithmID";
 
-      ArrayList<String> presentedOffersIDs = new ArrayList<>();
+      ArrayList<String> presentedOfferIDs = new ArrayList<>();
+      List<Integer> positions = new ArrayList<Integer>();
+      List<Double> presentedOfferScores = new ArrayList<Double>();
+      List<String> scoringStrategyIDs = new ArrayList<String>();
+      int position = 0;
       for (ProposedOfferDetails presentedOffer : presentedOffers)
         {
-          presentedOffersIDs.add(presentedOffer.getOfferId());
-        }
-
-      int transactionDurationMs = 0; // TODO
-
-      List<Integer> positions = new ArrayList<>();
-      int position = 0;
-      for (String offerId : presentedOffersIDs)
-        {
+          presentedOfferIDs.add(presentedOffer.getOfferId());
           positions.add(new Integer(position));
           position++;
+          presentedOfferScores.add(1.0);
+          scoringStrategyIDs.add(strategyID);
         }
+      int transactionDurationMs = 0; // TODO
       String salesChannelID = "0"; // No sales channel used in this case (= all channels)
       PresentationLog presentationLog = new PresentationLog(
           subscriberID, subscriberID, now, 
           "callUniqueIdentifier", channelID, salesChannelID, userID,
           tokenCode, 
           presentationStrategyID, transactionDurationMs, 
-          presentedOffersIDs, positions, 
-          controlGroupState, strategyID, scoringGroup, scoringGroupeID, algorithmID
+          presentedOfferIDs, presentedOfferScores, positions, 
+          controlGroupState, scoringStrategyIDs, null, null, null
           );
 
       //
@@ -3086,7 +3082,7 @@ public class ThirdPartyManager
       // Update token locally, so that it is correctly displayed in the response
       // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
       
-      subscriberStoredToken.setPresentedOffersIDs(presentedOffersIDs);
+      subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
       subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
       if (subscriberStoredToken.getCreationDate() == null)
         {
@@ -3207,7 +3203,7 @@ public class ThirdPartyManager
 
       // Check that offer has been presented to customer
       
-      List<String> offers = subscriberStoredToken.getPresentedOffersIDs();
+      List<String> offers = subscriberStoredToken.getPresentedOfferIDs();
       int position = 0;
       boolean found = false;
       for (String offerId : offers)
@@ -3243,6 +3239,7 @@ public class ThirdPartyManager
       String callUniqueIdentifier = origin;
       String controlGroupState = "controlGroupState";
       String channelID = "channelID";
+      Integer actionCall = 1;
       int transactionDurationMs = 0;
       // TODO END
       
@@ -3255,7 +3252,7 @@ public class ThirdPartyManager
           callUniqueIdentifier, channelID, salesChannelID,
           userID, tokenCode,
           presentationStrategyID, transactionDurationMs,
-          controlGroupState, offerID, fulfilledDate, position);
+          controlGroupState, offerID, fulfilledDate, position, actionCall);
       
       //
       //  submit to kafka

@@ -2504,11 +2504,11 @@ public class EvolutionEngine
               }
             subscriberStoredToken.setAutoRedeemed(isAutoRedeemed);
             
-            if (subscriberProfileForceUpdate.getParameterMap().containsKey("presentedOffersIDs"))
+            if (subscriberProfileForceUpdate.getParameterMap().containsKey("presentedOfferIDs"))
               {
                 // this was sent by a journey with AutomaticAllocation or AutomaticRedeem
-                List<String> presentedOffersIDs = (List<String>) subscriberProfileForceUpdate.getParameterMap().get("presentedOffersIDs");
-                subscriberStoredToken.setPresentedOffersIDs(presentedOffersIDs);
+                List<String> presentedOfferIDs = (List<String>) subscriberProfileForceUpdate.getParameterMap().get("presentedOfferIDs");
+                subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
               }            
             if (subscriberProfileForceUpdate.getParameterMap().containsKey("acceptedOffersID"))
               {
@@ -3464,7 +3464,7 @@ public class EvolutionEngine
         if (boundCount < maxNumberofPlays)
           {
             subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
-            subscriberStoredToken.setPresentedOffersIDs(presentationLog.getOfferIDs()); // replace whatever was there 
+            subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there 
             subscriberStateUpdated = true;
           }
       } else if(evolutionEvent instanceof AcceptanceLog) {
@@ -3490,7 +3490,7 @@ public class EvolutionEngine
       // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
       //
       
-      if(subscriberStoredToken.getPresentedOffersIDs().size() > 0 &&
+      if(subscriberStoredToken.getPresentedOfferIDs().size() > 0 &&
           subscriberStoredToken.getAcceptedOfferID() != null) {
             
         // 
@@ -3519,7 +3519,7 @@ public class EvolutionEngine
   private static List<PropensityEventOutput> retrievePropensityOutputs(DNBOToken token, SubscriberProfile subscriberProfile)
   {
     List<PropensityEventOutput> result = new ArrayList<PropensityEventOutput>();
-    for(String offerID: token.getPresentedOffersIDs())
+    for(String offerID: token.getPresentedOfferIDs())
       {
         result.add(new PropensityEventOutput(new PropensityKey(offerID, subscriberProfile, subscriberGroupEpochReader), offerID.equals(token.getAcceptedOfferID())));
       }
