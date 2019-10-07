@@ -34,24 +34,23 @@ public class ContactPolicyCommunicationChannels
 
   public enum ContactType
   {
-    CallToAction("callToAction", "Call To Action", DeliveryPriority.Standard, true),
+    CallToAction("callToAction", "Advertising", DeliveryPriority.Standard, true),
+    Response("response", "Bonus Message", DeliveryPriority.High, false),
     Reminder("reminder", "Reminder", DeliveryPriority.Standard, true),
-    Response("response", "Response", DeliveryPriority.Urgent, false),
-    Announcement("announcement", "Announcement", DeliveryPriority.Standard, true),
+    Announcement("announcement", "Announcement", DeliveryPriority.Urgent, false),
     ActionNotification("actionNotification", "Action Notification", DeliveryPriority.Urgent, false),
     Unknown("(unknown)", "(unknown)", DeliveryPriority.Unknown, false);
     private String externalRepresentation;
     private String display;
     private DeliveryPriority deliveryPriority;
-    private boolean checkContactPolicy;
-    private ContactType(String externalRepresentation, String display, DeliveryPriority deliveryPriority, boolean checkContactPolicy) { this.externalRepresentation = externalRepresentation; this.display = display; this.deliveryPriority = deliveryPriority; this.checkContactPolicy = checkContactPolicy; }
+    private boolean restricted;
+    private ContactType(String externalRepresentation, String display, DeliveryPriority deliveryPriority, boolean restricted) { this.externalRepresentation = externalRepresentation; this.display = display; this.deliveryPriority = deliveryPriority; this.restricted = restricted; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getDisplay() { return display; }
     public DeliveryPriority getDeliveryPriority() { return deliveryPriority; }
-    public boolean getCheckContactPolicy() { return checkContactPolicy; }
+    public boolean getRestricted() { return restricted; }
     public static ContactType fromExternalRepresentation(String externalRepresentation) { for (ContactType enumeratedValue : ContactType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
-  
   
   /*****************************************
   *

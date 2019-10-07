@@ -103,7 +103,7 @@ public class BaseSplit
   *
   *****************************************/
 
-  BaseSplit(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot) throws GUIManagerException
+  BaseSplit(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, boolean resetSegmentIDs) throws GUIManagerException
   {
     this.splitName = JSONUtilities.decodeString(jsonRoot, "splitName", true);
 
@@ -163,7 +163,7 @@ public class BaseSplit
     //  segments
     //
 
-    this.segments = decodeSegmentRanges(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", false), rangeVariableDependentOnExtendedSubscriberProfile || profileCriteriaDependentOnExtendedSubscriberProfile);
+    this.segments = decodeSegmentRanges(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", false), rangeVariableDependentOnExtendedSubscriberProfile || profileCriteriaDependentOnExtendedSubscriberProfile, resetSegmentIDs);
   }
 
   /*****************************************
@@ -189,7 +189,7 @@ public class BaseSplit
   *
   *****************************************/
 
-  private List<SegmentRanges> decodeSegmentRanges(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean dependentOnExtendedSubscriberProfile) throws GUIManagerException
+  private List<SegmentRanges> decodeSegmentRanges(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean dependentOnExtendedSubscriberProfile, boolean resetSegmentIDs) throws GUIManagerException
   {
     if(jsonArray == null){
       return null;
@@ -199,7 +199,7 @@ public class BaseSplit
       {
         JSONObject segment = (JSONObject) jsonArray.get(i);
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
-        if (segmentID == null)
+        if (segmentID == null || resetSegmentIDs)
           {
             segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);

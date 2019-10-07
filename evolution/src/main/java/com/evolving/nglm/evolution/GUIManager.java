@@ -786,9 +786,10 @@ public class GUIManager
       }      
     };
     segmentationDimensionService.registerListener(dynamicEventDeclarationsListener);
+
     /*****************************************
     *
-    *  Elasticsearch -- client
+    *  elasticsearch -- client
     *
     *****************************************/
 
@@ -1317,9 +1318,9 @@ public class GUIManager
         // remove all existing simple profile dimensions
         //
 
-        for(GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions())
+        for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions())
           {
-            if(dimensionObject instanceof SegmentationDimension)
+            if (dimensionObject instanceof SegmentationDimension)
               {
                 SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
                 if(dimension.getIsSimpleProfileDimension())
@@ -1342,16 +1343,9 @@ public class GUIManager
         Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.getCriterionFields();
         for (CriterionField criterion : profileCriterionFields.values())
           {
-            log.debug("SimpleProfileDimension : handling field '"+criterion.getName()+"' ...");
             List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false);
-            if (availableValues != null && !availableValues.isEmpty())
+            if (availableValues != null && availableValues.size() > 0)
               {
-                //
-                //  log
-                //
-
-                log.debug("     field '"+criterion.getName()+"' : field has availableValues => create a new dimension");
-
                 //
                 // create dimension
                 //
@@ -1360,7 +1354,7 @@ public class GUIManager
                 HashMap<String,Object> newSimpleProfileDimensionJSON = new HashMap<String,Object>();
                 newSimpleProfileDimensionJSON.put("isSimpleProfileDimension", true);
                 newSimpleProfileDimensionJSON.put("id", dimensionID);
-                newSimpleProfileDimensionJSON.put("name", criterion.getName());
+                newSimpleProfileDimensionJSON.put("name", normalizeSegmentName(criterion.getName()));
                 newSimpleProfileDimensionJSON.put("display", criterion.getDisplay());
                 newSimpleProfileDimensionJSON.put("description", "Simple profile criteria (from "+criterion.getName()+")");
                 newSimpleProfileDimensionJSON.put("targetingType", SegmentationDimensionTargetingType.ELIGIBILITY.getExternalRepresentation());
@@ -1386,7 +1380,7 @@ public class GUIManager
                           String stringValueID = JSONUtilities.decodeString(availableValue, "id", true);
                           String stringValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
                           segmentJSON.put("id", dimensionID + "." + stringValueID);
-                          segmentJSON.put("name", normalizeSegmentName(criterion.getName() + "." + stringValueDisplay));
+                          segmentJSON.put("name", normalizeSegmentName(stringValueDisplay));
                           if (!newSimpleProfileDimensionSegments.isEmpty())
                             {
                               // first element is the default value => fill criteria for all values except the first
@@ -1411,7 +1405,7 @@ public class GUIManager
                           boolean booleanValueID = JSONUtilities.decodeBoolean(availableValue, "id", true);
                           String booleanValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
                           segmentJSON.put("id", dimensionID + "." + booleanValueID);
-                          segmentJSON.put("name", normalizeSegmentName(criterion.getName() + "." + booleanValueDisplay));
+                          segmentJSON.put("name", normalizeSegmentName(booleanValueDisplay));
                           if (!newSimpleProfileDimensionSegments.isEmpty())
                             {
                               // first element is the default value => fill criteria for all values except the first
@@ -1436,7 +1430,7 @@ public class GUIManager
                           int intValueID = JSONUtilities.decodeInteger(availableValue, "id", true);
                           String intValueDisplay = JSONUtilities.decodeString(availableValue, "display", true);
                           segmentJSON.put("id", dimensionID + "." + intValueID);
-                          segmentJSON.put("name", normalizeSegmentName(criterion.getName() + "." + intValueDisplay));
+                          segmentJSON.put("name", normalizeSegmentName(intValueDisplay));
                           if (!newSimpleProfileDimensionSegments.isEmpty())
                             {
                               // first element is the default value => fill criteria for all values except the first
@@ -1460,14 +1454,8 @@ public class GUIManager
                   }
 
                 newSimpleProfileDimensionJSON.put("segments", JSONUtilities.encodeArray(newSimpleProfileDimensionSegments));
-
                 JSONObject newSimpleProfileDimension = JSONUtilities.encodeObject(newSimpleProfileDimensionJSON);
                 processPutSegmentationDimension("0", newSimpleProfileDimension);
-                log.debug("     field '"+criterion.getName()+"' : field has availableValues => new dimension CREATED "+newSimpleProfileDimension);
-              }
-            else
-              {
-                log.debug("     field '"+criterion.getName()+"' : field DO NOT have availableValues => NO dimension created");
               }
           }
       }
@@ -6299,10 +6287,12 @@ public class GUIManager
     *****************************************/
 
     String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    boolean resetSegmentIDs = false;
     if (segmentationDimensionID == null)
       {
         segmentationDimensionID = subscriberGroupSharedIDService.generateID();
         jsonRoot.put("id", segmentationDimensionID);
+        resetSegmentIDs = true;
       }
 
     /*****************************************
@@ -6348,15 +6338,15 @@ public class GUIManager
         switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
           {
             case ELIGIBILITY:
-              segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+              segmentationDimension = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
               break;
 
             case RANGES:
-              segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+              segmentationDimension = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
               break;
 
             case FILE:
-              segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension);
+              segmentationDimension = new SegmentationDimensionFileImport(segmentationDimensionService, jsonRoot, epoch, existingSegmentationDimension, resetSegmentIDs);
               break;
 
             case Unknown:
@@ -6625,7 +6615,7 @@ public class GUIManager
         switch (SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true)))
           {
             case RANGES:
-              segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+              segmentationDimensionRanges = new SegmentationDimensionRanges(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
               break;
 
             case Unknown:
@@ -7040,7 +7030,7 @@ public class GUIManager
       {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
         List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null);
+        SegmentationDimensionEligibility segmentationDimensionEligibility = new SegmentationDimensionEligibility(segmentationDimensionService, jsonRoot, epochServer.getKey(), null, false);
         for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
           {
             BoolQueryBuilder query = QueryBuilders.boolQuery();
@@ -21801,9 +21791,9 @@ public class GUIManager
   *
   *****************************************/
 
-  private String normalizeSegmentName(String segmentName)
+  public static String normalizeSegmentName(String segmentName)
   {
-    return segmentName.replace(" ",".");
+    return segmentName.replace(" ",".").toLowerCase();
   }
 
   /*****************************************

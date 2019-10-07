@@ -220,6 +220,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("htmlBodyTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("textBodyTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
@@ -253,6 +254,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     private List<String> htmlBodyTags;
     private List<String> textBodyTags;
     private boolean confirmationExpected;
+    private boolean restricted;
     private MAILMessageStatus status;
     private int returnCode;
     private String returnCodeDetails;
@@ -269,6 +271,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public List<String> getHtmlBodyTags() { return htmlBodyTags; }
     public List<String> getTextBodyTags() { return textBodyTags; }
     public boolean getConfirmationExpected() { return confirmationExpected; }
+    public boolean getRestricted() { return restricted; }
     public MAILMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
@@ -284,6 +287,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     //
 
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
+    public void setRestricted(boolean restricted) { this.restricted = restricted; }
     public void setMessageStatus(MAILMessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
@@ -394,7 +398,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, MAILMessageStatus status, String returnCodeDetails)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MAILMessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -405,6 +409,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.htmlBodyTags = htmlBodyTags;
       this.textBodyTags = textBodyTags;
       this.confirmationExpected = confirmationExpected;
+      this.restricted = restricted;
       this.status = status;
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
@@ -427,6 +432,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       this.htmlBodyTags = mailNotificationManagerRequest.getHtmlBodyTags();
       this.textBodyTags = mailNotificationManagerRequest.getTextBodyTags();
       this.confirmationExpected = mailNotificationManagerRequest.getConfirmationExpected();
+      this.restricted = mailNotificationManagerRequest.getRestricted();
       this.status = mailNotificationManagerRequest.getMessageStatus();
       this.returnCode = mailNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = mailNotificationManagerRequest.getReturnCodeDetails();
@@ -462,6 +468,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       struct.put("htmlBodyTags", notificationRequest.getHtmlBodyTags());
       struct.put("textBodyTags", notificationRequest.getTextBodyTags());
       struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
+      struct.put("restricted", notificationRequest.getRestricted());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       return struct;
@@ -502,6 +509,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       List<String> htmlBodyTags = (List<String>) valueStruct.get("htmlBodyTags");
       List<String> textBodyTags = (List<String>) valueStruct.get("textBodyTags");
       boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
+      boolean restricted = valueStruct.getBoolean("restricted");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MAILMessageStatus status = MAILMessageStatus.fromReturnCode(returnCode);
@@ -510,7 +518,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       //  return
       //
 
-      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, status, returnCodeDetails);
+      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, restricted, status, returnCodeDetails);
     }
     
     /****************************************
@@ -612,6 +620,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       ContactType contactType = ContactType.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype"));
       String fromAddress = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.fromaddress") : "TBD";
       boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
+      boolean restricted = contactType.getRestricted();
 
       /*****************************************
       *
@@ -659,6 +668,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
+          request.setRestricted(restricted);
           request.setDeliveryPriority(contactType.getDeliveryPriority());
         }
       else

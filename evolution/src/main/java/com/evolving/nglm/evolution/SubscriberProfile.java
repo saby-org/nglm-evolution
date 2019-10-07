@@ -342,7 +342,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null ? subscriberGroupEpochReader.get(dimensionID).getEpoch() : 0))
               {
                 Segment segment = segmentationDimensionService.getSegment(segmentID);
-                result.add(segment.getName());
+                result.add(GUIManager.normalizeSegmentName(segmentationDimension.getSegmentationDimensionName() + "." + segment.getName()));
               }
           }
       }

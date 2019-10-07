@@ -537,7 +537,7 @@ public class CriterionField extends DeploymentManagedObject
                   break;
 
                 case DoubleCriterion:
-                  if (criterionFieldValue instanceof Float) criterionFieldValue = new Double(((Float) criterionFieldValue).doubleValue());
+                  if (criterionFieldValue instanceof Number && ! (criterionFieldValue instanceof Double)) criterionFieldValue = new Double(((Number) criterionFieldValue).doubleValue());
                   if (! (criterionFieldValue instanceof Double)) throw new CriterionException("criterionField " + this + " expected double retrieved " + criterionFieldValue.getClass());
                   break;
 

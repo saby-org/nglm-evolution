@@ -192,7 +192,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionEligibility(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked) throws GUIManagerException
+  public SegmentationDimensionEligibility(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
   {
     /*****************************************
     *
@@ -216,7 +216,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
     *
     *****************************************/
 
-    this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true));
+    this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true), resetSegmentIDs);
     
     /*****************************************
     *
@@ -236,14 +236,14 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
   *
   *****************************************/
 
-  private List<SegmentEligibility> decodeSegments(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray) throws GUIManagerException
+  private List<SegmentEligibility> decodeSegments(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs) throws GUIManagerException
    {
     List<SegmentEligibility> result = new ArrayList<SegmentEligibility>();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject segment = (JSONObject) jsonArray.get(i);
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
-        if (segmentID == null)
+        if (segmentID == null || resetSegmentIDs)
           {
             segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);

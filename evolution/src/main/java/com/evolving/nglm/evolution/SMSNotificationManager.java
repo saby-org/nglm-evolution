@@ -227,6 +227,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("templateID", Schema.STRING_SCHEMA);
       schemaBuilder.field("messageTags", SchemaBuilder.array(Schema.STRING_SCHEMA));
       schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("flashSMS", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
@@ -259,6 +260,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     private String templateID;
     private List<String> messageTags;
     private boolean confirmationExpected;
+    private boolean restricted;
     private boolean flashSMS;
     private SMSMessageStatus status;
     private int returnCode;
@@ -274,6 +276,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public String getTemplateID() { return templateID; }
     public List<String> getMessageTags() { return messageTags; }
     public boolean getConfirmationExpected() { return confirmationExpected; }
+    public boolean getRestricted() { return restricted; }
     public boolean getFlashSMS() { return flashSMS; }
     public SMSMessageStatus getMessageStatus() { return status; }
     public int getReturnCode() { return returnCode; }
@@ -290,6 +293,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //
 
     public void setConfirmationExpected(boolean confirmationExpected) { this.confirmationExpected = confirmationExpected; }
+    public void setRestricted(boolean restricted) { this.restricted = restricted; }
     public void setFlashSMS(boolean flashSMS) { this.flashSMS = flashSMS; }
     public void setMessageStatus(SMSMessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
@@ -369,7 +373,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, boolean flashSMS, SMSMessageStatus status, String returnCodeDetails)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, boolean restricted, boolean flashSMS, SMSMessageStatus status, String returnCodeDetails)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -378,6 +382,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.templateID = templateID;
       this.messageTags = messageTags;
       this.confirmationExpected = confirmationExpected;
+      this.restricted = restricted;
       this.flashSMS = flashSMS;
       this.status = status;
       this.returnCode = status.getReturnCode();
@@ -399,6 +404,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       this.templateID = smsNotificationManagerRequest.getTemplateID();
       this.messageTags = smsNotificationManagerRequest.getMessageTags();
       this.confirmationExpected = smsNotificationManagerRequest.getConfirmationExpected();
+      this.restricted = smsNotificationManagerRequest.getRestricted();
       this.flashSMS = smsNotificationManagerRequest.getFlashSMS();
       this.status = smsNotificationManagerRequest.getMessageStatus();
       this.returnCode = smsNotificationManagerRequest.getReturnCode();
@@ -433,6 +439,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       struct.put("templateID", notificationRequest.getTemplateID());
       struct.put("messageTags", notificationRequest.getMessageTags());
       struct.put("confirmationExpected", notificationRequest.getConfirmationExpected());
+      struct.put("restricted", notificationRequest.getRestricted());
       struct.put("flashSMS", notificationRequest.getFlashSMS());
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
@@ -472,6 +479,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       String templateID = valueStruct.getString("templateID");
       List<String> messageTags = (List<String>) valueStruct.get("messageTags");
       boolean confirmationExpected = valueStruct.getBoolean("confirmationExpected");
+      boolean restricted = valueStruct.getBoolean("restricted");
       boolean flashSMS = valueStruct.getBoolean("flashSMS");
       Integer returnCode = valueStruct.getInt32("returnCode");
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
@@ -481,7 +489,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       //  return
       //
 
-      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, flashSMS, status, returnCodeDetails);
+      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, restricted, flashSMS, status, returnCodeDetails);
     }
     
     /****************************************
@@ -584,6 +592,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       ContactType contactType = ContactType.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype"));
       String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
       boolean confirmationExpected = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.confirmationexpected");
+      boolean restricted = contactType.getRestricted();
       boolean flashSMS = (Boolean) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.flashsms");
 
       /*****************************************
@@ -613,6 +622,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
+          request.setRestricted(restricted);
           request.setFlashSMS(flashSMS);
           request.setDeliveryPriority(contactType.getDeliveryPriority());
         }

@@ -2683,16 +2683,27 @@ public class EvolutionEngine
                               CriterionDataType dataType = baseMetric.getFieldDataType();
                               switch (dataType) {
                                   case IntegerCriterion:
-                                    if(segment.getRangeMin() != null){
-                                      minValueOK = (normalized != null) && (Long)normalized >= segment.getRangeMin(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
-                                    }
-                                    if(segment.getRangeMax() != null){
-                                      minValueOK = (normalized == null) || (Long)normalized < segment.getRangeMax(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
-                                    }
+                                    if(segment.getRangeMin() != null)
+                                      {
+                                        minValueOK = (normalized != null) && (Long) normalized >= segment.getRangeMin(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
+                                      }
+                                    if(segment.getRangeMax() != null)
+                                      {
+                                        maxValueOK = (normalized == null) || (Long) normalized < segment.getRangeMax(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
+                                      }
+                                    break;
+
+                                  case DoubleCriterion:
+                                      {
+                                        minValueOK = (normalized != null) && (Double) normalized >= segment.getRangeMin(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
+                                      }
+                                    if(segment.getRangeMax() != null)
+                                      {
+                                        maxValueOK = (normalized == null) || (Double) normalized < segment.getRangeMax(); //TODO SCH : FIX OPERATOR ... for now we are assuming it is like [valMin - valMax[ ...
+                                      }
                                     break;
 
                                   default: //TODO : will need to handle those dataTypes in a future version ...
-                                    // DoubleCriterion
                                     // StringCriterion
                                     // BooleanCriterion
                                     // DateCriterion

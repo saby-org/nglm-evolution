@@ -200,7 +200,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionFileImport(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked) throws GUIManagerException
+  public SegmentationDimensionFileImport(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
   {
     /*****************************************
     *
@@ -225,7 +225,7 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
     *****************************************/
 
     this.dimensionFileID = JSONUtilities.decodeString(jsonRoot, "dimensionFileID", true);
-    this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true));
+    this.segments = decodeSegments(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "segments", true), resetSegmentIDs);
     
     /*****************************************
     *
@@ -245,14 +245,14 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   *
   *****************************************/
 
-  private List<SegmentFileImport> decodeSegments(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray) throws GUIManagerException
+  private List<SegmentFileImport> decodeSegments(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs) throws GUIManagerException
    {
     List<SegmentFileImport> result = new ArrayList<SegmentFileImport>();
     for (int i=0; i<jsonArray.size(); i++)
       {
         JSONObject segment = (JSONObject) jsonArray.get(i);
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
-        if (segmentID == null)
+        if (segmentID == null || resetSegmentIDs)
           {
             segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);

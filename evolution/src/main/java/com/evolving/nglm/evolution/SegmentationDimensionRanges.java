@@ -209,7 +209,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   *
   *****************************************/
 
-  public SegmentationDimensionRanges(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked) throws GUIManagerException
+  public SegmentationDimensionRanges(SegmentationDimensionService segmentationDimensionService, JSONObject jsonRoot, long epoch, GUIManagedObject existingSegmentationDimensionUnchecked, boolean resetSegmentIDs) throws GUIManagerException
   {
     /*****************************************
     *
@@ -233,7 +233,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
     *
     *****************************************/
 
-    this.baseSplit = decodeBaseSplit(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "baseSplit", true));
+    this.baseSplit = decodeBaseSplit(segmentationDimensionService, JSONUtilities.decodeJSONArray(jsonRoot, "baseSplit", true), resetSegmentIDs);
     
     /*****************************************
     *
@@ -253,12 +253,12 @@ public class SegmentationDimensionRanges extends SegmentationDimension
   *
   *****************************************/
 
-  private List<BaseSplit> decodeBaseSplit(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray) throws GUIManagerException
+  private List<BaseSplit> decodeBaseSplit(SegmentationDimensionService segmentationDimensionService, JSONArray jsonArray, boolean resetSegmentIDs) throws GUIManagerException
    {
     List<BaseSplit> result = new ArrayList<BaseSplit>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new BaseSplit(segmentationDimensionService, (JSONObject) jsonArray.get(i)));
+        result.add(new BaseSplit(segmentationDimensionService, (JSONObject) jsonArray.get(i), resetSegmentIDs));
       }
     return result;
   }
