@@ -8,8 +8,6 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -35,7 +33,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -763,8 +760,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     requestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.PENDING.getReturnCode());
 
     Map<String,String> diplomaticBriefcase = new HashMap<String,String>();
-    diplomaticBriefcase.put(APPLICATION_ID, applicationID);
-    diplomaticBriefcase.put(APPLICATION_BRIEFCASE, briefcase.toJSONString());
+    if(applicationID != null){diplomaticBriefcase.put(APPLICATION_ID, applicationID);}
+    if(briefcase != null){diplomaticBriefcase.put(APPLICATION_BRIEFCASE, briefcase.toJSONString());}
     requestData.put("diplomaticBriefcase", diplomaticBriefcase);
     
     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get("commodityDelivery"));

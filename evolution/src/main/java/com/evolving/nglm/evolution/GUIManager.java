@@ -107,8 +107,10 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
@@ -334,6 +336,7 @@ public class GUIManager
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
+    getCustomerPoints("getCustomerPoints"),
     refreshUCG("refreshUCG"),
     putUploadedFile("putUploadedFile"),
     getUploadedFileList("getUploadedFileList"),
@@ -371,6 +374,8 @@ public class GUIManager
     putPartner("putPartner"),
     removePartner("removePartner"),
     enterCampaign("enterCampaign"),
+    creditBonus("creditBonus"),
+    debitBonus("debitBonus"),
     getExclusionInclusionTargetList("getExclusionInclusionTargetList"),
     getExclusionInclusionTargetSummaryList("getExclusionInclusionTargetSummaryList"),
     putExclusionInclusionTarget("putExclusionInclusionTarget"),
@@ -1707,6 +1712,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
+        restServer.createContext("/nglm-guimanager/getCustomerPoints", new APISimpleHandler(API.getCustomerPoints));
         restServer.createContext("/nglm-guimanager/refreshUCG", new APISimpleHandler(API.refreshUCG));
         restServer.createContext("/nglm-guimanager/getUploadedFileList", new APISimpleHandler(API.getUploadedFileList));
         restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APISimpleHandler(API.getUploadedFileSummaryList));
@@ -1744,6 +1750,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putPartner", new APISimpleHandler(API.putPartner));
         restServer.createContext("/nglm-guimanager/removePartner", new APISimpleHandler(API.removePartner));
         restServer.createContext("/nglm-guimanager/enterCampaign", new APISimpleHandler(API.enterCampaign));
+        restServer.createContext("/nglm-guimanager/creditBonus", new APISimpleHandler(API.creditBonus));
+        restServer.createContext("/nglm-guimanager/debitBonus", new APISimpleHandler(API.debitBonus));
         restServer.createContext("/nglm-guimanager/getExclusionInclusionTargetList", new APISimpleHandler(API.getExclusionInclusionTargetList));
         restServer.createContext("/nglm-guimanager/getExclusionInclusionTargetSummaryList", new APISimpleHandler(API.getExclusionInclusionTargetSummaryList));
         restServer.createContext("/nglm-guimanager/putExclusionInclusionTarget", new APISimpleHandler(API.putExclusionInclusionTarget));
@@ -2848,6 +2856,10 @@ public class GUIManager
                   jsonResponse = processGetCustomerCampaigns(userID, jsonRoot);
                   break;
 
+                case getCustomerPoints:
+                  jsonResponse = processGetCustomerPoints(userID, jsonRoot);
+                  break;
+
                 case refreshUCG:
                   jsonResponse = processRefreshUCG(userID, jsonRoot);
                   break;
@@ -2990,6 +3002,14 @@ public class GUIManager
 
                 case enterCampaign:
                   jsonResponse = processEnterCampaign(userID, jsonRoot);
+                  break;
+                  
+                case creditBonus:
+                  jsonResponse = processCreditBonus(userID, jsonRoot);
+                  break;
+                  
+                case debitBonus:
+                  jsonResponse = processDebitBonus(userID, jsonRoot);
                   break;
                   
                 case getExclusionInclusionTargetList:  
@@ -14915,6 +14935,126 @@ public class GUIManager
 
   /*****************************************
   *
+  * processGetGetCustomerPoints
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerPoints(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     *  now
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", false);
+
+    /*****************************************
+     *
+     *  resolve point
+     *
+     *****************************************/
+
+    Point searchedPoint = null;
+    if(bonusName != null && !bonusName.isEmpty())
+      {
+        for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
+          if(storedPoint instanceof Point && (((Point) storedPoint).getPointName().equals(bonusName))){
+            searchedPoint = (Point)storedPoint;
+          }
+        }
+        if(searchedPoint == null){
+          log.info("bonus with name '"+bonusName+"' not found");
+          response.put("responseCode", "BonusNotFound");
+          return JSONUtilities.encodeObject(response);
+        }
+      }
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     *  getSubscriberProfile
+     *
+     *****************************************/
+
+    try
+    {
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      if (baseSubscriberProfile == null)
+        {
+          response.put("responseCode", "CustomerNotFound");
+        }
+      else
+        {
+          ArrayList<JSONObject> pointsPresentation = new ArrayList<JSONObject>();
+          Map<String, PointBalance> pointBalances = baseSubscriberProfile.getPointBalances();
+          for (String pointID : pointBalances.keySet())
+            {
+              Point point = pointService.getActivePoint(pointID, now);
+              if (point != null && (searchedPoint == null || searchedPoint.getPointID().equals(point.getPointID())))
+                {
+                  HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
+                  PointBalance pointBalance = pointBalances.get(pointID);
+                  pointPresentation.put("point", point.getDisplay());
+                  pointPresentation.put("balance", pointBalance.getBalance(now));
+                  Set<Object> pointExpirations = new HashSet<Object>();
+                  for(Date expirationDate : pointBalance.getBalances().keySet()){
+                    HashMap<String, Object> expirationPresentation = new HashMap<String, Object>();
+                    expirationPresentation.put("expirationDate", getDateString(expirationDate));
+                    expirationPresentation.put("quantity", pointBalance.getBalances().get(expirationDate));
+                    pointExpirations.add(JSONUtilities.encodeObject(expirationPresentation));
+                  }
+                  pointPresentation.put("expirations", pointExpirations);
+
+
+                  pointsPresentation.add(JSONUtilities.encodeObject(pointPresentation));
+                }
+            }
+          
+          response.put("points", pointsPresentation);
+          response.put("responseCode", "ok");
+        }
+    }
+    catch (SubscriberProfileServiceException e)
+    {
+      throw new GUIManagerException(e);
+    }
+
+    /*****************************************
+     *
+     *  return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
   * refreshUCG
   *
   *****************************************/
@@ -17611,6 +17751,162 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processCreditBonus
+  *
+  *****************************************/
+  
+  private JSONObject processCreditBonus(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    /*****************************************
+    *
+    *  resolve bonus
+    *
+    *****************************************/
+
+    Deliverable searchedBonus = null;
+    for(GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables()){
+      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableName().equals(bonusName))){
+        searchedBonus = (Deliverable)storedDeliverable;
+      }
+    }
+    if(searchedBonus == null){
+      log.info("bonus with name '"+bonusName+"' not found");
+      response.put("responseCode", "BonusNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    /*****************************************
+    *
+    *  generate commodity delivery request
+    *
+    *****************************************/
+    
+    String uniqueKey = UUID.randomUUID().toString();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processDebitBonus
+  *
+  *****************************************/
+  
+  private JSONObject processDebitBonus(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+    
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    /*****************************************
+    *
+    *  resolve bonus
+    *
+    *****************************************/
+
+    PaymentMean searchedBonus = null;
+    for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans()){
+      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanName().equals(bonusName))){
+        searchedBonus = (PaymentMean)storedPaymentMean;
+      }
+    }
+    if(searchedBonus == null){
+      log.info("bonus with name '"+bonusName+"' not found");
+      response.put("responseCode", "BonusNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    /*****************************************
+    *
+    *  generate commodity delivery request
+    *
+    *****************************************/
+    
+    String uniqueKey = UUID.randomUUID().toString();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processRemovePartner

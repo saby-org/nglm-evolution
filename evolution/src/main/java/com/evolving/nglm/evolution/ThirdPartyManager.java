@@ -22,10 +22,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -65,7 +67,9 @@ import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -116,6 +120,8 @@ public class ThirdPartyManager
   private JourneyService journeyService;
   private JourneyObjectiveService journeyObjectiveService;
   private LoyaltyProgramService loyaltyProgramService;
+  private PointService pointService;
+  private PaymentMeanService paymentMeanService;
   private OfferObjectiveService offerObjectiveService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private SalesChannelService salesChannelService;
@@ -165,6 +171,9 @@ public class ThirdPartyManager
     getCustomer,
     getCustomerBDRs,
     getCustomerODRs,
+    getCustomerPoints,
+    creditBonus,
+    debitBonus,
     getCustomerMessages,
     getCustomerJourneys,
     getCustomerCampaigns,
@@ -242,6 +251,8 @@ public class ThirdPartyManager
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyObjectiveTopic = Deployment.getJourneyObjectiveTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
+    String pointTopic = Deployment.getPointTopic();
+    String paymentMeanTopic = Deployment.getPaymentMeanTopic();
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
     String redisServer = Deployment.getRedisSentinels();
@@ -331,6 +342,12 @@ public class ThirdPartyManager
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "thirdpartymanager-loyaltyprogramservice-" + apiProcessKey, loyaltyProgramTopic, false);
     loyaltyProgramService.start();
     
+    pointService = new PointService(bootstrapServers, "thirdpartymanager-pointservice-" + apiProcessKey, pointTopic, false);
+    pointService.start();
+    
+    paymentMeanService = new PaymentMeanService(bootstrapServers, "thirdpartymanager-paymentmeanservice-" + apiProcessKey, paymentMeanTopic, false);
+    paymentMeanService.start();
+    
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "thirdpartymanager-offerObjectiveService-" + apiProcessKey, offerObjectiveTopic, false);
     offerObjectiveService.start();
     
@@ -380,6 +397,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerPoints", new APIHandler(API.getCustomerPoints));
+      restServer.createContext("/nglm-thirdpartymanager/creditBonus", new APIHandler(API.creditBonus));
+      restServer.createContext("/nglm-thirdpartymanager/debitBonus", new APIHandler(API.debitBonus));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerMessages", new APIHandler(API.getCustomerMessages));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerJourneys", new APIHandler(API.getCustomerJourneys));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
@@ -414,7 +434,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
 
     /*****************************************
      *
@@ -446,6 +466,8 @@ public class ThirdPartyManager
     private JourneyService journeyService;
     private JourneyObjectiveService journeyObjectiveService;
     private LoyaltyProgramService loyaltyProgramService;
+    private PointService pointService;
+    private PaymentMeanService paymentMeanService;
     private OfferObjectiveService offerObjectiveService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SalesChannelService salesChannelService;
@@ -458,7 +480,7 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -468,6 +490,8 @@ public class ThirdPartyManager
       this.journeyService = journeyService;
       this.journeyObjectiveService = journeyObjectiveService;
       this.loyaltyProgramService = loyaltyProgramService;
+      this.pointService = pointService;
+      this.paymentMeanService = paymentMeanService;
       this.offerObjectiveService = offerObjectiveService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.salesChannelService = salesChannelService;
@@ -499,6 +523,8 @@ public class ThirdPartyManager
       if (journeyService != null) journeyService.stop();
       if (journeyObjectiveService != null) journeyObjectiveService.stop();
       if (loyaltyProgramService != null) loyaltyProgramService.stop();
+      if (pointService != null) pointService.stop();
+      if (paymentMeanService != null) paymentMeanService.stop();
       if (offerObjectiveService != null ) offerObjectiveService.stop();
       if (subscriberMessageTemplateService != null) subscriberMessageTemplateService.stop();
       if (salesChannelService != null) salesChannelService.stop();
@@ -645,6 +671,15 @@ public class ThirdPartyManager
               break;
             case getCustomerODRs:
               jsonResponse = processGetCustomerODRs(jsonRoot);
+              break;
+            case getCustomerPoints:
+              jsonResponse = processGetCustomerPoints(jsonRoot);
+              break;
+            case creditBonus:
+              jsonResponse = processCreditBonus(jsonRoot);
+              break;
+            case debitBonus:
+              jsonResponse = processDebitBonus(jsonRoot);
               break;
             case getCustomerMessages:
               jsonResponse = processGetCustomerMessages(jsonRoot);
@@ -1241,6 +1276,285 @@ public class ThirdPartyManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  * processGetGetCustomerPoints
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerPoints(JSONObject jsonRoot) throws ThirdPartyManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+     *
+     *  now
+     *
+     ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+
+    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", false);
+
+    /*****************************************
+     *
+     *  resolve point
+     *
+     *****************************************/
+
+    Point searchedPoint = null;
+    if(bonusName != null && !bonusName.isEmpty())
+      {
+        for(GUIManagedObject storedPoint : pointService.getStoredPoints()){
+          if(storedPoint instanceof Point && (((Point) storedPoint).getPointName().equals(bonusName))){
+            searchedPoint = (Point)storedPoint;
+          }
+        }
+        if(searchedPoint == null){
+          log.info("bonus with name '"+bonusName+"' not found");
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BONUS_NOT_FOUND.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BONUS_NOT_FOUND.getGenericResponseMessage());
+          return JSONUtilities.encodeObject(response);
+        }
+      }
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = null;
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot, response);
+      } catch (ThirdPartyManagerException e1)
+      {
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     *  getSubscriberProfile
+     *
+     *****************************************/
+
+    try
+    {
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      if (baseSubscriberProfile == null)
+        {
+          response.put("responseCode", "CustomerNotFound");
+        }
+      else
+        {
+          ArrayList<JSONObject> pointsPresentation = new ArrayList<JSONObject>();
+          Map<String, PointBalance> pointBalances = baseSubscriberProfile.getPointBalances();
+          for (String pointID : pointBalances.keySet())
+            {
+              Point point = pointService.getActivePoint(pointID, now);
+              if (point != null && (searchedPoint == null || searchedPoint.getPointID().equals(point.getPointID())))
+                {
+                  HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
+                  PointBalance pointBalance = pointBalances.get(pointID);
+                  pointPresentation.put("point", point.getDisplay());
+                  pointPresentation.put("balance", pointBalance.getBalance(now));
+                  Set<Object> pointExpirations = new HashSet<Object>();
+                  for(Date expirationDate : pointBalance.getBalances().keySet()){
+                    HashMap<String, Object> expirationPresentation = new HashMap<String, Object>();
+                    expirationPresentation.put("expirationDate", getDateString(expirationDate));
+                    expirationPresentation.put("quantity", pointBalance.getBalances().get(expirationDate));
+                    pointExpirations.add(JSONUtilities.encodeObject(expirationPresentation));
+                  }
+                  pointPresentation.put("expirations", pointExpirations);
+
+
+                  pointsPresentation.add(JSONUtilities.encodeObject(pointPresentation));
+                }
+            }
+
+          response.put("points", pointsPresentation);
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+        }
+    }
+    catch (SubscriberProfileServiceException e)
+    {
+      log.error("SubscriberProfileServiceException ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+    }
+
+    /*****************************************
+     *
+     *  return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processCreditBonus
+  *
+  *****************************************/
+  
+  private JSONObject processCreditBonus(JSONObject jsonRoot) 
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+    
+    String subscriberID = null;
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot, response);
+      } catch (ThirdPartyManagerException e1)
+      {
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    /*****************************************
+    *
+    *  resolve bonus
+    *
+    *****************************************/
+
+    Deliverable searchedBonus = null;
+    for(GUIManagedObject storedDeliverable : deliverableService.getStoredDeliverables()){
+      if(storedDeliverable instanceof Deliverable && (((Deliverable) storedDeliverable).getDeliverableName().equals(bonusName))){
+        searchedBonus = (Deliverable)storedDeliverable;
+      }
+    }
+    if(searchedBonus == null){
+      log.info("bonus with name '"+bonusName+"' not found");
+      response.put("responseCode", "BonusNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    /*****************************************
+    *
+    *  generate commodity delivery request
+    *
+    *****************************************/
+    
+    String uniqueKey = UUID.randomUUID().toString();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processDebitBonus
+  *
+  *****************************************/
+  
+  private JSONObject processDebitBonus(JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
+    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+    
+    String subscriberID = null;
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot, response);
+      } catch (ThirdPartyManagerException e1)
+      {
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    /*****************************************
+    *
+    *  resolve bonus
+    *
+    *****************************************/
+
+    PaymentMean searchedBonus = null;
+    for(GUIManagedObject storedPaymentMean : paymentMeanService.getStoredPaymentMeans()){
+      if(storedPaymentMean instanceof PaymentMean && (((PaymentMean) storedPaymentMean).getPaymentMeanName().equals(bonusName))){
+        searchedBonus = (PaymentMean)storedPaymentMean;
+      }
+    }
+    if(searchedBonus == null){
+      log.info("bonus with name '"+bonusName+"' not found");
+      response.put("responseCode", "BonusNotFound");
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    /*****************************************
+    *
+    *  generate commodity delivery request
+    *
+    *****************************************/
+    
+    String uniqueKey = UUID.randomUUID().toString();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+ 
   /*****************************************
    *
    *  processGetCustomerMessages

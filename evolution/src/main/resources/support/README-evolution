@@ -236,6 +236,11 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "custo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerCampaigns; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerJourneys; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/creditBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/debitBonus; echo
+
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "applicationID":"application-1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getUploadedFileSummaryList; echo
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"id" : "001", "sourceFilename": "target.data.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"application-1","customerAlternateID" : "msisdn"}' -F 'file=@target.data.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFile; echo
@@ -366,6 +371,11 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "BADGES" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramsList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerPoints; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 9, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/creditBonus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "bonusName" : "BluePoints", "quantity" : 2, "origin" : "from rest method"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/debitBonus; echo
 
 --
 --  dnbo proxy
