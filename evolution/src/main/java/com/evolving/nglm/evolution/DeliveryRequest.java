@@ -211,7 +211,6 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
-    schemaBuilder.field("rescheduledDate", Timestamp.builder().optional().schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -271,7 +270,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private DeliveryStatus deliveryStatus;
   private Date deliveryDate;
   private Map<String, String> diplomaticBriefcase;
-  private Date rescheduledTime;
+  private Date rescheduledDate;
 
   /*****************************************
   *
@@ -301,7 +300,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
   public ActionType getActionType() { return ActionType.DeliveryRequest; }
   public boolean isPending() { return deliveryStatus == DeliveryStatus.Pending; }
-  public Date getRescheduledTime() { return rescheduledTime; }
+  public Date getRescheduledDate() { return rescheduledDate; }
 
   //
   //  setters
@@ -319,7 +318,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) { this.diplomaticBriefcase = (diplomaticBriefcase != null) ? diplomaticBriefcase : new HashMap<String,String>(); }
-  public void setRescheduledTime(Date rescheduledTime) { this.rescheduledTime = rescheduledTime; }
+  public void setRescheduledDate(Date rescheduledDate) { this.rescheduledDate = rescheduledDate; }
   
   /*****************************************
   *
@@ -368,7 +367,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
-    this.rescheduledTime = null;
+    this.rescheduledDate = null;
   }
   
   /*******************************************
@@ -404,7 +403,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
-    this.rescheduledTime = null;
+    this.rescheduledDate = null;
   }
 
   /*****************************************
@@ -434,7 +433,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = deliveryRequest.getDeliveryStatus();
     this.deliveryDate = deliveryRequest.getDeliveryDate();
     this.diplomaticBriefcase = deliveryRequest.getDiplomaticBriefcase();
-    this.rescheduledTime = deliveryRequest.getRescheduledTime();
+    this.rescheduledDate = deliveryRequest.getRescheduledDate();
   }
 
   /*****************************************
@@ -470,7 +469,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
-    this.rescheduledTime = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
+    this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
   }
 
   /*****************************************
@@ -500,7 +499,6 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
-    struct.put("rescheduledDate", deliveryRequest.getRescheduledTime());
   }
 
   /*****************************************
@@ -543,7 +541,6 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
     Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
-    Date rescheduledDate = (Date) valueStruct.get("rescheduledDate");
 
     //
     //  return
@@ -568,7 +565,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = deliveryStatus;
     this.deliveryDate = deliveryDate;
     this.diplomaticBriefcase = diplomaticBriefcase;
-    this.rescheduledTime = rescheduledDate;
+    this.rescheduledDate = null;
   }
 
   /****************************************
@@ -699,7 +696,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append("," + deliveryStatus);
     b.append("," + deliveryDate);
     b.append("," + diplomaticBriefcase);
-    b.append("," + rescheduledTime);
+    b.append("," + rescheduledDate);
     return b.toString();
   }
 

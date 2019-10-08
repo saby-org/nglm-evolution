@@ -14008,11 +14008,12 @@ public class GUIManager
                           {
                             Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
                             Date expirationDate = null;
-                            if(bdrMap.get("validityPeriodType") != null && bdrMap.get("validityPeriodQuantity") != null)
+                            Date deliveryDate = bdr.getDeliveryDate();
+                            TimeUnit validityPeriodTimeUnit = TimeUnit.fromExternalRepresentation((String) bdrMap.get("validityPeriodType"));
+                            Integer validityPeriodQuantity = (Integer) bdrMap.get("validityPeriodQuantity");
+                            if (validityPeriodTimeUnit != null && validityPeriodTimeUnit != TimeUnit.Unknown && validityPeriodQuantity != null && deliveryDate != null)
                               {
-                                TimeUnit timeUnit = TimeUnit.fromExternalRepresentation(bdrMap.get("validityPeriodType").toString());
-                                Integer periodQuantity = (Integer) bdrMap.get("validityPeriodQuantity");
-                                expirationDate = EvolutionUtilities.addTime(SystemTime.getCurrentTime(), periodQuantity, timeUnit, Deployment.getBaseTimeZone());
+                                expirationDate = EvolutionUtilities.addTime(deliveryDate, validityPeriodQuantity, validityPeriodTimeUnit, Deployment.getBaseTimeZone());
                               }
                             if(expirationDate != null)
                               {

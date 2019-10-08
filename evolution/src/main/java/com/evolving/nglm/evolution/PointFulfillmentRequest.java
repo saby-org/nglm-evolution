@@ -279,7 +279,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     guiPresentationMap.put(DELIVERABLEID, getPointID());
     guiPresentationMap.put(DELIVERABLEQTY, getAmount());
     guiPresentationMap.put(OPERATION, getOperation().toString());
-    guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType());
+    guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
     guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
     guiPresentationMap.put(MODULEID, getModuleID());
     guiPresentationMap.put(MODULENAME, module.toString());
@@ -295,7 +295,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
     thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
-    thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType());
+    thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
     thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
     thirdPartyPresentationMap.put(MODULENAME, module.toString());
