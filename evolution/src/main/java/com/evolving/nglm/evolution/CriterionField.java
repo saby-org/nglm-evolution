@@ -80,10 +80,11 @@ public class CriterionField extends DeploymentManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_field");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldDataType", Schema.STRING_SCHEMA);
     schemaBuilder.field("mandatoryParameter", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("generateDimension", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("esField", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("criterionFieldRetriever", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("expressionValuedParameter", SchemaBuilder.bool().defaultValue(false).schema());
@@ -115,6 +116,7 @@ public class CriterionField extends DeploymentManagedObject
 
   private CriterionDataType fieldDataType;
   private boolean mandatoryParameter;
+  private boolean generateDimension;
   private String esField;
   private String criterionFieldRetriever;
   private boolean expressionValuedParameter;
@@ -137,6 +139,7 @@ public class CriterionField extends DeploymentManagedObject
 
   public CriterionDataType getFieldDataType() { return fieldDataType; }
   public boolean getMandatoryParameter() { return mandatoryParameter; }
+  public boolean getGenerateDimension() { return generateDimension; }
   public String getESField() { return esField; }
   public String getCriterionFieldRetriever() { return criterionFieldRetriever; }
   public boolean getExpressionValuedParameter() { return expressionValuedParameter; }
@@ -174,6 +177,7 @@ public class CriterionField extends DeploymentManagedObject
 
     this.fieldDataType = CriterionDataType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "dataType", true));
     this.mandatoryParameter = JSONUtilities.decodeBoolean(jsonRoot, "mandatory", Boolean.FALSE);
+    this.generateDimension = JSONUtilities.decodeBoolean(jsonRoot, "generateDimension", Boolean.FALSE);
     this.esField = JSONUtilities.decodeString(jsonRoot, "esField", false);
     this.criterionFieldRetriever = JSONUtilities.decodeString(jsonRoot, "retriever", false);
     this.expressionValuedParameter = JSONUtilities.decodeBoolean(jsonRoot, "expressionValuedParameter", Boolean.FALSE);
@@ -343,7 +347,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, String tagFormat, Integer tagMaxLength, boolean profileChangeEvent)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, String tagFormat, Integer tagMaxLength, boolean profileChangeEvent)
   {
     //
     //  super
@@ -358,6 +362,7 @@ public class CriterionField extends DeploymentManagedObject
 
     this.fieldDataType = fieldDataType;
     this.mandatoryParameter = mandatoryParameter;
+    this.generateDimension = generateDimension;
     this.esField = esField;
     this.criterionFieldRetriever = criterionFieldRetriever;
     this.expressionValuedParameter = expressionValuedParameter;
@@ -398,6 +403,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("jsonRepresentation", criterionField.getJSONRepresentation().toString());
     struct.put("fieldDataType", criterionField.getFieldDataType().getExternalRepresentation());
     struct.put("mandatoryParameter", criterionField.getMandatoryParameter());
+    struct.put("generateDimension", criterionField.getGenerateDimension());
     struct.put("esField", criterionField.getESField());
     struct.put("criterionFieldRetriever", criterionField.getCriterionFieldRetriever());
     struct.put("expressionValuedParameter", criterionField.getExpressionValuedParameter());
@@ -432,6 +438,7 @@ public class CriterionField extends DeploymentManagedObject
     JSONObject jsonRepresentation = parseRepresentation(valueStruct.getString("jsonRepresentation"));
     CriterionDataType fieldDataType = CriterionDataType.fromExternalRepresentation(valueStruct.getString("fieldDataType"));
     boolean mandatoryParameter = valueStruct.getBoolean("mandatoryParameter");
+    boolean generateDimension = (schemaVersion >= 3) ? valueStruct.getBoolean("generateDimension") : false;
     String esField = valueStruct.getString("esField");
     String criterionFieldRetriever = valueStruct.getString("criterionFieldRetriever");
     boolean expressionValuedParameter = (schemaVersion >= 2) ? valueStruct.getBoolean("expressionValuedParameter") : false;
@@ -444,7 +451,7 @@ public class CriterionField extends DeploymentManagedObject
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, tagFormat, tagMaxLength, profileChangeEvent);
+    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, tagFormat, tagMaxLength, profileChangeEvent);
   }
 
   /*****************************************
@@ -746,6 +753,7 @@ public class CriterionField extends DeploymentManagedObject
         result = super.equals(obj);
         result = result && Objects.equals(fieldDataType, criterionField.getFieldDataType());
         result = result && Objects.equals(mandatoryParameter, criterionField.getMandatoryParameter());
+        result = result && Objects.equals(generateDimension, criterionField.getGenerateDimension());
         result = result && Objects.equals(esField, criterionField.getESField());
         result = result && Objects.equals(criterionFieldRetriever, criterionField.getCriterionFieldRetriever());
         result = result && expressionValuedParameter == criterionField.getExpressionValuedParameter();

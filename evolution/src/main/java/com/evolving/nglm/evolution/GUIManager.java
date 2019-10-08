@@ -1313,36 +1313,31 @@ public class GUIManager
     *
     *****************************************/
 
-    if (Deployment.getGenerateSimpleProfileDimensions())
-      {
-        //
-        // remove all existing simple profile dimensions
-        //
+    //
+    // remove all existing simple profile dimensions
+    //
 
-        for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions())
+    for (GUIManagedObject dimensionObject : segmentationDimensionService.getStoredSegmentationDimensions())
+      {
+        if (dimensionObject instanceof SegmentationDimension)
           {
-            if (dimensionObject instanceof SegmentationDimension)
+            SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
+            if (dimension.getIsSimpleProfileDimension())
               {
-                SegmentationDimension dimension = (SegmentationDimension)dimensionObject;
-                if(dimension.getIsSimpleProfileDimension())
-                  {
-                    log.debug("SimpleProfileDimension : removing dimension '" + dimension.getSegmentationDimensionName() + "'");
-                    segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0");
-                  }
-                else
-                  {
-                    log.debug("SimpleProfileDimension : dimension '"+ dimension.getSegmentationDimensionName() + "' is not a simpleProfile dimension, do Not remove");
-                  }
+                segmentationDimensionService.removeSegmentationDimension(dimension.getSegmentationDimensionID(), "0");
               }
           }
+      }
 
-        //
-        // re-create simple profile dimensions (=> so we are sure that dimensions are in line with profile fields)
-        //
+    //
+    // re-create simple profile dimensions (=> so we are sure that dimensions are in line with profile fields)
+    //
 
-        Date now = SystemTime.getCurrentTime();
-        Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.getCriterionFields();
-        for (CriterionField criterion : profileCriterionFields.values())
+    Date now = SystemTime.getCurrentTime();
+    Map<String,CriterionField> profileCriterionFields = CriterionContext.FullProfile.getCriterionFields();
+    for (CriterionField criterion : profileCriterionFields.values())
+      {
+        if (Deployment.getGenerateSimpleProfileDimensions() || criterion.getGenerateDimension())
           {
             List<JSONObject> availableValues = evaluateAvailableValues(criterion, now, false);
             if (availableValues != null && availableValues.size() > 0)
