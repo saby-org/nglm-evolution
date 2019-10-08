@@ -2372,6 +2372,15 @@ public class ThirdPartyManager
                      if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate())); }
 
                      //
+                     //  status point
+                     //
+                     
+                     LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+                     String statusPointID = loyaltyProgramPoints.getStatusPointsID();
+                     PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
+                     loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
+                     
+                     //
                      //  reward point informations
                      //
 
