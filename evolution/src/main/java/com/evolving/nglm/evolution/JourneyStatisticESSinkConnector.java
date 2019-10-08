@@ -131,6 +131,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("toNodeID", journeyStatistic.getToNodeID());
       documentMap.put("rewardHistory", journeyReward);
       documentMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+      documentMap.put("sample", journeyStatistic.getSample());
       documentMap.put("markNotified", journeyStatistic.getMarkNotified());
       documentMap.put("markConverted", journeyStatistic.getMarkConverted());
       documentMap.put("statusNotified", journeyStatistic.getStatusNotified());

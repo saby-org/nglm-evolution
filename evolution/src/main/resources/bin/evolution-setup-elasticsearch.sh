@@ -44,7 +44,9 @@
                   "evolutionSubscriberStatusChangeDate" : { "type" : "date" },
                   "universalControlGroup" : { "type" : "boolean" },
                   "language" : { "type" : "keyword" },
-                  "segments" : { "type" : "keyword" }
+                  "segments" : { "type" : "keyword" },
+                  "loyaltyPrograms" : { "type" : "text", "index" : "false"},
+                  "pointBalances" : { "type" : "text", "index" : "false"}
                 }
         }
     }'
@@ -127,6 +129,8 @@
                 {
 	          "subscriberID" : { "type" : "keyword" },
 	          "providerID" : { "type" : "keyword" },
+	          "eventID" : { "type" : "keyword" },
+	          "deliveryRequestID" : { "type" : "keyword" },
 	          "deliverableID" : { "type" : "keyword" },
 	          "eventDatetime" : { "type" : "date" },
 	          "deliverableExpiration" : { "type" : "date" },
@@ -135,9 +139,9 @@
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "responseCode" : { "type" : "keyword" },
+	          "returnCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "responseMessage" : { "type" : "text", "index" : "false" }
+	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
                 }
         }
     }'
@@ -177,20 +181,22 @@
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
-	          "purchaseID" : { "type" : "keyword" },
 	          "eventDatetime" : { "type" : "date" },
+	          "deliveryRequestID" : { "type" : "keyword" },
+	          "eventID" : { "type" : "keyword" },
 	          "offerID" : { "type" : "keyword" },
 	          "offerQty" : { "type" : "integer", "index" : "false" },
 	          "salesChannelID" : { "type" : "keyword" },
-	          "offerPrice" : { "type" : "integer", "index" : "false" },
+	          "offerPrice" : { "type" : "text", "index" : "false" },
+	          "meanOfPayment" : { "type" : "text", "index" : "false" },
 	          "offerStock" : { "type" : "integer", "index" : "false" },
 	          "offerContent" : { "type" : "text", "index" : "false" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "responseCode" : { "type" : "keyword" },
+	          "returnCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "responseMessage" : { "type" : "text", "index" : "false" },
+	          "returnCodeDetails" : { "type" : "text", "index" : "false" },
 	          "voucherCode" : { "type" : "keyword" },
 	          "voucherPartnerID" : { "type" : "keyword" }
                 }
@@ -233,14 +239,16 @@
                 {
 	          "subscriberID" : { "type" : "keyword" },
 	          "eventID" : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date" },
+	          "deliveryRequestID" : { "type" : "keyword" },
+	          "creationDate" : { "type" : "date" },
+	          "deliveryDate" : { "type" : "date" },
 	          "messageID" : { "type" : "keyword" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
 	          "origin" : { "type" : "text", "index" : "false" },
-	          "responseCode" : { "type" : "keyword" },
+	          "returnCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "responseMessage" : { "type" : "text", "index" : "false" }
+	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
                 }
         }
     }'
@@ -289,6 +297,7 @@
                   "fromNodeID" : { "type" : "keyword" },
                   "toNodeID" : { "type" : "keyword" },
                   "deliveryRequestID" : { "type" : "keyword" },
+                  "sample" : { "type" : "keyword" },
                   "markNotified" : { "type" : "boolean" },
                   "markConverted" : { "type" : "boolean" },
                   "statusNotified" : { "type" : "boolean" },

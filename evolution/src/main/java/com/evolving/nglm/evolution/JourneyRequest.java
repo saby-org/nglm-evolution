@@ -256,7 +256,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   ****************************************/
   
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     Module module = Module.fromExternalRepresentation(getModuleID());
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -270,7 +270,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     guiPresentationMap.put(ORIGIN, "");
   }
   
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     Module module = Module.fromExternalRepresentation(getModuleID());
     thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -283,6 +283,16 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
+  
+  /****************************************
+  *
+  *  getEffectiveDeliveryTime
+  *
+  ****************************************/
 
-
+  @Override
+  public Date getEffectiveDeliveryTime(Date now)
+  {
+    return now;
+  }    
 }

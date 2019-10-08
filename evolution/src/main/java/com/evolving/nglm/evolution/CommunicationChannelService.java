@@ -8,7 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
+import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
 import com.evolving.nglm.core.SystemTime;
 
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 public class CommunicationChannelService extends GUIService
 {
@@ -141,6 +142,36 @@ public class CommunicationChannelService extends GUIService
   *****************************************/
 
   public void removeCommunicationChannel(String communicationChannelID, String userID) { removeGUIManagedObject(communicationChannelID, SystemTime.getCurrentTime(), userID); }
+  
+  /*****************************************
+  *
+  *  getEffectiveDeliveryTime
+  *
+  *****************************************/
+  
+  public Date getEffectiveDeliveryTime(String channelID, Date now)
+  {
+    
+    CommunicationChannel communicationChannel = (CommunicationChannel) getActiveCommunicationChannel(channelID, now);
+    if(communicationChannel != null)
+      {
+        if(communicationChannel.getNotificationDailyWindows() != null)
+          {
+            List<DailyWindow> dailyWindows = communicationChannel.getTodaysDailyWindows();
+            if(dailyWindows != null && !dailyWindows.isEmpty())
+              {
+                for(DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows())
+                  {
+                    if(EvolutionUtilities.isDateBetween(now, dailyWindow.getFromDate(), dailyWindow.getUntilDate()))
+                      {
+                        return dailyWindow.getUntilDate();
+                      }
+                  }
+              }
+          }
+      } 
+    return now;
+  }
 
   /*****************************************
   *

@@ -7,7 +7,7 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.io.IOException;
-import java.io.Writer;
+import java.util.zip.ZipOutputStream;
 
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
@@ -21,9 +21,9 @@ public interface ReportCsvFactory {
 	 * Write a {@link ReportElement} to the report (csv file).
 	 * @param key     The key that this record had in Kafka, for reference.
 	 * @param re      {@link ReportElement} to write.
-	 * @param writer  {@link Writer} to write to.
+	 * @param gzipOutputStream  {@link Writer} to write to.
 	 * @throws IOException When an error related to filesystem access occurs.
 	 */
-	void dumpElementToCsv(String key, ReportElement re, Writer writer) throws IOException;
+	void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException;
 	
 }

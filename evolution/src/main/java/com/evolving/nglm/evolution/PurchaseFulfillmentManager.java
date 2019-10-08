@@ -463,7 +463,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       //
@@ -477,54 +477,61 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
 
       Offer offer = offerService.getActiveOffer(getOfferID(), SystemTime.getCurrentTime());
-      // TODO : should check if offer is still valid, ie (offer != null) 
 
       //
       //  presentation
       //
-
-      guiPresentationMap.put(CUSTOMERID, getSubscriberID());
-      guiPresentationMap.put(PURCHASEID, getEventID());
-      guiPresentationMap.put(OFFERID, getOfferID());
-      guiPresentationMap.put(OFFERNAME, offer.getGUIManagedObjectName());
-      guiPresentationMap.put(OFFERQTY, getQuantity());
-      guiPresentationMap.put(OFFERSTOCK, offer.getStock());
-      if(offer.getOfferSalesChannelsAndPrices() != null){
-        for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
-          if(channel.getSalesChannelIDs() != null) {
-            for(String salesChannelID : channel.getSalesChannelIDs()) {
-              if(salesChannelID.equals(getSalesChannelID())) {
-                guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+      
+      if(offer != null)
+        {
+          guiPresentationMap.put(CUSTOMERID, getSubscriberID());
+          guiPresentationMap.put(OFFERID, getOfferID());
+          guiPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
+          guiPresentationMap.put(OFFERQTY, getQuantity());
+          guiPresentationMap.put(OFFERSTOCK, offer.getStock());
+          if(offer.getOfferSalesChannelsAndPrices() != null){
+            for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
+              if(channel.getSalesChannelIDs() != null) {
+                for(String salesChannelID : channel.getSalesChannelIDs()) {
+                  if(salesChannelID.equals(getSalesChannelID())) {
+                    if(channel.getPrice() != null) {
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                      if(paymentMean != null) {
+                        guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+                        guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                      }
+                    }
+                  }
+                }
               }
             }
           }
+
+          StringBuilder sb = new StringBuilder();
+          if(offer.getOfferProducts() != null) {
+            for(OfferProduct offerProduct : offer.getOfferProducts()) {
+              Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():offerProduct.getProductID()).append(",");
+            }
+          }
+          String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          guiPresentationMap.put(OFFERCONTENT, offerContent);
+
+          guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
+          guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
+          guiPresentationMap.put(MODULEID, getModuleID());
+          guiPresentationMap.put(MODULENAME, module.toString());
+          guiPresentationMap.put(FEATUREID, getFeatureID());
+          guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
+          guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
+          guiPresentationMap.put(RETURNCODE, getReturnCode());
+          guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
+          guiPresentationMap.put(VOUCHERCODE, "");
+          guiPresentationMap.put(VOUCHERPARTNERID, "");
         }
-      }
-      
-      StringBuilder sb = new StringBuilder();
-      if(offer.getOfferProducts() != null) {
-        for(OfferProduct offerProduct : offer.getOfferProducts()) {
-          Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-          sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
-        }
-      }
-      String offerContent = sb.toString().substring(0, sb.toString().length()-1);
-      guiPresentationMap.put(OFFERCONTENT, offerContent);
-      
-      guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());
-      guiPresentationMap.put(SALESCHANNEL, (salesChannel != null) ? salesChannel.getSalesChannelName() : null);
-      guiPresentationMap.put(MODULEID, getModuleID());
-      guiPresentationMap.put(MODULENAME, module.toString());
-      guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
-      guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
-      guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
-      guiPresentationMap.put(VOUCHERCODE, "");
-      guiPresentationMap.put(VOUCHERPARTNERID, "");
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       
       Module module = Module.fromExternalRepresentation(getModuleID());
@@ -546,9 +553,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //
 
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
-      thirdPartyPresentationMap.put(PURCHASEID, getEventID());
       thirdPartyPresentationMap.put(OFFERID, getOfferID());
-      thirdPartyPresentationMap.put(OFFERNAME, offer.getGUIManagedObjectName());
+      thirdPartyPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
       thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
       thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
       if(offer.getOfferSalesChannelsAndPrices() != null){
@@ -556,7 +562,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(channel.getSalesChannelIDs() != null) {
             for(String salesChannelID : channel.getSalesChannelIDs()) {
               if(salesChannelID.equals(getSalesChannelID())) {
-                thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+                if(channel.getPrice() != null) {
+                  PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                  if(paymentMean != null) {
+                    thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
+                    thirdPartyPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                  }
+                }
               }
             }
           }
@@ -585,6 +597,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(VOUCHERCODE, "");
       thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
     }
+    
+    /****************************************
+    *
+    *  getEffectiveDeliveryTime
+    *
+    ****************************************/
+
+    @Override
+    public Date getEffectiveDeliveryTime(Date now)
+    {
+      return now;
+    }   
   }
 
   /*****************************************

@@ -11,7 +11,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
@@ -26,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -34,6 +32,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.CommunicationChannelBlackoutPeriod.BlackoutPeriods;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -57,10 +56,11 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //
   
   public static final String DELIVERYREQUESTID = "deliveryRequestID";
-  public static final String EVENTDATETIME = "eventDatetime";
   public static final String DELIVERYSTATUS = "deliveryStatus";
   public static final String EVENTID = "eventID";
   public static final String ACTIVITYTYPE = "activityType";
+  public static final String DELIVERYDATE = "deliveryDate";
+  public static final String CREATIONDATE = "creationDate";
   
   //
   // child generic
@@ -102,6 +102,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public static final String OFFERPRICE = "offerPrice";
   public static final String OFFERSTOCK = "offerStock";
   public static final String OFFERCONTENT = "offerContent";
+  public static final String MEANOFPAYMENT = "meanOfPayment";
   public static final String VOUCHERCODE = "voucherCode";
   public static final String VOUCHERPARTNERID = "voucherPartnerId";
   
@@ -109,6 +110,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   // Messages
   //
   
+  public static final String MESSAGE_ID = "messageID";
+  public static final String SOURCE = "source";
   public static final String NOTIFICATION_CHANNEL = "notificationChannel";
   public static final String NOTIFICATION_SUBJECT = "subject";
   public static final String NOTIFICATION_TEXT_BODY = "textBody";
@@ -208,6 +211,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.field("deliveryStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("diplomaticBriefcase", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).name("deliveryrequest_diplomaticBriefcase").schema());
+    schemaBuilder.field("rescheduledDate", Timestamp.builder().optional().schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -267,6 +271,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   private DeliveryStatus deliveryStatus;
   private Date deliveryDate;
   private Map<String, String> diplomaticBriefcase;
+  private Date rescheduledTime;
 
   /*****************************************
   *
@@ -296,6 +301,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
   public ActionType getActionType() { return ActionType.DeliveryRequest; }
   public boolean isPending() { return deliveryStatus == DeliveryStatus.Pending; }
+  public Date getRescheduledTime() { return rescheduledTime; }
 
   //
   //  setters
@@ -313,6 +319,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) { this.diplomaticBriefcase = (diplomaticBriefcase != null) ? diplomaticBriefcase : new HashMap<String,String>(); }
+  public void setRescheduledTime(Date rescheduledTime) { this.rescheduledTime = rescheduledTime; }
   
   /*****************************************
   *
@@ -323,9 +330,10 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
-  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService);
-  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
   public abstract Integer getActivityType();
+  public abstract Date getEffectiveDeliveryTime(Date now);
 
   /*****************************************
   *
@@ -360,6 +368,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
+    this.rescheduledTime = null;
   }
   
   /*******************************************
@@ -395,6 +404,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
     this.diplomaticBriefcase = new HashMap<String, String>();
+    this.rescheduledTime = null;
   }
 
   /*****************************************
@@ -424,6 +434,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = deliveryRequest.getDeliveryStatus();
     this.deliveryDate = deliveryRequest.getDeliveryDate();
     this.diplomaticBriefcase = deliveryRequest.getDiplomaticBriefcase();
+    this.rescheduledTime = deliveryRequest.getRescheduledTime();
   }
 
   /*****************************************
@@ -459,6 +470,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = DeliveryStatus.Pending;
     this.deliveryDate = null;
     this.diplomaticBriefcase = (Map<String, String>) jsonRoot.get("diplomaticBriefcase");
+    this.rescheduledTime = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
   }
 
   /*****************************************
@@ -488,6 +500,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     struct.put("deliveryStatus", deliveryRequest.getDeliveryStatus().getExternalRepresentation());
     struct.put("deliveryDate", deliveryRequest.getDeliveryDate() != null ? deliveryRequest.getDeliveryDate().getTime() : null);
     struct.put("diplomaticBriefcase", (deliveryRequest.getDiplomaticBriefcase() == null ? new HashMap<String, String>() : deliveryRequest.getDiplomaticBriefcase()));
+    struct.put("rescheduledDate", deliveryRequest.getRescheduledTime());
   }
 
   /*****************************************
@@ -530,6 +543,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     DeliveryStatus deliveryStatus = DeliveryStatus.fromExternalRepresentation(valueStruct.getString("deliveryStatus"));
     Date deliveryDate = (schemaVersion >= 3) ? (valueStruct.get("deliveryDate") != null ? new Date(valueStruct.getInt64("deliveryDate")) : null) : (Date) valueStruct.get("deliveryDate");
     Map<String, String> diplomaticBriefcase = (Map<String, String>) valueStruct.get("diplomaticBriefcase");
+    Date rescheduledDate = (Date) valueStruct.get("rescheduledDate");
 
     //
     //  return
@@ -554,6 +568,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     this.deliveryStatus = deliveryStatus;
     this.deliveryDate = deliveryDate;
     this.diplomaticBriefcase = diplomaticBriefcase;
+    this.rescheduledTime = rescheduledDate;
   }
 
   /****************************************
@@ -566,16 +581,17 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getGUIPresentationMap
   //
 
-  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
     guiPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
-    guiPresentationMap.put(EVENTID, getEventID());
-    guiPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
-    guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
+    guiPresentationMap.put(EVENTID, getEventID());    
+    guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
+    guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
+    guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
     return guiPresentationMap;
   }
   
@@ -583,16 +599,17 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getThirdPartyPresentationMap
   //
 
-  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
     thirdPartyPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
-    thirdPartyPresentationMap.put(EVENTID, getEventID());
-    thirdPartyPresentationMap.put(EVENTDATETIME, getDateString(getEventDate()));
-    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation());
+    thirdPartyPresentationMap.put(EVENTID, getEventID()); 
+    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
+    thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
+    thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
     return thirdPartyPresentationMap;
   }
   
@@ -682,6 +699,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     b.append("," + deliveryStatus);
     b.append("," + deliveryDate);
     b.append("," + diplomaticBriefcase);
+    b.append("," + rescheduledTime);
     return b.toString();
   }
 

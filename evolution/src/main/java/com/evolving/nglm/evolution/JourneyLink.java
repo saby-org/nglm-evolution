@@ -56,6 +56,7 @@ public class JourneyLink
     schemaBuilder.field("sourceReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("destinationReference", Schema.STRING_SCHEMA);
     schemaBuilder.field("evaluationPriority", Schema.STRING_SCHEMA);
+    schemaBuilder.field("linkDisplay", Schema.STRING_SCHEMA);
     schemaBuilder.field("evaluateContextVariables", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("transitionCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
     schema = schemaBuilder.build();
@@ -87,6 +88,7 @@ public class JourneyLink
 
   private String linkID;
   private String linkName;
+  private String linkDisplay;
   private ParameterMap linkParameters;
   private String sourceReference;
   private String destinationReference;
@@ -117,6 +119,7 @@ public class JourneyLink
   public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
   public JourneyNode getSource() { return source; }
   public JourneyNode getDestination() { return destination; }
+  public String getLinkDisplay() { return linkDisplay; }
 
   //
   //  setters
@@ -132,7 +135,7 @@ public class JourneyLink
   *
   *****************************************/
 
-  public JourneyLink(String linkID, String linkName, ParameterMap linkParameters, String sourceReference, String destinationReference, EvaluationPriority evaluationPriority, boolean evaluateContextVariables, List<EvaluationCriterion> transitionCriteria)
+  public JourneyLink(String linkID, String linkName, ParameterMap linkParameters, String sourceReference, String destinationReference, EvaluationPriority evaluationPriority, boolean evaluateContextVariables, List<EvaluationCriterion> transitionCriteria, String linkDisplay)
   {
     this.linkID = linkID;
     this.linkName = linkName;
@@ -142,6 +145,7 @@ public class JourneyLink
     this.evaluationPriority = evaluationPriority;
     this.evaluateContextVariables = evaluateContextVariables;
     this.transitionCriteria = transitionCriteria;
+    this.linkDisplay = linkDisplay;
   }
 
   /*****************************************
@@ -162,6 +166,7 @@ public class JourneyLink
     struct.put("evaluationPriority", journeyLink.getEvaluationPriority().getExternalRepresentation());
     struct.put("evaluateContextVariables", journeyLink.getEvaluateContextVariables());
     struct.put("transitionCriteria", packTransitionCriteria(journeyLink.getTransitionCriteria()));
+    struct.put("linkDisplay", journeyLink.getLinkDisplay());
     return struct;
   }
 
@@ -210,12 +215,13 @@ public class JourneyLink
     EvaluationPriority evaluationPriority = EvaluationPriority.fromExternalRepresentation(valueStruct.getString("evaluationPriority"));
     boolean evaluateContextVariables = (schemaVersion >= 2) ? valueStruct.getBoolean("evaluateContextVariables") : false;
     List<EvaluationCriterion> transitionCriteria = unpackTransitionCriteria(schema.field("transitionCriteria").schema(), valueStruct.get("transitionCriteria"));
+    String linkDisplay = valueStruct.getString("linkDisplay");
 
     //
     //  return
     //
 
-    return new JourneyLink(linkID, linkName, linkParameters, sourceReference, destinationReference, evaluationPriority, evaluateContextVariables, transitionCriteria);
+    return new JourneyLink(linkID, linkName, linkParameters, sourceReference, destinationReference, evaluationPriority, evaluateContextVariables, transitionCriteria, linkDisplay);
   }
 
   /*****************************************

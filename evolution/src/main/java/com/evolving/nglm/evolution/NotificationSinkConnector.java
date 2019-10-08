@@ -114,28 +114,30 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
-        documentMap.put("eventID", mailNotification.getEventID());
-        documentMap.put("eventDatetime", mailNotification.getEventDate());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", mailNotification.getCreationDate());
+        documentMap.put("deliveryDate", mailNotification.getDeliveryDate());
         documentMap.put("moduleID", mailNotification.getModuleID());
         documentMap.put("featureID", mailNotification.getFeatureID());
-        documentMap.put("origin", mailNotification.getDeliveryRequestSource());
-        documentMap.put("responseCode", mailNotification.getReturnCode());
+        documentMap.put("source", mailNotification.getFromAddress());
+        documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
-        documentMap.put("responseMessage", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
+        documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
       }else{
         documentMap = new HashMap<String,Object>();
         SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(smsNotificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
-        documentMap.put("eventID", smsNotification.getEventID());
-        documentMap.put("eventDatetime", smsNotification.getEventDate());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", smsNotification.getCreationDate());
+        documentMap.put("deliveryDate", smsNotification.getDeliveryDate());
         documentMap.put("moduleID", smsNotification.getModuleID());
         documentMap.put("featureID", smsNotification.getFeatureID());
-        documentMap.put("origin", smsNotification.getDeliveryRequestSource());
-        documentMap.put("responseCode", smsNotification.getReturnCode());
+        documentMap.put("source", smsNotification.getSource());
+        documentMap.put("returnCode", smsNotification.getReturnCode());
         documentMap.put("deliveryStatus", smsNotification.getMessageStatus().toString());
-        documentMap.put("responseMessage", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
+        documentMap.put("returnCodeDetails", SMSMessageStatus.fromReturnCode(smsNotification.getReturnCode()));
       }
       
       return documentMap;

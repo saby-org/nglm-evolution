@@ -93,4 +93,13 @@ public class EvolutionUtilities
   {
     return addTime(baseTime, amount, timeUnit, timeZone, false);
   }
+  
+  //
+  // isDateBetween
+  //
+  
+  public static boolean isDateBetween(Date now, Date from, Date until)
+  {
+    return now.after(from) && now.before(until);
+  }
 }

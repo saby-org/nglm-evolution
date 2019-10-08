@@ -9,7 +9,10 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.JourneyStatus;
+import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -19,9 +22,11 @@ import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -281,5 +286,30 @@ public class CommunicationChannel extends GUIManagedObject
         {
           return true;
         }
+    }
+    
+    public List<DailyWindow> getTodaysDailyWindows()
+    {
+      int today = SystemTime.getCalendar().get(Calendar.DAY_OF_WEEK);
+      if(getNotificationDailyWindows() != null)
+        {
+          switch(today) {
+          case 1:
+            return getNotificationDailyWindows().getDailyWindowSunday();
+          case 2:
+            return getNotificationDailyWindows().getDailyWindowMonday();
+          case 3:
+            return getNotificationDailyWindows().getDailyWindowTuesday();
+          case 4:
+            return getNotificationDailyWindows().getDailyWindowWednesday();
+          case 5:
+            return getNotificationDailyWindows().getDailyWindowThursday();
+          case 6:
+            return getNotificationDailyWindows().getDailyWindowFriday();
+          case 7:
+            return getNotificationDailyWindows().getDailyWindowSaturday();
+          }
+        }
+      return null;
     }
 }

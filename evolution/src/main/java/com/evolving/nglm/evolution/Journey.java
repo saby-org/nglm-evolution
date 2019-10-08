@@ -1138,7 +1138,7 @@ public class Journey extends GUIManagedObject
         *****************************************/
 
         String linkID = jsonLink.getSourceNodeID() + "-" + Integer.toString(jsonLink.getSourceConnectionPoint()) + ":" + jsonLink.getDestinationNodeID();
-        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), outgoingConnectionPoint.getOutputConnectorParameters(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), outgoingConnectionPoint.getEvaluateContextVariables(), transitionCriteria);
+        JourneyLink journeyLink = new JourneyLink(linkID, outgoingConnectionPoint.getName(), outgoingConnectionPoint.getOutputConnectorParameters(), sourceNode.getNodeID(), destinationNode.getNodeID(), outgoingConnectionPoint.getEvaluationPriority(), outgoingConnectionPoint.getEvaluateContextVariables(), transitionCriteria, outgoingConnectionPoint.getDisplay());
         journeyLink.setSource(sourceJourneyNode);
         journeyLink.setDestination(destinationJourneyNode);
         journeyLinks.put(journeyLink.getLinkID(), journeyLink);
@@ -2407,6 +2407,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
 
     private String name;
+    private String display;
     private ParameterMap outputConnectorParameters;
     private EvaluationPriority evaluationPriority;
     private boolean evaluateContextVariables;
@@ -2420,6 +2421,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
     
     public String getName() { return name; }
+    public String getDisplay() { return display; }
     public ParameterMap getOutputConnectorParameters() { return outputConnectorParameters; }
     public EvaluationPriority getEvaluationPriority() { return evaluationPriority; }
     public boolean getEvaluateContextVariables() { return evaluateContextVariables; }
@@ -2435,6 +2437,7 @@ public class Journey extends GUIManagedObject
     public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
+      this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
       this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext, subscriberMessageTemplateService);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
       this.evaluateContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "evaluateContextVariables", Boolean.FALSE);
@@ -2698,6 +2701,40 @@ public class Journey extends GUIManagedObject
             subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
             break;
         }
+    }
+  }
+  
+  /*****************************************
+  *
+  *  class ABTestingAction
+  *
+  *****************************************/
+
+  public static class ABTestingAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public ABTestingAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+    }
+        
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public void executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
+    {
+      //
+      // can be sample.a or sample.b as key
+      //
+      subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(journeyLink.getLinkName(), journeyLink.getLinkDisplay());            
     }
   }
 }

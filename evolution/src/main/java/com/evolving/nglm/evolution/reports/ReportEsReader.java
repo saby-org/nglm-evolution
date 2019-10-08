@@ -166,11 +166,28 @@ public class ReportEsReader {
         // Read all docs from ES, on esIndex[i]
         // Write to topic, one message per document
         try {
-          Scanner s = new Scanner(esNode);
-          s.useDelimiter(":");
-          String node = s.next();
-          int port = s.nextInt();
-          s.close();
+          
+          // ESROUTER can have two access points
+          // need to cut the string to get at least one
+          String node = null;
+          int port = 0;
+          if(esNode.contains(",")) {
+            String[] split = esNode.split(",");
+            if(split[0] != null) {
+              Scanner s = new Scanner(split[0]);
+              s.useDelimiter(":");
+              node = s.next();
+              port = s.nextInt();
+              s.close();
+            }
+          }else {
+            Scanner s = new Scanner(esNode);
+            s.useDelimiter(":");
+            node = s.next();
+            port = s.nextInt();
+            s.close();
+          }
+          
           elasticsearchReaderClient = new RestHighLevelClient(
               RestClient.builder(
                   new HttpHost(node , port, "http")));

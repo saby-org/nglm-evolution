@@ -2254,7 +2254,16 @@ public class EvolutionEngine
               currentStatusTraffic.addInflow();
             }
         }
+      
+        //
+        // update abTesting
+        //
+        if(event.getJourneyStatistic().getSample() != null)
+          {
+            history.getCurrentData().incrementABTesting(event.getJourneyStatistic().getSample());
+          }
       }
+   
     
     // 
     // Update rewards
@@ -3033,7 +3042,7 @@ public class EvolutionEngine
                 if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramPointsState))
                   {
                     LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
-                    currentLoyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, newTierName, now, loyaltyProgramHistory);
+                    currentLoyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, newTierName, null, now, loyaltyProgramHistory);
                   }
 
                 //
@@ -3081,13 +3090,14 @@ public class EvolutionEngine
                 //
 
                 LoyaltyProgramState loyaltyProgramState = subscriberProfile.getLoyaltyPrograms().get(loyaltyProgramRequest.getLoyaltyProgramID());
+
                 if (loyaltyProgramState == null)
                   {
                     LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
-                    loyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierName, now, loyaltyProgramHistory);
+                    loyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierName, null, now, loyaltyProgramHistory);
                   }
-                String oldTier = ((LoyaltyProgramPointsState)loyaltyProgramState).getTierName();
 
+                String oldTier = ((LoyaltyProgramPointsState)loyaltyProgramState).getTierName();
                 //
                 //  update loyalty program state
                 //
@@ -3320,7 +3330,7 @@ public class EvolutionEngine
   
   /*****************************************
   *
-  *  updatePropensity
+  *  determineLoyaltyProgramPointsTier
   *
   *****************************************/
 
@@ -4399,7 +4409,24 @@ public class EvolutionEngine
 
                 boolean currentStatusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
                 boolean markConverted = originalStatusConverted == false && currentStatusConverted == true;
+                
+                //
+                // abTesting (we remove it so its only counted once per journey)
+                //
+                
+                String sample = null;
+                if(journeyState.getJourneyParameters().get("sample.a") != null)
+                  {
+                    sample = (String) journeyState.getJourneyParameters().get("sample.a");
+                    journeyState.getJourneyParameters().remove("sample.a");
+                  }
 
+                else if(journeyState.getJourneyParameters().get("sample.b") != null)
+                  {
+                    sample = (String) journeyState.getJourneyParameters().get("sample.b");
+                    journeyState.getJourneyParameters().remove("sample.b");
+                  }
+                
                 //
                 //  journeyStatistic
                 //
@@ -4410,7 +4437,7 @@ public class EvolutionEngine
                     subscriberGroupEpochReader,
                     ucgStateReader,
                     statusUpdated,
-                    new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted)));
+                    new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample)));
               }
           }
         while (firedLink != null && journeyState.getJourneyExitDate() == null);

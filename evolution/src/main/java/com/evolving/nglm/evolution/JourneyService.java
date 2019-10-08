@@ -218,7 +218,7 @@ public class JourneyService extends GUIService
   *
   *****************************************/
 
-  private JourneyStatus getJourneyStatus(GUIManagedObject guiManagedObject)
+  public JourneyStatus getJourneyStatus(GUIManagedObject guiManagedObject)
   {
     Date now = SystemTime.getCurrentTime();
     JourneyStatus status = JourneyStatus.Unknown;

@@ -21,6 +21,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   
   private static OfferService offerService;
   private static ProductService productService;
+  private static PaymentMeanService paymentMeanService;
   
   /****************************************
   *
@@ -72,6 +73,9 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       
       productService = new ProductService(Deployment.getBrokerServers(), "ordsinkconnector-productservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getProductTopic(), false);
       productService.start();
+      
+      paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "ordsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
+      paymentMeanService.start();
     }
 
     /*****************************************
@@ -121,8 +125,9 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       if(purchaseManager != null){
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", purchaseManager.getSubscriberID());
-        documentMap.put("purchaseID", purchaseManager.getEventID());
+        documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
         documentMap.put("eventDatetime", purchaseManager.getEventDate());
+        documentMap.put("eventID", purchaseManager.getEventID());
         documentMap.put("offerID", purchaseManager.getOfferID());
         documentMap.put("offerQty", purchaseManager.getQuantity());
         documentMap.put("salesChannelID", purchaseManager.getSalesChannelID());
@@ -132,7 +137,11 @@ public class ODRSinkConnector extends SimpleESSinkConnector
               if(channel.getSalesChannelIDs() != null) {
                 for(String salesChannelID : channel.getSalesChannelIDs()) {
                   if(salesChannelID.equals(purchaseManager.getSalesChannelID())) {
-                    documentMap.put("offerPrice", channel.getPrice().getAmount());
+                    PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(channel.getPrice().getPaymentMeanID());
+                    if(paymentMean != null) {
+                      documentMap.put("offerPrice", channel.getPrice().getAmount());
+                      documentMap.put("meanOfPayment", paymentMean.getDisplay());
+                    }
                   }
                 }
               }
@@ -143,7 +152,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
           if(offer.getOfferProducts() != null) {
             for(OfferProduct offerProduct : offer.getOfferProducts()) {
               Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-              sb.append(product!=null?product.getDisplay():offerProduct.getProductID()).append(";").append(offerProduct.getQuantity()).append(",");
+              sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():offerProduct.getProductID()).append(",");
             }
           }
           String offerContent = sb.toString().substring(0, sb.toString().length()-1);
@@ -151,10 +160,10 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         }
         documentMap.put("moduleID", purchaseManager.getModuleID());
         documentMap.put("featureID", purchaseManager.getFeatureID());
-        documentMap.put("origin", purchaseManager.getDeliveryRequestSource());
-        documentMap.put("responseCode", purchaseManager.getReturnCode());
+        documentMap.put("origin", "");
+        documentMap.put("returnCode", purchaseManager.getReturnCode());
         documentMap.put("deliveryStatus", purchaseManager.getDeliveryStatus());
-        documentMap.put("responseMessage", PurchaseFulfillmentStatus.fromReturnCode(purchaseManager.getReturnCode()));
+        documentMap.put("returnCodeDetails", PurchaseFulfillmentStatus.fromReturnCode(purchaseManager.getReturnCode()));
         documentMap.put("voucherCode", "");
         documentMap.put("voucherPartnerID", "");
       }

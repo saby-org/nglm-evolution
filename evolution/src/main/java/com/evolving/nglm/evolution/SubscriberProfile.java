@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -33,6 +34,7 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +49,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
@@ -348,7 +351,93 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return result;
   }
-
+  
+  /******************************************
+  *
+  *  getLoyaltyProgramsJSON - LoyaltyPrograms
+  *
+  ******************************************/
+  
+  public JSONObject getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService)
+  {
+    Date now = SystemTime.getCurrentTime();
+    JSONObject result = new JSONObject();
+    if(this.loyaltyPrograms != null)
+      {
+        JSONArray array = new JSONArray();
+        for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
+          {
+            LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey());
+            Map<String, Object> loyalty = new HashMap<String, Object>();
+            loyalty.put("programID", program.getKey());
+            loyalty.put("loyaltyProgramType", program.getValue().getLoyaltyProgramType().getExternalRepresentation());
+            loyalty.put("loyaltyProgramEpoch", program.getValue().getLoyaltyProgramEpoch());
+            loyalty.put("loyaltyProgramName", program.getValue().getLoyaltyProgramName());
+            loyalty.put("loyaltyProgramEnrollmentDate", program.getValue().getLoyaltyProgramEnrollmentDate().getTime());
+            loyalty.put("loyaltyProgramExitDate", program.getValue().getLoyaltyProgramExitDate());
+            
+            if(loyaltyProgram instanceof LoyaltyProgramPoints) 
+              {                
+                LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+                LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) program.getValue();
+                if(loyaltyProgramPointsState.getTierName() != null){ loyalty.put("tierName", loyaltyProgramPointsState.getTierName()); }
+                if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyalty.put("tierUpdateDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
+                if(loyaltyProgramPointsState.getTierName() != null){ loyalty.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName()); }
+                
+                if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
+                  { 
+                    if(loyaltyProgramPoints.getRewardPointsID() != null)
+                      {
+                        loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString()); 
+                        loyalty.put("rewardPointBalance", this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()).getBalance(now));
+                      }
+                    if(loyaltyProgramPoints.getStatusPointsID() != null)
+                      {
+                        loyalty.put("statusPointName", pointService.getStoredPoint(loyaltyProgramPoints.getStatusPointsID()).getJSONRepresentation().get("display").toString());
+                        loyalty.put("statusPointBalance", this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now));
+                      } 
+                  }
+              }
+      
+            array.add(JSONUtilities.encodeObject(loyalty));
+          }
+        result.put("loyaltyPrograms", array);
+      }
+    return result;
+  }
+  
+  /****************************************
+  *
+  *  getPointsBalanceJSON - PointBalance
+  *
+  ****************************************/
+  
+  public JSONObject getPointsBalanceJSON()
+  {
+    JSONObject result = new JSONObject();
+    if(this.pointBalances != null)
+      {
+        JSONArray array = new JSONArray();
+        for(Entry<String, PointBalance> point : pointBalances.entrySet())
+          {
+            JSONObject obj = new JSONObject();
+            JSONArray expirationDates = new JSONArray();
+            for (Date expirationDate : point.getValue().getBalances().keySet())
+              {
+                JSONObject pointInfo = new JSONObject();
+                pointInfo.put("date", expirationDate.getTime());
+                pointInfo.put("amount", point.getValue().getBalances().get(expirationDate));
+                expirationDates.add(pointInfo);
+              }
+            obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
+            obj.put("pointID", point.getKey());
+            array.add(obj);
+          }
+        result.put("pointBalances", array);
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  accessors - loyalty programs
@@ -1302,7 +1391,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
 
-  private static Map<String,Object> packLoyaltyPrograms(Map<String,LoyaltyProgramState> loyaltyPrograms)
+  public static Map<String,Object> packLoyaltyPrograms(Map<String,LoyaltyProgramState> loyaltyPrograms)
   {
     Map<String,Object> result = new HashMap<String,Object>();
     for (String loyaltyProgramID : loyaltyPrograms.keySet())
@@ -1369,7 +1458,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ****************************************/
 
-  private static Map<String,Object> packPointBalances(Map<String,PointBalance> pointBalances)
+  public static Map<String,Object> packPointBalances(Map<String,PointBalance> pointBalances)
   {
     Map<String,Object> result = new HashMap<String,Object>();
     for (String pointID : pointBalances.keySet())

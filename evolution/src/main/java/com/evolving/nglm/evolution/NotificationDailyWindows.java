@@ -364,6 +364,8 @@ public class NotificationDailyWindows
       public String getStartTime() { return from; }
       public String getEndTime() { return until; }
       
+      public Date getFromDate() { return convertToDate(from); }
+      public Date getUntilDate() { return convertToDate(until); }
 
       /*****************************************
       *
@@ -454,9 +456,8 @@ public class NotificationDailyWindows
         json.put("until", getEndTime());
         return JSONUtilities.encodeObject(json);
       }
-    }
-    
-    public Date convertToDate(String time)
+      
+      public Date convertToDate(String time)
       {
         String[] splitTime = time.split(":");
         Calendar cal = SystemTime.getCalendar();
@@ -465,5 +466,6 @@ public class NotificationDailyWindows
           cal.set(Calendar.MINUTE, Integer.valueOf(splitTime[1]));
         }
         return cal.getTime();
+    }
     }
 }

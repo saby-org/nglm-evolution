@@ -55,6 +55,7 @@ public class JourneyTrafficSnapshot
     schemaBuilder.field("byStratum", journeyTrafficMapSchema.schema());
     schemaBuilder.field("byStatus", journeyTrafficMapSchema.schema());
     schemaBuilder.field("byStatusByStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, journeyTrafficMapSchema.schema()).name("by_stratum_journey_traffic_map").schema());
+    schemaBuilder.field("byAbTesting", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).name("by_ab_testing_map").optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -82,6 +83,7 @@ public class JourneyTrafficSnapshot
   private Map<List<String>,SubscriberTraffic> byStratum;                        // Traffic & Rewards
   private Map<String,SubscriberTraffic> byStatus;                               // Traffic only
   private Map<List<String>,Map<String,SubscriberTraffic>> byStatusByStratum;    // Traffic only -- Map<Stratum, Map<Status, SubscriberTraffic>>
+  private Map<String,Integer> byAbTesting;                                      // Traffic only
 
   /****************************************
   *
@@ -94,6 +96,7 @@ public class JourneyTrafficSnapshot
   public Map<List<String>, SubscriberTraffic> getByStratum() { return byStratum; }
   public Map<String,SubscriberTraffic> getByStatus() { return byStatus; }
   public Map<List<String>,Map<String,SubscriberTraffic>> getByStatusByStratum() { return byStatusByStratum; }
+  public Map<String,Integer> getByAbTesting() { return byAbTesting!=null?byAbTesting:new HashMap<String,Integer>(); }
   
   public int getStatusSubscribersCount(SubscriberJourneyStatus status)
   {
@@ -125,6 +128,21 @@ public class JourneyTrafficSnapshot
       }
     return 0;
   }
+  
+  public int getAbTestingCount(String sampleID)
+  {
+    Integer abTesting = byAbTesting.get(sampleID);
+    if(abTesting != null)
+      {
+        return abTesting;
+      }
+    return 0;
+  }
+  
+  public void incrementABTesting(String sampleID) 
+  {
+    byAbTesting.put(sampleID, byAbTesting.get(sampleID)!=null?byAbTesting.get(sampleID)+1:1);
+  }
 
   /*****************************************
   *
@@ -132,13 +150,14 @@ public class JourneyTrafficSnapshot
   *
   *****************************************/
 
-  public JourneyTrafficSnapshot(SubscriberTraffic global, Map<String,SubscriberTraffic> byNode, Map<List<String>,SubscriberTraffic> byStratum, Map<String,SubscriberTraffic> byStatus, Map<List<String>,Map<String,SubscriberTraffic>> byStatusByStratum)
+  public JourneyTrafficSnapshot(SubscriberTraffic global, Map<String,SubscriberTraffic> byNode, Map<List<String>,SubscriberTraffic> byStratum, Map<String,SubscriberTraffic> byStatus, Map<List<String>,Map<String,SubscriberTraffic>> byStatusByStratum, Map<String,Integer> byAbTesting)
   {
     this.global = global;
     this.byNode = byNode;
     this.byStratum = byStratum;
     this.byStatus = byStatus;
     this.byStatusByStratum = byStatusByStratum;
+    this.byAbTesting = byAbTesting;
   }
   
   /*****************************************
@@ -153,7 +172,8 @@ public class JourneyTrafficSnapshot
         new HashMap<String, SubscriberTraffic>(),                       // byNode
         new HashMap<List<String>, SubscriberTraffic>(),                 // byStratum
         new HashMap<String, SubscriberTraffic>(),                       // byStatus
-        new HashMap<List<String>, Map<String, SubscriberTraffic>>());   // byStatusByStratum
+        new HashMap<List<String>, Map<String, SubscriberTraffic>>(),    // byStatusByStratum
+        new HashMap<String, Integer>());                                // byAbTesting
     
     this.global.setEmptyRewardsMap();
   }
@@ -171,6 +191,7 @@ public class JourneyTrafficSnapshot
     this.byStratum = new HashMap<List<String>,SubscriberTraffic>();
     this.byStatus = new HashMap<String,SubscriberTraffic>();
     this.byStatusByStratum = new HashMap<List<String>, Map<String, SubscriberTraffic>>();
+    this.byAbTesting = new HashMap<String, Integer>(copy.getByAbTesting());   
     
     // deep copy
     for(String key : copy.getByNode().keySet()) 
@@ -222,6 +243,10 @@ public class JourneyTrafficSnapshot
     json.put("byStratum", getJSONByStratum(byStratum));
     json.put("byStatus", getJSONSubscriberTrafficMap(byStatus));
     json.put("byStatusByStratum", getJSONByStatusByStratum(byStatusByStratum));
+    if(byAbTesting != null)
+      {
+        json.put("byAbTesting", JSONUtilities.encodeObject(byAbTesting));
+      }
     return JSONUtilities.encodeObject(json);
   }
 
@@ -291,9 +316,10 @@ public class JourneyTrafficSnapshot
     struct.put("byStratum", packByStratum(obj.getByStratum()));
     struct.put("byStatus", packSubscriberTrafficMap(obj.getByStatus()));
     struct.put("byStatusByStratum", packByStatusByStratum(obj.getByStatusByStratum()));
+    struct.put("byAbTesting", obj.getByAbTesting());
     return struct;
   }
-
+  
   /****************************************
   *
   *  packSubscriberTrafficMap
@@ -371,12 +397,13 @@ public class JourneyTrafficSnapshot
     Map<List<String>,SubscriberTraffic> byStratum = unpackByStratum(schema.field("byStratum").schema(), valueStruct.get("byStratum"));
     Map<String,SubscriberTraffic> byStatus = unpackSubscriberTrafficMap(schema.field("byStatus").schema(), valueStruct.get("byStatus"));
     Map<List<String>,Map<String,SubscriberTraffic>> byStatusByStratum = unpackByStatusByStratum(schema.field("byStatusByStratum").schema(), valueStruct.get("byStatusByStratum"));
+    Map<String,Integer> byAbTesting = (Map<String,Integer>) valueStruct.get("byAbTesting");
     
     //
     //  return
     //
 
-    return new JourneyTrafficSnapshot(global, byNode, byStratum, byStatus, byStatusByStratum);
+    return new JourneyTrafficSnapshot(global, byNode, byStratum, byStatus, byStatusByStratum, byAbTesting);
   }
 
   /****************************************

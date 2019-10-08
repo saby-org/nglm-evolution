@@ -531,7 +531,7 @@ public class ThirdPartyManager
       if (subscriberIDService != null) subscriberIDService.stop();
       if (productService != null) productService.stop();
       if (deliverableService != null) deliverableService.stop();
-
+      
       //
       //  rest server
       //
@@ -1148,7 +1148,7 @@ public class ThirdPartyManager
                 {
                   if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                     {
-                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
                       BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                     }
                 }
@@ -1258,7 +1258,7 @@ public class ThirdPartyManager
                 {
                   if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                     {
-                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
                       ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                     }
                 }
@@ -1647,7 +1647,7 @@ public class ThirdPartyManager
                 {
                   if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                     {
-                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService)));
+                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService)));
                     }
                 }
             }
@@ -1687,7 +1687,7 @@ public class ThirdPartyManager
     } catch (ThirdPartyManagerException e) {
       return JSONUtilities.encodeObject(response);
     }
-    String journeyObjectiveName = readString(jsonRoot, "objectiveName", true);
+    String journeyObjectiveName = readString(jsonRoot, "objective", true);
     String journeyState = readString(jsonRoot, "journeyState", true);
     String customerStatus = readString(jsonRoot, "customerStatus", true);
     String journeyStartDateStr = readString(jsonRoot, "journeyStartDate", true);
@@ -1888,8 +1888,9 @@ public class ThirdPartyManager
                   journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                   journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
                   journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
-                  journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
-                  journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                  journeyResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                  journeyResponseMap.put("endDate", getDateString(journeyComplete?subsLatestStatistic.getJourneyExitDate():storeJourney.getEffectiveEndDate()));
+                  journeyResponseMap.put("campaignState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
                     {
@@ -1944,10 +1945,7 @@ public class ThirdPartyManager
                       nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                     }
 
-                  journeyResponseMap.put("statusNotified", statusNotified);
-                  journeyResponseMap.put("statusConverted", statusConverted);
-                  journeyResponseMap.put("statusControlGroup", statusControlGroup);
-                  journeyResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                  journeyResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
                   journeyResponseMap.put("journeyComplete", journeyComplete);
                   journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                   journeyResponseMap.put("currentState", currentStateJson);
@@ -1997,7 +1995,7 @@ public class ThirdPartyManager
     } catch (ThirdPartyManagerException e) {
       return JSONUtilities.encodeObject(response);
     }
-    String campaignObjectiveName = readString(jsonRoot, "objectiveName", true);
+    String campaignObjectiveName = readString(jsonRoot, "objective", true);
     String campaignState = readString(jsonRoot, "campaignState", true);
     String customerStatus = readString(jsonRoot, "customerStatus", true);
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", true);
@@ -2204,8 +2202,9 @@ public class ThirdPartyManager
                   campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                   campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                   campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                  campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
-                  campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+                  campaignResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                  campaignResponseMap.put("endDate", getDateString(campaignComplete?subsLatestStatistic.getJourneyExitDate():storeCampaign.getEffectiveEndDate()));
+                  campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
                     {
@@ -2258,11 +2257,7 @@ public class ThirdPartyManager
                       nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                       nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                     }
-
-                  campaignResponseMap.put("statusNotified", statusNotified);
-                  campaignResponseMap.put("statusConverted", statusConverted);
-                  campaignResponseMap.put("statusControlGroup", statusControlGroup);
-                  campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                  campaignResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(campaignComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
                   campaignResponseMap.put("campaignComplete", campaignComplete);
                   campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                   campaignResponseMap.put("currentState", currentStateJson);
@@ -3823,7 +3818,7 @@ public class ThirdPartyManager
     catch (SubscriberProfileServiceException e)
     {
       log.error("SubscriberProfileServiceException ", e.getMessage());
-      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage()+e.getMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
     }
 
     /*****************************************

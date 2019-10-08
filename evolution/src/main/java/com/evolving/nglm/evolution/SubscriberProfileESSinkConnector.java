@@ -12,15 +12,14 @@ import com.evolving.nglm.core.ReferenceDataReader;
 
 import com.evolving.nglm.core.SystemTime;
 
-import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConnector
 {
@@ -39,6 +38,8 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     *****************************************/
 
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+    private LoyaltyProgramService loyaltyProgramService;
+    private PointService pointService;
 
     /*****************************************
     *
@@ -51,6 +52,13 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       super.start(taskConfig);
       this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", Integer.toHexString(getTaskNumber()), Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
+      
+      loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "profileSinkConnector-loyaltyprogramservice" + Integer.toHexString(getTaskNumber()), Deployment.getLoyaltyProgramTopic(), false);
+      loyaltyProgramService.start();
+      
+      pointService = new PointService(Deployment.getBrokerServers(), "profileSinkConnector-pointservice" + Integer.toHexString(getTaskNumber()), Deployment.getPointTopic(), false);
+      pointService.start();
+      
     }
 
     /*****************************************
@@ -151,6 +159,8 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
       documentMap.put("language", subscriberProfile.getLanguage());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));
+      documentMap.put("loyaltyPrograms", (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty()) ? subscriberProfile.getLoyaltyProgramsJSON(loyaltyProgramService, pointService).toString() : null);
+      documentMap.put("pointBalances", (subscriberProfile.getPointBalances() != null && !subscriberProfile.getPointBalances().isEmpty()) ? subscriberProfile.getPointsBalanceJSON().toString() : null);
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //

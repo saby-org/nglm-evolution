@@ -13,6 +13,8 @@ import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.WorkItemScheduler;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
+import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -101,6 +103,7 @@ public abstract class DeliveryManager
     Failed("failed"),
     FailedTimeout("failedtimeout"),
     Acknowledged("acknowledged"),
+    Reschedule("reschedule"),
 
     /*****************************************
     *
@@ -1258,13 +1261,13 @@ public abstract class DeliveryManager
         deliveryRequest.setTimeout(timeout);
         scheduler.schedule(timeout, deliveryRequest);
       }
-
+    
     /****************************************
     *
     *  submit -- normal
     *
     ****************************************/
-
+    
     submitRequestQueue.add(deliveryRequest);
   }
 
@@ -1443,6 +1446,7 @@ public abstract class DeliveryManager
 
             DeliveryRequest deliveryRequestOnScheduler = null;
             boolean waiting = false;
+            boolean rescheduled = (deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule));
             if (waitingForAcknowledgement.containsKey(deliveryRequest.getDeliveryRequestID()))
               {
                 deliveryRequestOnScheduler = waitingForAcknowledgement.get(deliveryRequest.getDeliveryRequestID());
@@ -1458,7 +1462,7 @@ public abstract class DeliveryManager
             //  stale?
             //
 
-            if (! waiting)
+            if (! waiting && ! rescheduled)
               {
                 log.info("processCompleteRequest stale: {}", deliveryRequest);
                 return;
@@ -1487,7 +1491,7 @@ public abstract class DeliveryManager
         *****************************************/
 
         if (deliveryRequest.getDeliveryStatus() == null) deliveryRequest.setDeliveryStatus(DeliveryStatus.Indeterminate);
-        if (deliveryRequest.getDeliveryDate() == null) deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+        if (deliveryRequest.getDeliveryDate() == null && ! deliveryRequest.getDeliveryStatus().equals(DeliveryStatus.Reschedule)) deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
         /*****************************************
         *

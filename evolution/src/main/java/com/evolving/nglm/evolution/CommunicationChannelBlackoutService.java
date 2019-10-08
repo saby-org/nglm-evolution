@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.CommunicationChannelBlackoutPeriod.BlackoutPeriods;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -16,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public class CommunicationChannelBlackoutService extends GUIService
 {
@@ -141,6 +144,37 @@ public class CommunicationChannelBlackoutService extends GUIService
   *****************************************/
 
   public void removeCommunicationChannelBlackout(String communicationChannelID, String userID) { removeGUIManagedObject(communicationChannelID, SystemTime.getCurrentTime(), userID); }
+  
+  /*****************************************
+  *
+  *  getEffectiveDeliveryTime
+  *
+  *****************************************/
+  
+  public Date getEffectiveDeliveryTime(String blackoutPeriodID, Date now)
+  {
+    
+    CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = (CommunicationChannelBlackoutPeriod) getActiveCommunicationChannelBlackout(blackoutPeriodID, now);
+    if(communicationChannelBlackoutPeriod != null)
+      {
+        if(communicationChannelBlackoutPeriod.getBlackoutPeriodsList() != null)
+          {
+            Set<BlackoutPeriods> blackoutPeriods = communicationChannelBlackoutPeriod.getBlackoutPeriodsList();
+            if(blackoutPeriods != null && !blackoutPeriods.isEmpty())
+              {
+                for(BlackoutPeriods blackoutPeriod : communicationChannelBlackoutPeriod.getBlackoutPeriodsList())
+                  {
+                    if(EvolutionUtilities.isDateBetween(now, blackoutPeriod.getStartTime(), blackoutPeriod.getEndTime()))
+                      {
+                        return blackoutPeriod.getEndTime();
+                      }
+                  }
+              }
+          }
+      }
+
+    return now;
+  }
 
   /*****************************************
   *

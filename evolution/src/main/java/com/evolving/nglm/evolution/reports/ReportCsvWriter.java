@@ -10,11 +10,15 @@ import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Properties;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -107,19 +111,24 @@ public class ReportCsvWriter {
 			log.info("csvfile is null !");
 			return false;
 		}
-		if (new File(csvfile).exists()) {
+		
+		File file = new File(csvfile+ReportUtils.ZIP_EXTENSION);
+		if (file.exists()) {
 			log.info(csvfile+" already exists, do nothing");
 			return false;
 		}
-		FileWriter fw;
+		FileOutputStream fos;
 		try {
-			fw = new FileWriter(csvfile);
+		  fos = new FileOutputStream(file);
 		} catch (IOException ex) {
 			log.info("Error when creating "+csvfile+" : "+ex.getLocalizedMessage());
 			return false;
 		}
 		try {
-			BufferedWriter writer = new BufferedWriter(fw);
+		    ZipOutputStream writer = new ZipOutputStream(fos);
+		    ZipEntry entry = new ZipEntry(new File(csvfile).getName());
+		    writer.putNextEntry(entry);
+		    
 			final Consumer<String, ReportElement> consumer = createConsumer(topicIn);
 
 			//final Duration delay = Duration.ofSeconds(1);
@@ -175,6 +184,7 @@ public class ReportCsvWriter {
 					}
 				}
 			}
+			writer.closeEntry();
 			writer.close();
 			consumer.close();
 		} catch (IOException ex) {
@@ -189,6 +199,5 @@ public class ReportCsvWriter {
 		log.trace("Reading at offsets :");
 		consumer.assignment().forEach(p -> log.trace(" "+p));
 	}
-
 }
 

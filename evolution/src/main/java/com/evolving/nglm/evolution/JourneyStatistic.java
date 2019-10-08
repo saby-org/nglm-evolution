@@ -55,6 +55,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     schemaBuilder.field("fromNodeID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("toNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("sample", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("markNotified", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("markConverted", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("statusNotified", Schema.BOOLEAN_SCHEMA);
@@ -97,6 +98,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   private String fromNodeID;
   private String toNodeID;
   private String deliveryRequestID;
+  private String sample;
   private boolean markNotified;
   private boolean markConverted;
   private boolean statusNotified;
@@ -123,6 +125,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public String getFromNodeID() { return fromNodeID; }
   public String getToNodeID() { return toNodeID; }
   public String getDeliveryRequestID() { return deliveryRequestID; }
+  public String getSample() { return sample; }
   public boolean getMarkNotified() { return markNotified; }
   public boolean getMarkConverted() { return markConverted; }
   public boolean getStatusNotified() { return statusNotified; }
@@ -153,6 +156,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.fromNodeID = null;
     this.toNodeID = journeyState.getJourneyNodeID();
     this.deliveryRequestID = null;
+    this.sample = null;
     this.markNotified = false;
     this.markConverted = false;
     this.statusNotified = false;
@@ -171,7 +175,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -182,6 +186,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.fromNodeID = journeyLink.getSourceReference();
     this.toNodeID = journeyLink.getDestinationReference();
     this.deliveryRequestID = journeyState.getJourneyOutstandingDeliveryRequestID();
+    this.sample = sample;
     this.markNotified = markNotified;
     this.markConverted = markConverted;
     this.statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
@@ -229,7 +234,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory)
+  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory)
   {
     this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
@@ -240,6 +245,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.fromNodeID = fromNodeID;
     this.toNodeID = toNodeID;
     this.deliveryRequestID = deliveryRequestID;
+    this.sample = sample;
     this.markNotified = markNotified;
     this.markConverted = markConverted;
     this.statusNotified = statusNotified;
@@ -269,6 +275,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.fromNodeID = journeyStatistic.getFromNodeID();
     this.toNodeID = journeyStatistic.getToNodeID();
     this.deliveryRequestID = journeyStatistic.getDeliveryRequestID();
+    this.sample = journeyStatistic.getSample();
     this.markNotified = journeyStatistic.getMarkNotified();
     this.markConverted = journeyStatistic.getMarkConverted();
     this.statusNotified = journeyStatistic.getStatusNotified();
@@ -357,6 +364,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     struct.put("fromNodeID", journeyStatistic.getFromNodeID());
     struct.put("toNodeID", journeyStatistic.getToNodeID());
     struct.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+    struct.put("sample", journeyStatistic.getSample());
     struct.put("markNotified", journeyStatistic.getMarkNotified());
     struct.put("markConverted", journeyStatistic.getMarkConverted());
     struct.put("statusNotified", journeyStatistic.getStatusNotified());
@@ -454,6 +462,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     String fromNodeID = valueStruct.getString("fromNodeID");
     String toNodeID = valueStruct.getString("toNodeID");
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
+    String sample = valueStruct.getString("sample");
     boolean markNotified = (schemaVersion >= 2) ? valueStruct.getBoolean("markNotified") : false;
     boolean markConverted = (schemaVersion >= 2) ? valueStruct.getBoolean("markConverted") : false;
     boolean statusNotified = valueStruct.getBoolean("statusNotified");
@@ -469,7 +478,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     //  return
     //
 
-    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory);
+    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory);
   }
   
   /*****************************************

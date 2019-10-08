@@ -387,7 +387,7 @@ public class JourneyHistory
   
   public void addNodeInformation(String fromNodeID, String toNodeID, String deliveryRequestID, String linkID) 
   {
-    NodeHistory nodeHistory = new NodeHistory(fromNodeID, toNodeID, SystemTime.getActualCurrentTime(), deliveryRequestID, linkID);
+    NodeHistory nodeHistory = new NodeHistory(fromNodeID, toNodeID, SystemTime.getCurrentTime(), deliveryRequestID, linkID);
     this.nodeHistory.add(nodeHistory);
 
   }
@@ -441,6 +441,47 @@ public class JourneyHistory
           }
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  getJourneyEntranceDate
+  *
+  *****************************************/
+  
+  public Date getJourneyEntranceDate()
+  {
+    Comparator<NodeHistory> cmp = new Comparator<NodeHistory>() 
+    {
+      @Override
+      public int compare(NodeHistory node1, NodeHistory node2) 
+      {
+        return node1.getTransitionDate().compareTo(node2.getTransitionDate());
+      }
+    };
+    
+    return this.nodeHistory!=null?Collections.min(this.nodeHistory, cmp).getTransitionDate():null;
+  }
+  
+  /*****************************************
+  *
+  *  getJourneyExitDate
+  *
+  *****************************************/
+  
+  public Date getJourneyExitDate()
+  {
+    if(this.statusHistory != null)
+      {
+        for(StatusHistory status : this.statusHistory)
+          {
+            if(status.getJourneyComplete())
+              {
+                return status.getDate();
+              }
+          }
+      }
+    return null;
   }
   
   /*****************************************

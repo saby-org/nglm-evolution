@@ -108,6 +108,11 @@ public class ReportUtils {
 	 * Default GROUP_ID prefix string passed to the kafka Consumer. 
 	 */
 	public static final String DEFAULT_CONSUMER_GROUPID = "evolution-reports-";
+	
+	   /**
+     * Zip extension for reports. 
+     */
+    public static final String ZIP_EXTENSION = ".zip";
 
 	static public class JsonTimestampExtractor implements TimestampExtractor {
 		@Override

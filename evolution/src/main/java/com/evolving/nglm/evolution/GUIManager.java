@@ -114,6 +114,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
@@ -13893,7 +13894,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService))).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService))).collect(Collectors.toList());
                   }
 
                 //
@@ -14010,7 +14011,18 @@ public class GUIManager
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+                            Date expirationDate = null;
+                            if(bdrMap.get("validityPeriodType") != null && bdrMap.get("validityPeriodQuantity") != null)
+                              {
+                                TimeUnit timeUnit = TimeUnit.fromExternalRepresentation(bdrMap.get("validityPeriodType").toString());
+                                Integer periodQuantity = (Integer) bdrMap.get("validityPeriodQuantity");
+                                expirationDate = EvolutionUtilities.addTime(SystemTime.getCurrentTime(), periodQuantity, timeUnit, Deployment.getBaseTimeZone());
+                              }
+                            if(expirationDate != null)
+                              {
+                                bdrMap.put("deliverableExpiration", getDateString(expirationDate));
+                              }
                             BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                           }
                       }
@@ -14130,7 +14142,7 @@ public class GUIManager
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
                             ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                           }
                       }
@@ -14250,7 +14262,7 @@ public class GUIManager
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService);
+                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
                             messagesJson.add(JSONUtilities.encodeObject(messageMap));
                           }
                       }
@@ -14516,8 +14528,10 @@ public class GUIManager
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                         journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
                         journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
-                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
-                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                        journeyResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                        journeyResponseMap.put("endDate", getDateString(journeyComplete?subsLatestStatistic.getJourneyExitDate():storeJourney.getEffectiveEndDate()));
+                        journeyResponseMap.put("campaignState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
+                        
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                         for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
                           {
@@ -14571,10 +14585,7 @@ public class GUIManager
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                           }
 
-                        journeyResponseMap.put("statusNotified", statusNotified);
-                        journeyResponseMap.put("statusConverted", statusConverted);
-                        journeyResponseMap.put("statusControlGroup", statusControlGroup);
-                        journeyResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                        journeyResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
                         journeyResponseMap.put("journeyComplete", journeyComplete);
                         journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                         journeyResponseMap.put("currentState", currentStateJson);
@@ -14838,8 +14849,9 @@ public class GUIManager
                         campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                         campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                         campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
-                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+                        campaignResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                        campaignResponseMap.put("endDate", getDateString(journeyComplete?subsLatestStatistic.getJourneyExitDate():storeCampaign.getEffectiveEndDate()));
+                        campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                         for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
@@ -14893,11 +14905,7 @@ public class GUIManager
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                             nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                           }
-
-                        campaignResponseMap.put("statusNotified", statusNotified);
-                        campaignResponseMap.put("statusConverted", statusConverted);
-                        campaignResponseMap.put("statusControlGroup", statusControlGroup);
-                        campaignResponseMap.put("statusUniversalControlGroup", statusUniversalControlGroup);
+                        campaignResponseMap.put("customerStatus", Journey.getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup).getExternalRepresentation());
                         campaignResponseMap.put("journeyComplete", journeyComplete);
                         campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                         campaignResponseMap.put("currentState", currentStateJson);

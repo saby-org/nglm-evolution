@@ -7,8 +7,10 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -52,6 +54,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     UNDELIVERABLE(703),
     INVALID(704),
     QUEUE_FULL(705),
+    RESCHEDULE(709),
     THROTTLING(23),
     UNKNOWN(999);
     private Integer returnCode;
@@ -76,6 +79,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         case SENT:
         case DELIVERED:
           return DeliveryStatus.Delivered;
+        case RESCHEDULE:
+          return DeliveryStatus.Reschedule;
         case NO_CUSTOMER_LANGUAGE:
         case NO_CUSTOMER_CHANNEL:
         case ERROR:
@@ -219,7 +224,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_smsnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("source", Schema.STRING_SCHEMA);
@@ -229,6 +234,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       schemaBuilder.field("confirmationExpected", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("restricted", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("flashSMS", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("contactType", Schema.STRING_SCHEMA);
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
@@ -502,21 +508,20 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //  addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       
       Module module = Module.fromExternalRepresentation(getModuleID());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
+      guiPresentationMap.put(EVENTID, null);
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, module.toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
-      guiPresentationMap.put(ORIGIN, getSource());
+      guiPresentationMap.put(SOURCE, getSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
-      guiPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      guiPresentationMap.put(NOTIFICATION_SUBJECT, null);
+      guiPresentationMap.put(RETURNCODEDETAILS, SMSMessageStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(NOTIFICATION_TEXT_BODY, getText(subscriberMessageTemplateService));
-      guiPresentationMap.put(NOTIFICATION_HTML_BODY, null);
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
@@ -525,22 +530,49 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //  addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
+      thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, module.toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
-      thirdPartyPresentationMap.put(ORIGIN, getSource());
+      thirdPartyPresentationMap.put(SOURCE, getSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-      thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
-      thirdPartyPresentationMap.put(NOTIFICATION_SUBJECT, null);
+      thirdPartyPresentationMap.put(RETURNCODEDETAILS, SMSMessageStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(NOTIFICATION_TEXT_BODY, getText(subscriberMessageTemplateService));
-      thirdPartyPresentationMap.put(NOTIFICATION_HTML_BODY, null);
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
+    }
+    
+    @Override
+    public Date getEffectiveDeliveryTime(Date now)
+    {
+      Date deliveryDate = null;
+      
+      CommunicationChannelService communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getCommunicationChannelTopic(), false);
+      CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("sms", now);
+      
+      if(channel != null)
+        {
+          deliveryDate = communicationChannelService.getEffectiveDeliveryTime(channel.getGUIManagedObjectID(), now);
+        }
+      
+      if(deliveryDate != null && !deliveryDate.equals(now))
+        {
+          return deliveryDate;
+        }
+      
+      CommunicationChannelBlackoutService blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getCommunicationChannelBlackoutTopic(), false);
+      CommunicationChannelBlackoutPeriod blackoutPeriod = blackoutService.getActiveCommunicationChannelBlackout("blackoutPeriod", now);
+      if(blackoutPeriod != null)
+        {
+          deliveryDate = blackoutService.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), now);
+        }
+      
+      return deliveryDate;
     }
   }
   
@@ -662,11 +694,31 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         *****************************************/
         
         DeliveryRequest deliveryRequest = nextRequest();
-
-        log.debug("SMSNotificationManagerRequest run deliveryRequest;" + deliveryRequest);
+        Date now = SystemTime.getCurrentTime();
         
-        smsNotification.send((SMSNotificationManagerRequest)deliveryRequest);
+        log.debug("SMSNotificationManagerRequest run deliveryRequest;" + deliveryRequest);
 
+        SMSNotificationManagerRequest smsRequest = (SMSNotificationManagerRequest)deliveryRequest;
+        if(smsRequest.getRestricted()) 
+          {
+            Date effectiveDeliveryTime = smsRequest.getEffectiveDeliveryTime(now);
+            if(effectiveDeliveryTime.equals(now))
+              {
+                smsNotification.send(smsRequest);
+              }
+            else
+              {
+                smsRequest.setRescheduledTime(effectiveDeliveryTime);
+                smsRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
+                smsRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());
+                smsRequest.setMessageStatus(SMSMessageStatus.RESCHEDULE);
+                completeDeliveryRequest(smsRequest);
+              }
+          }
+        else
+          {
+            smsNotification.send(smsRequest);
+          }
       }
   }
 
