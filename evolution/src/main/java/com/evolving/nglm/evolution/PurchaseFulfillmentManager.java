@@ -514,7 +514,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():offerProduct.getProductID()).append(",");
             }
           }
-          String offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          String offerContent = null;
+          if(sb.length() >0){
+            offerContent = sb.toString().substring(0, sb.toString().length()-1);
+          }
           guiPresentationMap.put(OFFERCONTENT, offerContent);
 
           guiPresentationMap.put(SALESCHANNELID, getSalesChannelID());

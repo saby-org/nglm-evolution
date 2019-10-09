@@ -108,9 +108,11 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
@@ -118,13 +120,16 @@ import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
+import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.BulkType;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -132,6 +137,8 @@ import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileSer
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import net.jpountz.lz4.LZ4FrameOutputStream.BD;
 
 public class GUIManager
 {
@@ -13934,6 +13941,9 @@ public class GUIManager
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
 
     //
     // yyyy-MM-dd -- date format
@@ -13996,6 +14006,69 @@ public class GUIManager
                     else
                       {
                         startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      }
+                    
+                    //
+                    // filter on moduleID
+                    //
+
+                    if (moduleID != null)
+                      {
+                        BDRs = BDRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on featureID
+                    //
+
+                    if (featureID != null)
+                      {
+                        BDRs = BDRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on deliverableIDs
+                    //
+                    
+                    if(deliverableIDs != null)
+                      {
+                        List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                        for(DeliveryRequest deliveryRequest : BDRs)
+                          {
+                            if(deliveryRequest instanceof CommodityDeliveryRequest)
+                              {
+                                CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                            else if(deliveryRequest instanceof EmptyFulfillmentRequest) 
+                              {
+                                EmptyFulfillmentRequest request = (EmptyFulfillmentRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                            else if(deliveryRequest instanceof INFulfillmentRequest) 
+                              {
+                                INFulfillmentRequest request = (INFulfillmentRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                            else if(deliveryRequest instanceof PointFulfillmentRequest) 
+                              {
+                                PointFulfillmentRequest request = (PointFulfillmentRequest) deliveryRequest;
+                                if(checkDeliverableIDs(deliverableIDs, request.getPointID()))
+                                  {
+                                    result.add(deliveryRequest);
+                                  }
+                              }
+                          }
+                        BDRs = result;
                       }
 
                     //
@@ -14066,6 +14139,11 @@ public class GUIManager
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", false);
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", false);
 
     //
     // yyyy-MM-dd -- date format
@@ -14129,11 +14207,100 @@ public class GUIManager
                       {
                         startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
                       }
+                    
+                    //
+                    // filter on moduleID
+                    //
 
+                    if (moduleID != null)
+                      {
+                        ODRs = ODRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on featureID
+                    //
+
+                    if (featureID != null)
+                      {
+                        ODRs = ODRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on offerID
+                    //
+
+                    if (offerID != null)
+                      {
+                        List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                        for (DeliveryRequest request : ODRs)
+                          {
+                            if(request instanceof PurchaseFulfillmentRequest)
+                              {
+                                if(((PurchaseFulfillmentRequest)request).getOfferID().equals(offerID))
+                                  {
+                                    result.add(request);
+                                  }
+                              }
+                          }
+                        ODRs = result;
+                      }
+                    
+                    //
+                    // filter on salesChannelID
+                    //
+
+                    if (salesChannelID != null)
+                      {
+                        List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                        for (DeliveryRequest request : ODRs)
+                          {
+                            if(request instanceof PurchaseFulfillmentRequest)
+                              {
+                                if(((PurchaseFulfillmentRequest)request).getSalesChannelID().equals(salesChannelID))
+                                  {
+                                    result.add(request);
+                                  }
+                              }
+                          }
+                        ODRs = result;
+                      }
+                    
+                    //
+                    // filter on paymentMeanID
+                    //
+
+                    if (paymentMeanID != null)
+                      {
+                        List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                        for (DeliveryRequest request : ODRs)
+                          {
+                            if(request instanceof PurchaseFulfillmentRequest)
+                              {
+                                PurchaseFulfillmentRequest odrRequest = (PurchaseFulfillmentRequest) request;
+                                Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID());
+                                if(offer != null)
+                                  {
+                                    if(offer.getOfferSalesChannelsAndPrices() != null)
+                                      {
+                                        for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                                          {
+                                            if(channel.getPrice() != null && channel.getPrice().getPaymentMeanID().equals(paymentMeanID))
+                                              {
+                                                result.add(request);
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                        ODRs = result;
+                      }
+                    
                     //
                     // filter using dates and prepare json
                     //
-
+                    
                     for (DeliveryRequest odr : ODRs)
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
@@ -14186,6 +14353,8 @@ public class GUIManager
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
 
     //
     // yyyy-MM-dd -- date format
@@ -14248,6 +14417,24 @@ public class GUIManager
                     else
                       {
                         startDate = RLMDateUtils.parseDate(startDateReq, dateFormat, Deployment.getBaseTimeZone());
+                      }
+                    
+                    //
+                    // filter on moduleID
+                    //
+
+                    if (moduleID != null)
+                      {
+                        messages = messages.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                      }
+                    
+                    //
+                    // filter on featureID
+                    //
+
+                    if (featureID != null)
+                      {
+                        messages = messages.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
                       }
 
                     //
@@ -21843,5 +22030,26 @@ public class GUIManager
         log.warn(e.getMessage());
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  checkDeliverableIDs
+  *
+  *****************************************/
+
+  public static boolean checkDeliverableIDs(JSONArray deliverableIDs, String idToCheck)
+  {
+    if(deliverableIDs != null)
+      {
+        for(int i=0; i<deliverableIDs.size(); i++)
+          {
+            if(deliverableIDs.get(i).toString().equals(idToCheck))
+              {
+                return true;
+              }
+          }
+      }
+    return false;
   }
 }

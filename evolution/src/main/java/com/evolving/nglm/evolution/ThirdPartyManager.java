@@ -68,10 +68,13 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
@@ -1080,6 +1083,9 @@ public class ThirdPartyManager
      ****************************************/
 
     String startDateReq = readString(jsonRoot, "startDate", true);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
 
     String subscriberID;
     try {
@@ -1139,6 +1145,69 @@ public class ThirdPartyManager
                 {
                   startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
                 }
+              
+              //
+              // filter on moduleID
+              //
+
+              if (moduleID != null)
+                {
+                  BDRs = BDRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                }
+              
+              //
+              // filter on featureID
+              //
+
+              if (featureID != null)
+                {
+                  BDRs = BDRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                }
+              
+              //
+              // filter on deliverableIDs
+              //
+              
+              if(deliverableIDs != null)
+                {
+                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                  for(DeliveryRequest deliveryRequest : BDRs)
+                    {
+                      if(deliveryRequest instanceof CommodityDeliveryRequest)
+                        {
+                          CommodityDeliveryRequest request = (CommodityDeliveryRequest) deliveryRequest;
+                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                            {
+                              result.add(deliveryRequest);
+                            }
+                        }
+                      else if(deliveryRequest instanceof EmptyFulfillmentRequest) 
+                        {
+                          EmptyFulfillmentRequest request = (EmptyFulfillmentRequest) deliveryRequest;
+                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                            {
+                              result.add(deliveryRequest);
+                            }
+                        }
+                      else if(deliveryRequest instanceof INFulfillmentRequest) 
+                        {
+                          INFulfillmentRequest request = (INFulfillmentRequest) deliveryRequest;
+                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getCommodityID()))
+                            {
+                              result.add(deliveryRequest);
+                            }
+                        }
+                      else if(deliveryRequest instanceof PointFulfillmentRequest) 
+                        {
+                          PointFulfillmentRequest request = (PointFulfillmentRequest) deliveryRequest;
+                          if(GUIManager.checkDeliverableIDs(deliverableIDs, request.getPointID()))
+                            {
+                              result.add(deliveryRequest);
+                            }
+                        }
+                    }
+                  BDRs = result;
+                }
 
               //
               // filter and prepare JSON
@@ -1190,6 +1259,11 @@ public class ThirdPartyManager
      ****************************************/
 
     String startDateReq = readString(jsonRoot, "startDate", true);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
+    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", false);
+    String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "paymentMeanID", false);
 
     String subscriberID;
     try {
@@ -1248,6 +1322,95 @@ public class ThirdPartyManager
               else
                 {
                   startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+                }
+              
+              //
+              // filter on moduleID
+              //
+
+              if (moduleID != null)
+                {
+                  ODRs = ODRs.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                }
+              
+              //
+              // filter on featureID
+              //
+
+              if (featureID != null)
+                {
+                  ODRs = ODRs.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
+                }
+              
+              //
+              // filter on offerID
+              //
+
+              if (offerID != null)
+                {
+                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                  for (DeliveryRequest request : ODRs)
+                    {
+                      if(request instanceof PurchaseFulfillmentRequest)
+                        {
+                          if(((PurchaseFulfillmentRequest)request).getOfferID().equals(offerID))
+                            {
+                              result.add(request);
+                            }
+                        }
+                    }
+                  ODRs = result;
+                }
+              
+              //
+              // filter on salesChannelID
+              //
+
+              if (salesChannelID != null)
+                {
+                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                  for (DeliveryRequest request : ODRs)
+                    {
+                      if(request instanceof PurchaseFulfillmentRequest)
+                        {
+                          if(((PurchaseFulfillmentRequest)request).getSalesChannelID().equals(salesChannelID))
+                            {
+                              result.add(request);
+                            }
+                        }
+                    }
+                  ODRs = result;
+                }
+              
+              //
+              // filter on paymentMeanID
+              //
+
+              if (paymentMeanID != null)
+                {
+                  List<DeliveryRequest> result = new ArrayList<DeliveryRequest>();
+                  for (DeliveryRequest request : ODRs)
+                    {
+                      if(request instanceof PurchaseFulfillmentRequest)
+                        {
+                          PurchaseFulfillmentRequest odrRequest = (PurchaseFulfillmentRequest) request;
+                          Offer offer = (Offer) offerService.getStoredGUIManagedObject(odrRequest.getOfferID());
+                          if(offer != null)
+                            {
+                              if(offer.getOfferSalesChannelsAndPrices() != null)
+                                {
+                                  for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+                                    {
+                                      if(channel.getPrice() != null && channel.getPrice().getPaymentMeanID().equals(paymentMeanID))
+                                        {
+                                          result.add(request);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                  ODRs = result;
                 }
 
               //
@@ -1579,6 +1742,8 @@ public class ThirdPartyManager
      ****************************************/
 
     String startDateReq = readString(jsonRoot, "startDate", true);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
 
     String subscriberID;
     try {
@@ -1637,6 +1802,24 @@ public class ThirdPartyManager
               else
                 {
                   startDate = getDateFromString(startDateReq, REQUEST_DATE_FORMAT, REQUEST_DATE_PATTERN);
+                }
+              
+              //
+              // filter on moduleID
+              //
+
+              if (moduleID != null)
+                {
+                  messages = messages.stream().filter(activity -> activity.getModuleID().equals(moduleID)).collect(Collectors.toList());
+                }
+              
+              //
+              // filter on featureID
+              //
+
+              if (featureID != null)
+                {
+                  messages = messages.stream().filter(activity -> activity.getFeatureID().equals(featureID)).collect(Collectors.toList());
                 }
 
               //

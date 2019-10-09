@@ -774,7 +774,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         smsRequest.setMessageStatus(SMSMessageStatus.fromReturnCode(result));
         smsRequest.setDeliveryStatus(getMessageStatus(smsRequest.getMessageStatus()));
         smsRequest.setDeliveryDate(SystemTime.getCurrentTime());
-        completeRequest(smsRequest);
+        completeDeliveryRequest(smsRequest);
       }
   }
 
