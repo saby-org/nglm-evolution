@@ -199,6 +199,7 @@
     <gui.stg.display>true</gui.stg.display>
     <gui.sbm.display>true</gui.sbm.display>
     <gui.itm.display>false</gui.itm.display>
+    <gui.lpm.display>true</gui.lpm.display>
 
   </properties>
 

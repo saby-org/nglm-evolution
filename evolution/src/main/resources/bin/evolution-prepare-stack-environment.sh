@@ -896,6 +896,80 @@ export GUI_SBM_API_SERVER_HOST_EXTERNAL_IP
 export GUI_SBM_API_SERVER_PORT
 
 #
+#  GUI LPM WEB -- configuration
+#
+
+GUI_LPM_WEB_SERVER=
+GUI_LPM_WEB_SERVER_HOST=
+GUI_LPM_WEB_SERVER_HOST_IP=
+GUI_LPM_WEB_SERVER_HOST_EXTERNAL_IP=
+GUI_LPM_WEB_SERVER_PORT=
+for TUPLE in $GUI_LPM_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$GUI_LPM_WEB_SERVER" ]; then
+     GUI_LPM_WEB_SERVER="$HOST:$PORT"
+     GUI_LPM_WEB_SERVER_HOST="$HOST"
+     GUI_LPM_WEB_SERVER_HOST_IP="$HOST_IP"
+     GUI_LPM_WEB_SERVER_HOST_EXTERNAL_IP="$HOST_EXTERNAL_IP"
+     GUI_LPM_WEB_SERVER_PORT="$PORT"
+   fi
+done
+export GUI_LPM_WEB_SERVER
+export GUI_LPM_WEB_SERVER_HOST
+export GUI_LPM_WEB_SERVER_HOST_IP
+export GUI_LPM_WEB_SERVER_HOST_EXTERNAL_IP
+export GUI_LPM_WEB_SERVER_PORT
+
+#
+#  GUI LPM API -- configuration
+#
+
+GUI_LPM_API_SERVER=
+GUI_LPM_API_SERVER_HOST=
+GUI_LPM_API_SERVER_HOST_IP=
+GUI_LPM_API_SERVER_HOST_EXTERNAL_IP=
+GUI_LPM_API_SERVER_PORT=
+for TUPLE in $GUI_LPM_API_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   if [ -z "$GUI_LPM_API_SERVER" ]; then
+     GUI_LPM_API_SERVER="$HOST:$PORT"
+     GUI_LPM_API_SERVER_HOST="$HOST"
+     GUI_LPM_API_SERVER_HOST_IP="$HOST_IP"
+     GUI_LPM_API_SERVER_HOST_EXTERNAL_IP="$HOST_EXTERNAL_IP"
+     GUI_LPM_API_SERVER_PORT="$PORT"
+   fi
+done
+export GUI_LPM_API_SERVER
+export GUI_LPM_API_SERVER_HOST
+export GUI_LPM_API_SERVER_HOST_IP
+export GUI_LPM_API_SERVER_HOST_EXTERNAL_IP
+export GUI_LPM_API_SERVER_PORT
+
+#
+#  GUI AUDIT -- configuration
+#
+
+GUI_AUDIT_SERVER_HOST=
+for TUPLE in $GUI_AUDIT_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   if [ -z "$GUI_AUDIT_SERVER_HOST" ]; then
+     GUI_AUDIT_SERVER_HOST="$HOST"
+   fi
+done
+export GUI_AUDIT_SERVER_HOST
+#
 #  thirdpartymanager -- configuration
 #
 

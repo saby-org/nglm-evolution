@@ -1,0 +1,24 @@
+gui-audit-logstash-<_KEY_>:
+  image: ${env.DOCKER_REGISTRY}ev-gui.auditlogstash:${gui-audit.version}
+  environment:
+    ELASTICSEARCH: '<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
+    ELASTICSEARCH_INDEXNAME: 'auditlogs' 
+    TZ: <_DEPLOYMENT_TIMEZONE_>
+  volumes:
+    - type: bind
+      source: <_NGLM_GUI_RUNTIME_>
+      target: /mnt
+  deploy:
+    restart_policy:
+      condition: <_DOCKER_RESTART_POLICY_>
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_GUI_AUDIT_SERVER_HOST_>
+  networks:
+    - outside
+
