@@ -41,7 +41,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.7.1-build191007-SNAPSHOT</version>
+    <version>4.7.1-build191010-SNAPSHOT</version>
     <relativePath/>
   </parent>
 
@@ -49,7 +49,7 @@
 
     <!-- core version -->
 
-    <nglm.core.version>4.7.1-build191007-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.7.1-build191010-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>1.0.35</gui-fwk.version>
