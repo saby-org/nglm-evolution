@@ -1935,10 +1935,11 @@ public class EvolutionEngine
   private static ParameterMap saveProfileSegmentChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
   {
     ParameterMap oldSubscriberSegmentPerDimension = new ParameterMap();
-    for(Pair<String, String> currentSubscriberSegment : changeEventEvaluationRequest.getSubscriberProfile().getSegments().keySet()){
-      SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(currentSubscriberSegment.getFirstElement(), SystemTime.getCurrentTime());
+    Map<String, String> segmentsMap = changeEventEvaluationRequest.getSubscriberProfile().getSegmentsMap(changeEventEvaluationRequest.getSubscriberGroupEpochReader());
+    for(String dimensionId : segmentsMap.keySet()){
+      SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime());
       if(dimension != null) {
-        oldSubscriberSegmentPerDimension.put(dimension.getSegmentationDimensionName(), currentSubscriberSegment.getSecondElement());
+        oldSubscriberSegmentPerDimension.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
       }
     }
     
@@ -1985,10 +1986,11 @@ public class EvolutionEngine
   private static void updateSegmentChangeEvents(SubscriberState subscriberState, SubscriberProfile subscriberProfile, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileSegmentChangeOldValues)
   {
     ParameterMap profileSegmentChangeNewValues = new ParameterMap();
-    for(Pair<String, String> currentSubscriberSegment : changeEventEvaluationRequest.getSubscriberProfile().getSegments().keySet())
+    Map<String, String> segmentsMap = changeEventEvaluationRequest.getSubscriberProfile().getSegmentsMap(changeEventEvaluationRequest.getSubscriberGroupEpochReader());
+    for(String dimensionId : segmentsMap.keySet())
       {
-        SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(currentSubscriberSegment.getFirstElement(), SystemTime.getCurrentTime());
-        profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), currentSubscriberSegment.getSecondElement());
+        SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionId, SystemTime.getCurrentTime());
+        profileSegmentChangeNewValues.put(dimension.getSegmentationDimensionName(), segmentsMap.get(dimensionId));
       }
     
     // complete list with dimension not set so segment null
