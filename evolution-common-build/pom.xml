@@ -39,14 +39,14 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.7.1-build191010-SNAPSHOT</version>
+    <version>4.7.1-build191011-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.7.1-build191010-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.7.1-build191011-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
@@ -361,6 +361,8 @@
                     <include>bin/*</include>
                     <include>config/log4j-evolution.properties</include>
                     <include>docker/*.yml</include>
+                    <include>docker/connect/*</include>
+                    <include>docker/setup/*</include>
                     <include>support/*</include>
                   </includes>
                   <excludes>
