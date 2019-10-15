@@ -182,7 +182,7 @@ public class ThirdPartyManager
     getCustomerCampaigns,
     getCustomerLoyaltyPrograms,
     getLoyaltyProgram,
-    getLoyaltyProgramsList,
+    getLoyaltyProgramList,
     getOffersList,
     getActiveOffer,
     getActiveOffers,
@@ -408,7 +408,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getCustomerCampaigns", new APIHandler(API.getCustomerCampaigns));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerLoyaltyPrograms", new APIHandler(API.getCustomerLoyaltyPrograms));
       restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgram", new APIHandler(API.getLoyaltyProgram));
-      restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgramsList", new APIHandler(API.getLoyaltyProgramsList));
+      restServer.createContext("/nglm-thirdpartymanager/getLoyaltyProgramList", new APIHandler(API.getLoyaltyProgramList));
       restServer.createContext("/nglm-thirdpartymanager/getOffersList", new APIHandler(API.getOffersList));
       restServer.createContext("/nglm-thirdpartymanager/getActiveOffer", new APIHandler(API.getActiveOffer));
       restServer.createContext("/nglm-thirdpartymanager/getActiveOffers", new APIHandler(API.getActiveOffers));
@@ -699,8 +699,8 @@ public class ThirdPartyManager
             case getLoyaltyProgram:
               jsonResponse = processGetLoyaltyProgram(jsonRoot);
               break;
-            case getLoyaltyProgramsList:
-              jsonResponse = processGetLoyaltyProgramsList(jsonRoot);
+            case getLoyaltyProgramList:
+              jsonResponse = processGetLoyaltyProgramList(jsonRoot);
               break;
             case getOffersList:
               jsonResponse = processGetOffersList(jsonRoot);
@@ -1627,7 +1627,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString();
+    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
     CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
     
     /*****************************************
@@ -1636,6 +1636,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
+    response.put("deliveryRequestID", uniqueKey);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -1705,7 +1706,7 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString();
+    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
     CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
@@ -1714,6 +1715,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
+    response.put("deliveryRequestID", uniqueKey);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -2556,16 +2558,35 @@ public class ThirdPartyManager
                      LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                      String statusPointID = loyaltyProgramPoints.getStatusPointsID();
                      PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
-                     loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
+                     if(pointBalance != null)
+                       {
+                         loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
+                       }
+                     else
+                       {
+                         loyaltyProgramPresentation.put("statusPointsBalance", 0);
+                       }
                      
                      //
                      //  reward point informations
                      //
 
-                     loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
-                     loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
-                     loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
-                     loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+                     String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
+                     PointBalance rewardBalance = baseSubscriberProfile.getPointBalances().get(rewardPointID);
+                     if(rewardBalance != null)
+                       {
+                         loyaltyProgramPresentation.put("rewardsPointsBalance", rewardBalance.getBalance(now));
+                         loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
+                         loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
+                         loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
+                       }
+                     else
+                       {
+                         loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
+                         loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
+                         loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
+                         loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+                       }
 
                      //
                      //  history
@@ -2677,11 +2698,11 @@ public class ThirdPartyManager
 
   /*****************************************
   *
-  *  processGetLoyaltyProgramsList
+  *  processGetLoyaltyProgramList
   *
   *****************************************/
 
- private JSONObject processGetLoyaltyProgramsList(JSONObject jsonRoot) throws ThirdPartyManagerException
+ private JSONObject processGetLoyaltyProgramList(JSONObject jsonRoot) throws ThirdPartyManagerException
  {
    /****************************************
    *
@@ -4242,8 +4263,8 @@ public class ThirdPartyManager
               accessStatistics.updateGetOffersListCount(1);
               break;
 
-            case getLoyaltyProgramsList:
-              accessStatistics.updateGetLoyaltyProgramsListCount(1);
+            case getLoyaltyProgramList:
+              accessStatistics.updateGetLoyaltyProgramListCount(1);
               break;
 
             case getActiveOffer:

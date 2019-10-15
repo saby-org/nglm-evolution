@@ -84,7 +84,6 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
   //
 
   @Override public List<SegmentFileImport> getSegments() { return segments; }
-  @Override public String retrieveDefaultSegmentID() { return null; }
 
   /*****************************************
   *
@@ -288,16 +287,13 @@ public class SegmentationDimensionFileImport extends SegmentationDimension
 
   /*****************************************
   *
-  *  validation
+  *  checkSegments
   *
   *****************************************/
-  
-  @Override public boolean validate() throws GUIManagerException
-  {
-    //
-    //  TODO : check mandatory fields (if any ...)
-    //  throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
 
-    return true;
+  @Override public void checkSegments()
+  {
+    this.setNumberOfSegments(segments.size());
   }
+  
 }

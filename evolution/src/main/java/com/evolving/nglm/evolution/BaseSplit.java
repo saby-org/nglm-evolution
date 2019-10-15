@@ -111,36 +111,39 @@ public class BaseSplit
     //  range variable
     //
 
-    this.variableName = JSONUtilities.decodeString(jsonRoot, "variableName", true);
-    CriterionField rangeVariable = null;
     boolean rangeVariableDependentOnExtendedSubscriberProfile = false;
-    if (CriterionContext.Profile.getCriterionFields().get(variableName) != null)
+    this.variableName = JSONUtilities.decodeString(jsonRoot, "variableName", false);
+    if(variableName != null && !variableName.isEmpty())
       {
-        rangeVariable = CriterionContext.Profile.getCriterionFields().get(variableName);
-        rangeVariableDependentOnExtendedSubscriberProfile = false;
-      }
-    else if (CriterionContext.FullProfile.getCriterionFields().get(variableName) != null)
-      {
-        rangeVariable = CriterionContext.FullProfile.getCriterionFields().get(variableName);
-        rangeVariableDependentOnExtendedSubscriberProfile = true;        
-      }
-    else
-      {
-        throw new GUIManagerException("unsupported range variable ", this.variableName);
-      }
+        CriterionField rangeVariable = null;
+        if (CriterionContext.Profile.getCriterionFields().get(variableName) != null)
+          {
+            rangeVariable = CriterionContext.Profile.getCriterionFields().get(variableName);
+            rangeVariableDependentOnExtendedSubscriberProfile = false;
+          }
+        else if (CriterionContext.FullProfile.getCriterionFields().get(variableName) != null)
+          {
+            rangeVariable = CriterionContext.FullProfile.getCriterionFields().get(variableName);
+            rangeVariableDependentOnExtendedSubscriberProfile = true;        
+          }
+        else
+          {
+            throw new GUIManagerException("unsupported range variable ", this.variableName);
+          }
 
-    //
-    //  validate
-    //
+        //
+        //  validate
+        //
 
-    switch (rangeVariable.getFieldDataType())
-      {
+        switch (rangeVariable.getFieldDataType())
+        {
         case IntegerCriterion:
         case DoubleCriterion:
           break;
 
         default:
           throw new GUIManagerException("unsupported range variable type ("+rangeVariable.getFieldDataType()+") ", this.variableName);
+        }
       }
 
     //

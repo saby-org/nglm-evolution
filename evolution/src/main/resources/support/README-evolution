@@ -83,16 +83,14 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : 
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramPointsEvents; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramTypesList; echo
-
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramsList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramsSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram_POINT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
 
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_ELIGIBILITY.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
-curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE_IMPORT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_RANGES.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimensionList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSegmentationDimensionSummaryList; echo
@@ -264,9 +262,9 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/b
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBlackoutPeriods; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBlackoutPeriods; echo
 
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramTypesList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramsList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramsSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgramSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/loyaltyProgram.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getLoyaltyProgram; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeLoyaltyProgram; echo
@@ -366,9 +364,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginN
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "state" : "ACTIVE", "objectiveName":"objectiveName", "startDate" : "2018-10-12", "endDate" : "2020-10-12" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getOffersList/; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgram; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramsList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "POINTS" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramsList; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "BADGES" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramsList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "POINTS" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "loyaltyProgramType" : "BADGES" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getLoyaltyProgramList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID":"19195551000", "loyaltyProgramID" : "1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerLoyaltyPrograms; echo
 
@@ -424,7 +422,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1}' http://<_
 --  * associating subscribers with dimensions and segments
 --
 
-curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE_IMPORT.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dimension_FILE.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putSegmentationDimension; echo
 cp $DEPLOY_ROOT/support/subscribergroup-* <_NGLM_SUBSCRIBERGROUP_DATA_>
 $DEPLOY_ROOT/bin/update-subscribergroup.sh new segmentationDimension churnRisk subscribergroup-churnrisk.001
 $DEPLOY_ROOT/bin/update-subscribergroup.sh add segmentationDimension churnRisk subscribergroup-churnrisk.002

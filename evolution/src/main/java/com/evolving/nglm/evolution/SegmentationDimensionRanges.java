@@ -7,7 +7,6 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,7 +21,6 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class SegmentationDimensionRanges extends SegmentationDimension
@@ -288,36 +286,25 @@ public class SegmentationDimensionRanges extends SegmentationDimension
 
   /*****************************************
   *
-  *  validation
+  *  checkSegments
   *
   *****************************************/
   
-  @Override
-  public boolean validate() throws GUIManagerException {
-    //TODO : check mandatory fields (if any ...)
-    //TODO : need to check that rangeMin and rangeMax are valid integers ???
-    //throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
-    return super.validate();
-  }
-
-  /*****************************************
-  *
-  *  retrieveDefaultSegmentID
-  *
-  *****************************************/
-  
-  @Override public String retrieveDefaultSegmentID()
+  @Override public void checkSegments()
   {
+    int numberOfSegments = 0;
     String defaultSegmentID = null;
     for(BaseSplit split : baseSplit)
       {
+        
+        numberOfSegments = numberOfSegments + split.getSegments().size();
         if ((split.getProfileCriteria() == null || split.getProfileCriteria().isEmpty()) && (split.getVariableName() == null || split.getVariableName().isEmpty()) && split.getSegments().size() == 1)
           {
             SegmentRanges segment = split.getSegments().get(0);
             defaultSegmentID = segment.getID();
-            break;
           }
       }   
-    return defaultSegmentID;
+    this.setDefaultSegmentID(defaultSegmentID);
+    this.setNumberOfSegments(numberOfSegments);
   }
 }

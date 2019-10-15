@@ -1611,6 +1611,14 @@ public class EvolutionEngine
     *
     *****************************************/
         
+    updatePointBalances(context, subscriberState, now);
+    
+    /*****************************************
+    *
+    *  profile change detect changed values
+    *
+    *****************************************/
+        
     updateChangeEvents(subscriberState, now, changeEventEvaluationRequest, profileChangeOldValues);
     
     /*****************************************
@@ -1958,6 +1966,25 @@ public class EvolutionEngine
     return oldSubscriberSegmentPerDimension;
   }
   
+  /*****************************************
+  *
+  *  updatePointBalances
+  *
+  *****************************************/
+  
+  private static void updatePointBalances(EvolutionEventContext context, SubscriberState subscriberState, Date now)
+  {
+    Map<String, PointBalance> pointBalances = subscriberState.getSubscriberProfile().getPointBalances();
+    if(pointBalances != null){
+      for(String pointID: pointBalances.keySet()) {
+        Point point = pointService.getActivePoint(pointID, now);
+        if(point != null){
+          updatePointBalance(context, subscriberState.getSubscriberProfile(), point, PointOperation.Expire, 0, now);
+        }
+      }
+    }
+  }
+
   /*****************************************
   *
   *  updateChangeEvents
@@ -2600,7 +2627,7 @@ public class EvolutionEngine
             // update balance 
             //
             
-            boolean success = updatePointBalance(subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now);
+            boolean success = updatePointBalance(context, subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now);
             
             //
             //  response
@@ -2922,7 +2949,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updatePointBalance(SubscriberProfile subscriberProfile, Point point, PointOperation operation, int amount, Date now)
+  private static boolean updatePointBalance(EvolutionEventContext context, SubscriberProfile subscriberProfile, Point point, PointOperation operation, int amount, Date now)
   {
 
     //
@@ -2945,7 +2972,7 @@ public class EvolutionEngine
     //  update
     //
 
-    boolean success = pointBalance.update(operation, amount, point, now);
+    boolean success = pointBalance.update(context, subscriberProfile.getSubscriberID(), operation, amount, point, now);
 
     //
     //  update balances
@@ -3256,7 +3283,7 @@ public class EvolutionEngine
                         
                         log.info("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
                         int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit();
-                        updatePointBalance(subscriberProfile, point, PointOperation.Credit, amount, now);
+                        updatePointBalance(context, subscriberProfile, point, PointOperation.Credit, amount, now);
                         subscriberProfileUpdated = true;
 
                       }
@@ -3304,7 +3331,7 @@ public class EvolutionEngine
                         
                         log.info("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
                         int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit();
-                        updatePointBalance(subscriberProfile, point, PointOperation.Credit, amount, now);
+                        updatePointBalance(context, subscriberProfile, point, PointOperation.Credit, amount, now);
                         subscriberProfileUpdated = true;
                         
                       }

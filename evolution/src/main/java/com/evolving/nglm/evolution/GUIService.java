@@ -908,6 +908,7 @@ public class GUIService
       {
         responseJSON.putAll(fullDetails ? getJSONRepresentation(guiManagedObject) : getSummaryJSONRepresentation(guiManagedObject));
         responseJSON.put("accepted", guiManagedObject.getAccepted());
+        responseJSON.put("active", guiManagedObject.getActive());
         responseJSON.put("valid", guiManagedObject.getAccepted());
         responseJSON.put("processing", isActiveGUIManagedObject(guiManagedObject, date));
         responseJSON.put("readOnly", guiManagedObject.getReadOnly());
@@ -942,7 +943,6 @@ public class GUIService
     result.put("description", guiManagedObject.getJSONRepresentation().get("description"));
     result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
     result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
-    result.put("active", guiManagedObject.getJSONRepresentation().get("active"));
     result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
     result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
     result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));

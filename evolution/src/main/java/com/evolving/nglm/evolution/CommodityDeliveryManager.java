@@ -61,6 +61,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     Credit("credit"),
     Debit("debit"),
     Set("set"),
+    Expire("expire"),
     Activate("activate"),
     Deactivate("deactivate"),
     Unknown("(unknown)");
@@ -685,11 +686,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
+      Date now = SystemTime.getCurrentTime();
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(PROVIDERID, getProviderID());
       guiPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
       guiPresentationMap.put(DELIVERABLEID, getCommodityID());
-      guiPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getCommodityID(), SystemTime.getCurrentTime()).getDeliverableName());
+      guiPresentationMap.put(DELIVERABLENAME, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getDeliverableName() : getCommodityID()));
       guiPresentationMap.put(DELIVERABLEQTY, getAmount());
       guiPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
       guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
@@ -706,11 +708,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
+      Date now = SystemTime.getCurrentTime();
       thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
       thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
       thirdPartyPresentationMap.put(DELIVERABLEID, getCommodityID());
-      thirdPartyPresentationMap.put(DELIVERABLENAME, deliverableService.getActiveDeliverable(getCommodityID(), SystemTime.getCurrentTime()).getDeliverableName());
+      thirdPartyPresentationMap.put(DELIVERABLENAME, (deliverableService.getActiveDeliverable(getCommodityID(), now) != null ? deliverableService.getActiveDeliverable(getCommodityID(), now).getDeliverableName() : getCommodityID()));
       thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
       thirdPartyPresentationMap.put(OPERATION, getOperation().getExternalRepresentation());
       thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());

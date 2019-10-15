@@ -278,36 +278,23 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
 
   /*****************************************
   *
-  *  validation
+  *  checkSegments
   *
   *****************************************/
   
-  @Override public boolean validate() throws GUIManagerException
+  @Override public void checkSegments()
   {
-    //
-    //  TODO : check mandatory fields (if any ...)
-    //  throw new GUIManagerException("missing required calling channel properties", callingChannel.getGUIManagedObjectID())
-
-    return super.validate();
-  }
-
-  /*****************************************
-  *
-  *  retrieveDefaultSegmentID
-  *
-  *****************************************/
-  
-  @Override public String retrieveDefaultSegmentID()
-  {
+    int numberOfSegments = 0;
     String defaultSegmentID = null;
     for (SegmentEligibility segment : segments)
       {
+        numberOfSegments++;
         if(segment.getProfileCriteria() == null || segment.getProfileCriteria().isEmpty())
           {
             defaultSegmentID = segment.getID();
-            break;
           }
       }
-    return defaultSegmentID;
+    this.setDefaultSegmentID(defaultSegmentID);
+    this.setNumberOfSegments(numberOfSegments);
   }
 }

@@ -370,9 +370,9 @@ public class GUIManager
     getBlackoutPeriods("getBlackoutPeriods"),
     putBlackoutPeriods("putBlackoutPeriods"),
     removeBlackoutPeriods("removeBlackoutPeriods"),
-    getLoyaltyProgramTypesList("getLoyaltyProgramTypesList"),
-    getLoyaltyProgramsList("getLoyaltyProgramsList"),
-    getLoyaltyProgramsSummaryList("getLoyaltyProgramsSummaryList"),
+    getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
+    getLoyaltyProgramList("getLoyaltyProgramList"),
+    getLoyaltyProgramSummaryList("getLoyaltyProgramSummaryList"),
     getLoyaltyProgram("getLoyaltyProgram"),
     putLoyaltyProgram("putLoyaltyProgram"),
     removeLoyaltyProgram("removeLoyaltyProgram"),
@@ -1361,6 +1361,7 @@ public class GUIManager
                 newSimpleProfileDimensionJSON.put("display", criterion.getDisplay());
                 newSimpleProfileDimensionJSON.put("description", "Simple profile criteria (from "+criterion.getName()+")");
                 newSimpleProfileDimensionJSON.put("targetingType", SegmentationDimensionTargetingType.ELIGIBILITY.getExternalRepresentation());
+                newSimpleProfileDimensionJSON.put("active", Boolean.TRUE);
                 newSimpleProfileDimensionJSON.put("readOnly", Boolean.TRUE);
 
                 //
@@ -1729,9 +1730,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/putBlackoutPeriods", new APISimpleHandler(API.putBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
-        restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypesList", new APISimpleHandler(API.getLoyaltyProgramTypesList));
-        restServer.createContext("/nglm-guimanager/getLoyaltyProgramsList", new APISimpleHandler(API.getLoyaltyProgramsList));
-        restServer.createContext("/nglm-guimanager/getLoyaltyProgramsSummaryList", new APISimpleHandler(API.getLoyaltyProgramsSummaryList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramList", new APISimpleHandler(API.getLoyaltyProgramList));
+        restServer.createContext("/nglm-guimanager/getLoyaltyProgramSummaryList", new APISimpleHandler(API.getLoyaltyProgramSummaryList));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgram", new APISimpleHandler(API.getLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/putLoyaltyProgram", new APISimpleHandler(API.putLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
@@ -2947,16 +2948,16 @@ public class GUIManager
                   jsonResponse = processRemoveBlackoutPeriods(userID, jsonRoot);
                   break;
 
-                case getLoyaltyProgramTypesList:
-                  jsonResponse = processGetLoyaltyProgramTypesList(userID, jsonRoot);
+                case getLoyaltyProgramTypeList:
+                  jsonResponse = processGetLoyaltyProgramTypeList(userID, jsonRoot);
                   break;
 
-                case getLoyaltyProgramsList:
-                  jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, true, includeArchived);
+                case getLoyaltyProgramList:
+                  jsonResponse = processGetLoyaltyProgramList(userID, jsonRoot, true, includeArchived);
                   break;
 
-                case getLoyaltyProgramsSummaryList:
-                  jsonResponse = processGetLoyaltyProgramsList(userID, jsonRoot, false, includeArchived);
+                case getLoyaltyProgramSummaryList:
+                  jsonResponse = processGetLoyaltyProgramList(userID, jsonRoot, false, includeArchived);
                   break;
 
                 case getLoyaltyProgram:
@@ -15202,6 +15203,9 @@ public class GUIManager
                   PointBalance pointBalance = pointBalances.get(pointID);
                   pointPresentation.put("point", point.getDisplay());
                   pointPresentation.put("balance", pointBalance.getBalance(now));
+                  pointPresentation.put("earned", pointBalance.getEarnedHistory().getAllTimeBucket());
+                  pointPresentation.put("expired", pointBalance.getExpiredHistory().getAllTimeBucket());
+                  pointPresentation.put("consumed", pointBalance.getConsumedHistory().getAllTimeBucket());
                   Set<Object> pointExpirations = new HashSet<Object>();
                   for(Date expirationDate : pointBalance.getBalances().keySet()){
                     HashMap<String, Object> expirationPresentation = new HashMap<String, Object>();
@@ -16734,11 +16738,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetLoyaltyProgramTypesList
+  *  processGetLoyaltyProgramTypeList
   *
   *****************************************/
 
-  private JSONObject processGetLoyaltyProgramTypesList(String userID, JSONObject jsonRoot)
+  private JSONObject processGetLoyaltyProgramTypeList(String userID, JSONObject jsonRoot)
   {
     /*****************************************
     *
@@ -16771,11 +16775,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processGetLoyaltyProgramsList
+  *  processGetLoyaltyProgramList
   *
   *****************************************/
 
-  private JSONObject processGetLoyaltyProgramsList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  private JSONObject processGetLoyaltyProgramList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
     /*****************************************
     *
@@ -17997,7 +18001,7 @@ public class GUIManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString();
+    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
     CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
 
     /*****************************************
@@ -18006,6 +18010,7 @@ public class GUIManager
     *
     *****************************************/
 
+    response.put("deliveryRequestID", uniqueKey);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -18075,7 +18080,7 @@ public class GUIManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString();
+    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
     CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
@@ -18084,6 +18089,7 @@ public class GUIManager
     *
     *****************************************/
 
+    response.put("deliveryRequestID", uniqueKey);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }

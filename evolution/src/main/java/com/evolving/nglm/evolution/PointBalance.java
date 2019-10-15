@@ -6,31 +6,55 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 
 
 public class PointBalance
 {
+  /*****************************************
+  *
+  *  configuration
+  *
+  *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(PointBalance.class);
+
   /*****************************************
   *
   *  schema
@@ -49,6 +73,9 @@ public class PointBalance
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("expirationDates", SchemaBuilder.array(Timestamp.SCHEMA));
     schemaBuilder.field("points", SchemaBuilder.array(Schema.INT32_SCHEMA));
+    schemaBuilder.field("earnedHistory", MetricHistory.schema());
+    schemaBuilder.field("consumedHistory", MetricHistory.schema());
+    schemaBuilder.field("expiredHistory", MetricHistory.schema());
     schema = schemaBuilder.build();
   };
 
@@ -72,6 +99,9 @@ public class PointBalance
   *****************************************/
 
   private SortedMap<Date,Integer> balances;
+  private MetricHistory earnedHistory;
+  private MetricHistory consumedHistory;
+  private MetricHistory expiredHistory;
 
   /*****************************************
   *
@@ -80,6 +110,9 @@ public class PointBalance
   *****************************************/
 
   public SortedMap<Date,Integer> getBalances() { return balances; }
+  public MetricHistory getEarnedHistory() { return earnedHistory; }
+  public MetricHistory getConsumedHistory() { return consumedHistory; }
+  public MetricHistory getExpiredHistory() { return expiredHistory; }
 
   /*****************************************
   *
@@ -90,6 +123,9 @@ public class PointBalance
   public PointBalance()
   {
     this.balances = new TreeMap<Date,Integer>();
+    this.earnedHistory = new MetricHistory(0, 0);   // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.consumedHistory = new MetricHistory(0, 0); // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
+    this.expiredHistory = new MetricHistory(0, 0);  // TODO : what are the right values for numberOfDailyBuckets and numberOfMonthlyBuckets ?
   }
 
   /*****************************************
@@ -98,9 +134,12 @@ public class PointBalance
   *
   *****************************************/
 
-  private PointBalance(SortedMap<Date,Integer> balances)
+  private PointBalance(SortedMap<Date,Integer> balances, MetricHistory earnedHistory, MetricHistory consumedHistory, MetricHistory expiredHistory)
   {
     this.balances = balances;
+    this.earnedHistory = earnedHistory;
+    this.consumedHistory = consumedHistory;
+    this.expiredHistory = expiredHistory;
   }
 
   /*****************************************
@@ -112,6 +151,9 @@ public class PointBalance
   public PointBalance(PointBalance pointBalance)
   {
     this.balances = new TreeMap<Date,Integer>(pointBalance.getBalances()); 
+    this.earnedHistory = new MetricHistory(pointBalance.getEarnedHistory());
+    this.consumedHistory = new MetricHistory(pointBalance.getConsumedHistory());
+    this.expiredHistory = new MetricHistory(pointBalance.getExpiredHistory());
   }
 
   /*****************************************
@@ -159,7 +201,7 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(PointOperation operation, int amount, Point point, Date evaluationDate)
+  public boolean update(EvolutionEventContext context, String subscriberID, PointOperation operation, int amount, Point point, Date evaluationDate)
   {
     //
     //  validate
@@ -187,7 +229,102 @@ public class PointBalance
         Date expirationDate = expirationDates.next();
         if (expirationDate.compareTo(evaluationDate) <= 0)
           {
+
+            //
+            //  update "expired" metric history
+            //
+            
+            int expiredAmount = balances.get(expirationDate);
+            if(expiredAmount > 0){
+
+              //
+              //  logs
+              //
+              
+              log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : expired amount > 0 => NEED to update expired history and generate a BDR");
+
+              //
+              //  
+              //
+              
+              expiredHistory.update(expirationDate, expiredAmount);
+              
+              //
+              //  get related deliverable
+              //
+              
+              DeliveryManagerDeclaration pointManagerDeclaration = Deployment.getDeliveryManagers().get("pointFulfillment");
+              JSONObject pointManagerJSON = (pointManagerDeclaration != null) ? pointManagerDeclaration.getJSONRepresentation() : null;
+              String providerID = (pointManagerJSON != null) ? (String) pointManagerJSON.get("providerID") : null;
+              Collection<Deliverable> deliverables = context.getDeliverableService().getActiveDeliverables(evaluationDate);
+              Deliverable searchedDeliverable = null;
+              for(Deliverable deliverable : deliverables){
+                if(deliverable.getFulfillmentProviderID().equals(providerID) && deliverable.getExternalAccountID().equals(point.getPointID())){
+                  searchedDeliverable = deliverable;
+                  break;
+                }
+              }
+              
+              if(searchedDeliverable != null)
+                {
+
+                  //
+                  //  generate fake commodityDeliveryResponse (needed to get BDRs)
+                  //
+                  
+                  DeliveryManagerDeclaration commodityDeliveryManagerDeclaration = Deployment.getDeliveryManagers().get("commodityDelivery");
+                  String commodityDeliveryResponseTopic = commodityDeliveryManagerDeclaration.getResponseTopic();
+
+                  HashMap<String,Object> commodityDeliveryRequestData = new HashMap<String,Object>();
+                  
+                  commodityDeliveryRequestData.put("deliveryRequestID", context.getUniqueKey());
+                  commodityDeliveryRequestData.put("originatingRequest", true); 
+                  commodityDeliveryRequestData.put("deliveryType", "commodityDelivery");
+
+                  commodityDeliveryRequestData.put("eventID", "bonusExpiration");
+                  commodityDeliveryRequestData.put("moduleID", Module.REST_API.getExternalRepresentation());
+                  commodityDeliveryRequestData.put("featureID", "bonusExpiration");
+
+                  commodityDeliveryRequestData.put("subscriberID", subscriberID);
+                  commodityDeliveryRequestData.put("pointID", point.getPointID());
+                  commodityDeliveryRequestData.put("providerID", searchedDeliverable.getFulfillmentProviderID());
+                  commodityDeliveryRequestData.put("commodityID", searchedDeliverable.getDeliverableID());
+                  commodityDeliveryRequestData.put("operation", CommodityDeliveryOperation.Expire.getExternalRepresentation());
+                  commodityDeliveryRequestData.put("amount", expiredAmount);
+                  commodityDeliveryRequestData.put("validityPeriodType", null);
+                  commodityDeliveryRequestData.put("validityPeriodQuantity", 0);
+
+                  commodityDeliveryRequestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.SUCCESS.getReturnCode());
+
+                  log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
+                  log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
+
+                  CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
+                  commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);
+                  commodityDeliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
+                  commodityDeliveryRequest.setStatusMessage("Success");
+                  commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+
+                  Properties kafkaProducerProperties = new Properties();
+                  kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+                  kafkaProducerProperties.put("acks", "all");
+                  kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+                  kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+                  KafkaProducer commodityDeliveryProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
+                  if(commodityDeliveryProducer != null){
+                    commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest))); 
+                  }
+                  
+                }
+              
+            }
+            
+            //
+            //  remove expired entry
+            //
+            
             expirationDates.remove();
+            
           }
       }
 
@@ -230,6 +367,13 @@ public class PointBalance
                     balances.put(latestExpirationDate, balance);
                   }
               }
+            
+            //
+            //  update "earned" metric history
+            //
+            
+            earnedHistory.update(evaluationDate, amount);
+            
           }
           break;
 
@@ -270,6 +414,13 @@ public class PointBalance
                     balances.remove(expirationDate);
                   }
               }
+            
+            //
+            //  update "consumed" metric history
+            //
+            
+            consumedHistory.update(evaluationDate, amount);
+            
           }
           break;
       }
@@ -300,6 +451,9 @@ public class PointBalance
       }
     struct.put("expirationDates", expirationDates);
     struct.put("points", points);
+    struct.put("earnedHistory", MetricHistory.pack(pointBalance.getEarnedHistory()));
+    struct.put("consumedHistory", MetricHistory.pack(pointBalance.getConsumedHistory()));
+    struct.put("expiredHistory", MetricHistory.pack(pointBalance.getExpiredHistory()));
     return struct;
   }
 
@@ -331,11 +485,14 @@ public class PointBalance
       {
         balances.put(expirationDates.get(i), points.get(i));
       }
+    MetricHistory earnedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("earnedHistory").schema(), valueStruct.get("earnedHistory")));
+    MetricHistory consumedHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("consumedHistory").schema(), valueStruct.get("consumedHistory")));
+    MetricHistory expiredHistory = MetricHistory.unpack(new SchemaAndValue(schema.field("expiredHistory").schema(), valueStruct.get("expiredHistory")));
 
     //  
     //  return
     //
 
-    return new PointBalance(balances);
+    return new PointBalance(balances, earnedHistory, consumedHistory, expiredHistory);
   }
 }

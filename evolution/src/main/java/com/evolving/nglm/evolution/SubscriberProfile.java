@@ -635,6 +635,43 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
               if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
               
               //
+              //  status point
+              //
+              
+              LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+              String statusPointID = loyaltyProgramPoints.getStatusPointsID();
+              PointBalance pointBalance = pointBalances.get(statusPointID);
+              if(pointBalance != null)
+                {
+                  loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
+                }
+              else
+                {
+                  loyaltyProgramPresentation.put("statusPointsBalance", 0);
+                }
+              
+              //
+              //  reward point informations
+              //
+
+              String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
+              PointBalance rewardBalance = pointBalances.get(rewardPointID);
+              if(rewardBalance != null)
+                {
+                  loyaltyProgramPresentation.put("rewardsPointsBalance", rewardBalance.getBalance(now));
+                  loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
+                  loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
+                  loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
+                }
+              else
+                {
+                  loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
+                  loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
+                  loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
+                  loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+                }
+
+              //
               //  history
               //
               ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();

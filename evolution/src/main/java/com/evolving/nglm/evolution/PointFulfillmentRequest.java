@@ -42,6 +42,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
   {
     Credit("credit"),
     Debit("debit"),
+    Expire("expire"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private PointOperation(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

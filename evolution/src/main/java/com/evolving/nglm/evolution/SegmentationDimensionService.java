@@ -232,7 +232,10 @@ public class SegmentationDimensionService extends GUIService
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status",guiManagedObject.getJSONRepresentation().get("status"));
     result.put("targetingType", guiManagedObject.getJSONRepresentation().get("targetingType"));
-    result.put("noOfSegments",guiManagedObject.getJSONRepresentation().get("numberOfSegments"));
+    if(guiManagedObject instanceof SegmentationDimension)
+      {
+        result.put("noOfSegments",((SegmentationDimension)guiManagedObject).getNumberOfSegments());
+      }
     return result;
   }
 

@@ -61,6 +61,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
     schemaBuilder.field("defaultSegmentID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("isSimpleProfileDimension", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("numberOfSegments", Schema.INT32_SCHEMA);
     schemaBuilder.field("subscriberGroupEpoch", SubscriberGroupEpoch.schema());
     commonSchema = schemaBuilder.build();
   };
@@ -80,6 +81,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
   private SegmentationDimensionTargetingType targetingType;
   private String defaultSegmentID;
   private boolean isSimpleProfileDimension;
+  private int numberOfSegments;
   private SubscriberGroupEpoch subscriberGroupEpoch;
 
   /****************************************
@@ -97,14 +99,22 @@ public abstract class SegmentationDimension extends GUIManagedObject
   public SegmentationDimensionTargetingType getTargetingType() { return targetingType; }
   public String getDefaultSegmentID() { return defaultSegmentID; }
   public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
+  public int getNumberOfSegments() { return numberOfSegments; }
   public SubscriberGroupEpoch getSubscriberGroupEpoch() { return subscriberGroupEpoch; }
+  
+  //
+  //  setters
+  //
+  
+  protected void setDefaultSegmentID(String defaultSegmentID) { this.defaultSegmentID = defaultSegmentID; }
+  protected void setNumberOfSegments(int numberOfSegments) { this.numberOfSegments = numberOfSegments; }
   
   //
   //  abstract 
   //
 
   public abstract List<? extends Segment> getSegments();
-  protected abstract String retrieveDefaultSegmentID();
+  protected abstract void checkSegments();
   
   //
   //  setters
@@ -142,6 +152,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     SegmentationDimensionTargetingType targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
     String defaultSegmentID = valueStruct.getString("defaultSegmentID");
     boolean isSimpleProfileDimension = valueStruct.getBoolean("isSimpleProfileDimension");
+    int numberOfSegments = valueStruct.getInt32("numberOfSegments");
     SubscriberGroupEpoch subscriberGroupEpoch = SubscriberGroupEpoch.unpack(new SchemaAndValue(schema.field("subscriberGroupEpoch").schema(), valueStruct.get("subscriberGroupEpoch")));
     
     //
@@ -151,6 +162,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.targetingType = targetingType;
     this.defaultSegmentID = defaultSegmentID;
     this.isSimpleProfileDimension = isSimpleProfileDimension;
+    this.numberOfSegments = numberOfSegments;
     this.subscriberGroupEpoch = subscriberGroupEpoch;
   }
 
@@ -166,6 +178,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     struct.put("targetingType", segmentationDimension.getTargetingType().getExternalRepresentation());
     struct.put("defaultSegmentID", segmentationDimension.getDefaultSegmentID());
     struct.put("isSimpleProfileDimension", segmentationDimension.getIsSimpleProfileDimension());
+    struct.put("numberOfSegments", segmentationDimension.getNumberOfSegments());
     struct.put("subscriberGroupEpoch", SubscriberGroupEpoch.pack(segmentationDimension.getSubscriberGroupEpoch()));
   }
   
@@ -194,6 +207,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
     this.targetingType = SegmentationDimensionTargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
     this.defaultSegmentID = JSONUtilities.decodeString(jsonRoot, "defaultSegmentID", false);
     this.isSimpleProfileDimension = JSONUtilities.decodeBoolean(jsonRoot, "isSimpleProfileDimension", Boolean.FALSE);
+    this.numberOfSegments = JSONUtilities.decodeInteger(jsonRoot, "numberOfSegments", 0);
     this.subscriberGroupEpoch = new SubscriberGroupEpoch(this.getSegmentationDimensionID());
   }
 
@@ -205,7 +219,16 @@ public abstract class SegmentationDimension extends GUIManagedObject
   
   public boolean validate() throws GUIManagerException
   {
-    this.defaultSegmentID = retrieveDefaultSegmentID();
+    //
+    //  compute the number of segments and get default segment id
+    //
+    
+    checkSegments();
+    
+    //
+    //  return
+    //
+    
     return true;
   }
   
