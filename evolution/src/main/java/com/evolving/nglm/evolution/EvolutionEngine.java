@@ -1934,6 +1934,11 @@ public class EvolutionEngine
   
   private static ParameterMap saveProfileSegmentChangeOldValues(SubscriberEvaluationRequest changeEventEvaluationRequest)
   {
+    if (!Deployment.getEnableProfileSegmentChange()) 
+      {
+        return null;
+      }
+    
     ParameterMap oldSubscriberSegmentPerDimension = new ParameterMap();
     Map<String, String> segmentsMap = changeEventEvaluationRequest.getSubscriberProfile().getSegmentsMap(changeEventEvaluationRequest.getSubscriberGroupEpochReader());
     for(String dimensionId : segmentsMap.keySet()){
@@ -1984,7 +1989,12 @@ public class EvolutionEngine
   *****************************************/
   
   private static void updateSegmentChangeEvents(SubscriberState subscriberState, SubscriberProfile subscriberProfile, Date now, SubscriberEvaluationRequest changeEventEvaluationRequest, ParameterMap profileSegmentChangeOldValues)
-  {
+  {    
+    if (!Deployment.getEnableProfileSegmentChange()) 
+      {
+        return;
+      }
+    
     ParameterMap profileSegmentChangeNewValues = new ParameterMap();
     Map<String, String> segmentsMap = changeEventEvaluationRequest.getSubscriberProfile().getSegmentsMap(changeEventEvaluationRequest.getSubscriberGroupEpochReader());
     for(String dimensionId : segmentsMap.keySet())

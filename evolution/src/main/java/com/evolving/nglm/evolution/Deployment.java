@@ -60,6 +60,7 @@ public class Deployment
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents = new LinkedHashMap<String,EvolutionEngineEventDeclaration>();
   private static Map<String, CriterionField> profileChangeDetectionCriterionFields = new HashMap<>();
   private static Map<String, CriterionField> profileChangeGeneratedCriterionFields = new HashMap<>();
+  private static boolean enableProfileSegmentChange;
   private static String emptyTopic;
   private static String journeyTopic;
   private static String journeyTemplateTopic;
@@ -258,6 +259,7 @@ public class Deployment
   public static String getSubscriberProfileClassName() { return subscriberProfileClassName; }
   public static String getExtendedSubscriberProfileClassName() { return extendedSubscriberProfileClassName; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
+  public static boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
   public static String getEmptyTopic() { return emptyTopic; }
   public static String getJourneyTopic() { return journeyTopic; }
   public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
@@ -739,6 +741,19 @@ public class Deployment
     try
       {
         evolutionEngineExternalAPIClassName = JSONUtilities.decodeString(jsonRoot, "externalAPIClass", false);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  enableProfileSegmentChange
+    //
+
+    try
+      {
+        enableProfileSegmentChange = JSONUtilities.decodeBoolean(jsonRoot, "enableProfileSegmentChange", Boolean.FALSE);
       }
     catch (JSONUtilitiesException e)
       {
