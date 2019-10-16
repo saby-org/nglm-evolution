@@ -260,6 +260,28 @@ public class OfferCharacteristics
   {
     return properties.hashCode();
   }
+  
+  /*****************************************
+  *
+  *  toJSONObject
+  *
+  *****************************************/
+  
+  public JSONObject toJSONObject()
+  {
+    JSONObject result = new JSONObject();
+    JSONArray array = new JSONArray();
+    if(this.properties != null)
+      {
+        for(OfferCharacteristicsLanguageProperty prop : this.properties)
+          {
+            array.add(prop.toJSONObject());
+          }
+      }
+    result.put("languageProperties", array);
+    return result;
+  }
+  
 
   /****************************************************************************
   *
@@ -508,6 +530,28 @@ public class OfferCharacteristics
     {
       return properties.hashCode();
     }
+    
+    /*****************************************
+    *
+    *  toJSONObject
+    *
+    *****************************************/
+    
+    public JSONObject toJSONObject()
+    {
+      JSONObject result = new JSONObject();
+      JSONArray array = new JSONArray();
+      if(this.properties != null)
+        {
+          for(OfferCharacteristicsProperty prop : this.properties)
+            {
+              array.add(prop.toJSONObject());
+            }
+        }
+      result.put("languageID", this.languageID);
+      result.put("properties", array);
+      return result;
+    }
   }
 
 
@@ -753,6 +797,20 @@ public class OfferCharacteristics
     public int hashCode()
     {
       return value.hashCode();
+    }
+    
+    /*****************************************
+    *
+    *  toJSONObject
+    *
+    *****************************************/
+    
+    public JSONObject toJSONObject()
+    {
+      JSONObject result = new JSONObject();
+      result.put("catalogCharacteristicID", this.catalogCharacteristicID);
+      result.put("catalogCharacteristicName", this.catalogCharacteristicName);
+      return result;
     }
   }
 }

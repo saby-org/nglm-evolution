@@ -2073,8 +2073,10 @@ public class ThirdPartyManager
                   journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                   journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
                   journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
-                  journeyResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                  journeyResponseMap.put("endDate", getDateString(journeyComplete?subsLatestStatistic.getJourneyExitDate():storeJourney.getEffectiveEndDate()));
+                  journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
+                  journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                  journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                  journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
                   journeyResponseMap.put("campaignState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
@@ -2387,8 +2389,10 @@ public class ThirdPartyManager
                   campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                   campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                   campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                  campaignResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                  campaignResponseMap.put("endDate", getDateString(campaignComplete?subsLatestStatistic.getJourneyExitDate():storeCampaign.getEffectiveEndDate()));
+                  campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
+                  campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+                  campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                  campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
                   campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                   List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                   for (JourneyObjectiveInstance journeyObjectiveInstance : storeCampaign.getJourneyObjectiveInstances())
@@ -2891,7 +2895,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, salesChannelService)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -2953,7 +2957,7 @@ public class ThirdPartyManager
       }
     else 
       {
-        response.put("offer", ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer));
+        response.put("offer", ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, productService));
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);
@@ -2990,7 +2994,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer)).collect(Collectors.toList());
+    List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, productService)).collect(Collectors.toList());
     response.put("offers", JSONUtilities.encodeArray(offersJson));
     response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
     response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());

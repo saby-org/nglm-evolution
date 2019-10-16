@@ -1,5 +1,7 @@
 package com.evolving.nglm.evolution;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +23,9 @@ import com.evolving.nglm.core.SystemTime;
 
 public class BDRSinkConnector extends SimpleESSinkConnector
 {
+  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
+  
   /****************************************
   *
   *  taskClass
@@ -119,7 +124,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
-        documentMap.put("eventDatetime", commodityRequest.getEventDate());
+        documentMap.put("eventDatetime", commodityRequest.getEventDate()!=null?dateFormat.format(commodityRequest.getEventDate()):"");
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("eventID", commodityRequest.getEventID());
         documentMap.put("deliverableExpiration", expirationDate);

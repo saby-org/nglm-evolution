@@ -126,7 +126,6 @@ import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
-import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -134,11 +133,10 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
-import net.jpountz.lz4.LZ4FrameOutputStream.BD;
 
 public class GUIManager
 {
@@ -14492,7 +14490,7 @@ public class GUIManager
     ****************************************/
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-    String journeyObjectiveName = JSONUtilities.decodeString(jsonRoot, "objectiveName", false);
+    String journeyObjectiveName = JSONUtilities.decodeString(jsonRoot, "objective", false);
     String journeyState = JSONUtilities.decodeString(jsonRoot, "journeyState", false);
     String customerStatus = JSONUtilities.decodeString(jsonRoot, "customerStatus", false);
     String journeyStartDateStr = JSONUtilities.decodeString(jsonRoot, "journeyStartDate", false);
@@ -14605,6 +14603,15 @@ public class GUIManager
                           storeJourneys = storeJourneys.stream().filter(journey -> (journey.getJourneyObjectiveInstances() != null && (journey.getJourneyObjectiveInstances().stream().filter(obj -> obj.getJourneyObjectiveID().equals(exactJourneyObjective.getJourneyObjectiveID())).count() > 0L))).collect(Collectors.toList());
 
                       }
+                    
+                    //
+                    // filter on journeyState
+                    //
+                    
+                    if (journeyState != null)
+                      {
+                        storeJourneys = storeJourneys.stream().filter(journey -> journeyService.getJourneyStatus(journey).getExternalRepresentation().equalsIgnoreCase(journeyState)).collect(Collectors.toList()); 
+                      }
 
                     //
                     //  read campaign statistics 
@@ -14712,8 +14719,10 @@ public class GUIManager
                         journeyResponseMap.put("journeyID", storeJourney.getJourneyID());
                         journeyResponseMap.put("journeyName", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("display"));
                         journeyResponseMap.put("description", journeyService.generateResponseJSON(storeJourney, true, SystemTime.getCurrentTime()).get("description"));
-                        journeyResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        journeyResponseMap.put("endDate", getDateString(journeyComplete?subsLatestStatistic.getJourneyExitDate():storeJourney.getEffectiveEndDate()));
+                        journeyResponseMap.put("startDate", getDateString(storeJourney.getEffectiveStartDate()));
+                        journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
+                        journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                        journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
                         journeyResponseMap.put("campaignState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -15033,8 +15042,10 @@ public class GUIManager
                         campaignResponseMap.put("campaignID", storeCampaign.getJourneyID());
                         campaignResponseMap.put("campaignName", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("display"));
                         campaignResponseMap.put("description", journeyService.generateResponseJSON(storeCampaign, true, SystemTime.getCurrentTime()).get("description"));
-                        campaignResponseMap.put("startDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
-                        campaignResponseMap.put("endDate", getDateString(journeyComplete?subsLatestStatistic.getJourneyExitDate():storeCampaign.getEffectiveEndDate()));
+                        campaignResponseMap.put("startDate", getDateString(storeCampaign.getEffectiveStartDate()));
+                        campaignResponseMap.put("endDate", getDateString(storeCampaign.getEffectiveEndDate()));
+                        campaignResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
+                        campaignResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
                         campaignResponseMap.put("campaignState", journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
@@ -19446,7 +19457,7 @@ public class GUIManager
             String fileExtension = Deployment.getReportManagerFileExtension();
 
             File folder = new File(outputPath);
-            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension;
+            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
 
             File[] listOfFiles = folder.listFiles(new FileFilter(){
               @Override
@@ -19470,27 +19481,31 @@ public class GUIManager
                 responseCode = "Cant find report with that name";
               }
 
-              if(reportFile != null && reportFile.length() != 0) {
-                try {
-                  FileInputStream fis = new FileInputStream(reportFile);
-                  exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                  exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                  exchange.sendResponseHeaders(200, reportFile.length());
-                  OutputStream os = exchange.getResponseBody();
-                  int c;
-                  while ((c = fis.read()) != -1) {
-                    os.write(c);
+              if(reportFile != null) {
+                if(reportFile.length() > 0) {
+                  try {
+                    FileInputStream fis = new FileInputStream(reportFile);
+                    exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                    exchange.sendResponseHeaders(200, reportFile.length());
+                    OutputStream os = exchange.getResponseBody();
+                    int c;
+                    while ((c = fis.read()) != -1) {
+                      os.write(c);
+                    }
+                    fis.close();
+                    os.flush();
+                    os.close();
+                  } catch (Exception excp) {
+                    StringWriter stackTraceWriter = new StringWriter();
+                    excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                    log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
                   }
-                  fis.close();
-                  os.flush();
-                  os.close();
-                } catch (Exception excp) {
-                  StringWriter stackTraceWriter = new StringWriter();
-                  excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                  log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                }else {
+                  responseCode = "Report size is 0, report file is empty";
                 }
               }else {
-                responseCode = "Report is empty or being processed";
+                responseCode = "Report is null, cant find this report";
               }
           }
         catch (GUIManagerException e)

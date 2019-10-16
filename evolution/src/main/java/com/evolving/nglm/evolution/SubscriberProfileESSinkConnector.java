@@ -53,10 +53,10 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       this.subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("profileSinkConnector-subscriberGroupEpoch", Integer.toHexString(getTaskNumber()), Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
       SubscriberState.forceClassLoad();
       
-      loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "profileSinkConnector-loyaltyprogramservice" + Integer.toHexString(getTaskNumber()), Deployment.getLoyaltyProgramTopic(), false);
+      loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "sinkconnector-loyaltyprogramservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
       loyaltyProgramService.start();
       
-      pointService = new PointService(Deployment.getBrokerServers(), "profileSinkConnector-pointservice" + Integer.toHexString(getTaskNumber()), Deployment.getPointTopic(), false);
+      pointService = new PointService(Deployment.getBrokerServers(), "sinkconnector-pointservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPointTopic(), false);
       pointService.start();
       
     }

@@ -64,7 +64,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
       subscriberProfileService.start();
       
-      journeyService = new JourneyService(Deployment.getBrokerServers(), "guimanager-journeyservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getJourneyTopic(), false);
+      journeyService = new JourneyService(Deployment.getBrokerServers(), "sinkconnector-journeyservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getJourneyTopic(), false);
       journeyService.start();
     }
     

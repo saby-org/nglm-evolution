@@ -1,5 +1,7 @@
 package com.evolving.nglm.evolution;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +24,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   private static OfferService offerService;
   private static ProductService productService;
   private static PaymentMeanService paymentMeanService;
+  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
   
   /****************************************
   *
@@ -126,7 +130,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", purchaseManager.getSubscriberID());
         documentMap.put("deliveryRequestID", purchaseManager.getDeliveryRequestID());
-        documentMap.put("eventDatetime", purchaseManager.getEventDate());
+        documentMap.put("eventDatetime", purchaseManager.getEventDate()!=null?dateFormat.format(purchaseManager.getEventDate()):"");
         documentMap.put("eventID", purchaseManager.getEventID());
         documentMap.put("offerID", purchaseManager.getOfferID());
         documentMap.put("offerQty", purchaseManager.getQuantity());

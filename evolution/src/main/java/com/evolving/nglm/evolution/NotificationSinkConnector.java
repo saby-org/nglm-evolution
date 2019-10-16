@@ -1,5 +1,7 @@
 package com.evolving.nglm.evolution;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,16 +10,19 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
+import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
+import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
+import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 
 public class NotificationSinkConnector extends SimpleESSinkConnector
 {
+  
+  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
+  
   /****************************************
   *
   *  taskClass
@@ -115,8 +120,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", mailNotification.getCreationDate());
-        documentMap.put("deliveryDate", mailNotification.getDeliveryDate());
+        documentMap.put("creationDate", mailNotification.getCreationDate()!=null?dateFormat.format(mailNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?dateFormat.format(mailNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", mailNotification.getModuleID());
         documentMap.put("featureID", mailNotification.getFeatureID());
         documentMap.put("source", mailNotification.getFromAddress());
@@ -130,8 +135,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
         documentMap.put("eventID", "");
-        documentMap.put("creationDate", smsNotification.getCreationDate());
-        documentMap.put("deliveryDate", smsNotification.getDeliveryDate());
+        documentMap.put("creationDate", smsNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");
         documentMap.put("moduleID", smsNotification.getModuleID());
         documentMap.put("featureID", smsNotification.getFeatureID());
         documentMap.put("source", smsNotification.getSource());

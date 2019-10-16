@@ -132,7 +132,7 @@
 	          "eventID" : { "type" : "keyword" },
 	          "deliveryRequestID" : { "type" : "keyword" },
 	          "deliverableID" : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date" },
+	          "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
 	          "deliverableExpiration" : { "type" : "date" },
 	          "deliverableQty" : { "type" : "integer", "index" : "false" },
 	          "operation" : { "type" : "keyword" },
@@ -181,7 +181,7 @@
               "properties" :
                 {
 	          "subscriberID" : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date" },
+	          "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
 	          "deliveryRequestID" : { "type" : "keyword" },
 	          "eventID" : { "type" : "keyword" },
 	          "offerID" : { "type" : "keyword" },
@@ -240,8 +240,8 @@
 	          "subscriberID" : { "type" : "keyword" },
 	          "eventID" : { "type" : "keyword" },
 	          "deliveryRequestID" : { "type" : "keyword" },
-	          "creationDate" : { "type" : "date" },
-	          "deliveryDate" : { "type" : "date" },
+	          "creationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+	          "deliveryDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
 	          "messageID" : { "type" : "keyword" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },

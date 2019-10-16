@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -23,6 +21,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
 
 public class ThirdPartyJSONGenerator 
 {
@@ -104,7 +103,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateOfferJSONForThirdParty(Offer offer) 
+  protected static JSONObject generateOfferJSONForThirdParty(Offer offer, ProductService productService) 
   {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
@@ -112,7 +111,7 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerName", offer.getGUIManagedObjectName());
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product)).collect(Collectors.toList());
+    List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product, productService)).collect(Collectors.toList());
     offerMap.put("products", products);
     return JSONUtilities.encodeObject(offerMap);
   }
@@ -123,7 +122,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService)
+  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, SalesChannelService salesChannelService)
   {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
@@ -133,10 +132,16 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate()));
     offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate()));
     offerMap.put("offerDescription", offer.getDescription());
-    offerMap.put("offerOfferObjectiveNames", getOfferObjectivesJson(offer, offerObjectiveService));
+    offerMap.put("offerExternalID", offer.getJSONRepresentation().get("externalID")!=null?offer.getJSONRepresentation().get("externalID"):"");
+    offerMap.put("offerAvailableStock", offer.getJSONRepresentation().get("presentationStock")!=null?offer.getJSONRepresentation().get("presentationStock"):"");
+    offerMap.put("offerAvailableStockAlertThreshold", offer.getJSONRepresentation().get("presentationStockAlertThreshold")!=null?offer.getJSONRepresentation().get("presentationStockAlertThreshold"):"");
+    offerMap.put("offerImageURL", offer.getJSONRepresentation().get("imageURL")!=null?offer.getJSONRepresentation().get("imageURL"):"");
+    offerMap.put("offerObjectives", getOfferObjectivesJson(offer, offerObjectiveService));
+    offerMap.put("offerCharacteristics", offer.getOfferCharacteristics().toJSONObject()!=null?offer.getOfferCharacteristics().toJSONObject():"");
+    offerMap.put("offerSalesChannels", getOfferSalesChannelsJson(offer, salesChannelService));
     offerMap.put("offerInitialPropensity", offer.getInitialPropensity());
     offerMap.put("offerUnitaryCost", offer.getUnitaryCost());
-    List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product)).collect(Collectors.toList());
+    List<JSONObject> products = offer.getOfferProducts().stream().map(product -> ThirdPartyJSONGenerator.generateProductJSONForThirdParty(product, productService)).collect(Collectors.toList());
     offerMap.put("products", products);
     return JSONUtilities.encodeObject(offerMap);
   }
@@ -149,12 +154,49 @@ public class ThirdPartyJSONGenerator
   
   private static JSONArray  getOfferObjectivesJson(Offer offer, OfferObjectiveService offerObjectiveService)
   {
-    List<String> offerObjectiveNames = new ArrayList<String>();
-    for (OfferObjectiveInstance instance : offer.getOfferObjectives())
+    List<JSONObject> offerObjectives = new ArrayList<JSONObject>();
+    if(offer.getOfferObjectives() != null)
       {
-        offerObjectiveNames.add(offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID()).getGUIManagedObjectName());
+        for (OfferObjectiveInstance instance : offer.getOfferObjectives())
+          {
+            offerObjectives.add(offerObjectiveService.getStoredOfferObjective(instance.getOfferObjectiveID()).getJSONRepresentation());
+          }
       }
-    return JSONUtilities.encodeArray(offerObjectiveNames);
+    return JSONUtilities.encodeArray(offerObjectives);
+  }
+  
+  /*****************************************
+  *
+  *  getOfferObjectivesJson
+  *
+  *****************************************/
+  
+  private static JSONArray  getOfferSalesChannelsJson(Offer offer, SalesChannelService salesChannelService)
+  {
+    List<JSONObject> offerSalesChannels = new ArrayList<JSONObject>();
+    if(offer.getOfferSalesChannelsAndPrices() != null)
+      {
+        for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
+          {
+            if(channel.getSalesChannelIDs() != null) 
+              {
+                for(String salesChannelID : channel.getSalesChannelIDs()) 
+                  {
+                    SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, SystemTime.getCurrentTime());
+                    if(salesChannel != null)
+                      {
+                        JSONObject channelObject = new JSONObject();
+                        channelObject.put("salesChannelID", salesChannel.getSalesChannelID());
+                        channelObject.put("salesChannelName", salesChannel.getSalesChannelName());
+
+                        offerSalesChannels.add(channelObject);
+
+                      }
+                  }
+              }
+          }
+      }
+    return JSONUtilities.encodeArray(offerSalesChannels);
   }
 
   /*****************************************
@@ -163,12 +205,17 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateProductJSONForThirdParty(OfferProduct product) 
+  protected static JSONObject generateProductJSONForThirdParty(OfferProduct offerProduct, ProductService productService) 
   {
     HashMap<String, Object> productMap = new HashMap<String, Object>();
-    if ( null == product ) return JSONUtilities.encodeObject(productMap);
-    productMap.put("productID", product.getProductID());
-    productMap.put("quantity", product.getQuantity());
+    if ( null == offerProduct ) return JSONUtilities.encodeObject(productMap);
+    productMap.put("productID", offerProduct.getProductID());
+    Product product = (Product) productService.getStoredGUIManagedObject(offerProduct.getProductID());
+    if(product != null)
+      {
+        productMap.put("productName", product.getJSONRepresentation().get("display"));
+      }
+    productMap.put("quantity", offerProduct.getQuantity());
     return JSONUtilities.encodeObject(productMap);
   }
   

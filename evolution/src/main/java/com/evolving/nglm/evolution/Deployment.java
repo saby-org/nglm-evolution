@@ -209,6 +209,7 @@ public class Deployment
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
+  private static String elasticSearchDateFormat;
 
   /*****************************************
   *
@@ -409,6 +410,7 @@ public class Deployment
   public static String getDynamicEventDeclarationsTopic() { return dynamicEventDeclarationsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
+  public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
 
   /*****************************************
   *
@@ -887,6 +889,19 @@ public class Deployment
     try
       {
         pointFulfillmentResponseTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentResponseTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  elasticSearchDateFormat
+    //
+
+    try
+      {
+        elasticSearchDateFormat = JSONUtilities.decodeString(jsonRoot, "elasticSearchDateFormat", true);
       }
     catch (JSONUtilitiesException e)
       {
