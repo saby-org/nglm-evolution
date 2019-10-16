@@ -83,6 +83,38 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       super.stop();
     }
     
+    /*****************************************
+    *
+    *  getDocumentIndexName
+    *
+    *****************************************/
+    
+    @Override
+    protected String getDocumentIndexName(SinkRecord sinkRecord)
+    { 
+      /****************************************
+      *
+      *  extract JourneyStatistic
+      *
+      ****************************************/
+
+      Object journeyStatisticValue = sinkRecord.value();
+      Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
+      JourneyStatistic journeyStatistic = JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
+      
+      String suffix = journeyStatistic.getJourneyID().toLowerCase();
+      
+      if (suffix.matches("[a-z0-9_-]*")) 
+        {
+          return this.getIndexName() + "-" + suffix; 
+        }
+      else
+        {
+          log.error("Unable to insert document in elasticsearch index: " + this.getIndexName() + "-" + suffix + ". This is not a valid index name.");
+          return this.getIndexName() + "_unclassified"; 
+        }
+    }
+    
     @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
     {
       /****************************************

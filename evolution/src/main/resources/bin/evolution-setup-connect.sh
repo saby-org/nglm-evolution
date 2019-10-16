@@ -100,7 +100,7 @@
         "topics" : "${changelog.evolutionengine.journeytraffic.topic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-        "indexName" : "journeytraffic"
+        "indexName" : "datacube_journeytraffic"
         }
     }' &
     
@@ -255,7 +255,8 @@
          "topics" : "${topic.fulfillment.purchasefulfillment.response}",
          "connectionHost" : "'$MASTER_ESROUTER_HOST'",
          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-         "indexName" : "odr"
+         "indexName" : "detailedrecords_offers",
+         "pipelineName" : "odr-daily"
          }
      }' &
    
@@ -274,7 +275,8 @@
          "topics" : "${topic.commoditydelivery.response}",
          "connectionHost" : "'$MASTER_ESROUTER_HOST'",
          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-         "indexName" : "bdr"
+         "indexName" : "detailedrecords_bonuses",
+         "pipelineName" : "bdr-daily"
          }
      }' &
   
@@ -293,7 +295,8 @@
         "topics" : "${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-        "indexName" : "notification"
+        "indexName" : "detailedrecords_messages",
+        "pipelineName" : "mdr-daily"
         }
     }' &
 

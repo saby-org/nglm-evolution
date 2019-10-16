@@ -45,8 +45,8 @@
                   "universalControlGroup" : { "type" : "boolean" },
                   "language" : { "type" : "keyword" },
                   "segments" : { "type" : "keyword" },
-                  "loyaltyPrograms" : { "type" : "text", "index" : "false"},
-                  "pointBalances" : { "type" : "text", "index" : "false"}
+                  "loyaltyPrograms" : { "type" : "keyword", "index" : "false"},
+                  "pointBalances" : { "type" : "keyword", "index" : "false"}
                 }
         }
     }'
@@ -93,14 +93,38 @@
         }
     }'
   echo
+  
+  #
+  #  create a cleaning policy for bdr
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/bdr_policy -H'Content-Type: application/json' -d'
+    {
+      "policy": 
+        {
+          "phases": 
+            {
+              "delete": 
+                {
+                  "min_age": "'$ELASTICSEARCH_BDR_CLEANING'",
+                  "actions": 
+                    {
+                      "delete": {}
+                    }
+                }
+            }
+        }
+    }'
+  echo
 
   #
-  #  manually create bdr index
+  #  manually create bdr template
   #   - these settings are for index heavy load
   #
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/bdr -H'Content-Type: application/json' -d'
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -H'Content-Type: application/json' -d'
     {
+      "index_patterns": ["detailedrecords_bonuses-*"],
       "settings" :
         {
           "index" :
@@ -120,7 +144,8 @@
               "merge" : 
                 {
                   "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
-                }
+                },
+              "lifecycle.name": "bdr_policy"
             }
         },
       "mappings" :
@@ -138,22 +163,66 @@
 	          "operation" : { "type" : "keyword" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
-	          "origin" : { "type" : "text", "index" : "false" },
+	          "origin" : { "type" : "keyword", "index" : "false" },
 	          "returnCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
+	          "returnCodeDetails" : { "type" : "keyword", "index" : "false" }
                 }
+        }
+    }'
+  echo
+  
+  #
+  #  manually create bdr pipeline
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/bdr-daily -H 'Content-Type: application/json' -d'
+    {
+      "description": "daily bdr index naming",
+      "processors" : [
+        {
+          "date_index_name" : {
+            "field" : "eventDatetime",
+            "index_name_prefix" : "detailedrecords_bonuses-",
+            "index_name_format" : "yyyy-MM-dd",
+            "date_rounding" : "d"
+          }
+        }
+      ]
+    }'
+  echo
+  
+  #
+  #  create a cleaning policy for odr
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/odr_policy -H'Content-Type: application/json' -d'
+    {
+      "policy": 
+        {
+          "phases": 
+            {
+              "delete": 
+                {
+                  "min_age": "'$ELASTICSEARCH_ODR_CLEANING'",
+                  "actions": 
+                    {
+                      "delete": {}
+                    }
+                }
+            }
         }
     }'
   echo
 
   #
-  #  manually create odr index
+  #  manually create odr template
   #   - these settings are for index heavy load
   #
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/odr -H'Content-Type: application/json' -d'
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -H'Content-Type: application/json' -d'
     {
+      "index_patterns": ["detailedrecords_offers-*"],
       "settings" :
         {
           "index" :
@@ -173,7 +242,8 @@
               "merge" : 
                 {
                   "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
-                }
+                },
+              "lifecycle.name": "odr_policy"
             }
         },
       "mappings" :
@@ -187,16 +257,16 @@
 	          "offerID" : { "type" : "keyword" },
 	          "offerQty" : { "type" : "integer", "index" : "false" },
 	          "salesChannelID" : { "type" : "keyword" },
-	          "offerPrice" : { "type" : "text", "index" : "false" },
-	          "meanOfPayment" : { "type" : "text", "index" : "false" },
+	          "offerPrice" : { "type" : "keyword", "index" : "false" },
+	          "meanOfPayment" : { "type" : "keyword", "index" : "false" },
 	          "offerStock" : { "type" : "integer", "index" : "false" },
-	          "offerContent" : { "type" : "text", "index" : "false" },
+	          "offerContent" : { "type" : "keyword", "index" : "false" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
-	          "origin" : { "type" : "text", "index" : "false" },
+	          "origin" : { "type" : "keyword", "index" : "false" },
 	          "returnCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "returnCodeDetails" : { "type" : "text", "index" : "false" },
+	          "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
 	          "voucherCode" : { "type" : "keyword" },
 	          "voucherPartnerID" : { "type" : "keyword" }
                 }
@@ -205,12 +275,56 @@
   echo
   
   #
-  #  manually create notification index
+  #  manually create odr pipeline
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/odr-daily -H 'Content-Type: application/json' -d'
+    {
+      "description": "daily odr index naming",
+      "processors" : [
+        {
+          "date_index_name" : {
+            "field" : "eventDatetime",
+            "index_name_prefix" : "detailedrecords_offers-",
+            "index_name_format" : "yyyy-MM-dd",
+            "date_rounding" : "d"
+          }
+        }
+      ]
+    }'
+  echo
+  
+  #
+  #  create a cleaning policy for mdr
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/mdr_policy -H'Content-Type: application/json' -d'
+    {
+      "policy": 
+        {
+          "phases": 
+            {
+              "delete": 
+                {
+                  "min_age": "'$ELASTICSEARCH_MDR_CLEANING'",
+                  "actions": 
+                    {
+                      "delete": {}
+                    }
+                }
+            }
+        }
+    }'
+  echo
+
+  #
+  #  manually create mdr template
   #   - these settings are for index heavy load
   #
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/notification -H'Content-Type: application/json' -d'
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -H'Content-Type: application/json' -d'
     {
+      "index_patterns": ["detailedrecords_messages-*"],
       "settings" :
         {
           "index" :
@@ -230,7 +344,8 @@
               "merge" : 
                 {
                   "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
-                }
+                },
+              "lifecycle.name": "mdr_policy"
             }
         },
       "mappings" :
@@ -245,12 +360,32 @@
 	          "messageID" : { "type" : "keyword" },
 	          "moduleID" : { "type" : "keyword" },
 	          "featureID" : { "type" : "keyword" },
-	          "origin" : { "type" : "text", "index" : "false" },
+	          "origin" : { "type" : "keyword", "index" : "false" },
 	          "returnCode" : { "type" : "keyword" },
 	          "deliveryStatus" : { "type" : "keyword" },
-	          "returnCodeDetails" : { "type" : "text", "index" : "false" }
+	          "returnCodeDetails" : { "type" : "keyword", "index" : "false" }
                 }
         }
+    }'
+  echo
+  
+  #
+  #  manually create mdr pipeline
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/mdr-daily -H 'Content-Type: application/json' -d'
+    {
+      "description": "daily mdr index naming",
+      "processors" : [
+        {
+          "date_index_name" : {
+            "field" : "eventDatetime",
+            "index_name_prefix" : "detailedrecords_messages-",
+            "index_name_format" : "yyyy-MM-dd",
+            "date_rounding" : "d"
+          }
+        }
+      ]
     }'
   echo
   
@@ -259,8 +394,9 @@
   #   - these settings are for index heavy load
   #
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/journeystatistic -H'Content-Type: application/json' -d'
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeystatistic -H'Content-Type: application/json' -d'
     {
+      "index_patterns": ["journeystatistic*"],
       "settings" :
         {
           "index" :
@@ -311,11 +447,11 @@
   echo
 
   #
-  #  manually create journeytraffic index
+  #  manually create datacube_journeytraffic index
   #   - these settings are for index heavy load
   #
 
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/journeytraffic -H'Content-Type: application/json' -d'
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/datacube_journeytraffic -H'Content-Type: application/json' -d'
     {
       "settings" :
         {
