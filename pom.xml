@@ -8,7 +8,7 @@
   <url>http://maven.sixthsensemedia.com:8090/repository/snapshots</url>
   <description>NGLM evolution</description>
  
-  <modules> 
+  <modules>
     <module>evolution-common-build</module>
     <module>evolution</module>
   </modules>

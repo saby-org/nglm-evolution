@@ -1679,6 +1679,18 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  trackingID
+    *
+    *****************************************/
+    
+    if (evolutionEvent.getTrackingID() != null) 
+      {        
+        subscriberState.setTrackingID(evolutionEvent.getTrackingID());
+        subscriberStateUpdated = true;
+      }
+
+    /*****************************************
+    *
     *  externalAPI
     *
     *****************************************/

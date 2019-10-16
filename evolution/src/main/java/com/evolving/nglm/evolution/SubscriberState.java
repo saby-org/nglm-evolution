@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Schema;
@@ -55,7 +56,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
     schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -79,6 +80,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     schemaBuilder.field("profileLoyaltyProgramChangeEvents", SchemaBuilder.array(ProfileLoyaltyProgramChangeEvent.schema()).defaultValue(Collections.<ProfileLoyaltyProgramChangeEvent>emptyList()).schema());
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("externalAPIOutput", ExternalAPIOutput.serde().optionalSchema()); // TODO : check this 
+    schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -126,6 +128,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents;
   private SubscriberTrace subscriberTrace;
   private ExternalAPIOutput externalAPIOutput;
+  private List<UUID> trackingIDs;
 
   //
   //  in memory only
@@ -162,6 +165,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public List<ProfileLoyaltyProgramChangeEvent> getProfileLoyaltyProgramChangeEvents() { return profileLoyaltyProgramChangeEvents; }
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
   public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; }
+  public List<UUID> getTrackingIDs() { return trackingIDs; }
 
   //
   //  kafkaRepresentation
@@ -179,6 +183,34 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public void setLastEvaluationDate(Date lastEvaluationDate) { this.lastEvaluationDate = lastEvaluationDate; }
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
   public void setExternalAPIOutput(ExternalAPIOutput externalAPIOutput) { this.externalAPIOutput = externalAPIOutput; }
+  public void setTrackingID(UUID trackingID) 
+  { 
+    if(trackingID == null) 
+      {
+        return;
+      }
+    byte[] trackingIDBytes = EvolutionUtilities.getBytesFromUUID(trackingID);
+    byte[] savedTrackingIDBytes = EvolutionUtilities.getBytesFromUUIDs(this.trackingIDs);
+
+    //here, need to check if the same source ID exists. If true then replace the UUID with the existing one
+    int replacePos = -1;
+    for(int i = 0; i < savedTrackingIDBytes.length; i += 16) 
+      {
+        if(savedTrackingIDBytes[i] == trackingIDBytes[0]) 
+        {
+          replacePos = i;
+          break;
+        }
+      }
+    if( replacePos > -1) 
+      {          
+        this.trackingIDs.set(replacePos / 16, trackingID);
+      }
+      else 
+      {
+        this.trackingIDs.add(trackingID);
+      }
+  }
   
   //
   //  setUCGState
@@ -225,6 +257,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.subscriberTrace = null;
         this.externalAPIOutput = null;
         this.kafkaRepresentation = null;
+        this.trackingIDs = new ArrayList<UUID>();
       }
     catch (InvocationTargetException e)
       {
@@ -242,7 +275,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -268,7 +301,8 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     this.profileLoyaltyProgramChangeEvents = profileLoyaltyProgramChangeEvents;
     this.subscriberTrace = subscriberTrace;
     this.externalAPIOutput = externalAPIOutput;
-    this.kafkaRepresentation = null;
+    this.kafkaRepresentation = null;  
+    this.trackingIDs = trackingIDs;
   }
 
   /*****************************************
@@ -307,6 +341,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.subscriberTrace = subscriberState.getSubscriberTrace();
         this.externalAPIOutput = subscriberState.getExternalAPIOutput();
         this.kafkaRepresentation = null;
+        this.trackingIDs = subscriberState.getTrackingIDs();
 
         //
         //  deep copy of journey states
@@ -371,6 +406,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     struct.put("profileLoyaltyProgramChangeEvents", packProfileLoyaltyProgramChangeEvents(subscriberState.getProfileLoyaltyProgramChangeEvents()));
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
     struct.put("externalAPIOutput", subscriberState.getExternalAPIOutput() != null ? ExternalAPIOutput.serde().packOptional(subscriberState.getExternalAPIOutput()) : null);
+    struct.put("trackingID", EvolutionUtilities.getBytesFromUUIDs(subscriberState.getTrackingIDs()));
     return struct;
   }
 
@@ -610,12 +646,14 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents = (schemaVersion >= 2) ? unpackProfileLoyaltyProgramChangeEvents(schema.field("profileLoyaltyProgramChangeEvents").schema(), valueStruct.get("profileLoyaltyProgramChangeEvents")) : Collections.<ProfileLoyaltyProgramChangeEvent>emptyList();
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
     ExternalAPIOutput externalAPIOutput = valueStruct.get("externalAPIOutput") != null ? ExternalAPIOutput.unpack(new SchemaAndValue(schema.field("externalAPIOutput").schema(), valueStruct.get("externalAPIOutput"))) : null;
+    List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
+
 
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs);
   }
 
   /*****************************************
