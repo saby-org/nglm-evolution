@@ -13774,7 +13774,7 @@ public class GUIManager
     List<JSONObject> kpisMetaDataList = Deployment.getCustomerMetaData().getKpiMetaData().stream().map(kpisMetaData -> kpisMetaData.getJSONRepresentation()).collect(Collectors.toList());
     response.put("generalDetailsMetaData", JSONUtilities.encodeArray(generalDetailsMetaDataList));
     response.put("kpisMetaData", JSONUtilities.encodeArray(kpisMetaDataList));
-
+    
     /*****************************************
     *
     *  response
@@ -14647,14 +14647,9 @@ public class GUIManager
                         if (journeyState != null && !journeyState.isEmpty())
                           {
                             boolean criteriaSatisfied = false;
-                            switch (journeyState)
+                            if(journeyService.getJourneyStatus(storeJourney).getExternalRepresentation().equalsIgnoreCase(journeyState))
                               {
-                                case "active":
-                                  criteriaSatisfied = storeJourney.getActive();
-                                  break;
-                                case "inactive":
-                                  criteriaSatisfied = !storeJourney.getActive();
-                                  break;
+                                criteriaSatisfied = true;
                               }
                             if (! criteriaSatisfied) continue;
                           }
@@ -14970,14 +14965,9 @@ public class GUIManager
                         if (campaignState != null && !campaignState.isEmpty())
                           {
                             boolean criteriaSatisfied = false;
-                            switch (campaignState)
+                            if(journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation().equalsIgnoreCase(campaignState))
                               {
-                                case "active":
-                                  criteriaSatisfied = storeCampaign.getActive();
-                                  break;
-                                case "inactive":
-                                  criteriaSatisfied = !storeCampaign.getActive();
-                                  break;
+                                criteriaSatisfied = true;
                               }
                             if (! criteriaSatisfied) continue;
                           }

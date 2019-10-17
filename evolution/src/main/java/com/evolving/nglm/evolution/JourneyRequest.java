@@ -273,7 +273,6 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     Module module = Module.fromExternalRepresentation(getModuleID());
-    thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getJourneyID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, 1);
     thirdPartyPresentationMap.put(OPERATION, CommodityDeliveryOperation.Credit.toString());

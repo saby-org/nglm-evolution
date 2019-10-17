@@ -709,7 +709,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       Date now = SystemTime.getCurrentTime();
-      thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(PROVIDERID, getProviderID());
       thirdPartyPresentationMap.put(PROVIDERNAME, Deployment.getFulfillmentProviders().get(getProviderID()).getProviderName());
       thirdPartyPresentationMap.put(DELIVERABLEID, getCommodityID());

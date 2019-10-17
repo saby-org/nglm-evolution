@@ -555,7 +555,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  presentation
       //
 
-      thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
       thirdPartyPresentationMap.put(OFFERID, getOfferID());
       thirdPartyPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
       thirdPartyPresentationMap.put(OFFERQTY, getQuantity());

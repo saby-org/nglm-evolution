@@ -53,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Alarm;
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
@@ -1047,6 +1048,7 @@ public class ThirdPartyManager
       else
         {
           response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader);
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -1223,6 +1225,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -1427,6 +1430,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -1543,6 +1547,7 @@ public class ThirdPartyManager
             }
 
           response.put("points", pointsPresentation);
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -1837,6 +1842,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("messages", JSONUtilities.encodeArray(messagesJson));
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -2001,15 +2007,10 @@ public class ThirdPartyManager
                   if (journeyState != null && !journeyState.isEmpty())
                     {
                       boolean criteriaSatisfied = false;
-                      switch (journeyState)
-                      {
-                        case "active":
-                          criteriaSatisfied = storeJourney.getActive();
-                          break;
-                        case "inactive":
-                          criteriaSatisfied = !storeJourney.getActive();
-                          break;
-                      }
+                      if(journeyService.getJourneyStatus(storeJourney).getExternalRepresentation().equalsIgnoreCase(journeyState))
+                        {
+                          criteriaSatisfied = true;
+                        }
                       if (! criteriaSatisfied) continue;
                     }
 
@@ -2140,6 +2141,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("journeys", JSONUtilities.encodeArray(journeysJson));
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -2317,15 +2319,10 @@ public class ThirdPartyManager
                   if (campaignState != null && !campaignState.isEmpty())
                     {
                       boolean criteriaSatisfied = false;
-                      switch (campaignState)
-                      {
-                        case "active":
-                          criteriaSatisfied = storeCampaign.getActive();
-                          break;
-                        case "inactive":
-                          criteriaSatisfied = !storeCampaign.getActive();
-                          break;
-                      }
+                      if(journeyService.getJourneyStatus(storeCampaign).getExternalRepresentation().equalsIgnoreCase(campaignState))
+                        {
+                          criteriaSatisfied = true;
+                        }
                       if (! criteriaSatisfied) continue;
                     }
 
@@ -2454,6 +2451,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
+          response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -2628,6 +2626,7 @@ public class ThirdPartyManager
            }
 
          response.put("loyaltyPrograms", JSONUtilities.encodeArray(loyaltyProgramsPresentation));
+         response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile));
          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
        }
@@ -3121,6 +3120,7 @@ public class ThirdPartyManager
                 }
             }
           response.put("campaigns", JSONUtilities.encodeArray(campaignsJson));
+          response.putAll(resolveAllSubscriberIDs(subscriberProfile));
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
         }
@@ -3617,6 +3617,7 @@ public class ThirdPartyManager
       subscriberStoredToken.setBoundDate(now);
       subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
       response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService);
+      response.putAll(resolveAllSubscriberIDs(subscriberProfile));
       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
       return JSONUtilities.encodeObject(response);
@@ -4657,6 +4658,39 @@ public class ThirdPartyManager
       }
     // Returns a value, or an exception
     return subscriberID;
+  }
+  
+  /****************************************
+  *
+  *  resolveAllSubscriberIDs
+  *
+  ****************************************/
+
+  public Map<String, String> resolveAllSubscriberIDs(SubscriberProfile subscriberProfile)
+  {
+    Map<String, String> result = new HashMap<String, String>();
+    try
+    {
+      SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime());
+      for(AlternateID alternateID : Deployment.getAlternateIDs().values())
+        {
+          if(alternateID.getProfileCriterionField() != null)
+            {
+              CriterionField field = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
+              if(field != null)
+                {
+                  String alternateIDValue = (String) field.retrieveNormalized(request);
+                  result.put(alternateID.getID(), alternateIDValue);
+                }
+            }
+        }
+      result.put("subscriberID", subscriberProfile.getSubscriberID());
+    }
+    catch (Exception e)
+    {
+      log.error("Exception can not get alternateIDs for {} error is {}", subscriberProfile.getSubscriberID(), e.getMessage());
+    }
+    return result;
   }
 
  /*****************************************

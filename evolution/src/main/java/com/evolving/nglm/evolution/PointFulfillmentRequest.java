@@ -291,7 +291,6 @@ public class PointFulfillmentRequest extends DeliveryRequest
   @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     Module module = Module.fromExternalRepresentation(getModuleID());
-    thirdPartyPresentationMap.put(CUSTOMERID, getSubscriberID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());
     thirdPartyPresentationMap.put(DELIVERABLEQTY, getAmount());
     thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
