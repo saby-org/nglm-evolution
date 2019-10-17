@@ -38,6 +38,7 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliverySta
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 
 
@@ -340,7 +341,7 @@ public class PointBalance
             //  expiration date
             //
 
-            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getBaseTimeZone(), point.getValidity().getRoundUp());
+            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
 
             //
             //  adjust (or create) the bucket

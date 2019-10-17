@@ -42,7 +42,7 @@ public class PointValidity
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("periodType", Schema.STRING_SCHEMA);
     schemaBuilder.field("periodQuantity", Schema.INT32_SCHEMA);
-    schemaBuilder.field("roundUp", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("roundDown", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("validityExtension", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -61,7 +61,7 @@ public class PointValidity
 
   private TimeUnit periodType;
   private int periodQuantity;
-  private boolean roundUp;
+  private boolean roundDown;
   private boolean validityExtension;
 
   /*****************************************
@@ -70,11 +70,11 @@ public class PointValidity
   *
   *****************************************/
 
-  private PointValidity(TimeUnit periodType, int periodQuantity, boolean roundUp, boolean validityExtension)
+  private PointValidity(TimeUnit periodType, int periodQuantity, boolean roundDown, boolean validityExtension)
   {
     this.periodType = periodType;
     this.periodQuantity = periodQuantity;
-    this.roundUp = roundUp;
+    this.roundDown = roundDown;
     this.validityExtension = validityExtension;
   }
 
@@ -88,7 +88,7 @@ public class PointValidity
   {
     this.periodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
     this.periodQuantity = JSONUtilities.decodeInteger(jsonRoot, "periodQuantity", true);
-    this.roundUp = JSONUtilities.decodeBoolean(jsonRoot, "roundUp", true);
+    this.roundDown = JSONUtilities.decodeBoolean(jsonRoot, "roundDown", true);
     this.validityExtension = JSONUtilities.decodeBoolean(jsonRoot, "validityExtension", true);
   }
 
@@ -102,7 +102,7 @@ public class PointValidity
   {
     this.periodType = pointValidity.getPeriodType();
     this.periodQuantity = pointValidity.getPeriodQuantity();
-    this.roundUp = pointValidity.getRoundUp();
+    this.roundDown = pointValidity.getRoundDown();
     this.validityExtension = pointValidity.getValidityExtension();
   }
 
@@ -125,7 +125,7 @@ public class PointValidity
 
   public TimeUnit getPeriodType() { return periodType; }
   public int getPeriodQuantity() { return periodQuantity; }
-  public boolean getRoundUp() { return roundUp; }
+  public boolean getRoundDown() { return roundDown; }
   public boolean getValidityExtension() { return validityExtension; }
 
   /*****************************************
@@ -160,7 +160,7 @@ public class PointValidity
     Struct struct = new Struct(schema);
     struct.put("periodType", segment.getPeriodType().getExternalRepresentation());
     struct.put("periodQuantity", segment.getPeriodQuantity());
-    struct.put("roundUp", segment.getRoundUp());
+    struct.put("roundDown", segment.getRoundDown());
     struct.put("validityExtension", segment.getValidityExtension());
     return struct;
   }
@@ -188,13 +188,13 @@ public class PointValidity
     Struct valueStruct = (Struct) value;
     TimeUnit periodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("periodType"));
     int periodQuantity = valueStruct.getInt32("periodQuantity");
-    boolean roundUp = valueStruct.getBoolean("roundUp");
+    boolean roundDown = valueStruct.getBoolean("roundDown");
     boolean validityExtension = valueStruct.getBoolean("validityExtension");
 
     //
     //  return
     //
 
-    return new PointValidity(periodType, periodQuantity, roundUp, validityExtension);
+    return new PointValidity(periodType, periodQuantity, roundDown, validityExtension);
   }
 }

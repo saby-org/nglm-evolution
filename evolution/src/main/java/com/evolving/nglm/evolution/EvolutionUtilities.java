@@ -44,44 +44,108 @@ public class EvolutionUtilities
     public static TimeUnit fromExternalRepresentation(String externalRepresentation) { for (TimeUnit enumeratedValue : TimeUnit.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
+  public enum RoundingSelection
+  {
+    RoundUp("roundUp"),
+    RoundDown("roundDown"),
+    NoRound("noRound"),
+    Unknown("unknown");
+    private String externalRepresentation;
+    private RoundingSelection(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static RoundingSelection fromExternalRepresentation(String externalRepresentation) { for (RoundingSelection enumeratedValue : RoundingSelection.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
   /*****************************************
   *
   *  addTime
   *
   *****************************************/
 
-  public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone, boolean roundUp)
+  public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone, RoundingSelection roundingSelection)
   {
     Date result = baseTime;
     switch (timeUnit)
       {
         case Minute:
-          if (roundUp) result = RLMDateUtils.ceiling(result, Calendar.MINUTE, Calendar.SUNDAY, timeZone);
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.MINUTE, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.MINUTE, Calendar.SUNDAY, timeZone);
+            break;
+          default :
+            break;
+          }
           result = RLMDateUtils.addMinutes(result, amount);
           break;
 
         case Hour:
-          if (roundUp) result = RLMDateUtils.ceiling(result, Calendar.HOUR, Calendar.SUNDAY, timeZone);
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.HOUR, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.HOUR, Calendar.SUNDAY, timeZone);
+            break;
+          default :
+            break;
+          }
           result = RLMDateUtils.addHours(result, amount);
           break;
 
         case Day:
-          if (roundUp) result = RLMDateUtils.ceiling(result, Calendar.DATE, Calendar.SUNDAY, timeZone);
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.DATE, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.DATE, Calendar.SUNDAY, timeZone);
+            break;
+          default :
+            break;
+          }
           result = RLMDateUtils.addDays(result, amount, timeZone);
           break;
 
         case Week:
-          if (roundUp) result = RLMDateUtils.ceiling(result, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, timeZone);
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, timeZone);
+            break;
+          }
           result = RLMDateUtils.addWeeks(result, amount, timeZone);
           break;
 
         case Month:
-          if (roundUp) result = RLMDateUtils.ceiling(result, Calendar.MONTH, Calendar.SUNDAY, timeZone);
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.MONTH, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.MONTH, Calendar.SUNDAY, timeZone);
+            break;
+          default :
+            break;
+          }
           result = RLMDateUtils.addMonths(result, amount, timeZone);
           break;
 
         case Year:
-          if (roundUp) result = RLMDateUtils.ceiling(result, Calendar.YEAR, Calendar.SUNDAY, timeZone);
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.YEAR, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.YEAR, Calendar.SUNDAY, timeZone);
+            break;
+          default :
+            break;
+          }
           result = RLMDateUtils.addYears(result, amount, timeZone);
           break;
 
@@ -99,7 +163,7 @@ public class EvolutionUtilities
 
   public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone)
   {
-    return addTime(baseTime, amount, timeUnit, timeZone, false);
+    return addTime(baseTime, amount, timeUnit, timeZone, RoundingSelection.NoRound);
   }
   
 

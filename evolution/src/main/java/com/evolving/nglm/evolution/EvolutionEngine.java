@@ -95,6 +95,7 @@ import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -3777,7 +3778,7 @@ public class EvolutionEngine
                   {
                     if (Objects.equals(journeyState.getJourneyID(), journey.getJourneyID()))
                       {
-                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), Deployment.getJourneyDefaultTargetingWindowDuration(), Deployment.getJourneyDefaultTargetingWindowUnit(), Deployment.getBaseTimeZone(), Deployment.getJourneyDefaultTargetingWindowRoundUp());
+                        Date journeyReentryWindow = EvolutionUtilities.addTime(journeyState.getJourneyExitDate(), Deployment.getJourneyDefaultTargetingWindowDuration(), Deployment.getJourneyDefaultTargetingWindowUnit(), Deployment.getBaseTimeZone(), Deployment.getJourneyDefaultTargetingWindowRoundUp() ? RoundingSelection.RoundUp : RoundingSelection.NoRound);
                         if (journeyReentryWindow.after(now))
                           {
                             context.subscriberTrace("NotEligible: recently in journey {0}, window ends {1}", journey.getJourneyID(), journeyReentryWindow);
