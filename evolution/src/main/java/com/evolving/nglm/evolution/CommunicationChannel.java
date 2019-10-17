@@ -8,8 +8,8 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
 import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
@@ -23,6 +23,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -288,28 +289,37 @@ public class CommunicationChannel extends GUIManagedObject
         }
     }
     
-    public List<DailyWindow> getTodaysDailyWindows()
+    public List<DailyWindow> getTodaysDailyWindows(Date now)
     {
-      int today = SystemTime.getCalendar().get(Calendar.DAY_OF_WEEK);
-      if(getNotificationDailyWindows() != null)
+      List<DailyWindow> result = null;
+      int today = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getBaseTimeZone());
+      if (getNotificationDailyWindows() != null)
         {
-          switch(today) {
-          case 1:
-            return getNotificationDailyWindows().getDailyWindowSunday();
-          case 2:
-            return getNotificationDailyWindows().getDailyWindowMonday();
-          case 3:
-            return getNotificationDailyWindows().getDailyWindowTuesday();
-          case 4:
-            return getNotificationDailyWindows().getDailyWindowWednesday();
-          case 5:
-            return getNotificationDailyWindows().getDailyWindowThursday();
-          case 6:
-            return getNotificationDailyWindows().getDailyWindowFriday();
-          case 7:
-            return getNotificationDailyWindows().getDailyWindowSaturday();
-          }
+          switch(today)
+            {
+              case Calendar.SUNDAY:
+                result = getNotificationDailyWindows().getDailyWindowSunday();
+                break;
+              case Calendar.MONDAY:
+                result = getNotificationDailyWindows().getDailyWindowMonday();
+                break;
+              case Calendar.TUESDAY:
+                result = getNotificationDailyWindows().getDailyWindowTuesday();
+                break;
+              case Calendar.WEDNESDAY:
+                result = getNotificationDailyWindows().getDailyWindowWednesday();
+                break;
+              case Calendar.THURSDAY:
+                result = getNotificationDailyWindows().getDailyWindowThursday();
+                break;
+              case Calendar.FRIDAY:
+                result = getNotificationDailyWindows().getDailyWindowFriday();
+                break;
+              case Calendar.SATURDAY:
+                result = getNotificationDailyWindows().getDailyWindowSaturday();
+                break;
+            }
         }
-      return null;
+      return (result != null) ? result : Collections.<DailyWindow>emptyList();
     }
 }

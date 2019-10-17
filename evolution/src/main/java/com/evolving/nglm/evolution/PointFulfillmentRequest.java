@@ -20,7 +20,6 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -304,18 +303,6 @@ public class PointFulfillmentRequest extends DeliveryRequest
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
-  
-  /****************************************
-  *
-  *  getEffectiveDeliveryTime
-  *
-  ****************************************/
-
-  @Override
-  public Date getEffectiveDeliveryTime(Date now)
-  {
-    return now;
-  }   
 
   /*****************************************
   *  

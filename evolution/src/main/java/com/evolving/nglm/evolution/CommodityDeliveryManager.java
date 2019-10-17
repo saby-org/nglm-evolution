@@ -726,18 +726,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       thirdPartyPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
     }
-    
-    /****************************************
-    *
-    *  getEffectiveDeliveryTime
-    *
-    ****************************************/
-
-    @Override
-    public Date getEffectiveDeliveryTime(Date now)
-    {
-      return now;
-    }      
   }
 
   /*****************************************

@@ -13,7 +13,6 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SystemTime;
 
 public class JourneyTrafficESSinkConnector extends SimpleESSinkConnector
 {

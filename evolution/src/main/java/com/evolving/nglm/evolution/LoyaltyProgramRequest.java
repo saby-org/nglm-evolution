@@ -22,7 +22,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
@@ -256,17 +255,4 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
-  
-  /****************************************
-  *
-  *  getEffectiveDeliveryTime
-  *
-  ****************************************/
-
-  @Override
-  public Date getEffectiveDeliveryTime(Date now)
-  {
-    return now;
-  }   
-
 }

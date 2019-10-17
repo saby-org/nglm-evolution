@@ -206,7 +206,7 @@ public class EvolutionEngine
 
   public static void main(String[] args)
   {
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
     EvolutionEngine evolutionEngine = new EvolutionEngine();
     evolutionEngine.start(args);
   }
@@ -219,14 +219,6 @@ public class EvolutionEngine
 
   private void start(String[] args)
   {
-    /*****************************************
-    *
-    *  runtime
-    *
-    *****************************************/
-
-    NGLMRuntime.initialize();
-
     /*****************************************
     *
     *  configuration
@@ -1274,6 +1266,7 @@ public class EvolutionEngine
 
   public void waitForStreams(Date timeout)
   {
+    NGLMRuntime.registerSystemTimeDependency(this);
     boolean streamsInitialized = false;
     while (! streamsInitialized)
       {
@@ -3912,7 +3905,7 @@ public class EvolutionEngine
                 JourneyState journeyState = new JourneyState(context, journey, journey.getBoundParameters(), SystemTime.getCurrentTime(), journeyHistory);
                 journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
                 
-                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(),journeyState, false);
+                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(),journeyState, false);
                 subscriberState.getJourneyStates().add(journeyState);
                 subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
                     subscriberState.getSubscriberProfile(),
@@ -4082,7 +4075,7 @@ public class EvolutionEngine
         if (journey == null || journeyNode == null)
           {
             journeyState.setJourneyExitDate(now);
-            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
+            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
             subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
                 subscriberState.getSubscriberProfile(),
                 subscriberGroupEpochReader,
@@ -4224,13 +4217,13 @@ public class EvolutionEngine
                             //
 
                             journeyState.setJourneyExitDate(now);
-                            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
+                            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
                             subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
                                 subscriberState.getSubscriberProfile(),
                                 subscriberGroupEpochReader,
                                 ucgStateReader,
                                 statusUpdated,
-                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
+                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -4336,13 +4329,13 @@ public class EvolutionEngine
                             //
 
                             journeyState.setJourneyExitDate(now);
-                            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, true);
+                            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
                             subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
                                 subscriberState.getSubscriberProfile(),
                                 subscriberGroupEpochReader,
                                 ucgStateReader,
                                 statusUpdated,
-                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getActualCurrentTime())));
+                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -4482,7 +4475,7 @@ public class EvolutionEngine
                 //  journeyStatistic
                 //
                 
-                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getActualCurrentTime(), journeyState, firedLink.getDestination().getExitNode());
+                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, firedLink.getDestination().getExitNode());
                 subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
                     subscriberState.getSubscriberProfile(),
                     subscriberGroupEpochReader,
@@ -6272,6 +6265,7 @@ public class EvolutionEngine
 
   private void runPeriodicLogger()
   {
+    NGLMRuntime.registerSystemTimeDependency(evolutionEngineStatistics);
     Date nextProcessingTime = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), 300);
     while (true)
       {

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 
 import org.apache.zookeeper.CreateMode;
@@ -20,7 +21,6 @@ import org.apache.zookeeper.data.Stat;
 
 import com.rii.utilities.JSONUtilities;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
-import com.rii.utilities.SystemTime;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -358,6 +358,8 @@ public class StockMonitor implements Runnable
     *
     *****************************************/
 
+
+    NGLMRuntime.registerSystemTimeDependency(this);
     Date nextProcessingTime = RLMDateUtils.addSeconds(SystemTime.getCurrentTime(), Deployment.getStockRefreshPeriod());
     while (running)
       {
@@ -1295,7 +1297,7 @@ public class StockMonitor implements Runnable
     //  NGLMRuntime
     //
 
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
 
     //
     //  arguments

@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager;
@@ -105,6 +106,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   private static String applicationID = "deliverymanager-notificationmanagersms";
   public String pluginName;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
+  private CommunicationChannelService communicationChannelService;
+  private CommunicationChannelBlackoutService blackoutService;
 
   //
   //  logger
@@ -119,6 +122,8 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   *****************************************/
 
   public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
+  public CommunicationChannelService getCommunicationChannelService() { return communicationChannelService; }
+  public CommunicationChannelBlackoutService getBlackoutService() { return blackoutService; }
 
   /*****************************************
   *
@@ -150,6 +155,20 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "smsnotificationmanager-subscribermessagetemplateservice-" + deliveryManagerKey, Deployment.getSubscriberMessageTemplateTopic(), false);
     subscriberMessageTemplateService.start();
         
+    //
+    //  communicationChannelService
+    //
+
+    communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelservice-" + deliveryManagerKey, Deployment.getCommunicationChannelTopic(), false);
+    communicationChannelService.start();
+
+    //
+    //  blackoutService
+    //
+        
+    blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + deliveryManagerKey, Deployment.getCommunicationChannelBlackoutTopic(), false);
+    blackoutService.start();
+
     //
     //  manager
     //
@@ -546,31 +565,42 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
     }
     
-    @Override
-    public Date getEffectiveDeliveryTime(Date now)
+    /*****************************************
+    *
+    *  getEffectiveDeliveryTime
+    *
+    *****************************************/
+
+    public Date getEffectiveDeliveryTime(SMSNotificationManager smsNotificationManager, Date now)
     {
-      Date deliveryDate = null;
-      
-      CommunicationChannelService communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getCommunicationChannelTopic(), false);
-      CommunicationChannel channel = (CommunicationChannel) communicationChannelService.getActiveCommunicationChannel("sms", now);
-      
-      if(channel != null)
+      //
+      //  retrieve delivery time configuration
+      //
+
+      CommunicationChannel channel = (CommunicationChannel) smsNotificationManager.getCommunicationChannelService().getActiveCommunicationChannel("sms", now);
+      CommunicationChannelBlackoutPeriod blackoutPeriod = smsNotificationManager.getBlackoutService().getActiveCommunicationChannelBlackout("blackoutPeriod", now);
+
+      //
+      //  iterate until a valid date is found (give up after 7 days and reschedule even if not legal)
+      //
+
+      Date maximumDeliveryDate = RLMDateUtils.addDays(now, 7, Deployment.getBaseTimeZone());
+      Date deliveryDate = now;
+      while (deliveryDate.before(maximumDeliveryDate))
         {
-          deliveryDate = communicationChannelService.getEffectiveDeliveryTime(channel.getGUIManagedObjectID(), now);
+          Date nextDailyWindowDeliveryDate = (channel != null) ? smsNotificationManager.getCommunicationChannelService().getEffectiveDeliveryTime(channel.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
+          Date nextBlackoutWindowDeliveryDate = (blackoutPeriod != null) ? smsNotificationManager.getBlackoutService().getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), deliveryDate) : deliveryDate;
+          Date nextDeliveryDate = nextBlackoutWindowDeliveryDate.after(nextDailyWindowDeliveryDate) ? nextBlackoutWindowDeliveryDate : nextDailyWindowDeliveryDate;
+          if (nextDeliveryDate.after(deliveryDate))
+            deliveryDate = nextDeliveryDate;
+          else
+            break;
         }
-      
-      if(deliveryDate != null && !deliveryDate.equals(now))
-        {
-          return deliveryDate;
-        }
-      
-      CommunicationChannelBlackoutService blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "smsnotificationmanager-communicationchannelblackoutservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getCommunicationChannelBlackoutTopic(), false);
-      CommunicationChannelBlackoutPeriod blackoutPeriod = blackoutService.getActiveCommunicationChannelBlackout("blackoutPeriod", now);
-      if(blackoutPeriod != null)
-        {
-          deliveryDate = blackoutService.getEffectiveDeliveryTime(blackoutPeriod.getGUIManagedObjectID(), now);
-        }
-      
+
+      //
+      //  resolve
+      //
+
       return deliveryDate;
     }
   }
@@ -700,13 +730,14 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
         SMSNotificationManagerRequest smsRequest = (SMSNotificationManagerRequest)deliveryRequest;
         if(smsRequest.getRestricted()) 
           {
-            Date effectiveDeliveryTime = smsRequest.getEffectiveDeliveryTime(now);
+            Date effectiveDeliveryTime = smsRequest.getEffectiveDeliveryTime(this, now);
             if(effectiveDeliveryTime.equals(now))
               {
                 smsNotification.send(smsRequest);
               }
             else
               {
+                log.debug("SMSNotificationManagerRequest reschedule deliveryRequest;" + effectiveDeliveryTime);
                 smsRequest.setRescheduledDate(effectiveDeliveryTime);
                 smsRequest.setDeliveryStatus(DeliveryStatus.Reschedule);
                 smsRequest.setReturnCode(SMSMessageStatus.RESCHEDULE.getReturnCode());

@@ -811,6 +811,7 @@ public class GUIService
 
   private void runScheduler()
   {
+    NGLMRuntime.registerSystemTimeDependency(this);
     while (!stopRequested)
       {
         synchronized (this)

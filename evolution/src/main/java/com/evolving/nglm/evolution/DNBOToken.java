@@ -20,10 +20,10 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Token;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 
-import com.rii.utilities.SystemTime;
 
 public class DNBOToken extends Token {
 

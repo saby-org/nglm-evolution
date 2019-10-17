@@ -9,11 +9,14 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.NotificationDailyWindows.DailyWindow;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -151,26 +154,45 @@ public class CommunicationChannelService extends GUIService
   
   public Date getEffectiveDeliveryTime(String channelID, Date now)
   {
-    
+    Date effectiveDeliveryDate = now;
     CommunicationChannel communicationChannel = (CommunicationChannel) getActiveCommunicationChannel(channelID, now);
-    if(communicationChannel != null)
+    if (communicationChannel != null && communicationChannel.getNotificationDailyWindows() != null)
       {
-        if(communicationChannel.getNotificationDailyWindows() != null)
+        effectiveDeliveryDate = NGLMRuntime.END_OF_TIME;
+        Date today = RLMDateUtils.truncate(now, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+        for (int i=0; i<8; i++)
           {
-            List<DailyWindow> dailyWindows = communicationChannel.getTodaysDailyWindows();
-            if(dailyWindows != null && !dailyWindows.isEmpty())
+            //
+            //  check the i-th day
+            //
+
+            Date windowDay = RLMDateUtils.addDays(today, i, Deployment.getBaseTimeZone());
+            Date nextDay = RLMDateUtils.addDays(today, i+1, Deployment.getBaseTimeZone());
+            for (DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows(windowDay))
               {
-                for(DailyWindow dailyWindow : communicationChannel.getTodaysDailyWindows())
+                Date windowStartDate = dailyWindow.getFromDate(windowDay);
+                Date windowEndDate = dailyWindow.getUntilDate(windowDay);
+                if (EvolutionUtilities.isDateBetween(now, windowStartDate, windowEndDate))
                   {
-                    if(EvolutionUtilities.isDateBetween(now, dailyWindow.getFromDate(), dailyWindow.getUntilDate()))
-                      {
-                        return dailyWindow.getUntilDate();
-                      }
+                    effectiveDeliveryDate = now;
                   }
+                else if (now.compareTo(windowStartDate) < 0)
+                  {
+                    effectiveDeliveryDate = windowStartDate.compareTo(effectiveDeliveryDate) < 0 ? windowStartDate : effectiveDeliveryDate;
+                  }
+              }
+
+            //
+            //  effectiveDeliveryDate found?
+            //
+
+            if (effectiveDeliveryDate.compareTo(nextDay) < 0)
+              {
+                break;
               }
           }
       } 
-    return now;
+    return effectiveDeliveryDate;
   }
 
   /*****************************************

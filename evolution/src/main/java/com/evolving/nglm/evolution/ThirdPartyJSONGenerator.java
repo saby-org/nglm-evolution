@@ -243,7 +243,7 @@ public class ThirdPartyJSONGenerator
   
   protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService) 
   {
-    Date now = new Date();
+    Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
     if ( null == token ) return JSONUtilities.encodeObject(tokenMap);
     tokenMap.put("tokenStatus", token.getTokenStatus().getExternalRepresentation());

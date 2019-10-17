@@ -224,7 +224,7 @@ public class ThirdPartyManager
 
   public static void main(String[] args)
   {
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
     ThirdPartyManager thirdPartyManager = new ThirdPartyManager();
     thirdPartyManager.start(args);
   }
@@ -3481,7 +3481,7 @@ public class ThirdPartyManager
     }
     
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
-    Date now = new Date();
+    Date now = SystemTime.getCurrentTime();
     
     /*****************************************
      *
@@ -3769,7 +3769,7 @@ public class ThirdPartyManager
       int transactionDurationMs = 0;
       // TODO END
       
-      Date now = new Date();
+      Date now = SystemTime.getCurrentTime();
       Date fulfilledDate = now;
       String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
       
@@ -3862,7 +3862,7 @@ public class ThirdPartyManager
           return JSONUtilities.encodeObject(response);
         }
 
-      Date now = new Date();
+      Date now = SystemTime.getCurrentTime();
 
       String offerID = null;
       for (Offer offer : offerService.getActiveOffers(now))
@@ -4111,7 +4111,7 @@ public class ThirdPartyManager
         EvolutionEngineEvent eev = null;
         try
         {
-          eev = (EvolutionEngineEvent) constructor.newInstance(new Object[]{subscriberID, new Date(), eventBody });
+          eev = (EvolutionEngineEvent) constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
         }
         catch (Exception e)
         {

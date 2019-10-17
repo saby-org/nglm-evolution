@@ -274,6 +274,7 @@ public class TimerService
     *
     *****************************************/
 
+    NGLMRuntime.registerSystemTimeDependency(this);
     while (! stopRequested)
       {
         /*****************************************
@@ -354,6 +355,7 @@ public class TimerService
 
   private void runScheduleLoader()
   {
+    NGLMRuntime.registerSystemTimeDependency(this);
     while (! stopRequested)
       {
         /*****************************************
@@ -499,6 +501,7 @@ public class TimerService
     *
     *****************************************/
 
+    NGLMRuntime.registerSystemTimeDependency(this);
     Date now = SystemTime.getCurrentTime();
     Date nextPeriodicEvaluation = periodicEvaluation.previous(now);
     while (! stopRequested)

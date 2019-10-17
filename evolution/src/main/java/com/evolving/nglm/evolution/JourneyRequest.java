@@ -283,16 +283,4 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
-  
-  /****************************************
-  *
-  *  getEffectiveDeliveryTime
-  *
-  ****************************************/
-
-  @Override
-  public Date getEffectiveDeliveryTime(Date now)
-  {
-    return now;
-  }    
 }

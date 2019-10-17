@@ -175,7 +175,7 @@ public class SubscriberGroupLoader
     *
     ****************************************/
     
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
     log.info("main START: {} {} {} {} {} {} {} {}", numThreadsArgument, subscriberGroupTopic, subscriberGroupAssignSubscriberIDTopic, subscriberGroupEpochTopic, bootstrapServers, consumerGroupID, loadTypeArgument, groupName, (fileName != null ? fileName : ""));
     
     /****************************************

@@ -91,22 +91,27 @@ public class EvolutionUtilities
     return result;
   }
 
-  //
-  //  addTime
-  //
+  /*****************************************
+  *
+  *  addTime
+  *
+  *****************************************/
 
   public static Date addTime(Date baseTime, int amount, TimeUnit timeUnit, String timeZone)
   {
     return addTime(baseTime, amount, timeUnit, timeZone, false);
   }
   
-  //
-  // isDateBetween
-  //
+
+  /*****************************************
+  *
+  *  isDateBetween
+  *
+  *****************************************/
   
   public static boolean isDateBetween(Date now, Date from, Date until)
   {
-    return now.after(from) && now.before(until);
+    return from.compareTo(now) <= 0 && now.compareTo(until) < 0;
   }
 
   private static final byte[] emptyByteArray = {};

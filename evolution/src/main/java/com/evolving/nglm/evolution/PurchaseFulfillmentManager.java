@@ -600,18 +600,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(VOUCHERCODE, "");
       thirdPartyPresentationMap.put(VOUCHERPARTNERID, "");
     }
-    
-    /****************************************
-    *
-    *  getEffectiveDeliveryTime
-    *
-    ****************************************/
-
-    @Override
-    public Date getEffectiveDeliveryTime(Date now)
-    {
-      return now;
-    }   
   }
 
   /*****************************************

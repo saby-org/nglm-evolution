@@ -8,6 +8,8 @@ package com.evolving.nglm.evolution.reports;
 
 import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
+import com.evolving.nglm.core.SystemTime;
+
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -153,7 +155,7 @@ public class ReportEsReader {
 
       final AtomicInteger count = new AtomicInteger(0);
       final AtomicInteger nbReallySent = new AtomicInteger(0);
-      final AtomicLong before = new AtomicLong(new Date().getTime());
+      final AtomicLong before = new AtomicLong(SystemTime.getCurrentTime().getTime());
       final AtomicLong lastTS = new AtomicLong(0);
       final int traceInterval = 100_000;
       int i=0;
@@ -236,11 +238,11 @@ public class ReportEsReader {
                     lastTS.set(mdata.timestamp());
                   });
               if (count.getAndIncrement() % traceInterval == 0) {
-                long now = new Date().getTime();
+                long now = SystemTime.getCurrentTime().getTime();
                 long diff = now - before.get();
                 double speed = (traceInterval*1000.0)/(double)diff;
                 before.set(now);
-                log.debug(new Date()
+                log.debug(now
                     + " Sending msg "+d(count.get()-1)
                     + " to topic " + topicName
                     + " nbReallySent : "+d(nbReallySent.get())
@@ -288,13 +290,13 @@ public class ReportEsReader {
       producerReportElement.close();
 
       while (nbReallySent.get() < count.get()) {
-        log.trace(new Date()
+        log.trace(SystemTime.getCurrentTime()
             + " Sent "+d(count.get())+" messages, nbReallySent : "+d(nbReallySent.get())
             );
         try { TimeUnit.SECONDS.sleep(10); } catch (InterruptedException e) {}
       }
 
-      log.trace(new Date()
+      log.trace(SystemTime.getCurrentTime()
           + " Sent "+d(count.get())+" messages, nbReallySent : "+d(nbReallySent.get())
           );
     }

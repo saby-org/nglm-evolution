@@ -113,7 +113,7 @@ public class UCGEngine
     *
     *****************************************/
 
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
 
     /*****************************************
     *
@@ -264,6 +264,7 @@ public class UCGEngine
     *
     *****************************************/
 
+    NGLMRuntime.registerSystemTimeDependency(this);
     Date now = SystemTime.getCurrentTime();
     Date nextUCGEvaluation = ucgEvaluation.previous(now);
     while (! stopRequested)

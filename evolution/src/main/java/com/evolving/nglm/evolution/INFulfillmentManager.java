@@ -503,18 +503,6 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
     }
-    
-    /****************************************
-    *
-    *  getEffectiveDeliveryTime
-    *
-    ****************************************/
-
-    @Override
-    public Date getEffectiveDeliveryTime(Date now)
-    {
-      return now;
-    }   
   }
 
   /*****************************************

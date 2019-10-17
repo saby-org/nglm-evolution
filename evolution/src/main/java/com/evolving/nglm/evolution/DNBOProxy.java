@@ -156,7 +156,7 @@ public class DNBOProxy
 
   public static void main(String[] args) throws Exception
   {
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
     DNBOProxy dnboProxy = new DNBOProxy();
     dnboProxy.start(args);
   }

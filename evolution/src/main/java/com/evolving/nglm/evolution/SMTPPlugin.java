@@ -16,6 +16,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -358,6 +359,6 @@ public class SMTPPlugin implements MailNotificationInterface
 
   private String getSystemInfo()
   {
-    return getHost()+" on date "+new Date();
+    return getHost()+" on date "+SystemTime.getCurrentTime();
   }
 }

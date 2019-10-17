@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -281,7 +282,7 @@ public class DNBOUtils
       
       // set tokenCode in subscriber profile
       
-      Date now = new Date();
+      Date now = SystemTime.getCurrentTime();
       String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
       SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, now , parameterMap);
 

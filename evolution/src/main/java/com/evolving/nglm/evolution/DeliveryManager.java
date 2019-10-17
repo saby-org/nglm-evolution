@@ -391,7 +391,7 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
     
     /*****************************************
     *
@@ -1157,6 +1157,7 @@ public abstract class DeliveryManager
     //  wait
     //
         
+    NGLMRuntime.registerSystemTimeDependency(this);
     Date now = SystemTime.getCurrentTime();
     Date nextSubmitDate = RLMDateUtils.addMilliseconds(lastSubmitDate, millisecondsPerDelivery);
     while (managerStatus.isDeliveringRequests() && now.before(nextSubmitDate))

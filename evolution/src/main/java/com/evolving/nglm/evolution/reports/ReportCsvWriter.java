@@ -29,6 +29,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElementDeserializer;
 
@@ -154,7 +155,7 @@ public class ReportCsvWriter {
 				}
 				if (nbLoop % nbLoopForTrace == 0)
 					log.debug(""
-							+ new Date()
+							+ SystemTime.getCurrentTime()
 							+ " got "
 							+ d(consumerRecords.count()) + " records, total " + d(nbRecords)
 							+ " free mem = " + d(rt.freeMemory()) + "/" + d(rt.totalMemory())

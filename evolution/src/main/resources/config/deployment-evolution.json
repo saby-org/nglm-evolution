@@ -72,6 +72,7 @@
   "subscriberTraceControlTopic"                          : "${topic.subscribertracecontrol}",
   "subscriberTraceControlAssignSubscriberIDTopic"        : "${topic.subscribertracecontrol.assignsubscriberid}",
   "subscriberTraceTopic"                                 : "${topic.subscribertrace}",
+  "simulatedTimeTopic"                                   : "${topic.simulatedtime}",
   "journeyRequestTopic"                                  : "${topic.journeyrequest}",
   "journeyResponseTopic"                                 : "${topic.journeyresponse}",
   "journeyStatisticTopic"                                : "${topic.journeystatistic}",

@@ -15,8 +15,9 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class NotificationDailyWindows
@@ -363,9 +364,8 @@ public class NotificationDailyWindows
 
       public String getStartTime() { return from; }
       public String getEndTime() { return until; }
-      
-      public Date getFromDate() { return convertToDate(from); }
-      public Date getUntilDate() { return convertToDate(until); }
+      public Date getFromDate(Date day) { return convertToDate(day, from); }
+      public Date getUntilDate(Date day) { return RLMDateUtils.addMinutes(convertToDate(day, until), 1); }
 
       /*****************************************
       *
@@ -433,14 +433,19 @@ public class NotificationDailyWindows
 
       public DailyWindow(JSONObject jsonRoot) throws GUIManagerException
       {
-        
-        /*****************************************
-        *
-        *  attributes
-        *
-        *****************************************/
+        //
+        //  parse
+        //
+
         this.from = JSONUtilities.decodeString(jsonRoot, "from", false);
         this.until = JSONUtilities.decodeString(jsonRoot, "until", false);
+
+        //
+        //  validate
+        //
+
+        if (from != null && from.split(":").length != 2) throw new GUIManagerException("invalid time in daily window", from);
+        if (until != null && until.split(":").length != 2) throw new GUIManagerException("invalid time in daily window", until);
       }
       
       /*****************************************
@@ -457,15 +462,20 @@ public class NotificationDailyWindows
         return JSONUtilities.encodeObject(json);
       }
       
-      public Date convertToDate(String time)
+      /*****************************************
+      *
+      *  convertToDate
+      *
+      *****************************************/
+
+      private Date convertToDate(Date day, String time)
       {
+        Date result = day;
         String[] splitTime = time.split(":");
-        Calendar cal = SystemTime.getCalendar();
-        if(splitTime.length == 2) {
-          cal.set(Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]));
-          cal.set(Calendar.MINUTE, Integer.valueOf(splitTime[1]));
-        }
-        return cal.getTime();
-    }
+        if (splitTime.length != 2) throw new ServerRuntimeException("bad daily window time field");
+        result = RLMDateUtils.setField(result, Calendar.HOUR_OF_DAY, Integer.valueOf(splitTime[0]), Deployment.getBaseTimeZone());
+        result = RLMDateUtils.setField(result, Calendar.MINUTE, Integer.valueOf(splitTime[1]), Deployment.getBaseTimeZone());
+        return result;
+      }
     }
 }

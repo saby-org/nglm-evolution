@@ -12,6 +12,7 @@ import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Report;
 
 /**
@@ -50,7 +51,7 @@ public abstract class ReportDriver {
 		String topicSuffix = "";
     	try {
     		SimpleDateFormat sdf = new SimpleDateFormat(DateFormat);
-    		topicSuffix = sdf.format(new Date());
+    		topicSuffix = sdf.format(SystemTime.getCurrentTime());
     	} catch (IllegalArgumentException e) {
     		log.error(DateFormat+" is invalid, using default "+e.getLocalizedMessage());
     		topicSuffix = ""+System.currentTimeMillis();

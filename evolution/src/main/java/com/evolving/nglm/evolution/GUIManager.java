@@ -539,7 +539,7 @@ public class GUIManager
 
   public static void main(String[] args) throws Exception
   {
-    NGLMRuntime.initialize();
+    NGLMRuntime.initialize(true);
     GUIManager guiManager = new GUIManager();
     guiManager.start(args);
   }

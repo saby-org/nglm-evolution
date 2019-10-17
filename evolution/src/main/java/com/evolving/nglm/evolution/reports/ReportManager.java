@@ -32,6 +32,7 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Report;
@@ -150,7 +151,7 @@ public class ReportManager implements Watcher{
                 log.trace("Trying to create lock file "+lockFile);
                 zk.create(
                     lockFile,
-                    dfrm.format(new Date()).getBytes(), 
+                    dfrm.format(SystemTime.getCurrentTime()).getBytes(), 
                     Ids.OPEN_ACL_UNSAFE,
                     CreateMode.EPHEMERAL);
                 try {
@@ -250,7 +251,7 @@ public class ReportManager implements Watcher{
         log.error("Config error : date format "+dateFormat+" is invalid, using default"+e.getLocalizedMessage(), e);
         sdf = new SimpleDateFormat(); // Default format, might not be valid in a filename, sigh...
       }
-      String fileSuffix = sdf.format(new Date());
+      String fileSuffix = sdf.format(SystemTime.getCurrentTime());
       String csvFilename = "" 
           + outputPath 
           + File.separator

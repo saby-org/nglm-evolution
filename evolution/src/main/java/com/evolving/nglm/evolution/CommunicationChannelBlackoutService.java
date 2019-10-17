@@ -153,27 +153,19 @@ public class CommunicationChannelBlackoutService extends GUIService
   
   public Date getEffectiveDeliveryTime(String blackoutPeriodID, Date now)
   {
-    
+    Date effectiveDeliveryDate = now;
     CommunicationChannelBlackoutPeriod communicationChannelBlackoutPeriod = (CommunicationChannelBlackoutPeriod) getActiveCommunicationChannelBlackout(blackoutPeriodID, now);
-    if(communicationChannelBlackoutPeriod != null)
+    if (communicationChannelBlackoutPeriod != null)
       {
-        if(communicationChannelBlackoutPeriod.getBlackoutPeriodsList() != null)
+        for (BlackoutPeriods blackoutPeriod : communicationChannelBlackoutPeriod.getBlackoutPeriodsList())
           {
-            Set<BlackoutPeriods> blackoutPeriods = communicationChannelBlackoutPeriod.getBlackoutPeriodsList();
-            if(blackoutPeriods != null && !blackoutPeriods.isEmpty())
+            if (EvolutionUtilities.isDateBetween(now, blackoutPeriod.getStartTime(), blackoutPeriod.getEndTime()))
               {
-                for(BlackoutPeriods blackoutPeriod : communicationChannelBlackoutPeriod.getBlackoutPeriodsList())
-                  {
-                    if(EvolutionUtilities.isDateBetween(now, blackoutPeriod.getStartTime(), blackoutPeriod.getEndTime()))
-                      {
-                        return blackoutPeriod.getEndTime();
-                      }
-                  }
+                effectiveDeliveryDate = blackoutPeriod.getEndTime().compareTo(effectiveDeliveryDate) > 0 ? blackoutPeriod.getEndTime() : effectiveDeliveryDate;
               }
-          }
+         }
       }
-
-    return now;
+    return effectiveDeliveryDate;
   }
 
   /*****************************************
