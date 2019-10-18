@@ -193,7 +193,7 @@ public class StoreConfiguration
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getSMSTemplateList", "templates", "putSMSTemplate"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPushTemplateList", "templates", "putPushTemplate"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getOfferList", "offers", "putOffer"));
-    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getLoyaltyProgramsList", "loyaltyPrograms", "putLoyaltyProgram"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getLoyaltyProgramList", "loyaltyPrograms", "putLoyaltyProgram"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getExclusionInclusionTargetList", "exclusionInclusionTargets", "putExclusionInclusionTarget"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getTargetList", "targets", "putTarget"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getJourneyTemplateList", "journeyTemplates", "putJourneyTemplate"));
