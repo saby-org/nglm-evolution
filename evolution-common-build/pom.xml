@@ -171,6 +171,7 @@
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
+    <topic.criterionfieldavailablevalues>criterionfieldavailablevalues</topic.criterionfieldavailablevalues>
 
     <!-- registry subjects -->
     <registrysubject.subscriberprofile>subscriberprofile</registrysubject.subscriberprofile>

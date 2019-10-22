@@ -394,6 +394,11 @@ public class GUIManager
     removeSegmentContactPolicy("removeSegmentContactPolicy"),
     getBillingModes("getBillingModes"),
     getPartnerTypes("getPartnerTypes"),
+    getCriterionFieldAvailableValuesList("getCriterionFieldAvailableValuesList"),
+    getCriterionFieldAvailableValuesSummaryList("getCriterionFieldAvailableValuesSummaryList"),
+    getCriterionFieldAvailableValues("getCriterionFieldAvailableValues"),
+    putCriterionFieldAvailableValues("putCriterionFieldAvailableValues"),
+    removeCriterionFieldAvailableValues("removeCriterionFieldAvailableValues"),
 
     //
     //  configAdaptor APIs
@@ -509,6 +514,7 @@ public class GUIManager
   private SegmentContactPolicyService segmentContactPolicyService;
   private SharedIDService subscriberGroupSharedIDService;
   private DynamicEventDeclarationsService dynamicEventDeclarationsService;
+  private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
   private static Method externalAPIMethodJourneyActivated;
   private static Method externalAPIMethodJourneyDeactivated;
 
@@ -603,6 +609,7 @@ public class GUIManager
     String partnerTopic = Deployment.getPartnerTopic();
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
+    String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
     getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
     //
@@ -770,7 +777,7 @@ public class GUIManager
     partnerService = new PartnerService(bootstrapServers, "guimanager-partnerservice-"+apiProcessKey, partnerTopic, true);
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
-
+    criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
 
     /*****************************************
     *
@@ -1502,6 +1509,7 @@ public class GUIManager
     segmentContactPolicyService.start();
     dynamicEventDeclarationsService.start();
     dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);
+    criterionFieldAvailableValuesService.start();
 
 
     /*****************************************
@@ -1774,6 +1782,11 @@ public class GUIManager
         restServer.createContext("/nglm-configadaptor/getDeliverable", new APISimpleHandler(API.configAdaptorDeliverable));
         restServer.createContext("/nglm-guimanager/getBillingModes", new APISimpleHandler(API.getBillingModes));
         restServer.createContext("/nglm-guimanager/getPartnerTypes", new APISimpleHandler(API.getPartnerTypes));
+        restServer.createContext("/nglm-guimanager/getCriterionFieldAvailableValuesList", new APISimpleHandler(API.getCriterionFieldAvailableValuesList));
+        restServer.createContext("/nglm-guimanager/getCriterionFieldAvailableValuesSummaryList", new APISimpleHandler(API.getCriterionFieldAvailableValuesSummaryList));
+        restServer.createContext("/nglm-guimanager/getCriterionFieldAvailableValues", new APISimpleHandler(API.getCriterionFieldAvailableValues));
+        restServer.createContext("/nglm-guimanager/putCriterionFieldAvailableValues", new APISimpleHandler(API.putCriterionFieldAvailableValues));
+        restServer.createContext("/nglm-guimanager/removeCriterionFieldAvailableValues", new APISimpleHandler(API.removeCriterionFieldAvailableValues));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -1788,7 +1801,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, segmentContactPolicyService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
 
     /*****************************************
     *
@@ -1796,7 +1809,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
     /*****************************************
     *
@@ -1856,12 +1869,13 @@ public class GUIManager
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private PartnerService partnerService;
     private SegmentContactPolicyService segmentContactPolicyService;
+    private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
 
     //
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1900,6 +1914,7 @@ public class GUIManager
       this.partnerService = partnerService;
       this.dnboMatrixService = dnboMatrixService;
       this.segmentContactPolicyService = segmentContactPolicyService;
+      this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
     }
 
     //
@@ -1951,6 +1966,7 @@ public class GUIManager
       if (partnerService != null) partnerService.stop();
       if (dnboMatrixService != null) dnboMatrixService.stop();
       if (segmentContactPolicyService != null) segmentContactPolicyService.stop();
+      if (criterionFieldAvailableValuesService != null) criterionFieldAvailableValuesService.stop();
 
       //
       //  rest server
@@ -3126,8 +3142,28 @@ public class GUIManager
                   jsonResponse = processConfigAdaptorDefaultNoftificationDailyWindows(jsonRoot);
                   break;
 
-                  case configAdaptorDeliverable:
+                case configAdaptorDeliverable:
                   jsonResponse = processConfigAdaptorDeliverable(jsonRoot);
+                  break;
+
+                case getCriterionFieldAvailableValuesList:
+                  jsonResponse = processGetCriterionFieldAvailableValuesList(userID, jsonRoot, true, includeArchived);
+                  break;
+
+                case getCriterionFieldAvailableValuesSummaryList:
+                  jsonResponse = processGetCriterionFieldAvailableValuesList(userID, jsonRoot, false, includeArchived);
+                  break;
+
+                case getCriterionFieldAvailableValues:
+                  jsonResponse = processGetCriterionFieldAvailableValues(userID, jsonRoot, includeArchived);
+                  break;
+
+                case putCriterionFieldAvailableValues:
+                  jsonResponse = processPutCriterionFieldAvailableValues(userID, jsonRoot);
+                  break;
+
+                case removeCriterionFieldAvailableValues:
+                  jsonResponse = processRemoveCriterionFieldAvailableValues(userID, jsonRoot);
                   break;
               }
           }
@@ -9152,6 +9188,275 @@ public class GUIManager
     response.put("responseCode", responseCode);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*********************************************
+  *
+  *  processGetCriterionFieldAvailableValuesList
+  *
+  *********************************************/
+
+  private JSONObject processGetCriterionFieldAvailableValuesList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert CriterionFieldAvailableValues
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> criterionFieldAvailableValuesList = new ArrayList<JSONObject>();
+    for (GUIManagedObject criterionFieldAvailableValues : criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived))
+      {
+        criterionFieldAvailableValuesList.add(criterionFieldAvailableValuesService.generateResponseJSON(criterionFieldAvailableValues, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("criterionFieldAvailableValues", JSONUtilities.encodeArray(criterionFieldAvailableValuesList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveCriterionFieldAvailableValues
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCriterionFieldAvailableValues(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String criterionFieldAvailableValuesID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject criterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID);
+    if (criterionFieldAvailableValues != null && ! criterionFieldAvailableValues.getReadOnly()) criterionFieldAvailableValuesService.removeCriterionFieldAvailableValues(criterionFieldAvailableValuesID, userID);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (criterionFieldAvailableValues != null && ! criterionFieldAvailableValues.getReadOnly())
+      responseCode = "ok";
+    else if (criterionFieldAvailableValues != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "criterionFieldAvailableValuesNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutCriterionFieldAvailableValues
+  *
+  *****************************************/
+
+  private JSONObject processPutCriterionFieldAvailableValues(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  CriterionFieldAvailableValuesID
+    *
+    *****************************************/
+
+    String criterionFieldAvailableValuesID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (criterionFieldAvailableValuesID == null)
+      {
+        criterionFieldAvailableValuesID = communicationChannelBlackoutService.generateCommunicationChannelBlackoutID();
+        jsonRoot.put("id", criterionFieldAvailableValuesID);
+      }
+
+    /*****************************************
+    *
+    *  existing CriterionFieldAvailableValues
+    *
+    *****************************************/
+
+    GUIManagedObject existingCriterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCriterionFieldAvailableValues != null && existingCriterionFieldAvailableValues.getReadOnly())
+      {
+        response.put("id", existingCriterionFieldAvailableValues.getGUIManagedObjectID());
+        response.put("accepted", existingCriterionFieldAvailableValues.getAccepted());
+        response.put("valid", existingCriterionFieldAvailableValues.getAccepted());
+        response.put("processing", criterionFieldAvailableValuesService.isActiveCriterionFieldAvailableValues(existingCriterionFieldAvailableValues, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process CriterionFieldAvailableValues
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate CriterionFieldAvailableValues
+        *
+        ****************************************/
+
+        CriterionFieldAvailableValues criterionFieldAvailableValues = new CriterionFieldAvailableValues(jsonRoot, epoch, existingCriterionFieldAvailableValues);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(criterionFieldAvailableValues, (existingCriterionFieldAvailableValues == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", criterionFieldAvailableValues.getGUIManagedObjectID());
+        response.put("accepted", criterionFieldAvailableValues.getAccepted());
+        response.put("valid", criterionFieldAvailableValues.getAccepted());
+        response.put("processing", criterionFieldAvailableValuesService.isActiveCriterionFieldAvailableValues(criterionFieldAvailableValues, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        criterionFieldAvailableValuesService.putCriterionFieldAvailableValues(incompleteObject, (existingCriterionFieldAvailableValues == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "criterionFieldAvailableValuesNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processGetCriterionFieldAvailableValues
+  *
+  *****************************************/
+
+  private JSONObject processGetCriterionFieldAvailableValues(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String criterionFieldAvailableValuesID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject criterionFieldAvailableValues = salesChannelService.getStoredSalesChannel(criterionFieldAvailableValuesID, includeArchived);
+    JSONObject criterionFieldAvailableValuesJSON = criterionFieldAvailableValuesService.generateResponseJSON(criterionFieldAvailableValues, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (criterionFieldAvailableValues != null) ? "ok" : "criterionFieldAvailableValuesNotFound");
+    if (criterionFieldAvailableValues != null) response.put("criterionFieldAvailableValues", criterionFieldAvailableValuesJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+  
 
   /*****************************************
   *
@@ -20414,19 +20719,40 @@ public class GUIManager
           break;
 
         default:
-          if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null)
+          boolean foundValue = false;
+          if(includeDynamic)
+            {
+              for(CriterionFieldAvailableValues availableValues : criterionFieldAvailableValuesService.getActiveCriterionFieldAvailableValues(now))
+                {
+                  if(availableValues.getGUIManagedObjectID().equals(reference))
+                    {
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      if(availableValues.getAvailableValues() != null)
+                        {
+                          for(Pair<String, String> pair : availableValues.getAvailableValues())
+                            {
+                              availableValue.put("id", pair.getFirstElement());
+                              availableValue.put("display", pair.getSecondElement());
+                              result.add(JSONUtilities.encodeObject(availableValue));
+                              foundValue = true;
+                            }
+                        }
+                    }
+                }
+            }
+          if (guiManagerExtensionEvaluateEnumeratedValuesMethod != null && !foundValue)
             {
               try
-                {
-                  result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
-                }
+              {
+                result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
+              }
               catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
-                {
-                  log.error("failed deployment evaluate enumerated values for reference {}", reference);
-                  StringWriter stackTraceWriter = new StringWriter();
-                  e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                  log.error(stackTraceWriter.toString());
-                }
+              {
+                log.error("failed deployment evaluate enumerated values for reference {}", reference);
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.error(stackTraceWriter.toString());
+              }
             }
           break;
       }
@@ -21844,6 +22170,7 @@ public class GUIManager
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private PartnerService partnerService;
     private SegmentContactPolicyService segmentContactPolicyService;
+    private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
 
     /*****************************************
     *
@@ -21883,6 +22210,8 @@ public class GUIManager
     public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
     public PartnerService getPartnerService() { return partnerService; }
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
+    public CriterionFieldAvailableValuesService getCriterionFieldAvailableValuesService() { return criterionFieldAvailableValuesService; }
+    
 
     /*****************************************
     *
@@ -21890,7 +22219,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -21924,6 +22253,7 @@ public class GUIManager
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.partnerService = partnerService;
       this.segmentContactPolicyService = segmentContactPolicyService;
+      this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
     }
   }
 

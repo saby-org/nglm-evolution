@@ -209,6 +209,7 @@ public class Deployment
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
   private static String elasticSearchDateFormat;
+  private static String criterionFieldAvailableValuesTopic;
 
   /*****************************************
   *
@@ -410,6 +411,7 @@ public class Deployment
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
+  public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
 
   /*****************************************
   *
@@ -1874,6 +1876,19 @@ public class Deployment
       {
         throw new ServerRuntimeException("deployment", e);
       }
+    
+    //
+    //  criterionFieldAvailableValuesTopic
+    //
+
+    try
+    {
+      criterionFieldAvailableValuesTopic = JSONUtilities.decodeString(jsonRoot, "criterionFieldAvailableValuesTopic", true);
+    }
+  catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
+    }
 
     //
     //  baseLanguageID

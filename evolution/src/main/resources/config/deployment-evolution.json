@@ -99,6 +99,7 @@
   "dnboMatrixTopic"                                      : "${topic.dnbomatrix}",
   "dynamicEventDeclarationsTopic"                        : "${topic.dynamiceventdeclarations}",
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
+  "criterionFieldAvailableValuesTopic"					 : "${topic.criterionfieldavailablevalues}",
   
   --
   --  registry "topics" -- fake topic names used to register Avro schemas when objects are serialized/deserialized to non-Kafka places (e.g., Redis)

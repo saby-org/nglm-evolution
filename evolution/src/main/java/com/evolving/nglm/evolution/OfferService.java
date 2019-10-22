@@ -101,6 +101,7 @@ public class OfferService extends GUIService
     result.put("default", guiManagedObject.getJSONRepresentation().get("default"));
     result.put("serviceTypeID", guiManagedObject.getJSONRepresentation().get("serviceTypeID"));
     result.put("imageURL", guiManagedObject.getJSONRepresentation().get("imageURL"));
+    result.put("offerObjectives", guiManagedObject.getJSONRepresentation().get("offerObjectives"));
     return result;
   }
   

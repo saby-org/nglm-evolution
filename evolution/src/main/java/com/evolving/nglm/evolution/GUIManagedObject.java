@@ -184,6 +184,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(DNBOMatrix.serde());
     guiManagedObjectSerdes.add(SegmentContactPolicy.serde());
 	guiManagedObjectSerdes.add(DynamicEventDeclarations.serde());
+	guiManagedObjectSerdes.add(CriterionFieldAvailableValues.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }
