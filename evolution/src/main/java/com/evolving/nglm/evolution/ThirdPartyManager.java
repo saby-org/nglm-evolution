@@ -142,6 +142,7 @@ public class ThirdPartyManager
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
+  private ZookeeperUniqueKeyServer zuks;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends EvolutionEngineEvent>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -302,6 +303,12 @@ public class ThirdPartyManager
     //
 
     authCache = TimebasedCache.getInstance(60000*authResponseCacheLifetimeInMinutes);
+    
+    //
+    // ZookeeperUniqueKeyServer
+    //
+    
+    zuks = new ZookeeperUniqueKeyServer("thirdpartymanager");
 
     /*****************************************
      *
@@ -1632,8 +1639,8 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    String deliveryRequestID = zuks.getStringKey();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
     
     /*****************************************
     *
@@ -1641,7 +1648,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
-    response.put("deliveryRequestID", uniqueKey);
+    response.put("deliveryRequestID", deliveryRequestID);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -1711,8 +1718,8 @@ public class ThirdPartyManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    String deliveryRequestID = zuks.getStringKey();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
@@ -1720,7 +1727,7 @@ public class ThirdPartyManager
     *
     *****************************************/
 
-    response.put("deliveryRequestID", uniqueKey);
+    response.put("deliveryRequestID", deliveryRequestID);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -3671,6 +3678,7 @@ public class ThirdPartyManager
      * getSubscriberProfile - no history
      *
      *****************************************/
+    String deliveryRequestID = "";
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
@@ -3733,9 +3741,9 @@ public class ThirdPartyManager
       List<String> offers = subscriberStoredToken.getPresentedOfferIDs();
       int position = 0;
       boolean found = false;
-      for (String offerId : offers)
+      for (String offID : offers)
       {
-        if (offerId.equals(offerID))
+        if (offID.equals(offerID))
           {
             found = true;
             break;
@@ -3752,10 +3760,7 @@ public class ThirdPartyManager
       String featureID = "acceptOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
       String salesChannelID = "salesChannelID"; // TODO
-      String deliveryRequestID = "deliveryRequestID"; // TODO
-      String eventID = "eventID"; // TODO
-      String deliveryType = "deliveryType"; // TODO
-      purchaseOffer(subscriberID, offerID, salesChannelID, 1, deliveryRequestID, eventID, moduleID, featureID, deliveryType, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -3785,6 +3790,7 @@ public class ThirdPartyManager
       //  submit to kafka
       //
 
+      {
       String topic = Deployment.getAcceptanceLogTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<AcceptanceLog> valueSerializer = AcceptanceLog.serde().serializer();
@@ -3793,9 +3799,23 @@ public class ThirdPartyManager
           keySerializer.serialize(topic, new StringKey(subscriberID)),
           valueSerializer.serialize(topic, acceptanceLog)
           ));
+      }
       
-      // TODO trigger event (for campaign) ?
-      
+      //
+      // trigger event (for campaigns)
+      //
+
+      {
+        TokenRedeemed tokenRedeemed = new TokenRedeemed(subscriberID, now, subscriberStoredToken.getTokenTypeID(), offerID);
+        String topic = Deployment.getTokenRedeemedTopic();
+        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+        Serializer<TokenRedeemed> valueSerializer = TokenRedeemed.serde().serializer();
+        kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+            topic,
+            keySerializer.serialize(topic, new StringKey(subscriberID)),
+            valueSerializer.serialize(topic, tokenRedeemed)
+            ));
+      }      
     }
     catch (SubscriberProfileServiceException e) 
     {
@@ -3808,7 +3828,7 @@ public class ThirdPartyManager
      *  decorate and response
      *
      *****************************************/
-
+    response.put("deliveryRequestID", deliveryRequestID);
     response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
     response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     return JSONUtilities.encodeObject(response);
@@ -3852,6 +3872,7 @@ public class ThirdPartyManager
      * getSubscriberProfile - no history
      *
      *****************************************/
+    String deliveryRequestID = "";
     try
     {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
@@ -3899,10 +3920,7 @@ public class ThirdPartyManager
       
       String featureID = "purchaseOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-      String deliveryRequestID = "deliveryRequestID"; // TODO
-      String eventID = "eventID"; // TODO
-      String deliveryType = "deliveryType"; // TODO
-      purchaseOffer(subscriberID, offerID, salesChannelID, quantity, deliveryRequestID, eventID, moduleID, featureID, deliveryType, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, kafkaProducer);
       
       //
       // TODO how do we deal with the offline errors ? 
@@ -3922,7 +3940,7 @@ public class ThirdPartyManager
      *  decorate and response
      *
      *****************************************/
-
+    response.put("deliveryRequestID", deliveryRequestID);
     response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
     response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     return JSONUtilities.encodeObject(response);
@@ -4600,34 +4618,6 @@ public class ThirdPartyManager
 
     return result;
   }
-
-  /*****************************************
-  *
-  *  getAlternateIDParameter
-  *
-  *****************************************/
-
-  private String getAlternateIDParameter(JSONObject jsonRoot)
-  {
-    String result = null;
-    // returns the first parameter in the input request that corresponds to an entry in alternateID
-    for (String id : Deployment.getAlternateIDs().keySet())
-      {
-        String param = JSONUtilities.decodeString(jsonRoot, id, false);
-        if (param != null)
-          {
-            try
-            {
-              result = subscriberIDService.getSubscriberID(id, param);
-              break;
-            } catch (SubscriberIDServiceException e)
-            {
-              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
-            }
-          }
-      }
-    return result;
-  }
   
   /*****************************************
   *
@@ -4639,7 +4629,31 @@ public class ThirdPartyManager
   {
     // "customerID" parameter is mapped internally to subscriberID 
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
-    String alternateSubscriberID = getAlternateIDParameter(jsonRoot);
+    String alternateSubscriberID = null;
+    
+    // finds the first parameter in the input request that corresponds to an entry in alternateID[]
+    for (String id : Deployment.getAlternateIDs().keySet())
+      {
+        String param = JSONUtilities.decodeString(jsonRoot, id, false);
+        if (param != null)
+          {
+            try
+            {
+              alternateSubscriberID = subscriberIDService.getSubscriberID(id, param);
+              if (alternateSubscriberID == null)
+                {
+                  response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+                  response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+                  throw new ThirdPartyManagerException("",0);
+                }
+              break;
+            } catch (SubscriberIDServiceException e)
+            {
+              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
+            }
+          }
+      }
+    
     if (subscriberID == null)
       {
         if (alternateSubscriberID == null)
@@ -4652,6 +4666,7 @@ public class ThirdPartyManager
       }
     else if (alternateSubscriberID != null)
       {
+        // alternateSubscriberID & subscriberID are both specified
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage());
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
         throw new ThirdPartyManagerException("",0);
@@ -4737,8 +4752,8 @@ public class ThirdPartyManager
    *
    *****************************************/
   
-  public static void purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, String deliveryRequestID,
-      String eventID, String moduleID, String featureID, String deliveryType, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
+  public String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
+      String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -4766,6 +4781,7 @@ public class ThirdPartyManager
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
 
+    String deliveryRequestID = zuks.getStringKey();
     // Build a json doc to create the PurchaseFulfillmentRequest
     HashMap<String,Object> request = new HashMap<String,Object>();
     request.put("subscriberID", subscriberID);
@@ -4773,10 +4789,10 @@ public class ThirdPartyManager
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", eventID);
+    request.put("eventID", "0"); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
-    request.put("deliveryType", deliveryType);
+    request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
     PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration);
@@ -4786,7 +4802,8 @@ public class ThirdPartyManager
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),
         valueSerializer.serialize(topic, pfr)
-        ));    
+        ));
+    return deliveryRequestID;
   }
 
   /*****************************************

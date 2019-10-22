@@ -2410,7 +2410,7 @@ public class EvolutionEngine
         subscriberProfile.setSubscriberTraceEnabled(subscriberTraceControl.getSubscriberTraceEnabled());
         subscriberProfileUpdated = true;
       }
-
+    
     /*****************************************
     *
     *  invoke evolution engine extension

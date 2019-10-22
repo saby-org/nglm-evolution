@@ -55,6 +55,7 @@
   "renamedProfileCriterionFieldTopic"                    : "${topic.renamedprofilecriterionfield}",
   "timedEvaluationTopic"                                 : "${topic.timedevaluation}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
+  "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
   "extendedSubscriberProfileChangeLog"                   : "${changelog.evolutionengine.extendedsubscriberprofile}",

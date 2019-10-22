@@ -222,6 +222,30 @@
     }' &
 
   #
+  #  source connector -- TokenRedeemedFileSourceConnector
+  #
+
+  export CONNECT_URL_TOKEN_REDEEMED=${CONNECT_URL_TOKEN_REDEEMED:-$DEFAULT_CONNECT_URL}
+  curl -XPOST $CONNECT_URL_TOKEN_REDEEMED/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "TokenRedeemedFileSourceConnector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.TokenRedeemedFileSourceConnector",
+        "tasks.max" : 1,
+        "directory" : "/app/data/tokenredeemed",
+        "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+        "pollMaxRecords" : 5,
+        "pollingInterval" : 10,
+        "verifySizeInterval" : 0,
+        "topic" : "${topic.tokenredeemed}",
+        "bootstrapServers" : "'$BROKER_SERVERS'",
+        "internalTopic" : "${topic.tokenredeemed_fileconnector}",
+        "archiveDirectory" : "/app/data/tokenredeemedarchive"
+        }
+    }' &
+
+  #
   #  sink connector -- propensity (elasticsearch)
   #
 

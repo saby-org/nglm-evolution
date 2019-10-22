@@ -39,9 +39,9 @@ public class DNBOMatrixRange
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dnbo_matrixrange");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("rangeId", Schema.STRING_SCHEMA);
-    schemaBuilder.field("rangeStartValue", Schema.STRING_SCHEMA);
+    schemaBuilder.field("rangeStartValue", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("rangeEndValue", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.array(DNBOMatrixSegment.schema()).schema());
     schema = schemaBuilder.build();
@@ -205,8 +205,8 @@ public class DNBOMatrixRange
   public DNBOMatrixRange(JSONObject jsonRoot) throws GUIManagerException
   {
     this.rangeId = JSONUtilities.decodeString(jsonRoot, "rangeId", true);
-    this.rangeStartValue = JSONUtilities.decodeString(jsonRoot, "rangeStartValue", true);
-    this.rangeEndValue = JSONUtilities.decodeString(jsonRoot, "rangeEndValue", false); // optional : means unlimited
+    this.rangeStartValue = JSONUtilities.decodeString(jsonRoot, "rangeStartValue", false);
+    this.rangeEndValue = JSONUtilities.decodeString(jsonRoot, "rangeEndValue", false);
     this.segments = decodeSegments(JSONUtilities.decodeJSONArray(jsonRoot, "segments", true));
   }
 

@@ -517,7 +517,7 @@ public class GUIManager
   private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
   private static Method externalAPIMethodJourneyActivated;
   private static Method externalAPIMethodJourneyDeactivated;
-
+  private ZookeeperUniqueKeyServer zuks;
 
   private static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   private static final String FILE_REQUEST = "file"; 
@@ -650,6 +650,12 @@ public class GUIManager
       {
         throw new ServerRuntimeException(e);
       }
+    
+    //
+    // ZookeeperUniqueKeyServer
+    //
+ 
+    zuks = new ZookeeperUniqueKeyServer("guimanager");
 
     /*****************************************
     *
@@ -18307,8 +18313,8 @@ public class GUIManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    String deliveryRequestID = zuks.getStringKey();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
 
     /*****************************************
     *
@@ -18316,7 +18322,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("deliveryRequestID", uniqueKey);
+    response.put("deliveryRequestID", deliveryRequestID);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -18386,8 +18392,8 @@ public class GUIManager
     *
     *****************************************/
     
-    String uniqueKey = UUID.randomUUID().toString(); // TODO : @Marc : change the way the deliveryRequestID is generated
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, uniqueKey, true, uniqueKey, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    String deliveryRequestID = zuks.getStringKey();
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
@@ -18395,7 +18401,7 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("deliveryRequestID", uniqueKey);
+    response.put("deliveryRequestID", deliveryRequestID);
     response.put("responseCode", "ok");
     return JSONUtilities.encodeObject(response);
   }
@@ -20667,7 +20673,7 @@ public class GUIManager
                         {
                           case OffersPresentation:
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                            availableValue.put("id", tokenType.getCodeFormat());
+                            availableValue.put("id", tokenType.getTokenTypeID());
                             availableValue.put("display", tokenType.getTokenTypeName());
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
@@ -20717,6 +20723,24 @@ public class GUIManager
               result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
+
+        case "tokenTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject tokenTypesUnchecked : tokenTypeService.getStoredTokenTypes())
+                {
+                  if (tokenTypesUnchecked.getAccepted())
+                    {
+                      TokenType tokenType = (TokenType) tokenTypesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", tokenType.getGUIManagedObjectID());
+                      availableValue.put("display", tokenType.getTokenTypeName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
 
         default:
           boolean foundValue = false;

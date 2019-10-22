@@ -117,6 +117,7 @@ public class Deployment
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
+  private static String tokenRedeemedTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
   private static String journeyTrafficChangeLog;
@@ -318,6 +319,7 @@ public class Deployment
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
+  public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
   public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
@@ -2740,6 +2742,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment",e);
       }
 
+
+    //
+    //  tokenRedeemedTopic
+    //
+
+    try
+      {
+        tokenRedeemedTopic = JSONUtilities.decodeString(jsonRoot, "tokenRedeemedTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
   }
 
   /*****************************************

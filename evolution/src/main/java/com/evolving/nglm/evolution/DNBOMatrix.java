@@ -41,11 +41,11 @@ public class DNBOMatrix extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dnbo_matrix");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("scoringTypeId", Schema.STRING_SCHEMA);
     schemaBuilder.field("dimensionId", Schema.STRING_SCHEMA);
-    schemaBuilder.field("variableId", Schema.STRING_SCHEMA);
+    schemaBuilder.field("variableId", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("ranges", SchemaBuilder.array(DNBOMatrixRange.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -235,7 +235,7 @@ public class DNBOMatrix extends GUIManagedObject
 
     this.scoringTypeId = JSONUtilities.decodeString(jsonRoot, "scoringTypeId", true);
     this.dimensionId = JSONUtilities.decodeString(jsonRoot, "dimensionId", true);
-    this.variableId = JSONUtilities.decodeString(jsonRoot, "variableId", true);
+    this.variableId = JSONUtilities.decodeString(jsonRoot, "variableId", false);
     this.ranges = decodeRanges(JSONUtilities.decodeJSONArray(jsonRoot, "ranges", true));
 
     /*****************************************
