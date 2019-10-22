@@ -111,7 +111,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   //
 
   public String getOfferID() { return getGUIManagedObjectID(); }
-  public String getDisplay() { return getGUIManagedObjectName(); }
+  public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public double getInitialPropensity() { return initialPropensity; }
   public Integer getStock() { return stock; } 
   public int getUnitaryCost() { return unitaryCost; }

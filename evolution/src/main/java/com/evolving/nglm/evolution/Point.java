@@ -83,7 +83,7 @@ public class Point extends GUIManagedObject
 
   public String getPointID() { return getGUIManagedObjectID(); }
   public String getPointName() { return getGUIManagedObjectName(); }
-  public String getDisplay() { return getGUIManagedObjectName(); }
+  public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public boolean getDebitable() { return debitable; }
   public boolean getCreditable() { return creditable; }
   public boolean getSetable() { return setable; }
