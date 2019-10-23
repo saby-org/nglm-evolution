@@ -8,8 +8,10 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -37,6 +39,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
 import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
@@ -1342,7 +1345,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    public ActionManager(JSONObject configuration)
+    public ActionManager(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
@@ -1357,7 +1360,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     *
     *****************************************/
 
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       /*****************************************
       *
@@ -1394,7 +1397,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *
       *****************************************/
 
-      return request;
+      return Collections.<Action>singletonList(request);
     }
   }
 }

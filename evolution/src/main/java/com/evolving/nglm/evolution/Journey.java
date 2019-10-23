@@ -35,6 +35,8 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -2656,12 +2658,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       SubscriberJourneyStatusField statusField = SubscriberJourneyStatusField.fromExternalRepresentation(subscriberEvaluationRequest.getJourneyNode().getNodeParameters().containsKey("node.parameter.journeystatus") ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journeystatus") : "(unknown)");
       if (statusField == null) throw new ServerRuntimeException("unknown status field: " + CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.journeystatus"));
-      subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(statusField.getJourneyParameterName(), Boolean.TRUE);
-      return null;
+      ContextUpdate contextUpdate = new ContextUpdate(ActionType.JourneyContextUpdate);
+      contextUpdate.getParameters().put(statusField.getJourneyParameterName(), Boolean.TRUE);
+      return Collections.<Action>singletonList(contextUpdate);
     }
   }
 
@@ -2690,17 +2693,19 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    @Override public void executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
+    @Override public List<Action> executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
     {
+      ContextUpdate contextUpdate = new ContextUpdate(ActionType.JourneyContextUpdate);
       switch (journeyLink.getLinkName())
         {
           case "controlGroup":
-            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName(), Boolean.TRUE);            
             break;
           case "universalControlGroup":
-            subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
+            contextUpdate.getParameters().put(SubscriberJourneyStatusField.StatusUniversalControlGroup.getJourneyParameterName(), Boolean.TRUE);            
             break;
         }
+      return Collections.<Action>singletonList(contextUpdate);
     }
   }
   
@@ -2729,12 +2734,50 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    @Override public void executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
+    @Override public List<Action> executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
     {
-      //
-      // can be sample.a or sample.b as key
-      //
-      subscriberEvaluationRequest.getJourneyState().getJourneyParameters().put(journeyLink.getLinkName(), journeyLink.getLinkDisplay());            
+      ContextUpdate contextUpdate = new ContextUpdate(ActionType.JourneyContextUpdate);
+      contextUpdate.getParameters().put(journeyLink.getLinkName(), journeyLink.getLinkDisplay());
+      return Collections.<Action>singletonList(contextUpdate);
+    }
+  }
+
+  /*****************************************
+  *
+  *  class ContextUpdate
+  *
+  *****************************************/
+
+  public static class ContextUpdate implements Action
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private ActionType actionType;
+    private ParameterMap parameters;
+
+    /*****************************************
+    *
+    *  accessors
+    *
+    *****************************************/
+
+    public ActionType getActionType() { return actionType; }
+    public ParameterMap getParameters() { return parameters; }
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public ContextUpdate(ActionType actionType)
+    {
+      this.actionType = actionType;
+      this.parameters = new ParameterMap();
     }
   }
 }

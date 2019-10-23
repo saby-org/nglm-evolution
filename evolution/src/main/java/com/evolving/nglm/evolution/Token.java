@@ -18,8 +18,10 @@ import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 
-public class Token
+public class Token implements Action
 {
   /*****************************************
   *
@@ -127,6 +129,7 @@ public class Token
   public String getTokenTypeID() { return tokenTypeID; }
   public String getModuleID() { return moduleID; }
   public Integer getFeatureID() { return featureID; }
+  public ActionType getActionType() { return ActionType.TokenUpdate; }
 
   //
   //  setters

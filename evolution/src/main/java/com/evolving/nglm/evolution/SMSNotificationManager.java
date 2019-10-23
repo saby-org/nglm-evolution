@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactTyp
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.SMSMessage;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
@@ -627,7 +629,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public ActionManager(JSONObject configuration)
+    public ActionManager(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
@@ -640,7 +642,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       /*****************************************
       *
@@ -701,7 +703,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      return request;
+      return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
   }
 

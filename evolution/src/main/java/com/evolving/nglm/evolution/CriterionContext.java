@@ -415,6 +415,12 @@ public class CriterionContext
         this.journeyCriterionFields.putAll(journeyNodeType.getParameters());
 
         //
+        //  action-manager parameters
+        //
+
+        this.journeyCriterionFields.putAll((journeyNodeType.getActionManager() != null) ? journeyNodeType.getActionManager().getOutputAttributes() : Collections.<String,CriterionField>emptyMap());
+
+        //
         //  link-level  parameters
         //
 

@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -31,6 +32,7 @@ import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -660,7 +662,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public ActionManager(JSONObject configuration)
+    public ActionManager(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
@@ -673,7 +675,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       /*****************************************
       *
@@ -747,7 +749,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      return request;
+      return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
   }
 

@@ -39,11 +39,12 @@ public class JourneyState
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyParameters", ParameterMap.schema());
+    schemaBuilder.field("journeyActionManagerContext", ParameterMap.serde().optionalSchema());
     schemaBuilder.field("journeyEntryDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyExitDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("journeyCloseDate", Timestamp.builder().optional().schema());
@@ -81,6 +82,7 @@ public class JourneyState
   private String journeyID;
   private String journeyNodeID;
   private ParameterMap journeyParameters;
+  private ParameterMap journeyActionManagerContext;
   private Date journeyEntryDate;
   private Date journeyExitDate;
   private Date journeyCloseDate;
@@ -103,6 +105,7 @@ public class JourneyState
   public String getJourneyID() { return journeyID; }
   public String getJourneyNodeID() { return journeyNodeID; }
   public ParameterMap getJourneyParameters() { return journeyParameters; }
+  public ParameterMap getJourneyActionManagerContext() { return journeyActionManagerContext; }
   public Date getJourneyEntryDate() { return journeyEntryDate; }
   public Date getJourneyExitDate() { return journeyExitDate; }
   public Date getJourneyCloseDate() { return journeyCloseDate; }
@@ -140,6 +143,7 @@ public class JourneyState
     this.journeyID = journey.getJourneyID();
     this.journeyNodeID = journey.getStartNodeID();
     this.journeyParameters = new ParameterMap(journeyParameters);
+    this.journeyActionManagerContext = new ParameterMap();
     this.journeyEntryDate = journeyEntryDate;
     this.journeyExitDate = null;
     this.journeyCloseDate = null;
@@ -159,12 +163,13 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, String journeyID, String journeyNodeID, ParameterMap journeyParameters, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingJourneyRequestID, String journeyOutstandingJourneyInstanceID, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory)
+  public JourneyState(String journeyInstanceID, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingJourneyRequestID, String journeyOutstandingJourneyInstanceID, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory)
   {
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
     this.journeyNodeID = journeyNodeID;
     this.journeyParameters = journeyParameters;
+    this.journeyActionManagerContext = journeyActionManagerContext;
     this.journeyEntryDate = journeyEntryDate;
     this.journeyExitDate = journeyExitDate;
     this.journeyCloseDate = journeyCloseDate;
@@ -190,6 +195,7 @@ public class JourneyState
     this.journeyID = journeyState.getJourneyID();
     this.journeyNodeID = journeyState.getJourneyNodeID();
     this.journeyParameters = new ParameterMap(journeyState.getJourneyParameters());
+    this.journeyActionManagerContext = new ParameterMap(journeyState.getJourneyActionManagerContext());
     this.journeyEntryDate = journeyState.getJourneyEntryDate();
     this.journeyExitDate = journeyState.getJourneyExitDate();
     this.journeyCloseDate = journeyState.getJourneyCloseDate();
@@ -217,6 +223,7 @@ public class JourneyState
     struct.put("journeyID", journeyState.getJourneyID());
     struct.put("journeyNodeID", journeyState.getJourneyNodeID());
     struct.put("journeyParameters", ParameterMap.pack(journeyState.getJourneyParameters()));
+    struct.put("journeyActionManagerContext", ParameterMap.serde().packOptional(journeyState.getJourneyActionManagerContext()));
     struct.put("journeyEntryDate", journeyState.getJourneyEntryDate());
     struct.put("journeyExitDate", journeyState.getJourneyExitDate());
     struct.put("journeyCloseDate", journeyState.getJourneyCloseDate());
@@ -256,6 +263,7 @@ public class JourneyState
     String journeyID = valueStruct.getString("journeyID");
     String journeyNodeID = valueStruct.getString("journeyNodeID");
     ParameterMap journeyParameters = ParameterMap.unpack(new SchemaAndValue(schema.field("journeyParameters").schema(), valueStruct.get("journeyParameters")));
+    ParameterMap journeyActionManagerContext = (schemaVersion >= 3) ? ParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("journeyActionManagerContext").schema(), valueStruct.get("journeyActionManagerContext"))) : new ParameterMap();
     Date journeyEntryDate = (Date) valueStruct.get("journeyEntryDate");
     Date journeyExitDate = (Date) valueStruct.get("journeyExitDate");
     Date journeyCloseDate = (schemaVersion >= 2) ? (Date) valueStruct.get("journeyCloseDate") : journeyExitDate;
@@ -272,6 +280,6 @@ public class JourneyState
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, journeyID, journeyNodeID, journeyParameters, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingJourneyRequestID, journeyOutstandingJourneyInstanceID, journeyOutstandingDeliveryRequestID, journeyHistory);
+    return new JourneyState(journeyInstanceID, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingJourneyRequestID, journeyOutstandingJourneyInstanceID, journeyOutstandingDeliveryRequestID, journeyHistory);
   }
 }

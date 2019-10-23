@@ -100,6 +100,7 @@ import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
+import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
@@ -176,6 +177,9 @@ public class EvolutionEngine
   private static TargetService targetService;
   private static JourneyObjectiveService journeyObjectiveService;
   private static SegmentationDimensionService segmentationDimensionService;
+  private static PresentationStrategyService presentationStrategyService;
+  private static ScoringStrategyService scoringStrategyService;
+  private static OfferService offerService;
   private static TokenTypeService tokenTypeService;
   private static SubscriberMessageTemplateService subscriberMessageTemplateService;
   private static DeliverableService deliverableService;
@@ -191,8 +195,6 @@ public class EvolutionEngine
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private static ReadOnlyKeyValueStore<StringKey, ExtendedSubscriberProfile> extendedSubscriberProfileStore = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberHistory> subscriberHistoryStore = null;
-  private static TokenType externalTokenType = null;
-  private static final String externalTokenTypeID = "external";
   private static final int RESTAPIVersion = 1;
   private static HttpServer subscriberProfileServer;
   private static HttpServer internalServer;
@@ -341,6 +343,27 @@ public class EvolutionEngine
 
     segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, "evolutionengine-segmentationdimensionservice-" + evolutionEngineKey, Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
+
+    //
+    //  presentationStrategyService
+    //
+
+    presentationStrategyService = new PresentationStrategyService(bootstrapServers, "evolutionengine-presentationstrategyservice-" + evolutionEngineKey, Deployment.getPresentationStrategyTopic(), false);
+    presentationStrategyService.start();
+
+    //
+    //  scoringStrategyService
+    //
+
+    scoringStrategyService = new ScoringStrategyService(bootstrapServers, "evolutionengine-scoringstrategyservice-" + evolutionEngineKey, Deployment.getScoringStrategyTopic(), false);
+    scoringStrategyService.start();
+
+    //
+    //  offerService
+    //
+
+    offerService = new OfferService(bootstrapServers, "evolutionengine-offer-" + evolutionEngineKey, Deployment.getOfferTopic(), false);
+    offerService.start();
 
     //
     //  tokenTypeService
@@ -1206,7 +1229,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, targetService, journeyObjectiveService, segmentationDimensionService, timerService, exclusionInclusionTargetService, subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1242,21 +1265,6 @@ public class EvolutionEngine
     *****************************************/
 
     log.info("evolution engine started");
-  }
-
-  /*****************************************
-  *
-  *  getExternalTokenType
-  *
-  *****************************************/
-
-  public static TokenType getExternalTokenType()
-  {
-    if(externalTokenType == null)
-      {
-        externalTokenType = (TokenType) tokenTypeService.getStoredTokenType(externalTokenTypeID);
-      }
-    return externalTokenType;
   }
 
   /*****************************************
@@ -1425,31 +1433,49 @@ public class EvolutionEngine
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ReferenceDataReader<String,UCGState> ucgStateReader;
     private JourneyService journeyService;
+    private LoyaltyProgramService loyaltyProgramService;
     private TargetService targetService;
     private JourneyObjectiveService journeyObjectiveService;
     private SegmentationDimensionService segmentationDimensionService;
+    private PresentationStrategyService presentationStrategyService;
+    private ScoringStrategyService scoringStrategyService;
+    private OfferService offerService;
+    private TokenTypeService tokenTypeService;
+    private SubscriberMessageTemplateService subscriberMessageTemplateService;
+    private DeliverableService deliverableService;
+    private SegmentContactPolicyService segmentContactPolicyService;
     private TimerService timerService;
+    private PointService pointService;
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private HttpServer subscriberProfileServer;
     private HttpServer internalServer;
-    private ExclusionInclusionTargetService exclusionInclusionTargetService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, TimerService timerService, ExclusionInclusionTargetService exclusionInclusionTargetService,  HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.ucgStateReader = ucgStateReader;
-      this.targetService = targetService;
       this.journeyService = journeyService;
+      this.loyaltyProgramService = loyaltyProgramService;
+      this.targetService = targetService;
       this.journeyObjectiveService = journeyObjectiveService;
       this.segmentationDimensionService = segmentationDimensionService;
+      this.presentationStrategyService = presentationStrategyService;
+      this.scoringStrategyService = scoringStrategyService;
+      this.offerService = offerService;
+      this.tokenTypeService = tokenTypeService;
+      this.subscriberMessageTemplateService = subscriberMessageTemplateService;
+      this.deliverableService = deliverableService;
+      this.segmentContactPolicyService = segmentContactPolicyService;
       this.timerService = timerService;
+      this.pointService = pointService;
+      this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.subscriberProfileServer = subscriberProfileServer;
       this.internalServer = internalServer;
-      this.exclusionInclusionTargetService = exclusionInclusionTargetService;
     }
 
     //
@@ -1476,10 +1502,19 @@ public class EvolutionEngine
       //
 
       journeyService.stop();
+      loyaltyProgramService.stop();
       targetService.stop();
       journeyObjectiveService.stop();
       segmentationDimensionService.stop();
+      presentationStrategyService.stop();
+      scoringStrategyService.stop();
+      offerService.stop();
+      tokenTypeService.stop();
+      subscriberMessageTemplateService.stop();
+      deliverableService.stop();
+      segmentContactPolicyService.stop();
       timerService.stop();
+      pointService.stop();
       exclusionInclusionTargetService.stop();
 
       //
@@ -1531,7 +1566,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, segmentContactPolicyService, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, tokenTypeService, segmentContactPolicyService, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -2507,77 +2542,6 @@ public class EvolutionEngine
                 subscriberProfileUpdated = true;
               }
           }
-
-        //
-        //  token
-        //
-
-        if (subscriberProfileForceUpdate.getParameterMap().containsKey("tokenCode"))
-          {
-            String tokenCode = (String) subscriberProfileForceUpdate.getParameterMap().get("tokenCode");
-            TokenType defaultDNBOTokenType = getExternalTokenType();
-            if(defaultDNBOTokenType == null) {
-              log.error("Could not find any default token type for external token. Check your configuration.");
-              return false;
-            }
-            DNBOToken subscriberStoredToken = new DNBOToken(tokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
-            List<Token> currentTokens = subscriberProfile.getTokens();
-            for (Token token : currentTokens)
-              {
-                if (tokenCode.equals(token.getTokenCode()))
-                    {
-                      log.info("Duplicated token code {} for subscriber, ignore it.", tokenCode);
-                      return false;
-                    }
-              }
-            String strategyID = (String) subscriberProfileForceUpdate.getParameterMap().get("tokenStrategy");
-            subscriberStoredToken.setPresentationStrategyID(strategyID);            
-            subscriberStoredToken.setCreationDate(now);
-
-            //
-            // AutoBounded
-            //
-            
-            Boolean isAutoBoundedBoolean = (Boolean) subscriberProfileForceUpdate.getParameterMap().get("tokenAutoBounded");
-            boolean isAutoBounded = false; // default value 
-            if (isAutoBoundedBoolean != null)
-              {
-                isAutoBounded = isAutoBoundedBoolean;
-              }
-            subscriberStoredToken.setAutoBounded(isAutoBounded);
-
-            //
-            // AutoRedeemed
-            //
-
-            Boolean isAutoRedeemedBoolean = (Boolean) subscriberProfileForceUpdate.getParameterMap().get("tokenAutoRedeemed");
-            boolean isAutoRedeemed = false; // default value 
-            if (isAutoRedeemedBoolean != null)
-              {
-                isAutoRedeemed = isAutoRedeemedBoolean;
-              }
-            subscriberStoredToken.setAutoRedeemed(isAutoRedeemed);
-            
-            if (subscriberProfileForceUpdate.getParameterMap().containsKey("presentedOfferIDs"))
-              {
-                // this was sent by a journey with AutomaticAllocation or AutomaticRedeem
-                List<String> presentedOfferIDs = (List<String>) subscriberProfileForceUpdate.getParameterMap().get("presentedOfferIDs");
-                subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
-              }            
-            if (subscriberProfileForceUpdate.getParameterMap().containsKey("acceptedOffersID"))
-              {
-                // this was sent by a journey with AutomaticRedeem
-                String acceptedOfferID = (String) subscriberProfileForceUpdate.getParameterMap().get("acceptedOffersID");
-                subscriberStoredToken.setAcceptedOfferID(acceptedOfferID);
-              }            
-
-            //
-            // Store new token
-            //
-            
-            currentTokens.add(subscriberStoredToken);
-            subscriberProfileUpdated = true;
-          }
       }
     
     /*****************************************
@@ -3425,151 +3389,178 @@ public class EvolutionEngine
     *****************************************/
 
     if (evolutionEvent instanceof PresentationLog || evolutionEvent instanceof AcceptanceLog)
-    {
-      String eventTokenCode = null;
-      List<Token> subscriberTokens = subscriberProfile.getTokens();
-      DNBOToken subscriberStoredToken = null;
-      TokenType defaultDNBOTokenType = getExternalTokenType();
-      if(defaultDNBOTokenType == null) {
-        log.error("Could not find any default token type for external token. Check your configuration.");
-        return false;
-      }
-
-      //
-      // Retrieve the token-code we are looking for, from the event log.
-      //
-
-      if(evolutionEvent instanceof PresentationLog) {
-        eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
-      } else if(evolutionEvent instanceof AcceptanceLog) {
-        eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
-      }
-
-      //
-      // Subscriber token list cleaning.
-      // We will delete all already expired tokens before doing anything.
-      //
-
-      List<Token> cleanedList = new ArrayList<Token>();
-      boolean changed = false;
-      Date now = SystemTime.getCurrentTime();
-      for(Token token : subscriberTokens) {
-        if(token.getTokenExpirationDate().before(now)) {
-          changed = true;
-          break;
-        }
-        cleanedList.add(token);
-      }
-
-      if(changed) {
-        subscriberProfile.setTokens(cleanedList);
-        subscriberTokens = cleanedList;
-        subscriberStateUpdated = true;
-      }
-
-      //
-      // Retrieving the corresponding token from the subscriber token list, if it already exists.
-      // We expect a DNBOToken, otherwise it means that there is a conflict with a token stored in the subscriber token list.
-      // Maybe we had already generated an other kind of token with the exact same token-code that this one (that has been created outside).
-      // If it happens, we ignore this new token and raise an error (that's the best we can do ATM but it could change later)
-      //
-
-      for(Token token : subscriberTokens) {
-        if(Objects.equals(eventTokenCode, token.getTokenCode())) {
-          if(token instanceof DNBOToken) {
-
-            subscriberStoredToken = (DNBOToken) token;
-          } else {
-            log.error("Unexpected type (" + token.getClass().getName() + ") for an already existing token " + token);
-            return subscriberStateUpdated;
-          }
-          break;
-        }
-      }
-
-      //
-      // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
-      //
-
-      if(subscriberStoredToken == null) {
-        subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
-        subscriberTokens.add(subscriberStoredToken);
-        subscriberStateUpdated = true;
-      }
-
-      //
-      // Update the token with the incoming event
-      //
-
-      if(evolutionEvent instanceof PresentationLog) {
-
-        //
-        // Presentation event update
-        // If token created outside Evolution, we do not know its actual creation date, so assume created when it was bound with offers
-        //
-
-        PresentationLog presentationLog = (PresentationLog) evolutionEvent;
-
-        if(subscriberStoredToken.getTokenStatus() == TokenStatus.New) {
-          subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
-          subscriberStateUpdated = true;
-        }
-        Date eventDate = presentationLog.getEventDate();
-        if(subscriberStoredToken.getCreationDate() == null) {
-          subscriberStoredToken.setCreationDate(eventDate);
-          subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate));
-          subscriberStateUpdated = true;
-        }
-        if(subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate)) {
-          subscriberStoredToken.setBoundDate(eventDate);
-          subscriberStateUpdated = true;
-        }
-        int boundCount = subscriberStoredToken.getBoundCount();
-        Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
-        int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
-        if (boundCount < maxNumberofPlays)
+      {
+        String eventTokenCode = null;
+        List<Token> subscriberTokens = subscriberProfile.getTokens();
+        DNBOToken subscriberStoredToken = null;
+        TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType("external", SystemTime.getCurrentTime());
+        if (defaultDNBOTokenType == null)
           {
-            subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
-            subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there 
+            log.error("Could not find any default token type for external token. Check your configuration.");
+            return false;
+          }
+
+        //
+        // Retrieve the token-code we are looking for, from the event log.
+        //
+
+        if (evolutionEvent instanceof PresentationLog)
+          {
+            eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
+          }
+        else if (evolutionEvent instanceof AcceptanceLog)
+          {
+            eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
+          }
+
+        //
+        // Subscriber token list cleaning.
+        // We will delete all already expired tokens before doing anything.
+        //
+
+        List<Token> cleanedList = new ArrayList<Token>();
+        boolean changed = false;
+        Date now = SystemTime.getCurrentTime();
+        for (Token token : subscriberTokens)
+          {
+            if (token.getTokenExpirationDate().before(now))
+              {
+                changed = true;
+                break;
+              }
+            cleanedList.add(token);
+          }
+
+        if (changed)
+          {
+            subscriberProfile.setTokens(cleanedList);
+            subscriberTokens = cleanedList;
             subscriberStateUpdated = true;
           }
-      } else if(evolutionEvent instanceof AcceptanceLog) {
 
         //
-        // Acceptance event update
+        // Retrieving the corresponding token from the subscriber token list, if it already exists.
+        // We expect a DNBOToken, otherwise it means that there is a conflict with a token stored in the subscriber token list.
+        // Maybe we had already generated an other kind of token with the exact same token-code that this one (that has been created outside).
+        // If it happens, we ignore this new token and raise an error (that's the best we can do ATM but it could change later)
         //
 
-        AcceptanceLog acceptanceLog = (AcceptanceLog) evolutionEvent;
-
-        if(subscriberStoredToken.getAcceptedOfferID() != null) {
-          log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
-          return subscriberStateUpdated;
-        } else {
-          subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
-          subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
-          subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-        }
-        subscriberStateUpdated = true;
-      }
-
-      //
-      // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
-      //
-      
-      if(subscriberStoredToken.getPresentedOfferIDs().size() > 0 &&
-          subscriberStoredToken.getAcceptedOfferID() != null) {
-            
-        // 
-        // Validate propensity rule before using it (ignore any propensity outputs otherwise)
-        //
-        
-        if(Deployment.getPropensityRule().validate(segmentationDimensionService))
+        for (Token token : subscriberTokens)
           {
-            subscriberState.getPropensityOutputs().addAll(retrievePropensityOutputs(subscriberStoredToken, subscriberProfile));
+            if(Objects.equals(eventTokenCode, token.getTokenCode()))
+              {
+                if(token instanceof DNBOToken)
+                  {
+
+                    subscriberStoredToken = (DNBOToken) token;
+                  }
+                else
+                  {
+                    log.error("Unexpected type (" + token.getClass().getName() + ") for an already existing token " + token);
+                    return subscriberStateUpdated;
+                  }
+                break;
+              }
+          }
+
+        //
+        // We start by creating a new token if it does not exist in Evolution (if it has been created by an outside system)
+        //
+
+        if (subscriberStoredToken == null)
+          {
+            subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
+            subscriberTokens.add(subscriberStoredToken);
             subscriberStateUpdated = true;
           }
+
+        //
+        // Update the token with the incoming event
+        //
+
+        if (evolutionEvent instanceof PresentationLog)
+          {
+            //
+            // Presentation event update
+            // If token created outside Evolution, we do not know its actual creation date, so assume created when it was bound with offers
+            //
+
+            PresentationLog presentationLog = (PresentationLog) evolutionEvent;
+
+            if(subscriberStoredToken.getTokenStatus() == TokenStatus.New)
+              {
+                subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+                subscriberStateUpdated = true;
+              }
+            Date eventDate = presentationLog.getEventDate();
+            if (subscriberStoredToken.getCreationDate() == null)
+              {
+                subscriberStoredToken.setCreationDate(eventDate);
+                subscriberStoredToken.setTokenExpirationDate(defaultDNBOTokenType.getExpirationDate(eventDate));
+                subscriberStateUpdated = true;
+              }
+            if (subscriberStoredToken.getBoundDate() == null || subscriberStoredToken.getBoundDate().before(eventDate))
+              {
+                subscriberStoredToken.setBoundDate(eventDate);
+                subscriberStateUpdated = true;
+              }
+            int boundCount = subscriberStoredToken.getBoundCount();
+            Integer maxNumberofPlaysInt = defaultDNBOTokenType.getMaxNumberOfPlays();
+            int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
+            if (boundCount < maxNumberofPlays)
+              {
+                subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
+                subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there 
+                subscriberStateUpdated = true;
+              }
+          }
+        else if(evolutionEvent instanceof AcceptanceLog)
+          {
+
+            //
+            // Acceptance event update
+            //
+
+            AcceptanceLog acceptanceLog = (AcceptanceLog) evolutionEvent;
+
+            if (subscriberStoredToken.getAcceptedOfferID() != null)
+              {
+                log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
+                return subscriberStateUpdated;
+              }
+            else
+              {
+                subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
+                subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
+                subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
+              }
+            subscriberStateUpdated = true;
+          }
+
+        //
+        // Extract propensity information (only if we already acknowledged both Presentation & Acceptance events)
+        //
+
+        if (subscriberStoredToken.getPresentedOfferIDs().size() > 0 && subscriberStoredToken.getAcceptedOfferID() != null)
+          {
+
+            // 
+            // Validate propensity rule before using it (ignore any propensity outputs otherwise)
+            //
+
+            if (Deployment.getPropensityRule().validate(segmentationDimensionService))
+              {
+                subscriberState.getPropensityOutputs().addAll(retrievePropensityOutputs(subscriberStoredToken, subscriberProfile));
+                subscriberStateUpdated = true;
+              }
+          }
       }
-    }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
 
     return subscriberStateUpdated;
   }
@@ -4250,9 +4241,32 @@ public class EvolutionEngine
                   {
                     try
                       {
+                        //
+                        //  evaluate action
+                        //
+
                         SubscriberEvaluationRequest exitActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
-                        journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
+                        List<Action> actions = journeyNode.getNodeType().getActionManager().executeOnExit(context, exitActionEvaluationRequest, firedLink);
                         context.getSubscriberTraceDetails().addAll(exitActionEvaluationRequest.getTraceDetails());
+
+                        //
+                        //  execute action
+                        //
+
+                        for (Action action : actions)
+                          {
+                            switch (action.getActionType())
+                              {
+                                case JourneyContextUpdate:
+                                  ContextUpdate journeyContextUpdate = (ContextUpdate) action;
+                                  journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());
+                                  break;
+
+                                default:
+                                  log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
+                                  break;
+                              }
+                          }
                       }
                     catch (RuntimeException e)
                       {
@@ -4272,6 +4286,7 @@ public class EvolutionEngine
                 JourneyNode nextJourneyNode = firedLink.getDestination();
                 journeyState.setJourneyNodeID(nextJourneyNode.getNodeID(), now);
                 journeyState.getJourneyHistory().addNodeInformation(firedLink.getSourceReference(), firedLink.getDestinationReference(), journeyState.getJourneyOutstandingDeliveryRequestID(), firedLink.getLinkID()); 
+                journeyState.getJourneyActionManagerContext().clear();
                 journeyNode = nextJourneyNode;
                 subscriberStateUpdated = true;
 
@@ -4295,6 +4310,74 @@ public class EvolutionEngine
                 *****************************************/
 
                 visited.add(journeyNode);
+
+                /*****************************************
+                *
+                *  enter node action
+                *
+                *****************************************/
+
+                if (journeyNode.getNodeType().getActionManager() != null)
+                  {
+                    try
+                      {
+                        //
+                        //  evaluate action
+                        //
+
+                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                        List<Action> actions = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
+                        context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
+
+                        //
+                        //  execute action
+                        //
+
+                        for (Action action : actions)
+                          {
+                            switch (action.getActionType())
+                              {
+                                case DeliveryRequest:
+                                  DeliveryRequest deliveryRequest = (DeliveryRequest) action;
+                                  subscriberState.getDeliveryRequests().add(deliveryRequest);
+                                  journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
+                                  break;
+
+                                case JourneyRequest:
+                                  JourneyRequest journeyRequest = (JourneyRequest) action;
+                                  subscriberState.getJourneyRequests().add(journeyRequest);
+                                  journeyState.setJourneyOutstandingJourneyRequestID(journeyRequest.getJourneyRequestID());
+                                  break;
+
+                                case JourneyContextUpdate:
+                                  ContextUpdate journeyContextUpdate = (ContextUpdate) action;
+                                  journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());
+                                  break;
+
+                                case ActionManagerContextUpdate:
+                                  ContextUpdate actionManagerContext = (ContextUpdate) action;
+                                  journeyState.getJourneyActionManagerContext().putAll(actionManagerContext.getParameters());
+                                  break;
+
+                                case TokenUpdate:
+                                  Token token = (Token) action;
+                                  subscriberState.getSubscriberProfile().getTokens().add(token);
+                                  break;
+
+                                default:
+                                  log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
+                                  break;
+                              }
+                          }
+                      }
+                    catch (RuntimeException e)
+                      {
+                        log.error("failed action");
+                        StringWriter stackTraceWriter = new StringWriter();
+                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                        log.error(stackTraceWriter.toString());
+                      }
+                  }
 
                 /*****************************************
                 *
@@ -4331,12 +4414,7 @@ public class EvolutionEngine
 
                             journeyState.setJourneyExitDate(now);
                             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
-                                subscriberState.getSubscriberProfile(),
-                                subscriberGroupEpochReader,
-                                ucgStateReader,
-                                statusUpdated,
-                                new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getCurrentTime())));
+                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -4349,55 +4427,6 @@ public class EvolutionEngine
                     if (journeyState.getJourneyExitDate() != null)
                       {
                         continue;
-                      }
-                  }
-
-                /*****************************************
-                *
-                *  enter node action
-                *
-                *****************************************/
-
-                if (journeyNode.getNodeType().getActionManager() != null)
-                  {
-                    try
-                      {
-                        //
-                        //  evaluate action
-                        //
-
-                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                        Action action = journeyNode.getNodeType().getActionManager().executeOnEntry(context, entryActionEvaluationRequest);
-                        context.getSubscriberTraceDetails().addAll(entryActionEvaluationRequest.getTraceDetails());
-
-                        //
-                        //  execute action
-                        //
-
-                        if (action != null)
-                          {
-                            switch (action.getActionType())
-                              {
-                                case DeliveryRequest:
-                                  DeliveryRequest deliveryRequest = (DeliveryRequest) action;
-                                  subscriberState.getDeliveryRequests().add(deliveryRequest);
-                                  journeyState.setJourneyOutstandingDeliveryRequestID(deliveryRequest.getDeliveryRequestID());
-                                  break;
-
-                                case JourneyRequest:
-                                  JourneyRequest journeyRequest = (JourneyRequest) action;
-                                  subscriberState.getJourneyRequests().add(journeyRequest);
-                                  journeyState.setJourneyOutstandingJourneyRequestID(journeyRequest.getJourneyRequestID());
-                                  break;
-                              }
-                          }
-                      }
-                    catch (RuntimeException e)
-                      {
-                        log.error("failed action");
-                        StringWriter stackTraceWriter = new StringWriter();
-                        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                        log.error(stackTraceWriter.toString());
                       }
                   }
 
@@ -4477,12 +4506,7 @@ public class EvolutionEngine
                 //
                 
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, firedLink.getDestination().getExitNode());
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(
-                    subscriberState.getSubscriberProfile(),
-                    subscriberGroupEpochReader,
-                    ucgStateReader,
-                    statusUpdated,
-                    new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample)));
+                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample)));
               }
           }
         while (firedLink != null && journeyState.getJourneyExitDate() == null);
@@ -5510,6 +5534,10 @@ public class EvolutionEngine
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private DeliverableService deliverableService;
     private SegmentationDimensionService segmentationDimensionService;
+    private PresentationStrategyService presentationStrategyService;
+    private ScoringStrategyService scoringStrategyService;
+    private OfferService offerService;
+    private TokenTypeService tokenTypeService;
     private SegmentContactPolicyService segmentContactPolicyService;
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
@@ -5521,7 +5549,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, SegmentContactPolicyService segmentContactPolicyService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService,     PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -5529,6 +5557,10 @@ public class EvolutionEngine
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.deliverableService = deliverableService;
       this.segmentationDimensionService = segmentationDimensionService;
+      this.presentationStrategyService = presentationStrategyService;
+      this.scoringStrategyService = scoringStrategyService;
+      this.offerService = offerService;
+      this.tokenTypeService = tokenTypeService;    
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
@@ -5547,6 +5579,10 @@ public class EvolutionEngine
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
     public SegmentationDimensionService getSegmentationDimensionService() { return segmentationDimensionService; }
+    public PresentationStrategyService getPresentationStrategyService() { return presentationStrategyService; }
+    public ScoringStrategyService getScoringStrategyService() { return scoringStrategyService; }
+    public OfferService getOfferService() { return offerService; }
+    public TokenTypeService getTokenTypeService() { return tokenTypeService; }
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
     public KStreamsUniqueKeyServer getUniqueKeyServer() { return uniqueKeyServer; }
     public List<String> getSubscriberTraceDetails() { return subscriberTraceDetails; }
@@ -6332,7 +6368,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    @Override public JourneyRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       /*****************************************
       *
@@ -6357,7 +6393,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      return request;
+      return Collections.<Action>singletonList(request);
     }
   }
   
@@ -6384,7 +6420,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public LoyaltyProgramAction(JSONObject configuration)
+    public LoyaltyProgramAction(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
@@ -6397,7 +6433,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    @Override public LoyaltyProgramRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       
       /*****************************************
@@ -6425,8 +6461,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      return request;
-      
+      return Collections.<Action>singletonList(request);
     }
   }
 }

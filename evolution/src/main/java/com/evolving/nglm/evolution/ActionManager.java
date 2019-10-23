@@ -6,9 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public abstract class ActionManager
 {
@@ -21,8 +30,19 @@ public abstract class ActionManager
   public enum ActionType
   {
     DeliveryRequest,
-    JourneyRequest;
+    JourneyRequest,
+    JourneyContextUpdate,
+    ActionManagerContextUpdate,
+    TokenUpdate;
   }
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+
+  private Map<String,CriterionField> outputAttributes;
 
   /*****************************************
   *
@@ -30,7 +50,28 @@ public abstract class ActionManager
   *
   *****************************************/
 
-  protected ActionManager(JSONObject configuration)  { }
+  protected ActionManager(JSONObject configuration) throws GUIManagerException
+  {
+    this.outputAttributes = decodeOutputAttributes(JSONUtilities.decodeJSONArray(configuration, "outputAttributes", new JSONArray()));
+  }
+
+  /*****************************************
+  *
+  *  decodeOutputAttributes
+  *
+  *****************************************/
+
+  public static Map<String,CriterionField> decodeOutputAttributes(JSONArray jsonArray) throws GUIManagerException
+  {
+    Map<String,CriterionField> outputAttributes = new LinkedHashMap<String,CriterionField>();
+    for (int i=0; i<jsonArray.size(); i++)
+      {
+        JSONObject outputAttributeJSON = (JSONObject) jsonArray.get(i);
+        CriterionField outputAttribute = new CriterionField(outputAttributeJSON);
+        outputAttributes.put(outputAttribute.getID(), outputAttribute);
+      }
+    return outputAttributes;
+  }
 
   /*****************************************
   *
@@ -38,13 +79,13 @@ public abstract class ActionManager
   *
   *****************************************/
 
-  public Action executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+  public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
   {
     //
     //  default implementation (empty)
     //
 
-    return null;
+    return Collections.<Action>emptyList();
   }
 
   /*****************************************
@@ -53,12 +94,22 @@ public abstract class ActionManager
   *
   *****************************************/
 
-  public void executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
+  public List<Action> executeOnExit(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, JourneyLink journeyLink)
   {
     //
     //  default implementation (empty)
     //
+
+    return Collections.<Action>emptyList();
   }
+
+  /*****************************************
+  *
+  *  getOutputAttributes
+  *
+  *****************************************/
+
+  public Map<String,CriterionField> getOutputAttributes() { return outputAttributes; }
 
   /*****************************************
   *

@@ -15029,7 +15029,7 @@ public class GUIManager
                         journeyResponseMap.put("endDate", getDateString(storeJourney.getEffectiveEndDate()));
                         journeyResponseMap.put("entryDate", getDateString(subsLatestStatistic.getJourneyEntranceDate()));
                         journeyResponseMap.put("exitDate", subsLatestStatistic.getJourneyExitDate()!=null?getDateString(subsLatestStatistic.getJourneyExitDate()):"");
-                        journeyResponseMap.put("campaignState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
+                        journeyResponseMap.put("journeyState", journeyService.getJourneyStatus(storeJourney).getExternalRepresentation());
                         
                         List<JSONObject> resultObjectives = new ArrayList<JSONObject>();
                         for (JourneyObjectiveInstance journeyObjectiveInstance : storeJourney.getJourneyObjectiveInstances())
