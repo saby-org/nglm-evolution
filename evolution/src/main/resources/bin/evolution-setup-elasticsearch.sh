@@ -185,6 +185,7 @@
             "field" : "eventDatetime",
             "index_name_prefix" : "detailedrecords_bonuses-",
             "index_name_format" : "yyyy-MM-dd",
+            "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
             "date_rounding" : "d"
           }
         }
@@ -287,6 +288,7 @@
             "field" : "eventDatetime",
             "index_name_prefix" : "detailedrecords_offers-",
             "index_name_format" : "yyyy-MM-dd",
+            "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
             "date_rounding" : "d"
           }
         }
@@ -379,9 +381,10 @@
       "processors" : [
         {
           "date_index_name" : {
-            "field" : "eventDatetime",
+            "field" : "creationDate",
             "index_name_prefix" : "detailedrecords_messages-",
             "index_name_format" : "yyyy-MM-dd",
+            "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
             "date_rounding" : "d"
           }
         }

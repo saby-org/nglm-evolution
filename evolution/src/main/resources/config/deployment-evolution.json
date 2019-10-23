@@ -118,8 +118,8 @@
   --  journeyTrafficArchive default values
   --
 
-  "journeyTrafficArchivePeriodInSeconds"                 : 10,
-  "journeyTrafficArchiveMaxNumberOfPeriods"              : 48,
+  "journeyTrafficArchivePeriodInSeconds"                 : 3600,
+  "journeyTrafficArchiveMaxNumberOfPeriods"              : 168,
   
   -- 
   --  supportedDataTypes
