@@ -274,8 +274,7 @@
 			"id": "M-Random",
 			"name": "Random",
 			"display": "Random",
-			"parameters": [
-			],
+			"parameters": [{"name":"predictable"}],
 			"javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
 		}
 	]
