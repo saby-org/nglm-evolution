@@ -38,6 +38,23 @@ public class ContextVariable
 {
   /*****************************************
   *
+  *  enum
+  *
+  *****************************************/
+
+  public enum Assignment
+  {
+    Direct("="),
+    Increment("+="),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private Assignment(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static Assignment fromExternalRepresentation(String externalRepresentation) { for (Assignment enumeratedValue : Assignment.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  /*****************************************
+  *
   *  schema
   *
   *****************************************/
@@ -51,11 +68,12 @@ public class ContextVariable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("context_variable");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("expressionString", Schema.STRING_SCHEMA);
+    schemaBuilder.field("assignment", SchemaBuilder.string().defaultValue("=").schema());
     schemaBuilder.field("baseTimeUnit", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -83,6 +101,7 @@ public class ContextVariable
   private String name;
   private CriterionContext criterionContext;
   private String expressionString;
+  private Assignment assignment;
   private TimeUnit baseTimeUnit;
 
   //
@@ -99,12 +118,13 @@ public class ContextVariable
   *
   *****************************************/
 
-  private ContextVariable(String id, String name, String expressionString, TimeUnit baseTimeUnit)
+  private ContextVariable(String id, String name, String expressionString, Assignment assignment, TimeUnit baseTimeUnit)
   {
     this.id = id;
     this.name = name;
     this.criterionContext = null;
     this.expressionString = expressionString;
+    this.assignment = assignment;
     this.baseTimeUnit = baseTimeUnit;
     this.validated = false;
     this.expression = null;
@@ -124,6 +144,7 @@ public class ContextVariable
     this.criterionContext = null;
     JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "value", false);
     this.expressionString = (jsonValue != null) ? JSONUtilities.decodeString(jsonValue, "expression", false) : null;
+    this.assignment = Assignment.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "assignment", "="));
     this.baseTimeUnit = (jsonValue != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
     this.validated = false;
     this.expression = null;
@@ -141,6 +162,7 @@ public class ContextVariable
   public String getName() { return name; }
   public CriterionContext getCriterionContext() { return criterionContext; }
   public String getExpressionString() { return expressionString; }
+  public Assignment getAssignment() { return assignment; }
   public TimeUnit getBaseTimeUnit() { return baseTimeUnit; }
   public boolean getValidated() { return validated; }
   public Expression getExpression() { return expression; }
@@ -170,6 +192,7 @@ public class ContextVariable
     struct.put("name", contextVariable.getName());
     struct.put("criterionContext", CriterionContext.pack(contextVariable.getCriterionContext()));
     struct.put("expressionString", contextVariable.getExpressionString());
+    struct.put("assignment", contextVariable.getAssignment().getExternalRepresentation());
     struct.put("baseTimeUnit", contextVariable.getBaseTimeUnit().getExternalRepresentation());
     return struct;
   }
@@ -199,13 +222,14 @@ public class ContextVariable
     String name = valueStruct.getString("name");
     CriterionContext criterionContext = CriterionContext.unpack(new SchemaAndValue(schema.field("criterionContext").schema(), valueStruct.get("criterionContext")));
     String expressionString = valueStruct.getString("expressionString");
+    Assignment assignment = (schemaVersion >= 2) ? Assignment.fromExternalRepresentation(valueStruct.getString("assignment")) : Assignment.Direct;
     TimeUnit baseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("baseTimeUnit"));
 
     //
     //  construct 
     //
 
-    ContextVariable result = new ContextVariable(id, name, expressionString, baseTimeUnit);
+    ContextVariable result = new ContextVariable(id, name, expressionString, assignment, baseTimeUnit);
 
     //
     //  validate
@@ -272,12 +296,24 @@ public class ContextVariable
     try
       {
         //
-        //  parse
+        //  assignment
         //
 
-        ExpressionReader expressionReader = new ExpressionReader(criterionContext, this.expressionString, this.baseTimeUnit);
+        String expressionString = this.expressionString;
+        switch (assignment)
+          {
+            case Increment:
+              expressionString = this.getID() + "+" + "(" + expressionString + ")";
+              break;
+          }
+
+        //
+        //  parse expression
+        //
+
+        ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
         Expression expression = expressionReader.parse();
-        if (expression == null) throw new GUIManagerException("no expression", this.expressionString);
+        if (expression == null) throw new GUIManagerException("no expression", expressionString);
 
         //
         //  validate type

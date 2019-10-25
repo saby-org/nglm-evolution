@@ -62,6 +62,8 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
+import org.apache.kafka.streams.processor.TaskMetadata;
+import org.apache.kafka.streams.processor.ThreadMetadata;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -659,12 +661,6 @@ public class EvolutionEngine
     *****************************************/
 
     //
-    //  empty
-    //
-
-    KStream emptySourceStream = builder.stream(emptyTopic, Consumed.with(byteArraySerde, byteArraySerde)).filter((key,value) -> false);
-
-    //
     //  core streams
     //
 
@@ -1176,6 +1172,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
+    Date errorLogDate = RLMDateUtils.addMinutes(SystemTime.getCurrentTime(), 1);
     boolean stateStoresInitialized = false;
     while (! stateStoresInitialized)
       {
@@ -1194,7 +1191,15 @@ public class EvolutionEngine
           {
             StringWriter stackTraceWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            log.debug(stackTraceWriter.toString());
+            if (SystemTime.getCurrentTime().after(errorLogDate))
+              {
+                log.error(stackTraceWriter.toString());
+                errorLogDate = RLMDateUtils.addMinutes(errorLogDate, 1);
+              }
+            else
+              {
+                log.debug(stackTraceWriter.toString());
+              }
           }
 
         //
@@ -6404,7 +6409,7 @@ public class EvolutionEngine
               }
 
             //
-            //  log
+            //  log state store sizes
             //
 
             log.info("SubscriberStateSize: {}", evolutionEngineStatistics.getSubscriberStateSize().toString());
@@ -6412,7 +6417,18 @@ public class EvolutionEngine
             log.info("ExtendedProfileSize: {}", evolutionEngineStatistics.getExtendedProfileSize().toString());
 
             //
-            //  nextProcessingTime
+            //  log task/partition assignments
+            //
+
+            for (ThreadMetadata threadMetadata : streams.localThreadsMetadata())
+              {
+                log.info(threadMetadata.toString());
+                for (TaskMetadata taskMetadata : threadMetadata.activeTasks()) log.info("active " + taskMetadata.toString());
+                for (TaskMetadata taskMetadata : threadMetadata.standbyTasks()) log.info("standby " + taskMetadata.toString());
+              }
+
+            //
+            //  nextprocessingtime
             //
 
             nextProcessingTime = RLMDateUtils.addSeconds(nextProcessingTime, 300);

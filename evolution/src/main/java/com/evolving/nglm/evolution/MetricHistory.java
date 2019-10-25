@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MetricHistory
 {
@@ -337,7 +338,7 @@ public class MetricHistory
     //
     
     Struct struct = new Struct(schema);
-    struct.put("daysSinceEpoch", RLMDateUtils.daysBetween(EPOCH, metricHistory.getBaseDay(), Deployment.getBaseTimeZone()));
+    struct.put("daysSinceEpoch", getDaysSinceEpoch(metricHistory.getBaseDay()));
     struct.put("dailyRepresentation", daily.getFirstElement().getExternalRepresentation());
     struct.put("dailyBuckets", daily.getSecondElement());
     struct.put("monthlyRepresentation", monthly.getFirstElement().getExternalRepresentation());
@@ -491,7 +492,7 @@ public class MetricHistory
     //  return
     //
 
-    return new MetricHistory(initialized, RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getBaseTimeZone()), dailyBuckets, monthlyBuckets, allTimeBucket, metricHistoryMode);
+    return new MetricHistory(initialized, getDateFromEpoch(daysSinceEpoch), dailyBuckets, monthlyBuckets, allTimeBucket, metricHistoryMode);
   }
   
   /*****************************************
@@ -614,6 +615,45 @@ public class MetricHistory
     int numberOfBuckets = packedBuckets[0];
     long[] buckets = allocateBuckets(metricHistoryMode, numberOfBuckets);
     return buckets;
+  }
+
+  /****************************************
+  *
+  *  date-based caches
+  *
+  ****************************************/
+
+  private static Map<Date, Integer> daysSinceEpochIntegers = new ConcurrentHashMap<Date, Integer>();
+  private static Map<Integer, Date> daysSinceEpochDates = new ConcurrentHashMap<Integer, Date>();
+
+  //
+  //  getDaysSinceEpoch
+  //
+  
+  private static Integer getDaysSinceEpoch(Date baseDay)
+  {
+    Integer result = daysSinceEpochIntegers.get(baseDay);
+    if (result == null)
+      {
+        result = RLMDateUtils.daysBetween(EPOCH, baseDay, Deployment.getBaseTimeZone());
+        daysSinceEpochIntegers.put(baseDay, result);
+      }
+    return result;
+  }
+  
+  //
+  //  getDateFromEpoch
+  //
+
+  private static Date getDateFromEpoch(Integer daysSinceEpoch)
+  {
+    Date result = daysSinceEpochDates.get(daysSinceEpoch);
+    if (result == null)
+      {
+        result = RLMDateUtils.addDays(EPOCH, daysSinceEpoch, Deployment.getBaseTimeZone());
+        daysSinceEpochDates.put(daysSinceEpoch, result);
+      }
+    return result;
   }
   
   /****************************************

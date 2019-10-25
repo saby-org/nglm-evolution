@@ -1707,8 +1707,36 @@ public abstract class Expression
 
           try
             {
+              //
+              //  intialize reader
+              //
+
               reader = new StringReader(expressionString);
+
+              //
+              //  parse
+              //
+
               expression = parseExpression();
+
+              //
+              //  input consumed?
+              //
+
+              switch (nextToken())
+                {
+                  case END_OF_INPUT:
+                    break;
+
+                  default:
+                    parseError(tokenPosition,"expected end of input");
+                    break;
+                }
+
+              //
+              //  parse errors
+              //
+
               if (parseErrors != null)
                 {
                   throw new ExpressionParseException(parseErrors);
