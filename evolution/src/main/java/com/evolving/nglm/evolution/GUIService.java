@@ -66,7 +66,7 @@ public class GUIService
   //  statistics
   //
 
-  protected  GUIServiceStatistics serviceStatistics = null;
+  private GUIServiceStatistics serviceStatistics = null;
 
   /*****************************************
   *
@@ -143,13 +143,16 @@ public class GUIService
     //  statistics
     //
 
-    try
+    if (masterService)
       {
-        this.serviceStatistics = new GUIServiceStatistics(serviceName);
-      }
-    catch (ServerException e)
-      {
-        throw new ServerRuntimeException("Could not initialize statistics");
+        try
+          {
+            this.serviceStatistics = new GUIServiceStatistics(serviceName);
+          }
+        catch (ServerException e)
+          {
+            throw new ServerRuntimeException("Could not initialize statistics");
+          }
       }
 
     //
@@ -602,15 +605,21 @@ public class GUIService
         if (guiManagedObject != null)
           {
             storedGUIManagedObjects.put(guiManagedObject.getGUIManagedObjectID(), guiManagedObject);
-            if (! deleted)
-              serviceStatistics.updatePutCount(guiManagedObject.getGUIManagedObjectID());
-            else
-              serviceStatistics.updateRemoveCount(guiManagedObjectID);
+            if (serviceStatistics != null)
+              {
+                if (! deleted)
+                  serviceStatistics.updatePutCount(guiManagedObject.getGUIManagedObjectID());
+                else
+                  serviceStatistics.updateRemoveCount(guiManagedObjectID);
+              }
           }
         else
           {
             storedGUIManagedObjects.remove(guiManagedObjectID);
-            serviceStatistics.updateRemoveCount(guiManagedObjectID);
+            if (serviceStatistics != null)
+              {
+                serviceStatistics.updateRemoveCount(guiManagedObjectID);
+              }
           }
 
         //
@@ -679,8 +688,11 @@ public class GUIService
         //  statistics
         //
 
-        serviceStatistics.setActiveCount(activeGUIManagedObjects.size());
-        serviceStatistics.setObjectCount(availableGUIManagedObjects.size());
+        if (serviceStatistics != null)
+          {
+            serviceStatistics.setActiveCount(activeGUIManagedObjects.size());
+            serviceStatistics.setObjectCount(availableGUIManagedObjects.size());
+          }
 
         //
         //  lastUpdate

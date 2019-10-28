@@ -4,6 +4,7 @@ fwk-api-<_KEY_>:
   environment:
     AppSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
+    FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     Audit__Nodes: '<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
     Audit__Index: 'auditlogs-*'

@@ -177,6 +177,7 @@ public class DNBOProxy
 
     String apiProcessKey = args[0];
     int apiRestPort = parseInteger("apiRestPort", args[1]);
+    int dnboProxyThread = parseInteger("DNBOPROXY_THREADS", args[2]);
 
     //
     //  log
@@ -270,7 +271,7 @@ public class DNBOProxy
         restServer = HttpServer.create(addr, 0);
         restServer.createContext("/nglm-dnboproxy/getSubscriberOffers", new APIHandler(API.getSubscriberOffers));
         restServer.createContext("/nglm-dnboproxy/provisionSubscriber", new APIHandler(API.provisionSubscriber));
-        restServer.setExecutor(Executors.newFixedThreadPool(20));
+        restServer.setExecutor(Executors.newFixedThreadPool(dnboProxyThread));
         restServer.start();
       }
     catch (IOException e)
@@ -292,7 +293,7 @@ public class DNBOProxy
     *
     *****************************************/
 
-    log.info("main restServerStarted");
+    log.info("main restServerStarted with " + dnboProxyThread + " threads");
   }
 
   /*****************************************
@@ -421,7 +422,7 @@ public class DNBOProxy
   *
   *****************************************/
 
-  private synchronized void handleAPI(API api, HttpExchange exchange) throws IOException
+  private void handleAPI(API api, HttpExchange exchange) throws IOException
   {
     try
       {
@@ -1020,6 +1021,19 @@ public class DNBOProxy
     if (effectiveSubscriberID == null)
       {
         throw new DNBOProxyException("subscriberID not provided", Deployment.getExternalSubscriberID());
+      }
+
+    //
+    //  validate
+    //
+
+    try
+      {
+        Long.parseLong(effectiveSubscriberID);
+      }
+    catch (NumberFormatException e)
+      {
+        throw new DNBOProxyException("subscriberID invalid", effectiveSubscriberID);
       }
 
     /*****************************************

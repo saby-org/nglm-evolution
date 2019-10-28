@@ -22062,6 +22062,12 @@ public class GUIManager
                   processPutDeliverable("0", deliverableSource.getDeliverableJSON());
                 }
             }
+              
+          //
+          //  commit offsets
+          //
+
+          consumer.commitSync();
         }
       while (!stopRequested);
     }

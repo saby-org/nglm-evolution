@@ -12,9 +12,7 @@ opc-api-<_KEY_>:
     DNBOSettings__DNBOEngineSettings__UseSubscriberId: 'true'
     DNBOSettings__DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
     DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
-    DNBOSettings__SQLConnection: 'Data Source=<_IOM_DB_AUDIT_HOST_>;Initial Catalog=<_IOM_DB_AUDIT_DATABASE_>;User ID=<_IOM_DB_AUDIT_USER_>;Password=<_IOM_DB_AUDIT_PASSWORD_>'
     DNBOSettings__RedisConfigurationSettings__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_CONNECTION_STRING_>,allowAdmin=true,syncTimeout=5000'
-    DNBOSettings__MatrixBusSettings__RetriveCustomerDetailsDataFromDB: '<_OPC_WEB_GET_CUSTOMER_DATA_FROM_DB_>'
     ReportSettings__ApiElasticsearchUrl: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/'
     TZ: <_DEPLOYMENT_TIMEZONE_>
     OPC_API_PORT: <_PORT_>

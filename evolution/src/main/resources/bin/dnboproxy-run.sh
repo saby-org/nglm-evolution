@@ -68,7 +68,13 @@ done
 echo deployment complete
 
 #
+# default value for DNBOPROXY_THREADS
+#
+
+export DNBOPROXY_THREADS=${DNBOPROXY_THREADS:-40}
+
+#
 #  run
 #
 
-exec kafka-run-class -name dnboproxy -loggc com.evolving.nglm.evolution.DNBOProxy $KEY $API_PORT
+exec kafka-run-class -name dnboproxy -loggc com.evolving.nglm.evolution.DNBOProxy $KEY $API_PORT $DNBOPROXY_THREADS
