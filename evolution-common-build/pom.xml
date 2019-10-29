@@ -274,11 +274,13 @@
               <target>
                 <concat destfile="${project.build.directory}/assembled-resources/bin/prometheus-application-run.sh" force="yes">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="prometheus-application-run-preamble.sh"/>
+                  <fileset dir="${project.build.directory}/partially-assembled-resources/bin" includes="*-prometheus-application-run.sh"/>
                   <fileset dir="${project.basedir}/src/assembly/resources/bin" includes="deployment-prometheus-application-run.sh"/>
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/bin" includes="prometheus-application-run-postamble.sh"/>
                 </concat>
                 <concat destfile="${project.build.directory}/assembled-resources/config/prometheus-application.yml" force="yes">
                   <fileset dir="${project.build.directory}/nglm-evolution-resources/config" includes="evolution-prometheus-application.yml"/>
+                  <fileset dir="${project.build.directory}/partially-assembled-resources/config" includes="*-prometheus-application.yml"/>
                   <fileset dir="${project.basedir}/src/assembly/resources/config" includes="deployment-prometheus-application.yml"/>
                 </concat>
                 <concat destfile="${project.build.directory}/assembled-resources/docker/prometheus-application.yml" force="yes">
