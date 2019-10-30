@@ -19,10 +19,10 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Target.TargetingType;
 
 public class Deliverable extends GUIManagedObject
 {
-
   /*****************************************
   *
   *  schema
@@ -41,7 +41,7 @@ public class Deliverable extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("fulfillmentProviderID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("externalAccountID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("externalAccountID", SchemaBuilder.string().defaultValue("").schema());
     schemaBuilder.field("unitaryCost", Schema.INT32_SCHEMA);
     schemaBuilder.field("generatedFromAccount", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();

@@ -808,6 +808,22 @@ public class GUIManager
       }      
     };
     segmentationDimensionService.registerListener(dynamicEventDeclarationsListener);
+    
+    dynamicEventDeclarationsListener = new GUIManagedObjectListener() {
+
+      @Override
+      public void guiManagedObjectActivated(GUIManagedObject guiManagedObject)
+      {
+        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);         
+      }
+
+      @Override
+      public void guiManagedObjectDeactivated(String objectID)
+      {
+        dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);         
+      }      
+    };
+    loyaltyProgramService.registerListener(dynamicEventDeclarationsListener);
 
     /*****************************************
     *
@@ -1518,6 +1534,7 @@ public class GUIManager
     segmentContactPolicyService.start();
     dynamicEventDeclarationsService.start();
     dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);
+    dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
     criterionFieldAvailableValuesService.start();
 
 

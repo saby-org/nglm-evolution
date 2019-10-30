@@ -22,6 +22,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.google.gson.JsonObject;
 
 public class DynamicEventDeclarationsService extends GUIService
@@ -105,7 +106,7 @@ public class DynamicEventDeclarationsService extends GUIService
   public Collection<GUIManagedObject> getStoredDynamicEventDeclarationss() { return getStoredGUIManagedObjects(); }
   public boolean isActiveDynamicEventDeclarations(GUIManagedObject dynamicEventDeclarationsUnchecked, Date date) { return isActiveGUIManagedObject(dynamicEventDeclarationsUnchecked, date); }
   public DynamicEventDeclarations getActiveDynamicEventDeclarations(String dynamicEventDeclarationsID, Date date) { return (DynamicEventDeclarations) getActiveGUIManagedObject(dynamicEventDeclarationsID, date); }
-  public Collection<DynamicEventDeclarations> getActiveDynamicEventDeclarationss(Date date) { return (Collection<DynamicEventDeclarations>) getActiveGUIManagedObjects(date); }
+  
   public DynamicEventDeclarations getSingletonDynamicEventDeclarations() { return getActiveDynamicEventDeclarations(DynamicEventDeclarations.singletonID, SystemTime.getCurrentTime()); }
   public Map<String, EvolutionEngineEventDeclaration> getStaticAndDynamicEvolutionEventDeclarations()
   {
@@ -120,6 +121,51 @@ public class DynamicEventDeclarationsService extends GUIService
           }
       }
     return result;
+  }
+  
+  /*****************************************
+  *
+  *  refreshLoyaltyProgramChangeEvent
+  *
+  *****************************************/
+
+  public void refreshLoyaltyProgramChangeEvent(LoyaltyProgramService loyaltyProgramService)
+  {
+    DynamicEventDeclaration loyaltyProgramPointChangeEventDeclaration;
+    try
+      {
+        loyaltyProgramPointChangeEventDeclaration = new DynamicEventDeclaration("tier update in loyalty program", ProfileLoyaltyProgramChangeEvent.class.getName(), Deployment.getProfileLoyaltyProgramChangeEventTopic(), EventRule.Standard, getProfileLoyaltyProgramChangeCriterionFields(loyaltyProgramService));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException("dynamicEventDeclaration point program change ", e);
+      }
+
+    DynamicEventDeclarations dynamicEventDeclarations = getSingletonDynamicEventDeclarations();
+    boolean newObject;
+    Map<String, DynamicEventDeclaration> dynamicEventDeclarationsMap;
+    if (dynamicEventDeclarations == null)
+      {
+        newObject = true;
+        dynamicEventDeclarationsMap = new HashMap<>();
+      }
+    else
+      {
+        newObject = false;
+        dynamicEventDeclarationsMap = dynamicEventDeclarations.getDynamicEventDeclarations();
+      }
+
+    dynamicEventDeclarationsMap.put(loyaltyProgramPointChangeEventDeclaration.getDynamicEventDeclaration().getName(), loyaltyProgramPointChangeEventDeclaration);
+    JSONObject guiManagedObjectJson = new JSONObject();
+    guiManagedObjectJson.put("id", DynamicEventDeclarations.singletonID);
+    guiManagedObjectJson.put("active", Boolean.TRUE);
+    dynamicEventDeclarations = new DynamicEventDeclarations(guiManagedObjectJson, dynamicEventDeclarationsMap);
+
+    //
+    // put
+    //
+
+    putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null);
   }
 
   /*****************************************
@@ -138,7 +184,7 @@ public class DynamicEventDeclarationsService extends GUIService
     DynamicEventDeclaration segmentChangeEventDeclaration;
     try
       {
-        segmentChangeEventDeclaration = new DynamicEventDeclaration("segmentChange", ProfileSegmentChangeEvent.class.getName(), Deployment.getProfileSegmentChangeEventTopic(), EventRule.Standard, getProfileSegmentChangeCriterionFields(segmentationDimensionService));
+        segmentChangeEventDeclaration = new DynamicEventDeclaration("segment update", ProfileSegmentChangeEvent.class.getName(), Deployment.getProfileSegmentChangeEventTopic(), EventRule.Standard, getProfileSegmentChangeCriterionFields(segmentationDimensionService));
       }
     catch (GUIManagerException e)
       {
@@ -172,6 +218,95 @@ public class DynamicEventDeclarationsService extends GUIService
     putGUIManagedObject(dynamicEventDeclarations, SystemTime.getCurrentTime(), newObject, null);
   }
   
+  /*****************************************
+  *
+  *  getProfileLoyaltyProgramChangeCriterionFields
+  *
+  *****************************************/
+  private Map<String, CriterionField> getProfileLoyaltyProgramChangeCriterionFields(LoyaltyProgramService loyaltyProgramService) throws GUIManagerException
+  {
+
+    Map<String, CriterionField> result = new HashMap<>();
+    for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(SystemTime.getCurrentTime()))
+      {
+        switch (loyaltyProgram.getLoyaltyProgramType())
+          {
+          case POINTS:
+            // for each loyalty program of type point, generate Old Tier, New Tier and isTierUpdated criterion
+            LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints)loyaltyProgram;
+            
+            //
+            // OLD Criterion
+            //
+            
+            JSONObject criterionFieldOLDJSON = new JSONObject();
+            JSONArray availableValues = new JSONArray();
+            for (Tier tier : loyaltyProgramPoints.getTiers())
+              {
+                JSONObject av = new JSONObject();
+                av.put("id", tier.getTierName());
+                av.put("display", tier.getTierName());
+                availableValues.add(av);
+              }
+            JSONObject v = new JSONObject();
+            v.put("id", LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.ENTERING.name());
+            v.put("display", LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.ENTERING.name());
+            availableValues.add(v);
+            
+            criterionFieldOLDJSON.put("id", LoyaltyProgramPoints.CRITERION_FIELD_NAME_OLD_PREFIX + loyaltyProgramPoints.getLoyaltyProgramID());
+            criterionFieldOLDJSON.put("display", "Old " + loyaltyProgramPoints.getLoyaltyProgramName() + " tier");
+            criterionFieldOLDJSON.put("dataType", "string");
+            criterionFieldOLDJSON.put("retriever", "getProfilePointLoyaltyProgramChangeTierOldValue");
+            
+            criterionFieldOLDJSON.put("availableValues", availableValues);
+            CriterionField criterionFieldOLD = new CriterionField(criterionFieldOLDJSON);
+
+            //
+            // NEW Criterion
+            //           
+            
+            JSONObject criterionFieldNEWJSON = new JSONObject();
+            availableValues = new JSONArray();
+            for (Tier tier : loyaltyProgramPoints.getTiers())
+              {
+                JSONObject av = new JSONObject();
+                av.put("id", tier.getTierName());
+                av.put("display", tier.getTierName());
+                availableValues.add(av);
+              }
+            v = new JSONObject();
+            v.put("id", LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.LEAVING.name());
+            v.put("display", LoyaltyProgramPoints.LoyaltyProgramPointsEventInfos.LEAVING.name());
+            availableValues.add(v);
+            
+            criterionFieldNEWJSON.put("id", LoyaltyProgramPoints.CRITERION_FIELD_NAME_NEW_PREFIX + loyaltyProgramPoints.getLoyaltyProgramID());
+            criterionFieldNEWJSON.put("display", "New " + loyaltyProgramPoints.getLoyaltyProgramName() + " tier");
+            criterionFieldNEWJSON.put("dataType", "string");
+            criterionFieldNEWJSON.put("retriever", "getProfilePointLoyaltyProgramChangeTierNewValue");
+            
+            criterionFieldNEWJSON.put("availableValues", availableValues);
+            CriterionField criterionFieldNEW = new CriterionField(criterionFieldNEWJSON);
+            
+            //
+            // IsUpdated Criterion
+            // 
+            
+            JSONObject criterionFielUpdatedJSON = new JSONObject();
+            criterionFielUpdatedJSON.put("id", LoyaltyProgramPoints.CRITERION_FIELD_NAME_IS_UPDATED_PREFIX + loyaltyProgramPoints.getLoyaltyProgramID());
+            criterionFielUpdatedJSON.put("display", "Is " + loyaltyProgramPoints.getLoyaltyProgramName() + " updated");
+            criterionFielUpdatedJSON.put("dataType", "boolean");
+            criterionFielUpdatedJSON.put("retriever", "getProfilePointLoyaltyProgramUpdated");
+            CriterionField criterionFieldUpdated = new CriterionField(criterionFielUpdatedJSON);
+
+            result.put(criterionFieldOLD.getID(), criterionFieldOLD);
+            result.put(criterionFieldNEW.getID(), criterionFieldNEW);
+            result.put(criterionFieldUpdated.getID(), criterionFieldUpdated);
+
+            break;
+          }
+      }
+    return result;
+  }  
   
   /*****************************************
   *

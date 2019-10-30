@@ -89,7 +89,7 @@ public class ProfileLoyaltyProgramChangeEvent implements EvolutionEngineEvent, S
   *
   ****************************************/
 
-  public String getEventName() { return "profileLoyaltyProgramChangeEvent"; }
+  public String getEventName() { return "tier update in loyalty program"; }
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public String getLoyaltyProgramID() { return loyaltyProgramID; }

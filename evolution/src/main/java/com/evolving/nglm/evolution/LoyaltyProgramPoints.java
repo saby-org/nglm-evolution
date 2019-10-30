@@ -90,6 +90,15 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<LoyaltyProgramPoints> serde() { return serde; }
+  
+  // 
+  //  constants
+  // 
+  
+  public final static String CRITERION_FIELD_NAME_OLD_PREFIX = "pointLoyaltyProgramChange.old.";
+  public final static String CRITERION_FIELD_NAME_NEW_PREFIX = "pointLoyaltyProgramChange.new.";
+  public final static String CRITERION_FIELD_NAME_IS_UPDATED_PREFIX = "pointLoyaltyProgramChange.isupdated.";
+
 
   /*****************************************
    *

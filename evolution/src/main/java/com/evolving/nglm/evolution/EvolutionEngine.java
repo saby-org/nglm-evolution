@@ -2838,6 +2838,21 @@ public class EvolutionEngine
     
     /*****************************************
     *
+    *  process rule based target lists
+    *
+    *****************************************/
+    for(Target target : targetService.getActiveTargets(now)) {
+      SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+      if(target.getTargetingType().equals(Target.TargetingType.Eligibility))
+        {
+          boolean addTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, target.getTargetingCriteria());
+          subscriberProfile.setTarget(target.getTargetID(), subscriberGroupEpochReader.get(target.getTargetID()) != null ? subscriberGroupEpochReader.get(target.getTargetID()).getEpoch() : 0, addTarget);
+          subscriberProfileUpdated = true;
+        }          
+    }
+    
+    /*****************************************
+    *
     *  process file-sourced subscriberGroup event
     *
     *****************************************/
@@ -2867,7 +2882,7 @@ public class EvolutionEngine
               break;
           }
       }
-
+    
     /*****************************************
     *
     *  ucg evaluation
@@ -3200,7 +3215,7 @@ public class EvolutionEngine
                 ParameterMap info = new ParameterMap();
                 info.put(LoyaltyProgramPointsEventInfos.LEAVING.getExternalRepresentation(), loyaltyProgramRequest.getLoyaltyProgramID());
                 info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), oldTier);
-                info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), tierName);
+                info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), null);
                 ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                 subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
                 

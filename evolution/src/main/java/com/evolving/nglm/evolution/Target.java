@@ -25,6 +25,32 @@ public class Target extends GUIManagedObject
 {
   /*****************************************
   *
+  *  enum
+  *
+  *****************************************/
+  
+  public enum TargetingType
+  {
+    File("FILE"),
+    Eligibility("ELIGIBILITY"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private TargetingType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static TargetingType fromExternalRepresentation(String externalRepresentation) { 
+      for (TargetingType enumeratedValue : TargetingType.values()) { 
+        if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) {
+          return enumeratedValue; 
+         }
+      }
+        return Unknown; 
+       
+    }
+    
+  }
+  
+  /*****************************************
+  *
   *  schema
   *
   *****************************************/
@@ -38,11 +64,13 @@ public class Target extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("target");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("targetName", Schema.STRING_SCHEMA);
+    schemaBuilder.field("targetingType", SchemaBuilder.string().defaultValue(TargetingType.File.getExternalRepresentation()).schema());   
     schemaBuilder.field("targetFileID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).optional().schema());
+
     schema = schemaBuilder.build();
   };
 
@@ -66,6 +94,7 @@ public class Target extends GUIManagedObject
   ****************************************/
   
   private String targetName;
+  private TargetingType targetingType;
   private String targetFileID;
   private List<EvaluationCriterion> targetingCriteria;
   
@@ -77,6 +106,7 @@ public class Target extends GUIManagedObject
 
   public String getTargetID() { return getGUIManagedObjectID(); }
   public String getTargetName() { return targetName; }
+  public TargetingType getTargetingType() { return targetingType; }
   public String getTargetFileID () { return targetFileID; }
   public List<EvaluationCriterion> getTargetingCriteria() { return targetingCriteria; }
   
@@ -87,10 +117,11 @@ public class Target extends GUIManagedObject
   *
   *****************************************/
 
-  public Target(SchemaAndValue schemaAndValue, String targetName, String targetFileID, List<EvaluationCriterion> targetingCriteria)
+  public Target(SchemaAndValue schemaAndValue, String targetName, TargetingType targetingType, String targetFileID, List<EvaluationCriterion> targetingCriteria)
   {
     super(schemaAndValue);
     this.targetName = targetName;
+    this.targetingType = targetingType;
     this.targetFileID = targetFileID;
     this.targetingCriteria = targetingCriteria;
   }
@@ -107,6 +138,7 @@ public class Target extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, target);
     struct.put("targetName", target.getTargetName());
+    struct.put("targetingType", target.getTargetingType().name());
     struct.put("targetFileID", target.getTargetFileID());
     struct.put("targetingCriteria", packCriteria(target.getTargetingCriteria()));
     return struct;
@@ -143,7 +175,6 @@ public class Target extends GUIManagedObject
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
     Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
-
     
     //
     //  unpack
@@ -152,13 +183,14 @@ public class Target extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     String targetName = valueStruct.getString("targetName");
     String targetFileID = valueStruct.getString("targetFileID");
+    TargetingType targetingType = (schemaVersion >= 2) ? TargetingType.fromExternalRepresentation(valueStruct.getString("targetingType")) : TargetingType.File;
     List<EvaluationCriterion> targetingCriteria = unpackCriteria(schema.field("targetingCriteria").schema(), valueStruct.get("targetingCriteria"));
     
     //
     //  return
     //
 
-    return new Target(schemaAndValue, targetName, targetFileID, targetingCriteria);
+    return new Target(schemaAndValue, targetName, targetingType, targetFileID, targetingCriteria);
   }
   
   /*****************************************
@@ -220,12 +252,44 @@ public class Target extends GUIManagedObject
     /*****************************************
     *
     *  attributes
+    *          // this is an adaptation of an object coming from the GUI with a wierd structure: TODO to be changed later for a simpler and more meamingfull structure
+//        "segments": [
+//                     {
+//                       "segId": "1",
+//                       "positionId": 0,
+//                       "name": "",
+//                       "profileCriteria": [
+//                         {
+//                           "argument": {
+//                             "valueAdd": null,
+//                             "expression": "55",
+//                             "valueMultiply": null,
+//                             "valueType": "simple",
+//                             "value": 55,
+//                             "timeUnit": null
+//                           },
+//                           "criterionField": "history.rechargeCount.previous7Days",
+//                           "criterionOperator": ">="
+//                         }
+//                       ]
+//                     }
+//                   ],
+
+
     *
     *****************************************/
 
     this.targetName = JSONUtilities.decodeString(jsonRoot, "targetName", true);
     this.targetFileID = JSONUtilities.decodeString(jsonRoot, "targetFileID", false);
-    this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
+    this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
+    if(this.targetingType.equals(TargetingType.Eligibility)) 
+      {
+        JSONArray segments = JSONUtilities.decodeJSONArray(jsonRoot, "segments", true);
+        if(segments.size() > 0) {
+          JSONObject segment0 = (JSONObject)segments.get(0);
+          this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", true), new ArrayList<EvaluationCriterion>());
+        }
+      }
 
     /*****************************************
     *
@@ -287,6 +351,7 @@ public class Target extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingTarget.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(targetName, existingTarget.getTargetName());
+        epochChanged = epochChanged || ! Objects.equals(targetingType, existingTarget.getTargetingType());
         epochChanged = epochChanged || ! Objects.equals(targetFileID, existingTarget.getTargetFileID());
         epochChanged = epochChanged || ! Objects.equals(targetingCriteria, existingTarget.getTargetingCriteria());
         return epochChanged;

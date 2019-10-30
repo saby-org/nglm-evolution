@@ -339,7 +339,7 @@ public class Journey extends GUIManagedObject
                 }
 
               //
-              //  target critera
+              //  target criteria
               //
 
               if (target != null)

@@ -84,7 +84,7 @@ public class ProfileChangeEvent implements EvolutionEngineEvent, SubscriberStrea
   *
   ****************************************/
 
-  public String getEventName() { return "profileChange"; }
+  public String getEventName() { return "profile update"; }
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public ParameterMap getOldValues() { return oldValues; }

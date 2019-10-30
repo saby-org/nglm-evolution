@@ -93,7 +93,7 @@ public class ProfileSegmentChangeEvent implements EvolutionEngineEvent, Subscrib
   *
   ****************************************/
 
-  public String getEventName() { return "segmentChange"; }
+  public String getEventName() { return "segment update"; }
   public String getSubscriberID() { return subscriberID; }
   public Date getEventDate() { return eventDate; }
   public ParameterMap getOldValues() { return oldValues; }

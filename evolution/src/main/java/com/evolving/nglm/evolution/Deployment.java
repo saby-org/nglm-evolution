@@ -2232,7 +2232,7 @@ public class Deployment
             }
           }
         
-        EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profileChange", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
+        EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
         evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
 
       }
