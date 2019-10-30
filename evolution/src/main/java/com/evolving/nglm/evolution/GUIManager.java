@@ -5076,7 +5076,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey journey = new Journey(jsonRoot, objectType, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
         /*****************************************
         *
@@ -5401,7 +5401,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
         /*****************************************
         *
@@ -5572,7 +5572,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
         /*****************************************
         *
@@ -5788,7 +5788,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey bulkCampaign = new Journey(campaignJSON, GUIManagedObjectType.BulkCampaign, epoch, existingBulkCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
         /*****************************************
         *
@@ -5998,7 +5998,7 @@ public class GUIManager
         *
         ****************************************/
 
-        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+        Journey journeyTemplate = new Journey(jsonRoot, GUIManagedObjectType.JourneyTemplate, epoch, existingJourneyTemplate, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
         /*****************************************
         *
@@ -12895,7 +12895,7 @@ public class GUIManager
         *
         ****************************************/
 
-        MailTemplate mailTemplate = new MailTemplate(jsonRoot, epoch, existingTemplate);
+        MailTemplate mailTemplate = new MailTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -12923,7 +12923,7 @@ public class GUIManager
           {
             if (! mailTemplate.getReadOnly())
               {
-                MailTemplate readOnlyCopy = (MailTemplate) SubscriberMessageTemplate.newReadOnlyCopy(mailTemplate, subscriberMessageTemplateService);
+                MailTemplate readOnlyCopy = (MailTemplate) SubscriberMessageTemplate.newReadOnlyCopy(mailTemplate, subscriberMessageTemplateService, communicationChannelService);
                 mailTemplate.setReadOnlyCopyID(readOnlyCopy.getMailTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -13192,7 +13192,7 @@ public class GUIManager
         *
         ****************************************/
 
-        SMSTemplate smsTemplate = new SMSTemplate(jsonRoot, epoch, existingTemplate);
+        SMSTemplate smsTemplate = new SMSTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -13220,7 +13220,7 @@ public class GUIManager
           {
             if (! smsTemplate.getReadOnly())
               {
-                SMSTemplate readOnlyCopy = (SMSTemplate) SubscriberMessageTemplate.newReadOnlyCopy(smsTemplate, subscriberMessageTemplateService);
+                SMSTemplate readOnlyCopy = (SMSTemplate) SubscriberMessageTemplate.newReadOnlyCopy(smsTemplate, subscriberMessageTemplateService, communicationChannelService);
                 smsTemplate.setReadOnlyCopyID(readOnlyCopy.getSMSTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -13350,6 +13350,15 @@ public class GUIManager
 
   private JSONObject processGetPushTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
   {
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", false);
+    
     /*****************************************
     *
     *  retrieve and convert templates
@@ -13360,7 +13369,10 @@ public class GUIManager
     List<JSONObject> templates = new ArrayList<JSONObject>();
     for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived))
       {
-        templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+        PushTemplate pushTemplate = (PushTemplate)template;
+        if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(pushTemplate.getCommunicationChannelID())){
+          templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
+        }
       }
 
     /*****************************************
@@ -13489,7 +13501,7 @@ public class GUIManager
         *
         ****************************************/
 
-        PushTemplate pushTemplate = new PushTemplate(jsonRoot, epoch, existingTemplate);
+        PushTemplate pushTemplate = new PushTemplate(communicationChannelService, jsonRoot, epoch, existingTemplate);
 
         /*****************************************
         *
@@ -13517,7 +13529,7 @@ public class GUIManager
           {
             if (! pushTemplate.getReadOnly())
               {
-                PushTemplate readOnlyCopy = (PushTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService);
+                PushTemplate readOnlyCopy = (PushTemplate) SubscriberMessageTemplate.newReadOnlyCopy(pushTemplate, subscriberMessageTemplateService, communicationChannelService);
                 pushTemplate.setReadOnlyCopyID(readOnlyCopy.getPushTemplateID());
                 subscriberMessageTemplateService.putSubscriberMessageTemplate(readOnlyCopy, true, null);
               }
@@ -20888,6 +20900,27 @@ public class GUIManager
             }
           break;
 
+        case "pushTemplates":
+          if (includeDynamic)
+            {
+              for (SubscriberMessageTemplate messageTemplate : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now))
+                {
+                  if (messageTemplate.getAccepted() && !messageTemplate.getInternalOnly())
+                    {
+                      switch (messageTemplate.getTemplateType())
+                        {
+                          case "push":
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
+                            availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+          
         case "smsTemplates":
           if (includeDynamic)
             {
@@ -21257,7 +21290,7 @@ public class GUIManager
         GUIManagedObject modifiedJourney;
         try
           {
-            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+            Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
             modifiedJourney = journey;
           }

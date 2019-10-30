@@ -59,6 +59,10 @@ if [ "<_NOTIFICATIONMANAGER_MAIL_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-notificationmanagermail
 fi  
 
+if [ "<_NOTIFICATIONMANAGER_PUSH_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-notificationmanagerpush
+fi  
+
 if [ "<_REPORTMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-reportmanager
 fi

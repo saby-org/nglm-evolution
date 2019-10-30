@@ -89,7 +89,7 @@ public class PointValidity
     this.periodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "periodType", true));
     this.periodQuantity = JSONUtilities.decodeInteger(jsonRoot, "periodQuantity", true);
     this.roundDown = JSONUtilities.decodeBoolean(jsonRoot, "roundDown", true);
-    this.validityExtension = JSONUtilities.decodeBoolean(jsonRoot, "validityExtension", true);
+    this.validityExtension = JSONUtilities.decodeBoolean(jsonRoot, "validityExtension", Boolean.FALSE);
   }
 
   /*****************************************

@@ -6,36 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.Arrays;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.text.Format;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class SMSTemplate extends SubscriberMessageTemplate
 {
@@ -90,7 +72,7 @@ public class SMSTemplate extends SubscriberMessageTemplate
   //
 
   @Override public String getTemplateType() { return "sms"; }
-  @Override public List<String> getDialogMessageFields() { return Arrays.asList("messageText"); }
+  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException { this.dialogMessageFields = Arrays.asList("messageText"); }
 
   /*****************************************
   *
@@ -98,8 +80,49 @@ public class SMSTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public SMSTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public SMSTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked);
+    super(communicationChannelService, jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch, existingTemplateUnchecked);
+    
+    /*****************************************
+    *
+    *  existingSegmentationDimension
+    *
+    *****************************************/
+
+    SMSTemplate existingTemplate = (existingTemplateUnchecked != null && existingTemplateUnchecked instanceof SMSTemplate) ? (SMSTemplate) existingTemplateUnchecked : null;
+
+    /*****************************************
+    *
+    *  epoch
+    *
+    *****************************************/
+
+    if (epochChanged(existingTemplate))
+      {
+        this.setEpoch(epoch);
+      }    
+  }
+
+  /*****************************************
+  *
+  *  epochChanged
+  *
+  *****************************************/
+
+  private boolean epochChanged(SMSTemplate existingSubscriberMessageTemplate)
+  {
+    if (existingSubscriberMessageTemplate != null && existingSubscriberMessageTemplate.getAccepted())
+      {
+        boolean epochChanged = false;
+        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSubscriberMessageTemplate.getGUIManagedObjectID());
+        epochChanged = epochChanged || ! Objects.equals(getDialogMessages(), existingSubscriberMessageTemplate.getDialogMessages());
+        epochChanged = epochChanged || ! Objects.equals(getDialogMessageFields(), existingSubscriberMessageTemplate.getDialogMessageFields());
+        return epochChanged;
+      }
+    else
+      {
+        return true;
+      }
   }
 }

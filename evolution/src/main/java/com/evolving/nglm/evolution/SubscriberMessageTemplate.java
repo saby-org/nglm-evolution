@@ -6,39 +6,27 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.text.Format;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public abstract class SubscriberMessageTemplate extends GUIManagedObject
 {
@@ -61,6 +49,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.array(DialogMessage.schema()).schema());
     schemaBuilder.field("readOnlyCopyID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("dialogMessageFields", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -78,6 +67,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   private List<DialogMessage> dialogMessages = new ArrayList<DialogMessage>();
   private String readOnlyCopyID;
+  protected List<String> dialogMessageFields = new ArrayList<String>();
 
   /*****************************************
   *
@@ -89,13 +79,24 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   public String getSubscriberMessageTemplateName() { return getGUIManagedObjectName(); }
   public List<DialogMessage> getDialogMessages() { return dialogMessages; }
   public String getReadOnlyCopyID() { return readOnlyCopyID; }
+  public List<String> getDialogMessageFields(){ return dialogMessageFields;}
+  public DialogMessage getDialogMessage(String messageField) 
+  {    
+    DialogMessage result = null;
+    int index = getDialogMessageFields().indexOf(messageField);
+    if(index > 0)
+      {
+        result = getDialogMessages().get(index); 
+      }
+    return result; 
+  }
 
   //
   //  abstract
   //
 
   public abstract String getTemplateType();
-  public abstract List<String> getDialogMessageFields();
+  public abstract void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException;
 
   /*****************************************
   *
@@ -111,7 +112,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  protected SubscriberMessageTemplate(JSONObject jsonRoot, GUIManagedObjectType messageTemplateType, long epoch, GUIManagedObject existingSubscriberMessageTemplateUnchecked) throws GUIManagerException
+  protected SubscriberMessageTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, GUIManagedObjectType messageTemplateType, long epoch, GUIManagedObject existingSubscriberMessageTemplateUnchecked) throws GUIManagerException
   {
     /*****************************************
     *
@@ -123,20 +124,13 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
     /*****************************************
     *
-    *  existingSubscriberMessageTemplate
-    *
-    *****************************************/
-
-    SubscriberMessageTemplate existingSubscriberMessageTemplate = (existingSubscriberMessageTemplateUnchecked != null && existingSubscriberMessageTemplateUnchecked instanceof SubscriberMessageTemplate) ? (SubscriberMessageTemplate) existingSubscriberMessageTemplateUnchecked : null;
-
-    /*****************************************
-    *
     *  attributes
     *
     *****************************************/
 
     this.readOnlyCopyID = null;
-
+    retrieveDialogMessageFields(communicationChannelService, jsonRoot);
+    
     /*****************************************
     *
     *  messages
@@ -153,24 +147,15 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //  messageText
     //
 
+    this.dialogMessages = new ArrayList<DialogMessage>();
     if (messagesJSON.size() > 0)
       {
         for (String dialogMessageField : getDialogMessageFields())
           {
-            dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, CriterionContext.Profile));
+            this.dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, CriterionContext.Profile));
           }
       }
 
-    /*****************************************
-    *
-    *  epoch
-    *
-    *****************************************/
-
-    if (epochChanged(existingSubscriberMessageTemplate))
-      {
-        this.setEpoch(epoch);
-      }
   }
 
   /*****************************************
@@ -179,7 +164,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static SubscriberMessageTemplate newReadOnlyCopy(SubscriberMessageTemplate subscriberMessageTemplate, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+  public static SubscriberMessageTemplate newReadOnlyCopy(SubscriberMessageTemplate subscriberMessageTemplate, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService) throws GUIManagerException
   {
     //
     //  construct JSON representation
@@ -200,9 +185,9 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     SubscriberMessageTemplate result = null;
-    if (subscriberMessageTemplate instanceof SMSTemplate) result = new SMSTemplate(readOnlyCopy, 0L, null);
-    if (subscriberMessageTemplate instanceof MailTemplate) result = new MailTemplate(readOnlyCopy, 0L, null);
-    if (subscriberMessageTemplate instanceof PushTemplate) result = new PushTemplate(readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof SMSTemplate) result = new SMSTemplate(communicationChannelService, readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof MailTemplate) result = new MailTemplate(communicationChannelService, readOnlyCopy, 0L, null);
+    if (subscriberMessageTemplate instanceof PushTemplate) result = new PushTemplate(communicationChannelService, readOnlyCopy, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");
 
     //
@@ -218,7 +203,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static SubscriberMessageTemplate newInternalTemplate(SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+  public static SubscriberMessageTemplate newInternalTemplate(SubscriberMessage subscriberMessage, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService) throws GUIManagerException
   {
     //
     //  construct JSON representation
@@ -238,9 +223,9 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     SubscriberMessageTemplate result = null;
-    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(internalSubscriberMessageTemplate, 0L, null);
-    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(internalSubscriberMessageTemplate, 0L, null);
-    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof SMSMessage) result = new SMSTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof EmailMessage) result = new MailTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
+    if (subscriberMessage instanceof PushMessage) result = new PushTemplate(communicationChannelService, internalSubscriberMessageTemplate, 0L, null);
     if (result == null) throw new ServerRuntimeException("illegal subscriberMessage");
 
     //
@@ -288,6 +273,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     List<DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (List<Object>) valueStruct.get("dialogMessages"));
     String readOnlyCopyID = valueStruct.getString("readOnlyCopyID");
+    List<String> dialogMessageFields = (List<String>) valueStruct.get("dialogMessageFields");
 
     //
     //  return
@@ -295,6 +281,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
     this.dialogMessages = dialogMessages;
     this.readOnlyCopyID = readOnlyCopyID;
+    this.dialogMessageFields = dialogMessageFields;
   }
 
   /*****************************************
@@ -335,13 +322,25 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
+  /*****************************************
+  *
+  *  packCommon
+  *
+  *****************************************/
+  
+  protected static void packCommon(Struct struct, SubscriberMessageTemplate subscriberMessageTemplate)
+  {
+    GUIManagedObject.packCommon(struct, subscriberMessageTemplate);
+    struct.put("dialogMessages", packDialogMessages(subscriberMessageTemplate.getDialogMessages()));
+    struct.put("readOnlyCopyID", subscriberMessageTemplate.getReadOnlyCopyID());
+    struct.put("dialogMessageFields", subscriberMessageTemplate.getDialogMessageFields());
+  }
+  
   protected static Object packCommon(Schema schema, Object value)
   {
     SubscriberMessageTemplate subscriberMessageTemplate = (SubscriberMessageTemplate) value;
     Struct struct = new Struct(schema);
-    GUIManagedObject.packCommon(struct, subscriberMessageTemplate);
-    struct.put("dialogMessages", packDialogMessages(subscriberMessageTemplate.getDialogMessages()));
-    struct.put("readOnlyCopyID", subscriberMessageTemplate.getReadOnlyCopyID());
+    packCommon(struct, subscriberMessageTemplate);
     return struct;
   }
 
@@ -445,22 +444,19 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   /*****************************************
   *
-  *  epochChanged
+  *  resolve
   *
   *****************************************/
 
-  private boolean epochChanged(SubscriberMessageTemplate existingSubscriberMessageTemplate)
-  {
-    if (existingSubscriberMessageTemplate != null && existingSubscriberMessageTemplate.getAccepted())
+  public String resolveX(String dialogMessageField, SubscriberEvaluationRequest subscriberEvaluationRequest) 
+  { 
+    String result = null;
+    DialogMessage message = getDialogMessage(dialogMessageField);
+    if(message != null)
       {
-        boolean epochChanged = false;
-        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSubscriberMessageTemplate.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(dialogMessages, existingSubscriberMessageTemplate.getDialogMessages());
-        return epochChanged;
+        result = message.resolveX(subscriberEvaluationRequest); 
       }
-    else
-      {
-        return true;
-      }
+    return result; 
   }
+  
 }

@@ -14,6 +14,8 @@ import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.MailNotificationManager.MAILMessageStatus;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
+import com.evolving.nglm.evolution.PushNotificationManager.PushMessageStatus;
+import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSMessageStatus;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 
@@ -107,7 +109,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       *******************************************/
 
       Object smsNotificationValue = sinkRecord.value();
-      Schema smsNotificationValueSchema = sinkRecord.valueSchema();
+      Schema notificationValueSchema = sinkRecord.valueSchema();
       
       Struct valueStruct = (Struct) smsNotificationValue;
       String type = valueStruct.getString("deliveryType");
@@ -115,7 +117,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       
       if(type.equals("notificationmanagermail")){
         documentMap = new HashMap<String,Object>();
-        MailNotificationManagerRequest mailNotification = MailNotificationManagerRequest.unpack(new SchemaAndValue(smsNotificationValueSchema, smsNotificationValue));
+        MailNotificationManagerRequest mailNotification = MailNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
@@ -128,9 +130,24 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("returnCode", mailNotification.getReturnCode());
         documentMap.put("deliveryStatus", mailNotification.getMessageStatus().toString());
         documentMap.put("returnCodeDetails", MAILMessageStatus.fromReturnCode(mailNotification.getReturnCode()));
+      }else if(type.equals("notificationmanagerpush")){
+        documentMap = new HashMap<String,Object>();
+        PushNotificationManagerRequest pushNotification = PushNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
+        documentMap = new HashMap<String,Object>();
+        documentMap.put("subscriberID", pushNotification.getSubscriberID());
+        documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
+        documentMap.put("eventID", "");
+        documentMap.put("creationDate", pushNotification.getCreationDate()!=null?dateFormat.format(pushNotification.getCreationDate()):"");
+        documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?dateFormat.format(pushNotification.getDeliveryDate()):"");
+        documentMap.put("moduleID", pushNotification.getModuleID());
+        documentMap.put("featureID", pushNotification.getFeatureID());
+        documentMap.put("source", ""); // TODO SCH : what is the source of push notifications ?
+        documentMap.put("returnCode", pushNotification.getReturnCode());
+        documentMap.put("deliveryStatus", pushNotification.getMessageStatus().toString());
+        documentMap.put("returnCodeDetails", PushMessageStatus.fromReturnCode(pushNotification.getReturnCode()));
       }else{
         documentMap = new HashMap<String,Object>();
-        SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(smsNotificationValueSchema, smsNotificationValue));
+        SMSNotificationManagerRequest smsNotification = SMSNotificationManagerRequest.unpack(new SchemaAndValue(notificationValueSchema, smsNotificationValue));
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());

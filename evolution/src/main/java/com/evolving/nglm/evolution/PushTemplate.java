@@ -6,36 +6,24 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.text.Format;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class PushTemplate extends SubscriberMessageTemplate
 {
@@ -54,8 +42,9 @@ public class PushTemplate extends SubscriberMessageTemplate
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("push_template");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
-    for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(SubscriberMessageTemplate.commonSchema().version(),1));
+    for (Field field : SubscriberMessageTemplate.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
+    schemaBuilder.field("communicationChannelID", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
   }
 
@@ -64,9 +53,6 @@ public class PushTemplate extends SubscriberMessageTemplate
   //
 
   private static ConnectSerde<PushTemplate> serde = new ConnectSerde<PushTemplate>(schema, false, PushTemplate.class, PushTemplate::pack, PushTemplate::unpack);
-  public static Object pack(Object value) { return SubscriberMessageTemplate.packCommon(schema, value); }
-  public static PushTemplate unpack(SchemaAndValue schemaAndValue) { return new PushTemplate(schemaAndValue); }
-  public PushTemplate(SchemaAndValue schemaAndValue) { super(schemaAndValue); }
 
   //
   //  accessor
@@ -74,6 +60,14 @@ public class PushTemplate extends SubscriberMessageTemplate
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<PushTemplate> serde() { return serde; }
+
+  /****************************************
+  *
+  *  data
+  *
+  ****************************************/
+
+  private String communicationChannelID;
 
   /*****************************************
   *
@@ -83,14 +77,65 @@ public class PushTemplate extends SubscriberMessageTemplate
 
   public String getPushTemplateID() { return getGUIManagedObjectID(); }
   public String getPushTemplateName() { return getGUIManagedObjectName(); }
-  public DialogMessage getMessageText() { return super.getDialogMessages().get(0); }
-  
-  //
-  //  abstract
-  //
+  public String getCommunicationChannelID() { return communicationChannelID; }
 
-  @Override public String getTemplateType() { return "push"; }
-  @Override public List<String> getDialogMessageFields() { return Arrays.asList("messageText"); }
+  /*****************************************
+  *
+  *  constructor -- unpack
+  *
+  *****************************************/
+
+  public PushTemplate(SchemaAndValue schemaAndValue, String communicationChannelID)
+  {
+    super(schemaAndValue);
+    this.communicationChannelID = communicationChannelID;
+  }
+
+  /*****************************************
+  *
+  *  pack
+  *
+  *****************************************/
+
+  public static Object pack(Object value)
+  {
+    PushTemplate pushTemplate = (PushTemplate) value;
+    Struct struct = new Struct(schema);
+    SubscriberMessageTemplate.packCommon(struct, pushTemplate);
+    struct.put("communicationChannelID", pushTemplate.getCommunicationChannelID());
+    return struct;
+  }
+  
+  /*****************************************
+  *
+  *  unpack
+  *
+  *****************************************/
+  
+  public static PushTemplate unpack(SchemaAndValue schemaAndValue) 
+  { 
+    //
+    //  data
+    //
+
+    Schema schema = schemaAndValue.schema();
+    Object value = schemaAndValue.value();
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion2(schema.version()) : null;
+
+    //
+    //  unpack
+    //
+
+    Struct valueStruct = (Struct) value;
+    String communicationChannelID = valueStruct.getString("communicationChannelID");
+    
+    //
+    //  return
+    //
+
+    return new PushTemplate(schemaAndValue, communicationChannelID);
+
+  }
 
   /*****************************************
   *
@@ -98,16 +143,99 @@ public class PushTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public PushTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public PushTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.PushMessageTemplate, epoch, existingTemplateUnchecked);
+    /*****************************************
+    *
+    *  super
+    *
+    *****************************************/
+
+    super(communicationChannelService, jsonRoot, GUIManagedObjectType.PushMessageTemplate, epoch, existingTemplateUnchecked);
+    
+    /*****************************************
+    *
+    *  existingSegmentationDimension
+    *
+    *****************************************/
+
+    PushTemplate existingPushTemplate = (existingTemplateUnchecked != null && existingTemplateUnchecked instanceof PushTemplate) ? (PushTemplate) existingTemplateUnchecked : null;
+
+    /*****************************************
+    *
+    *  attributes
+    *
+    *****************************************/
+
+    this.communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", true);
+
+    /*****************************************
+    *
+    *  epoch
+    *
+    *****************************************/
+
+    if (epochChanged(existingPushTemplate))
+      {
+        this.setEpoch(epoch);
+      }
   }
 
   /*****************************************
   *
-  *  resolve
+  *  abstract
   *
   *****************************************/
 
-  public String resolveX(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getMessageText().resolveX(subscriberEvaluationRequest); }
+  @Override public String getTemplateType() { return "push"; }
+
+  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  attributes
+    *
+    *****************************************/
+    
+    this.communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", true);
+
+    this.dialogMessageFields = new ArrayList<String>();
+    Date now = SystemTime.getCurrentTime();
+    CommunicationChannel communicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
+    if(communicationChannel == null)
+      {
+        throw new GUIManagerException("unknown communication channel", communicationChannelID);
+      }
+    if(communicationChannel.getParameters() != null)
+      {
+        for(String communicationChannelParameter : communicationChannel.getParameters().keySet())
+          {
+            dialogMessageFields.add(communicationChannelParameter); 
+          }
+      }
+  }
+  
+  /*****************************************
+  *
+  *  epochChanged
+  *
+  *****************************************/
+
+  private boolean epochChanged(PushTemplate existingPushTemplate)
+  {
+    if (existingPushTemplate != null && existingPushTemplate.getAccepted())
+      {
+        boolean epochChanged = false;
+        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingPushTemplate.getGUIManagedObjectID());
+        epochChanged = epochChanged || ! Objects.equals(getDialogMessages(), existingPushTemplate.getDialogMessages());
+        epochChanged = epochChanged || ! Objects.equals(getDialogMessageFields(), existingPushTemplate.getDialogMessageFields());
+        epochChanged = epochChanged || ! Objects.equals(communicationChannelID, existingPushTemplate.getCommunicationChannelID());
+        return epochChanged;
+      }
+    else
+      {
+        return true;
+      }
+   }
+
 }

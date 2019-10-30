@@ -65,6 +65,10 @@ do
 	      docker pull ${env.DOCKER_REGISTRY}ev-notificationmanagermail:${project.name}-${project.version}
       fi
 
+	  if [ "${NOTIFICATIONMANAGER_PUSH_ENABLED}" = "true" ]; then
+	      docker pull ${env.DOCKER_REGISTRY}ev-notificationmanagerpush:${project.name}-${project.version}
+      fi
+
 	  if [ "${REPORTMANAGER_ENABLED}" = "true" ]; then
 	      docker pull ${env.DOCKER_REGISTRY}ev-reportmanager:${project.name}-${project.version}
       fi

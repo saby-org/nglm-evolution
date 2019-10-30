@@ -89,6 +89,13 @@ scrape_configs:
     static_configs:
       - targets: [<_NOTIFICATIONMANAGER_MAIL_PROMETHEUS_>]
 
+  # notificationmanager job
+  - job_name: 'notificationmanagerpush'
+
+    # main config
+    static_configs:
+      - targets: [<_NOTIFICATIONMANAGER_PUSH_PROMETHEUS_>]
+
   # reportmanager job
   - job_name: 'reportmanager'
 

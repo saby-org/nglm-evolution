@@ -6,35 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.Arrays;
+import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.text.Format;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class MailTemplate extends SubscriberMessageTemplate
 {
@@ -91,7 +74,7 @@ public class MailTemplate extends SubscriberMessageTemplate
   //
 
   @Override public String getTemplateType() { return "mail"; }
-  @Override public List<String> getDialogMessageFields() { return Arrays.asList("subject", "htmlBody", "textBody"); }
+  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException { this.dialogMessageFields = Arrays.asList("subject", "htmlBody", "textBody"); }
 
   /*****************************************
   *
@@ -99,9 +82,35 @@ public class MailTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public MailTemplate(JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
+  public MailTemplate(CommunicationChannelService communicationChannelService, JSONObject jsonRoot, long epoch, GUIManagedObject existingTemplateUnchecked) throws GUIManagerException
   {
-    super(jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked);
+    /*****************************************
+    *
+    *  super
+    *
+    *****************************************/
+    
+    super(communicationChannelService, jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch, existingTemplateUnchecked);
+    
+    /*****************************************
+    *
+    *  existingSegmentationDimension
+    *
+    *****************************************/
+
+    MailTemplate existingTemplate = (existingTemplateUnchecked != null && existingTemplateUnchecked instanceof MailTemplate) ? (MailTemplate) existingTemplateUnchecked : null;
+
+    /*****************************************
+    *
+    *  epoch
+    *
+    *****************************************/
+
+    if (epochChanged(existingTemplate))
+      {
+        this.setEpoch(epoch);
+      }
+
   }
   
   /*****************************************
@@ -113,4 +122,26 @@ public class MailTemplate extends SubscriberMessageTemplate
   public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getSubject().resolveX(subscriberEvaluationRequest); }
   public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getHTMLBody().resolveX(subscriberEvaluationRequest); }
   public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getTextBody().resolveX(subscriberEvaluationRequest); }
+
+  /*****************************************
+  *
+  *  epochChanged
+  *
+  *****************************************/
+
+  protected boolean epochChanged(MailTemplate existingSubscriberMessageTemplate)
+  {
+    if (existingSubscriberMessageTemplate != null && existingSubscriberMessageTemplate.getAccepted())
+      {
+        boolean epochChanged = false;
+        epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSubscriberMessageTemplate.getGUIManagedObjectID());
+        epochChanged = epochChanged || ! Objects.equals(getDialogMessages(), existingSubscriberMessageTemplate.getDialogMessages());
+        epochChanged = epochChanged || ! Objects.equals(getDialogMessageFields(), existingSubscriberMessageTemplate.getDialogMessageFields());
+        return epochChanged;
+      }
+    else
+      {
+        return true;
+      }
+  }
 }
