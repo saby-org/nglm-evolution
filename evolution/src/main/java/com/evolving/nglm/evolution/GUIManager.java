@@ -128,11 +128,13 @@ import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyService.JourneyListener;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -343,6 +345,7 @@ public class GUIManager
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
     getCustomerPoints("getCustomerPoints"),
+    getCustomerLoyaltyPrograms("getCustomerLoyaltyPrograms"),
     refreshUCG("refreshUCG"),
     putUploadedFile("putUploadedFile"),
     getUploadedFileList("getUploadedFileList"),
@@ -1717,6 +1720,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
         restServer.createContext("/nglm-guimanager/getCustomerPoints", new APISimpleHandler(API.getCustomerPoints));
+        restServer.createContext("/nglm-guimanager/getCustomerLoyaltyPrograms", new APISimpleHandler(API.getCustomerLoyaltyPrograms));
         restServer.createContext("/nglm-guimanager/refreshUCG", new APISimpleHandler(API.refreshUCG));
         restServer.createContext("/nglm-guimanager/getUploadedFileList", new APISimpleHandler(API.getUploadedFileList));
         restServer.createContext("/nglm-guimanager/getUploadedFileSummaryList", new APISimpleHandler(API.getUploadedFileSummaryList));
@@ -2870,6 +2874,10 @@ public class GUIManager
 
                 case getCustomerPoints:
                   jsonResponse = processGetCustomerPoints(userID, jsonRoot);
+                  break;
+
+                case getCustomerLoyaltyPrograms:
+                  jsonResponse = processGetCustomerLoyaltyPrograms(userID, jsonRoot);
                   break;
 
                 case refreshUCG:
@@ -15536,6 +15544,203 @@ public class GUIManager
           response.put("responseCode", "ok");
         }
     }
+    catch (SubscriberProfileServiceException e)
+    {
+      throw new GUIManagerException(e);
+    }
+
+    /*****************************************
+     *
+     *  return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerLoyaltyPrograms
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerLoyaltyPrograms(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  now
+    *
+    ****************************************/
+
+   Date now = SystemTime.getCurrentTime();
+
+   /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+   String searchedLoyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramID", false);
+   if(searchedLoyaltyProgramID != null && searchedLoyaltyProgramID.isEmpty()){ searchedLoyaltyProgramID = null; }
+
+   /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID);
+   if (subscriberID == null)
+     {
+       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+       response.put("responseCode", "CustomerNotFound");
+       return JSONUtilities.encodeObject(response);
+     }
+
+    /*****************************************
+     *
+     *  getSubscriberProfile
+     *
+     *****************************************/
+    try
+    {
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, true, false);
+      if (baseSubscriberProfile == null)
+        {
+          response.put("responseCode", "CustomerNotFound");
+        }
+      else
+        {
+
+          Map<String,LoyaltyProgramState> loyaltyPrograms = baseSubscriberProfile.getLoyaltyPrograms();
+          List<JSONObject> loyaltyProgramsPresentation = new ArrayList<JSONObject>();
+          for (String loyaltyProgramID : loyaltyPrograms.keySet())
+            {
+
+              //
+              //  check loyalty program still exist
+              //
+
+              LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now);
+              if (loyaltyProgram != null && (searchedLoyaltyProgramID == null || loyaltyProgramID.equals(searchedLoyaltyProgramID)))
+                {
+
+                  HashMap<String, Object> loyaltyProgramPresentation = new HashMap<String,Object>();
+
+                  //
+                  //  loyalty program informations
+                  //
+
+                  LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
+                  loyaltyProgramPresentation.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
+                  loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
+                  loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate()));
+                  loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate()));
+
+
+                  switch (loyaltyProgramState.getLoyaltyProgramType()) {
+                    case POINTS:
+
+                      LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+
+                      //
+                      //  current tier
+                      //
+
+                      if(loyaltyProgramPointsState.getTierName() != null){ loyaltyProgramPresentation.put("tierName", loyaltyProgramPointsState.getTierName()); }
+                      if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyaltyProgramPresentation.put("tierEnrollmentDate", getDateString(loyaltyProgramPointsState.getTierEnrollmentDate())); }
+
+                      //
+                      //  status point
+                      //
+                      
+                      LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+                      String statusPointID = loyaltyProgramPoints.getStatusPointsID();
+                      Point statusPoint = pointService.getActivePoint(statusPointID, now);
+                      if (statusPoint != null)
+                        {
+                          loyaltyProgramPresentation.put("statusPointID", statusPoint.getPointID());
+                          loyaltyProgramPresentation.put("statusPointName", statusPoint.getPointName());
+                        }
+                      PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
+                      if(pointBalance != null)
+                        {
+                          loyaltyProgramPresentation.put("statusPointsBalance", pointBalance.getBalance(now));
+                        }
+                      else
+                        {
+                          loyaltyProgramPresentation.put("statusPointsBalance", 0);
+                        }
+                      
+                      //
+                      //  reward point informations
+                      //
+
+                      String rewardPointID = loyaltyProgramPoints.getRewardPointsID();
+                      Point rewardPoint = pointService.getActivePoint(rewardPointID, now);
+                      if (rewardPoint != null)
+                        {
+                          loyaltyProgramPresentation.put("rewardsPointID", rewardPoint.getPointID());
+                          loyaltyProgramPresentation.put("rewardsPointName", rewardPoint.getPointName());
+                        }
+                      PointBalance rewardBalance = baseSubscriberProfile.getPointBalances().get(rewardPointID);
+                      if(rewardBalance != null)
+                        {
+                          loyaltyProgramPresentation.put("rewardsPointsBalance", rewardBalance.getBalance(now));
+                          loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
+                          loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
+                          loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
+                        }
+                      else
+                        {
+                          loyaltyProgramPresentation.put("rewardsPointsBalance", 0);
+                          loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
+                          loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
+                          loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+                        }
+
+                      //
+                      //  history
+                      //
+                      ArrayList<JSONObject> loyaltyProgramHistoryJSON = new ArrayList<JSONObject>();
+                      LoyaltyProgramHistory history = loyaltyProgramPointsState.getLoyaltyProgramHistory();
+                      if(history != null && history.getTierHistory() != null && !history.getTierHistory().isEmpty()){
+                        for(TierHistory tier : history.getTierHistory()){
+                          HashMap<String, Object> tierHistoryJSON = new HashMap<String,Object>();
+                          tierHistoryJSON.put("fromTier", tier.getFromTier());
+                          tierHistoryJSON.put("toTier", tier.getToTier());
+                          tierHistoryJSON.put("transitionDate", getDateString(tier.getTransitionDate()));
+                          loyaltyProgramHistoryJSON.add(JSONUtilities.encodeObject(tierHistoryJSON));
+                        }
+                      }
+                      loyaltyProgramPresentation.put("loyaltyProgramHistory", loyaltyProgramHistoryJSON);
+
+                      break;
+
+                    case BADGES:
+                      // TODO
+                      break;
+
+                    default:
+                      break;
+                  }
+
+                  //
+                  //  
+                  //
+
+                  loyaltyProgramsPresentation.add(JSONUtilities.encodeObject(loyaltyProgramPresentation));
+
+                }
+            }
+
+          response.put("loyaltyPrograms", loyaltyProgramsPresentation);
+          response.put("responseCode", "ok");
+        }
+    } 
     catch (SubscriberProfileServiceException e)
     {
       throw new GUIManagerException(e);

@@ -39,7 +39,6 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.RoundingSelection;
-import com.evolving.nglm.evolution.PointFulfillmentRequest.PointOperation;
 
 
 public class PointBalance
@@ -202,7 +201,7 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(EvolutionEventContext context, String subscriberID, PointOperation operation, int amount, Point point, Date evaluationDate)
+  public boolean update(EvolutionEventContext context, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate)
   {
     //
     //  validate
