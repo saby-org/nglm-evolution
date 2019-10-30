@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,9 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class PushNotificationManager extends DeliveryManager implements Runnable
 {
@@ -636,7 +639,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public ActionManager(JSONObject configuration)
+    public ActionManager(JSONObject configuration) throws GUIManagerException
     {
       super(configuration);
       this.deliveryType = JSONUtilities.decodeString(configuration, "deliveryType", true);
@@ -649,7 +652,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    @Override public DeliveryRequest executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       
       /*****************************************
@@ -743,7 +746,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
       *
       *****************************************/
 
-      return request;
+      return Collections.<Action>singletonList(request);
     }
   }
 
