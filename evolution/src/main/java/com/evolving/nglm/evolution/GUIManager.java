@@ -402,6 +402,7 @@ public class GUIManager
     getCriterionFieldAvailableValues("getCriterionFieldAvailableValues"),
     putCriterionFieldAvailableValues("putCriterionFieldAvailableValues"),
     removeCriterionFieldAvailableValues("removeCriterionFieldAvailableValues"),
+    getEffectiveSystemTime("getEffectiveSystemTime"),
 
     //
     //  configAdaptor APIs
@@ -1814,6 +1815,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCriterionFieldAvailableValues", new APISimpleHandler(API.getCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/putCriterionFieldAvailableValues", new APISimpleHandler(API.putCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/removeCriterionFieldAvailableValues", new APISimpleHandler(API.removeCriterionFieldAvailableValues));
+        restServer.createContext("/nglm-guimanager/getEffectiveSystemTime", new APISimpleHandler(API.getEffectiveSystemTime));
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -3196,6 +3198,10 @@ public class GUIManager
                 case removeCriterionFieldAvailableValues:
                   jsonResponse = processRemoveCriterionFieldAvailableValues(userID, jsonRoot);
                   break;
+
+                case getEffectiveSystemTime:
+                  jsonResponse = processGetEffectiveSystemTime(userID, jsonRoot);
+                  break;                                    
               }
           }
         else
@@ -3805,7 +3811,7 @@ public class GUIManager
     response.put("partnerTypes", JSONUtilities.encodeArray(partnerTypes));
     return JSONUtilities.encodeObject(response);
   }
-  
+
   /*****************************************
   *
   *  getSupportedCurrencies
@@ -9487,7 +9493,26 @@ public class GUIManager
     if (criterionFieldAvailableValues != null) response.put("criterionFieldAvailableValues", criterionFieldAvailableValuesJSON);
     return JSONUtilities.encodeObject(response);
   }
-  
+
+  /*****************************************
+  *
+  *  getEffectiveSystemTime
+  *
+  *****************************************/
+
+  private JSONObject processGetEffectiveSystemTime(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("effectiveSystemTime", SystemTime.getCurrentTime());
+    return JSONUtilities.encodeObject(response);
+  }
 
   /*****************************************
   *
