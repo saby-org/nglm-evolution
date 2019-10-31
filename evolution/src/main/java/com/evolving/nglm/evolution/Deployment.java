@@ -211,6 +211,7 @@ public class Deployment
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
   private static String elasticSearchDateFormat;
+  private static int elasticSearchScrollSize;
   private static String criterionFieldAvailableValuesTopic;
 
   /*****************************************
@@ -415,6 +416,7 @@ public class Deployment
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
+  public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
 
   /*****************************************
@@ -913,6 +915,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  elasticSearchScrollSize
+    //
+
+    try
+      {
+        elasticSearchScrollSize = JSONUtilities.decodeInteger(jsonRoot, "elasticSearchScrollSize", 0);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
     //
     //  pointFufillmentRepartitioningTopic
     //

@@ -251,6 +251,12 @@
       { "id" : "month",   "display" : "Month" },
       { "id" : "year",    "display" : "Year" }
     ],
+    
+    --
+    -- elasticSearchScrollSize
+    --
+    
+    "elasticSearchScrollSize" : 1000,
 
     -- 
     -- supported Token Codes Formats

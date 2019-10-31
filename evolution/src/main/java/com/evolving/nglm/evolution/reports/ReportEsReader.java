@@ -47,6 +47,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
 
 /**
@@ -301,11 +302,12 @@ public class ReportEsReader {
           );
     }
 
-    private int getScrollSize() {
-		int scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;
-		String scrollSizeStr = System.getenv().get(ReportUtils.ENV_ELASTIC_SEARCH_SCROLL_SIZE);
-		if (scrollSizeStr != null)
-			scrollSize = Integer.parseInt(scrollSizeStr);
+  private int getScrollSize() {
+    int scrollSize = Deployment.getElasticSearchScrollSize();
+    if (scrollSize == 0)
+    {
+      scrollSize = ReportUtils.DEFAULT_ELASTIC_SEARCH_SCROLL_SIZE;
+    }
 		log.trace("Using "+scrollSize+" as scroll size in Elastic Search");
 		return scrollSize;
 	}
