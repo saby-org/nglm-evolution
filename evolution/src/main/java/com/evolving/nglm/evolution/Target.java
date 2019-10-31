@@ -37,16 +37,7 @@ public class Target extends GUIManagedObject
     private String externalRepresentation;
     private TargetingType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
-    public static TargetingType fromExternalRepresentation(String externalRepresentation) { 
-      for (TargetingType enumeratedValue : TargetingType.values()) { 
-        if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) {
-          return enumeratedValue; 
-         }
-      }
-        return Unknown; 
-       
-    }
-    
+    public static TargetingType fromExternalRepresentation(String externalRepresentation) { for (TargetingType enumeratedValue : TargetingType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) { return enumeratedValue; } } return Unknown; }
   }
   
   /*****************************************
@@ -70,7 +61,6 @@ public class Target extends GUIManagedObject
     schemaBuilder.field("targetingType", SchemaBuilder.string().defaultValue(TargetingType.File.getExternalRepresentation()).schema());   
     schemaBuilder.field("targetFileID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("targetingCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).optional().schema());
-
     schema = schemaBuilder.build();
   };
 
@@ -138,7 +128,7 @@ public class Target extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, target);
     struct.put("targetName", target.getTargetName());
-    struct.put("targetingType", target.getTargetingType().name());
+    struct.put("targetingType", target.getTargetingType().getExternalRepresentation());
     struct.put("targetFileID", target.getTargetFileID());
     struct.put("targetingCriteria", packCriteria(target.getTargetingCriteria()));
     return struct;
@@ -252,43 +242,53 @@ public class Target extends GUIManagedObject
     /*****************************************
     *
     *  attributes
-    *          // this is an adaptation of an object coming from the GUI with a wierd structure: TODO to be changed later for a simpler and more meamingfull structure
-//        "segments": [
-//                     {
-//                       "segId": "1",
-//                       "positionId": 0,
-//                       "name": "",
-//                       "profileCriteria": [
-//                         {
-//                           "argument": {
-//                             "valueAdd": null,
-//                             "expression": "55",
-//                             "valueMultiply": null,
-//                             "valueType": "simple",
-//                             "value": 55,
-//                             "timeUnit": null
-//                           },
-//                           "criterionField": "history.rechargeCount.previous7Days",
-//                           "criterionOperator": ">="
-//                         }
-//                       ]
-//                     }
-//                   ],
-
-
     *
     *****************************************/
 
     this.targetName = JSONUtilities.decodeString(jsonRoot, "targetName", true);
     this.targetFileID = JSONUtilities.decodeString(jsonRoot, "targetFileID", false);
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", true));
-    if(this.targetingType.equals(TargetingType.Eligibility)) 
+
+    /*****************************************
+    *
+    *  targeting criteria
+    *
+    *          // this is an adaptation of an object coming from the GUI with a wierd structure: TODO to be changed later for a simpler and more meamingfull structure
+    *          //        "segments": [
+    *          //                     {
+    *          //                       "segId": "1",
+    *          //                       "positionId": 0,
+    *          //                       "name": "",
+    *          //                       "profileCriteria": [
+    *          //                         {
+    *          //                           "argument": {
+    *          //                             "valueAdd": null,
+    *          //                             "expression": "55",
+    *          //                             "valueMultiply": null,
+    *          //                             "valueType": "simple",
+    *          //                             "value": 55,
+    *          //                             "timeUnit": null
+    *          //                           },
+    *          //                           "criterionField": "history.rechargeCount.previous7Days",
+    *          //                           "criterionOperator": ">="
+    *          //                         }
+    *          //                       ]
+    *          //                     }
+    *          //                   ],
+    *
+    *****************************************/
+
+    this.targetingCriteria = new ArrayList<EvaluationCriterion>();
+    switch (this.targetingType)
       {
-        JSONArray segments = JSONUtilities.decodeJSONArray(jsonRoot, "segments", true);
-        if(segments.size() > 0) {
-          JSONObject segment0 = (JSONObject)segments.get(0);
-          this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", true), new ArrayList<EvaluationCriterion>());
-        }
+        case Eligibility:
+          JSONArray segments = JSONUtilities.decodeJSONArray(jsonRoot, "segments", true);
+          if (segments.size() > 0)
+            {
+              JSONObject segment0 = (JSONObject) segments.get(0);
+              this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(segment0, "profileCriteria", true), new ArrayList<EvaluationCriterion>());
+            }
+          break;
       }
 
     /*****************************************
