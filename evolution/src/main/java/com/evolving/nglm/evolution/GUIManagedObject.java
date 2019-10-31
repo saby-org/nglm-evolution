@@ -170,6 +170,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(UCGRule.serde());
     guiManagedObjectSerdes.add(Deliverable.serde());
     guiManagedObjectSerdes.add(TokenType.serde());
+    guiManagedObjectSerdes.add(VoucherType.serde());
     guiManagedObjectSerdes.add(IncompleteObject.serde());
     guiManagedObjectSerdes.add(Report.serde());
     guiManagedObjectSerdes.add(MailTemplate.serde());

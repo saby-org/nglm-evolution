@@ -86,6 +86,7 @@ public class Deployment
   private static String ucgRuleTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
+  private static String voucherTypeTopic;
   private static String subscriberMessageTemplateTopic;
   private static String guiAuditTopic;
   private static String subscriberGroupTopic;
@@ -288,6 +289,7 @@ public class Deployment
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
+  public static String getVoucherTypeTopic() { return voucherTypeTopic; }
   public static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
@@ -1152,6 +1154,19 @@ public class Deployment
     try
       {
         tokenTypeTopic = JSONUtilities.decodeString(jsonRoot, "tokenTypeTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  voucherType
+    //
+
+    try
+      {
+        voucherTypeTopic = JSONUtilities.decodeString(jsonRoot, "voucherTypeTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

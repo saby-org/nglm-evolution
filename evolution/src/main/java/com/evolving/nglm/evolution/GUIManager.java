@@ -313,6 +313,13 @@ public class GUIManager
     getTokenType("getTokenType"),
     removeTokenType("removeTokenType"),
     getTokenCodesFormats("getTokenCodesFormats"),
+    
+    getVoucherTypeList("getVoucherTypeList"),
+    getVoucherTypeSummaryList("getVoucherTypeSummaryList"),
+    putVoucherType("putVoucherType"),
+    getVoucherType("getVoucherType"),
+    removeVoucherType("removeVoucherType"),
+
     getMailTemplateList("getMailTemplateList"),
     getMailTemplateSummaryList("getMailTemplateSummaryList"),
     getMailTemplate("getMailTemplate"),
@@ -500,6 +507,7 @@ public class GUIManager
   private UCGRuleService ucgRuleService;
   private DeliverableService deliverableService;
   private TokenTypeService tokenTypeService;
+  private VoucherTypeService voucherTypeService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private SubscriberProfileService subscriberProfileService;
   private SubscriberIDService subscriberIDService;
@@ -597,6 +605,7 @@ public class GUIManager
     String ucgRuleTopic = Deployment.getUCGRuleTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
     String tokenTypeTopic = Deployment.getTokenTypeTopic();
+    String voucherTypeTopic = Deployment.getVoucherTypeTopic();
     String subscriberMessageTemplateTopic = Deployment.getSubscriberMessageTemplateTopic();
     String subscriberGroupEpochTopic = Deployment.getSubscriberGroupEpochTopic();
     String journeyTrafficChangeLogTopic = Deployment.getJourneyTrafficChangeLogTopic();
@@ -771,6 +780,7 @@ public class GUIManager
     ucgRuleService = new UCGRuleService(bootstrapServers,"guimanager-ucgruleservice-"+apiProcessKey,ucgRuleTopic,true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     tokenTypeService = new TokenTypeService(bootstrapServers, "guimanager-tokentypeservice-" + apiProcessKey, tokenTypeTopic, true);
+    voucherTypeService = new VoucherTypeService(bootstrapServers, "guimanager-vouchertypeservice-" + apiProcessKey, voucherTypeTopic, true);
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(bootstrapServers, "guimanager-subscribermessagetemplateservice-" + apiProcessKey, subscriberMessageTemplateTopic, true);
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
@@ -1522,6 +1532,7 @@ public class GUIManager
     ucgRuleService.start();
     deliverableService.start();
     tokenTypeService.start();
+    voucherTypeService.start();
     subscriberMessageTemplateService.start();
     subscriberProfileService.start();
     deliverableSourceService.start();
@@ -1706,6 +1717,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTokenType", new APISimpleHandler(API.getTokenType));
         restServer.createContext("/nglm-guimanager/removeTokenType", new APISimpleHandler(API.removeTokenType));
         restServer.createContext("/nglm-guimanager/getTokenCodesFormats", new APISimpleHandler(API.getTokenCodesFormats));
+        
+        restServer.createContext("/nglm-guimanager/getVoucherTypeList", new APISimpleHandler(API.getVoucherTypeList));
+        restServer.createContext("/nglm-guimanager/getVoucherTypeSummaryList", new APISimpleHandler(API.getVoucherTypeSummaryList));
+        restServer.createContext("/nglm-guimanager/putVoucherType", new APISimpleHandler(API.putVoucherType));
+        restServer.createContext("/nglm-guimanager/getVoucherType", new APISimpleHandler(API.getVoucherType));
+        restServer.createContext("/nglm-guimanager/removeVoucherType", new APISimpleHandler(API.removeVoucherType));
+
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APISimpleHandler(API.getMailTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getMailTemplate", new APISimpleHandler(API.getMailTemplate));
@@ -1830,7 +1848,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, deliverableSourceService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
 
     /*****************************************
     *
@@ -1838,7 +1856,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
     /*****************************************
     *
@@ -1883,6 +1901,7 @@ public class GUIManager
     private UCGRuleService ucgRuleService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
+    private VoucherTypeService voucherTypeService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
@@ -1904,7 +1923,7 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -1927,6 +1946,7 @@ public class GUIManager
       this.ucgRuleService = ucgRuleService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
+      this.voucherTypeService = voucherTypeService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;
@@ -1982,6 +2002,7 @@ public class GUIManager
       if (ucgRuleService != null) ucgRuleService.stop();
       if (deliverableService != null) deliverableService.stop();
       if (tokenTypeService != null) tokenTypeService.stop();
+      if (voucherTypeService != null) voucherTypeService.stop();
       if (subscriberMessageTemplateService != null) subscriberMessageTemplateService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (subscriberIDService != null) subscriberIDService.stop();
@@ -2765,6 +2786,26 @@ public class GUIManager
 
                 case getTokenCodesFormats:
                   jsonResponse = processGetTokenCodesFormats(userID, jsonRoot);
+                  break;
+
+                case getVoucherTypeList:
+                  jsonResponse = processGetVoucherTypeList(userID, jsonRoot, true, includeArchived);
+                  break;
+
+                case getVoucherTypeSummaryList:
+                  jsonResponse = processGetVoucherTypeList(userID, jsonRoot, false, includeArchived);
+                  break;
+
+                case putVoucherType:
+                  jsonResponse = processPutVoucherType(userID, jsonRoot);
+                  break;
+
+                case getVoucherType:
+                  jsonResponse = processGetVoucherType(userID, jsonRoot, includeArchived);
+                  break;
+
+                case removeVoucherType:
+                  jsonResponse = processRemoveVoucherType(userID, jsonRoot);
                   break;
 
                 case getMailTemplateList:
@@ -12792,6 +12833,282 @@ public class GUIManager
 
   /*****************************************
   *
+  *  processGetVoucherTypeList
+  *
+  *****************************************/
+
+  private JSONObject processGetVoucherTypeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert voucherTypes
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> voucherTypes = new ArrayList<JSONObject>();
+    for (GUIManagedObject voucherType : voucherTypeService.getStoredVoucherTypes(includeArchived))
+      {
+        voucherTypes.add(voucherTypeService.generateResponseJSON(voucherType, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("voucherTypes", JSONUtilities.encodeArray(voucherTypes));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetVoucherType
+  *
+  *****************************************/
+
+  private JSONObject processGetVoucherType(String userID, JSONObject jsonRoot, boolean includeArchived)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate voucherType
+    *
+    *****************************************/
+
+    GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID, includeArchived);
+    JSONObject voucherTypeJSON = voucherTypeService.generateResponseJSON(voucherType, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (voucherType != null) ? "ok" : "voucherTypeNotFound");
+    if (voucherType != null) response.put("voucherType", voucherTypeJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processPutVoucherType
+  *
+  *****************************************/
+
+  private JSONObject processPutVoucherType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  voucherTypeID
+    *
+    *****************************************/
+
+    String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (voucherTypeID == null)
+      {
+        voucherTypeID = voucherTypeService.generateVoucherTypeID();
+        jsonRoot.put("id", voucherTypeID);
+      }
+
+    /*****************************************
+    *
+    *  existing voucherType
+    *
+    *****************************************/
+
+    GUIManagedObject existingVoucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingVoucherType != null && existingVoucherType.getReadOnly())
+      {
+        response.put("id", existingVoucherType.getGUIManagedObjectID());
+        response.put("accepted", existingVoucherType.getAccepted());
+        response.put("valid", existingVoucherType.getAccepted());
+        response.put("processing", voucherTypeService.isActiveVoucherType(existingVoucherType, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process voucherType
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate voucherType
+        *
+        ****************************************/
+
+        VoucherType voucherType = new VoucherType(jsonRoot, epoch, existingVoucherType);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+
+        voucherTypeService.putVoucherType(voucherType, (existingVoucherType == null), userID);
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", voucherType.getVoucherTypeID());
+        response.put("accepted", voucherType.getAccepted());
+        response.put("valid", voucherType.getAccepted());
+        response.put("processing", voucherTypeService.isActiveVoucherType(voucherType, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+
+        //
+        //  store
+        //
+
+        voucherTypeService.putVoucherType(incompleteObject, (existingVoucherType == null), userID);
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "voucherTypeNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+
+  /*****************************************
+  *
+  *  processRemoveVoucherType
+  *
+  *****************************************/
+
+  private JSONObject processRemoveVoucherType(String userID, JSONObject jsonRoot)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+
+    GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
+    if (voucherType != null && ! voucherType.getReadOnly()) voucherTypeService.removeVoucherType(voucherTypeID, userID);
+
+    /*****************************************
+    *
+    *  revalidateProducts
+    *
+    *****************************************/
+
+    revalidateProducts(now);
+
+    /*****************************************
+    *
+    *  responseCode
+    *
+    *****************************************/
+
+    String responseCode;
+    if (voucherType != null && ! voucherType.getReadOnly())
+      responseCode = "ok";
+    else if (voucherType != null)
+      responseCode = "failedReadOnly";
+    else
+      responseCode = "voucherTypeNotFound";
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", responseCode);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
   *  processGetMailTemplateList
   *
   *****************************************/
@@ -14036,7 +14353,7 @@ public class GUIManager
     response.put("smsTemplateCount", subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived).size());
     response.put("pushTemplateCount", subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived).size());
     response.put("reportsCount", reportService.getStoredReports(includeArchived).size());
-    response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size());
+    response.put("walletsCount", pointService.getStoredPoints(includeArchived).size() + tokenTypeService.getStoredTokenTypes(includeArchived).size() + voucherTypeService.getStoredVoucherTypes(includeArchived).size());
     response.put("ucgRuleCount", ucgRuleService.getStoredUCGRules(includeArchived).size());
     response.put("targetCount", targetService.getStoredTargets(includeArchived).size());
     response.put("exclusionInclusionCount", exclusionInclusionTargetService.getStoredExclusionInclusionTargets(includeArchived).size());
@@ -15693,6 +16010,7 @@ public class GUIManager
                   loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
                   loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate()));
                   loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate()));
+                  loyaltyProgramPresentation.put("active", loyaltyProgram.getActive());
 
 
                   switch (loyaltyProgramState.getLoyaltyProgramType()) {
@@ -22468,6 +22786,7 @@ public class GUIManager
     private UCGRuleService ucgRuleService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
+    private VoucherTypeService voucherTypeService;
     private SubscriberMessageTemplateService subscriberMessageTemplateService;
     private SubscriberProfileService subscriberProfileService;
     private SubscriberIDService subscriberIDService;
@@ -22508,6 +22827,7 @@ public class GUIManager
     public UCGRuleService getUcgRuleService() { return ucgRuleService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
     public TokenTypeService getTokenTypeService() { return tokenTypeService; }
+    public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
     public SubscriberMessageTemplateService getSubscriberMessageTemplateService() { return subscriberMessageTemplateService; }
     public SubscriberProfileService getSubscriberProfileService() { return subscriberProfileService; }
     public SubscriberIDService getSubscriberIDService() { return subscriberIDService; }
@@ -22529,7 +22849,7 @@ public class GUIManager
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, DeliverableSourceService deliverableSourceService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -22551,6 +22871,7 @@ public class GUIManager
       this.ucgRuleService = ucgRuleService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
+      this.voucherTypeService = voucherTypeService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.subscriberProfileService = subscriberProfileService;
       this.subscriberIDService = subscriberIDService;

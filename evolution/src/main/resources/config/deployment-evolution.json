@@ -40,6 +40,7 @@
   "ucgRuleTopic"                                         : "${topic.ucgrule}",
   "deliverableTopic"                                     : "${topic.deliverable}",
   "tokenTypeTopic"                                       : "${topic.tokentype}",  
+  "voucherTypeTopic"                                     : "${topic.vouchertype}",  
   "guiAuditTopic"                                        : "${topic.guiaudit}",
   "reportTopic"                                          : "${topic.report}",
   "subscriberUpdateTopic"                                : "subscriberupdate",
