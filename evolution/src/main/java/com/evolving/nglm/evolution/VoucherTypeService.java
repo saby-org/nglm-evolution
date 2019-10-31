@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.Collection;
 import java.util.Date;
 
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,6 +112,20 @@ public class VoucherTypeService extends GUIService
   *****************************************/
 
   public void removeVoucherType(String voucherTypeID, String userID) { removeGUIManagedObject(voucherTypeID, SystemTime.getCurrentTime(), userID); }
+
+  /*****************************************
+  *
+  *  getSummaryJSONRepresentation
+  *
+  *****************************************/
+
+ @Override protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+ {
+   JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+   result.put("codeType", guiManagedObject.getJSONRepresentation().get("codeType"));
+   result.put("transferable", guiManagedObject.getJSONRepresentation().get("transferable"));
+   return result;
+ }
 
   /*****************************************
   *
