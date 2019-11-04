@@ -1168,17 +1168,20 @@ public class EvaluationCriterion
     switch (evaluationDataType)
       {
         case StringCriterion:
-          script.append("def left = doc." + esField + ".value?.toLowerCase(); ");
+          script.append("def left = doc." + esField + "?.value?.toLowerCase(); ");
           break;
           
         case DateCriterion:
+          script.append("def left; ");
+          script.append("if (doc." + esField + ".size() != 0) { ");
           script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");
           script.append("def leftMillis = doc." + esField + ".value.getMillis(); ");
           script.append("def leftCalendar = leftSF.getCalendar(); ");
           script.append("leftCalendar.setTimeInMillis(leftMillis); ");
           script.append("def leftInstant = leftCalendar.toInstant(); ");
           script.append("def leftBeforeTruncate = LocalDateTime.ofInstant(leftInstant, ZoneOffset.UTC); ");
-          script.append(constructDateTruncateESScript(null, "leftBeforeTruncate", "left", argumentBaseTimeUnit));
+          script.append(constructDateTruncateESScript(null, "leftBeforeTruncate", "tempLeft", argumentBaseTimeUnit));
+          script.append("left = tempLeft; } ");
           break;
 
         case StringSetCriterion:
@@ -1190,7 +1193,7 @@ public class EvaluationCriterion
           break;
           
         default:
-          script.append("def left = doc." + esField + ".value; ");
+          script.append("def left = doc." + esField + "?.value; ");
           break;
       }
 

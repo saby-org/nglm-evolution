@@ -541,7 +541,7 @@ public abstract class Expression
           case IntegerExpression:
           case DoubleExpression:
           case BooleanExpression:
-  	    script.append("def right_" + getNodeID() + " = doc." + esField + ".value; ");
+  	    script.append("def right_" + getNodeID() + " = doc." + esField + "?.value; ");
             break;
             
           case StringSetExpression:
@@ -550,13 +550,16 @@ public abstract class Expression
             break;
             
           case DateExpression:
+            script.append("def right_" + getNodeID() + "; ");
+            script.append("if (doc." + esField + ".size() != 0) { ");
             script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");
             script.append("def rightMillis_" + getNodeID() + " = doc." + esField + ".value.getMillis(); ");
             script.append("def rightCalendar_" + getNodeID() +" = rightSF_" + getNodeID() + ".getCalendar(); ");
             script.append("rightCalendar_" + getNodeID() + ".setTimeInMillis(rightMillis_" + getNodeID() + "); ");
             script.append("def rightInstant_" + getNodeID() + " = rightCalendar_" + getNodeID() + ".toInstant(); ");
             script.append("def rightRaw_" + getNodeID() + " = LocalDateTime.ofInstant(rightInstant_" + getNodeID() + ", ZoneOffset.UTC); ");
-            script.append(EvaluationCriterion.constructDateTruncateESScript(getNodeID(), "rightRaw", "right", baseTimeUnit));
+            script.append(EvaluationCriterion.constructDateTruncateESScript(getNodeID(), "rightRaw", "tempRight", baseTimeUnit));
+            script.append("right = tempRight; } ");
             break;
 
           default:
