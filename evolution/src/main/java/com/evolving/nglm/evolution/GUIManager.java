@@ -15892,7 +15892,7 @@ public class GUIManager
                 {
                   HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
                   PointBalance pointBalance = pointBalances.get(pointID);
-                  pointPresentation.put("point", point.getDisplay());
+                  pointPresentation.put("pointName", point.getDisplay());
                   pointPresentation.put("balance", pointBalance.getBalance(now));
                   pointPresentation.put("earned", pointBalance.getEarnedHistory().getAllTimeBucket());
                   pointPresentation.put("expired", pointBalance.getExpiredHistory().getAllTimeBucket());
@@ -16092,9 +16092,9 @@ public class GUIManager
 
                       break;
 
-                    case BADGES:
-                      // TODO
-                      break;
+//                    case BADGES:
+//                      // TODO
+//                      break;
 
                     default:
                       break;
@@ -17816,9 +17816,9 @@ public class GUIManager
             loyaltyProgram = new LoyaltyProgramPoints(jsonRoot, epoch, existingLoyaltyProgram, catalogCharacteristicService);
             break;
 
-          case BADGES:
-            // TODO
-            break;
+//          case BADGES:
+//            // TODO
+//            break;
 
           case Unknown:
             throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));

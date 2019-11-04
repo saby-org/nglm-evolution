@@ -689,9 +689,9 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
 
               break;
 
-            case BADGES:
-              // TODO
-              break;
+//            case BADGES:
+//              // TODO
+//              break;
 
             default:
               break;

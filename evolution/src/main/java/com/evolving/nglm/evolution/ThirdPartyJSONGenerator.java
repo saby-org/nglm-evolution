@@ -53,9 +53,9 @@ public class ThirdPartyJSONGenerator
       loyaltyProgramMap.put("tiers", tiers);
       break;
 
-    case BADGES:
-      // TODO
-      break;
+//    case BADGES:
+//      // TODO
+//      break;
       
     default:
       break;

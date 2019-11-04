@@ -3233,9 +3233,9 @@ public class EvolutionEngine
 
               break;
 
-            case BADGES:
-              // TODO
-              break;
+//            case BADGES:
+//              // TODO
+//              break;
 
             default:
               break;
@@ -3401,9 +3401,9 @@ public class EvolutionEngine
                   }
                 break;
 
-              case BADGES:
-                // TODO
-                break;
+//              case BADGES:
+//                // TODO
+//                break;
                 
               default:
                 break;

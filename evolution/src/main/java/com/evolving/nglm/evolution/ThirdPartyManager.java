@@ -1537,7 +1537,7 @@ public class ThirdPartyManager
                 {
                   HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
                   PointBalance pointBalance = pointBalances.get(pointID);
-                  pointPresentation.put("point", point.getDisplay());
+                  pointPresentation.put("pointName", point.getDisplay());
                   pointPresentation.put("balance", pointBalance.getBalance(now));
                   Set<Object> pointExpirations = new HashSet<Object>();
                   for(Date expirationDate : pointBalance.getBalances().keySet()){
@@ -2615,9 +2615,9 @@ public class ThirdPartyManager
 
                      break;
 
-                   case BADGES:
-                     // TODO
-                     break;
+//                   case BADGES:
+//                     // TODO
+//                     break;
 
                    default:
                      break;
