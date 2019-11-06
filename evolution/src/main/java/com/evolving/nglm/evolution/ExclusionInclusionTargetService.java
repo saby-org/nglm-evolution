@@ -394,7 +394,6 @@ public class ExclusionInclusionTargetService extends GUIService
             *****************************************/
 
             SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, exclusionInclusionTarget.getExclusionInclusionTargetID());
-            subscriberIDService.close();
           }
         catch (InterruptedException e)
           {

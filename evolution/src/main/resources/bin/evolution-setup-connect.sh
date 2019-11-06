@@ -9,6 +9,7 @@
   #
 
   export CONNECT_URL_SUBSCRIBERPROFILE_REDIS=${CONNECT_URL_SUBSCRIBERPROFILE_REDIS:-$DEFAULT_CONNECT_URL}
+  export CONNECT_REDIS_SUBSCRIBERPROFILE_SINK_TASKS=${CONNECT_REDIS_SUBSCRIBERPROFILE_SINK_TASKS:-'1'}
   curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_REDIS/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "subscriberprofile_redis_sink_connector",
@@ -29,6 +30,7 @@
   #
 
   export CONNECT_URL_SUBSCRIBERPROFILE_ES=${CONNECT_URL_SUBSCRIBERPROFILE_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_SUBSCRIBERPROFILE_SINK_TASKS=${CONNECT_ES_SUBSCRIBERPROFILE_SINK_TASKS:-'1'}
   curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "subscriberprofile_es_sink_connector",
@@ -50,6 +52,9 @@
   #
 
   export CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES=${CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_SINK_TASKS=${CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_SINK_TASKS:-'1'}
+  export CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHRECORDCOUNT=${CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHRECORDCOUNT:-'1'}
+  export CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHSIZEMB=${CONNECT_ES_EXTENDEDSUBSCRIBERPROFILE_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_EXTENDEDSUBSCRIBERPROFILE_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "extendedsubscriberprofile_es_sink_connector",
@@ -71,17 +76,22 @@
   #
 
   export CONNECT_URL_JOURNEYSTATISTIC_ES=${CONNECT_URL_JOURNEYSTATISTIC_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_JOURNEYSTATISTIC_SINK_TASKS=${CONNECT_ES_JOURNEYSTATISTIC_SINK_TASKS:-'1'}
+  export CONNECT_ES_JOURNEYSTATISTIC_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEYSTATISTIC_BATCHRECORDCOUNT:-'1'}
+  export CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB=${CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_JOURNEYSTATISTIC_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "journeystatistic_es_sink_connector",
       "config" :
         {
         "connector.class" : "com.evolving.nglm.evolution.JourneyStatisticESSinkConnector",
-        "tasks.max" : 1,
+        "tasks.max" : '$CONNECT_ES_JOURNEYSTATISTIC_SINK_TASKS',
         "topics" : "${topic.journeystatistic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-        "indexName" : "journeystatistic"
+        "indexName" : "journeystatistic",
+	"batchRecordCount" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_JOURNEYSTATISTIC_BATCHSIZEMB'"
         }
     }' &
 
@@ -90,17 +100,22 @@
   #
 
   export CONNECT_URL_JOURNEYTRAFFIC_ES=${CONNECT_URL_JOURNEYTRAFFIC_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS=${CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS:-'1'}
+  export CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT:-'1'}
+  export CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB=${CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_JOURNEYTRAFFIC_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "journeytraffic_es_sink_connector",
       "config" :
         {
         "connector.class" : "com.evolving.nglm.evolution.JourneyTrafficESSinkConnector",
-        "tasks.max" : 1,
+        "tasks.max" : '$CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS',
         "topics" : "${changelog.evolutionengine.journeytraffic.topic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-        "indexName" : "datacube_journeytraffic"
+        "indexName" : "datacube_journeytraffic",
+	"batchRecordCount" : "'$CONNECT_ES_JOURNEYTRAFFIC_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_JOURNEYTRAFFIC_BATCHSIZEMB'"
         }
     }' &
     
@@ -110,18 +125,23 @@
   #
 
   export CONNECT_URL_JOURNEYMETRIC_ES=${CONNECT_URL_JOURNEYMETRIC_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_JOURNEYMETRIC_SINK_TASKS=${CONNECT_ES_JOURNEYMETRIC_SINK_TASKS:-'1'}
+  export CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB=${CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_JOURNEYMETRIC_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "journeymetric_es_sink_connector",
       "config" :
         {
         "connector.class" : "com.evolving.nglm.evolution.JourneyMetricESSinkConnector",
-        "tasks.max" : 1,
+        "tasks.max" : '$CONNECT_ES_JOURNEYMETRIC_SINK_TASKS',
         "topics" : "${topic.journeymetric}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
-        "indexName" : "journeymetric"
+        "indexName" : "journeymetric",
+	"batchRecordCount" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_JOURNEYMETRIC_BATCHSIZEMB'"
         }
     }' &
 
@@ -322,17 +342,22 @@
   #
 
   export CONNECT_URL_PROPENSITY_ES=${CONNECT_URL_PROPENSITY_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_PROPENSITY_SINK_TASKS=${CONNECT_ES_PROPENSITY_SINK_TASKS:-'1'}
+  export CONNECT_ES_PROPENSITY_BATCHRECORDCOUNT=${CONNECT_ES_PROPENSITY_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_PROPENSITY_BATCHSIZEMB=${CONNECT_ES_PROPENSITY_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_PROPENSITY_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "propensity_es_sink_connector",
       "config" :
         {
         "connector.class" : "com.evolving.nglm.evolution.PropensityESSinkConnector",
-        "tasks.max" : 1,
+        "tasks.max" : '$CONNECT_ES_PROPENSITY_SINK_TASKS',
         "topics" : "${topic.propensitylog}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
-        "indexName" : "propensity"
+        "indexName" : "propensity",
+	"batchRecordCount" : "'$CONNECT_ES_PROPENSITY_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_PROPENSITY_BATCHSIZEMB'"
         }
     }' &
 
@@ -341,18 +366,23 @@
   #
 
   export CONNECT_URL_ODR_ES=${CONNECT_URL_ODR_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_ODR_SINK_TASKS=${CONNECT_ES_ODR_SINK_TASKS:-'1'}
+  export CONNECT_ES_ODR_BATCHRECORDCOUNT=${CONNECT_ES_ODR_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_ODR_BATCHSIZEMB=${CONNECT_ES_ODR_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_ODR_ES/connectors -H "Content-Type: application/json" -d '
      {
        "name" : "odr_es_sink_connector",
        "config" :
          {
          "connector.class" : "com.evolving.nglm.evolution.ODRSinkConnector",
-         "tasks.max" : 1,
+         "tasks.max" : '$CONNECT_ES_ODR_SINK_TASKS',
          "topics" : "${topic.fulfillment.purchasefulfillment.response}",
          "connectionHost" : "'$MASTER_ESROUTER_HOST'",
          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
          "indexName" : "detailedrecords_offers",
-         "pipelineName" : "odr-daily"
+         "pipelineName" : "odr-daily",
+         "batchRecordCount" : "'$CONNECT_ES_ODR_BATCHRECORDCOUNT'",
+         "batchSize" : "'$CONNECT_ES_ODR_BATCHSIZEMB'"
          }
      }' &
    
@@ -361,18 +391,23 @@
   #
 
   export CONNECT_URL_BDR_ES=${CONNECT_URL_BDR_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_BDR_SINK_TASKS=${CONNECT_ES_BDR_SINK_TASKS:-'1'}
+  export CONNECT_ES_BDR_BATCHRECORDCOUNT=${CONNECT_ES_BDR_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_BDR_BATCHSIZEMB=${CONNECT_ES_BDR_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_BDR_ES/connectors -H "Content-Type: application/json" -d '
      {
        "name" : "bdr_es_sink_connector",
        "config" :
          {
          "connector.class" : "com.evolving.nglm.evolution.BDRSinkConnector",
-         "tasks.max" : 1,
+         "tasks.max" : '$CONNECT_ES_BDR_SINK_TASKS',
          "topics" : "${topic.commoditydelivery.response}",
          "connectionHost" : "'$MASTER_ESROUTER_HOST'",
          "connectionPort" : "'$MASTER_ESROUTER_PORT'",
          "indexName" : "detailedrecords_bonuses",
-         "pipelineName" : "bdr-daily"
+         "pipelineName" : "bdr-daily",
+         "batchRecordCount" : "'$CONNECT_ES_BDR_BATCHRECORDCOUNT'",
+         "batchSize" : "'$CONNECT_ES_BDR_BATCHSIZEMB'"
          }
      }' &
   
@@ -381,18 +416,23 @@
   #
 
   export CONNECT_URL_NOTIFICATION_ES=${CONNECT_URL_NOTIFICATION_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_NOTIFICATION_SINK_TASKS=${CONNECT_ES_NOTIFICATION_SINK_TASKS:-'1'}
+  export CONNECT_ES_NOTIFICATION_BATCHRECORDCOUNT=${CONNECT_ES_NOTIFICATION_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_NOTIFICATION_BATCHSIZEMB=${CONNECT_ES_NOTIFICATION_BATCHSIZEMB:-'5'}
   curl -XPOST $CONNECT_URL_NOTIFICATION_ES/connectors -H "Content-Type: application/json" -d '
     {
       "name" : "notification_es_sink_connector",
       "config" :
         {
         "connector.class" : "com.evolving.nglm.evolution.NotificationSinkConnector",
-        "tasks.max" : 1,
+        "tasks.max" : '$CONNECT_ES_NOTIFICATION_SINK_TASKS',
         "topics" : "${topic.notificationmanagerpush.response},"${topic.notificationmanagermail.response},${topic.notificationmanagersms.response}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "indexName" : "detailedrecords_messages",
-        "pipelineName" : "mdr-daily"
+        "pipelineName" : "mdr-daily",
+         "batchRecordCount" : "'$CONNECT_ES_NOTIFICATION_BATCHRECORDCOUNT'",
+         "batchSize" : "'$CONNECT_ES_NOTIFICATION_BATCHSIZEMB'"
         }
     }' &
 

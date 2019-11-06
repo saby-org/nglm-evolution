@@ -354,7 +354,6 @@ public class TargetService extends GUIService
             *****************************************/
 
             SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, target.getTargetID());
-            subscriberIDService.close();
           }
         catch (InterruptedException e)
           {

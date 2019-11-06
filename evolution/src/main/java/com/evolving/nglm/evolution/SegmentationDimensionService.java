@@ -447,7 +447,6 @@ public class SegmentationDimensionService extends GUIService
             *****************************************/
 
             SubscriberGroupEpochService.closeZooKeeperAndReleaseGroup(zookeeper, segmentationDimension.getGUIManagedObjectID());
-            subscriberIDService.close();
           }
         catch (InterruptedException e)
           {

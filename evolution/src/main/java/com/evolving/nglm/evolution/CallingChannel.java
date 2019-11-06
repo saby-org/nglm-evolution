@@ -70,6 +70,7 @@ public class CallingChannel extends GUIManagedObject
   ****************************************/
 
   public String getCallingChannelID() { return getGUIManagedObjectID(); }
+  public String getDisplay() { return getGUIManagedObjectDisplay(); }
 
   /*****************************************
   *
