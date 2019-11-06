@@ -48,8 +48,9 @@ public class RandomAlgo implements IOfferOptimizerAlgorithm {
     double score;
     if (predictable)
       {
-        // Sort offers by reverse creation date
-        score = (double) (o.getCreatedDate().getTime() / 3000000000000.0); // Sat Jan 24 06:20:00 CET 2065
+        // Offers will sort according to creation date (created last -> highest score)
+        // This formula works with dates from 2019 to 2025, and for offers created within 1 second of each other
+        score = ((((o.getCreatedDate().getTime()-1_550_000_000_000L) / (1_750_000_000_000D-1_550_000_000_000D)*(double)Integer.MAX_VALUE)));
       }
     else
       {

@@ -695,7 +695,7 @@ public class StockMonitor implements Runnable
         *
         *****************************************/
 
-        log.info("processStock for {}: {}, initial stock: {}", stockableItem.getStockableItemID(), stock.toJSON(), stockableItem.getStock());
+        log.debug("processStock for {}: {}, initial stock: {}", stockableItem.getStockableItemID(), stock.toJSON(), stockableItem.getStock());
         
         /******************************************
         *

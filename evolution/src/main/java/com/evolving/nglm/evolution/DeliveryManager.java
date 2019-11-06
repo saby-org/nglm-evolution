@@ -6,58 +6,16 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.StringValue;
-import com.evolving.nglm.core.WorkItemScheduler;
-import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
-
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.connect.data.Schema;
-
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SystemTime;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +26,29 @@ import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.StringValue;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.WorkItemScheduler;
+import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 
 public abstract class DeliveryManager
 {
@@ -1594,6 +1575,35 @@ public abstract class DeliveryManager
                   {
                     StringKey key = deliveryRequest.getOriginatingRequest() ? new StringKey(deliveryRequest.getSubscriberID()) : new StringKey(deliveryRequest.getDeliveryRequestID());
                     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(responseTopic, stringKeySerde.serializer().serialize(responseTopic, key), requestSerde.serializer().serialize(responseTopic, deliveryRequest))).get();
+                    
+                    log.debug("Send Delivery Event {} {}", deliveryRequest.getActivityType(), deliveryRequest.toString());
+
+                    if (deliveryRequest.getActivityType().equals(ActivityType.BDR.getExternalRepresentation()))
+                      {
+                        //
+                        // BonusDelivery
+                        //
+                        BonusDelivery bonusDelivery = new BonusDelivery(deliveryRequest);
+                        String topic = Deployment.getBonusDeliveryTopic();
+                        kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), BonusDelivery.serde().serializer().serialize(topic, bonusDelivery)));
+                      } else if (deliveryRequest.getActivityType().equals(ActivityType.ODR.getExternalRepresentation()))
+                      {
+                        //
+                        // OfferDelivery
+                        //
+                        OfferDelivery offerDelivery = new OfferDelivery(deliveryRequest);
+                        String topic = Deployment.getOfferDeliveryTopic();
+                        kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), OfferDelivery.serde().serializer().serialize(topic, offerDelivery)));
+                      } else if (deliveryRequest.getActivityType().equals(ActivityType.Messages.getExternalRepresentation()))
+                      {
+                        //
+                        // MessageDelivery
+                        //
+                        MessageDelivery messageDelivery = new MessageDelivery(deliveryRequest);
+                        String topic = Deployment.getMessageDeliveryTopic();
+                        kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), MessageDelivery.serde().serializer().serialize(topic, messageDelivery)));
+                      }
+                      
                     break;
                   }
                 catch (InterruptedException e)

@@ -134,12 +134,12 @@ public class TokenRedeemed implements EvolutionEngineEvent
 
   public static Object pack(Object value)
   {
-    TokenRedeemed lifeCycleSegment = (TokenRedeemed) value;
+    TokenRedeemed tokenRedeemed = (TokenRedeemed) value;
     Struct struct = new Struct(schema);
-    struct.put("subscriberID", lifeCycleSegment.getSubscriberID());
-    struct.put("eventDate", lifeCycleSegment.getEventDate());
-    struct.put("tokenType", lifeCycleSegment.getTokenType());
-    struct.put("acceptedOfferId", lifeCycleSegment.getAcceptedOfferId());
+    struct.put("subscriberID", tokenRedeemed.getSubscriberID());
+    struct.put("eventDate", tokenRedeemed.getEventDate());
+    struct.put("tokenType", tokenRedeemed.getTokenType());
+    struct.put("acceptedOfferId", tokenRedeemed.getAcceptedOfferId());
     return struct;
   }
 

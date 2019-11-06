@@ -1143,15 +1143,18 @@ public class DNBOProxy
 
         outstandingSubscriberIDs.clear();
         outstandingExternalSubscriberIDs.clear();
-        for (AssignSubscriberIDs assignSubscriberIDs : outstandingRequests.keySet())
-          {
-            String passedSubscriberID = assignSubscriberIDs.getSubscriberID();
-            String externalSubscriberID = assignSubscriberIDs.getAlternateIDs().get(externalSubscriberIDName);
-            if (! Objects.equals(passedSubscriberID, externalSubscriberID))
-              outstandingSubscriberIDs.put(passedSubscriberID, outstandingRequests.get(assignSubscriberIDs));
-            else
-              outstandingExternalSubscriberIDs.put(passedSubscriberID, outstandingRequests.get(assignSubscriberIDs));
-          }
+        synchronized (outstandingRequests)
+        {
+          for (AssignSubscriberIDs assignSubscriberIDs : outstandingRequests.keySet())
+            {
+              String passedSubscriberID = assignSubscriberIDs.getSubscriberID();
+              String externalSubscriberID = assignSubscriberIDs.getAlternateIDs().get(externalSubscriberIDName);
+              if (! Objects.equals(passedSubscriberID, externalSubscriberID))
+                outstandingSubscriberIDs.put(passedSubscriberID, outstandingRequests.get(assignSubscriberIDs));
+              else
+                outstandingExternalSubscriberIDs.put(passedSubscriberID, outstandingRequests.get(assignSubscriberIDs));
+            }
+        }
 
         //
         //  process - only searching through the records if there are outstanding records to consider

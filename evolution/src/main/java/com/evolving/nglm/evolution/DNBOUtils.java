@@ -161,7 +161,7 @@ public class DNBOUtils
     *
     *****************************************/
         
-    protected List<String> handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenUpdate)
+    protected Collection<ProposedOfferDetails> handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenUpdate)
     {
       /*****************************************
       *
@@ -174,7 +174,7 @@ public class DNBOUtils
       if (boundCount >= maxNumberofPlays)
         {
             log.error("maxNumberofPlays has been reached {}", maxNumberofPlays);
-            return Collections.<String>emptyList();
+            return Collections.<ProposedOfferDetails>emptyList();
         }
       token.setBoundCount(boundCount+1);
       
@@ -212,7 +212,7 @@ public class DNBOUtils
       catch (GetOfferException e)
         {
           log.error("unknown offer while scoring {}", e.getLocalizedMessage());
-          return Collections.<String>emptyList();
+          return Collections.<ProposedOfferDetails>emptyList();
         }
 
       /*****************************************
@@ -231,7 +231,7 @@ public class DNBOUtils
           if (offer == null)
             {
               log.error("invalid offer returned by scoring {}", offerId);
-              return Collections.<String>emptyList();
+              return Collections.<ProposedOfferDetails>emptyList();
             }
           tokenUpdate.getParameters().put("action.presented.offer." + (index+1), offer.getDisplay());
           if (++index == MAX_PRESENTED_OFFERS)
@@ -250,7 +250,7 @@ public class DNBOUtils
       *  return
       *
       *****************************************/
-      return presentedOfferIDs;
+      return presentedOffers;
     }    
     
   }
@@ -400,8 +400,8 @@ public class DNBOUtils
       *
       *****************************************/
       
-      List<String> presentedOfferIDs = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenUpdate);
-      if (presentedOfferIDs.isEmpty())
+      Collection<ProposedOfferDetails> presentedOfferDetailsList = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenUpdate);
+      if (presentedOfferDetailsList.isEmpty())
         {
           log.error("cannot select first offer because list is empty");
           return Collections.<Action>emptyList();
@@ -409,12 +409,13 @@ public class DNBOUtils
 
       //   select 1st offer of the list
       
-      String acceptedOfferID = presentedOfferIDs.get(0);
-      token.setAcceptedOfferID(acceptedOfferID);
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(acceptedOfferID, evolutionEventContext.now());
+      ProposedOfferDetails acceptedOfferDetail = presentedOfferDetailsList.iterator().next();
+      String offerId = acceptedOfferDetail.getOfferId();
+      token.setAcceptedOfferID(offerId);
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerId, evolutionEventContext.now());
       if (offer == null)
         {
-          log.error("invalid offer returned by scoring {}", acceptedOfferID);
+          log.error("invalid offer returned by scoring {}", offerId);
           return Collections.<Action>emptyList();
         }
       tokenUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());

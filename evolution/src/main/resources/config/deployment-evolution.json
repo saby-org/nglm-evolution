@@ -57,6 +57,9 @@
   "timedEvaluationTopic"                                 : "${topic.timedevaluation}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
+  "bonusDeliveryTopic"                                   : "${topic.bonusdelivery}",
+  "offerDeliveryTopic"                                   : "${topic.offerdelivery}",
+  "messageDeliveryTopic"                                 : "${topic.messagedelivery}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
   "extendedSubscriberProfileChangeLog"                   : "${changelog.evolutionengine.extendedsubscriberprofile}",
@@ -272,16 +275,106 @@
           { "id" : "c2-5", "display" : "[0123456789abcdef]{5}" },
           { "id" : "c2-6", "display" : "[0123456789abcdef]{6}" }
      ],
-  --
-  --  offerOptimizationAlgorithmsCommon
-  --
+        
+    --
+    --  evolutionEngineCoreEvents
+    -- 
+
+    "evolutionEngineCoreEvents" :
+    [
+      { 
+        "name" : "tokenRedeemed",
+        "eventClass" : "com.evolving.nglm.evolution.TokenRedeemed",
+        "eventTopic" : "${topic.tokenredeemed}",
+ 		"eventRule"  : "standard",
+        "eventCriterionFields" : [
+           { "id" : "event.tokenType",      "display" : "Token Type",       "dataType" : "string", "retriever" : "getTokenType",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#tokenTypes#"] },
+           { "id" : "event.acceptedOfferId","display" : "Accepted Offer Id","dataType" : "string", "retriever" : "getAcceptedOfferId","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] }
+         ]
+      },          
+      { 
+        "name" : "bonusDelivery",
+        "eventClass" : "com.evolving.nglm.evolution.BonusDelivery",
+        "eventTopic" : "${topic.bonusdelivery}",
+ 		"eventRule"  : "standard",
+        "eventCriterionFields" : [
+           { "id" : "event.moduleID",             "display" : "Module Id",             "dataType" : "string", "retriever" : "getModuleId_BonusDelivery",             "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+           { "id" : "event.featureID",            "display" : "Feature Id",            "dataType" : "string", "retriever" : "getFeatureId_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.returnCode",           "display" : "Return Code",           "dataType" : "double", "retriever" : "getReturnCode_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.deliveryStatus",       "display" : "Delivery Status",       "dataType" : "string", "retriever" : "getDeliveryStatus_BonusDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
+           { "id" : "event.returnCodeDetails",    "display" : "Return Code Details",   "dataType" : "string", "retriever" : "getReturnCodeDetails_BonusDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.origin",               "display" : "Origin",                "dataType" : "string", "retriever" : "getOrigin_BonusDelivery",               "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.providerId",           "display" : "Provider Id",           "dataType" : "string", "retriever" : "getProviderId_BonusDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#providerIds#"] },
+           { "id" : "event.deliverableId",        "display" : "Deliverable Id",        "dataType" : "string", "retriever" : "getDeliverableId_BonusDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliverableIds#"] },
+           { "id" : "event.deliverableQty",       "display" : "Deliverable Qty",       "dataType" : "double", "retriever" : "getDeliverableQty_BonusDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.deliverableExpiration","display" : "Deliverable Expiration","dataType" : "string", "retriever" : "getDeliverableExpiration_BonusDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.operation",            "display" : "Operation",             "dataType" : "string", "retriever" : "getOperation_BonusDelivery",            "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+         ]
+      },      
+      { 
+        "name" : "offerDelivery",
+        "eventClass" : "com.evolving.nglm.evolution.OfferDelivery",
+        "eventTopic" : "${topic.offerdelivery}",
+ 		"eventRule"  : "standard",
+        "eventCriterionFields" : [
+           { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+           { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_OfferDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "double", "retriever" : "getReturnCode_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.deliveryStatus",   "display" : "Delivery Status",    "dataType" : "string", "retriever" : "getDeliveryStatus_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
+           { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_OfferDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_OfferDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.offerId",          "display" : "Offer Id",           "dataType" : "string", "retriever" : "getOfferId_OfferDelivery",          "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] },
+           { "id" : "event.offerQty",         "display" : "Offer Qty",          "dataType" : "double", "retriever" : "getOfferQty_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.salesChannelId",   "display" : "Sales Channel Id",   "dataType" : "string", "retriever" : "getSalesChannelId_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.offerPrice",       "display" : "Offer Price",        "dataType" : "double", "retriever" : "getOfferPrice_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.meanOfPayment",    "display" : "Mean Of Payment",    "dataType" : "string", "retriever" : "getMeanOfPayment_OfferDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.offerStock",       "display" : "Offer Stock",        "dataType" : "double", "retriever" : "getOfferStock_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.offerContent",     "display" : "Offer Content",      "dataType" : "string", "retriever" : "getOfferContent_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.voucherCode",      "display" : "Voucher Code",       "dataType" : "string", "retriever" : "getVoucherCode_OfferDelivery",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.voucherPartnerId", "display" : "Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+         ]
+      },      
+      { 
+        "name" : "messageDelivery",
+        "eventClass" : "com.evolving.nglm.evolution.MessageDelivery",
+        "eventTopic" : "${topic.messagedelivery}",
+ 		"eventRule"  : "standard",
+        "eventCriterionFields" : [
+           { "id" : "event.moduleID",         "display" : "Module Id",          "dataType" : "string", "retriever" : "getModuleId_MessageDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#moduleIds#"] },
+           { "id" : "event.featureID",        "display" : "Feature Id",         "dataType" : "string", "retriever" : "getFeatureId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.returnCode",       "display" : "Return Code",        "dataType" : "double", "retriever" : "getReturnCode_MessageDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.deliveryStatus",   "display" : "Delivery Status",    "dataType" : "string", "retriever" : "getDeliveryStatus_MessageDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
+           { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_MessageDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_MessageDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
+           { "id" : "event.messageId",        "display" : "Message Id",         "dataType" : "string", "retriever" : "getMessageId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
+         ]
+      }
+    ],
+     
+    --
+    --  offerOptimizationAlgorithmsCommon
+    --
 
 	"offerOptimizationAlgorithmsCommon": [
 		{
 			"id": "M-Random",
 			"name": "Random",
 			"display": "Random",
-			"parameters": [{"name":"predictable"}],
+			"parameters": [
+			  {
+			    "name":"predictable",
+			    "availableValues": [
+			      {
+			        "id":"false",
+			        "display":"false"
+			      },
+			      {
+			        "id":"true",
+			        "display":"true"
+			      }
+			    ]
+			  }
+			],
 			"javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
 		}
 	]

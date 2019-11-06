@@ -109,6 +109,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryManagerAccount.Account;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -21338,7 +21339,63 @@ public class GUIManager
                 }
             }
           break;
+          
+        case "moduleIds":
+          if (includeDynamic)
+            {
+              for (Module module : DeliveryRequest.Module.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", module.getExternalRepresentation());
+                  availableValue.put("display", module.name());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
 
+          
+        case "deliveryStatuses":
+          if (includeDynamic)
+            {
+              for (DeliveryStatus deliveryStatus : DeliveryManager.DeliveryStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", deliveryStatus.getExternalRepresentation());
+                  availableValue.put("display", deliveryStatus.name());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+
+        case "providerIds":
+          if (includeDynamic)
+            {
+              for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", deliveryManager.getProviderID());
+                  availableValue.put("display", deliveryManager.getProviderName());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+                }
+            }
+          break;
+
+        case "deliverableIds":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverablesUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", deliverable.getGUIManagedObjectID());
+                      availableValue.put("display", deliverable.getDeliverableName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
 
         default:
           boolean foundValue = false;

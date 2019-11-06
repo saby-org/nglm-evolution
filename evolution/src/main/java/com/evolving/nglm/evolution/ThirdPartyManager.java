@@ -4777,7 +4777,7 @@ public class ThirdPartyManager
         log.error("Internal error, cannot find a deliveryManager with a RequestClassName as com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest");
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
       }
-    String topic = deliveryManagerDeclaration.getResponseTopic();
+    String topic = deliveryManagerDeclaration.getDefaultRequestTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
 
@@ -4800,7 +4800,7 @@ public class ThirdPartyManager
     // Write it to the right topic
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
-        keySerializer.serialize(topic, new StringKey(subscriberID)),
+        keySerializer.serialize(topic, new StringKey(deliveryRequestID)),
         valueSerializer.serialize(topic, pfr)
         ));
     return deliveryRequestID;
