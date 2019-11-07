@@ -14,6 +14,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
@@ -312,7 +313,7 @@ public class ContextVariable
         //
 
         ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
-        Expression expression = expressionReader.parse();
+        Expression expression = expressionReader.parse(ExpressionContext.ContextVariable);
         if (expression == null) throw new GUIManagerException("no expression", expressionString);
 
         //

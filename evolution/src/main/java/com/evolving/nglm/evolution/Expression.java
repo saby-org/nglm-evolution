@@ -78,6 +78,17 @@ public abstract class Expression
   *****************************************************************************/
 
   //
+  //  enum ExpressionContext
+  //
+
+  public enum ExpressionContext
+  {
+    Criterion,
+    Parameter,
+    ContextVariable
+  }
+
+  //
   //  enum Token
   //
 
@@ -187,7 +198,7 @@ public abstract class Expression
   *
   *****************************************/
 
-  public abstract void typeCheck(TimeUnit baseTimeUnit);
+  public abstract void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit);
   public abstract int assignNodeID(int preorderNumber);
   public boolean isConstant() { return false; }
   public abstract Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit);
@@ -258,7 +269,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(TimeUnit baseTimeUnit) { }
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit) { }
 
     /*****************************************
     *
@@ -382,7 +393,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
     {
       //
       //  type
@@ -423,9 +434,14 @@ public abstract class Expression
       //  evaluation.date -- illegal
       //
 
-      if (reference.getID().equals(CriterionField.EvaluationDateField))
+      switch (expressionContext)
         {
-          throw new ExpressionTypeCheckException("illegal reference to " + CriterionField.EvaluationDateField);
+          case Criterion:
+            if (reference.getID().equals(CriterionField.EvaluationDateField))
+              {
+                throw new ExpressionTypeCheckException("illegal reference to " + CriterionField.EvaluationDateField);
+              }
+            break;
         }
     }
 
@@ -604,7 +620,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
     {
       /*****************************************
       *
@@ -612,8 +628,8 @@ public abstract class Expression
       *
       *****************************************/
 
-      leftArgument.typeCheck(baseTimeUnit);
-      rightArgument.typeCheck(baseTimeUnit);
+      leftArgument.typeCheck(expressionContext, baseTimeUnit);
+      rightArgument.typeCheck(expressionContext, baseTimeUnit);
 
       /*****************************************
       *
@@ -869,7 +885,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
     {
       /*****************************************
       *
@@ -877,7 +893,7 @@ public abstract class Expression
       *
       *****************************************/
 
-      unaryArgument.typeCheck(baseTimeUnit);
+      unaryArgument.typeCheck(expressionContext, baseTimeUnit);
 
       /*****************************************
       *
@@ -1077,7 +1093,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public void typeCheck(TimeUnit baseTimeUnit)
+    @Override public void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit)
     {
       /*****************************************
       *
@@ -1087,7 +1103,7 @@ public abstract class Expression
 
       for (Expression argument : arguments)
         {
-          argument.typeCheck(baseTimeUnit);
+          argument.typeCheck(expressionContext, baseTimeUnit);
         }
 
       /*****************************************
@@ -1692,7 +1708,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    public Expression parse() throws ExpressionParseException, ExpressionTypeCheckException
+    public Expression parse(ExpressionContext expressionContext) throws ExpressionParseException, ExpressionTypeCheckException
     {
       /*****************************************
       *
@@ -1756,7 +1772,7 @@ public abstract class Expression
           *
           *****************************************/
 
-          expression.typeCheck(expressionBaseTimeUnit);
+          expression.typeCheck(expressionContext, expressionBaseTimeUnit);
 
           /*****************************************
           *

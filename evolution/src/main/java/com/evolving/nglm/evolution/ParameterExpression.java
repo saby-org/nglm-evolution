@@ -12,6 +12,7 @@ import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
@@ -212,6 +213,6 @@ public class ParameterExpression
   public void parseParameterExpression() throws ExpressionParseException, ExpressionTypeCheckException
   {
     ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, baseTimeUnit);
-    expression = expressionReader.parse();
+    expression = expressionReader.parse(ExpressionContext.Parameter);
   }
 }

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
@@ -687,7 +688,7 @@ public class EvaluationCriterion
   public void parseArgument() throws ExpressionParseException, ExpressionTypeCheckException
   {
     ExpressionReader expressionReader = new ExpressionReader(criterionContext, argumentExpression, argumentBaseTimeUnit);
-    argument = expressionReader.parse();
+    argument = expressionReader.parse(ExpressionContext.Criterion);
   }
 
   /*****************************************
