@@ -123,6 +123,7 @@
     <topic.deliverable>deliverable</topic.deliverable>
     <topic.tokentype>tokentype</topic.tokentype>
     <topic.vouchertype>vouchertype</topic.vouchertype>
+    <topic.voucher>voucher</topic.voucher>
     <topic.template.subscribermessage>template-subscribermessage</topic.template.subscribermessage>
     <topic.subscribergroup>subscribergroup</topic.subscribergroup>
     <topic.subscribergroup.assignsubscriberid>subscribergroup-assignsubscriberid</topic.subscribergroup.assignsubscriberid>

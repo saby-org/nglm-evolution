@@ -41,6 +41,7 @@
   "deliverableTopic"                                     : "${topic.deliverable}",
   "tokenTypeTopic"                                       : "${topic.tokentype}",  
   "voucherTypeTopic"                                     : "${topic.vouchertype}",  
+  "voucherTopic"                                         : "${topic.voucher}",  
   "guiAuditTopic"                                        : "${topic.guiaudit}",
   "reportTopic"                                          : "${topic.report}",
   "subscriberUpdateTopic"                                : "subscriberupdate",

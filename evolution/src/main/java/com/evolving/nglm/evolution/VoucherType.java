@@ -57,7 +57,6 @@ public class VoucherType extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("codeType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("description", Schema.STRING_SCHEMA);
     schemaBuilder.field("transferable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("validity", VoucherValidity.schema());
     schema = schemaBuilder.build();
@@ -83,7 +82,6 @@ public class VoucherType extends GUIManagedObject
   *****************************************/
 
   private CodeType codeType;
-  private String description;
   private boolean transferable;
   private VoucherValidity validity;
 
@@ -96,7 +94,6 @@ public class VoucherType extends GUIManagedObject
   public String getVoucherTypeID() { return getGUIManagedObjectID(); }
   public String getVoucherTypeName() { return getGUIManagedObjectName(); }
   public CodeType getCodeType() { return codeType; }
-  public String getDescription() { return description; }
   public boolean getTransferable() { return transferable; }
   public VoucherValidity getValidity() { return validity; }
 
@@ -106,11 +103,10 @@ public class VoucherType extends GUIManagedObject
   *
   *****************************************/
 
-  public VoucherType(SchemaAndValue schemaAndValue, CodeType codeType, String description, boolean transferable, VoucherValidity validity)
+  public VoucherType(SchemaAndValue schemaAndValue, CodeType codeType, boolean transferable, VoucherValidity validity)
   {
     super(schemaAndValue);
     this.codeType = codeType;
-    this.description = description;
     this.transferable = transferable;
     this.validity = validity;
   }
@@ -125,7 +121,6 @@ public class VoucherType extends GUIManagedObject
   {
     super(voucherType.getJSONRepresentation(), voucherType.getEpoch());
     this.codeType = voucherType.getCodeType();
-    this.description = voucherType.getDescription();
     this.transferable = voucherType.getTransferable();
     this.validity = voucherType.getValidity();
   }
@@ -153,7 +148,6 @@ public class VoucherType extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, voucherType);
     struct.put("codeType", voucherType.getCodeType().getExternalRepresentation());
-    struct.put("description", voucherType.getDescription());
     struct.put("transferable", voucherType.getTransferable());
     struct.put("validity", VoucherValidity.pack(voucherType.getValidity()));
     return struct;
@@ -181,7 +175,6 @@ public class VoucherType extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     CodeType codeType = CodeType.fromExternalRepresentation(valueStruct.getString("codeType"));
-    String description = valueStruct.getString("description");
     boolean transferable = valueStruct.getBoolean("transferable");
     VoucherValidity validity = VoucherValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
 
@@ -189,7 +182,7 @@ public class VoucherType extends GUIManagedObject
     //  return
     //
 
-    return new VoucherType(schemaAndValue, codeType, description, transferable, validity);
+    return new VoucherType(schemaAndValue, codeType, transferable, validity);
   }
 
   /*****************************************
@@ -223,7 +216,6 @@ public class VoucherType extends GUIManagedObject
     *****************************************/
 
     this.codeType = CodeType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "codeType", true));
-    this.description = JSONUtilities.decodeString(jsonRoot, "description", true);
     this.transferable = JSONUtilities.decodeBoolean(jsonRoot, "transferable", true);
     this.validity = new VoucherValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity"));
 
@@ -252,7 +244,6 @@ public class VoucherType extends GUIManagedObject
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingVoucherType.getGUIManagedObjectID());
         epochChanged = epochChanged || ! Objects.equals(codeType, existingVoucherType.getCodeType());
-        epochChanged = epochChanged || ! Objects.equals(description, existingVoucherType.getDescription());
         epochChanged = epochChanged || ! Objects.equals(transferable, existingVoucherType.getTransferable());
         epochChanged = epochChanged || ! Objects.equals(validity, existingVoucherType.getValidity());
         return epochChanged;

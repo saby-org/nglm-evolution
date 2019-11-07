@@ -649,4 +649,21 @@ public class DialogMessage
   {
     return messageTextByLanguage.hashCode();
   }
+  
+  /*****************************************
+  *
+  *  toString
+  *
+  *****************************************/
+
+  @Override
+  public String toString()
+  {
+    return "DialogMessage [messageTextByLanguage=" + messageTextByLanguage 
+        + ", contextTags=" + contextTags 
+        + ", parameterTags=" + parameterTags 
+        + ", allTags=" + allTags + "]";
+  }
+
+
 }

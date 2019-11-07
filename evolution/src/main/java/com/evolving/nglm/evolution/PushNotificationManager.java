@@ -710,12 +710,33 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
           //  get dialogMessageTags
           //
           
+//          log.info(" ===================================");
+//          log.info("destAddress = "+destAddress);
+
           tags = new HashMap<String, List<String>>();
           for(String messageField : template.getDialogMessageFields()){
             DialogMessage dialogMessage = template.getDialogMessage(messageField);
             List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
             tags.put(messageField, dialogMessageTags);
+            
+            
+//            log.info("  ------------------------");
+//            log.info("template.getDialogMessageFields contains :");
+//            for(String m : template.getDialogMessageFields()){log.info("     - "+m);}
+//            log.info("template.getDialogMessageFields contains :");
+//            for(DialogMessage dm : template.getDialogMessages()){
+//              log.info("    => dialogMessage :");
+//              for(String k : dm.getMessageTextByLanguage().keySet()){
+//                log.info("     - "+k+" : "+dm.getMessageTextByLanguage().get(k));
+//              }
+//            }
+//            log.info("handling messageField = "+messageField);
+//            log.info("found dialogMessage = "+dialogMessage+" (SHOULD NOT BE NULL !!!)");
+//            log.info("dialogMessageTags = "+dialogMessageTags+" ("+dialogMessageTags.size()+" elements)");
+
+            
           }
+//          log.info(" ===================================");
         }
       else
         {

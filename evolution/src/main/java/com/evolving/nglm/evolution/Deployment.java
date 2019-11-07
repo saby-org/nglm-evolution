@@ -87,6 +87,7 @@ public class Deployment
   private static String deliverableTopic;
   private static String tokenTypeTopic;
   private static String voucherTypeTopic;
+  private static String voucherTopic;
   private static String subscriberMessageTemplateTopic;
   private static String guiAuditTopic;
   private static String subscriberGroupTopic;
@@ -158,6 +159,7 @@ public class Deployment
   private static JSONArray initialOfferObjectivesJSONArray = null;
   private static JSONArray initialProductTypesJSONArray = null;  
   private static JSONArray initialTokenTypesJSONArray = null;
+  private static JSONArray initialVoucherCodeFormatsJSONArray = null;
   private static JSONArray initialScoringTypesJSONArray = null;
   private static JSONArray initialSegmentationDimensionsJSONArray = null;
   private static JSONArray initialCommunicationChannelsJSONArray = null;
@@ -294,6 +296,7 @@ public class Deployment
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
   public static String getVoucherTypeTopic() { return voucherTypeTopic; }
+  public static String getVoucherTopic() { return voucherTopic; }
   public static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
   public static String getGUIAuditTopic() { return guiAuditTopic; }
   public static String getSubscriberGroupTopic() { return subscriberGroupTopic; }
@@ -363,6 +366,7 @@ public class Deployment
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
+  public static JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static JSONArray getInitialCommunicationChannelsJSONArray() { return initialCommunicationChannelsJSONArray; }
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
@@ -1256,6 +1260,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
 
+    //
+    //  voucher
+    //
+    
+    try
+    {
+      voucherTopic = JSONUtilities.decodeString(jsonRoot, "voucherTopic", true);
+    }
+  catch (JSONUtilitiesException e)
+    {
+      throw new ServerRuntimeException("deployment", e);
+    }
+    
     //
     //  subscriberMessageTemplateTopic
     //
@@ -2244,6 +2261,12 @@ public class Deployment
     //
 
     initialTokenTypesJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialTokenTypes", new JSONArray());
+    
+    //
+    //  initialVoucherCodeFormatsJSONArray
+    //
+
+    initialVoucherCodeFormatsJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "initialVoucherCodeFormats", new JSONArray());
     
     //
     //  initialSegmentationDimensionsJSONArray

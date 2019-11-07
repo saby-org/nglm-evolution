@@ -41,6 +41,7 @@
   echo create_topic ${topic.deliverable}                                              $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.tokentype}                                                $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.vouchertype}                                              $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
+  echo create_topic ${topic.voucher}                                                  $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.template.subscribermessage}                               $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
   echo create_topic ${topic.guiaudit}                                                 $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_DATA_TWO_WEEKS"  >> /app/setup/topics-evolution
   echo create_topic ${topic.subscribergroup}                                          $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution

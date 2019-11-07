@@ -84,7 +84,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   {    
     DialogMessage result = null;
     int index = getDialogMessageFields().indexOf(messageField);
-    if(index > 0)
+    if(index >= 0)
       {
         result = getDialogMessages().get(index); 
       }
