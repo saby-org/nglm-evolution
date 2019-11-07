@@ -8,15 +8,11 @@ package com.evolving.nglm.evolution.reports;
 
 import static com.evolving.nglm.evolution.reports.ReportUtils.d;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Properties;
-import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
