@@ -71,6 +71,10 @@ if [ "<_REPORTSCHEDULER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-reportscheduler
 fi  
 
+if [ "<_DATACUBEMANAGER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-datacubemanager
+fi
+
 #
 #  hack -- remove gui containers
 #

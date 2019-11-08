@@ -126,6 +126,12 @@
   "journeyTrafficArchivePeriodInSeconds"                 : 3600,
   "journeyTrafficArchiveMaxNumberOfPeriods"              : 168,
   
+  --
+  --  odr datacube
+  --
+
+  "ODRDatacubePeriodCronEntryString"                     : "0 2 * * *",
+
   -- 
   --  supportedDataTypes
   --

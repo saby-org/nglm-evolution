@@ -251,6 +251,7 @@
                     <include>bin/notificationmanagerpush-run.sh</include>
                     <include>bin/reportmanager-run.sh</include>
                     <include>bin/reportscheduler-run.sh</include>
+                    <include>bin/datacubemanager-run.sh</include>
                     <include>bin/subscribergroup-run.sh</include>
                     <include>bin/storeconfiguration-run.sh</include>
                     <include>bin/guimanager-run.sh</include>
@@ -278,6 +279,7 @@
                     <include>config/notificationmanagerpush_jmx.yml</include>
                     <include>config/reportmanager_jmx.yml</include>
                     <include>config/reportscheduler_jmx.yml</include>
+                    <include>config/datacubemanager_jmx.yml</include>
                     <include>config/guimanager_jmx.yml</include>
                     <include>config/thirdpartymanager_jmx.yml</include>
                     <include>config/dnboproxy_jmx.yml</include>
@@ -314,6 +316,8 @@
                     <include>docker/reportmanager.yml</include>
                     <include>docker/reportscheduler/*</include>
                     <include>docker/reportscheduler.yml</include>
+                    <include>docker/datacubemanager/*</include>
+                    <include>docker/datacubemanager.yml</include>
                     <include>docker/subscribergroup/*</include>
                     <include>docker/storeconfiguration/*</include>
                     <include>docker/upgrade/*</include>
@@ -348,6 +352,7 @@
                     <exclude>docker/notificationmanagerpush.yml</exclude>
                     <exclude>docker/reportmanager.yml</exclude>
                     <exclude>docker/reportscheduler.yml</exclude>
+                    <exclude>docker/datacubemanager.yml</exclude>
                     <exclude>docker/upgrade-preamble.yml</exclude>
                     <exclude>docker/upgrade-postamble.yml</exclude>
                   </excludes>

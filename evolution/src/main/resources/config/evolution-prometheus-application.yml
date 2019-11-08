@@ -110,6 +110,13 @@ scrape_configs:
     static_configs:
       - targets: [<_REPORTSCHEDULER_PROMETHEUS_>]
 
+  # datacubemanager job
+  - job_name: 'datacubemanager'
+
+    # main config
+    static_configs:
+      - targets: [<_DATACUBEMANAGER_PROMETHEUS_>]
+      
   # guimanager job
   - job_name: 'guimanager'
 

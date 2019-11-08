@@ -76,6 +76,10 @@ do
 	  if [ "${REPORTSCHEDULER_ENABLED}" = "true" ]; then
 	      docker pull ${env.DOCKER_REGISTRY}ev-reportscheduler:${project.name}-${project.version}
       fi
+      
+      if [ "${DATACUBEMANAGER_ENABLED}" = "true" ]; then
+	      docker pull ${env.DOCKER_REGISTRY}ev-datacubemanager:${project.name}-${project.version}
+      fi
 
 	  docker pull ${env.DOCKER_REGISTRY}ev-upgrade:${project.name}-${project.version}
       docker pull ${env.DOCKER_REGISTRY}ev-suspenseprocessor:${project.name}-${project.version}

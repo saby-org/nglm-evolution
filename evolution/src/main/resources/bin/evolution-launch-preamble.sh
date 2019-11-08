@@ -65,3 +65,7 @@ if [ "<_REPORTSCHEDULER_ENABLED_>" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-reportscheduler.yml <_DOCKER_STACK_>-reportscheduler
 fi
 
+if [ "<_DATACUBEMANAGER_ENABLED_>" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-datacubemanager.yml <_DOCKER_STACK_>-datacubemanager
+fi
+

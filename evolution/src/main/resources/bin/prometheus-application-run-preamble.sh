@@ -34,4 +34,5 @@ sed -i "s/<_THIRDPARTYMANAGER_PROMETHEUS_>/${THIRDPARTYMANAGER_PROMETHEUS}/g" /e
 sed -i "s/<_DNBOPROXY_PROMETHEUS_>/${DNBOPROXY_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_REPORTMANAGER_PROMETHEUS_>/${REPORTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_REPORTSCHEDULER_PROMETHEUS_>/${REPORTSCHEDULER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
+sed -i "s/<_DATACUBEMANAGER_PROMETHEUS_>/${DATACUBEMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_KAFKA_LAG_EXPORTER_URL_>/${KAFKA_LAG_EXPORTER_URL}/g" /etc/prometheus/prometheus-application.yml

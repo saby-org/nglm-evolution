@@ -131,6 +131,7 @@ public class Deployment
   private static CompressionType subscriberProfileCompressionType;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
+  private static String ODRDatacubePeriodCronEntryString;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
@@ -340,6 +341,7 @@ public class Deployment
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
+  public static String getODRDatacubePeriodCronEntryString() { return ODRDatacubePeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
@@ -1895,6 +1897,19 @@ public class Deployment
     try
       {
         journeyTrafficArchiveMaxNumberOfPeriods = JSONUtilities.decodeInteger(jsonRoot, "journeyTrafficArchiveMaxNumberOfPeriods", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  ODRDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        ODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "ODRDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

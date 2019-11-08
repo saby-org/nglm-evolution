@@ -74,6 +74,7 @@
     <common.build.phase.generate-notificationmanagerpush-image>none</common.build.phase.generate-notificationmanagerpush-image>
     <common.build.phase.generate-reportmanager-image>none</common.build.phase.generate-reportmanager-image>
     <common.build.phase.generate-reportscheduler-image>none</common.build.phase.generate-reportscheduler-image>
+    <common.build.phase.generate-datacubemanager-image>none</common.build.phase.generate-datacubemanager-image>
     <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
     <common.build.skip.docker-prometheus-application-image>true</common.build.skip.docker-prometheus-application-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
@@ -92,6 +93,7 @@
     <common.build.skip.docker-notificationmanagerpush-image>true</common.build.skip.docker-notificationmanagerpush-image>
     <common.build.skip.docker-reportmanager-image>true</common.build.skip.docker-reportmanager-image>
     <common.build.skip.docker-reportscheduler-image>true</common.build.skip.docker-reportscheduler-image>
+    <common.build.skip.docker-datacubemanager-image>true</common.build.skip.docker-datacubemanager-image>
     <common.build.skip.docker-upgrade-image>true</common.build.skip.docker-upgrade-image>
     
     <!-- topics -->
@@ -1213,6 +1215,56 @@
           </execution>
 
           <execution>
+            <id>generate-datacubemanager-docker-stack</id>
+            <phase>${common.build.phase.generate-datacubemanager-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/datacubemanager</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/datacubemanager</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/datacubemanager-run.sh</include>
+                    <include>config/datacubemanager_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
             <id>generate-upgrade-stack</id>
             <phase>${common.build.phase.generate-upgrade-image}</phase>
             <goals>
@@ -1520,6 +1572,21 @@
               <contextDirectory>${project.build.directory}/assembled-docker/reportscheduler</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-reportscheduler</repository>
               <classifier>docker-info-reportscheduler</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-datacubemanager</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-datacubemanager-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/datacubemanager</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-datacubemanager</repository>
+              <classifier>docker-info-datacubemanager</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

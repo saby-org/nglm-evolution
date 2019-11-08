@@ -258,7 +258,7 @@
 	          "offerID" : { "type" : "keyword" },
 	          "offerQty" : { "type" : "integer", "index" : "false" },
 	          "salesChannelID" : { "type" : "keyword" },
-	          "offerPrice" : { "type" : "keyword", "index" : "false" },
+	          "offerPrice" : { "type" : "integer", "index" : "false" },
 	          "meanOfPayment" : { "type" : "keyword", "index" : "false" },
 	          "offerStock" : { "type" : "integer", "index" : "false" },
 	          "offerContent" : { "type" : "keyword", "index" : "false" },
@@ -489,6 +489,48 @@
                   "maxNumberOfPeriods" : { "type" : "integer" },
                   "currentData" : { "type" : "object" },
                   "archivedData" : { "type" : "object" }
+                }
+        }
+    }'
+  echo
+  
+  #
+  #  manually create datacube_odr index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/datacube_odr -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "computationDate" : { "type" : "long" },
+                  "filter" : { "type" : "object" },
+                  "count" : { "type" : "integer" },
+                  "data" : { "type" : "object" }
                 }
         }
     }'
