@@ -377,6 +377,27 @@
 			  }
 			],
 			"javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
+		},
+		{
+			"id": "M-Price",
+			"name": "Price",
+			"display": "Price",
+			"parameters": [
+			  {
+			    "name":"reversed",
+			    "availableValues": [
+			      {
+			        "id":"false",
+			        "display":"false"
+			      },
+			      {
+			        "id":"true",
+			        "display":"true"
+			      }
+			    ]
+			  }
+			],
+			"javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo"
 		}
 	]
 }

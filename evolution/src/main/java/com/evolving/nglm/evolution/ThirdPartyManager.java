@@ -3536,9 +3536,15 @@ public class ThirdPartyManager
         }
       
       DNBOToken subscriberStoredToken = (DNBOToken) subscriberToken;
- 
-      // Hack : we use this field to store the ScoringStrategy instead (it is just a strategy)
-      String strategyID = subscriberStoredToken.getPresentationStrategyID();
+      List<String> sss = subscriberStoredToken.getScoringStrategyIDs();
+      if (sss == null)
+        {
+          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription());
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
+          return JSONUtilities.encodeObject(response);                    
+        }
+      String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
       ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
       if (scoringStrategy == null)
         {
@@ -3553,6 +3559,7 @@ public class ThirdPartyManager
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
 
       // Allocate offers for this subscriber, and associate them in the token
+      // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be considered.  
       Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
           now, null,
           subscriberProfile, scoringStrategy, productService,

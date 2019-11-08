@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkConnection;
@@ -362,5 +363,15 @@ public class ReportUtils {
 	public static String getSeparator() {
 		return Deployment.getReportManagerCsvSeparator();
 	}
+
+  
+  //
+  // format
+  //
+  public static String format(String s)
+  {
+    // Surround s with double quotes, and escape double quotes inside it
+    return "\""+s.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
+  }
 
 }

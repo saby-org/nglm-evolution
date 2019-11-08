@@ -27,14 +27,4 @@ public interface ReportCsvFactory {
 	 */
 	void dumpElementToCsv(String key, ReportElement re, ZipOutputStream writer) throws IOException;
 	
-	 
-  //
-  // format
-  //
-  default String format(String s)
-  {
-    // Surround s with double quotes, and escape double quotes inside s
-    return "\""+s.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
-  }
-
 }

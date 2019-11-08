@@ -122,9 +122,9 @@ public class ReportCsvWriter {
 			return false;
 		}
 		try {
-		    ZipOutputStream writer = new ZipOutputStream(fos);
-		    ZipEntry entry = new ZipEntry(new File(csvfile).getName());
-		    writer.putNextEntry(entry);
+		  ZipOutputStream writer = new ZipOutputStream(fos);
+		  ZipEntry entry = new ZipEntry(new File(csvfile).getName());
+		  writer.putNextEntry(entry);
 		    
 			final Consumer<String, ReportElement> consumer = createConsumer(topicIn);
 
@@ -188,7 +188,7 @@ public class ReportCsvWriter {
 			log.info("Error when writing to "+csvfile+" : "+ex.getLocalizedMessage());
 			return false;
 		}
-		log.info("Finished producing "+csvfile);
+		log.info("Finished producing "+csvfile+ReportUtils.ZIP_EXTENSION);
 		return true;
 	}
 
