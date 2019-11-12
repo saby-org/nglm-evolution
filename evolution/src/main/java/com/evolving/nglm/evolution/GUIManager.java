@@ -20721,9 +20721,10 @@ public class GUIManager
                     exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
                     exchange.sendResponseHeaders(200, reportFile.length());
                     OutputStream os = exchange.getResponseBody();
-                    int c;
-                    while ((c = fis.read()) != -1) {
-                      os.write(c);
+                    byte data[] = new byte[10_000]; // allow some bufferization
+                    int length;
+                    while ((length = fis.read(data)) != -1) {
+                      os.write(data, 0, length);
                     }
                     fis.close();
                     os.flush();

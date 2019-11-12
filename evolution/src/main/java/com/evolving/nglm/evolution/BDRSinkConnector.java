@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentStatus;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
@@ -120,7 +121,12 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = null;
       
       if(commodityRequest != null){
-        Date expirationDate = EvolutionUtilities.addTime(SystemTime.getCurrentTime(), commodityRequest.getValidityPeriodQuantity(), commodityRequest.getValidityPeriodType(), Deployment.getBaseTimeZone());
+        Date expirationDate;
+        if (commodityRequest.getValidityPeriodType() == TimeUnit.Unknown) {
+          expirationDate = SystemTime.getCurrentTime();
+        } else {
+          expirationDate = EvolutionUtilities.addTime(SystemTime.getCurrentTime(), commodityRequest.getValidityPeriodQuantity(), commodityRequest.getValidityPeriodType(), Deployment.getBaseTimeZone());
+        }
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());

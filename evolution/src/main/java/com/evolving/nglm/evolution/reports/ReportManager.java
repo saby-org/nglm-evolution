@@ -114,7 +114,13 @@ public class ReportManager implements Watcher{
     createZKNode(topDir, true);
     createZKNode(controlDir, true);
     createZKNode(lockDir, true);
-    List<String> children = zk.getChildren(controlDir, this); // sets watch
+    List<String> initialReportList = zk.getChildren(controlDir, null); // no watch initially
+    try {
+      processChildren(initialReportList);
+    } catch (KeeperException | InterruptedException e){
+      log.error("Error processing report", e);
+    }
+    zk.getChildren(controlDir, this); // sets watch
   }
 
   private void createZKNode(String znode, boolean canExist) {
@@ -139,89 +145,94 @@ public class ReportManager implements Watcher{
     try {
       if (event.getType().equals(EventType.NodeChildrenChanged)) {
         List<String> children = zk.getChildren(controlDir, this); // get the children and renew watch
-        if (!children.isEmpty()) {
-          Collections.sort(children); // we are getting an unsorted list
-          for (String child : children) {
-            String controlFile = controlDir + File.separator + child;
-            String lockFile = lockDir + File.separator + child;
-            log.trace("Checking if lock file exists : "+lockFile);
-            if (zk.exists(lockFile, false) == null) {
-              log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
-              try {
-                log.trace("Trying to create lock file "+lockFile);
-                zk.create(
-                    lockFile,
-                    dfrm.format(SystemTime.getCurrentTime()).getBytes(), 
-                    Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL);
-                try {
-                  log.trace("Lock file "+lockFile+" successfully created");
-                  Stat stat = null;
-                  Charset utf8Charset = Charset.forName("UTF-8");
-                  byte[] d = zk.getData(controlFile, false, stat);
-                  String data = new String(d, utf8Charset);
-                  log.info("Got data "+data);
-                  Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
-                  String reportName = s.next().trim();
-                  log.trace("We got reportName = "+reportName);
-                  String restOfLine = s.nextLine().trim();
-                  s.close();
-                  Collection<GUIManagedObject> reports = reportService.getStoredReports();
-                  Report report = null;
-                  if (reportName != null) {
-                    for (GUIManagedObject gmo : reports) {
-                      Report reportLocal = (Report) gmo;
-                      log.trace("Checking "+report+" for "+reportName);
-                      if (reportName.equals(reportLocal.getName())) {
-                        report = reportLocal;
-                        break;
-                      }
-                    }
-                  }
-                  if (report == null) {
-                    log.error("Report does not exist : "+reportName);
-                    reportManagerStatistics.incrementFailureCount();
-                  } else {
-                    log.debug("report = "+report);
-                    handleReport(reportName, report, restOfLine);
-                    reportManagerStatistics.incrementReportCount();
-                  }
-                } catch (KeeperException | InterruptedException | NoSuchElementException e) {
-                  log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
-                  reportManagerStatistics.incrementFailureCount();
-                } catch (IllegalCharsetNameException e) {
-                  log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
-                  reportManagerStatistics.incrementFailureCount();
-                } finally {
-                  try {
-                    log.trace("Deleting control file "+controlFile);
-                    zk.delete(controlFile, -1);
-                  } catch (KeeperException | InterruptedException e) {
-                    log.trace("Issue deleting control file : "+e.getLocalizedMessage(), e);
-                  }
-                  try {
-                    log.trace("Deleting lock file "+lockFile);
-                    zk.delete(lockFile, -1);
-                    log.trace("Both files deleted");
-                  } catch (KeeperException | InterruptedException e) {
-                    log.trace("Issue deleting lock file : "+e.getLocalizedMessage(), e);
+        processChildren(children);
+      }
+    } catch (KeeperException | InterruptedException e){
+      log.error("Error processing report", e);
+    }
+  }
+
+  private void processChildren(List<String> children) throws KeeperException, InterruptedException
+  {
+    if (!children.isEmpty()) {
+      Collections.sort(children); // we are getting an unsorted list
+      for (String child : children) {
+        String controlFile = controlDir + File.separator + child;
+        String lockFile = lockDir + File.separator + child;
+        log.trace("Checking if lock file exists : "+lockFile);
+        if (zk.exists(lockFile, false) == null) {
+          log.trace("Processing entry "+child+" with znodes "+controlFile+" and "+lockFile);
+          try {
+            log.trace("Trying to create lock file "+lockFile);
+            zk.create(
+                lockFile,
+                dfrm.format(SystemTime.getCurrentTime()).getBytes(), 
+                Ids.OPEN_ACL_UNSAFE,
+                CreateMode.EPHEMERAL);
+            try {
+              log.trace("Lock file "+lockFile+" successfully created");
+              Stat stat = null;
+              Charset utf8Charset = Charset.forName("UTF-8");
+              byte[] d = zk.getData(controlFile, false, stat);
+              String data = new String(d, utf8Charset);
+              log.info("Got data "+data);
+              Scanner s = new Scanner(data+"\n"); // Make sure s.nextLine() will work
+              String reportName = s.next().trim();
+              log.trace("We got reportName = "+reportName);
+              String restOfLine = s.nextLine().trim();
+              s.close();
+              Collection<GUIManagedObject> reports = reportService.getStoredReports();
+              Report report = null;
+              if (reportName != null) {
+                for (GUIManagedObject gmo : reports) {
+                  Report reportLocal = (Report) gmo;
+                  log.trace("Checking "+report+" for "+reportName);
+                  if (reportName.equals(reportLocal.getName())) {
+                    report = reportLocal;
+                    break;
                   }
                 }
-              } catch (KeeperException | InterruptedException ignore) {
-                // even so we check the existence of a lock,
-                // it could have been created in the mean time
-                // making create fail. We catch and ignore it.
-                log.trace("Failed to create lock file, this is OK "
-                    +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
-              } 
-            } else {
-              log.trace("--> This report is already processed by another ReportManager instance");
+              }
+              if (report == null) {
+                log.error("Report does not exist : "+reportName);
+                reportManagerStatistics.incrementFailureCount();
+              } else {
+                log.debug("report = "+report);
+                handleReport(reportName, report, restOfLine);
+                reportManagerStatistics.incrementReportCount();
+              }
+            } catch (KeeperException | InterruptedException | NoSuchElementException e) {
+              log.error("Issue while reading from control node "+e.getLocalizedMessage(), e);
+              reportManagerStatistics.incrementFailureCount();
+            } catch (IllegalCharsetNameException e) {
+              log.error("Unexpected issue, UTF-8 does not seem to exist "+e.getLocalizedMessage(), e);
+              reportManagerStatistics.incrementFailureCount();
+            } finally {
+              try {
+                log.trace("Deleting control file "+controlFile);
+                zk.delete(controlFile, -1);
+              } catch (KeeperException | InterruptedException e) {
+                log.trace("Issue deleting control file : "+e.getLocalizedMessage(), e);
+              }
+              try {
+                log.trace("Deleting lock file "+lockFile);
+                zk.delete(lockFile, -1);
+                log.trace("Both files deleted");
+              } catch (KeeperException | InterruptedException e) {
+                log.trace("Issue deleting lock file : "+e.getLocalizedMessage(), e);
+              }
             }
-          }
+          } catch (KeeperException | InterruptedException ignore) {
+            // even so we check the existence of a lock,
+            // it could have been created in the mean time
+            // making create fail. We catch and ignore it.
+            log.trace("Failed to create lock file, this is OK "
+                +lockFile+ ":"+ignore.getLocalizedMessage(), ignore);
+          } 
+        } else {
+          log.trace("--> This report is already processed by another ReportManager instance");
         }
       }
-    } catch (Exception e){
-      log.error("Error processing report", e);
     }
   }
 
