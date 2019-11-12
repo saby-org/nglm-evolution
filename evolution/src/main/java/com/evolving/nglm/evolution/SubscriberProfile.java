@@ -159,6 +159,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("subscriberHistory", SubscriberHistory.serde().optionalSchema());
+//    schemaBuilder.field("lastUpdateDate", Timestamp.builder().optional().schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -231,6 +232,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private SubscriberHistory subscriberHistory;
   private Map<String,Integer> exclusionInclusionTargets; 
+//  private Date lastUpdateDate;
 
   /****************************************
   *
@@ -254,6 +256,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
   public SubscriberHistory getSubscriberHistory() { return subscriberHistory; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
+//  public Date getLastUpdateDate() { return lastUpdateDate; }
 
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -722,6 +725,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     generalDetailsPresentation.put("language", getLanguage());
     generalDetailsPresentation.put("subscriberID", getSubscriberID());
     generalDetailsPresentation.put("exclusionInclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionInclusionTargetNames(exclusionInclusionTargetService, subscriberGroupEpochReader))));
+//    generalDetailsPresentation.put("lastUpdateDate", getDateString(getLastUpdateDate()));
 
     //
     // prepare basic kpiPresentation (if any)
@@ -992,6 +996,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   public void setLanguageID(String languageID) { this.languageID = languageID; }
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
   public void setSubscriberHistory(SubscriberHistory subscriberHistory) { this.subscriberHistory = subscriberHistory; }
+//  public void setLastUpdateDate(Date lastUpdateDate) { this.lastUpdateDate = lastUpdateDate; }
 
   //
   //  setEvolutionSubscriberStatus
@@ -1104,6 +1109,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.extendedSubscriberProfile = null;
     this.subscriberHistory = null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
+//    this.lastUpdateDate = null;
   }
 
   /*****************************************
@@ -1143,6 +1149,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     SubscriberHistory subscriberHistory  = valueStruct.get("subscriberHistory") != null ? SubscriberHistory.unpack(new SchemaAndValue(schema.field("subscriberHistory").schema(), valueStruct.get("subscriberHistory"))) : null;
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
+//    Date lastUpdateDate = (Date) valueStruct.get("lastUpdateDate");
 
     //
     //  return
@@ -1164,6 +1171,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberHistory = subscriberHistory;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
+//    this.lastUpdateDate = lastUpdateDate;
   }
 
   /*****************************************
@@ -1373,6 +1381,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
     this.subscriberHistory = subscriberProfile.getSubscriberHistory() != null ? new SubscriberHistory(subscriberProfile.getSubscriberHistory()) : null;
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
+//    this.lastUpdateDate = subscriberProfile.getLastUpdateDate();
   }
 
   /*****************************************
@@ -1399,6 +1408,7 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
     struct.put("subscriberHistory", (subscriberProfile.getSubscriberHistory() != null) ? SubscriberHistory.serde().packOptional(subscriberProfile.getSubscriberHistory()) : null);
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
+//    struct.put("lastUpdateDate", subscriberProfile.getLastUpdateDate());
   }
 
   /****************************************

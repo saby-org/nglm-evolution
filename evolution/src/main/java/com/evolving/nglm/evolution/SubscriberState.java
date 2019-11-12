@@ -251,7 +251,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.journeyStatisticWrappers = new ArrayList<JourneyStatisticWrapper>();
         this.journeyMetrics = new ArrayList<JourneyMetric>();
         this.propensityOutputs = new ArrayList<PropensityEventOutput>();
-         this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
+        this.profileChangeEvents = new ArrayList<ProfileChangeEvent>();
         this.profileSegmentChangeEvents = new ArrayList<ProfileSegmentChangeEvent>();
         this.profileLoyaltyProgramChangeEvents = new ArrayList<ProfileLoyaltyProgramChangeEvent>();
         this.subscriberTrace = null;

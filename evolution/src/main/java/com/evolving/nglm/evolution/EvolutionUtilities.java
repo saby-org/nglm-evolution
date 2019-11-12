@@ -6,9 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+
+import com.evolving.nglm.core.RLMDateUtils;
 
 public class EvolutionUtilities
 {
@@ -67,6 +66,20 @@ public class EvolutionUtilities
     Date result = baseTime;
     switch (timeUnit)
       {
+        case Instant:
+          switch (roundingSelection) {
+          case RoundUp:
+            result = RLMDateUtils.ceiling(result, Calendar.MILLISECOND, Calendar.SUNDAY, timeZone);
+            break;
+          case RoundDown:
+            result = RLMDateUtils.truncate(result, Calendar.MILLISECOND, Calendar.SUNDAY, timeZone);
+            break;
+          default :
+            break;
+          }
+          result = RLMDateUtils.addMilliseconds(result, amount);
+        break;
+
         case Minute:
           switch (roundingSelection) {
           case RoundUp:
@@ -116,6 +129,8 @@ public class EvolutionUtilities
             break;
           case RoundDown:
             result = RLMDateUtils.truncate(result, Calendar.DAY_OF_WEEK, Calendar.SUNDAY, timeZone);
+            break;
+          default :
             break;
           }
           result = RLMDateUtils.addWeeks(result, amount, timeZone);

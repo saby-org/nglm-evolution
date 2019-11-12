@@ -39,7 +39,6 @@ public class Voucher extends GUIManagedObject
     schemaBuilder.name("voucher");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("description", Schema.STRING_SCHEMA);
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("voucherTypeId", Schema.STRING_SCHEMA);
     schemaBuilder.field("unitaryCost", Schema.OPTIONAL_INT32_SCHEMA);
@@ -66,7 +65,6 @@ public class Voucher extends GUIManagedObject
   *
   *****************************************/
 
-  private String description;
   private String supplierID;
   private String voucherTypeId;
   private Integer unitaryCost;
@@ -80,7 +78,6 @@ public class Voucher extends GUIManagedObject
 
   public String getVoucherID() { return getGUIManagedObjectID(); }
   public String getVoucherName() { return getGUIManagedObjectName(); }
-  public String getDescription() { return description; }
   public String getSupplierID() { return supplierID; }
   public String getVoucherTypeId() { return voucherTypeId; }
   public Integer getUnitaryCost() { return unitaryCost; }
@@ -92,10 +89,9 @@ public class Voucher extends GUIManagedObject
   *
   *****************************************/
 
-  public Voucher(SchemaAndValue schemaAndValue, String description, String supplierID, String voucherTypeId, Integer unitaryCost, Integer recommendedPrice)
+  public Voucher(SchemaAndValue schemaAndValue, String supplierID, String voucherTypeId, Integer unitaryCost, Integer recommendedPrice)
   {
     super(schemaAndValue);
-    this.description = description;
     this.supplierID = supplierID;
     this.voucherTypeId = voucherTypeId;
     this.unitaryCost = unitaryCost;
@@ -111,7 +107,6 @@ public class Voucher extends GUIManagedObject
   private Voucher(Voucher voucher)
   {
     super(voucher.getJSONRepresentation(), voucher.getEpoch());
-    this.description = voucher.getDescription();
     this.supplierID = voucher.getSupplierID();
     this.voucherTypeId = voucher.getVoucherTypeId();
     this.unitaryCost = voucher.getUnitaryCost();
@@ -140,7 +135,6 @@ public class Voucher extends GUIManagedObject
     Voucher voucher = (Voucher) value;
     Struct struct = new Struct(schema);
     packCommon(struct, voucher);
-    struct.put("description", voucher.getDescription());
     struct.put("supplierID", voucher.getSupplierID());
     struct.put("voucherTypeId", voucher.getVoucherTypeId());
     struct.put("unitaryCost", voucher.getUnitaryCost());
@@ -169,7 +163,6 @@ public class Voucher extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    String description = valueStruct.getString("description");
     String supplierID = valueStruct.getString("supplierID");
     String voucherTypeId = valueStruct.getString("voucherTypeId");
     Integer unitaryCost = valueStruct.getInt32("unitaryCost");
@@ -179,7 +172,7 @@ public class Voucher extends GUIManagedObject
     //  return
     //
 
-    return new Voucher(schemaAndValue, description, supplierID, voucherTypeId, unitaryCost, recommendedPrice);
+    return new Voucher(schemaAndValue, supplierID, voucherTypeId, unitaryCost, recommendedPrice);
   }
 
   /*****************************************
@@ -212,7 +205,6 @@ public class Voucher extends GUIManagedObject
     *
     *****************************************/
 
-    this.description = JSONUtilities.decodeString(jsonRoot, "description", true);
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     this.voucherTypeId = JSONUtilities.decodeString(jsonRoot, "voucherTypeId", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", false);
@@ -242,7 +234,6 @@ public class Voucher extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingVoucher.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(description, existingVoucher.getDescription());
         epochChanged = epochChanged || ! Objects.equals(supplierID, existingVoucher.getSupplierID());
         epochChanged = epochChanged || ! Objects.equals(voucherTypeId, existingVoucher.getVoucherTypeId());
         epochChanged = epochChanged || ! Objects.equals(unitaryCost, existingVoucher.getUnitaryCost());
