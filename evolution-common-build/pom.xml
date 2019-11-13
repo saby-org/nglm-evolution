@@ -62,6 +62,8 @@
     <common.build.phase.generate-thirdpartymanager-image>none</common.build.phase.generate-thirdpartymanager-image>
     <common.build.phase.generate-dnboproxy-image>none</common.build.phase.generate-dnboproxy-image>
     <common.build.phase.generate-evolutionengine-image>none</common.build.phase.generate-evolutionengine-image>
+    <common.build.phase.generate-journeytrafficengine-image>none</common.build.phase.generate-journeytrafficengine-image>
+    <common.build.phase.generate-propensityengine-image>none</common.build.phase.generate-propensityengine-image>
     <common.build.phase.generate-subscribergroup-image>none</common.build.phase.generate-subscribergroup-image>
     <common.build.phase.generate-storeconfiguration-image>none</common.build.phase.generate-storeconfiguration-image>
     <common.build.phase.generate-ucgengine-image>none</common.build.phase.generate-ucgengine-image>
@@ -81,6 +83,8 @@
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
     <common.build.skip.docker-evolutionengine-image>true</common.build.skip.docker-evolutionengine-image>
+    <common.build.skip.docker-journeytrafficengine-image>true</common.build.skip.docker-journeytrafficengine-image>
+    <common.build.skip.docker-propensityengine-image>true</common.build.skip.docker-propensityengine-image>
     <common.build.skip.docker-subscribergroup-image>true</common.build.skip.docker-subscribergroup-image>
     <common.build.skip.docker-storeconfiguration-image>true</common.build.skip.docker-storeconfiguration-image>
     <common.build.skip.docker-ucgengine-image>true</common.build.skip.docker-ucgengine-image>
@@ -163,6 +167,9 @@
     <topic.uploadedfile>uploadedfile</topic.uploadedfile>
     <topic.pointfulfillment.request>pointfulfillment-request</topic.pointfulfillment.request>
     <topic.pointfulfillment.response>pointfulfillment-response</topic.pointfulfillment.response>
+    <topic.pointfulfillment.rekeyed>pointfulfillmentrequest-rekeyed</topic.pointfulfillment.rekeyed>
+    <topic.propensityoutput>propensityoutput</topic.propensityoutput>
+    <topic.journeytraffic>journeytraffic</topic.journeytraffic>
     <topic.target>target</topic.target>
     <topic.commoditydelivery.request>commoditydelivery-request</topic.commoditydelivery.request>
     <topic.commoditydelivery.response>commoditydelivery-response</topic.commoditydelivery.response>
@@ -201,13 +208,15 @@
     <changelog.evolutionengine.extendedsubscriberprofile.topic>streams-evolutionengine-${changelog.evolutionengine.extendedsubscriberprofile}-changelog</changelog.evolutionengine.extendedsubscriberprofile.topic>
     <changelog.evolutionengine.subscriberhistory>subscriberhistory</changelog.evolutionengine.subscriberhistory>
     <changelog.evolutionengine.subscriberhistory.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberhistory}-changelog</changelog.evolutionengine.subscriberhistory.topic>
-    <changelog.evolutionengine.propensitystate>propensitystate</changelog.evolutionengine.propensitystate>
-    <changelog.evolutionengine.propensitystate.topic>streams-evolutionengine-${changelog.evolutionengine.propensitystate}-changelog</changelog.evolutionengine.propensitystate.topic>
-    <changelog.evolutionengine.journeytraffic>journeytraffic</changelog.evolutionengine.journeytraffic>
-    <changelog.evolutionengine.journeytraffic.topic>streams-evolutionengine-${changelog.evolutionengine.journeytraffic}-changelog</changelog.evolutionengine.journeytraffic.topic>
-    <topic.evolutionengine.pointfulfillment.repartition>pointfulfillmentrequest-repartition</topic.evolutionengine.pointfulfillment.repartition>
-    <topic.evolutionengine.propensityoutput.repartition>propensityoutput-repartition</topic.evolutionengine.propensityoutput.repartition>
 
+    <!-- journeytrafficengine -->
+    <changelog.journeytrafficengine.journeytraffic>journeytraffic</changelog.journeytrafficengine.journeytraffic>
+    <changelog.journeytrafficengine.journeytraffic.topic>streams-journeytrafficengine-${changelog.journeytrafficengine.journeytraffic}-changelog</changelog.journeytrafficengine.journeytraffic.topic>
+    
+    <!-- propensityengine -->
+    <changelog.propensityengine.propensitystate>propensitystate</changelog.propensityengine.propensitystate>
+    <changelog.propensityengine.propensitystate.topic>streams-propensityengine-${changelog.propensityengine.propensitystate}-changelog</changelog.propensityengine.propensitystate.topic>
+    
     <!-- gui -->
     <gui.csr.display>true</gui.csr.display>
     <gui.opc.display>true</gui.opc.display>
@@ -601,6 +610,106 @@
                   <includes>
                     <include>bin/evolutionengine-run.sh</include>
                     <include>config/evolutionengine_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+          
+          <execution>
+            <id>generate-journeytrafficengine-docker-stack</id>
+            <phase>${common.build.phase.generate-journeytrafficengine-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/journeytrafficengine</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/journeytrafficengine</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/journeytrafficengine-run.sh</include>
+                    <include>config/journeytrafficengine_jmx.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-core-resources</directory>
+                  <includes>
+                    <include>bin/ev-cub</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/assembled-resources</directory>
+                  <includes>
+                    <include>config/log4j-evol.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>lib/*.jar</include>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+          
+          <execution>
+            <id>generate-propensityengine-docker-stack</id>
+            <phase>${common.build.phase.generate-propensityengine-image}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/propensityengine</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources/docker/propensityengine</directory>
+                  <includes>
+                    <include>Dockerfile</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>bin/propensityengine-run.sh</include>
+                    <include>config/propensityengine_jmx.yml</include>
                   </includes>
                   <filtering>true</filtering>
                 </resource>
@@ -1392,6 +1501,36 @@
               <contextDirectory>${project.build.directory}/assembled-docker/evolutionengine</contextDirectory>
               <repository>${env.DOCKER_REGISTRY}ev-evolutionengine</repository>
               <classifier>docker-info-evolutionengine</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-journeytrafficengine</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-journeytrafficengine-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/journeytrafficengine</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-journeytrafficengine</repository>
+              <classifier>docker-info-journeytrafficengine</classifier>
+              <tag>${project.name}-${project.version}</tag>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>docker-propensityengine</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <skip>${common.build.skip.docker-propensityengine-image}</skip>
+              <contextDirectory>${project.build.directory}/assembled-docker/propensityengine</contextDirectory>
+              <repository>${env.DOCKER_REGISTRY}ev-propensityengine</repository>
+              <classifier>docker-info-propensityengine</classifier>
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>

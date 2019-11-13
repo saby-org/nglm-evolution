@@ -1,0 +1,11 @@
+lowercaseOutputName: true
+rules:
+  - pattern : kafka.streams<type=stream-metrics, client-id=streams-journeytrafficengine.+-(StreamThread-.+)><>((\w|-)+)
+    name: kafka_streams_journeytrafficengine_stream_$2
+    labels:
+      threadID: "$1"
+  - pattern : kafka.streams<type=stream-rocksdb-state-metrics, client-id=streams-journeytrafficengine.+-(StreamThread-.+)><>((\w|-)+)
+    name: kafka_streams_journeytrafficengine_rocksdb_$2
+    labels:
+      threadID: "$1"
+  - pattern: "com.evolving.nglm.evolution.*"

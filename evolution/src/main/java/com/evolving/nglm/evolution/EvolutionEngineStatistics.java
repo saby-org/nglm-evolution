@@ -31,8 +31,6 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   String name;
   String objectNameForManagement;
   int eventProcessedCount;
-  int presentationCount;
-  int acceptanceCount;
   Histogram subscriberStateSize;
   Histogram subscriberHistorySize;
   Histogram extendedProfileSize;
@@ -48,8 +46,6 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
   //
 
   public int getEventProcessedCount() { return eventProcessedCount; }
-  public int getPresentationCount() { return presentationCount; }
-  public int getAcceptanceCount() { return acceptanceCount; }
   public Histogram getSubscriberStateSize() { return subscriberStateSize; }
   public Histogram getSubscriberHistorySize() { return subscriberHistorySize; }
   public Histogram getExtendedProfileSize() { return extendedProfileSize; }
@@ -75,8 +71,6 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
     this.name = name;
     this.eventProcessedCount = 0;
     this.evolutionEventCounts = new HashMap<String,EvolutionEventStatistics>();
-    this.presentationCount = 0;
-    this.acceptanceCount = 0;
     this.subscriberStateSize = new Histogram("subscriberStateSize", 10, 20, 1000, "KB");
     this.subscriberHistorySize = new Histogram("subscriberHistorySize", 10, 20, 1000, "KB");
     this.extendedProfileSize = new Histogram("extendedProfileSize", 10, 20, 1000, "KB");
@@ -88,15 +82,6 @@ public class EvolutionEngineStatistics implements EvolutionEngineStatisticsMBean
 
     NGLMRuntime.registerMonitoringObject(this);
   }
-
-  /*****************************************
-  *
-  *  setters
-  *
-  *****************************************/
-
-  synchronized void incrementPresentationCount() { presentationCount += 1; }
-  synchronized void incrementAcceptanceCount() { acceptanceCount += 1; }
 
   /*****************************************
   *

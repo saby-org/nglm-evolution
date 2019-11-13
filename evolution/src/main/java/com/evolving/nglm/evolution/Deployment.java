@@ -67,7 +67,7 @@ public class Deployment
   private static String pointTopic;
   private static String pointFulfillmentRequestTopic;
   private static String pointFulfillmentResponseTopic;
-  private static String pointFufillmentRepartitioningTopic;
+  private static String pointFulfillmentRekeyedTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -115,7 +115,7 @@ public class Deployment
   private static String propensityLogTopic;
   private static String propensityStateChangeLog;
   private static String propensityStateChangeLogTopic;
-  private static String propensityRepartitioningTopic;
+  private static String propensityOutputTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
@@ -127,6 +127,7 @@ public class Deployment
   private static int propensityInitialisationDurationInDaysThreshold;
   private static String journeyTrafficChangeLog;
   private static String journeyTrafficChangeLogTopic;
+  private static String journeyTrafficTopic;
   private static String subscriberProfileRegistrySubject;
   private static CompressionType subscriberProfileCompressionType;
   private static int journeyTrafficArchivePeriodInSeconds;
@@ -277,7 +278,7 @@ public class Deployment
   public static String getPointTopic() { return pointTopic; }
   public static String getPointFulfillmentRequestTopic() { return pointFulfillmentRequestTopic; }
   public static String getPointFulfillmentResponseTopic() { return pointFulfillmentResponseTopic; }
-  public static String getPointFufillmentRepartitioningTopic() { return pointFufillmentRepartitioningTopic; }
+  public static String getPointFulfillmentRekeyedTopic() { return pointFulfillmentRekeyedTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getPaymentMeanTopic() { return paymentMeanTopic; }
@@ -325,7 +326,7 @@ public class Deployment
   public static String getPropensityLogTopic() { return propensityLogTopic; }
   public static String getPropensityStateChangeLog() { return propensityStateChangeLog; }
   public static String getPropensityStateChangeLogTopic() { return propensityStateChangeLogTopic; }
-  public static String getPropensityRepartitioningTopic() { return propensityRepartitioningTopic; }
+  public static String getPropensityOutputTopic() { return propensityOutputTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
@@ -337,6 +338,7 @@ public class Deployment
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
   public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
   public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
+  public static String getJourneyTrafficTopic() { return journeyTrafficTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
@@ -1003,12 +1005,12 @@ public class Deployment
       }
     
     //
-    //  pointFufillmentRepartitioningTopic
+    //  pointFulfillmentRekeyedTopic
     //
 
     try
       {
-        pointFufillmentRepartitioningTopic = JSONUtilities.decodeString(jsonRoot, "pointFufillmentRepartitioningTopic", true);
+        pointFulfillmentRekeyedTopic = JSONUtilities.decodeString(jsonRoot, "pointFulfillmentRekeyedTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1732,12 +1734,12 @@ public class Deployment
       }
 
     //
-    //  propensityRepartitioningTopic
+    //  propensityOutputTopic
     //
 
     try
       {
-        propensityRepartitioningTopic = JSONUtilities.decodeString(jsonRoot, "propensityRepartitioningTopic", true);
+        propensityOutputTopic = JSONUtilities.decodeString(jsonRoot, "propensityOutputTopic", true);
       }
     catch (JSONUtilitiesException e)
       {
@@ -1844,6 +1846,19 @@ public class Deployment
     try
       {
         journeyTrafficChangeLogTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficChangeLogTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  journeyTrafficTopic
+    //
+
+    try
+      {
+        journeyTrafficTopic = JSONUtilities.decodeString(jsonRoot, "journeyTrafficTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

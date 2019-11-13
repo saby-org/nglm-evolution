@@ -270,23 +270,21 @@ public class EvolutionEngine
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
     String presentationLogTopic = Deployment.getPresentationLogTopic();
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
-    String pointFulfillmentRequestTopic = Deployment.getPointFulfillmentRequestTopic();
-
-    
     String productServiceTopic = Deployment.getProductTopic();
     String productTypeServiceTopic = Deployment.getProductTypeTopic();
     String catalogCharacteristicServiceTopic = Deployment.getCatalogCharacteristicTopic();
     String dnboMatrixServiceTopic = Deployment.getDNBOMatrixTopic();
+    String pointFulfillmentRekeyedTopic = Deployment.getPointFulfillmentRekeyedTopic();
     
     //
     //  sink topics
     //
 
     String subscriberTraceTopic = Deployment.getSubscriberTraceTopic();
-    String propensityLogTopic = Deployment.getPropensityLogTopic();
     String pointFulfillmentResponseTopic = Deployment.getPointFulfillmentResponseTopic();
     String journeyResponseTopic = Deployment.getJourneyResponseTopic();
     String loyaltyProgramResponseTopic = Deployment.getLoyaltyProgramResponseTopic();
+    String journeyTrafficTopic = Deployment.getJourneyTrafficTopic();
 
     //
     //  changelogs
@@ -295,15 +293,12 @@ public class EvolutionEngine
     String subscriberStateChangeLog = Deployment.getSubscriberStateChangeLog();
     String extendedSubscriberProfileChangeLog = Deployment.getExtendedSubscriberProfileChangeLog();
     String subscriberHistoryChangeLog = Deployment.getSubscriberHistoryChangeLog();
-    String propensityStateChangeLog = Deployment.getPropensityStateChangeLog();
-    String journeyTrafficChangeLog = Deployment.getJourneyTrafficChangeLog();
 
     //
     // Internal repartitioning topic (when rekeyed)
     //
 
-    String pointFufillmentRepartitioningTopic = Deployment.getPointFufillmentRepartitioningTopic();
-    String propensityRepartitioningTopic = Deployment.getPropensityRepartitioningTopic();
+    String propensityOutputTopic = Deployment.getPropensityOutputTopic();
 
     //
     //  (force load of SubscriberProfile class)
@@ -610,7 +605,6 @@ public class EvolutionEngine
     final ConnectSerde<JourneyRequest> journeyRequestSerde = JourneyRequest.serde();
     final ConnectSerde<JourneyStatistic> journeyStatisticSerde = JourneyStatistic.serde();
     final ConnectSerde<JourneyStatisticWrapper> journeyStatisticWrapperSerde = JourneyStatisticWrapper.serde();
-    final ConnectSerde<JourneyTrafficHistory> journeyTrafficHistorySerde = JourneyTrafficHistory.serde();
     final ConnectSerde<JourneyMetric> journeyMetricSerde = JourneyMetric.serde();
     final ConnectSerde<LoyaltyProgramRequest> loyaltyProgramRequestSerde = LoyaltyProgramRequest.serde();
     final ConnectSerde<SubscriberGroup> subscriberGroupSerde = SubscriberGroup.serde();
@@ -618,7 +612,6 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
     final ConnectSerde<PropensityEventOutput> propensityEventOutputSerde = PropensityEventOutput.serde();
     final ConnectSerde<PropensityKey> propensityKeySerde = PropensityKey.serde();
-    final ConnectSerde<PropensityState> propensityStateSerde = PropensityState.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
     final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
 
@@ -684,6 +677,7 @@ public class EvolutionEngine
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(profileSegmentChangeEventTopic, Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(profileLoyaltyProgramChangeEventTopic, Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
+    KStream<StringKey, PointFulfillmentRequest> rekeyedPointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRekeyedTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
 
     //
     //  timedEvaluationStreams
@@ -692,13 +686,6 @@ public class EvolutionEngine
     KStream<StringKey, ? extends TimedEvaluation>[] branchedTimedEvaluationStreams = timedEvaluationSourceStream.branch((key,value) -> ((TimedEvaluation) value).getPeriodicEvaluation(), (key,value) -> true);
     KStream<StringKey, TimedEvaluation> periodicTimedEvaluationStream = (KStream<StringKey, TimedEvaluation>) branchedTimedEvaluationStreams[0];
     KStream<StringKey, TimedEvaluation> standardTimedEvaluationStream = (KStream<StringKey, TimedEvaluation>) branchedTimedEvaluationStreams[1];
-
-    //
-    //  pointFulfillmentRequest streams (keyed by deliveryRequestID)
-    //
-
-    KStream<StringKey, PointFulfillmentRequest> pointFulfillmentRequestSourceStream = builder.stream(pointFulfillmentRequestTopic, Consumed.with(stringKeySerde, pointFulfillmentRequestSerde));
-    KStream<StringKey, PointFulfillmentRequest> rekeyedPointFulfillmentRequestSourceStream = pointFulfillmentRequestSourceStream.map(EvolutionEngine::rekeyPointFulfilmentRequestStream).through(pointFufillmentRepartitioningTopic, Produced.with(stringKeySerde, pointFulfillmentRequestSerde));
 
     //
     //  evolution engine event source streams
@@ -804,9 +791,9 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) presentationLogSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) acceptanceLogSourceStream);
-    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) rekeyedPointFulfillmentRequestSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileSegmentChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) rekeyedPointFulfillmentRequestSourceStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     KStream evolutionEventCompositeStream = null;
@@ -929,9 +916,6 @@ public class EvolutionEngine
     *****************************************/
 
     KStream<StringKey, JourneyStatisticWrapper> rekeyedJourneyStatisticStream = journeyStatisticWrapperStream.map(EvolutionEngine::rekeyByJourneyID);
-    KeyValueBytesStoreSupplier journeyTrafficSupplier = Stores.persistentKeyValueStore(journeyTrafficChangeLog);
-    Materialized journeyTrafficStore = Materialized.<StringKey, JourneyTrafficHistory>as(journeyTrafficSupplier).withKeySerde(stringKeySerde).withValueSerde(journeyTrafficHistorySerde);
-    KTable<StringKey, JourneyTrafficHistory> unusedJourneyTraffic = rekeyedJourneyStatisticStream.groupByKey(Serialized.with(stringKeySerde, journeyStatisticWrapperSerde)).aggregate(EvolutionEngine::nullJourneyTrafficHistory, EvolutionEngine::updateJourneyTrafficHistory, journeyTrafficStore);
     
     /*****************************************
     *
@@ -960,21 +944,7 @@ public class EvolutionEngine
     // For those reasons, we manually create the intermediary topic just after the map operation and we applied groupeByKey and leftJoin on this "well-partioned" stream, thus no other redistribution intermediary topic will be needed.
     //
 
-    KStream<PropensityKey, PropensityEventOutput> rekeyedPropensityStream = propensityOutputsStream.map(EvolutionEngine::rekeyPropensityStream).through(propensityRepartitioningTopic, Produced.with(propensityKeySerde, propensityEventOutputSerde));
-
-    //
-    //  propensity aggregate
-    //
-
-    KeyValueBytesStoreSupplier supplier = Stores.persistentKeyValueStore(propensityStateChangeLog);
-    Materialized propensityStateStore = Materialized.<PropensityKey, PropensityState>as(supplier).withKeySerde(propensityKeySerde).withValueSerde(propensityStateSerde.optionalSerde());
-    KTable<PropensityKey, PropensityState> propensityState = rekeyedPropensityStream.groupByKey(Serialized.with(propensityKeySerde, propensityEventOutputSerde)).aggregate(EvolutionEngine::nullPropensityState, EvolutionEngine::updatePropensityState, propensityStateStore);
-
-    //
-    //  convert to stream
-    //
-
-    KStream<PropensityKey, PropensityState> propensityStateStream = rekeyedPropensityStream.leftJoin(propensityState, EvolutionEngine::getPropensityState);
+    KStream<PropensityKey, PropensityEventOutput> rekeyedPropensityStream = propensityOutputsStream.map(EvolutionEngine::rekeyPropensityStream);
 
     /*****************************************
     *
@@ -1020,11 +990,12 @@ public class EvolutionEngine
     journeyMetricStream.to(journeyMetricTopic, Produced.with(stringKeySerde, journeyMetricSerde));
     subscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
     extendedProfileSubscriberTraceStream.to(subscriberTraceTopic, Produced.with(stringKeySerde, subscriberTraceSerde));
-    propensityStateStream.to(propensityLogTopic, Produced.with(propensityKeySerde, propensityStateSerde));
     profileChangeEventsStream.to(profileChangeEventTopic, Produced.with(stringKeySerde, profileChangeEventSerde));
     profileSegmentChangeEventsStream.to(profileSegmentChangeEventTopic, Produced.with(stringKeySerde, profileSegmentChangeEventSerde));
     profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
-
+    rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
+    rekeyedPropensityStream.to(propensityOutputTopic, Produced.with(propensityKeySerde, propensityEventOutputSerde));
+    
     //
     //  sink - delivery request streams
     //
@@ -2197,245 +2168,6 @@ public class EvolutionEngine
       ProfileSegmentChangeEvent profileSegmentChangeEvent = new ProfileSegmentChangeEvent(subscriberProfile.getSubscriberID(), now, profileSegmentChangeOldValues, profileSegmentChangeNewValues);
       subscriberState.getProfileSegmentChangeEvents().add(profileSegmentChangeEvent);
     }
-  }
-
-  /*****************************************
-  *
-  *  nullJourneyTrafficHistory
-  *
-  ****************************************/
-
-  public static JourneyTrafficHistory nullJourneyTrafficHistory() { 
-    JourneyTrafficHistory history = new JourneyTrafficHistory(
-        "",
-        SystemTime.getCurrentTime(),
-        SystemTime.getCurrentTime(),
-        Deployment.getJourneyTrafficArchivePeriodInSeconds(),
-        Deployment.getJourneyTrafficArchiveMaxNumberOfPeriods(),
-        new JourneyTrafficSnapshot(),
-        new HashMap<Integer, JourneyTrafficSnapshot>()); 
-    
-    //
-    // add an empty record at archived start time 
-    // 
-    
-    history.getArchivedData().put(0, new JourneyTrafficSnapshot());
-    
-    return history;
-  }
-  
-  /*****************************************
-  *
-  *  updateJourneyTrafficHistory
-  *
-  *****************************************/
-
-  public static JourneyTrafficHistory updateJourneyTrafficHistory(StringKey journeyID, JourneyStatisticWrapper event, JourneyTrafficHistory history)
-  {
-    Date currentDate = SystemTime.getCurrentTime();
-    
-    // 
-    // start by updating archived data if needed
-    // > We need to archive current data before updating it !
-    // 
-    
-    Long timeDelta = currentDate.getTime() - history.getLastArchivedDataDate().getTime();
-    int periodsSinceLastArchivedData = (int) ( timeDelta / (history.getArchivePeriodInSeconds() * 1000));
-    
-    if(periodsSinceLastArchivedData > 0) 
-      {
-        Map<Integer, JourneyTrafficSnapshot> map = history.getArchivedData();
-
-        // 
-        // move previous archived data
-        // 
-
-        for(int i = history.getMaxNumberOfPeriods()-1; i >= periodsSinceLastArchivedData; i--) 
-          {
-            JourneyTrafficSnapshot journeyTrafficByNode = map.get(i - periodsSinceLastArchivedData);
-            if(journeyTrafficByNode != null) 
-              {
-                map.put(i, journeyTrafficByNode);
-              } 
-            else 
-              {
-                map.remove(i);
-              }
-          }
-
-        // 
-        // fill with current data (new archived data)
-        //
-        
-        map.put(0, new JourneyTrafficSnapshot(history.getCurrentData()));
-        for(int i = 1; i < periodsSinceLastArchivedData; i++) 
-          {
-            map.remove(i);
-          }
-      }
-
-    history.setLastArchivedDataDate(RLMDateUtils.addSeconds(history.getLastArchivedDataDate(), history.getArchivePeriodInSeconds() * periodsSinceLastArchivedData));
-    history.setLastUpdateDate(currentDate);
-    history.setJourneyID(journeyID.getKey());
-    
-    // 
-    // update current data
-    //
-    
-    if(event.getJourneyStatistic() != null)
-      {
-      String fromNodeID = event.getJourneyStatistic().getFromNodeID();
-      String toNodeID = event.getJourneyStatistic().getToNodeID();
-      
-      if(fromNodeID != null) 
-        {
-          SubscriberTraffic traffic = history.getCurrentData().getByNode().get(fromNodeID);
-          if(traffic == null) 
-            {
-              traffic = new SubscriberTraffic();
-              history.getCurrentData().getByNode().put(fromNodeID, traffic);
-            }
-          traffic.addOutflow();
-        }
-      else 
-        {
-          //
-          // Update global entrance for this journey (global and byStratum)
-          //
-  
-          history.getCurrentData().getGlobal().addInflow();
-          SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
-          if(stratumTraffic == null)
-            {
-              stratumTraffic = new SubscriberTraffic();
-              stratumTraffic.setEmptyRewardsMap();
-              history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
-            }
-          stratumTraffic.addInflow();
-        }
-      
-      if(toNodeID != null) 
-        {
-          SubscriberTraffic traffic = history.getCurrentData().getByNode().get(toNodeID);
-          if(traffic == null) 
-            {
-              traffic = new SubscriberTraffic();
-              history.getCurrentData().getByNode().put(toNodeID, traffic);
-            }
-          traffic.addInflow();
-        } 
-      
-      //
-      // Update global exit for this journey (traffic for global and byStratum)
-      //
-      
-      if (event.getJourneyStatistic().getJourneyComplete()) 
-        {
-          // 
-          // Journey exit 
-          // 
-  
-          history.getCurrentData().getGlobal().addOutflow();
-          SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
-          if(stratumTraffic == null)
-            {
-              stratumTraffic = new SubscriberTraffic();
-              stratumTraffic.setEmptyRewardsMap();
-              history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
-            }
-          stratumTraffic.addOutflow();
-        }
-      
-      // 
-      // update status map
-      // 
-      
-      if (event.isStatusUpdated()) 
-        {
-          SubscriberJourneyStatus previousStatus = (event.getJourneyStatistic().getPreviousJourneyStatus() != null) ? event.getJourneyStatistic().getPreviousJourneyStatus().getSubscriberJourneyStatus() : null;
-          SubscriberJourneyStatus currentStatus = event.getJourneyStatistic().getSubscriberJourneyStatus();
-          if (previousStatus == null || currentStatus != previousStatus)
-            {
-              //
-              // by status map update
-              //
-      
-              if (previousStatus != null)
-                {
-                  SubscriberTraffic previousStatusTraffic = history.getCurrentData().getByStatus().get(previousStatus.getExternalRepresentation());
-                  if(previousStatusTraffic != null) 
-                    {
-                      previousStatusTraffic.addOutflow();
-                    }
-                }
-      
-              SubscriberTraffic currentStatusTraffic = history.getCurrentData().getByStatus().get(currentStatus.getExternalRepresentation());
-              if (currentStatusTraffic == null) 
-                {
-                  currentStatusTraffic = new SubscriberTraffic();
-                  history.getCurrentData().getByStatus().put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
-                }
-              currentStatusTraffic.addInflow();
-              
-              //
-              // by stratum map update
-              //
-              
-              List<String> subscriberStratum = event.getSubscriberStratum();
-              Map<String, SubscriberTraffic> stratumTraffic = history.getCurrentData().getByStatusByStratum().get(subscriberStratum);
-              if (stratumTraffic == null) 
-                {
-                  stratumTraffic = new HashMap<String, SubscriberTraffic>();
-                  history.getCurrentData().getByStatusByStratum().put(subscriberStratum, stratumTraffic);
-                }
-      
-              if (previousStatus != null)
-                {
-                  SubscriberTraffic previousStatusTraffic = stratumTraffic.get(previousStatus.getExternalRepresentation());
-                  if (previousStatusTraffic != null) 
-                    {
-                      previousStatusTraffic.addOutflow();
-                    }
-                }
-      
-              currentStatusTraffic = stratumTraffic.get(currentStatus.getExternalRepresentation());
-              if (currentStatusTraffic == null) 
-                {
-                  currentStatusTraffic = new SubscriberTraffic();
-                  stratumTraffic.put(currentStatus.getExternalRepresentation(), currentStatusTraffic);
-                }
-              currentStatusTraffic.addInflow();
-            }
-        }
-      
-        //
-        // update abTesting
-        //
-        if(event.getJourneyStatistic().getSample() != null)
-          {
-            history.getCurrentData().incrementABTesting(event.getJourneyStatistic().getSample());
-          }
-      }
-   
-    
-    // 
-    // Update rewards
-    // 
-    else if (event.getLastRewards() != null && event.getLastRewards().getAmount() > 0)
-      {
-        RewardHistory rewards = event.getLastRewards();
-        history.getCurrentData().getGlobal().addRewards(rewards.getRewardID(), rewards.getAmount());
-        SubscriberTraffic stratumTraffic = history.getCurrentData().getByStratum().get(event.getSubscriberStratum());
-        if(stratumTraffic == null)
-          {
-            stratumTraffic = new SubscriberTraffic();
-            stratumTraffic.setEmptyRewardsMap();
-            history.getCurrentData().getByStratum().put(event.getSubscriberStratum(), stratumTraffic);
-          }
-        stratumTraffic.addRewards(rewards.getRewardID(), rewards.getAmount());
-      }
-    
-    return history;
   }
 
   /*****************************************
@@ -4830,54 +4562,6 @@ public class EvolutionEngine
     return extendedSubscriberProfileUpdated;
   }
 
-  /*****************************************
-  *
-  *  nullPropensityState
-  *
-  ****************************************/
-
-  public static PropensityState nullPropensityState() { return (PropensityState) null; }
-
-  /*****************************************
-  *
-  *  updatePropensityState
-  *
-  ****************************************/
-
-  public static PropensityState updatePropensityState(PropensityKey aggKey, PropensityEventOutput propensityEvent, PropensityState currentPropensityState)
-  {
-    /****************************************
-    *
-    *  get (or create) entry
-    *
-    ****************************************/
-
-    PropensityState propensityState = (currentPropensityState != null) ? new PropensityState(currentPropensityState) : new PropensityState(aggKey);
-
-    /*****************************************
-    *
-    *  update PropensityState
-    *
-    *****************************************/
-
-    if (propensityEvent.isAccepted())
-    {
-      propensityState.setAcceptanceCount(propensityState.getAcceptanceCount() + 1L);
-      evolutionEngineStatistics.incrementAcceptanceCount();
-    }
-
-    propensityState.setPresentationCount(propensityState.getPresentationCount() + 1L);
-    evolutionEngineStatistics.incrementPresentationCount();
-
-    /****************************************
-    *
-    *  return the updated PropensityState (it is always different than the current one)
-    *
-    ****************************************/
-
-    return propensityState;
-  }
-
   /****************************************
   *
   *  rekeyPropensityStream
@@ -5150,17 +4834,6 @@ public class EvolutionEngine
   private static SubscriberState getSubscriberState(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState)
   {
     return subscriberState;
-  }
-
-  /*****************************************
-  *
-  *  getPropensityState
-  *
-  *****************************************/
-
-  private static PropensityState getPropensityState(PropensityEventOutput propensityEventOutput, PropensityState propensityState)
-  {
-    return propensityState;
   }
 
   /*****************************************

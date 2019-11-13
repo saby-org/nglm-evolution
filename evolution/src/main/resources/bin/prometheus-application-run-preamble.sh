@@ -21,6 +21,8 @@ set -o errexit \
 sed -i "s/<_MONITORING_HOST_>/${MONITORING_HOST}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_PROMETHEUS_APPLICATION_PORT_>/${PROMETHEUS_APPLICATION_PORT}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_EVOLUTIONENGINE_PROMETHEUS_>/${EVOLUTIONENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
+sed -i "s/<_JOURNEYTRAFFICENGINE_PROMETHEUS_>/${JOURNEYTRAFFICENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
+sed -i "s/<_PROPENSITYENGINE_PROMETHEUS_>/${PROPENSITYENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_UCGENGINE_PROMETHEUS_>/${UCGENGINE_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_INFULFILLMENTMANAGER_PROMETHEUS_>/${INFULFILLMENTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml
 sed -i "s/<_EMPTYFULFILLMENTMANAGER_PROMETHEUS_>/${EMPTYFULFILLMENTMANAGER_PROMETHEUS}/g" /etc/prometheus/prometheus-application.yml

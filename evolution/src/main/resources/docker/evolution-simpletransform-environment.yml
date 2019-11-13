@@ -1,0 +1,6 @@
+    #
+    #  environment variables required for SIMPLETRANSFORM_CONFIGURATION
+    #
+    POINT_REQUEST_TOPIC: ${topic.pointfulfillment.request}
+    REKEYED_POINT_REQUEST_TOPIC: ${topic.pointfulfillment.rekeyed}
+

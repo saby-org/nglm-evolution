@@ -110,7 +110,7 @@
         {
         "connector.class" : "com.evolving.nglm.evolution.JourneyTrafficESSinkConnector",
         "tasks.max" : '$CONNECT_ES_JOURNEYTRAFFIC_SINK_TASKS',
-        "topics" : "${changelog.evolutionengine.journeytraffic.topic}",
+        "topics" : "${changelog.journeytrafficengine.journeytraffic.topic}",
         "connectionHost" : "'$MASTER_ESROUTER_HOST'",
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "indexName" : "datacube_journeytraffic",

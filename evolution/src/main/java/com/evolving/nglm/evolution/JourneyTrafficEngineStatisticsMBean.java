@@ -1,12 +1,13 @@
 /****************************************************************************
 *
-*  EvolutionEngineStatisticsMBean.java
+*  JourneyTrafficEngineStatisticsMBean.java
 *
 ****************************************************************************/
 
 package com.evolving.nglm.evolution;
 
-public interface EvolutionEngineStatisticsMBean
+public interface JourneyTrafficEngineStatisticsMBean
 {
   public int getEventProcessedCount();
+  public int getCompletedJourneys();
 }
