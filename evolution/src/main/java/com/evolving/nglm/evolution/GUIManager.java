@@ -21618,14 +21618,14 @@ public class GUIManager
         case "pushTemplates_app":
           if (includeDynamic)
             {
-              filterPushTemplates("app", result, now);  //Note : "app" is the id of the communication channel (defined in deployment.json)
+              filterPushTemplates("3", result, now);  //Note : "app" is the id of the communication channel (defined in deployment.json)
             }
           break;
           
         case "pushTemplates_USSD":
           if (includeDynamic)
             {
-              filterPushTemplates("USSD", result, now);  //Note : "USSD" is the id of the communication channel (defined in deployment.json)
+              filterPushTemplates("4", result, now);  //Note : "USSD" is the id of the communication channel (defined in deployment.json)
             }
           break;
           
