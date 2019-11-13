@@ -711,6 +711,34 @@ public class GUIService
   private void readGUIManagedObjects(KafkaConsumer<byte[], byte[]> consumer, boolean readInitialTopicRecords)
   {
     //
+    //  on the initial read, skip the poll if there are no records
+    //
+
+    if (readInitialTopicRecords)
+      {
+        boolean foundRecord = false;
+        Set<TopicPartition> partitions = new HashSet<TopicPartition>();
+        for (org.apache.kafka.common.PartitionInfo partitionInfo : consumer.partitionsFor(guiManagedObjectTopic))
+          {
+            partitions.add(new TopicPartition(guiManagedObjectTopic, partitionInfo.partition()));
+          }
+        Map<TopicPartition,Long> endOffsets = consumer.endOffsets(partitions);
+        for (TopicPartition partition : endOffsets.keySet())
+          {
+            if (endOffsets.get(partition) > 0)
+              {
+                foundRecord = true;
+                break;
+              }
+          }
+        if (!foundRecord)
+          {
+            log.info("No records found.  Skipping initial read for {}", guiManagedObjectTopic);
+            return;
+          }
+      }
+    
+    //
     //  initialize consumedOffsets
     //
         
