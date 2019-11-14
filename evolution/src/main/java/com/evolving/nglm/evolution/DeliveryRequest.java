@@ -6,19 +6,18 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +26,11 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.CommunicationChannelBlackoutPeriod.BlackoutPeriods;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -58,6 +56,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public static final String DELIVERYREQUESTID = "deliveryRequestID";
   public static final String DELIVERYSTATUS = "deliveryStatus";
   public static final String EVENTID = "eventID";
+  public static final String EVENTDATE = "eventDate";
   public static final String ACTIVITYTYPE = "activityType";
   public static final String DELIVERYDATE = "deliveryDate";
   public static final String CREATIONDATE = "creationDate";
@@ -127,6 +126,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public enum Module
   {
     Journey_Manager("1"),
+    Loyalty_Program("2"),
     Offer_Catalog("3"),
     Delivery_Manager("4"),
     Customer_Care("5"),
@@ -329,8 +329,8 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract DeliveryRequest copy();
   public abstract Schema subscriberStreamEventSchema();
   public abstract Object subscriberStreamEventPack(Object value);
-  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
-  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
+  public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
+  public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
   public abstract Integer getActivityType();
 
   /*****************************************
@@ -577,17 +577,18 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getGUIPresentationMap
   //
 
-  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+  public Map<String, Object> getGUIPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
     guiPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
+    guiPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     guiPresentationMap.put(EVENTID, getEventID());    
     guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+    addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
     return guiPresentationMap;
   }
   
@@ -595,17 +596,18 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getThirdPartyPresentationMap
   //
 
-  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+  public Map<String, Object> getThirdPartyPresentationMap(SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
     thirdPartyPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
+    thirdPartyPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(EVENTID, getEventID()); 
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromActivityTypeExternalRepresentation(getActivityType()).toString());
-    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+    addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
     return thirdPartyPresentationMap;
   }
   
@@ -613,7 +615,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  getFeatureName
   //
 
-  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService)
+  public static String getFeatureName(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     String featureName = null;
 
@@ -623,6 +625,11 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
           GUIManagedObject journey = journeyService.getStoredJourney(featureId);
           journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureName = journey == null ? null : journey.getGUIManagedObjectName();
+          break;
+
+        case Loyalty_Program:
+          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId);
+          featureName = loyaltyProgram == null ? null : loyaltyProgram.getGUIManagedObjectName();
           break;
 
         case Offer_Catalog:

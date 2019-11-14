@@ -250,7 +250,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
   *
   ****************************************/
   
-  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+  @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     Module module = Module.fromExternalRepresentation(getModuleID());
     guiPresentationMap.put(CUSTOMERID, getSubscriberID());
@@ -262,11 +262,11 @@ public class PointFulfillmentRequest extends DeliveryRequest
     guiPresentationMap.put(MODULEID, getModuleID());
     guiPresentationMap.put(MODULENAME, module.toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
-    guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
+    guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     guiPresentationMap.put(ORIGIN, "");
   }
   
-  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+  @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
   {
     Module module = Module.fromExternalRepresentation(getModuleID());
     thirdPartyPresentationMap.put(DELIVERABLEID, getPointID());
@@ -277,7 +277,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
     thirdPartyPresentationMap.put(MODULENAME, module.toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-    thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
+    thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
 

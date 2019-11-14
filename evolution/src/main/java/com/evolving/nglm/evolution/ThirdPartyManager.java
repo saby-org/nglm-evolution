@@ -1226,7 +1226,7 @@ public class ThirdPartyManager
                 {
                   if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                     {
-                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+                      Map<String, Object> bdrMap = bdr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
                       BDRsJson.add(JSONUtilities.encodeObject(bdrMap));
                     }
                 }
@@ -1431,7 +1431,7 @@ public class ThirdPartyManager
                 {
                   if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                     {
-                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+                      Map<String, Object> presentationMap =  odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
                       ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                     }
                 }
@@ -1844,7 +1844,7 @@ public class ThirdPartyManager
                 {
                   if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                     {
-                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService)));
+                      messagesJson.add(JSONUtilities.encodeObject(message.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService)));
                     }
                 }
             }

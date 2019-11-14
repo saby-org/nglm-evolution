@@ -108,6 +108,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
 
   public String getLoyaltyProgramID() { return getGUIManagedObjectID(); }
   public String getLoyaltyProgramName() { return getGUIManagedObjectName(); }
+  public String getLoyaltyProgramDisplay() { return getGUIManagedObjectDisplay(); }
   public LoyaltyProgramType getLoyaltyProgramType() { return loyaltyProgramType; }
   public String getLoyaltyProgramDescription() { return loyaltyProgramDescription; }
   public Set<CatalogCharacteristicInstance> getCharacteristics() { return characteristics; }

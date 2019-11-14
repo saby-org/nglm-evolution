@@ -528,7 +528,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //  addFieldsForGUIPresentation
     //
 
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       
       Module module = Module.fromExternalRepresentation(getModuleID());
@@ -537,7 +537,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, module.toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getSource());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, SMSMessageStatus.fromReturnCode(getReturnCode()).toString());
@@ -550,14 +550,14 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //  addFieldsForThirdPartyPresentation
     //
 
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService)
     {
       Module module = Module.fromExternalRepresentation(getModuleID());
       thirdPartyPresentationMap.put(EVENTID, null);
       thirdPartyPresentationMap.put(MODULEID, getModuleID());
       thirdPartyPresentationMap.put(MODULENAME, module.toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService));
+      thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getSource());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, SMSMessageStatus.fromReturnCode(getReturnCode()).toString());

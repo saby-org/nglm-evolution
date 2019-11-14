@@ -14939,7 +14939,7 @@ public class GUIManager
                     // prepare json
                     //
 
-                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService))).collect(Collectors.toList());
+                    deliveryRequestsJson = result.stream().map(deliveryRequest -> JSONUtilities.encodeObject(deliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService))).collect(Collectors.toList());
                   }
 
                 //
@@ -15122,7 +15122,7 @@ public class GUIManager
                       {
                         if (bdr.getEventDate().after(startDate) || bdr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+                            Map<String, Object> bdrMap = bdr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
                             Date expirationDate = null;
                             Date deliveryDate = bdr.getDeliveryDate();
                             TimeUnit validityPeriodTimeUnit = TimeUnit.fromExternalRepresentation((String) bdrMap.get("validityPeriodType"));
@@ -15348,7 +15348,7 @@ public class GUIManager
                       {
                         if (odr.getEventDate().after(startDate) || odr.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+                            Map<String, Object> presentationMap =  odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
                             ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                           }
                       }
@@ -15488,7 +15488,7 @@ public class GUIManager
                       {
                         if (message.getEventDate().after(startDate) || message.getEventDate().equals(startDate))
                           {
-                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, productService, deliverableService, paymentMeanService);
+                            Map<String, Object> messageMap = message.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
                             messagesJson.add(JSONUtilities.encodeObject(messageMap));
                           }
                       }
@@ -16361,7 +16361,8 @@ public class GUIManager
 
                   LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
                   loyaltyProgramPresentation.put("loyaltyProgramType", loyaltyProgram.getLoyaltyProgramType().getExternalRepresentation());
-                  loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
+                  loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgram.getLoyaltyProgramName());
+                  loyaltyProgramPresentation.put("loyaltyProgramDisplay", loyaltyProgram.getLoyaltyProgramDisplay());
                   loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", getDateString(loyaltyProgramState.getLoyaltyProgramEnrollmentDate()));
                   loyaltyProgramPresentation.put("loyaltyProgramExitDate", getDateString(loyaltyProgramState.getLoyaltyProgramExitDate()));
                   loyaltyProgramPresentation.put("active", loyaltyProgram.getActive());
@@ -16390,6 +16391,7 @@ public class GUIManager
                         {
                           loyaltyProgramPresentation.put("statusPointID", statusPoint.getPointID());
                           loyaltyProgramPresentation.put("statusPointName", statusPoint.getPointName());
+                          loyaltyProgramPresentation.put("statusPointDisplay", statusPoint.getDisplay());
                         }
                       PointBalance pointBalance = baseSubscriberProfile.getPointBalances().get(statusPointID);
                       if(pointBalance != null)
@@ -16411,6 +16413,7 @@ public class GUIManager
                         {
                           loyaltyProgramPresentation.put("rewardsPointID", rewardPoint.getPointID());
                           loyaltyProgramPresentation.put("rewardsPointName", rewardPoint.getPointName());
+                          loyaltyProgramPresentation.put("rewardsPointDisplay", rewardPoint.getDisplay());
                         }
                       PointBalance rewardBalance = baseSubscriberProfile.getPointBalances().get(rewardPointID);
                       if(rewardBalance != null)
