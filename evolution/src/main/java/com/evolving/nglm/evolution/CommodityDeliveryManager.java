@@ -1049,8 +1049,55 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
             }
           }
           
-        }else{
-          
+        }else if(operation.equals(CommodityDeliveryOperation.Set)){
+            
+            //
+            // Set => check in commodity list
+            //
+            
+            deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
+            if(deliverable == null){
+              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+              submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", validityPeriodType.getExternalRepresentation(), validityPeriodQuantity);
+              continue;
+            }else{
+              externalAccountID = deliverable.getExternalAccountID();
+              DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
+              if(provider == null){
+                log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+                submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", validityPeriodType.getExternalRepresentation(), validityPeriodQuantity);
+                continue;
+              }else{
+                commodityType = provider.getProviderType();
+                deliveryType = provider.getDeliveryType();
+              }
+            }
+            
+        }else if(operation.equals(CommodityDeliveryOperation.Activate)){
+            
+            //
+            // Activate => check in commodity list
+            //
+            
+            deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
+            if(deliverable == null){
+              log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
+              submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "commodity not found (providerID "+providerID+" - commodityID "+commodityID+")", validityPeriodType.getExternalRepresentation(), validityPeriodQuantity);
+              continue;
+            }else{
+              externalAccountID = deliverable.getExternalAccountID();
+              DeliveryManagerDeclaration provider = Deployment.getFulfillmentProviders().get(deliverable.getFulfillmentProviderID());
+              if(provider == null){
+                log.error(Thread.currentThread().getId()+" - CommodityDeliveryManager (provider "+providerID+", commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
+                submitCorrelatorUpdate(commodityDeliveryRequest.getCorrelator(), CommodityDeliveryStatus.BONUS_NOT_FOUND, "provider of deliverable not found (providerID "+providerID+" - commodityID "+commodityID+")", validityPeriodType.getExternalRepresentation(), validityPeriodQuantity);
+                continue;
+              }else{
+                commodityType = provider.getProviderType();
+                deliveryType = provider.getDeliveryType();
+              }
+            }
+            
+          }else{          //          
           //
           // unknown operation => return an error
           //
@@ -1204,8 +1251,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       inRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
       inRequestData.put("providerID", commodityDeliveryRequest.getProviderID());
       inRequestData.put("commodityID", commodityDeliveryRequest.getCommodityID());
-      inRequestData.put("externalAccountID", externalAccountID);
-      
+	  inRequestData.put("externalAccountID", externalAccountID);
+
       inRequestData.put("operation", CommodityDeliveryOperation.fromExternalRepresentation(commodityDeliveryRequest.getOperation().getExternalRepresentation()).getExternalRepresentation());
       inRequestData.put("amount", commodityDeliveryRequest.getAmount());
       inRequestData.put("validityPeriodType", validityPeriodType);
@@ -1422,7 +1469,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       *****************************************/
 
       String commodityID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.commodityid");
-      int amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
+
+      // Set amount default to 1 for Activate / Deactivate
+      int amount = 1;
+      if ( operation != CommodityDeliveryOperation.Activate && operation != CommodityDeliveryOperation.Deactivate ){
+          amount = ((Number) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.amount")).intValue();
+      }
       TimeUnit validityPeriodType = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type") != null) ? TimeUnit.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.type")) : null;
       Integer validityPeriodQuantity = (Integer) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.validity.period.quantity");
       

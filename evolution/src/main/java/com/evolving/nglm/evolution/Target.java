@@ -143,10 +143,12 @@ public class Target extends GUIManagedObject
   private static List<Object> packCriteria(List<EvaluationCriterion> criteria)
   {
     List<Object> result = new ArrayList<Object>();
-    for (EvaluationCriterion criterion : criteria)
-      {
-        result.add(EvaluationCriterion.pack(criterion));
-      }
+    if (criteria != null){
+	    for (EvaluationCriterion criterion : criteria)
+	      {
+	        result.add(EvaluationCriterion.pack(criterion));
+	      }
+    }
     return result;
   }
   

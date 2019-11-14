@@ -70,6 +70,8 @@ public class DNBOUtils
         
     protected Object[] handleToken(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      log.info("ActionManagerDNBO.handleToken() method call");
+    	
       /*****************************************
       *
       *  parameters
@@ -90,6 +92,8 @@ public class DNBOUtils
           return new Object[] {Collections.<Action>emptyList()};
         }
 
+      log.info("ActionManagerDNBO.handleToken() scoringStrategy valid");
+
       /*****************************************
       *
       *  token type
@@ -101,7 +105,9 @@ public class DNBOUtils
           log.error("no token type {}", tokenTypeID);
           return new Object[] {Collections.<Action>emptyList()};
         }
-        
+
+      log.info("ActionManagerDNBO.handleToken() tokenType valid");
+
       /*****************************************
       *
       *  action -- generate new token code (different from others already associated with this subscriber)
@@ -126,6 +132,8 @@ public class DNBOUtils
           return new Object[] {Collections.<Action>emptyList()};
         }
       
+      log.info("ActionManagerDNBO.handleToken() token code generated " + tokenCode);
+
       DNBOToken token = new DNBOToken(tokenCode, subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID(), tokenType);
       token.setScoringStrategyIDs(Collections.<String>singletonList(scoringStrategy.getScoringStrategyID()));
       token.setCreationDate(evolutionEventContext.now());
@@ -282,6 +290,7 @@ public class DNBOUtils
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      log.info("ActionManagerToken.executeOnEntry() method call");
       Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];
@@ -322,6 +331,7 @@ public class DNBOUtils
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      log.info("ActionManagerAllocate.executeOnEntry() method call");
       Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];
@@ -382,6 +392,7 @@ public class DNBOUtils
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
+      log.info("ActionManagerPurchase.executeOnEntry() method call");
       Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];
