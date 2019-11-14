@@ -241,7 +241,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -267,6 +267,13 @@ public class ThirdPartyJSONGenerator
         tokenMap.put("isAutoBounded", dnboToken.isAutoBounded());
         tokenMap.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
         
+        ArrayList<Object> scoringStrategiesList = new ArrayList<>();
+        for (String scoringStrategyID : dnboToken.getScoringStrategyIDs())
+          {
+            scoringStrategiesList.add(JSONUtilities.encodeObject(buildStrategyElement(scoringStrategyID, scoringStrategyService, now)));
+          }
+        tokenMap.put("scoringStrategies", JSONUtilities.encodeArray(scoringStrategiesList));        
+        
         ArrayList<Object> presentedOffersList = new ArrayList<>();
         for (String offerID : dnboToken.getPresentedOfferIDs())
           {
@@ -278,6 +285,21 @@ public class ThirdPartyJSONGenerator
         tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, now)));
       }
     return JSONUtilities.encodeObject(tokenMap);
+  }
+  
+  private static HashMap<String, Object> buildStrategyElement(String scoringStrategyID, ScoringStrategyService scoringStrategyService, Date now) {
+    HashMap<String, Object> scoringStrategyMap = new HashMap<String, Object>();
+    scoringStrategyMap.put("id", scoringStrategyID);
+    if (scoringStrategyID == null)
+      {
+        scoringStrategyMap.put("name",null);
+      }
+    else
+      {
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
+        scoringStrategyMap.put("name", (scoringStrategy == null) ? "unknown scoring strategy" : scoringStrategy.getGUIManagedObjectName());
+      }
+    return scoringStrategyMap;
   }
   
   private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, Date now) {

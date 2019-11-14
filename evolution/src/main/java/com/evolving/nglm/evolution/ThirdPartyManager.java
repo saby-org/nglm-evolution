@@ -3539,7 +3539,7 @@ public class ThirdPartyManager
       List<String> sss = subscriberStoredToken.getScoringStrategyIDs();
       if (sss == null)
         {
-          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription());
+          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" null value");
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
           return JSONUtilities.encodeObject(response);                    
@@ -3548,7 +3548,7 @@ public class ThirdPartyManager
       ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
       if (scoringStrategy == null)
         {
-          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription());
+          log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+strategyID);
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
           response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
           return JSONUtilities.encodeObject(response);          
@@ -3630,7 +3630,7 @@ public class ThirdPartyManager
         }
       subscriberStoredToken.setBoundDate(now);
       subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
-      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService);
+      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService);
       response.putAll(resolveAllSubscriberIDs(subscriberProfile));
       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -4035,7 +4035,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService))
               .collect(Collectors.toList());
         }
 

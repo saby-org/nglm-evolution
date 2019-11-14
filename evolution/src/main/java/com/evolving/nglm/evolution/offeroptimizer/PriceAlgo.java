@@ -14,6 +14,7 @@ import com.evolving.nglm.evolution.CatalogCharacteristicService;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
+import com.evolving.nglm.evolution.OfferPrice;
 import com.evolving.nglm.evolution.OfferSalesChannelsAndPrice;
 import com.evolving.nglm.evolution.ProductService;
 import com.evolving.nglm.evolution.ProductTypeService;
@@ -57,10 +58,14 @@ public class PriceAlgo implements IOfferOptimizerAlgorithm {
       {
         if (oscap.getSalesChannelIDs() != null && oscap.getSalesChannelIDs().contains(salesChannelId))
           {
-            score = (double) oscap.getPrice().getAmount(); // simple cast from long to double is enough
-            if (isReversed)
+            OfferPrice price = oscap.getPrice();
+            if (price != null) // If price is null, take default score (0.0)
               {
-                score = -score;
+                score = (double) price.getAmount(); // simple cast from long to double is enough
+                if (isReversed)
+                  {
+                    score = -score;
+                  }
               }
             break;
           }
