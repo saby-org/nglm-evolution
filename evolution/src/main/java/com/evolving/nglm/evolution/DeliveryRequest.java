@@ -54,6 +54,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //
   
   public static final String DELIVERYREQUESTID = "deliveryRequestID";
+  public static final String ORIGINATINGDELIVERYREQUESTID = "originatingDeliveryRequestID";
   public static final String DELIVERYSTATUS = "deliveryStatus";
   public static final String EVENTID = "eventID";
   public static final String EVENTDATE = "eventDate";
@@ -194,6 +195,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
+    schemaBuilder.field("originatingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("creationDate", Schema.INT64_SCHEMA);
     schemaBuilder.field("originatingRequest", SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
@@ -253,6 +255,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
   private String deliveryRequestID;
   private String deliveryRequestSource;
+  private String originatingDeliveryRequestID;
   private boolean originatingRequest;
   private Date creationDate;
   private String subscriberID;
@@ -280,6 +283,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
   public String getDeliveryRequestID() { return deliveryRequestID; }
   public String getDeliveryRequestSource() { return deliveryRequestSource; }
+  public String getOriginatingDeliveryRequestID() { return originatingDeliveryRequestID; }
   public boolean getOriginatingRequest() { return originatingRequest; }
   public Date getCreationDate() { return creationDate; }
   public String getSubscriberID() { return subscriberID; }
@@ -306,6 +310,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   //  setters
   //
 
+  public void setOriginatingDeliveryRequestID(String originatingDeliveryRequestID) { this.originatingDeliveryRequestID = originatingDeliveryRequestID; }
   public void setControl(boolean control) { this.control = control; }
   public void setDeliveryPartition(int deliveryPartition) { this.deliveryPartition = deliveryPartition; }
   public void setRetries(int retries) { this.retries = retries; }
@@ -349,6 +354,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = context.getUniqueKey();
     this.deliveryRequestSource = deliveryRequestSource;
+    this.originatingDeliveryRequestID = null;
     this.originatingRequest = true;
     this.creationDate = context.now();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
@@ -385,6 +391,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = uniqueKey;
     this.deliveryRequestSource = deliveryRequestSource;
+    this.originatingDeliveryRequestID = null;
     this.originatingRequest = true;
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = subscriberID;
@@ -415,6 +422,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   {
     this.deliveryRequestID = deliveryRequest.getDeliveryRequestID();
     this.deliveryRequestSource = deliveryRequest.getDeliveryRequestSource();
+    this.originatingDeliveryRequestID = deliveryRequest.getOriginatingDeliveryRequestID();
     this.originatingRequest = deliveryRequest.getOriginatingRequest();
     this.creationDate = deliveryRequest.getCreationDate();
     this.subscriberID = deliveryRequest.getSubscriberID();
@@ -451,6 +459,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
+    this.originatingDeliveryRequestID = JSONUtilities.decodeString(jsonRoot, "originatingDeliveryRequestID", false);
     this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
@@ -481,6 +490,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   {
     struct.put("deliveryRequestID", deliveryRequest.getDeliveryRequestID());
     struct.put("deliveryRequestSource", deliveryRequest.getDeliveryRequestSource());
+    struct.put("originatingDeliveryRequestID", deliveryRequest.getOriginatingDeliveryRequestID());
     struct.put("originatingRequest", deliveryRequest.getOriginatingRequest());
     struct.put("creationDate", deliveryRequest.getCreationDate().getTime());
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
@@ -523,6 +533,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     Struct valueStruct = (Struct) value;
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
+    String originatingDeliveryRequestID = valueStruct.getString("originatingDeliveryRequestID");
     boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
     Date creationDate = (schemaVersion >= 3) ? new Date(valueStruct.getInt64("creationDate")) : ((schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime());
     String subscriberID = valueStruct.getString("subscriberID");
@@ -547,6 +558,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
 
     this.deliveryRequestID = deliveryRequestID;
     this.deliveryRequestSource = deliveryRequestSource;
+    this.originatingDeliveryRequestID = originatingDeliveryRequestID;
     this.originatingRequest = originatingRequest;
     this.creationDate = creationDate;
     this.subscriberID = subscriberID;
@@ -582,6 +594,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> guiPresentationMap = new HashMap<String,Object>();
     guiPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
+    guiPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     guiPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     guiPresentationMap.put(EVENTID, getEventID());    
     guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
@@ -601,6 +614,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     if (! originatingRequest) throw new ServerRuntimeException("presentationMap for non-originating request");
     HashMap<String, Object> thirdPartyPresentationMap = new HashMap<String,Object>();
     thirdPartyPresentationMap.put(DELIVERYREQUESTID, getDeliveryRequestID());
+    thirdPartyPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     thirdPartyPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     thirdPartyPresentationMap.put(EVENTID, getEventID()); 
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
@@ -685,6 +699,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     StringBuilder b = new StringBuilder();
     b.append(deliveryRequestID);
     b.append("," + deliveryRequestSource);
+    b.append("," + originatingDeliveryRequestID);
     b.append("," + originatingRequest);
     b.append("," + creationDate);
     b.append("," + subscriberID);

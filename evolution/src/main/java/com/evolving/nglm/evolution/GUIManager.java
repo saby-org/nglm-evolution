@@ -13669,7 +13669,7 @@ public class GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.MailMessageTemplate, epoch);
 
         //
         //  store
@@ -13966,7 +13966,7 @@ public class GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.SMSMessageTemplate, epoch);
 
         //
         //  store
@@ -14079,8 +14079,8 @@ public class GUIManager
     List<JSONObject> templates = new ArrayList<JSONObject>();
     for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived))
       {
-        PushTemplate pushTemplate = (PushTemplate)template;
-        if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(pushTemplate.getCommunicationChannelID())){
+        String templateCommunicationChannelID = (String) template.getJSONRepresentation().get("communicationChannelID");
+        if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
           templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
         }
       }
@@ -14275,7 +14275,7 @@ public class GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, GUIManagedObjectType.PushMessageTemplate, epoch);
 
         //
         //  store
@@ -19248,7 +19248,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
 
     /*****************************************
     *
@@ -19327,7 +19327,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *

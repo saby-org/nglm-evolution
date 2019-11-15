@@ -279,7 +279,7 @@ public abstract class GUIManagedObject
   protected void setCreatedDate(Date createdDate) { this.createdDate = createdDate; jsonRepresentation.put("createdDate", formatDateField(createdDate)); }
   protected void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; jsonRepresentation.put("updatedDate", formatDateField(updatedDate)); }
   protected void markDeleted(boolean deleted) { this.deleted = deleted; jsonRepresentation.put("deleted", deleted); }
-
+  
   /*****************************************
   *
   *  packCommon

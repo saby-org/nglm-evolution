@@ -121,6 +121,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", mailNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", mailNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", mailNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
         documentMap.put("creationDate", mailNotification.getCreationDate()!=null?dateFormat.format(mailNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", mailNotification.getDeliveryDate()!=null?dateFormat.format(mailNotification.getDeliveryDate()):"");
@@ -136,6 +137,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", pushNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", pushNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", pushNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
         documentMap.put("creationDate", pushNotification.getCreationDate()!=null?dateFormat.format(pushNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", pushNotification.getDeliveryDate()!=null?dateFormat.format(pushNotification.getDeliveryDate()):"");
@@ -151,6 +153,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", smsNotification.getSubscriberID());
         documentMap.put("deliveryRequestID", smsNotification.getDeliveryRequestID());
+        documentMap.put("originatingDeliveryRequestID", smsNotification.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", "");
         documentMap.put("creationDate", smsNotification.getCreationDate()!=null?dateFormat.format(smsNotification.getCreationDate()):"");
         documentMap.put("deliveryDate", smsNotification.getDeliveryDate()!=null?dateFormat.format(smsNotification.getDeliveryDate()):"");

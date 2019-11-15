@@ -58,7 +58,7 @@
     <gui-opc.version>1.2.27</gui-opc.version>
     <gui-iar.version>1.0.35</gui-iar.version>
     <gui-opr.version>1.0.38</gui-opr.version>
-    <gui-stg.version>1.0.60</gui-stg.version>
+    <gui-stg.version>1.0.61</gui-stg.version>
     <gui-sbm.version>1.0.72</gui-sbm.version>
     <gui-lpm.version>1.0.4</gui-lpm.version>
     <gui-csrmockup.version>1.0.2</gui-csrmockup.version>
