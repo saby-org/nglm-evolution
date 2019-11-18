@@ -95,6 +95,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public static final String PURCHASEID = "purchaseId";
   public static final String OFFERID = "offerId";
   public static final String OFFERNAME = "offerName";
+  public static final String OFFERDISPLAY = "offerDisplay";
   public static final String OFFERQTY = "offerQty";
   public static final String SALESCHANNELID = "salesChannelId";
   public static final String SALESCHANNEL = "salesChannel";

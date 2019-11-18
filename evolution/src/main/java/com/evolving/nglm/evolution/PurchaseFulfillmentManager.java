@@ -489,6 +489,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(CUSTOMERID, getSubscriberID());
           guiPresentationMap.put(OFFERID, getOfferID());
           guiPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
+          guiPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
           guiPresentationMap.put(OFFERQTY, getQuantity());
           guiPresentationMap.put(OFFERSTOCK, offer.getStock());
           if(offer.getOfferSalesChannelsAndPrices() != null){
@@ -559,6 +560,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       thirdPartyPresentationMap.put(OFFERID, getOfferID());
       thirdPartyPresentationMap.put(OFFERNAME, offer.getJSONRepresentation().get("name"));
+      thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
       thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
       thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
       if(offer.getOfferSalesChannelsAndPrices() != null){
