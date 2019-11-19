@@ -9,10 +9,12 @@ package com.evolving.nglm.evolution;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -25,7 +27,6 @@ import com.evolving.nglm.core.SuspenseProcessEventConfiguration;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.SubscriberProfile.CompressionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,7 +130,6 @@ public class Deployment
   private static String journeyTrafficChangeLogTopic;
   private static String journeyTrafficTopic;
   private static String subscriberProfileRegistrySubject;
-  private static CompressionType subscriberProfileCompressionType;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
   private static String ODRDatacubePeriodCronEntryString;
@@ -243,6 +243,7 @@ public class Deployment
   public static String getAssignSubscriberIDsTopic() { return com.evolving.nglm.core.Deployment.getAssignSubscriberIDsTopic(); }
   public static String getAssignExternalSubscriberIDsTopic() { return com.evolving.nglm.core.Deployment.getAssignExternalSubscriberIDsTopic(); }
   public static String getRecordSubscriberIDTopic() { return com.evolving.nglm.core.Deployment.getRecordSubscriberIDTopic(); }
+  public static String getCleanupSubscriberTopic() { return com.evolving.nglm.core.Deployment.getCleanupSubscriberTopic(); }
   public static String getExternalSubscriberID() { return com.evolving.nglm.core.Deployment.getExternalSubscriberID(); }
   public static String getSubscriberTraceControlAlternateID() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAlternateID(); }
   public static boolean getSubscriberTraceControlAutoProvision() { return com.evolving.nglm.core.Deployment.getSubscriberTraceControlAutoProvision(); }
@@ -340,7 +341,6 @@ public class Deployment
   public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
   public static String getJourneyTrafficTopic() { return journeyTrafficTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
-  public static CompressionType getSubscriberProfileCompressionType() { return subscriberProfileCompressionType; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
   public static String getODRDatacubePeriodCronEntryString() { return ODRDatacubePeriodCronEntryString; }
@@ -1879,20 +1879,6 @@ public class Deployment
       }
 
     //
-    //  subscriberProfileCompressionType
-    //
-
-    try
-      {
-        subscriberProfileCompressionType = CompressionType.fromStringRepresentation(JSONUtilities.decodeString(jsonRoot, "subscriberProfileCompressionType", "unknown"));
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    if (subscriberProfileCompressionType == CompressionType.Unknown) throw new ServerRuntimeException("unsupported compression type");
-
-    //
     //  journeyTrafficArchivePeriodInSeconds
     //
 
@@ -2029,13 +2015,13 @@ public class Deployment
     //
 
     try
-    {
-      criterionFieldAvailableValuesTopic = JSONUtilities.decodeString(jsonRoot, "criterionFieldAvailableValuesTopic", true);
-    }
-  catch (JSONUtilitiesException e)
-    {
-      throw new ServerRuntimeException("deployment", e);
-    }
+      {
+        criterionFieldAvailableValuesTopic = JSONUtilities.decodeString(jsonRoot, "criterionFieldAvailableValuesTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
 
     //
     //  baseLanguageID

@@ -77,8 +77,15 @@ public class StateStoreSerde<T extends StateStore> implements Serde<T>
       @Override public void close() { }
       @Override public byte[] serialize(String topic, T data)
       {
-        if (data.getKafkaRepresentation() == null) throw new ServerRuntimeException("stateStoreSerde found null representation");
-        return data.getKafkaRepresentation();
+        if (data != null)
+          {
+            if (data.getKafkaRepresentation() == null) throw new ServerRuntimeException("stateStoreSerde found null representation");
+            return data.getKafkaRepresentation();
+          }
+        else
+          {
+            return null;
+          }
       }
     };
   }
@@ -98,7 +105,7 @@ public class StateStoreSerde<T extends StateStore> implements Serde<T>
       @Override public T deserialize(String topic, byte[] data)
       {
         T result = connectSerde.deserializer().deserialize(topic, data);
-        result.setKafkaRepresentation(data);
+        if (result != null) result.setKafkaRepresentation(data);
         return result;
       }
     };
@@ -112,6 +119,9 @@ public class StateStoreSerde<T extends StateStore> implements Serde<T>
 
   public void setKafkaRepresentation(String topic, T data)
   {
-    data.setKafkaRepresentation(connectSerde.serializer().serialize(topic, data));
+    if (data != null)
+      {
+        data.setKafkaRepresentation(connectSerde.serializer().serialize(topic, data));
+      }
   }
 }

@@ -56,6 +56,7 @@
   "ucgStateTopic"                                        : "${topic.ucgstate}",
   "renamedProfileCriterionFieldTopic"                    : "${topic.renamedprofilecriterionfield}",
   "timedEvaluationTopic"                                 : "${topic.timedevaluation}",
+  "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "bonusDeliveryTopic"                                   : "${topic.bonusdelivery}",
@@ -113,12 +114,6 @@
   --
 
   "subscriberProfileRegistrySubject"                     : "${registrysubject.subscriberprofile}",
-
-  --
-  --  subscriberProfileCompressionType
-  --
-
-  "subscriberProfileCompressionType"                     : "<_REDIS_SUBSCRIBERPROFILE_COMPRESSION_>",
 
   --
   --  journeyTrafficArchive default values
@@ -269,6 +264,21 @@
     --
     
     "elasticSearchScrollSize" : 1000,
+
+    --
+    --  elasticSearch subscriber indexes
+    --
+
+    "subscriberESIndexes" :
+      [
+        "subscriberprofile",
+	"detailedrecords_bonuses-*",
+	"detailedrecords_offers-*",
+	"detailedrecords_messages-*",
+	"journeystatistic*",
+	"journeymetric",
+	"regr_criteria"
+      ],
 
     -- 
     -- supported Token Codes Formats

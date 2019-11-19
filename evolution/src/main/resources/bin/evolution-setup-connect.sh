@@ -5,27 +5,6 @@
   #################################################################################
 
   #
-  #  sink connector -- subscriberProfile (redis)
-  #
-
-  export CONNECT_URL_SUBSCRIBERPROFILE_REDIS=${CONNECT_URL_SUBSCRIBERPROFILE_REDIS:-$DEFAULT_CONNECT_URL}
-  export CONNECT_REDIS_SUBSCRIBERPROFILE_SINK_TASKS=${CONNECT_REDIS_SUBSCRIBERPROFILE_SINK_TASKS:-'1'}
-  curl -XPOST $CONNECT_URL_SUBSCRIBERPROFILE_REDIS/connectors -H "Content-Type: application/json" -d '
-    {
-      "name" : "subscriberprofile_redis_sink_connector",
-      "config" :
-        {
-        "connector.class" : "com.evolving.nglm.evolution.SubscriberProfileRedisSinkConnector",
-        "tasks.max" : '$CONNECT_REDIS_SUBSCRIBERPROFILE_SINK_TASKS',
-        "topics" : "${changelog.evolutionengine.subscriberstate.topic}",
-        "redisSentinels" : "'$REDIS_SENTINELS'",
-        "redisInstance" : "subscriberprofile",
-        "defaultDBIndex"   : "0",
-        "pipelined" : "true"
-        }
-    }' &
-
-  #
   #  sink connector -- subscriberProfile (elasticsearch)
   #
 

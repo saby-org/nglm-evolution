@@ -75,6 +75,7 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
@@ -258,6 +259,7 @@ public class EvolutionEngine
 
     String emptyTopic = Deployment.getEmptyTopic();
     String timedEvaluationTopic = Deployment.getTimedEvaluationTopic();
+    String cleanupSubscriberTopic = Deployment.getCleanupSubscriberTopic();
     String subscriberProfileForceUpdateTopic = Deployment.getSubscriberProfileForceUpdateTopic();
     String profileChangeEventTopic = Deployment.getProfileChangeEventTopic();
     String profileSegmentChangeEventTopic = Deployment.getProfileSegmentChangeEventTopic();
@@ -595,6 +597,7 @@ public class EvolutionEngine
     final Serde<byte[]> byteArraySerde = new Serdes.ByteArraySerde();
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
+    final ConnectSerde<CleanupSubscriber> cleanupSubscriberSerde = CleanupSubscriber.serde();
     final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
@@ -635,6 +638,7 @@ public class EvolutionEngine
 
     ArrayList<ConnectSerde<? extends SubscriberStreamEvent>> evolutionEventSerdes = new ArrayList<ConnectSerde<? extends SubscriberStreamEvent>>();
     evolutionEventSerdes.add(timedEvaluationSerde);
+    evolutionEventSerdes.add(cleanupSubscriberSerde);
     evolutionEventSerdes.add(subscriberProfileForceUpdateSerde);
     evolutionEventSerdes.add(recordSubscriberIDSerde);
     evolutionEventSerdes.add(journeyRequestSerde);
@@ -667,6 +671,7 @@ public class EvolutionEngine
     //
 
     KStream<StringKey, TimedEvaluation> timedEvaluationSourceStream = builder.stream(timedEvaluationTopic, Consumed.with(stringKeySerde, timedEvaluationSerde));
+    KStream<StringKey, CleanupSubscriber> cleanupSubscriberSourceStream = builder.stream(cleanupSubscriberTopic, Consumed.with(stringKeySerde, cleanupSubscriberSerde));
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateSourceStream = builder.stream(subscriberProfileForceUpdateTopic, Consumed.with(stringKeySerde, subscriberProfileForceUpdateSerde));
     KStream<StringKey, RecordSubscriberID> recordSubscriberIDSourceStream = builder.stream(recordSubscriberIDTopic, Consumed.with(stringKeySerde, recordSubscriberIDSerde));
     KStream<StringKey, JourneyRequest> journeyRequestSourceStream = builder.stream(journeyRequestTopic, Consumed.with(stringKeySerde, journeyRequestSerde));
@@ -737,6 +742,7 @@ public class EvolutionEngine
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> extendedProfileEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) periodicTimedEvaluationStream);
+    extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) cleanupSubscriberSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     extendedProfileEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberProfileForceUpdateSourceStream);
     extendedProfileEventStreams.addAll(extendedProfileEvolutionEngineEventStreams);
@@ -783,6 +789,7 @@ public class EvolutionEngine
     ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>> evolutionEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) standardTimedEvaluationStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) enhancedPeriodicEvaluationStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) cleanupSubscriberSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberProfileForceUpdateSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) recordSubscriberIDSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) journeyRequestSourceStream);
@@ -958,6 +965,7 @@ public class EvolutionEngine
     //
 
     KStream subscriberHistoryCompositeStream = journeyStatisticSourceStream;
+    subscriberHistoryCompositeStream = subscriberHistoryCompositeStream.merge(cleanupSubscriberSourceStream);
     for (KStream<StringKey, ? extends SubscriberStreamEvent> eventStream : deliveryManagerResponseStreams)
       {
         subscriberHistoryCompositeStream = (subscriberHistoryCompositeStream == null) ? eventStream : subscriberHistoryCompositeStream.merge(eventStream);
@@ -1632,6 +1640,24 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  cleanup
+    *
+    *****************************************/
+
+    switch (evolutionEvent.getSubscriberAction())
+      {
+        case Cleanup:
+          updateScheduledEvaluations((currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet(), Collections.<TimedEvaluation>emptySet());
+          return null;
+          
+        case Delete:
+          cleanSubscriberState(currentSubscriberState, now);
+          SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
+          return currentSubscriberState;
+      }
+    
+    /*****************************************
+    *
     *  profileChangeEvent get Old Values
     *
     *****************************************/
@@ -1709,35 +1735,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    //
-    //  previously scheduled
-    //
-
-    Set<TimedEvaluation> previouslyScheduledEvaluations = (currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet();
-
-    //
-    //  deschedule no longer required events
-    //
-
-    for (TimedEvaluation scheduledEvaluation : previouslyScheduledEvaluations)
-      {
-        if (! subscriberState.getScheduledEvaluations().contains(scheduledEvaluation))
-          {
-            timerService.deschedule(scheduledEvaluation);
-          }
-      }
-
-    //
-    //  schedule new events
-    //
-
-    for (TimedEvaluation scheduledEvaluation : subscriberState.getScheduledEvaluations())
-      {
-        if (! previouslyScheduledEvaluations.contains(scheduledEvaluation))
-          {
-            timerService.schedule(scheduledEvaluation);
-          }
-      }
+    updateScheduledEvaluations((currentSubscriberState != null) ? currentSubscriberState.getScheduledEvaluations() : Collections.<TimedEvaluation>emptySet(), subscriberState.getScheduledEvaluations());
 
     /*****************************************
     *
@@ -1794,13 +1792,13 @@ public class EvolutionEngine
 
     if (subscriberStateUpdated)
       {
-        subscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+        SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
         evolutionEngineStatistics.updateSubscriberStateSize(subscriberState.getKafkaRepresentation());
         if (subscriberState.getKafkaRepresentation().length > 1000000)
           {
             log.error("StateStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberState.getKafkaRepresentation().length);
             cleanSubscriberState(currentSubscriberState, now);
-            currentSubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
+            SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), currentSubscriberState);
             subscriberStateUpdated = false;
           }
       }
@@ -1822,6 +1820,15 @@ public class EvolutionEngine
 
   private static boolean cleanSubscriberState(SubscriberState subscriberState, Date now)
   {
+    //
+    //  abort if null
+    //
+
+    if (subscriberState == null)
+      {
+        return false;
+      }
+    
     //
     //  subscriberStateUpdated
     //
@@ -2172,6 +2179,39 @@ public class EvolutionEngine
     }
   }
 
+  /*****************************************
+  * 
+  *  updateScheduledEvaluations
+  *
+  *****************************************/
+
+  private static void updateScheduledEvaluations(Set<TimedEvaluation> previouslyScheduledEvaluations, Set<TimedEvaluation> scheduledEvaluations)
+  {
+    //
+    //  deschedule no longer required events
+    //
+
+    for (TimedEvaluation scheduledEvaluation : previouslyScheduledEvaluations)
+      {
+        if (! scheduledEvaluations.contains(scheduledEvaluation))
+          {
+            timerService.deschedule(scheduledEvaluation);
+          }
+      }
+
+    //
+    //  schedule new events
+    //
+
+    for (TimedEvaluation scheduledEvaluation : scheduledEvaluations)
+      {
+        if (! previouslyScheduledEvaluations.contains(scheduledEvaluation))
+          {
+            timerService.schedule(scheduledEvaluation);
+          }
+      }
+  }
+  
   /*****************************************
   * 
   *  callExternalAPI
@@ -4462,6 +4502,23 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  cleanup
+    *
+    *****************************************/
+
+    switch (evolutionEvent.getSubscriberAction())
+      {
+        case Cleanup:
+          return null;
+          
+        case Delete:
+          cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
+          ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
+          return currentExtendedSubscriberProfile;
+      }
+    
+    /*****************************************
+    *
     *  process subscriberTraceControl
     *
     *****************************************/
@@ -4508,13 +4565,13 @@ public class EvolutionEngine
 
     if (extendedSubscriberProfileUpdated)
       {
-        extendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile);
+        ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), extendedSubscriberProfile);
         evolutionEngineStatistics.updateExtendedProfileSize(extendedSubscriberProfile.getKafkaRepresentation());
         if (extendedSubscriberProfile.getKafkaRepresentation().length > 1000000)
           {
             log.error("ExtendedSubscriberProfile size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), extendedSubscriberProfile.getKafkaRepresentation().length);
             cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
-            currentExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
+            ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
             extendedSubscriberProfileUpdated = false;
           }
       }
@@ -4536,6 +4593,15 @@ public class EvolutionEngine
 
   private static boolean cleanExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile, Date now)
   {
+    //
+    //  abort if null
+    //
+
+    if (extendedSubscriberProfile == null)
+      {
+        return false;
+      }
+    
     //
     //  extendedSubscrberProfileUpdated
     //
@@ -4613,6 +4679,23 @@ public class EvolutionEngine
 
     /*****************************************
     *
+    *  cleanup
+    *
+    *****************************************/
+
+    switch (evolutionEvent.getSubscriberAction())
+      {
+        case Cleanup:
+          return null;
+          
+        case Delete:
+          cleanSubscriberHistory(currentSubscriberHistory, now);
+          SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
+          return currentSubscriberHistory;
+      }
+    
+    /*****************************************
+    *
     *  deliveryRequest
     *
     *****************************************/
@@ -4641,13 +4724,13 @@ public class EvolutionEngine
 
     if (subscriberHistoryUpdated)
       {
-        subscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
+        SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), subscriberHistory);
         evolutionEngineStatistics.updateSubscriberHistorySize(subscriberHistory.getKafkaRepresentation());
         if (subscriberHistory.getKafkaRepresentation().length > 1000000)
           {
             log.error("HistoryStore size error, ignoring event {} for subscriber {}: {}", evolutionEvent.getClass().toString(), evolutionEvent.getSubscriberID(), subscriberHistory.getKafkaRepresentation().length);
             cleanSubscriberHistory(currentSubscriberHistory, now);
-            currentSubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
+            SubscriberHistory.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberHistoryChangeLogTopic(), currentSubscriberHistory);
             subscriberHistoryUpdated = false;
           }
       }
@@ -4669,6 +4752,15 @@ public class EvolutionEngine
 
   private static boolean cleanSubscriberHistory(SubscriberHistory subscriberHistory, Date now)
   {
+    //
+    //  abort if null
+    //
+
+    if (subscriberHistory == null)
+      {
+        return false;
+      }
+    
     //
     //  subscriberHistoryUpdated
     //
@@ -4853,27 +4945,30 @@ public class EvolutionEngine
   private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberState subscriberState)
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
-    result.addAll(subscriberState.getJourneyResponses());
-    result.addAll(subscriberState.getJourneyRequests());
-    result.addAll(subscriberState.getLoyaltyProgramResponses());
-    result.addAll(subscriberState.getLoyaltyProgramRequests());
-    result.addAll(subscriberState.getPointFulfillmentResponses());
-    result.addAll(subscriberState.getDeliveryRequests());
-    result.addAll(subscriberState.getJourneyStatisticWrappers());
-    for (JourneyStatisticWrapper wrapper: subscriberState.getJourneyStatisticWrappers()) 
+    if (subscriberState != null)
       {
-        if (wrapper.getJourneyStatistic() != null)
+        result.addAll(subscriberState.getJourneyResponses());
+        result.addAll(subscriberState.getJourneyRequests());
+        result.addAll(subscriberState.getLoyaltyProgramResponses());
+        result.addAll(subscriberState.getLoyaltyProgramRequests());
+        result.addAll(subscriberState.getPointFulfillmentResponses());
+        result.addAll(subscriberState.getDeliveryRequests());
+        result.addAll(subscriberState.getJourneyStatisticWrappers());
+        for (JourneyStatisticWrapper wrapper: subscriberState.getJourneyStatisticWrappers()) 
           {
-            result.add(wrapper.getJourneyStatistic());
+            if (wrapper.getJourneyStatistic() != null)
+              {
+                result.add(wrapper.getJourneyStatistic());
+              }
           }
+        result.addAll(subscriberState.getJourneyMetrics());
+        result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
+        result.addAll(subscriberState.getPropensityOutputs());
+        result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
+        result.addAll(subscriberState.getProfileChangeEvents());
+        result.addAll(subscriberState.getProfileSegmentChangeEvents());
+        result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }
-    result.addAll(subscriberState.getJourneyMetrics());
-    result.addAll((subscriberState.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(subscriberState.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
-    result.addAll(subscriberState.getPropensityOutputs());
-    result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
-    result.addAll(subscriberState.getProfileChangeEvents());
-    result.addAll(subscriberState.getProfileSegmentChangeEvents());
-    result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
     return result;
   }
 
@@ -4886,7 +4981,7 @@ public class EvolutionEngine
   private static List<SubscriberStreamOutput> getExtendedProfileOutputs(ExtendedSubscriberProfile extendedSubscriberProfile)
   {
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
-    result.addAll((extendedSubscriberProfile.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(extendedSubscriberProfile.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
+    result.addAll((extendedSubscriberProfile != null && extendedSubscriberProfile.getSubscriberTrace() != null) ? Collections.<SubscriberTrace>singletonList(extendedSubscriberProfile.getSubscriberTrace()) : Collections.<SubscriberTrace>emptyList());
     return result;
   }
   
