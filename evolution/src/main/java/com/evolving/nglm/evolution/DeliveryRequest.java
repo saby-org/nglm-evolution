@@ -154,6 +154,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     BDR(1),
     ODR(2),
     Messages(3),
+    LoyaltyProgram(4),
     Unknown(-1);
     private Integer externalRepresentation;
     private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }

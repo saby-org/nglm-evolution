@@ -91,7 +91,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getEventDate() { return eventDate; }
 
-  @Override public Integer getActivityType() { return ActivityType.BDR.getExternalRepresentation(); }
+  @Override public Integer getActivityType() { return ActivityType.LoyaltyProgram.getExternalRepresentation(); }
   
   /*****************************************
   *

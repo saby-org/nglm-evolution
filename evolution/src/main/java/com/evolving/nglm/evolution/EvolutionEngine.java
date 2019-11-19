@@ -2406,10 +2406,8 @@ public class EvolutionEngine
 
             if (success)
               {
-                PointBalance pointBalance = subscriberProfile.getPointBalances().get(pointFulfillmentRequest.getPointID());
                 pointFulfillmentResponse.setDeliveryStatus(DeliveryStatus.Delivered);
                 pointFulfillmentResponse.setDeliveryDate(now);
-                pointFulfillmentResponse.setResultValidityDate(pointBalance.getFirstExpirationDate(now));
               }
             else
               {

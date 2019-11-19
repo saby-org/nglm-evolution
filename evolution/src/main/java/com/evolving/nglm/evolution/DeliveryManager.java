@@ -1602,6 +1602,11 @@ public abstract class DeliveryManager
                         MessageDelivery messageDelivery = new MessageDelivery(deliveryRequest);
                         String topic = Deployment.getMessageDeliveryTopic();
                         kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), MessageDelivery.serde().serializer().serialize(topic, messageDelivery)));
+                      } else if (deliveryRequest.getActivityType().equals(ActivityType.LoyaltyProgram.getExternalRepresentation()))
+                      {
+                        //
+                        // Nothing to do
+                        //
                       }
                       
                     break;
