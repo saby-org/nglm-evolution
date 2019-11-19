@@ -557,7 +557,7 @@ public abstract class Expression
           case IntegerExpression:
           case DoubleExpression:
           case BooleanExpression:
-  	    script.append("def right_" + getNodeID() + " = doc." + esField + "?.value; ");
+  	    script.append("def right_" + getNodeID() + " = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
             break;
             
           case StringSetExpression:
@@ -575,7 +575,7 @@ public abstract class Expression
             script.append("def rightInstant_" + getNodeID() + " = rightCalendar_" + getNodeID() + ".toInstant(); ");
             script.append("def rightRaw_" + getNodeID() + " = LocalDateTime.ofInstant(rightInstant_" + getNodeID() + ", ZoneOffset.UTC); ");
             script.append(EvaluationCriterion.constructDateTruncateESScript(getNodeID(), "rightRaw", "tempRight", baseTimeUnit));
-            script.append("right = tempRight; } ");
+            script.append("right_" + getNodeID() + " =  tempRight; } ");
             break;
 
           default:

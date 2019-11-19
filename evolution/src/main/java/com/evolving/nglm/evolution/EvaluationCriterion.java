@@ -1169,7 +1169,7 @@ public class EvaluationCriterion
     switch (evaluationDataType)
       {
         case StringCriterion:
-          script.append("def left = doc." + esField + "?.value?.toLowerCase(); ");
+          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + ".value?.toLowerCase() : null; ");
           break;
           
         case DateCriterion:
@@ -1194,7 +1194,7 @@ public class EvaluationCriterion
           break;
           
         default:
-          script.append("def left = doc." + esField + "?.value; ");
+          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
           break;
       }
 
@@ -1238,11 +1238,11 @@ public class EvaluationCriterion
         *****************************************/
 
         case EqualOperator:
-          script.append("return left == right; ");
+          script.append("return (left != null) ? left == right : false; ");
           break;
 
         case NotEqualOperator:
-          script.append("return left != right; ");
+          script.append("return (left != null) ? left != right : false; ");
           break;
 
         /*****************************************
@@ -1255,11 +1255,11 @@ public class EvaluationCriterion
           switch (evaluationDataType)
             {
               case DateCriterion:
-                script.append("return left.isAfter(right); ");
+                script.append("return (left != null) ? left.isAfter(right) : false; ");
                 break;
 
               default:
-                script.append("return left > right; ");
+                script.append("return (left != null) ? left > right : false; ");
                 break;
             }
           break;
@@ -1268,11 +1268,11 @@ public class EvaluationCriterion
           switch (evaluationDataType)
             {
               case DateCriterion:
-                script.append("return !left.isBefore(right); ");
+                script.append("return (left != null) ? !left.isBefore(right) : true; ");
                 break;
 
               default:
-                script.append("return left >= right; ");
+                script.append("return (left != null) ? left >= right : false; ");
                 break;
             }
           break;
@@ -1281,11 +1281,11 @@ public class EvaluationCriterion
           switch (evaluationDataType)
             {
               case DateCriterion:
-                script.append("return left.isBefore(right); ");
+                script.append("return (left != null) ? left.isBefore(right) : false; ");
                 break;
 
               default:
-                script.append("return left < right; ");
+                script.append("return (left != null) ? left < right : false; ");
                 break;
             }
           break;
@@ -1294,11 +1294,11 @@ public class EvaluationCriterion
           switch (evaluationDataType)
             {
               case DateCriterion:
-                script.append("return !left.isAfter(right); ");
+                script.append("return (left != null) ? !left.isAfter(right) : true; ");
                 break;
 
               default:
-                script.append("return left <= right; ");
+                script.append("return (left != null) ? left <= right : false; ");
                 break;
             }
           break;
@@ -1430,7 +1430,7 @@ public class EvaluationCriterion
           if (criterionDefault)
             query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(baseQuery);
           else
-            query = baseQuery;
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
           break;
       }
     
