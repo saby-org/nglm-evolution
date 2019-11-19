@@ -2066,7 +2066,7 @@ public class EvolutionEngine
         Point point = pointService.getActivePoint(pointID, now);
         if(point != null){
           //TODO : what module is best here ?
-          updatePointBalance(context, Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now);
+          updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true);
         }
       }
     }
@@ -2395,16 +2395,10 @@ public class EvolutionEngine
             }
             
             //
-            // set the validity in the response
-            //
-            pointFulfillmentResponse.setValidityPeriodType(newPoint.getValidity().getPeriodType());
-            pointFulfillmentResponse.setValidityPeriodQuantity(newPoint.getValidity().getPeriodQuantity());
-
-            //
             // update balance 
             //
             
-            boolean success = updatePointBalance(context, pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now);
+            boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false);
             
             //
             //  response
@@ -2741,7 +2735,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static boolean updatePointBalance(EvolutionEventContext context, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now)
+  private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR)
   {
 
     //
@@ -2764,7 +2758,7 @@ public class EvolutionEngine
     //  update
     //
 
-    boolean success = pointBalance.update(context, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now);
+    boolean success = pointBalance.update(context, pointFulfillmentResponse, eventID, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now, generateBDR);
 
     //
     //  update balances
@@ -3076,7 +3070,7 @@ public class EvolutionEngine
                         
                         log.info("update loyalty program STATUS => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit()+" of point "+point.getPointName());
                         int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfStatusPointsPerUnit();
-                        updatePointBalance(context, Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now);
+                        updatePointBalance(context, null, statusEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
                         subscriberProfileUpdated = true;
 
                       }
@@ -3124,7 +3118,7 @@ public class EvolutionEngine
                         
                         log.info("update loyalty program REWARD => adding "+((LoyaltyProgramPointsEvent)evolutionEvent).getUnit()+" x "+subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit()+" of point with ID "+loyaltyProgramPoints.getRewardPointsID());
                         int amount = ((LoyaltyProgramPointsEvent)evolutionEvent).getUnit() * subscriberCurrentTierDefinition.getNumberOfRewardPointsPerUnit();
-                        updatePointBalance(context, Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now);
+                        updatePointBalance(context, null, rewardEventDeclaration.getEventClassName(), Module.Loyalty_Program.getExternalRepresentation(), loyaltyProgram.getLoyaltyProgramID(), subscriberProfile, point, CommodityDeliveryOperation.Credit, amount, now, true);
                         subscriberProfileUpdated = true;
                         
                       }

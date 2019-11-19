@@ -78,14 +78,17 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public static final String PROVIDERNAME = "providerName";
   public static final String DELIVERABLEID = "deliverableId";
   public static final String DELIVERABLENAME = "deliverableName";
+  public static final String DELIVERABLEDISPLAY = "deliverableDisplay";
   public static final String DELIVERABLEQTY = "deliverableQty";
   public static final String OPERATION = "operation";
   public static final String VALIDITYPERIODTYPE = "validityPeriodType";
   public static final String VALIDITYPERIODQUANTITY = "validityPeriodQuantity";
+  public static final String DELIVERABLEEXPIRATIONDATE = "deliverableExpirationDate";
   public static final String MODULEID = "moduleId";
   public static final String MODULENAME = "moduleName";
   public static final String FEATUREID = "featureId";
   public static final String FEATURENAME = "featureName";
+  public static final String FEATUREDISPLAY = "featureDisplay";
   public static final String ORIGIN = "origin";
   
   //
@@ -668,6 +671,50 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
           break;
       }
     return featureName;
+  }
+
+  //
+  //  getFeatureDisplay
+  //
+
+  public static String getFeatureDisplay(Module module, String featureId, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
+  {
+    String featureDisplay = null;
+
+    switch (module)
+      {
+        case Journey_Manager:
+          GUIManagedObject journey = journeyService.getStoredJourney(featureId);
+          journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
+          featureDisplay = journey == null ? null : journey.getGUIManagedObjectDisplay();
+          break;
+
+        case Loyalty_Program:
+          GUIManagedObject loyaltyProgram = loyaltyProgramService.getStoredLoyaltyProgram(featureId);
+          featureDisplay = loyaltyProgram == null ? null : loyaltyProgram.getGUIManagedObjectDisplay();
+          break;
+
+        case Offer_Catalog:
+          featureDisplay = offerService.getStoredOffer(featureId).getGUIManagedObjectDisplay();
+          break;
+
+        case Delivery_Manager:
+          featureDisplay = "Delivery_Manager-its temp"; //To DO
+          break;
+
+        case REST_API:
+          featureDisplay = "REST_API-its temp"; //To DO
+          break;
+          
+        case Customer_Care:
+          featureDisplay = "Customer_Care-its temp"; //To DO
+          break;
+
+        case Unknown:
+          featureDisplay = "Unknown";
+          break;
+      }
+    return featureDisplay;
   }
 
   /*****************************************

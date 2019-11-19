@@ -49,7 +49,8 @@ public class PointFulfillmentRequest extends DeliveryRequest
     schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("validityPeriodType", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("validityPeriodQuantity", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("resultValidityDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("resultValidityDate", Timestamp.builder().optional().schema()); // TODO : what is this field used for ?
+    schemaBuilder.field("deliverableExpirationDate", Timestamp.builder().optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -79,6 +80,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
   private TimeUnit validityPeriodType;
   private Integer validityPeriodQuantity;
   private Date resultValidityDate;
+  private Date deliverableExpirationDate;
 
   //
   //  accessors
@@ -90,14 +92,16 @@ public class PointFulfillmentRequest extends DeliveryRequest
   public TimeUnit getValidityPeriodType() { return validityPeriodType; }
   public Integer getValidityPeriodQuantity() { return validityPeriodQuantity; }
   public Date getResultValidityDate() { return resultValidityDate; }
+  public Date getDeliverableExpirationDate() { return deliverableExpirationDate; }
 
   //
   //  setters
   //  
 
-  public void setResultValidityDate(Date resultValidityDate) { this.resultValidityDate = resultValidityDate; }
   public void setValidityPeriodType(TimeUnit validityPeriodType) { this.validityPeriodType = validityPeriodType; }
   public void setValidityPeriodQuantity(Integer validityPeriodQuantity) { this.validityPeriodQuantity = validityPeriodQuantity; } 
+  public void setResultValidityDate(Date resultValidityDate) { this.resultValidityDate = resultValidityDate; }
+  public void setDeliverableExpirationDate(Date deliverableExpirationDate) { this.deliverableExpirationDate = deliverableExpirationDate; } 
 
   //
   //  structure
@@ -120,6 +124,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     this.validityPeriodType = validityPeriodType;
     this.validityPeriodQuantity = validityPeriodQuantity;
     this.resultValidityDate = null;
+    this.deliverableExpirationDate = null;
   }
 
   /*****************************************
@@ -137,6 +142,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     this.validityPeriodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityPeriodType", false));
     this.validityPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, "validityPeriodQuantity", false);
     this.resultValidityDate = null;
+    this.deliverableExpirationDate = null;
   }
 
   /*****************************************
@@ -145,7 +151,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
   *
   *****************************************/
 
-  private PointFulfillmentRequest(SchemaAndValue schemaAndValue, String pointID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date resultValidityDate)
+  private PointFulfillmentRequest(SchemaAndValue schemaAndValue, String pointID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, Date resultValidityDate, Date deliverableExpirationDate)
   {
     super(schemaAndValue);
     this.pointID = pointID;
@@ -154,6 +160,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     this.validityPeriodType = validityPeriodType;
     this.validityPeriodQuantity = validityPeriodQuantity;
     this.resultValidityDate = resultValidityDate;
+    this.deliverableExpirationDate = deliverableExpirationDate;
   }
 
   /*****************************************
@@ -171,6 +178,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     this.validityPeriodType = pointFulfillmentRequest.getValidityPeriodType();
     this.validityPeriodQuantity = pointFulfillmentRequest.getValidityPeriodQuantity();
     this.resultValidityDate = pointFulfillmentRequest.getResultValidityDate();
+    this.deliverableExpirationDate = pointFulfillmentRequest.getDeliverableExpirationDate();
   }
 
   /*****************************************
@@ -201,6 +209,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     struct.put("validityPeriodType", pointFulfillmentRequest.getValidityPeriodType().getExternalRepresentation());
     struct.put("validityPeriodQuantity", pointFulfillmentRequest.getValidityPeriodQuantity());
     struct.put("resultValidityDate", pointFulfillmentRequest.getResultValidityDate());
+    struct.put("deliverableExpirationDate", pointFulfillmentRequest.getDeliverableExpirationDate());
     return struct;
   }
 
@@ -236,12 +245,13 @@ public class PointFulfillmentRequest extends DeliveryRequest
     TimeUnit validityPeriodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("validityPeriodType"));
     Integer validityPeriodQuantity = valueStruct.getInt32("validityPeriodQuantity");
     Date resultValidityDate = (Date) valueStruct.get("resultValidityDate");
+    Date deliverableExpirationDate = (Date) valueStruct.get("deliverableExpirationDate");
 
     //
     //  return
     //
 
-    return new PointFulfillmentRequest(schemaAndValue, pointID, operation, amount, validityPeriodType, validityPeriodQuantity, resultValidityDate);
+    return new PointFulfillmentRequest(schemaAndValue, pointID, operation, amount, validityPeriodType, validityPeriodQuantity, resultValidityDate, deliverableExpirationDate);
   }
 
   /****************************************
@@ -259,10 +269,12 @@ public class PointFulfillmentRequest extends DeliveryRequest
     guiPresentationMap.put(OPERATION, getOperation().toString());
     guiPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
     guiPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
+    guiPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
     guiPresentationMap.put(MODULEID, getModuleID());
     guiPresentationMap.put(MODULENAME, module.toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
     guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     guiPresentationMap.put(ORIGIN, "");
   }
   
@@ -274,10 +286,12 @@ public class PointFulfillmentRequest extends DeliveryRequest
     thirdPartyPresentationMap.put(OPERATION, getOperation().toString());
     thirdPartyPresentationMap.put(VALIDITYPERIODTYPE, getValidityPeriodType().getExternalRepresentation());
     thirdPartyPresentationMap.put(VALIDITYPERIODQUANTITY, getValidityPeriodQuantity());
+    thirdPartyPresentationMap.put(DELIVERABLEEXPIRATIONDATE, getDateString(getDeliverableExpirationDate()));
     thirdPartyPresentationMap.put(MODULEID, getModuleID());
     thirdPartyPresentationMap.put(MODULENAME, module.toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
 
@@ -299,6 +313,7 @@ public class PointFulfillmentRequest extends DeliveryRequest
     b.append("," + validityPeriodType);
     b.append("," + validityPeriodQuantity);
     b.append("," + resultValidityDate);
+    b.append("," + deliverableExpirationDate);
     b.append("}");
     return b.toString();
   }

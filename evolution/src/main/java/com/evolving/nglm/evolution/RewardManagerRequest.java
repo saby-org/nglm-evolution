@@ -323,6 +323,7 @@ public class RewardManagerRequest extends DeliveryRequest
     guiPresentationMap.put(MODULENAME, module.toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
     guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     guiPresentationMap.put(ORIGIN, "");
     guiPresentationMap.put(RETURNCODE, getReturnCode());
     guiPresentationMap.put(RETURNCODEDETAILS, getReturnStatus());
@@ -348,6 +349,7 @@ public class RewardManagerRequest extends DeliveryRequest
     thirdPartyPresentationMap.put(MODULENAME, module.toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
     thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
     thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnStatus());

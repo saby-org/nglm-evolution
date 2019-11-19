@@ -2,7 +2,6 @@ package com.evolving.nglm.evolution;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,15 +11,9 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
-import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentStatus;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 
 public class BDRSinkConnector extends SimpleESSinkConnector
 {
@@ -121,12 +114,6 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = null;
       
       if(commodityRequest != null){
-        Date expirationDate;
-        if (commodityRequest.getValidityPeriodType() == TimeUnit.Unknown) {
-          expirationDate = SystemTime.getCurrentTime();
-        } else {
-          expirationDate = EvolutionUtilities.addTime(SystemTime.getCurrentTime(), commodityRequest.getValidityPeriodQuantity(), commodityRequest.getValidityPeriodType(), Deployment.getBaseTimeZone());
-        }
         
         documentMap = new HashMap<String,Object>();
         documentMap.put("subscriberID", commodityRequest.getSubscriberID());
@@ -134,7 +121,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
         documentMap.put("deliveryRequestID", commodityRequest.getDeliveryRequestID());
         documentMap.put("originatingDeliveryRequestID", commodityRequest.getOriginatingDeliveryRequestID());
         documentMap.put("eventID", commodityRequest.getEventID());
-        documentMap.put("deliverableExpiration", expirationDate);
+        documentMap.put("deliverableExpirationDate", commodityRequest.getDeliverableExpirationDate());
         documentMap.put("providerID", commodityRequest.getProviderID());
         documentMap.put("deliverableID", commodityRequest.getCommodityID());
         documentMap.put("deliverableQty", commodityRequest.getAmount());

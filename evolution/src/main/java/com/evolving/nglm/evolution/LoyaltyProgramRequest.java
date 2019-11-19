@@ -239,6 +239,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     guiPresentationMap.put(MODULENAME, module.toString());
     guiPresentationMap.put(FEATUREID, getFeatureID());
     guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     guiPresentationMap.put(ORIGIN, "");
   }
   
@@ -252,6 +253,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
     thirdPartyPresentationMap.put(MODULENAME, module.toString());
     thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
     thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
     thirdPartyPresentationMap.put(ORIGIN, "");
   }
 }

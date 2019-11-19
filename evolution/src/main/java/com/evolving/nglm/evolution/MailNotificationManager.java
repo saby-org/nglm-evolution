@@ -567,6 +567,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       guiPresentationMap.put(MODULENAME, module.toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
       guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(SOURCE, getFromAddress());
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MAILMessageStatus.fromReturnCode(getReturnCode()).toString());
@@ -589,6 +590,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
       thirdPartyPresentationMap.put(MODULENAME, module.toString());
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(SOURCE, getFromAddress());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, MAILMessageStatus.fromReturnCode(getReturnCode()).toString());

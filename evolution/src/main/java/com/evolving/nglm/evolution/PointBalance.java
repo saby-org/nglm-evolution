@@ -201,7 +201,7 @@ public class PointBalance
   *
   *****************************************/
 
-  public boolean update(EvolutionEventContext context, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate)
+  public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR)
   {
     //
     //  validate
@@ -269,53 +269,10 @@ public class PointBalance
                 {
 
                   //
-                  //  generate fake commodityDeliveryResponse (needed to get BDRs)
+                  //  generate fake commodityDeliveryResponse (always generate BDR when bonuses expire, needed to get BDRs)
                   //
                   
-                  generateCommodityDeliveryResponse(context, moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable);
-                  
-//                  DeliveryManagerDeclaration commodityDeliveryManagerDeclaration = Deployment.getDeliveryManagers().get("commodityDelivery");
-//                  String commodityDeliveryResponseTopic = commodityDeliveryManagerDeclaration.getResponseTopic();
-//
-//                  HashMap<String,Object> commodityDeliveryRequestData = new HashMap<String,Object>();
-//                  
-//                  commodityDeliveryRequestData.put("deliveryRequestID", context.getUniqueKey());
-//                  commodityDeliveryRequestData.put("originatingRequest", true); 
-//                  commodityDeliveryRequestData.put("deliveryType", "commodityDelivery");
-//
-//                  commodityDeliveryRequestData.put("eventID", "bonusExpiration");
-//                  commodityDeliveryRequestData.put("moduleID", Module.Loyalty_Program.getExternalRepresentation());
-//                  commodityDeliveryRequestData.put("featureID", "bonusExpiration");
-//
-//                  commodityDeliveryRequestData.put("subscriberID", subscriberID);
-//                  commodityDeliveryRequestData.put("pointID", point.getPointID());
-//                  commodityDeliveryRequestData.put("providerID", searchedDeliverable.getFulfillmentProviderID());
-//                  commodityDeliveryRequestData.put("commodityID", searchedDeliverable.getDeliverableID());
-//                  commodityDeliveryRequestData.put("operation", CommodityDeliveryOperation.Expire.getExternalRepresentation());
-//                  commodityDeliveryRequestData.put("amount", expiredAmount);
-//                  commodityDeliveryRequestData.put("validityPeriodType", null);
-//                  commodityDeliveryRequestData.put("validityPeriodQuantity", 0);
-//
-//                  commodityDeliveryRequestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.SUCCESS.getReturnCode());
-//
-//                  log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : generating fake response DONE");
-//                  log.info(Thread.currentThread().getId()+" - PointBalance.update(...) : sending fake response ...");
-//
-//                  CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(JSONUtilities.encodeObject(commodityDeliveryRequestData), commodityDeliveryManagerDeclaration);
-//                  commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);
-//                  commodityDeliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
-//                  commodityDeliveryRequest.setStatusMessage("Success");
-//                  commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
-//
-//                  Properties kafkaProducerProperties = new Properties();
-//                  kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
-//                  kafkaProducerProperties.put("acks", "all");
-//                  kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-//                  kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-//                  KafkaProducer commodityDeliveryProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-//                  if(commodityDeliveryProducer != null){
-//                    commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest))); 
-//                  }
+                  generateCommodityDeliveryResponse(context, (eventID == null ? "bonusExpiration" : eventID), moduleID, (featureID == null ? "bonusExpiration" : featureID), subscriberID, CommodityDeliveryOperation.Expire, expiredAmount, point, searchedDeliverable, null);
                   
                 }
               
@@ -343,6 +300,7 @@ public class PointBalance
             //
 
             Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getBaseTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
+            if(pointFulfillmentResponse != null){ pointFulfillmentResponse.setDeliverableExpirationDate(expirationDate); }
 
             //
             //  adjust (or create) the bucket
@@ -388,8 +346,10 @@ public class PointBalance
                 break;
               }
             }
-            generateCommodityDeliveryResponse(context, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable);
-            
+            if(generateBDR){
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, expirationDate);
+            }
+           
           }
           break;
 
@@ -449,7 +409,9 @@ public class PointBalance
                 break;
               }
             }
-            generateCommodityDeliveryResponse(context, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable);
+            if(generateBDR){
+              generateCommodityDeliveryResponse(context, eventID, moduleID, featureID, subscriberID, operation, amount, point, searchedDeliverable, null);
+            }
             
           }
           break;
@@ -532,7 +494,7 @@ public class PointBalance
   *
   *****************************************/
 
-  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable){
+  private void generateCommodityDeliveryResponse(EvolutionEventContext context, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Deliverable deliverable, Date deliverableExpirationDate){
     
     //
     //  generate fake commodityDeliveryResponse (needed to get BDRs)
@@ -547,7 +509,7 @@ public class PointBalance
     commodityDeliveryRequestData.put("originatingRequest", true); 
     commodityDeliveryRequestData.put("deliveryType", "commodityDelivery");
 
-    commodityDeliveryRequestData.put("eventID", "bonusExpiration");
+    commodityDeliveryRequestData.put("eventID", (eventID == null ? "unknown" : eventID));
     commodityDeliveryRequestData.put("moduleID", moduleID);
     commodityDeliveryRequestData.put("featureID", featureID);
 
@@ -559,6 +521,8 @@ public class PointBalance
     commodityDeliveryRequestData.put("amount", amount);
     commodityDeliveryRequestData.put("validityPeriodType", null);
     commodityDeliveryRequestData.put("validityPeriodQuantity", 0);
+
+    commodityDeliveryRequestData.put("deliverableExpirationDate", deliverableExpirationDate);
 
     commodityDeliveryRequestData.put("commodityDeliveryStatusCode", CommodityDeliveryStatus.SUCCESS.getReturnCode());
 
