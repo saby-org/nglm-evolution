@@ -107,6 +107,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public static final String OFFERSTOCK = "offerStock";
   public static final String OFFERCONTENT = "offerContent";
   public static final String MEANOFPAYMENT = "meanOfPayment";
+  public static final String PAYMENTPROVIDERID = "paymentProviderID";
   public static final String VOUCHERCODE = "voucherCode";
   public static final String VOUCHERPARTNERID = "voucherPartnerId";
   

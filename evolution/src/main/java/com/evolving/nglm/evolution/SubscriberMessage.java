@@ -88,7 +88,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, List<String> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
     /*****************************************
     *
@@ -138,9 +138,10 @@ public abstract class SubscriberMessage
         //
 
         dialogMessages = new ArrayList<DialogMessage>();
-        for (String dialogMessageField : dialogMessageFields)
+        for (String dialogMessageField : dialogMessageFields.keySet())
           {
-            dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, criterionContext));
+            boolean mandatory = dialogMessageFields.get(dialogMessageField);
+            dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext));
           }
       }
   }

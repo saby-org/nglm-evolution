@@ -49,7 +49,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("dialogMessages", SchemaBuilder.array(DialogMessage.schema()).schema());
     schemaBuilder.field("readOnlyCopyID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("dialogMessageFields", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
+    schemaBuilder.field("dialogMessageFields", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.BOOLEAN_SCHEMA).name("message_template_dialog_message_fields").schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -67,7 +67,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   private List<DialogMessage> dialogMessages = new ArrayList<DialogMessage>();
   private String readOnlyCopyID;
-  protected List<String> dialogMessageFields = new ArrayList<String>();
+  protected Map<String, Boolean> dialogMessageFields = new HashMap<String, Boolean>();
 
   /*****************************************
   *
@@ -79,15 +79,10 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   public String getSubscriberMessageTemplateName() { return getGUIManagedObjectName(); }
   public List<DialogMessage> getDialogMessages() { return dialogMessages; }
   public String getReadOnlyCopyID() { return readOnlyCopyID; }
-  public List<String> getDialogMessageFields(){ return dialogMessageFields;}
+  public Map<String, Boolean> getDialogMessageFields(){ return dialogMessageFields;}
   public DialogMessage getDialogMessage(String messageField) 
   {    
-    DialogMessage result = null;
-    int index = getDialogMessageFields().indexOf(messageField);
-    if(index >= 0)
-      {
-        result = getDialogMessages().get(index); 
-      }
+    DialogMessage result = getDialogMessages().get(0/*messageField*/); 
     return result; 
   }
 
@@ -150,9 +145,10 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     this.dialogMessages = new ArrayList<DialogMessage>();
     if (messagesJSON.size() > 0)
       {
-        for (String dialogMessageField : getDialogMessageFields())
+        for (String dialogMessageField : getDialogMessageFields().keySet())
           {
-            this.dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, CriterionContext.Profile));
+            boolean mandatory = getDialogMessageFields().get(dialogMessageField);
+            this.dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.Profile));
           }
       }
 
@@ -273,7 +269,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     Struct valueStruct = (Struct) value;
     List<DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (List<Object>) valueStruct.get("dialogMessages"));
     String readOnlyCopyID = valueStruct.getString("readOnlyCopyID");
-    List<String> dialogMessageFields = (List<String>) valueStruct.get("dialogMessageFields");
+    Map<String, Boolean> dialogMessageFields = (Map<String, Boolean>) valueStruct.get("dialogMessageFields");
 
     //
     //  return
@@ -333,7 +329,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     GUIManagedObject.packCommon(struct, subscriberMessageTemplate);
     struct.put("dialogMessages", packDialogMessages(subscriberMessageTemplate.getDialogMessages()));
     struct.put("readOnlyCopyID", subscriberMessageTemplate.getReadOnlyCopyID());
-    struct.put("dialogMessageFields", subscriberMessageTemplate.getDialogMessageFields());
+    struct.put("dialogMessageFields", (subscriberMessageTemplate.getDialogMessageFields() == null ? new HashMap<String, Boolean>() : subscriberMessageTemplate.getDialogMessageFields()));
   }
   
   protected static Object packCommon(Schema schema, Object value)

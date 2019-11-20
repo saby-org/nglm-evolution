@@ -6,35 +6,17 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import java.text.Format;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class EmailMessage extends SubscriberMessage
 {
@@ -82,6 +64,15 @@ public class EmailMessage extends SubscriberMessage
 
   public EmailMessage(Object emailMessageJSON, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
-    super(emailMessageJSON, Arrays.asList("subject", "htmlBody", "textBody"), subscriberMessageTemplateService, criterionContext);
+    super(emailMessageJSON, createMap(), subscriberMessageTemplateService, criterionContext);
   }
+  
+  private static Map<String, Boolean> createMap() {
+    Map<String,Boolean> myMap = new HashMap<String, Boolean>();
+    myMap.put("subject", true);
+    myMap.put("htmlBody", true);
+    myMap.put("textBody", true);
+    return myMap;
+  }
+  
 }

@@ -713,7 +713,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 //          log.info("destAddress = "+destAddress);
 
           tags = new HashMap<String, List<String>>();
-          for(String messageField : template.getDialogMessageFields()){
+          for(String messageField : template.getDialogMessageFields().keySet()){
             DialogMessage dialogMessage = template.getDialogMessage(messageField);
             List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
             tags.put(messageField, dialogMessageTags);

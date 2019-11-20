@@ -19455,7 +19455,7 @@ public class GUIManager
         Map<String,Map<String,Object>> messageByLanguage = new HashMap<String,Map<String,Object>>();
         for (int i=0; i<template.getDialogMessages().size(); i++)
           {
-            String messageTextField = template.getDialogMessageFields().get(i);
+            String messageTextField = ""/*template.getDialogMessageFields().get(0/*dialogMessageField)*/;
             DialogMessage messageText = template.getDialogMessages().get(i);
             for (String language : messageText.getMessageTextByLanguage().keySet())
               {
