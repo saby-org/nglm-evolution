@@ -5807,6 +5807,7 @@ public class GUIManager
         jsonRoot.put("id", bulkCampaignID);
       }
     String bulkCampaignName = JSONUtilities.decodeString(jsonRoot, "name", true);
+    String bulkCampaignDisplay = JSONUtilities.decodeString(jsonRoot, "display", true);
     String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", true);
     String bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
     String bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
@@ -5876,6 +5877,7 @@ public class GUIManager
         campaignJSONRepresentation.put("journeyTemplateID", journeyTemplateID);
         campaignJSONRepresentation.put("id", bulkCampaignID);
         campaignJSONRepresentation.put("name", bulkCampaignName);
+        campaignJSONRepresentation.put("display", bulkCampaignDisplay);
         campaignJSONRepresentation.put("description", bulkCampaignDescription);
         campaignJSONRepresentation.put("effectiveStartDate", bulkCampaignEffectiveStartDate);
         campaignJSONRepresentation.put("effectiveEndDate", bulkCampaignEffectiveEndDate);
