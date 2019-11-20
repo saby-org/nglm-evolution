@@ -152,13 +152,12 @@ public class DatacubeScheduler
             
             while (! stopRequested)
               {
-                
                 DatacubeScheduling datacube = schedule.first();
                 if(datacube == null) 
                   {
                     break;
                   }
-                
+
                 Date nextPeriodicEvaluation = datacube.getNextGenerationDate();
                 if (now.before(nextPeriodicEvaluation))
                   {
@@ -196,5 +195,5 @@ public class DatacubeScheduler
               }
           }
       }    
-  } 
+  }
 }

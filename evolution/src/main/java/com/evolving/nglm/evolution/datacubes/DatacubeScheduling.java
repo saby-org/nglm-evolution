@@ -37,6 +37,7 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *
   *****************************************/
 
+  private long schedulingUniqueID;
   protected DatacubeGenerator datacube;
   private Date nextGenerationDate;
   private CronFormat periodicGeneration;
@@ -48,8 +49,9 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *
   *****************************************/
 
-  public DatacubeScheduling(DatacubeGenerator datacube, Date nextGenerationDate, String periodicGenerationCronEntry, String baseTimeZone)
+  public DatacubeScheduling(long schedulingUniqueID, DatacubeGenerator datacube, Date nextGenerationDate, String periodicGenerationCronEntry, String baseTimeZone)
   {
+    this.schedulingUniqueID = schedulingUniqueID;
     this.properlyConfigured = true;
     this.datacube = datacube;
     this.nextGenerationDate = nextGenerationDate;
@@ -88,12 +90,33 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   /*****************************************
   *
   *  compareTo
+  *  
+  *  This function sort by generation date, but because
+  *  two scheduling can have the same generation date, we 
+  *  also provide an arbitrary order with schedulingUniqueID
+  *  
+  *  compareTo must return 0 if and only if both object
+  *  are the exact same scheduling !
   *
   *****************************************/
   @Override
   public int compareTo(DatacubeScheduling o)
   {
-    return nextGenerationDate.compareTo(o.getNextGenerationDate());
+    if(this.schedulingUniqueID == o.schedulingUniqueID)
+      {
+        return 0;
+      }
+    
+    int result = nextGenerationDate.compareTo(o.getNextGenerationDate());
+    if(result == 0) 
+      {
+        return (this.schedulingUniqueID > o.schedulingUniqueID)? 1: -1;
+      } 
+    else 
+      {
+        return result;
+      }
+    
   }
   
   /*****************************************
@@ -110,5 +133,17 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
     
     this.nextGenerationDate = periodicGeneration.next();
     log.info("End [" + this.datacube.getDatacubeName() + "] generation with success, next generation is scheduled for " + this.nextGenerationDate.toLocaleString());
+  }
+
+  
+  /*****************************************
+  *
+  *  toString
+  *
+  *****************************************/
+  
+  @Override
+  public String toString() {
+    return "{ID:" + this.schedulingUniqueID + ", " + this.datacube.datacubeName + ": " + this.getNextGenerationDate().toLocaleString() + "}";
   }
 }

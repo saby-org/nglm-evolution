@@ -105,10 +105,30 @@ public class DatacubeManager
     // Adding datacubes scheduling
     //
     
-    DatacubeScheduling odr = new ODRDatacubeScheduling(elasticsearchRestClient);
-    if(odr.properlyConfigured)
+    long uniqueID = 0;
+    
+    DatacubeScheduling yesOdr = new YesterdayODRDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    if(yesOdr.properlyConfigured)
       {
-        datacubeScheduler.schedule(odr);
+        datacubeScheduler.schedule(yesOdr);
+      }
+    
+    DatacubeScheduling todOdr = new TodayODRDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    if(todOdr.properlyConfigured)
+      {
+        datacubeScheduler.schedule(todOdr);
+      }
+    
+    DatacubeScheduling yesLoy = new YesterdayLoyaltyDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    if(yesLoy.properlyConfigured)
+      {
+        datacubeScheduler.schedule(yesLoy);
+      }
+    
+    DatacubeScheduling todLoy = new TodayLoyaltyDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    if(todLoy.properlyConfigured)
+      {
+        datacubeScheduler.schedule(todLoy);
       }
     
 

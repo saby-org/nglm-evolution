@@ -132,7 +132,10 @@ public class Deployment
   private static String subscriberProfileRegistrySubject;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
-  private static String ODRDatacubePeriodCronEntryString;
+  private static String yesterdayODRDatacubePeriodCronEntryString;
+  private static String todayODRDatacubePeriodCronEntryString;
+  private static String yesterdayLoyaltyDatacubePeriodCronEntryString;
+  private static String todayLoyaltyDatacubePeriodCronEntryString;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
@@ -344,7 +347,10 @@ public class Deployment
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
-  public static String getODRDatacubePeriodCronEntryString() { return ODRDatacubePeriodCronEntryString; }
+  public static String getYesterdayODRDatacubePeriodCronEntryString() { return yesterdayODRDatacubePeriodCronEntryString; }
+  public static String getTodayODRDatacubePeriodCronEntryString() { return todayODRDatacubePeriodCronEntryString; }
+  public static String getYesterdayLoyaltyDatacubePeriodCronEntryString() { return yesterdayLoyaltyDatacubePeriodCronEntryString; }
+  public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
@@ -1912,12 +1918,51 @@ public class Deployment
       }
     
     //
-    //  ODRDatacubePeriodCronEntryString
+    //  yesterdayODRDatacubePeriodCronEntryString
     //
 
     try
       {
-        ODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "ODRDatacubePeriodCronEntryString", true);
+        yesterdayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayODRDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  todayODRDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        todayODRDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayODRDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  yesterdayLoyaltyDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        yesterdayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayLoyaltyDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  todayLoyaltyDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

@@ -358,13 +358,12 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
   *
   ******************************************/
   
-  public JSONObject getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService)
+  public JSONArray getLoyaltyProgramsJSON(LoyaltyProgramService loyaltyProgramService, PointService pointService)
   {
     Date now = SystemTime.getCurrentTime();
-    JSONObject result = new JSONObject();
+    JSONArray array = new JSONArray();
     if(this.loyaltyPrograms != null)
       {
-        JSONArray array = new JSONArray();
         for(Entry<String, LoyaltyProgramState> program : loyaltyPrograms.entrySet())
           {
             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey());
@@ -406,10 +405,45 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                       } 
                   }
               }
-      
+            
             array.add(JSONUtilities.encodeObject(loyalty));
           }
-        result.put("loyaltyPrograms", array);
+      }
+    return array;
+  }
+  
+  /******************************************
+  *
+  *  getPointFluctuationsJSON - PointFluctuation
+  *
+  ******************************************/
+
+  public JSONObject getPointFluctuationsJSON()
+  {
+    JSONObject result = new JSONObject();
+    if(this.pointBalances != null)
+      {
+        Date todayDate = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
+        Date yesterdayDate = RLMDateUtils.addDays(todayDate, -1, Deployment.getBaseTimeZone());
+        
+        for(Entry<String, PointBalance> point : pointBalances.entrySet())
+          {
+            JSONObject fluctuations = new JSONObject();
+            JSONObject todayFluctuations = new JSONObject();
+            JSONObject yesterdayFluctuations = new JSONObject();
+            
+            todayFluctuations.put("earned", point.getValue().getEarnedHistory().getValue(todayDate, todayDate));
+            todayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getValue(todayDate, todayDate));
+            todayFluctuations.put("expired", point.getValue().getExpiredHistory().getValue(todayDate, todayDate));
+            fluctuations.put("today", todayFluctuations);
+            
+            yesterdayFluctuations.put("earned", point.getValue().getEarnedHistory().getValue(yesterdayDate, yesterdayDate));
+            yesterdayFluctuations.put("redeemed", point.getValue().getConsumedHistory().getValue(yesterdayDate, yesterdayDate));
+            yesterdayFluctuations.put("expired", point.getValue().getExpiredHistory().getValue(yesterdayDate, yesterdayDate));
+            fluctuations.put("yesterday", yesterdayFluctuations);
+            
+            result.put(point.getKey(), fluctuations);
+          }
       }
     return result;
   }

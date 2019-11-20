@@ -45,7 +45,8 @@
                   "universalControlGroup" : { "type" : "boolean" },
                   "language" : { "type" : "keyword" },
                   "segments" : { "type" : "keyword" },
-                  "loyaltyPrograms" : { "type" : "keyword", "index" : "false"},
+                  "loyaltyPrograms" : { "type" : "nested"},
+                  "pointFluctuations" : { "type" : "object"},
                   "pointBalances" : { "type" : "keyword", "index" : "false"}
                 }
         }
@@ -528,9 +529,20 @@
               "properties" :
                 {
                   "computationDate" : { "type" : "long" },
-                  "filter" : { "type" : "object" },
+                  "filter.dataDate" : { "type" : "keyword" },
+                  "filter.offer.id" : { "type" : "keyword" },
+                  "filter.offer.display" : { "type" : "keyword" },
+                  "filter.module.id" : { "type" : "keyword" },
+                  "filter.module.display" : { "type" : "keyword" },
+                  "filter.feature.id" : { "type" : "keyword" },
+                  "filter.feature.display" : { "type" : "keyword" },
+                  "filter.salesChannel.id" : { "type" : "keyword" },
+                  "filter.salesChannel.display" : { "type" : "keyword" },
+                  "filter.meanOfPayment.id" : { "type" : "keyword" },
+                  "filter.meanOfPayment.display" : { "type" : "keyword" },
+                  "filter.meanOfPayment.paymentProviderID" : { "type" : "keyword" },
                   "count" : { "type" : "integer" },
-                  "data" : { "type" : "object" }
+                  "data.totalAmount" : { "type" : "integer" }
                 }
         }
     }'

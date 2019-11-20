@@ -159,7 +159,8 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
       documentMap.put("language", subscriberProfile.getLanguage());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));
-      documentMap.put("loyaltyPrograms", (subscriberProfile.getLoyaltyPrograms() != null && !subscriberProfile.getLoyaltyPrograms().isEmpty()) ? subscriberProfile.getLoyaltyProgramsJSON(loyaltyProgramService, pointService).toString() : null);
+      documentMap.put("loyaltyPrograms", subscriberProfile.getLoyaltyProgramsJSON(loyaltyProgramService, pointService));
+      documentMap.put("pointFluctuations", subscriberProfile.getPointFluctuationsJSON());
       documentMap.put("pointBalances", (subscriberProfile.getPointBalances() != null && !subscriberProfile.getPointBalances().isEmpty()) ? subscriberProfile.getPointsBalanceJSON().toString() : null);
       documentMap.put("lastUpdateDate", now);
       addToDocumentMap(documentMap, subscriberProfile, now);

@@ -8,7 +8,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 
-public class ODRDatacubeScheduling extends DatacubeScheduling
+public class TodayLoyaltyDatacubeScheduling extends DatacubeScheduling
 {
   /*****************************************
   *
@@ -22,13 +22,13 @@ public class ODRDatacubeScheduling extends DatacubeScheduling
   *
   *  constructor
   *  
-  *  This ODR datacube will be generated every day at 1:00 am
-  *  and it will aggregate data from the previous day.
+  *  This LoyaltyProgramsHistory datacube will be generated every hours and will aggregate current data from today !
+  *  Every hour will update the previous datacube of the day, according to new data.
   *
   *****************************************/
-  public ODRDatacubeScheduling(RestHighLevelClient elasticsearch) 
+  public TodayLoyaltyDatacubeScheduling(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
   {
-    super(new ODRDatacubeGenerator(), SystemTime.getCurrentTime(), Deployment.getODRDatacubePeriodCronEntryString(), Deployment.getBaseTimeZone());
+    super(schedulingUniqueID, new LoyaltyDatacubeGenerator("Today-Loyalty"), SystemTime.getCurrentTime(), Deployment.getTodayLoyaltyDatacubePeriodCronEntryString(), Deployment.getBaseTimeZone());
     this.elasticsearch = elasticsearch;
   }
   
@@ -42,8 +42,7 @@ public class ODRDatacubeScheduling extends DatacubeScheduling
   protected void callDatacubeGenerator()
   {
     Date now = SystemTime.getCurrentTime();
-    Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    this.datacube.run(yesterday, elasticsearch);
+    this.datacube.run(now, elasticsearch);
   }
 
 }

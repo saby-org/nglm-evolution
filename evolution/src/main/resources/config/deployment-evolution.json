@@ -123,10 +123,13 @@
   "journeyTrafficArchiveMaxNumberOfPeriods"              : 168,
   
   --
-  --  odr datacube
+  --  datacube
   --
 
-  "ODRDatacubePeriodCronEntryString"                     : "0 2 * * *",
+  "yesterdayODRDatacubePeriodCronEntryString"            : "0 2 * * *",
+  "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
+  "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 2 * * *",
+  "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
 
   -- 
   --  supportedDataTypes
