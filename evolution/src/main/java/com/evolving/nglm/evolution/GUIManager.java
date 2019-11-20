@@ -59,11 +59,19 @@ import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchGenerationException;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -135,7 +143,6 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -1562,7 +1569,111 @@ public class GUIManager
     dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
     criterionFieldAvailableValuesService.start();
 
+    /*****************************************************************
+    *
+    *  ES indices - create/update subscriber available Value indices
+    *
+    ******************************************************************/
+    //
+  	// Get default mapping_modules index setting
+    //
+    GetSettingsRequest getSettingRequest = new GetSettingsRequest().indices("mapping_modules");
+    Settings settings = null;
+  	try {
+  		GetSettingsResponse settingResponse = elasticsearch.indices().getSettings(getSettingRequest, RequestOptions.DEFAULT);
+  		settings = settingResponse.getIndexToSettings().get("mapping_modules");
+  		
+  	} catch (IOException e) {
+			log.error("Failed to retrieve mapping_modules ES settings, IOException occurs with message: " + e.getMessage());
+  	}
 
+    for (String key : Deployment.getProfileCriterionFields().keySet()){
+   	
+      CriterionField criterionField = Deployment.getProfileCriterionFields().get(key);
+      String mappingName = "mapping_"+ criterionField.getESField().toLowerCase();
+      JSONArray availableValues = JSONUtilities.decodeJSONArray(criterionField.getJSONRepresentation(), "availableValues", false);
+      if (availableValues!= null && !availableValues.isEmpty()){
+
+      	//
+      	// Check if index exists
+      	//
+      	GetIndexRequest getIndexRequest = new GetIndexRequest(mappingName);
+      	boolean exist = false;
+      	try {
+      		exist = elasticsearch.indices().exists(getIndexRequest, RequestOptions.DEFAULT);
+      	} catch (IOException e1) {
+      	}
+    	
+      	if (!exist && settings != null){
+      		//
+      		// Create missing index with default settings
+      		//
+      		CreateIndexRequest request = new CreateIndexRequest(mappingName);
+      		request.settings(Settings.builder()
+      		    .put("index.number_of_shards", settings.get("index.number_of_shards"))
+          		.put("index.number_of_replicas", settings.get("index.number_of_replicas"))
+          		.put("index.refresh_interval", settings.get("index.refresh_interval"))
+      		    .put("index.translog.durability", settings.get("index.translog.durability"))
+      		    .put("index.translog.sync_interval", settings.get("index.translog.sync_interval"))
+      		    .put("index.routing.allocation.total_shards_per_node", settings.get("index.routing.allocation.total_shards_per_node"))
+      		    .put("index.merge.scheduler.max_thread_count", settings.get("index.merge.scheduler.max_thread_count"))
+  		        .put("index.merge.scheduler.max_merge_count", settings.get("index.merge.scheduler.max_merge_count")));
+      		
+      		Map<String, Object> keyword = new HashMap<>();
+      		keyword.put("type", "keyword");   
+
+          Map<String, Object> properties = new HashMap<>();
+          properties.put("fieldID", keyword);
+          properties.put("fieldDisplay", keyword);
+
+          Map<String, Object> mapping = new HashMap<>();
+          mapping.put("properties", properties);
+          request.mapping(mapping);
+      		try {
+      			elasticsearch.indices().create(request, RequestOptions.DEFAULT);
+      			log.info("Create ES indices " + mappingName);
+  	    	} catch (ElasticsearchGenerationException e) {
+      			log.error("Failed to create ES indices " + mappingName+", ElasticsearchGenerationException occurs with message: " + e.getMessage());
+      			continue;
+  	    	} catch (IOException e) {
+      			log.error("Failed to create ES indices " + mappingName+", IOException occurs with message: " + e.getMessage());
+      			continue;
+      		} catch (Exception e) {
+      			log.error("Failed to create ES indices " + mappingName+", Exception occurs with message: " + e.getMessage());
+      			continue;
+      		}
+      	}
+    	
+        for (Object availableValue : availableValues)
+        {
+          if (availableValue instanceof JSONObject){
+        		//
+        		// Insert ID/Display value into index
+        		//
+      	    String id = ((JSONObject)availableValue).get("id").toString();
+      	    String display = ((JSONObject)availableValue).get("display").toString();
+      	    if (id != null && !id.isEmpty() && display != null && !display.isEmpty()){
+      	    	Map<String, Object> jsonMap = new HashMap<>();
+      	    	jsonMap.put("fieldID", id);
+      	    	jsonMap.put("fieldDisplay", display);
+      	    	try {
+      	    		elasticsearch.index(new IndexRequest(mappingName).id("_" + id).source(jsonMap), RequestOptions.DEFAULT);
+          			log.info("Add data [id:"+id+",display:"+display+"]to ES indices " + mappingName);
+      	    	} catch (ElasticsearchGenerationException e) {
+          			log.error("Failed to put data to " + mappingName +", ElasticsearchGenerationException occurs with message: " + e.getMessage());
+      	    	} catch (IOException e) {
+          			log.error("Failed to put data to " + mappingName +", IOException occurs with message: " + e.getMessage());
+      	    	} catch (Exception e) {
+          			log.error("Failed to put data to " + mappingName +", Exception occurs with message: " + e.getMessage());
+      	    	}
+      	    }
+          }
+        }
+        
+      }
+      
+    }
+    
     /*****************************************
     *
     *  REST interface -- server and handlers

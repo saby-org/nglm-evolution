@@ -442,4 +442,130 @@
     }' &
   fi
 
+  #
+  #  sink connector -- Deliverable (elasticsearch)
+  #
+
+  export CONNECT_URL_DELIVERABLE_ES=${CONNECT_URL_DELIVERABLE_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_DELIVERABLE_SINK_TASKS=${CONNECT_ES_DELIVERABLE_SINK_TASKS:-'1'}
+  export CONNECT_ES_DELIVERABLE_BATCHRECORDCOUNT=${CONNECT_ES_DELIVERABLE_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_DELIVERABLE_BATCHSIZEMB=${CONNECT_ES_DELIVERABLE_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_DELIVERABLE_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "deliverable_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.DeliverableESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_DELIVERABLE_SINK_TASKS',
+        "topics" : "${topic.deliverable}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_deliverables",
+	"batchRecordCount" : "'$CONNECT_ES_DELIVERABLE_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_DELIVERABLE_BATCHSIZEMB'"
+        }
+    }' &
+
+  #
+  #  sink connector -- PaymentMean (elasticsearch)
+  #
+
+  export CONNECT_URL_PAYMENTMEAN_ES=${CONNECT_URL_PAYMENTMEAN_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_PAYMENTMEAN_SINK_TASKS=${CONNECT_ES_PAYMENTMEAN_SINK_TASKS:-'1'}
+  export CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT=${CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB=${CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_PAYMENTMEAN_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "paymentmean_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.PaymentMeanESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_PAYMENTMEAN_SINK_TASKS',
+        "topics" : "${topic.paymentMean}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_paymentmeans",
+	"batchRecordCount" : "'$CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB'"
+        }
+    }' &
+
+  #
+  #  sink connector -- Offer (elasticsearch)
+  #
+
+  export CONNECT_URL_OFFER_ES=${CONNECT_URL_OFFER_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_OFFER_SINK_TASKS=${CONNECT_ES_OFFER_SINK_TASKS:-'1'}
+  export CONNECT_ES_OFFER_BATCHRECORDCOUNT=${CONNECT_ES_OFFER_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_OFFER_BATCHSIZEMB=${CONNECT_ES_OFFER_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_OFFER_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "offer_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.OfferESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_OFFER_SINK_TASKS',
+        "topics" : "${topic.offer}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_offers",
+	"batchRecordCount" : "'$CONNECT_ES_OFFER_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_OFFER_BATCHSIZEMB'"
+        }
+    }' &
+
+  #
+  #  sink connector -- Product (elasticsearch)
+  #
+
+  export CONNECT_URL_PRODUCT_ES=${CONNECT_URL_PRODUCT_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_PRODUCT_SINK_TASKS=${CONNECT_ES_PRODUCT_SINK_TASKS:-'1'}
+  export CONNECT_ES_PRODUCT_BATCHRECORDCOUNT=${CONNECT_ES_PRODUCT_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_PRODUCT_BATCHSIZEMB=${CONNECT_ES_PRODUCT_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_PRODUCT_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "product_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.ProductESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_PRODUCT_SINK_TASKS',
+        "topics" : "${topic.product}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_products",
+	"batchRecordCount" : "'$CONNECT_ES_PRODUCT_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_PRODUCT_BATCHSIZEMB'"
+        }
+    }' &
+
+  #
+  #  sink connector -- Loyalty Program (elasticsearch)
+  #
+
+  export CONNECT_URL_LOYALTYPROGRAM_ES=${CONNECT_URL_LOYALTYPROGRAM_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS=${CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS:-'1'}
+  export CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT=${CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB=${CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_LOYALTYPROGRAM_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "loyaltyprogram_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.LoyaltyProgramPointsESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_LOYALTYPROGRAM_SINK_TASKS',
+        "topics" : "${topic.loyaltyprogram}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_loyaltyprograms",
+	"batchRecordCount" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT'",
+	"batchSize" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB'"
+        }
+    }' &
+
+
 wait
