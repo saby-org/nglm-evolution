@@ -228,7 +228,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
   
-  public static class SMSNotificationManagerRequest extends DeliveryRequest
+  public static class SMSNotificationManagerRequest extends DeliveryRequest implements MessageDelivery
   {
     /*****************************************
     *
@@ -312,7 +312,7 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     //  abstract
     //
 
-    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
+    @Override public ActivityType getActivityType() { return ActivityType.Messages; }
 
     //
     //  setters
@@ -324,6 +324,15 @@ public class SMSNotificationManager extends DeliveryManager implements Runnable
     public void setMessageStatus(SMSMessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+
+    //
+    //  message delivery accessors
+    //
+
+    public int getMessageDeliveryReturnCode() { return getReturnCode(); }
+    public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
+    public String getMessageDeliveryOrigin() { return ""; }
+    public String getMessageDeliveryMessageId() { return getEventID(); }
     
     /*****************************************
     *

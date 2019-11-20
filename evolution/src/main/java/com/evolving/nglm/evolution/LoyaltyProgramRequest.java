@@ -29,7 +29,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 
-public class LoyaltyProgramRequest extends DeliveryRequest /*implements SubscriberStreamEvent, SubscriberStreamOutput, Action*/
+public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDelivery
 {
   /*****************************************
   *
@@ -90,9 +90,20 @@ public class LoyaltyProgramRequest extends DeliveryRequest /*implements Subscrib
   public String getLoyaltyProgramRequestID() { return loyaltyProgramRequestID; }
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getEventDate() { return eventDate; }
-
-  @Override public Integer getActivityType() { return ActivityType.BDR.getExternalRepresentation(); }
+  @Override public ActivityType getActivityType() { return ActivityType.BDR; }
   
+  //
+  //  bonus delivery accessors
+  //
+
+  public int getBonusDeliveryReturnCode() { return 0; }
+  public String getBonusDeliveryReturnCodeDetails() { return ""; }
+  public String getBonusDeliveryOrigin() { return ""; }
+  public String getBonusDeliveryProviderId() { return ""; }
+  public String getBonusDeliveryDeliverableId() { return ""; }
+  public int getBonusDeliveryDeliverableQty() { return 0; }
+  public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
+
   /*****************************************
   *
   *  constructor -- journey

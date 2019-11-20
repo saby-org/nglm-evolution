@@ -1587,50 +1587,6 @@ public abstract class DeliveryManager
                   }
               }
 
-            /*****************************************
-            *
-            *  write delivery events
-            *
-            *****************************************/
-
-            while (managerStatus.isProcessingResponses())
-              {
-                try
-                  {
-                    StringKey key = new StringKey(deliveryRequest.getSubscriberID());
-                    String topic = null;
-                    switch (ActivityType.fromExternalRepresentation(deliveryRequest.getActivityType()))
-                      {
-                        case BDR:
-                          BonusDelivery bonusDelivery = new BonusDelivery(deliveryRequest);
-                          topic = Deployment.getBonusDeliveryTopic();
-                          kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), BonusDelivery.serde().serializer().serialize(topic, bonusDelivery))).get();
-                          break;
-
-                        case ODR:
-                          OfferDelivery offerDelivery = new OfferDelivery(deliveryRequest);
-                          topic = Deployment.getOfferDeliveryTopic();
-                          kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), OfferDelivery.serde().serializer().serialize(topic, offerDelivery))).get();
-                          break;
-
-                        case Messages:
-                          MessageDelivery messageDelivery = new MessageDelivery(deliveryRequest);
-                          topic = Deployment.getMessageDeliveryTopic();
-                          kafkaProducer.send(new ProducerRecord<byte[],byte[]>(topic, StringKey.serde().serializer().serialize(topic, key), MessageDelivery.serde().serializer().serialize(topic, messageDelivery))).get();
-                          break;
-                      }
-                    break;
-                  }
-                catch (InterruptedException e)
-                  {
-                    // ignore and resend
-                  }
-                catch (ExecutionException e)
-                  {
-                    throw new RuntimeException(e);
-                  }
-              }
-
             /****************************************
             *
             *  update progress

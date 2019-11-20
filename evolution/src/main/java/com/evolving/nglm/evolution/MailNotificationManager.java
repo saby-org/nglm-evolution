@@ -220,7 +220,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class MailNotificationManagerRequest extends DeliveryRequest
+  public static class MailNotificationManagerRequest extends DeliveryRequest implements MessageDelivery
   {
     /*****************************************
     *
@@ -307,7 +307,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     //  abstract
     //
 
-    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
+    @Override public ActivityType getActivityType() { return ActivityType.Messages; }
 
     //
     //  setters
@@ -318,7 +318,16 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
     public void setMessageStatus(MAILMessageStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-    
+
+    //
+    //  message delivery accessors
+    //
+
+    public int getMessageDeliveryReturnCode() { return getReturnCode(); }
+    public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
+    public String getMessageDeliveryOrigin() { return getFromAddress(); }
+    public String getMessageDeliveryMessageId() { return getEventID(); }
+
     /*****************************************
     *
     *  getSubject

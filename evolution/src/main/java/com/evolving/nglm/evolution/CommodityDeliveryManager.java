@@ -380,7 +380,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   *
   *****************************************/
 
-  public static class CommodityDeliveryRequest extends DeliveryRequest
+  public static class CommodityDeliveryRequest extends DeliveryRequest implements BonusDelivery
   {
     /*****************************************
     *
@@ -462,6 +462,18 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     public void setCommodityDeliveryStatus(CommodityDeliveryStatus status) { this.commodityDeliveryStatus = status; }
     public void setStatusMessage(String statusMessage) { this.statusMessage = statusMessage; }
     public void setDeliverableExpirationDate(Date deliverableExpirationDate) { this.deliverableExpirationDate = deliverableExpirationDate; }
+
+    //
+    //  bonus delivery accessors
+    //
+
+    public int getBonusDeliveryReturnCode() { return getCommodityDeliveryStatus().getReturnCode(); }
+    public String getBonusDeliveryReturnCodeDetails() { return getStatusMessage(); }
+    public String getBonusDeliveryOrigin() { return ""; }
+    public String getBonusDeliveryProviderId() { return getProviderID(); }
+    public String getBonusDeliveryDeliverableId() { return getCommodityID(); }
+    public int getBonusDeliveryDeliverableQty() { return getAmount(); }
+    public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
 
     /*****************************************
     *
@@ -689,7 +701,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       return b.toString();
     }
     
-    @Override public Integer getActivityType() { return ActivityType.BDR.getExternalRepresentation(); }
+    @Override public ActivityType getActivityType() { return ActivityType.BDR; }
     
     /****************************************
     *

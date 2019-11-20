@@ -121,9 +121,6 @@ public class Deployment
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
   private static String tokenRedeemedTopic;
-  private static String bonusDeliveryTopic;
-  private static String offerDeliveryTopic;
-  private static String messageDeliveryTopic;
   private static int propensityInitialisationPresentationThreshold;
   private static int propensityInitialisationDurationInDaysThreshold;
   private static String journeyTrafficChangeLog;
@@ -336,9 +333,6 @@ public class Deployment
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
   public static String getTokenRedeemedTopic() { return tokenRedeemedTopic; }
-  public static String getBonusDeliveryTopic() { return bonusDeliveryTopic; }
-  public static String getOfferDeliveryTopic() { return offerDeliveryTopic; }
-  public static String getMessageDeliveryTopic() { return messageDeliveryTopic; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
   public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
@@ -810,50 +804,15 @@ public class Deployment
       }
 
     //
-    //  bonusDeliveryTopic
-    //
-
-    try
-      {
-        bonusDeliveryTopic = JSONUtilities.decodeString(jsonRoot, "bonusDeliveryTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  offerDeliveryTopic
-    //
-
-    try
-      {
-        offerDeliveryTopic = JSONUtilities.decodeString(jsonRoot, "offerDeliveryTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  messageDeliveryTopic
-    //
-
-    try
-      {
-        messageDeliveryTopic = JSONUtilities.decodeString(jsonRoot, "messageDeliveryTopic", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
     //  evolutionEngineEvents
     //
 
     try
       {
+        //
+        //  deployment-level events
+        //
+
         JSONArray evolutionEngineEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineEvents", true);
         for (int i=0; i<evolutionEngineEventValues.size(); i++)
           {
@@ -862,7 +821,9 @@ public class Deployment
             evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
           }
         
+        //
         // core-level events
+        //
 
         JSONArray evolutionEngineCoreEventValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionEngineCoreEvents", true);
         for (int i=0; i<evolutionEngineCoreEventValues.size(); i++)
@@ -871,15 +832,6 @@ public class Deployment
             EvolutionEngineEventDeclaration evolutionEngineEventDeclaration = new EvolutionEngineEventDeclaration(evolutionEngineEventJSON);
             evolutionEngineEvents.put(evolutionEngineEventDeclaration.getName(), evolutionEngineEventDeclaration);
           }
-        
-        /*****************************************
-        *
-        *  add Profile Change Event
-        *
-        *****************************************/
-
-        // This is added when creating the profileCriterionFields
-        
       }
     catch (GUIManagerException | JSONUtilitiesException e)
       {

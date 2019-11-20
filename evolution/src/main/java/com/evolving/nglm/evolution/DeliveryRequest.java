@@ -35,7 +35,7 @@ import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 
-public abstract class DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, Comparable
+public abstract class DeliveryRequest implements EvolutionEngineEvent, SubscriberStreamOutput, Action, Comparable
 {
   /*****************************************
   *
@@ -154,6 +154,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     BDR(1),
     ODR(2),
     Messages(3),
+    Other(0),
     Unknown(-1);
     private Integer externalRepresentation;
     private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -340,7 +341,31 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
   public abstract Object subscriberStreamEventPack(Object value);
   public abstract void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
   public abstract void addFieldsForThirdPartyPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, DeliverableService deliverableService, PaymentMeanService paymentMeanService);
-  public abstract Integer getActivityType();
+  public ActivityType getActivityType() { return ActivityType.Other; }
+
+  /*****************************************
+  *
+  *  getEventName
+  *
+  *****************************************/
+
+  public String getEventName()
+  {
+    switch (getActivityType())
+      {
+        case BDR:
+          return "bonusDelivery";
+
+        case ODR:
+          return "offerDelivery";
+
+        case Messages:
+          return "messageDelivery";
+
+        default:
+          return null;
+      }
+  }
 
   /*****************************************
   *
@@ -604,7 +629,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
-    guiPresentationMap.put(ACTIVITYTYPE, ActivityType.fromExternalRepresentation(getActivityType()).toString());
+    guiPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
     addFieldsForGUIPresentation(guiPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
     return guiPresentationMap;
   }
@@ -624,7 +649,7 @@ public abstract class DeliveryRequest implements SubscriberStreamEvent, Subscrib
     thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
-    thirdPartyPresentationMap.put(ACTIVITYTYPE, ActivityType.fromExternalRepresentation(getActivityType()).toString());
+    thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
     addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, deliverableService, paymentMeanService);
     return thirdPartyPresentationMap;
   }

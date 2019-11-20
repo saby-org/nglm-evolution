@@ -15146,7 +15146,7 @@ public class GUIManager
                     // filterBDRs
                     //
 
-                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList());
+                    List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.BDR).collect(Collectors.toList());
 
                     //
                     // prepare dates
@@ -15334,7 +15334,7 @@ public class GUIManager
                     // filter ODRs
                     //
 
-                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList());
+                    List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.ODR).collect(Collectors.toList());
 
                     //
                     // prepare dates
@@ -15545,7 +15545,7 @@ public class GUIManager
                     // filter ODRs
                     //
 
-                    List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList());
+                    List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.Messages).collect(Collectors.toList());
 
                     //
                     // prepare dates

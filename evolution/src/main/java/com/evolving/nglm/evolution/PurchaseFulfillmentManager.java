@@ -232,7 +232,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  public static class PurchaseFulfillmentRequest extends DeliveryRequest
+  public static class PurchaseFulfillmentRequest extends DeliveryRequest implements OfferDelivery
   {
     /*****************************************
     *
@@ -302,6 +302,23 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setStatus(PurchaseFulfillmentStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+
+    //
+    //  offer delivery accessors
+    //
+
+    public int getOfferDeliveryReturnCode() { return getReturnCode(); }
+    public String getOfferDeliveryReturnCodeDetails() { return null; }
+    public String getOfferDeliveryOrigin() { return null; }
+    public String getOfferDeliveryOfferId() { return getOfferID(); }
+    public int getOfferDeliveryOfferQty() { return getQuantity(); }
+    public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
+    public int getOfferDeliveryOfferPrice() { return 1; }
+    public String getOfferDeliveryMeanOfPayment() { return "MOP"; }
+    public int getOfferDeliveryOfferStock() { return 1000; }
+    public String getOfferDeliveryOfferContent() { return ""; }
+    public String getOfferDeliveryVoucherCode() { return ""; }
+    public String getOfferDeliveryVoucherPartnerId() { return ""; }
 
     /*****************************************
     *
@@ -457,7 +474,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       return b.toString();
     }
     
-    @Override public Integer getActivityType() { return ActivityType.ODR.getExternalRepresentation(); }
+    @Override public ActivityType  getActivityType() { return ActivityType.ODR; }
     
     /****************************************
     *

@@ -578,8 +578,15 @@ public class EvolutionEngine
     Map<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>> evolutionEngineEventSerdes = new HashMap<EvolutionEngineEventDeclaration,ConnectSerde<? extends SubscriberStreamEvent>>();
     for (EvolutionEngineEventDeclaration evolutionEngineEvent : Deployment.getEvolutionEngineEvents().values())
       {
-        evolutionEngineEventTopics.put(evolutionEngineEvent, evolutionEngineEvent.getEventTopic());
-        evolutionEngineEventSerdes.put(evolutionEngineEvent, evolutionEngineEvent.getEventSerde());
+        switch (evolutionEngineEvent.getEventRule())
+          {
+            case All:
+            case Standard:
+            case Extended:
+              evolutionEngineEventTopics.put(evolutionEngineEvent, evolutionEngineEvent.getEventTopic());
+              evolutionEngineEventSerdes.put(evolutionEngineEvent, evolutionEngineEvent.getEventSerde());
+              break;
+          }
       }
 
     /*****************************************
@@ -709,19 +716,22 @@ public class EvolutionEngine
     List<KStream<StringKey, ? extends SubscriberStreamEvent>> extendedProfileEvolutionEngineEventStreams = new ArrayList<KStream<StringKey, ? extends SubscriberStreamEvent>>();
     for (EvolutionEngineEventDeclaration evolutionEngineEventDeclaration : Deployment.getEvolutionEngineEvents().values())
       {
-        KStream<StringKey, ? extends SubscriberStreamEvent> evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
+        KStream<StringKey, ? extends SubscriberStreamEvent> evolutionEngineEventStream;
         switch (evolutionEngineEventDeclaration.getEventRule())
           {
             case All:
+              evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
               standardEvolutionEngineEventStreams.add(evolutionEngineEventStream);
               extendedProfileEvolutionEngineEventStreams.add(evolutionEngineEventStream);
               break;
 
             case Standard:
+              evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
               standardEvolutionEngineEventStreams.add(evolutionEngineEventStream);
               break;
 
             case Extended:
+              evolutionEngineEventStream = builder.stream(evolutionEngineEventTopics.get(evolutionEngineEventDeclaration), Consumed.with(stringKeySerde, evolutionEngineEventSerdes.get(evolutionEngineEventDeclaration)));
               extendedProfileEvolutionEngineEventStreams.add(evolutionEngineEventStream);
               break;
           }

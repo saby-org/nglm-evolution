@@ -29,7 +29,7 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOpe
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
-public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action
+public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, BonusDelivery
 {
   /*****************************************
   *
@@ -106,7 +106,19 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   //  structure
   //
 
-  @Override public Integer getActivityType() { return ActivityType.BDR.getExternalRepresentation(); }
+  @Override public ActivityType getActivityType() { return ActivityType.BDR; }
+
+  //
+  //  bonus delivery accessors
+  //
+
+  public int getBonusDeliveryReturnCode() { return 0; }
+  public String getBonusDeliveryReturnCodeDetails() { return null; }
+  public String getBonusDeliveryOrigin() { return null; }
+  public String getBonusDeliveryProviderId() { return null; }
+  public String getBonusDeliveryDeliverableId() { return null; }
+  public int getBonusDeliveryDeliverableQty() { return 0; }
+  public String getBonusDeliveryOperation() { return null; }
   
   /*****************************************
   *

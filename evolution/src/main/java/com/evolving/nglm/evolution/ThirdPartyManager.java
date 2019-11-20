@@ -1137,7 +1137,7 @@ public class ThirdPartyManager
               // filter BDRs
               //
 
-              List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.BDR.getExternalRepresentation())).collect(Collectors.toList()); 
+              List<DeliveryRequest> BDRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.BDR).collect(Collectors.toList()); 
 
               //
               // prepare dates
@@ -1316,7 +1316,7 @@ public class ThirdPartyManager
               // filter ODRs
               //
 
-              List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.ODR.getExternalRepresentation())).collect(Collectors.toList()); 
+              List<DeliveryRequest> ODRs = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.ODR).collect(Collectors.toList()); 
 
               //
               // prepare dates
@@ -1800,7 +1800,7 @@ public class ThirdPartyManager
               // filter messages
               //
 
-              List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType().equals(ActivityType.Messages.getExternalRepresentation())).collect(Collectors.toList()); 
+              List<DeliveryRequest> messages = activities.stream().filter(activity -> activity.getActivityType() == ActivityType.Messages).collect(Collectors.toList()); 
 
               //
               // prepare dates
@@ -4078,22 +4078,33 @@ public class ThirdPartyManager
   private JSONObject processTriggerEvent(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
     Map<String, Object> response = new HashMap<String, Object>();
-    
+
     /****************************************
-     *
-     * argument
-     *
-     ****************************************/
+    *
+    * argument
+    *
+    ****************************************/
+
+    //
+    //  subscriberID
+    //
 
     String subscriberID;
-    try {
-      subscriberID = resolveSubscriberID(jsonRoot, response);
-    } catch (ThirdPartyManagerException e) {
-      return JSONUtilities.encodeObject(response);
-    }
-    String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true);
-    JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot, response);
+      }
+    catch (ThirdPartyManagerException e)
+      {
+        return JSONUtilities.encodeObject(response);
+      }
 
+    //
+    //  eventName
+    //
+
+
+    String eventName = JSONUtilities.decodeString(jsonRoot, "eventName", true);
     if (eventName == null || eventName.isEmpty())
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{eventName is missing}");
@@ -4101,6 +4112,11 @@ public class ThirdPartyManager
         return JSONUtilities.encodeObject(response);
       }
 
+    //
+    //  eventBody
+    //
+
+    JSONObject eventBody = JSONUtilities.decodeJSONObject(jsonRoot, "eventBody");
     if (eventBody == null)
       {
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage() + "-{eventBody is missing}");
@@ -4109,12 +4125,13 @@ public class ThirdPartyManager
       }
 
     /*****************************************
-     *
-     * Create Event object and push it its topic
-     *
-     *****************************************/
+    *
+    * Create Event object and push it its topic
+    *
+    *****************************************/
+
     EvolutionEngineEventDeclaration eventDeclaration = Deployment.getEvolutionEngineEvents().get(eventName);
-    if (eventDeclaration == null)
+    if (eventDeclaration == null || eventDeclaration.getEventRule() == EvolutionEngineEventDeclaration.EventRule.Internal)
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.EVENT_NAME_UNKNOWN.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.EVENT_NAME_UNKNOWN.getGenericResponseMessage() + "-{" + eventName + "}");
@@ -4127,29 +4144,29 @@ public class ThirdPartyManager
         if (constructor == null)
           {
             try
-            {
-              eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
-              constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
-              JSON3rdPartyEventsConstructor.put(eventName, constructor);
-            }
+              {
+                eventClass = (Class<? extends EvolutionEngineEvent>) Class.forName(eventDeclaration.getEventClassName());
+                constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+                JSON3rdPartyEventsConstructor.put(eventName, constructor);
+              }
             catch (Exception e)
-            {
-              response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseCode());
-              response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseMessage() + "-{" + eventDeclaration.getEventClassName() + "(1) Exception " + e.getClass().getName() + "}");
-              return JSONUtilities.encodeObject(response);
-            }
+              {
+                response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseCode());
+                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseMessage() + "-{" + eventDeclaration.getEventClassName() + "(1) Exception " + e.getClass().getName() + "}");
+                return JSONUtilities.encodeObject(response);
+              }
           }
         EvolutionEngineEvent eev = null;
         try
-        {
-          eev = (EvolutionEngineEvent) constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
-        }
+          {
+            eev = (EvolutionEngineEvent) constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
+          }
         catch (Exception e)
-        {
-          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseMessage() + "-{" + eventDeclaration.getEventClassName() + "(2) Exception " + e.getClass().getName() + "}");
-          return JSONUtilities.encodeObject(response);
-        }
+          {
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.BAD_3RD_PARTY_EVENT_CLASS_DEFINITION.getGenericResponseMessage() + "-{" + eventDeclaration.getEventClassName() + "(2) Exception " + e.getClass().getName() + "}");
+            return JSONUtilities.encodeObject(response);
+          }
 
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(eventDeclaration.getEventTopic(), StringKey.serde().serializer().serialize(eventDeclaration.getEventTopic(), new StringKey(subscriberID)), eventDeclaration.getEventSerde().serializer().serialize(eventDeclaration.getEventTopic(), eev)));
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
@@ -4157,10 +4174,11 @@ public class ThirdPartyManager
       }
 
     /*****************************************
-     *
-     * return
-     *
-     *****************************************/
+    *
+    * return
+    *
+    *****************************************/
+
     return JSONUtilities.encodeObject(response);
   }
   

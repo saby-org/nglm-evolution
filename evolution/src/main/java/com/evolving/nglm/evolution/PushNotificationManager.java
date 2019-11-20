@@ -215,7 +215,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  public static class PushNotificationManagerRequest extends DeliveryRequest
+  public static class PushNotificationManagerRequest extends DeliveryRequest implements MessageDelivery
   {
     /*****************************************
     *
@@ -293,7 +293,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     //  abstract
     //
 
-    @Override public Integer getActivityType() { return ActivityType.Messages.getExternalRepresentation(); }
+    @Override public ActivityType getActivityType() { return ActivityType.Messages; }
 
     //
     //  setters
@@ -305,6 +305,15 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
     
+    //
+    //  message delivery accessors
+    //
+
+    public int getMessageDeliveryReturnCode() { return getReturnCode(); }
+    public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
+    public String getMessageDeliveryOrigin() { return ""; }
+    public String getMessageDeliveryMessageId() { return getEventID(); }
+
     /*****************************************
     *
     *  getMessage
