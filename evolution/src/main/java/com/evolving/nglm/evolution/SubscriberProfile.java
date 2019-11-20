@@ -388,13 +388,21 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                   { 
                     if(loyaltyProgramPoints.getRewardPointsID() != null)
                       {
-                        loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString()); 
-                        loyalty.put("rewardPointBalance", this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()).getBalance(now));
+                        loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString());
+                        int balance = 0;
+                        if(this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()) != null){
+                          balance = this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()).getBalance(now);
+                        }
+                        loyalty.put("rewardPointBalance", balance);
                       }
                     if(loyaltyProgramPoints.getStatusPointsID() != null)
                       {
                         loyalty.put("statusPointName", pointService.getStoredPoint(loyaltyProgramPoints.getStatusPointsID()).getJSONRepresentation().get("display").toString());
-                        loyalty.put("statusPointBalance", this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now));
+                        int balance = 0;
+                        if(this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()) != null){
+                          balance = this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now);
+                        }
+                        loyalty.put("statusPointBalance", balance);
                       } 
                   }
               }
