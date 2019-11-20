@@ -711,6 +711,9 @@ public class CriterionField extends DeploymentManagedObject
         case StringCriterion:
           return 20;
 
+        case StringSetCriterion:
+          return 50;
+
         case BooleanCriterion:
           return 6;
 

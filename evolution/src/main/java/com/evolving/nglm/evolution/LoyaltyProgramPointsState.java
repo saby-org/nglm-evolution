@@ -89,9 +89,9 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramPointsState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String tierName, String previousTierName, Date tierEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
+  public LoyaltyProgramPointsState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, String loyaltyProgramID, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate, String tierName, String previousTierName, Date tierEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
   {
-    super(loyaltyProgramType, loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate);
+    super(loyaltyProgramType, loyaltyProgramEpoch, loyaltyProgramName, loyaltyProgramID, loyaltyProgramEnrollmentDate, loyaltyProgramExitDate);
     this.tierName = tierName;
     this.previousTierName = previousTierName;
     this.tierEnrollmentDate = tierEnrollmentDate;

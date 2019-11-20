@@ -369,6 +369,15 @@
          ]
       }
     ],
+    
+    --
+    -- loyaltyCriterionFields
+    --
+    
+    "loyaltyCriterionFields" :
+    [
+        { "id" : "loyaltyprogram.name", "display" : "Loyalty Program", "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100, "esField" : null, "retriever" : "getLoyaltyPrograms", "minValue" : null, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#loyaltyPrograms#" ] }
+    ],
      
     --
     --  offerOptimizationAlgorithmsCommon

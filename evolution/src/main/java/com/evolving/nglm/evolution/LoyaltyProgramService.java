@@ -8,14 +8,19 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.core.SystemTime;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class LoyaltyProgramService extends GUIService
 {
@@ -112,8 +117,56 @@ public class LoyaltyProgramService extends GUIService
     //
 
     putGUIManagedObject(loyaltyProgram, SystemTime.getCurrentTime(), newObject, userID);
+    
+    //
+    // Create associated criterion
+    //
+    
+    // loyaltyprogram.${LPNAME}.tier
+    {
+      String lpName = loyaltyProgram.getLoyaltyProgramName();
+      String id = computeCriterionId(loyaltyProgram.getLoyaltyProgramID());
+      JSONObject criterionFieldJSON = new JSONObject();
+      criterionFieldJSON.put("id", id);
+      criterionFieldJSON.put("display", "Loyalty Program "+lpName+" Tier");
+      criterionFieldJSON.put("dataType", "string");
+      criterionFieldJSON.put("tagFormat", null);
+      criterionFieldJSON.put("tagMaxLength", null);
+      criterionFieldJSON.put("esField", null);
+      criterionFieldJSON.put("retriever", "getLoyaltyProgramTier");
+      criterionFieldJSON.put("minValue", null);
+      criterionFieldJSON.put("maxValue", null);
+      criterionFieldJSON.put("includedOperators", null);
+      criterionFieldJSON.put("excludedOperators", null);
+      criterionFieldJSON.put("includedComparableFields", null); 
+      criterionFieldJSON.put("excludedComparableFields", new JSONArray());   
+      JSONArray availableValuesField = new JSONArray();
+      if (loyaltyProgram.getLoyaltyProgramType().equals(LoyaltyProgramType.POINTS))
+        {
+          for (Tier tier : ((LoyaltyProgramPoints) loyaltyProgram).getTiers())
+            {
+              availableValuesField.add(tier.getTierName());  
+            }
+        }
+      criterionFieldJSON.put("availableValues", availableValuesField);
+      CriterionField criterionField = new CriterionField(criterionFieldJSON);
+      putLoyaltyCriterionFields(criterionField.getID(), criterionField);
+    }
+    
   }
 
+  /*****************************************
+  *
+  *  computeCriterionId
+  *
+  *****************************************/
+
+  private static String computeCriterionId(String loyaltyProgramID)
+  {
+    return "loyaltyprogram."+loyaltyProgramID+".tier";
+  }
+
+  
   /*****************************************
   *
   *  putIncompleteLoyaltyProgram
@@ -134,6 +187,11 @@ public class LoyaltyProgramService extends GUIService
   public void removeLoyaltyProgram(String loyaltyProgramID, String userID) 
   { 
     removeGUIManagedObject(loyaltyProgramID, SystemTime.getCurrentTime(), userID);
+    LoyaltyProgram loyaltyProgram = (LoyaltyProgram) getStoredLoyaltyProgram(loyaltyProgramID);
+    if (loyaltyProgram != null)
+      {
+        removeLoyaltyCriterionFields(computeCriterionId(loyaltyProgram.getLoyaltyProgramID()));
+      }
   }
 
   /*****************************************
@@ -148,6 +206,17 @@ public class LoyaltyProgramService extends GUIService
     public void loyaltyProgramDeactivated(String guiManagedObjectID);
   }
 
+  private static Map<String,CriterionField> loyaltyCriterionFields;
+  
+  static {
+    loyaltyCriterionFields = new LinkedHashMap<String,CriterionField>();
+    loyaltyCriterionFields.putAll(Deployment.getLoyaltyCriterionFields());
+  }
+
+  public static Map<String, CriterionField> getLoyaltyCriterionFields() {return loyaltyCriterionFields; }
+  public static void putLoyaltyCriterionFields(String id, CriterionField criteria) { loyaltyCriterionFields.put(id, criteria); }
+  public static void removeLoyaltyCriterionFields(String id) { loyaltyCriterionFields.remove(id); }
+  
   /*****************************************
   *
   *  example main

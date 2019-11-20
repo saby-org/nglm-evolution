@@ -280,6 +280,7 @@ public class ThirdPartyJSONGenerator
             presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, now)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
+        tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
         
         String offerID = dnboToken.getAcceptedOfferID();
         tokenMap.put("acceptedOffer", JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, now)));

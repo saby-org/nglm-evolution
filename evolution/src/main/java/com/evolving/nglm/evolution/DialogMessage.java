@@ -172,6 +172,7 @@ public class DialogMessage
                 case IntegerCriterion:
                 case DoubleCriterion:
                 case StringCriterion:
+                case StringSetCriterion:
                 case BooleanCriterion:
                 case DateCriterion:
                   break;
@@ -449,6 +450,7 @@ public class DialogMessage
             switch (formatDataType)
               {
                 case StringCriterion:
+                case StringSetCriterion:
                   resolvedTag = formattedTag.substring(0, maxLength);
                   break;
 
@@ -554,6 +556,7 @@ public class DialogMessage
             switch (formatDataType)
               {
                 case StringCriterion:
+                case StringSetCriterion:
                   resolvedTag = formattedTag.substring(0, maxLength);
                   break;
 

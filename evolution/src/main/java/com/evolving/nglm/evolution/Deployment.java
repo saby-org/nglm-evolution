@@ -171,6 +171,7 @@ public class Deployment
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
+  private static Map<String,CriterionField> loyaltyCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
@@ -381,6 +382,7 @@ public class Deployment
   public static Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
   public static Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
+  public static Map<String,CriterionField> getLoyaltyCriterionFields() { return loyaltyCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
   public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
@@ -433,6 +435,11 @@ public class Deployment
   public static int getElasticSearchScrollSize() {return elasticSearchScrollSize; }
   public static String getCriterionFieldAvailableValuesTopic() { return criterionFieldAvailableValuesTopic; }
 
+  //
+  // addProfileCriterionField
+  //
+  public static void addProfileCriterionField(String key, CriterionField criterion) { profileCriterionFields.put(key, criterion); }
+  
   /*****************************************
   *
   *  getCriterionFieldRetrieverClass
@@ -2409,6 +2416,25 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             presentationCriterionFields.put(criterionField.getID(), criterionField);
+          }
+      }
+    catch (GUIManagerException | JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  loyaltyCriterionFields
+    //
+
+    try
+      {
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "loyaltyCriterionFields", new JSONArray());
+        for (int i=0; i<criterionFieldValues.size(); i++)
+          {
+            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+            CriterionField criterionField = new CriterionField(criterionFieldJSON);
+            loyaltyCriterionFields.put(criterionField.getID(), criterionField);
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)

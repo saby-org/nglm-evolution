@@ -41,6 +41,7 @@ public class CriterionContext
     Presentation("presentation"),
     Journey("journey"),
     JourneyNode("journeyNode"),
+    Loyalty("loyalty"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private CriterionContextType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -57,6 +58,7 @@ public class CriterionContext
   public static final CriterionContext Profile = new CriterionContext(CriterionContextType.Profile);
   public static final CriterionContext FullProfile = new CriterionContext(CriterionContextType.FullProfile);
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
+  public static final CriterionContext Loyalty = new CriterionContext(CriterionContextType.Loyalty);
 
   /*****************************************
   *
@@ -565,6 +567,7 @@ public class CriterionContext
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
+          result.putAll(Loyalty.getCriterionFields());
           result.putAll(Deployment.getProfileCriterionFields());
           break;
         case FullProfile:
@@ -574,16 +577,21 @@ public class CriterionContext
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
+          result.putAll(Loyalty.getCriterionFields());
           result.putAll(Deployment.getProfileCriterionFields());
           result.putAll(Deployment.getExtendedProfileCriterionFields());
           break;
         case Presentation:
           result = Deployment.getPresentationCriterionFields();
           break;
+        case Loyalty:
+          result = LoyaltyProgramService.getLoyaltyCriterionFields();
+          break;
         case Journey:
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(journeyCriterionFields);
+          result.putAll(Loyalty.getCriterionFields());
           result.putAll(Profile.getCriterionFields());
           break;
         default:

@@ -700,7 +700,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
           return;
         }else{
-          log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
+          if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
         }
 
         //
@@ -713,7 +713,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
           return;
         }else{
-          log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
+          if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
         }
 
         //
@@ -726,7 +726,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getSalesChannelID())){
             offerPrice = offerSalesChannelsAndPrice.getPrice();
             priceFound = true;
-            log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getSalesChannelID()+" found ("+offerPrice.getAmount()+" "+offerPrice.getPaymentMeanID()+")");
+            if (log.isDebugEnabled())
+              {
+                String offerPriceStr = (offerPrice == null) ? "free" : offerPrice.getAmount()+" "+offerPrice.getPaymentMeanID();
+                log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getSalesChannelID()+" found ("+offerPriceStr+")");
+              }
             break;
           }
         }
@@ -825,7 +829,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     completeRequest(deliveryRequest);
     odrStats.updatePurchasesCount(1, deliveryRequest.getDeliveryStatus());
 
-    log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
+    if (log.isDebugEnabled()) log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
 
   }
 
@@ -1261,7 +1265,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     // Getting initial request status
     // ------------------------------------
     
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status ");
+    if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status ");
     if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE) == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE).isEmpty()){
       log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(response) : can not get purchase status => ignore this response");
       return;
@@ -1277,7 +1281,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         log.error(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : ERROR while getting purchase status from '"+response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE)+"' => IGNORED");
         return;
       }
-    log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status DONE : "+purchaseStatus);
+    if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status DONE : "+purchaseStatus);
     
     // ------------------------------------
     // Handling response
@@ -1878,28 +1882,28 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if(this.getPaymentToBeDebited() != null){
         List<JSONObject> paymentToBeDebitedList = new ArrayList<JSONObject>();
         for(OfferPrice price : this.getPaymentToBeDebited()){
-          paymentToBeDebitedList.add(price.getJSONRepresentation());
+          if (price != null) paymentToBeDebitedList.add(price.getJSONRepresentation());
         }
         data.put("paymentToBeDebited", paymentToBeDebitedList);
       }
       if(this.getPaymentDebited() != null){
         List<JSONObject> paymentDebitedList = new ArrayList<JSONObject>();
         for(OfferPrice price : this.getPaymentDebited()){
-          paymentDebitedList.add(price.getJSONRepresentation());
+          if (price != null) paymentDebitedList.add(price.getJSONRepresentation());
         }
         data.put("paymentDebited", paymentDebitedList);
       }
       if(this.getPaymentRollbacked() != null){
         List<JSONObject> paymentRollbackedList = new ArrayList<JSONObject>();
         for(OfferPrice price : this.getPaymentRollbacked()){
-          paymentRollbackedList.add(price.getJSONRepresentation());
+          if (price != null) paymentRollbackedList.add(price.getJSONRepresentation());
         }
         data.put("paymentRollbacked", paymentRollbackedList);
       }
       if(this.getPaymentRollbackFailed() != null){
         List<JSONObject> paymentRollbackFailedList = new ArrayList<JSONObject>();
         for(OfferPrice price : this.getPaymentRollbackFailed()){
-          paymentRollbackFailedList.add(price.getJSONRepresentation());
+          if (price != null) paymentRollbackFailedList.add(price.getJSONRepresentation());
         }
         data.put("paymentRollbackFailed", paymentRollbackFailedList);
       }

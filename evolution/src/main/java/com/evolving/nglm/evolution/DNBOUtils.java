@@ -21,6 +21,7 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -143,8 +144,8 @@ public class DNBOUtils
       *  action -- token code
       *
       *****************************************/
-      ContextUpdate tokenUpdate = new ContextUpdate(ActionType.ActionManagerContextUpdate);
-      tokenUpdate.getParameters().put("action.token.code", token.getTokenCode());
+      ContextUpdate tokenContextUpdate = new ContextUpdate(ActionType.ActionManagerContextUpdate);
+      tokenContextUpdate.getParameters().put("action.token.code", token.getTokenCode());
 
       /*****************************************
       *
@@ -153,14 +154,14 @@ public class DNBOUtils
       *****************************************/
       List<Action> actionList = new ArrayList<>();
       actionList.add(token);
-      actionList.add(tokenUpdate);
+      actionList.add(tokenContextUpdate);
 
       /*****************************************
       *
       *  return
       *
       *****************************************/
-      return new Object[] {actionList, token, tokenUpdate, scoringStrategy, tokenType};
+      return new Object[] {actionList, token, tokenContextUpdate, scoringStrategy, tokenType};
     }
     
     /*****************************************
@@ -169,7 +170,7 @@ public class DNBOUtils
     *
     *****************************************/
         
-    protected Collection<ProposedOfferDetails> handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenUpdate)
+    protected Collection<ProposedOfferDetails> handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenContextUpdate)
     {
       /*****************************************
       *
@@ -197,6 +198,7 @@ public class DNBOUtils
       CatalogCharacteristicService catalogCharacteristicService = evolutionEventContext.getCatalogCharacteristicService();
       DNBOMatrixService dnboMatrixService = evolutionEventContext.getDnboMatrixService();
       SegmentationDimensionService segmentationDimensionService = evolutionEventContext.getSegmentationDimensionService();
+      SalesChannelService salesChannelService = evolutionEventContext.getSalesChannelService();
       ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = evolutionEventContext.getPropensityDataReader();
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader = evolutionEventContext.getSubscriberGroupEpochReader();
 
@@ -207,6 +209,8 @@ public class DNBOUtils
       SubscriberProfile subscriberProfile = evolutionEventContext.getSubscriberState().getSubscriberProfile();
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService, 0);
 
+      String salesChannelID = salesChannelService.getJourneySalesChannelID();
+      
       /*****************************************
       *
       *  Score offers for this subscriber
@@ -215,7 +219,7 @@ public class DNBOUtils
       Collection<ProposedOfferDetails> presentedOffers;
       try
         {
-          presentedOffers = TokenUtils.getOffers(now , null, subscriberProfile, scoringStrategy, productService, productTypeService, catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID);
+          presentedOffers = TokenUtils.getOffers(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, catalogCharacteristicService, propensityDataReader, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID);
         }
       catch (GetOfferException e)
         {
@@ -241,16 +245,17 @@ public class DNBOUtils
               log.error("invalid offer returned by scoring {}", offerId);
               return Collections.<ProposedOfferDetails>emptyList();
             }
-          tokenUpdate.getParameters().put("action.presented.offer." + (index+1), offer.getDisplay());
+          tokenContextUpdate.getParameters().put("action.presented.offer." + (index+1), offer.getDisplay());
           if (++index == MAX_PRESENTED_OFFERS)
             break;
         }
       for (int j=index; j<MAX_PRESENTED_OFFERS; j++)
         {
-          tokenUpdate.getParameters().put("action.presented.offer." + (j+1), "");
+          tokenContextUpdate.getParameters().put("action.presented.offer." + (j+1), "");
         }
       
       token.setPresentedOfferIDs(presentedOfferIDs);
+      token.setPresentedOffersSalesChannel(salesChannelID);
       token.setBoundDate(now);
       
       /*****************************************
@@ -259,7 +264,7 @@ public class DNBOUtils
       *
       *****************************************/
       return presentedOffers;
-    }    
+    }
     
   }
   
@@ -340,7 +345,7 @@ public class DNBOUtils
           return result;
         }
       DNBOToken token = (DNBOToken) res[1];
-      ContextUpdate tokenUpdate = (ContextUpdate) res[2];
+      ContextUpdate tokenContextUpdate = (ContextUpdate) res[2];
       ScoringStrategy scoringStrategy = (ScoringStrategy) res[3];
       TokenType tokenType = (TokenType) res[4];
       
@@ -350,7 +355,7 @@ public class DNBOUtils
       *
       *****************************************/
       
-      handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenUpdate);
+      handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenContextUpdate);
       token.setTokenStatus(TokenStatus.Bound);
       token.setAutoBounded(true);
       token.setAutoRedeemed(false);
@@ -421,12 +426,12 @@ public class DNBOUtils
       //   select 1st offer of the list
       
       ProposedOfferDetails acceptedOfferDetail = presentedOfferDetailsList.iterator().next();
-      String offerId = acceptedOfferDetail.getOfferId();
-      token.setAcceptedOfferID(offerId);
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerId, evolutionEventContext.now());
+      String offerID = acceptedOfferDetail.getOfferId();
+      token.setAcceptedOfferID(offerID);
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
-          log.error("invalid offer returned by scoring {}", offerId);
+          log.error("invalid offer returned by scoring {}", offerID);
           return Collections.<Action>emptyList();
         }
       tokenUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());
@@ -435,7 +440,22 @@ public class DNBOUtils
       token.setAutoBounded(true);
       token.setAutoRedeemed(true);
       token.setRedeemedDate(evolutionEventContext.now());
+      
+      /*****************************************
+      *
+      *  Effective purchase of the offer
+      *
+      *****************************************/
 
+      int quantity = 1;
+      String salesChannelID = token.getPresentedOffersSalesChannel();
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
+      request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
+      request.setFeatureID(deliveryRequestSource);
+      result.add(request);
+      
       /*****************************************
       *
       *  return

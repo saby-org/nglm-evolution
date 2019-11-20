@@ -11,13 +11,18 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class CriterionFieldRetriever
 {
   /*****************************************
   *
-  *  simle
+  *  simple
   *
   *****************************************/
 
@@ -190,6 +195,44 @@ public abstract class CriterionFieldRetriever
   *
   *****************************************/
 
+  //
+  // getLoyaltyPrograms
+  //
+  
+  public static Object getLoyaltyPrograms(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
+    Set<String> res = new HashSet<>();
+    for (LoyaltyProgramState lps : evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values())
+      {
+        res.add(lps.getLoyaltyProgramName());
+      }
+    return res;
+  }
+
+  //
+  // getLoyaltyProgramTier
+  //
+
+  public static Object getLoyaltyProgramTier(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
+    String res = "";
+    String programID = fieldName.substring("loyaltyprogram.".length(), fieldName.length()-".tier".length()); // "loyaltyprogram."+loyaltyProgramName+".tier"
+    for (LoyaltyProgramState lps : evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values())
+      {
+        if (lps.getLoyaltyProgramID() != null)
+          {
+          if (lps.getLoyaltyProgramID().equals(programID))
+              {
+                if (lps instanceof LoyaltyProgramPointsState)
+                  {
+                    res = ((LoyaltyProgramPointsState) lps).getTierName();
+                    break;
+                  }
+              }
+          }
+      }
+    return res;
+  }
+  
+  
   //
   //  getJourneyActionDeliveryStatus
   //

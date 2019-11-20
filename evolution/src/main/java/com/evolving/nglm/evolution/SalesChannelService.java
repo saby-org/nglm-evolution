@@ -125,6 +125,40 @@ public class SalesChannelService extends GUIService
   public SalesChannel getActiveSalesChannel(String salesChannelID, Date date) { return (SalesChannel) getActiveGUIManagedObject(salesChannelID, date); }
   public Collection<SalesChannel> getActiveSalesChannels(Date date) { return (Collection<SalesChannel>) getActiveGUIManagedObjects(date); }
 
+  private static final String JOURNEY_SALES_CHANNEL_NAME = "journey"; 
+  private static String journeySalesChannelID = null;
+  
+  /*****************************************
+  *
+  *  getJourneySalesChannelID
+  *
+  *****************************************/
+  
+  public String getJourneySalesChannelID()
+  {
+    if (journeySalesChannelID != null)
+      {
+        return journeySalesChannelID;
+      }
+    for (GUIManagedObject mo : getStoredSalesChannels())
+      {
+        SalesChannel salesChannel = (SalesChannel) mo;
+        if (salesChannel.getSalesChannelName().equalsIgnoreCase(JOURNEY_SALES_CHANNEL_NAME))
+          {
+            journeySalesChannelID  = salesChannel.getSalesChannelID();
+            log.info("journeySalesChannelID set to {}", journeySalesChannelID);
+            break;
+          }
+      }
+    if (journeySalesChannelID == null)
+      {
+        log.error("Unable to find journeySalesChannelID, exiting sales channels are :");
+        for (GUIManagedObject mo : getStoredSalesChannels()) log.error("  {}",((SalesChannel) mo).getSalesChannelName());
+      }
+    return journeySalesChannelID;
+  }
+  
+
   /*****************************************
   *
   *  putSalesChannel

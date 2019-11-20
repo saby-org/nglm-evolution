@@ -15,7 +15,6 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
@@ -39,9 +38,10 @@ public class LoyaltyProgramState
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program_subscriber_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("loyaltyProgramType", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramEpoch", Schema.INT64_SCHEMA);
+    schemaBuilder.field("loyaltyProgramID", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramName", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramEnrollmentDate", Timestamp.builder().schema());
     schemaBuilder.field("loyaltyProgramExitDate", Timestamp.builder().optional().schema());
@@ -76,6 +76,7 @@ public class LoyaltyProgramState
   protected LoyaltyProgramType loyaltyProgramType;
   protected long loyaltyProgramEpoch;
   protected String loyaltyProgramName;
+  protected String loyaltyProgramID;
   protected Date loyaltyProgramEnrollmentDate;
   protected Date loyaltyProgramExitDate;
   
@@ -88,6 +89,7 @@ public class LoyaltyProgramState
   public LoyaltyProgramType getLoyaltyProgramType() { return loyaltyProgramType; }
   public long getLoyaltyProgramEpoch() { return loyaltyProgramEpoch; }
   public String getLoyaltyProgramName() { return loyaltyProgramName; }
+  public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getLoyaltyProgramEnrollmentDate() { return loyaltyProgramEnrollmentDate; }
   public Date getLoyaltyProgramExitDate() { return loyaltyProgramExitDate; }
 
@@ -97,11 +99,12 @@ public class LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate)
+  public LoyaltyProgramState(LoyaltyProgramType loyaltyProgramType, long loyaltyProgramEpoch, String loyaltyProgramName, String loyaltyProgramID, Date loyaltyProgramEnrollmentDate, Date loyaltyProgramExitDate)
   {
     this.loyaltyProgramType = loyaltyProgramType;
     this.loyaltyProgramEpoch = loyaltyProgramEpoch;
     this.loyaltyProgramName = loyaltyProgramName;
+    this.loyaltyProgramID = loyaltyProgramID;
     this.loyaltyProgramEnrollmentDate = loyaltyProgramEnrollmentDate;
     this.loyaltyProgramExitDate = loyaltyProgramExitDate;
   }
@@ -117,6 +120,7 @@ public class LoyaltyProgramState
     struct.put("loyaltyProgramType", subscriberState.getLoyaltyProgramType().getExternalRepresentation());
     struct.put("loyaltyProgramEpoch", subscriberState.getLoyaltyProgramEpoch());
     struct.put("loyaltyProgramName", subscriberState.getLoyaltyProgramName());
+    struct.put("loyaltyProgramID", subscriberState.getLoyaltyProgramID());
     struct.put("loyaltyProgramEnrollmentDate", subscriberState.getLoyaltyProgramEnrollmentDate());
     struct.put("loyaltyProgramExitDate", subscriberState.getLoyaltyProgramExitDate());
   }
@@ -145,6 +149,7 @@ public class LoyaltyProgramState
     LoyaltyProgramType loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(valueStruct.getString("loyaltyProgramType"));
     long loyaltyProgramEpoch = valueStruct.getInt64("loyaltyProgramEpoch");
     String loyaltyProgramName = valueStruct.getString("loyaltyProgramName");
+    String loyaltyProgramID = (schemaVersion >= 2) ? valueStruct.getString("loyaltyProgramID") : "";
     Date loyaltyProgramEnrollmentDate = (Date) valueStruct.get("loyaltyProgramEnrollmentDate");
     Date loyaltyProgramExitDate = (Date) valueStruct.get("loyaltyProgramExitDate");
     
@@ -155,6 +160,7 @@ public class LoyaltyProgramState
     this.loyaltyProgramType = loyaltyProgramType;
     this.loyaltyProgramEpoch = loyaltyProgramEpoch;
     this.loyaltyProgramName = loyaltyProgramName;
+    this.loyaltyProgramID = loyaltyProgramID;
     this.loyaltyProgramEnrollmentDate = loyaltyProgramEnrollmentDate;
     this.loyaltyProgramExitDate = loyaltyProgramExitDate;
 

@@ -9863,7 +9863,7 @@ public class GUIManager
         ****************************************/
 
         SalesChannel salesChannel = new SalesChannel(jsonRoot, epoch, existingSalesChannel);
-
+        
         /*****************************************
         *
         *  store
@@ -21785,6 +21785,23 @@ public class GUIManager
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", tokenType.getGUIManagedObjectID());
                       availableValue.put("display", tokenType.getTokenTypeName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "loyaltyPrograms":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject loyaltyProgramsUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
+                {
+                  if (loyaltyProgramsUnchecked.getAccepted())
+                    {
+                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", loyaltyProgram.getGUIManagedObjectID());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }

@@ -184,6 +184,7 @@ public class EvolutionEngine
   private static PresentationStrategyService presentationStrategyService;
   private static ScoringStrategyService scoringStrategyService;
   private static OfferService offerService;
+  private static SalesChannelService salesChannelService;
   private static ProductService productService;
   private static ProductTypeService productTypeService;
   private static CatalogCharacteristicService catalogCharacteristicService;
@@ -376,6 +377,13 @@ public class EvolutionEngine
 
     offerService = new OfferService(bootstrapServers, "evolutionengine-offer-" + evolutionEngineKey, Deployment.getOfferTopic(), false);
     offerService.start();
+
+    //
+    //  salesChannelService
+    //
+
+    salesChannelService = new SalesChannelService(bootstrapServers, "evolutionengine-saleschannel-" + evolutionEngineKey, Deployment.getSalesChannelTopic(), false);
+    salesChannelService.start();
     
     //
     //  productService
@@ -1267,7 +1275,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader,subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader,subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1478,6 +1486,7 @@ public class EvolutionEngine
     private PresentationStrategyService presentationStrategyService;
     private ScoringStrategyService scoringStrategyService;
     private OfferService offerService;
+    private SalesChannelService salesChannelService;
     private ProductService productService;
     private ProductTypeService productTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
@@ -1497,7 +1506,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1510,6 +1519,7 @@ public class EvolutionEngine
       this.presentationStrategyService = presentationStrategyService;
       this.scoringStrategyService = scoringStrategyService;
       this.offerService = offerService;
+      this.salesChannelService = salesChannelService;
       this.tokenTypeService = tokenTypeService;
       this.subscriberMessageTemplateService = subscriberMessageTemplateService;
       this.deliverableService = deliverableService;
@@ -1558,6 +1568,7 @@ public class EvolutionEngine
       presentationStrategyService.stop();
       scoringStrategyService.stop();
       offerService.stop();
+      salesChannelService.stop();
       productService.stop();
       productTypeService.stop();
       catalogCharacteristicService.stop();
@@ -1619,7 +1630,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, communicationChannelService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, communicationChannelService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -2907,7 +2918,7 @@ public class EvolutionEngine
                 if (currentLoyaltyProgramState == null || !(currentLoyaltyProgramState instanceof LoyaltyProgramPointsState))
                   {
                     LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
-                    currentLoyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, newTierName, null, now, loyaltyProgramHistory);
+                    currentLoyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, newTierName, null, now, loyaltyProgramHistory);
                   }
 
                 //
@@ -2959,7 +2970,7 @@ public class EvolutionEngine
                 if (loyaltyProgramState == null)
                   {
                     LoyaltyProgramHistory loyaltyProgramHistory = new LoyaltyProgramHistory(loyaltyProgram.getLoyaltyProgramID());
-                    loyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), now, null, tierName, null, now, loyaltyProgramHistory);
+                    loyaltyProgramState = new LoyaltyProgramPointsState(LoyaltyProgramType.POINTS, loyaltyProgram.getEpoch(), loyaltyProgram.getLoyaltyProgramName(), loyaltyProgram.getLoyaltyProgramID(), now, null, tierName, null, now, loyaltyProgramHistory);
                   }
 
                 String oldTier = ((LoyaltyProgramPointsState)loyaltyProgramState).getTierName();
@@ -3367,7 +3378,9 @@ public class EvolutionEngine
             if (boundCount < maxNumberofPlays)
               {
                 subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
-                subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there 
+                subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there
+                String salesChannelID = presentationLog.getSalesChannelID();
+                subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
                 subscriberStateUpdated = true;
               }
           }
@@ -5391,6 +5404,7 @@ public class EvolutionEngine
     private PresentationStrategyService presentationStrategyService;
     private ScoringStrategyService scoringStrategyService;
     private OfferService offerService;
+    private SalesChannelService salesChannelService;
     
     private ProductService productService;
     private ProductTypeService productTypeService;
@@ -5410,7 +5424,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -5422,6 +5436,7 @@ public class EvolutionEngine
       this.presentationStrategyService = presentationStrategyService;
       this.scoringStrategyService = scoringStrategyService;
       this.offerService = offerService;
+      this.salesChannelService = salesChannelService;
       this.tokenTypeService = tokenTypeService;    
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.productService = productService;
@@ -5450,6 +5465,7 @@ public class EvolutionEngine
     public PresentationStrategyService getPresentationStrategyService() { return presentationStrategyService; }
     public ScoringStrategyService getScoringStrategyService() { return scoringStrategyService; }
     public OfferService getOfferService() { return offerService; }
+    public SalesChannelService getSalesChannelService() { return salesChannelService; }
     public ProductService getProductService() { return productService; }
     public ProductTypeService getProductTypeService() { return productTypeService; }
     public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
