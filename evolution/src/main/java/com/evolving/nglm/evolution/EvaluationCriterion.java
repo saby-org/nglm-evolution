@@ -66,6 +66,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class EvaluationCriterion
 {
@@ -195,6 +197,7 @@ public class EvaluationCriterion
     LessThanOrEqualOperator("<="),
     IsNullOperator("is null"),
     IsNotNullOperator("is not null"),
+    ContainsKeywordOperator("contains keyword"),
     IsInSetOperator("is in set"),
     NotInSetOperator("not in set"),
     ContainsOperator("contains"),
@@ -475,6 +478,24 @@ public class EvaluationCriterion
             }
           break;
           
+        case ContainsKeywordOperator:
+          switch (criterionField.getFieldDataType())
+            {
+              case StringCriterion:
+                switch (argumentType)
+                  {
+                    case StringExpression:
+                      validCombination = true;
+                      break;
+                  }
+                break;
+
+              default:
+                validCombination = false;
+                break;
+            }
+          break;
+
         case IsInSetOperator:
         case NotInSetOperator:
           switch (criterionField.getFieldDataType())
@@ -974,6 +995,16 @@ public class EvaluationCriterion
 
         /*****************************************
         *
+        *  containsKeyword operator
+        *
+        *****************************************/
+
+        case ContainsKeywordOperator:
+          result = traceCondition(evaluationRequest, evaluateContainsKeyword((String) criterionFieldValue, (String) evaluatedArgument), criterionFieldValue, evaluatedArgument);
+          break;
+
+        /*****************************************
+        *
         *  set operators
         *
         *****************************************/
@@ -1092,6 +1123,81 @@ public class EvaluationCriterion
   {
     evaluationRequest.subscriberTrace((condition ? "TrueCondition : " : "FalseCondition: ") + "Criterion {0} {1} value {2} argument {3}", criterionField.getID(), criterionOperator, value, evaluatedArgument);
     return condition;
+  }
+
+  /*****************************************
+  *
+  *  evaluateContainsKeyword
+  *
+  *****************************************/
+
+  //
+  //  generateContainsKeywordRegex
+  //
+
+  private String generateContainsKeywordRegex(String words)
+  {
+    Pattern topLevelPattern = Pattern.compile("(\"([^\"]+)\")|(\\S+)");
+    Matcher topLevelMatcher = topLevelPattern.matcher(words);
+    StringBuilder result = new StringBuilder();
+    while (topLevelMatcher.find())
+      {
+        //
+        //  pattern for one "word"
+        //
+
+        String wordPattern;
+        if (topLevelMatcher.group(1) != null)
+          {
+            Pattern singleWordPattern = Pattern.compile("\\S+");
+            Matcher singleWordMatcher = singleWordPattern.matcher(topLevelMatcher.group(2));
+            StringBuilder wordPatternBuilder = new StringBuilder();
+            while (singleWordMatcher.find())
+              {
+                if (wordPatternBuilder.length() > 0) wordPatternBuilder.append("\\s+");
+                wordPatternBuilder.append(Pattern.quote(singleWordMatcher.group(0)));
+              }
+            wordPattern = wordPatternBuilder.toString();
+          }
+        else
+          {
+            wordPattern = Pattern.quote(topLevelMatcher.group(3));
+          }
+
+        //
+        //  add pattern for "word"
+        //
+
+        if (result.length() > 0) result.append("|");
+        result.append("((^|\\s)" + wordPattern + "(\\s|$))");
+      }
+    return result.toString();
+  }
+
+  //
+  //  evaluateContainsKeyword
+  //
+
+  private boolean evaluateContainsKeyword(String data, String words)
+  {
+    //
+    //  regex
+    //
+
+    String regex = generateContainsKeywordRegex(words);
+
+    //
+    //  match
+    //
+
+    Pattern p = Pattern.compile(regex);
+    Matcher m = p.matcher(data);
+
+    //
+    //  result
+    //
+
+    return m.find();
   }
 
   /*****************************************
@@ -1315,6 +1421,41 @@ public class EvaluationCriterion
 
         case IsNotNullOperator:
           script.append("return left != null; ");
+          break;
+        
+        /*****************************************
+        *
+        *  containsKeyword operator
+        *
+        *****************************************/
+
+        case ContainsKeywordOperator:
+
+          //
+          //  argument must be constant to evaluate esQuery
+          //
+
+          if (! argument.isConstant())
+            {
+              throw new CriterionException("containsKeyword invalid (non-constant) argument");
+            }
+
+          //
+          //  evaluate constant right hand-side
+          //
+
+          String argumentValue = (String) argument.evaluate(null, TimeUnit.Unknown);
+
+          //
+          //  script
+          //
+
+          script.append("return left =~ /" + generateContainsKeywordRegex(argumentValue) + "/; ");
+
+          //
+          //  break
+          //
+
           break;
 
         /*****************************************

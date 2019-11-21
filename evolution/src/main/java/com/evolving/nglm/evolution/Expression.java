@@ -321,7 +321,7 @@ public abstract class Expression
             break;
 
           case StringExpression:
-            script.append("def right_" + getNodeID() + " = \"" + ((String) constant) + "\"; ");
+            script.append("def right_" + getNodeID() + " = '" + ((String) constant) + "'; ");
             break;
 
           case BooleanExpression:
