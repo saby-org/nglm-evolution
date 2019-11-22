@@ -6,12 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
@@ -47,7 +47,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     schemaBuilder.name("subscriber_message_template");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),1));
     for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("dialogMessages", SchemaBuilder.array(DialogMessage.schema()).schema());
+    schemaBuilder.field("dialogMessages", SchemaBuilder.map(Schema.STRING_SCHEMA, DialogMessage.schema()).name("message_template_dialog_messages").schema());
     schemaBuilder.field("readOnlyCopyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("dialogMessageFields", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.BOOLEAN_SCHEMA).name("message_template_dialog_message_fields").schema());
     commonSchema = schemaBuilder.build();
@@ -65,7 +65,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  private List<DialogMessage> dialogMessages = new ArrayList<DialogMessage>();
+  private Map<String,DialogMessage> dialogMessages = new HashMap<String,DialogMessage>();
   private String readOnlyCopyID;
   protected Map<String, Boolean> dialogMessageFields = new HashMap<String, Boolean>();
 
@@ -77,12 +77,12 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   public String getSubscriberMessageTemplateID() { return getGUIManagedObjectID(); }
   public String getSubscriberMessageTemplateName() { return getGUIManagedObjectName(); }
-  public List<DialogMessage> getDialogMessages() { return dialogMessages; }
+  public Map<String,DialogMessage> getDialogMessages() { return dialogMessages; }
   public String getReadOnlyCopyID() { return readOnlyCopyID; }
   public Map<String, Boolean> getDialogMessageFields(){ return dialogMessageFields;}
   public DialogMessage getDialogMessage(String messageField) 
   {    
-    DialogMessage result = getDialogMessages().get(0/*messageField*/); 
+    DialogMessage result = getDialogMessages().get(messageField); 
     return result; 
   }
 
@@ -142,13 +142,13 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //  messageText
     //
 
-    this.dialogMessages = new ArrayList<DialogMessage>();
+    this.dialogMessages = new HashMap<String, DialogMessage>();
     if (messagesJSON.size() > 0)
       {
         for (String dialogMessageField : getDialogMessageFields().keySet())
           {
             boolean mandatory = getDialogMessageFields().get(dialogMessageField);
-            this.dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.Profile));
+            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.Profile));
           }
       }
 
@@ -228,9 +228,9 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //  add dialogMessages
     //
 
-    for (DialogMessage dialogMessage : subscriberMessage.getDialogMessages())
+    for (Entry<String,DialogMessage> dialogMessage : subscriberMessage.getDialogMessages().entrySet())
       {
-        result.getDialogMessages().add(new DialogMessage(dialogMessage));
+        result.getDialogMessages().put(dialogMessage.getKey(), new DialogMessage(dialogMessage.getValue()));
       }
 
     //
@@ -267,7 +267,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    List<DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (List<Object>) valueStruct.get("dialogMessages"));
+    Map<String, DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (Map<String, Object>) valueStruct.get("dialogMessages"));
     String readOnlyCopyID = valueStruct.getString("readOnlyCopyID");
     Map<String, Boolean> dialogMessageFields = (Map<String, Boolean>) valueStruct.get("dialogMessageFields");
 
@@ -286,7 +286,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  private static List<DialogMessage> unpackDialogMessages(Schema schema, List<Object> value)
+  private static Map<String, DialogMessage> unpackDialogMessages(Schema schema, Map<String, Object> value)
   {
     //
     //  get schema
@@ -298,17 +298,17 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     //  unpack
     //
 
-    List<DialogMessage> result = new ArrayList<DialogMessage>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object dialogMessage : valueArray)
+    Map<String,DialogMessage> result = new HashMap<String,DialogMessage>();
+    for (String messageFieldName : value.keySet())
       {
-        result.add(DialogMessage.unpack(new SchemaAndValue(dialogMessageSchema, dialogMessage)));
+        DialogMessage dialogMessage = DialogMessage.unpack(new SchemaAndValue(dialogMessageSchema, value.get(messageFieldName)));
+        result.put(messageFieldName, dialogMessage);
       }
 
     //
     //  return
     //
-
+  
     return result;
   }
 
@@ -346,12 +346,13 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  private static List<Object> packDialogMessages(List<DialogMessage> dialogMessages)
+  private static Map<String, Object> packDialogMessages(Map<String,DialogMessage> dialogMessages)
   {
-    List<Object> result = new ArrayList<Object>();
-    for (DialogMessage dialogMessage : dialogMessages)
+    Map<String,Object> result = new HashMap<String,Object>();
+    for (String messageFieldName : dialogMessages.keySet())
       {
-        result.add(DialogMessage.pack(dialogMessage));
+        DialogMessage dialogMessage = dialogMessages.get(messageFieldName);
+        result.put(messageFieldName,DialogMessage.pack(dialogMessage));
       }
     return result;
   }
@@ -362,7 +363,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public List<CriterionField> getParameterTags()
+  public Map<String,CriterionField> getParameterTags()
   {
     return resolveParameterTags(dialogMessages);
   }
@@ -373,21 +374,30 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static List<CriterionField> resolveParameterTags(List<DialogMessage> dialogMessages)
+  public static Map<String,CriterionField> resolveParameterTags(Map<String,DialogMessage> dialogMessages)
   {
-    List<CriterionField> parameterTags = new ArrayList<CriterionField>();
-    Set<String> parameterTagIDs = new HashSet<String>();
-    for (DialogMessage dialogMessage : dialogMessages)
+    Map<String,CriterionField> parameterTags = new HashMap<String,CriterionField>();
+    Map<String,Set<String>> parameterTagIDs = new HashMap<String,Set<String>>();
+
+    for (Entry<String,DialogMessage> dialogMessageEntry : dialogMessages.entrySet())
       {
+        
+        String dialogMessageFieldName = dialogMessageEntry.getKey();
+        DialogMessage dialogMessage = dialogMessageEntry.getValue();
+        if (! parameterTagIDs.keySet().contains(dialogMessageFieldName))
+          {
+            parameterTagIDs.put(dialogMessageFieldName, new HashSet<String>());
+          }
+        
         for (CriterionField parameterTag : dialogMessage.getParameterTags())
           {
-            if (! parameterTagIDs.contains(parameterTag.getID()))
-              {
-                parameterTags.add(parameterTag);
-                parameterTagIDs.add(parameterTag.getID());
-              }
+            if (! parameterTagIDs.get(dialogMessageFieldName).contains(parameterTag.getID())){
+              parameterTags.put(dialogMessageFieldName, parameterTag);
+              parameterTagIDs.get(dialogMessageFieldName).add(parameterTag.getID());
+            }
           }
       }
+    
     return parameterTags;
   }
 
@@ -400,7 +410,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   public List<String> getLanguages()
   {
     Set<String> languages = new HashSet<String>();
-    for (DialogMessage dialogMessage : dialogMessages)
+    for (DialogMessage dialogMessage : dialogMessages.values())
       {
         for (String languageName : dialogMessage.getMessageTextByLanguage().keySet())
           {

@@ -65,9 +65,9 @@ public class MailTemplate extends SubscriberMessageTemplate
 
   public String getMailTemplateID() { return getGUIManagedObjectID(); }
   public String getMailTemplateName() { return getGUIManagedObjectName(); }
-  public DialogMessage getSubject() { return super.getDialogMessages().get(0/*"subject"*/); }
-  public DialogMessage getHTMLBody() { return super.getDialogMessages().get(1/*"htmlBody"*/); }
-  public DialogMessage getTextBody() { return super.getDialogMessages().get(2/*"textBody"*/); }
+  public DialogMessage getSubject() { return super.getDialogMessages().get("subject"); }
+  public DialogMessage getHTMLBody() { return super.getDialogMessages().get("htmlBody"); }
+  public DialogMessage getTextBody() { return super.getDialogMessages().get("textBody"); }
   
   //
   //  abstract

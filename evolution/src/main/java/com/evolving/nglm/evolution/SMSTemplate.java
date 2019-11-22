@@ -65,7 +65,7 @@ public class SMSTemplate extends SubscriberMessageTemplate
 
   public String getSMSTemplateID() { return getGUIManagedObjectID(); }
   public String getSMSTemplateName() { return getGUIManagedObjectName(); }
-  public DialogMessage getMessageText() { return super.getDialogMessages().get(0/*"messageText"*/); }
+  public DialogMessage getMessageText() { return super.getDialogMessages().get("messageText"); }
   
   //
   //  abstract
