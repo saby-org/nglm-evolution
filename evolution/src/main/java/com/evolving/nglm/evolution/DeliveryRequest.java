@@ -562,7 +562,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
     Struct valueStruct = (Struct) value;
     String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     String deliveryRequestSource = valueStruct.getString("deliveryRequestSource");
-    String originatingDeliveryRequestID = valueStruct.getString("originatingDeliveryRequestID");
+    String originatingDeliveryRequestID = (schemaVersion >= 3) ? valueStruct.getString("originatingDeliveryRequestID") : null;
     boolean originatingRequest = (schemaVersion >= 2) ? valueStruct.getBoolean("originatingRequest") : true;
     Date creationDate = (schemaVersion >= 3) ? new Date(valueStruct.getInt64("creationDate")) : ((schemaVersion >= 2) ? (Date) valueStruct.get("creationDate") : SystemTime.getCurrentTime());
     String subscriberID = valueStruct.getString("subscriberID");
