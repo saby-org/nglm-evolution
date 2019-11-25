@@ -68,7 +68,7 @@
     <mysql.gui.version>8.0.13</mysql.gui.version>
     
     <!-- dependencies - fake components -->
-    <fake.smsc.version>0.0.6</fake.smsc.version>
+    <fake.smsc.version>0.0.7</fake.smsc.version>
 
     <!-- lag exporter -->
     <lagexporter.version>0.4.0</lagexporter.version>
