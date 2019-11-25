@@ -21558,6 +21558,31 @@ public class GUIManager
             }
           break;
 
+        case "pointPaymentMeans":
+          if (includeDynamic)
+            {
+              DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
+              JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+              String providerID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+              if (providerID != null)
+                {
+                  for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+                    {
+                      if (paymentMeanUnchecked.getAccepted())
+                        {
+                          PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
+                          if(paymentMean.getFulfillmentProviderID().equals(providerID)){
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", paymentMean.getPaymentMeanID());
+                            availableValue.put("display", paymentMean.getPaymentMeanName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                          }
+                        }
+                    }
+               }
+            }
+          break;
+
         case "products":
           if (includeDynamic)
             {
