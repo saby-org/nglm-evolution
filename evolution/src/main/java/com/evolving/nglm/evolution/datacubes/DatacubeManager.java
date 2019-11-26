@@ -131,6 +131,18 @@ public class DatacubeManager
         datacubeScheduler.schedule(todLoy);
       }
     
+    DatacubeScheduling yesTier = new YesterdayTierDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    if(yesTier.properlyConfigured)
+      {
+        datacubeScheduler.schedule(yesTier);
+      }
+    
+    DatacubeScheduling todTier = new TodayTierDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    if(todTier.properlyConfigured)
+      {
+        datacubeScheduler.schedule(todTier);
+      }
+    
 
     log.info("Starting scheduler");
     datacubeScheduler.runScheduler();

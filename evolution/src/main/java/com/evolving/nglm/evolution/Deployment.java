@@ -133,6 +133,8 @@ public class Deployment
   private static String todayODRDatacubePeriodCronEntryString;
   private static String yesterdayLoyaltyDatacubePeriodCronEntryString;
   private static String todayLoyaltyDatacubePeriodCronEntryString;
+  private static String yesterdayTierDatacubePeriodCronEntryString;
+  private static String todayTierDatacubePeriodCronEntryString;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
   private static Map<String,ExternalAPITopic> externalAPITopics = new LinkedHashMap<String,ExternalAPITopic>();
@@ -345,6 +347,8 @@ public class Deployment
   public static String getTodayODRDatacubePeriodCronEntryString() { return todayODRDatacubePeriodCronEntryString; }
   public static String getYesterdayLoyaltyDatacubePeriodCronEntryString() { return yesterdayLoyaltyDatacubePeriodCronEntryString; }
   public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
+  public static String getYesterdayTierDatacubePeriodCronEntryString() { return yesterdayTierDatacubePeriodCronEntryString; }
+  public static String getTodayTierDatacubePeriodCronEntryString() { return todayTierDatacubePeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
   public static Map<String,ExternalAPITopic> getExternalAPITopics() { return externalAPITopics; }
@@ -1915,6 +1919,32 @@ public class Deployment
     try
       {
         todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  yesterdayTierDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        yesterdayTierDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayTierDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  todayTierDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        todayTierDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayTierDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

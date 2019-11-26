@@ -547,6 +547,102 @@
         }
     }'
   echo
+  
+  #
+  #  manually create datacube_loyaltyprogramshistory index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/datacube_loyaltyprogramshistory -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "computationDate" : { "type" : "long" },
+                  "filter.dataDate" : { "type" : "keyword" },
+                  "filter.loyaltyProgram.id" : { "type" : "keyword" },
+                  "filter.loyaltyProgram.display" : { "type" : "keyword" },
+                  "filter.tierName" : { "type" : "keyword" },
+                  "filter.evolutionSubscriberStatus.id" : { "type" : "keyword" },
+                  "filter.evolutionSubscriberStatus.display" : { "type" : "keyword" },
+                  "count" : { "type" : "integer" },
+                  "data.rewardPointRedeemed" : { "type" : "integer" },
+                  "data.redeemerCount" : { "type" : "integer" },
+                  "data.rewardPointEarned" : { "type" : "integer" },
+                  "data.rewardPointExpired": { "type" : "integer" }
+                }
+        }
+    }'
+  echo
+  
+  #
+  #  manually create datacube_loyaltyprogramschanges index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/datacube_loyaltyprogramschanges -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "computationDate" : { "type" : "long" },
+                  "filter.tierChangeDate" : { "type" : "keyword" },
+                  "filter.loyaltyProgram.id" : { "type" : "keyword" },
+                  "filter.loyaltyProgram.display" : { "type" : "keyword" },
+                  "filter.newTierName" : { "type" : "keyword" },
+                  "filter.previousTierName" : { "type" : "keyword" },
+                  "filter.tierChangeType" : { "type" : "keyword" },
+                  "count" : { "type" : "integer" }
+                }
+        }
+    }'
+  echo
 
   #
   #  manually create journeymetric index

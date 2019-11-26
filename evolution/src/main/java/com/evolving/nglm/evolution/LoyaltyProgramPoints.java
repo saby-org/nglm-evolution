@@ -11,6 +11,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.datacubes.DatacubeScheduling;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -53,6 +54,24 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
     private LoyaltyProgramPointsEventInfos(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public static LoyaltyProgramPointsEventInfos fromExternalRepresentation(String externalRepresentation) { for (LoyaltyProgramPointsEventInfos enumeratedValue : LoyaltyProgramPointsEventInfos.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+
+  //
+  //  LoyaltyProgramTierChange
+  //
+
+  public enum LoyaltyProgramTierChange
+  {
+    Optin("opt-in"),
+    Optout("opt-out"),
+    Upgrade("upgrade"),
+    Downgrade("downgrade"),
+    NoChange("nochange"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private LoyaltyProgramTierChange(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static LoyaltyProgramTierChange fromExternalRepresentation(String externalRepresentation) { for (LoyaltyProgramTierChange enumeratedValue : LoyaltyProgramTierChange.values()) { if (enumeratedValue.getExternalRepresentation().equals(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   
   /*****************************************
@@ -119,6 +138,23 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
   public String getRewardPointsID() { return rewardPointID; }
   public String getStatusPointsID() { return statusPointID; }
   public List<Tier> getTiers() { return tiers; }
+
+  /*****************************************
+   *
+   *  getTier
+   *
+   *****************************************/
+  public Tier getTier(String tierName)
+  {
+    for(Tier tier: tiers)
+      {
+        if(tier.getTierName().equals(tierName))
+          {
+            return tier;
+          }
+      }
+    return null;
+  }
 
   /*****************************************
    *
@@ -507,8 +543,31 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
       this.statusEventName = JSONUtilities.decodeString(jsonRoot, "statusEventName", true);
       this.numberOfStatusPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfStatusPointsPerUnit", true);
       this.rewardEventName = JSONUtilities.decodeString(jsonRoot, "rewardEventName", true);
-      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfRewardPointsPerUnit", true);
+      this.numberOfRewardPointsPerUnit = JSONUtilities.decodeInteger(jsonRoot, "numberOfRewardPointsPerUnit", true); 
+    }
+
+    /*****************************************
+     *
+     *  changeFrom
+     *
+     *****************************************/
+    public static LoyaltyProgramTierChange changeFromTierToTier(Tier from, Tier to)
+    {
+      if(to == null) { return LoyaltyProgramTierChange.Optout; }
+      if(from == null) { return LoyaltyProgramTierChange.Optin; }
       
+      if(to.statusPointLevel - from.statusPointLevel > 0)
+        {
+          return LoyaltyProgramTierChange.Upgrade;
+        }
+      else if (to.statusPointLevel - from.statusPointLevel < 0)
+        {
+          return LoyaltyProgramTierChange.Downgrade;
+        }
+      else 
+        {
+          return LoyaltyProgramTierChange.NoChange;
+        }
     }
   }
 }

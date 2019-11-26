@@ -100,7 +100,7 @@ public abstract class DatacubeGenerator
   protected abstract String getDataESIndex(String date);
   protected abstract String getDatacubeESIndex();
   protected abstract List<String> getFilterFields();
-  protected abstract List<CompositeValuesSourceBuilder<?>> getFilterComplexSources();
+  protected abstract List<CompositeValuesSourceBuilder<?>> getFilterComplexSources(String date); // @param date: YYYY-MM-dd format
   protected abstract List<AggregationBuilder> getDataAggregations(String date); // @param date: YYYY-MM-dd format
   protected abstract void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException;
   protected abstract void embellishFilters(Map<String, Object> filters);
@@ -162,7 +162,7 @@ public abstract class DatacubeGenerator
     String ESIndex = getDataESIndex(date);
     
     List<String> datacubeFilterFields = getFilterFields();
-    List<CompositeValuesSourceBuilder<?>> datacubeFilterComplexSources = getFilterComplexSources();
+    List<CompositeValuesSourceBuilder<?>> datacubeFilterComplexSources = getFilterComplexSources(date);
     List<AggregationBuilder> datacubeDataAggregations = getDataAggregations(date);
     
     //

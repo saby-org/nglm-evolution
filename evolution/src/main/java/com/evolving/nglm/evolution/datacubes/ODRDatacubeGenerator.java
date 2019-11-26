@@ -112,7 +112,7 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   }
 
   @Override
-  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources()
+  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources(String date)
   {
     return this.filterComplexSources;
   }

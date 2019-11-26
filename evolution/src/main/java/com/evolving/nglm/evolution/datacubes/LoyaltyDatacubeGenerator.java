@@ -111,7 +111,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
     // TODO : extract evolutionSubscriberStatus.display 
     filters.put("evolutionSubscriberStatus.display", status);
     
-    String loyaltyTier = (String) filters.remove("loyaltyProgramTier");
+    String loyaltyTier = (String) filters.remove(filterLoyaltyProgramTier);
     String loyaltyProgramID = "undefined";
     String tierName = "undefined";
     Matcher m = loyaltyTierPattern.matcher(loyaltyTier);
@@ -127,7 +127,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
       }
     else 
       {
-        log.warn("Unable to parse LoyaltyProgramTier field.");
+        log.warn("Unable to parse "+ filterLoyaltyProgramTier + " field.");
       }
     filters.put("tierName", tierName);
     filters.put("loyaltyProgram.id", loyaltyProgramID);
@@ -142,7 +142,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   }
 
   @Override
-  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources()
+  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources(String date)
   {
     return this.filterComplexSources;
   }
@@ -157,7 +157,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
     
     try
       {
-        oneDayAfter = DATE_FORMAT.format(RLMDateUtils.addDays(DATE_FORMAT.parse(date), -1, Deployment.getBaseTimeZone()));
+        oneDayAfter = DATE_FORMAT.format(RLMDateUtils.addDays(DATE_FORMAT.parse(date), 1, Deployment.getBaseTimeZone()));
       } 
     catch (ParseException e)
       {
@@ -185,7 +185,6 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
             .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if( (doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"' && params._source['pointFluctuations']['"+pointID+"']['yesterday']['redeemed'] > 0 ) || (doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"' && params._source['pointFluctuations']['"+pointID+"']['today']['redeemed'] > 0) ) {left = 1;} } return left;", Collections.emptyMap()));
         dataAggregations.add(redeemerCount);
       }
-    
     
     return dataAggregations;
   }
