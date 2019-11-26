@@ -125,9 +125,9 @@ public class MailTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getSubject().resolveX(subscriberEvaluationRequest); }
-  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getHTMLBody().resolveX(subscriberEvaluationRequest); }
-  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getTextBody().resolveX(subscriberEvaluationRequest); }
+  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return (getSubject() != null ? getSubject().resolveX(subscriberEvaluationRequest) : null); }
+  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return (getHTMLBody() != null ? getHTMLBody().resolveX(subscriberEvaluationRequest) : null); }
+  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return (getTextBody() != null ? getTextBody().resolveX(subscriberEvaluationRequest) : null); }
 
   /*****************************************
   *

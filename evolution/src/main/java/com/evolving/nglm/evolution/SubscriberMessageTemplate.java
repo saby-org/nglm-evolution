@@ -317,12 +317,6 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *  packCommon
   *
   *****************************************/
-
-  /*****************************************
-  *
-  *  packCommon
-  *
-  *****************************************/
   
   protected static void packCommon(Struct struct, SubscriberMessageTemplate subscriberMessageTemplate)
   {
