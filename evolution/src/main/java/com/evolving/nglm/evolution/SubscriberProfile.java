@@ -380,17 +380,9 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
               {                
                 LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
                 LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) program.getValue();
-
-                if(loyaltyProgramPointsState.getTierEnrollmentDate() != null)
-                  { 
-                    loyalty.put("tierUpdateDate", loyaltyProgramPointsState.getTierEnrollmentDate()); 
-                  }
-                if(loyaltyProgramPointsState.getTierName() != null)
-                  { 
-                    loyalty.put("tierName", loyaltyProgramPointsState.getTierName());
-                    loyalty.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName());
-                  }
-                
+                if(loyaltyProgramPointsState.getTierName() != null){ loyalty.put("tierName", loyaltyProgramPointsState.getTierName()); }
+                if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyalty.put("tierUpdateDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
+                if(loyaltyProgramPointsState.getPreviousTierName() != null){ loyalty.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName()); }
                 Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
                 Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
                 loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());

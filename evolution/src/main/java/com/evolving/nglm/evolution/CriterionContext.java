@@ -14,11 +14,14 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +44,8 @@ public class CriterionContext
     Presentation("presentation"),
     Journey("journey"),
     JourneyNode("journeyNode"),
-    Loyalty("loyalty"),
+    DynamicProfile("dynamicProfile"),
+    FullDynamicProfile("fullDynamicProfile"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private CriterionContextType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -57,14 +61,21 @@ public class CriterionContext
 
   public static final CriterionContext Profile = new CriterionContext(CriterionContextType.Profile);
   public static final CriterionContext FullProfile = new CriterionContext(CriterionContextType.FullProfile);
+  public static final CriterionContext DynamicProfile = new CriterionContext(CriterionContextType.DynamicProfile);
+  public static final CriterionContext FullDynamicProfile = new CriterionContext(CriterionContextType.FullDynamicProfile);
   public static final CriterionContext Presentation = new CriterionContext(CriterionContextType.Presentation);
-  public static final CriterionContext Loyalty = new CriterionContext(CriterionContextType.Loyalty);
 
   /*****************************************
   *
   *  standard CriterionFields
   *
   *****************************************/
+
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(CriterionContext.class);
   
   //
   //  internal
@@ -259,6 +270,18 @@ public class CriterionContext
       {
         throw new ServerRuntimeException(e);
       }
+  }
+
+  /*****************************************
+  *
+  *  dynamic criterion fields
+  *
+  *****************************************/
+
+  private static DynamicCriterionFieldService dynamicCriterionFieldService = null;
+  public static void initialize(DynamicCriterionFieldService dynamicCriterionFieldService)
+  {
+    CriterionContext.dynamicCriterionFieldService = dynamicCriterionFieldService;
   }
 
   /*****************************************
@@ -567,33 +590,42 @@ public class CriterionContext
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
-          result.putAll(Loyalty.getCriterionFields());
           result.putAll(Deployment.getProfileCriterionFields());
           break;
+
         case FullProfile:
           result = new LinkedHashMap<String,CriterionField>();
-          result.put(evaluationDate.getID(), evaluationDate);
-          result.put(evaluationEventName.getID(), evaluationEventName);
-          result.put(internalRandom100.getID(), internalRandom100);
-          result.put(internalFalse.getID(), internalFalse);
-          result.put(internalTargets.getID(), internalTargets);
-          result.putAll(Loyalty.getCriterionFields());
-          result.putAll(Deployment.getProfileCriterionFields());
+          result.putAll(Profile.getCriterionFields());
           result.putAll(Deployment.getExtendedProfileCriterionFields());
           break;
-        case Presentation:
-          result = Deployment.getPresentationCriterionFields();
+
+        case DynamicProfile:
+          if (dynamicCriterionFieldService == null) throw new ServerRuntimeException("criterion context not initialized");
+          result = new LinkedHashMap<String,CriterionField>();
+          result.putAll(Profile.getCriterionFields());
+          for (DynamicCriterionField dynamicCriterionField : dynamicCriterionFieldService.getActiveDynamicCriterionFields(SystemTime.getCurrentTime()))
+            {
+              result.put(dynamicCriterionField.getCriterionField().getID(), dynamicCriterionField.getCriterionField());
+            }
           break;
-        case Loyalty:
-          result = LoyaltyProgramService.getLoyaltyCriterionFields();
+
+        case FullDynamicProfile:
+          result = new LinkedHashMap<String,CriterionField>();
+          result.putAll(DynamicProfile.getCriterionFields());
+          result.putAll(Deployment.getExtendedProfileCriterionFields());
           break;
+
         case Journey:
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
           result.putAll(journeyCriterionFields);
-          result.putAll(Loyalty.getCriterionFields());
-          result.putAll(Profile.getCriterionFields());
+          result.putAll(DynamicProfile.getCriterionFields());
           break;
+
+        case Presentation:
+          result = Deployment.getPresentationCriterionFields();
+          break;
+
         default:
           throw new ServerRuntimeException("unknown criterionContext: " + criterionContextType);
       }

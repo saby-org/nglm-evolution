@@ -501,6 +501,7 @@ public class GUIManager
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private HttpServer restServer;
   private RestHighLevelClient elasticsearch;
+  private DynamicCriterionFieldService dynamicCriterionFieldService;
   private JourneyService journeyService;
   private JourneyTemplateService journeyTemplateService;
   private SegmentationDimensionService segmentationDimensionService;
@@ -600,6 +601,7 @@ public class GUIManager
     int elasticsearchServerPort = parseInteger("elasticsearchServerPort", args[4]);
     String nodeID = System.getProperty("nglm.license.nodeid");
 
+    String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyTemplateTopic = Deployment.getJourneyTemplateTopic();
     String segmentationDimensionTopic = Deployment.getSegmentationDimensionTopic();
@@ -775,6 +777,8 @@ public class GUIManager
           }
       }
     };
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "guimanager-dynamiccriterionfieldservice-"+apiProcessKey, dynamicCriterionFieldTopic, true);
+    CriterionContext.initialize(dynamicCriterionFieldService);
     journeyService = new JourneyService(bootstrapServers, "guimanager-journeyservice-" + apiProcessKey, journeyTopic, true, journeyListener);
     journeyTemplateService = new JourneyTemplateService(bootstrapServers, "guimanager-journeytemplateservice-" + apiProcessKey, journeyTemplateTopic, true);
     dynamicEventDeclarationsService = new DynamicEventDeclarationsService(bootstrapServers, "guimanager-dynamiceventdeclarationsservice-"+apiProcessKey, dynamicEventDeclarationsTopic, true);
@@ -1530,6 +1534,7 @@ public class GUIManager
     *
     *****************************************/
 
+    dynamicCriterionFieldService.start();
     journeyService.start();
     segmentationDimensionService.start();
     pointService.start();
@@ -1568,111 +1573,6 @@ public class GUIManager
     dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService);
     dynamicEventDeclarationsService.refreshLoyaltyProgramChangeEvent(loyaltyProgramService);
     criterionFieldAvailableValuesService.start();
-
-    /*****************************************************************
-    *
-    *  ES indices - create/update subscriber available Value indices
-    *
-    ******************************************************************/
-    //
-  	// Get default mapping_modules index setting
-    //
-    GetSettingsRequest getSettingRequest = new GetSettingsRequest().indices("mapping_modules");
-    Settings settings = null;
-  	try {
-  		GetSettingsResponse settingResponse = elasticsearch.indices().getSettings(getSettingRequest, RequestOptions.DEFAULT);
-  		settings = settingResponse.getIndexToSettings().get("mapping_modules");
-  		
-  	} catch (IOException e) {
-			log.error("Failed to retrieve mapping_modules ES settings, IOException occurs with message: " + e.getMessage());
-  	}
-
-    for (String key : Deployment.getProfileCriterionFields().keySet()){
-   	
-      CriterionField criterionField = Deployment.getProfileCriterionFields().get(key);
-      String mappingName = "mapping_"+ criterionField.getESField().toLowerCase();
-      JSONArray availableValues = JSONUtilities.decodeJSONArray(criterionField.getJSONRepresentation(), "availableValues", false);
-      if (availableValues!= null && !availableValues.isEmpty()){
-
-      	//
-      	// Check if index exists
-      	//
-      	GetIndexRequest getIndexRequest = new GetIndexRequest(mappingName);
-      	boolean exist = false;
-      	try {
-      		exist = elasticsearch.indices().exists(getIndexRequest, RequestOptions.DEFAULT);
-      	} catch (IOException e1) {
-      	}
-    	
-      	if (!exist && settings != null){
-      		//
-      		// Create missing index with default settings
-      		//
-      		CreateIndexRequest request = new CreateIndexRequest(mappingName);
-      		request.settings(Settings.builder()
-      		    .put("index.number_of_shards", settings.get("index.number_of_shards"))
-          		.put("index.number_of_replicas", settings.get("index.number_of_replicas"))
-          		.put("index.refresh_interval", settings.get("index.refresh_interval"))
-      		    .put("index.translog.durability", settings.get("index.translog.durability"))
-      		    .put("index.translog.sync_interval", settings.get("index.translog.sync_interval"))
-      		    .put("index.routing.allocation.total_shards_per_node", settings.get("index.routing.allocation.total_shards_per_node"))
-      		    .put("index.merge.scheduler.max_thread_count", settings.get("index.merge.scheduler.max_thread_count"))
-  		        .put("index.merge.scheduler.max_merge_count", settings.get("index.merge.scheduler.max_merge_count")));
-      		
-      		Map<String, Object> keyword = new HashMap<>();
-      		keyword.put("type", "keyword");   
-
-          Map<String, Object> properties = new HashMap<>();
-          properties.put("fieldID", keyword);
-          properties.put("fieldDisplay", keyword);
-
-          Map<String, Object> mapping = new HashMap<>();
-          mapping.put("properties", properties);
-          request.mapping(mapping);
-      		try {
-      			elasticsearch.indices().create(request, RequestOptions.DEFAULT);
-      			log.info("Create ES indices " + mappingName);
-  	    	} catch (ElasticsearchGenerationException e) {
-      			log.error("Failed to create ES indices " + mappingName+", ElasticsearchGenerationException occurs with message: " + e.getMessage());
-      			continue;
-  	    	} catch (IOException e) {
-      			log.error("Failed to create ES indices " + mappingName+", IOException occurs with message: " + e.getMessage());
-      			continue;
-      		} catch (Exception e) {
-      			log.error("Failed to create ES indices " + mappingName+", Exception occurs with message: " + e.getMessage());
-      			continue;
-      		}
-      	}
-    	
-        for (Object availableValue : availableValues)
-        {
-          if (availableValue instanceof JSONObject){
-        		//
-        		// Insert ID/Display value into index
-        		//
-      	    String id = ((JSONObject)availableValue).get("id").toString();
-      	    String display = ((JSONObject)availableValue).get("display").toString();
-      	    if (id != null && !id.isEmpty() && display != null && !display.isEmpty()){
-      	    	Map<String, Object> jsonMap = new HashMap<>();
-      	    	jsonMap.put("fieldID", id);
-      	    	jsonMap.put("fieldDisplay", display);
-      	    	try {
-      	    		elasticsearch.index(new IndexRequest(mappingName).id("_" + id).source(jsonMap), RequestOptions.DEFAULT);
-          			log.info("Add data [id:"+id+",display:"+display+"]to ES indices " + mappingName);
-      	    	} catch (ElasticsearchGenerationException e) {
-          			log.error("Failed to put data to " + mappingName +", ElasticsearchGenerationException occurs with message: " + e.getMessage());
-      	    	} catch (IOException e) {
-          			log.error("Failed to put data to " + mappingName +", IOException occurs with message: " + e.getMessage());
-      	    	} catch (Exception e) {
-          			log.error("Failed to put data to " + mappingName +", Exception occurs with message: " + e.getMessage());
-      	    	}
-      	    }
-          }
-        }
-        
-      }
-      
-    }
     
     /*****************************************
     *
@@ -1988,7 +1888,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, journeyTrafficReader, renamedProfileCriterionFieldReader, deliverableSourceService, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelService, communicationChannelBlackoutService, loyaltyProgramService, partnerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
     /*****************************************
     *
@@ -2013,6 +1913,7 @@ public class GUIManager
 
     private KafkaProducer<byte[], byte[]> kafkaProducer;
     private HttpServer restServer;
+    private DynamicCriterionFieldService dynamicCriterionFieldService;
     private JourneyService journeyService;
     private SegmentationDimensionService segmentationDimensionService;
     private DNBOMatrixService dnboMatrixService;
@@ -2056,10 +1957,11 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, DeliverableSourceService deliverableSourceService, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelService communicationChannelService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, PartnerService partnerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
+      this.dynamicCriterionFieldService = dynamicCriterionFieldService;
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
       this.pointService = pointService;
@@ -2117,6 +2019,7 @@ public class GUIManager
       //  services 
       //
 
+      if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
       if (journeyService != null) journeyService.stop();
       if (segmentationDimensionService != null) segmentationDimensionService.stop();
       if (pointService != null) pointService.stop();
@@ -2348,27 +2251,27 @@ public class GUIManager
                   break;
 
                 case getProfileCriterionFields:
-                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, CriterionContext.Profile);
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile : CriterionContext.Profile);
                   break;
 
                 case getProfileCriterionFieldIDs:
-                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, CriterionContext.Profile);
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile : CriterionContext.Profile);
                   break;
 
                 case getProfileCriterionField:
-                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, CriterionContext.Profile);
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.DynamicProfile : CriterionContext.Profile);
                   break;
 
                 case getFullProfileCriterionFields:
-                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, CriterionContext.FullProfile);
+                  jsonResponse = processGetProfileCriterionFields(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile : CriterionContext.FullProfile);
                   break;
 
                 case getFullProfileCriterionFieldIDs:
-                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, CriterionContext.FullProfile);
+                  jsonResponse = processGetProfileCriterionFieldIDs(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile : CriterionContext.FullProfile);
                   break;
 
                 case getFullProfileCriterionField:
-                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, CriterionContext.FullProfile);
+                  jsonResponse = processGetProfileCriterionField(userID, jsonRoot, getIncludeDynamicParameter(jsonRoot) ? CriterionContext.FullDynamicProfile : CriterionContext.FullProfile);
                   break;
 
                 case getPresentationCriterionFields:
@@ -3645,6 +3548,17 @@ public class GUIManager
         writer.close();
         exchange.close();
       }
+  }
+
+  /*****************************************
+  *
+  *  getIncludeDynamicParameter(jsonRoot)
+  *
+  *****************************************/
+
+  private boolean getIncludeDynamicParameter(JSONObject jsonRoot)
+  {
+    return JSONUtilities.decodeBoolean(jsonRoot, "includeDynamic", Boolean.FALSE);
   }
 
   /*****************************************
@@ -7708,6 +7622,14 @@ public class GUIManager
         *****************************************/
 
         pointService.putPoint(point, (existingPoint == null), userID);
+        
+        /*****************************************
+        *
+        *  add dynamic criterion fields)
+        *
+        *****************************************/
+
+        dynamicCriterionFieldService.addPointCriterionFields(point, (existingPoint == null));
 
         /*****************************************
         *
@@ -7753,6 +7675,16 @@ public class GUIManager
             PaymentMean paymentMean = new PaymentMean(JSONUtilities.encodeObject(paymentMeanMap), epoch, null);
             paymentMeanService.putPaymentMean(paymentMean, true, userID);
           }
+
+        /*****************************************
+        *
+        *  revalidate
+        *
+        *****************************************/
+
+        revalidateSubscriberMessageTemplates(now);
+        revalidateTargets(now);
+        revalidateJourneys(now);
 
         /*****************************************
         *
@@ -7817,6 +7749,14 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
     /****************************************
     *
     *  argument
@@ -7878,7 +7818,28 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject point = pointService.getStoredPoint(pointID);
-    if (point != null && ! point.getReadOnly()) pointService.removePoint(pointID, userID);
+    if (point != null && ! point.getReadOnly())
+      {
+        //
+        //  remove point
+        //
+
+        pointService.removePoint(pointID, userID);
+
+        //
+        //  remove dynamic criterion fields
+        //
+
+        dynamicCriterionFieldService.removePointCriterionFields(point);
+
+        //
+        //  revalidate
+        //
+
+        revalidateSubscriberMessageTemplates(now);
+        revalidateTargets(now);
+        revalidateJourneys(now);
+      }
 
     /*****************************************
     *
@@ -18281,6 +18242,7 @@ public class GUIManager
           case Unknown:
             throw new GUIManagerException("unsupported loyalty program type", JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", false));
         }
+
         /*****************************************
         *
         *  store
@@ -18288,6 +18250,24 @@ public class GUIManager
         *****************************************/
 
         loyaltyProgramService.putLoyaltyProgram(loyaltyProgram, (existingLoyaltyProgram == null), userID);
+        
+        /*****************************************
+        *
+        *  add dynamic criterion fields)
+        *
+        *****************************************/
+
+        dynamicCriterionFieldService.addLoyaltyProgramCriterionFields(loyaltyProgram, (existingLoyaltyProgram == null));
+
+        /*****************************************
+        *
+        *  revalidate
+        *
+        *****************************************/
+
+        revalidateSubscriberMessageTemplates(now);
+        revalidateTargets(now);
+        revalidateJourneys(now);
 
         /*****************************************
         *
@@ -18298,7 +18278,7 @@ public class GUIManager
         response.put("id", loyaltyProgram.getGUIManagedObjectID());
         response.put("accepted", loyaltyProgram.getAccepted());
         response.put("valid", loyaltyProgram.getAccepted());
-        response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingLoyaltyProgram, now));
+        response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(loyaltyProgram, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -18352,6 +18332,14 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
     /****************************************
     *
     *  argument
@@ -18367,9 +18355,28 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly()) {
-      loyaltyProgramService.removeLoyaltyProgram(loyaltyProgramID, userID);
-    }
+    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly())
+      {
+        //
+        //  remove loyalty program
+        //
+
+        loyaltyProgramService.removeLoyaltyProgram(loyaltyProgramID, userID);
+
+        //
+        //  remove dynamic criterion fields
+        //
+        
+        dynamicCriterionFieldService.removeLoyaltyProgramCriterionFields(existingLoyaltyProgram);
+
+        //
+        //  revalidate
+        //
+
+        revalidateSubscriberMessageTemplates(now);
+        revalidateTargets(now);
+        revalidateJourneys(now);
+      }
 
     /*****************************************
     *
@@ -18378,15 +18385,18 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly()) {
-      responseCode = "ok";
-    }
-    else if (existingLoyaltyProgram != null) {
-      responseCode = "failedReadOnly";
-    }
-    else {
-      responseCode = "loyaltyProgamNotFound";
-    }
+    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly())
+      {
+        responseCode = "ok";
+      }
+    else if (existingLoyaltyProgram != null)
+      {
+        responseCode = "failedReadOnly";
+      }
+    else
+      {
+        responseCode = "loyaltyProgamNotFound";
+      }
 
     /*****************************************
     *
@@ -18564,7 +18574,7 @@ public class GUIManager
         response.put("id", partner.getGUIManagedObjectID());
         response.put("accepted", partner.getAccepted());
         response.put("valid", partner.getAccepted());
-        response.put("processing", partnerService.isActivePartner(existingPartner, now));
+        response.put("processing", partnerService.isActivePartner(partner, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -22249,6 +22259,65 @@ public class GUIManager
     for (GUIManagedObject modifiedJourney : modifiedJourneys)
       {
         journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+      }
+  }
+
+  /*****************************************
+  *
+  *  revalidateSubscriberMessageTemplates
+  *
+  *****************************************/
+
+  private void revalidateSubscriberMessageTemplates(Date date)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+
+    Set<GUIManagedObject> modifiedSubscriberMessageTemplates = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingSubscriberMessageTemplate : subscriberMessageTemplateService.getStoredSubscriberMessageTemplates())
+      {
+        //
+        //  modifiedSubscriberMessageTemplate
+        //
+
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedSubscriberMessageTemplate;
+        try
+          {
+            SubscriberMessageTemplate subscriberMessageTemplate = null;
+            if (existingSubscriberMessageTemplate instanceof SMSTemplate) subscriberMessageTemplate = new SMSTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+            if (existingSubscriberMessageTemplate instanceof MailTemplate) subscriberMessageTemplate = new MailTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+            if (existingSubscriberMessageTemplate instanceof PushTemplate) subscriberMessageTemplate = new PushTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
+            if (subscriberMessageTemplate == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");            
+            modifiedSubscriberMessageTemplate = subscriberMessageTemplate;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedSubscriberMessageTemplate = new IncompleteObject(existingSubscriberMessageTemplate.getJSONRepresentation(), existingSubscriberMessageTemplate.getGUIManagedObjectType(), epoch);
+          }
+
+        //
+        //  changed?
+        //
+
+        if (existingSubscriberMessageTemplate.getAccepted() != modifiedSubscriberMessageTemplate.getAccepted())
+          {
+            modifiedSubscriberMessageTemplates.add(modifiedSubscriberMessageTemplate);
+          }
+      }
+
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+
+    for (GUIManagedObject modifiedSubscriberMessageTemplate : modifiedSubscriberMessageTemplates)
+      {
+        subscriberMessageTemplateService.putGUIManagedObject(modifiedSubscriberMessageTemplate, date, false, null);
       }
   }
 

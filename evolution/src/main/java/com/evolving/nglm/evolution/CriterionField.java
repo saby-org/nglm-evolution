@@ -475,11 +475,11 @@ public class CriterionField extends DeploymentManagedObject
 
   /*****************************************
   *
-  *  retrieve
+  *  retrieveStored
   *
   *****************************************/
 
-  public Object retrieve(SubscriberEvaluationRequest evaluationRequest)
+  private Object retrieveStored(SubscriberEvaluationRequest evaluationRequest) throws CriterionException
   {
     if (retriever != null)
       {
@@ -487,7 +487,7 @@ public class CriterionField extends DeploymentManagedObject
           {
             return retriever.invokeExact(evaluationRequest, this.getID());
           }
-        catch (RuntimeException | Error e)
+        catch (CriterionException | RuntimeException | Error e)
           {
             throw e;
           }
@@ -500,6 +500,43 @@ public class CriterionField extends DeploymentManagedObject
       {
         throw new UnsupportedOperationException();
       }
+  }
+
+  /*****************************************
+  *
+  *  retrieve
+  *
+  *****************************************/
+
+  public Object retrieve(SubscriberEvaluationRequest evaluationRequest)
+  {
+    /****************************************
+    *
+    *  retrieve fieldValue
+    *
+    ****************************************/
+
+    Object criterionFieldValue;
+    try
+      {
+        criterionFieldValue = this.retrieveStored(evaluationRequest);
+      }
+    catch (CriterionException e)
+      {
+        log.info("invalid criterion field {}", this.getID());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.info(stackTraceWriter.toString());
+        return null;
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return criterionFieldValue;
   }
 
   /*****************************************
@@ -525,7 +562,7 @@ public class CriterionField extends DeploymentManagedObject
         *
         *****************************************/
 
-        criterionFieldValue = this.retrieve(evaluationRequest);
+        criterionFieldValue = this.retrieveStored(evaluationRequest);
         
         /*****************************************
         *

@@ -31,6 +31,9 @@ public class DeliverableESSinkConnector extends SimpleESSinkConnector
   
   @Override public Class<? extends Task> taskClass()
   {
+    DynamicCriterionFieldService dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "loyaltyprogramessinkconnector-dynamiccriterionfieldservice-001", Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
     return DeliverableESSinkTask.class;
   }
 

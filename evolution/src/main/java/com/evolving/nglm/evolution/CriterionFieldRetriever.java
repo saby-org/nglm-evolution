@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public abstract class CriterionFieldRetriever
 {
@@ -167,12 +170,11 @@ public abstract class CriterionFieldRetriever
   public static Object getDeliveryStatus_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryDeliveryStatus() != null ? ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryDeliveryStatus().getExternalRepresentation() : null; }    
   public static Object getReturnCodeDetails_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryReturnCodeDetails(); }
   public static Object getOrigin_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOrigin(); }
-  public static Object getOfferId_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOfferId(); }
+  public static Object getOfferDisplay_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOfferDisplay(); }
   public static Object getOfferQty_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOfferQty(); }    
   public static Object getSalesChannelId_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliverySalesChannelId(); }
   public static Object getOfferPrice_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOfferPrice(); }    
   public static Object getMeanOfPayment_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryMeanOfPayment(); }
-  public static Object getOfferStock_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOfferStock(); }
   public static Object getOfferContent_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryOfferContent(); }
   public static Object getVoucherCode_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryVoucherCode(); }
   public static Object getVoucherPartnerId_OfferDelivery(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException { return ((OfferDelivery) evaluationRequest.getSubscriberStreamEvent()).getOfferDeliveryVoucherPartnerId(); }
@@ -200,44 +202,116 @@ public abstract class CriterionFieldRetriever
   //
   
   public static Object getLoyaltyPrograms(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
-    Set<String> res = new HashSet<>();
-    for (LoyaltyProgramState lps : evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values())
-      {
-        res.add(lps.getLoyaltyProgramName());
-      }
+    Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream()
+        .filter(lps -> (lps.getLoyaltyProgramExitDate() == null))
+        .map(lps -> lps.getLoyaltyProgramName())
+        .collect(Collectors.toSet());
     return res;
   }
 
   //
-  // getLoyaltyProgramTier
+  //  getLoyaltyProgramCriterionField (dynamic)
   //
 
-  public static Object getLoyaltyProgramTier(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
-    String res = "";
-    String programID = fieldName.substring("loyaltyprogram.".length(), fieldName.length()-".tier".length()); // "loyaltyprogram."+loyaltyProgramName+".tier"
-    for (LoyaltyProgramState lps : evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values())
+  public static Object getLoyaltyProgramCriterionField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    //
+    //  extract program and variable name
+    //
+
+    Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+    Matcher fieldNameMatcher = fieldNamePattern.matcher(fieldName);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + fieldName);
+    String loyaltyProgramID = fieldNameMatcher.group(1);
+    String criterionFieldBaseName = fieldNameMatcher.group(2);
+
+    //
+    //  loyaltyProgramState
+    //
+
+    LoyaltyProgramState loyaltyProgramState = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().get(loyaltyProgramID);
+
+    //
+    //  opted out previously?
+    //
+
+    if (loyaltyProgramState != null && loyaltyProgramState.getLoyaltyProgramExitDate() != null)
       {
-        if (lps.getLoyaltyProgramID() != null)
-          {
-          if (lps.getLoyaltyProgramID().equals(programID))
-              {
-                if (lps instanceof LoyaltyProgramPointsState)
-                  {
-                    res = ((LoyaltyProgramPointsState) lps).getTierName();
-                    break;
-                  }
-              }
-          }
+        loyaltyProgramState = null;
       }
-    return res;
+
+    //
+    //  in program?
+    //
+
+    if (loyaltyProgramState == null) throw new CriterionException("subscriber not in loyaltyprogram " + loyaltyProgramID);
+    if (! (loyaltyProgramState instanceof LoyaltyProgramPointsState)) throw new CriterionException("loyaltyProgram "+ loyaltyProgramID + " is not a point program : "+criterionFieldBaseName.getClass().getName());
+
+    //
+    //  retrieve
+    //
+    
+    LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+    Object result = null;
+    switch (criterionFieldBaseName)
+      {
+        case "tier":
+          result = loyaltyProgramPointsState.getTierName();
+          break;
+
+        case "statuspoint.balance":
+          result = loyaltyProgramPointsState.getStatusPoints();
+          break;
+
+        case "rewardpoint.balance":
+          result = loyaltyProgramPointsState.getRewardPoints();
+          break;
+      }
+
+    //
+    //  return
+    //
+
+    return result;
   }
-  
+
+  //
+  //  getPointCriterionField (dynamic)
+  //
+
+  public static Object getPointCriterionField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    //
+    //  extract point and variable name
+    //
+
+    Pattern fieldNamePattern = Pattern.compile("^point\\.([^.]+)\\.(.+)$");
+    Matcher fieldNameMatcher = fieldNamePattern.matcher(fieldName);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + fieldName);
+    String pointID = fieldNameMatcher.group(1);
+    String criterionFieldBaseName = fieldNameMatcher.group(2);
+    
+    Object result = null;
+    switch (criterionFieldBaseName)
+      {
+        case "balance":
+          PointBalance pointBalance = evaluationRequest.getSubscriberProfile().getPointBalances().get(pointID);
+          result = new Integer(pointBalance.getBalance(evaluationRequest.getEvaluationDate()));
+          break;
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
   
   //
   //  getJourneyActionDeliveryStatus
   //
 
-  public static Object getJourneyActionDeliveryStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  public static Object getJourneyActionDeliveryStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName)
   {
     /*****************************************
     *

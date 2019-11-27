@@ -9,7 +9,6 @@ package com.evolving.nglm.evolution;
 import java.util.Collection;
 import java.util.Date;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
-import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 
 public class PointService extends GUIService
 {
@@ -132,44 +129,6 @@ public class PointService extends GUIService
     //
 
     putGUIManagedObject(point, now, newObject, userID);
-    
-    //
-    // Create associated criterion
-    //
-    // point.<name>.balance
-    {
-      String pointName = point.getPointName();
-      String id = computeCriterionId(pointName);
-      JSONObject criterionFieldJSON = new JSONObject();
-      criterionFieldJSON.put("id", id);
-      criterionFieldJSON.put("display", "Point "+pointName+" Balance");
-      criterionFieldJSON.put("dataType", "integer");
-      criterionFieldJSON.put("tagFormat", null);
-      criterionFieldJSON.put("tagMaxLength", null);
-      criterionFieldJSON.put("esField", null);
-      criterionFieldJSON.put("retriever", null);
-      criterionFieldJSON.put("minValue", 0);
-      criterionFieldJSON.put("maxValue", null);
-      criterionFieldJSON.put("includedOperators", null);
-      JSONArray excludedOperatorsField = new JSONArray(); excludedOperatorsField.add(".*null.*"); criterionFieldJSON.put("excludedOperators", excludedOperatorsField);
-      criterionFieldJSON.put("includedComparableFields", null);
-      JSONArray excludedComparableFields = new JSONArray(); excludedComparableFields.add(".*ID"); criterionFieldJSON.put("excludedComparableFields", excludedComparableFields);
-      criterionFieldJSON.put("availableValues", null);
-      CriterionField criterionField = new CriterionField(criterionFieldJSON);
-      LoyaltyProgramService.putLoyaltyCriterionFields(criterionField.getID(), criterionField);
-    }
-
-  }
-
-  /*****************************************
-  *
-  *  computeCriterionId
-  *
-  *****************************************/
-
-  private static String computeCriterionId(String pointName)
-  {
-    return "point."+pointName+".balance";
   }
   
   /*****************************************
@@ -191,13 +150,6 @@ public class PointService extends GUIService
 
   public void removePoint(String pointID, String userID) { 
     removeGUIManagedObject(pointID, SystemTime.getCurrentTime(), userID);
-
-    Point point = (Point) getStoredPoint(pointID);
-    if (point != null)
-      {
-        LoyaltyProgramService.removeLoyaltyCriterionFields(computeCriterionId(point.getPointName()));
-      }
-
   }
 
   /*****************************************

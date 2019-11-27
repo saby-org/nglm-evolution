@@ -93,7 +93,7 @@
   "targetTopic"                                          : "${topic.target}",
   "pointFulfillmentRequestTopic"                         : "${topic.pointfulfillment.request}",
   "pointFulfillmentResponseTopic"                        : "${topic.pointfulfillment.response}",
-  "pointFulfillmentRekeyedTopic"                           : "${topic.pointfulfillment.rekeyed}",
+  "pointFulfillmentRekeyedTopic"                         : "${topic.pointfulfillment.rekeyed}",
   "communicationChannelTopic"                            : "${topic.communicationchannel}",
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
@@ -103,6 +103,7 @@
   "profileLoyaltyProgramChangeEventTopic"                : "${topic.profileloyaltyprogramchangeevent}",
   "dnboMatrixTopic"                                      : "${topic.dnbomatrix}",
   "dynamicEventDeclarationsTopic"                        : "${topic.dynamiceventdeclarations}",
+  "dynamicCriterionFieldTopic"                           : "${topic.dynamiccriterionfield}",
   "segmentContactPolicyTopic"                            : "${topic.segmentcontactpolicy}",
   "criterionFieldAvailableValuesTopic"                   : "${topic.criterionfieldavailablevalues}",
   
@@ -348,12 +349,11 @@
               { "id" : "event.deliveryStatus",   "display" : "Delivery Status",    "dataType" : "string", "retriever" : "getDeliveryStatus_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#deliveryStatuses#"] },
               { "id" : "event.returnCodeDetails","display" : "Return Code Details","dataType" : "string", "retriever" : "getReturnCodeDetails_OfferDelivery","minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.origin",           "display" : "Origin",             "dataType" : "string", "retriever" : "getOrigin_OfferDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.offerId",          "display" : "Offer Id",           "dataType" : "string", "retriever" : "getOfferId_OfferDelivery",          "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] },
+              { "id" : "event.offerDisplay",     "display" : "Offer Display",      "dataType" : "string", "retriever" : "getOfferDisplay_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : ["#offers#"] },
               { "id" : "event.offerQty",         "display" : "Offer Qty",          "dataType" : "double", "retriever" : "getOfferQty_OfferDelivery",         "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.salesChannelId",   "display" : "Sales Channel Id",   "dataType" : "string", "retriever" : "getSalesChannelId_OfferDelivery",   "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.offerPrice",       "display" : "Offer Price",        "dataType" : "double", "retriever" : "getOfferPrice_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.meanOfPayment",    "display" : "Mean Of Payment",    "dataType" : "string", "retriever" : "getMeanOfPayment_OfferDelivery",    "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
-              { "id" : "event.offerStock",       "display" : "Offer Stock",        "dataType" : "double", "retriever" : "getOfferStock_OfferDelivery",       "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.offerContent",     "display" : "Offer Content",      "dataType" : "string", "retriever" : "getOfferContent_OfferDelivery",     "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.voucherCode",      "display" : "Voucher Code",       "dataType" : "string", "retriever" : "getVoucherCode_OfferDelivery",      "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null },
               { "id" : "event.voucherPartnerId", "display" : "Voucher Partner Id", "dataType" : "string", "retriever" : "getVoucherPartnerId_OfferDelivery", "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
@@ -377,13 +377,13 @@
         }
     ],
     
-    --
-    -- loyaltyCriterionFields
-    --
+  --
+  -- evolutionProfileCriterionFields
+  --
     
-    "loyaltyCriterionFields" :
+  "evolutionProfileCriterionFields" :
     [
-        { "id" : "loyaltyprogram.name", "display" : "Loyalty Program", "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100, "esField" : null, "retriever" : "getLoyaltyPrograms", "minValue" : null, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#loyaltyPrograms#" ] }
+      { "id" : "loyaltyprogram.name", "display" : "Loyalty Program", "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100, "esField" : null, "retriever" : "getLoyaltyPrograms", "minValue" : null, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#loyaltyPrograms#" ] }
     ],
      
   --

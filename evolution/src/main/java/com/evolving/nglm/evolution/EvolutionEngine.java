@@ -176,6 +176,7 @@ public class EvolutionEngine
 
   private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static ReferenceDataReader<String,UCGState> ucgStateReader;
+  private static DynamicCriterionFieldService dynamicCriterionFieldService; 
   private static JourneyService journeyService;
   private static LoyaltyProgramService loyaltyProgramService;
   private static TargetService targetService;
@@ -317,6 +318,14 @@ public class EvolutionEngine
     log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, numberOfStreamThreads, kafkaReplicationFactor);
 
     //
+    //  dynamicCriterionFieldsService
+    //
+
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "evolutionengine-dynamiccriterionfieldservice-" + evolutionEngineKey, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);  
+
+    //
     //  journeyService
     //
 
@@ -447,7 +456,7 @@ public class EvolutionEngine
 
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "evolutionengine-segmentcontactpolicyservice-" + evolutionEngineKey, Deployment.getSegmentContactPolicyTopic(), false);
     segmentContactPolicyService.start();
-
+    
     //
     // pointService
     //
@@ -1285,7 +1294,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader,subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader,subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1488,6 +1497,7 @@ public class EvolutionEngine
     private KafkaStreams kafkaStreams;
     private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ReferenceDataReader<String,UCGState> ucgStateReader;
+    private DynamicCriterionFieldService dynamicCriterionFieldsService;
     private JourneyService journeyService;
     private LoyaltyProgramService loyaltyProgramService;
     private TargetService targetService;
@@ -1516,11 +1526,12 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
       this.ucgStateReader = ucgStateReader;
+      this.dynamicCriterionFieldsService = dynamicCriterionFieldsService;
       this.journeyService = journeyService;
       this.loyaltyProgramService = loyaltyProgramService;
       this.targetService = targetService;
@@ -1570,6 +1581,7 @@ public class EvolutionEngine
       //  stop services
       //
 
+      dynamicCriterionFieldsService.stop();
       journeyService.stop();
       loyaltyProgramService.stop();
       targetService.stop();
@@ -2088,16 +2100,16 @@ public class EvolutionEngine
   
   private static void updatePointBalances(EvolutionEventContext context, SubscriberState subscriberState, Date now)
   {
-    Map<String, PointBalance> pointBalances = subscriberState.getSubscriberProfile().getPointBalances();
-    if(pointBalances != null){
-      for(String pointID: pointBalances.keySet()) {
+    Map<String, PointBalance> pointBalances = subscriberState.getSubscriberProfile().getPointBalances() != null ? subscriberState.getSubscriberProfile().getPointBalances() : Collections.<String,PointBalance>emptyMap();
+    for(String pointID: pointBalances.keySet())
+      {
         Point point = pointService.getActivePoint(pointID, now);
-        if(point != null){
-          //TODO : what module is best here ?
-          updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true);
-        }
+        if(point != null)
+          {
+            //TODO : what module is best here ?
+            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true);
+          }
       }
-    }
   }
 
   /*****************************************
@@ -2826,6 +2838,22 @@ public class EvolutionEngine
     //
 
     subscriberProfile.getPointBalances().put(point.getPointID(), pointBalance);
+
+    //
+    //  update loyalty program balances
+    //
+
+    for (LoyaltyProgramState loyaltyProgramState : subscriberProfile.getLoyaltyPrograms().values())
+      {
+        LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
+        if (loyaltyProgram != null && loyaltyProgram instanceof LoyaltyProgramPoints)
+          {
+            LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+            LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyProgramState;
+            if (Objects.equals(point.getPointID(), loyaltyProgramPoints.getStatusPointsID())) loyaltyProgramPointsState.setStatusPoints(pointBalance.getBalance(now));
+            if (Objects.equals(point.getPointID(), loyaltyProgramPoints.getRewardPointsID())) loyaltyProgramPointsState.setRewardPoints(pointBalance.getBalance(now));
+          }
+      }
     
     //
     //  return
@@ -3198,12 +3226,8 @@ public class EvolutionEngine
               default:
                 break;
               }
-              
-            
           }
-          
         }
-        
       }
 
     /*****************************************
@@ -3221,8 +3245,8 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  private static String determineLoyaltyProgramPointsTier(SubscriberProfile subscriberProfile, LoyaltyProgramPoints loyaltyProgramPoints, Date now){
-
+  private static String determineLoyaltyProgramPointsTier(SubscriberProfile subscriberProfile, LoyaltyProgramPoints loyaltyProgramPoints, Date now)
+  {
     //
     //  determine tier
     //
@@ -3239,7 +3263,6 @@ public class EvolutionEngine
     }
     
     return newTierName;
-
   }
 
   /*****************************************

@@ -173,7 +173,6 @@ public class Deployment
   private static Map<String,CriterionField> profileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> extendedProfileCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static Map<String,CriterionField> presentationCriterionFields = new LinkedHashMap<String,CriterionField>();
-  private static Map<String,CriterionField> loyaltyCriterionFields = new LinkedHashMap<String,CriterionField>();
   private static List<EvaluationCriterion> universalControlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static List<EvaluationCriterion> controlGroupCriteria = new ArrayList<EvaluationCriterion>();
   private static Map<String,OfferCategory> offerCategories = new LinkedHashMap<String,OfferCategory>();
@@ -220,6 +219,7 @@ public class Deployment
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
   private static String dynamicEventDeclarationsTopic;
+  private static String dynamicCriterionFieldsTopic;
   private static String elasticSearchDateFormat;
   private static int elasticSearchScrollSize;
   private static String criterionFieldAvailableValuesTopic;
@@ -386,7 +386,6 @@ public class Deployment
   public static Map<String, CriterionField> getProfileChangeDetectionCriterionFields() { return profileChangeDetectionCriterionFields; }
   public static Map<String, CriterionField> getProfileChangeGeneratedCriterionFields() { return profileChangeGeneratedCriterionFields; }
   public static Map<String,CriterionField> getPresentationCriterionFields() { return presentationCriterionFields; }
-  public static Map<String,CriterionField> getLoyaltyCriterionFields() { return loyaltyCriterionFields; }
   public static List<EvaluationCriterion> getUniversalControlGroupCriteria() { return universalControlGroupCriteria; }
   public static List<EvaluationCriterion> getControlGroupCriteria() { return controlGroupCriteria; }
   public static Map<String,OfferCategory> getOfferCategories() { return offerCategories; }
@@ -433,6 +432,7 @@ public class Deployment
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
   public static String getDynamicEventDeclarationsTopic() { return dynamicEventDeclarationsTopic; }
+  public static String getDynamicCriterionFieldTopic() { return dynamicCriterionFieldsTopic; }
   public static Map<String,PartnerType> getPartnerTypes() { return partnerTypes; }
   public static Map<String,BillingMode> getBillingModes() { return billingModes; }
   public static String getElasticSearchDateFormat() { return elasticSearchDateFormat; }
@@ -1403,6 +1403,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  dynamicCriterionFieldsTopic
+    //
+
+    try
+      {
+        dynamicCriterionFieldsTopic = JSONUtilities.decodeString(jsonRoot, "dynamicCriterionFieldTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  communicationChannelBlackoutTopic
     //
@@ -2386,7 +2399,32 @@ public class Deployment
 
     try
       {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", new JSONArray());
+        //
+        //  profileCriterionFields (evolution)
+        //
+
+        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "evolutionProfileCriterionFields", new JSONArray());
+        for (int i=0; i<criterionFieldValues.size(); i++)
+          {
+            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
+            CriterionField criterionField = new CriterionField(criterionFieldJSON);
+            profileCriterionFields.put(criterionField.getID(), criterionField);
+            if(criterionField.getProfileChangeEvent()) {
+              profileChangeDetectionCriterionFields.put(criterionField.getID(), criterionField);
+              
+              //
+              // generation of CriterionFields related to oldValue, newValue and changedField 
+              //
+              
+              profileChangeGeneratedCriterionFields.putAll(generateProfileChangeCriterionFields(criterionField));
+            }
+          }
+
+        //
+        //  profileCriterionFields (deployment)
+        //
+
+        criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriterionFields", new JSONArray());
         for (int i=0; i<criterionFieldValues.size(); i++)
           {
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
@@ -2403,6 +2441,11 @@ public class Deployment
             }
           }
         
+        
+        //
+        //  profileChangeEvent
+        //
+
         EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
         evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
 
@@ -2443,25 +2486,6 @@ public class Deployment
             JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
             CriterionField criterionField = new CriterionField(criterionFieldJSON);
             presentationCriterionFields.put(criterionField.getID(), criterionField);
-          }
-      }
-    catch (GUIManagerException | JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-
-    //
-    //  loyaltyCriterionFields
-    //
-
-    try
-      {
-        JSONArray criterionFieldValues = JSONUtilities.decodeJSONArray(jsonRoot, "loyaltyCriterionFields", new JSONArray());
-        for (int i=0; i<criterionFieldValues.size(); i++)
-          {
-            JSONObject criterionFieldJSON = (JSONObject) criterionFieldValues.get(i);
-            CriterionField criterionField = new CriterionField(criterionFieldJSON);
-            loyaltyCriterionFields.put(criterionField.getID(), criterionField);
           }
       }
     catch (GUIManagerException | JSONUtilitiesException e)

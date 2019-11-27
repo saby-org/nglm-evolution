@@ -141,6 +141,7 @@ public class DNBOProxy
   private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader = null;
   private SegmentationDimensionService segmentationDimensionService;
   private DNBOMatrixService dnboMatrixService;
+  private DynamicCriterionFieldService dynamicCriterionFieldService;
   private SubscriberIDService subscriberIDService;
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private KafkaConsumer<byte[], byte[]> kafkaConsumer;
@@ -202,6 +203,7 @@ public class DNBOProxy
     propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey, Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
     segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
     dnboMatrixService = new DNBOMatrixService(Deployment.getBrokerServers(),"dnboproxy-matrixservice"+apiProcessKey,Deployment.getDNBOMatrixTopic(),false);
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "dnboproxy-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
     subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "dnboproxy-" + apiProcessKey);
     
     /*****************************************
@@ -219,6 +221,8 @@ public class DNBOProxy
     subscriberProfileService.start();
     segmentationDimensionService.start();
     dnboMatrixService.start();
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);  
 
     /*****************************************
     *

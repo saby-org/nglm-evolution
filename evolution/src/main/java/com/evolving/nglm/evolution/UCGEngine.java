@@ -68,6 +68,7 @@ public class UCGEngine
   *****************************************/
   
   private volatile boolean stopRequested = false;
+  private DynamicCriterionFieldService dynamicCriterionFieldService = null;
   private UCGRuleService ucgRuleService = null;
   private SegmentationDimensionService segmentationDimensionService = null;
   private ReferenceDataReader<String,UCGState> ucgStateReader = null;
@@ -125,6 +126,16 @@ public class UCGEngine
 
     /*****************************************
     *
+    *  dynamicCriterionFieldsService
+    *
+    *****************************************/
+
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "ucgengine-dynamiccriterionfieldservice", Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
+    
+    /*****************************************
+    *
     *  ucgRuleService
     *
     *****************************************/
@@ -143,7 +154,7 @@ public class UCGEngine
     *
     *****************************************/
 
-    segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "ucgending-segmentationdimensionservice", Deployment.getSegmentationDimensionTopic(), false);
+    segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "ucgengine-segmentationdimensionservice", Deployment.getSegmentationDimensionTopic(), false);
     segmentationDimensionService.start();
     
     /*****************************************
@@ -674,6 +685,7 @@ public class UCGEngine
 
     if (ucgRuleService != null) ucgRuleService.stop();
     if (segmentationDimensionService != null) segmentationDimensionService.stop();
+    if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
     if (ucgStateReader != null) ucgStateReader.close();
     if (kafkaProducer != null) kafkaProducer.close();
 

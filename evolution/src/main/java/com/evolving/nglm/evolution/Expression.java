@@ -477,7 +477,7 @@ public abstract class Expression
       //  retrieve
       //
 
-      Object referenceValue = reference.retrieve(subscriberEvaluationRequest);
+      Object referenceValue = reference.retrieveNormalized(subscriberEvaluationRequest);
       
       //
       //  null check

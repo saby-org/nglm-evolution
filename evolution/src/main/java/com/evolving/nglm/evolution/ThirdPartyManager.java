@@ -137,6 +137,7 @@ public class ThirdPartyManager
   private ProductTypeService productTypeService;
   private CatalogCharacteristicService catalogCharacteristicService;
   private DNBOMatrixService dnboMatrixService;
+  private DynamicCriterionFieldService dynamicCriterionFieldService;
 
   private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
@@ -389,6 +390,11 @@ public class ThirdPartyManager
     catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "thirdpartymanager-catalogcharacteristicservice-" + apiProcessKey, Deployment.getCatalogCharacteristicTopic(), false);
     catalogCharacteristicService.start();
     
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "thirdpartymanager-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
+
+    
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("thirdpartymanager-propensitystate", "thirdpartymanager-propensityreader-"+apiProcessKey,
@@ -445,7 +451,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService));
 
     /*****************************************
      *
@@ -486,15 +492,17 @@ public class ThirdPartyManager
     private ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader;
     private ProductService productService;
     private DeliverableService deliverableService;
+    private DynamicCriterionFieldService dynamicCriterionFieldService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
+      this.dynamicCriterionFieldService = dynamicCriterionFieldService;
       this.offerService = offerService;
       this.subscriberProfileService = subscriberProfileService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -528,6 +536,7 @@ public class ThirdPartyManager
       //  services
       //
 
+      if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
       if (offerService != null) offerService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
       if (segmentationDimensionService != null) segmentationDimensionService.stop();
@@ -3772,8 +3781,9 @@ public class ThirdPartyManager
       String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
       String featureID = "acceptOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
-      
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
+      Offer offer = offerService.getActiveOffer(offerID, now);
+      String offerDisplay = (offer == null) ? "<unknown>" : offer.getDisplay();
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, offerDisplay, salesChannelID, 1, moduleID, featureID, kafkaProducer);
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -3932,7 +3942,7 @@ public class ThirdPartyManager
       
       String featureID = "purchaseOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, offerName, salesChannelID, quantity, moduleID, featureID, kafkaProducer);
       
       //
       // TODO how do we deal with the offline errors ? 
@@ -4782,7 +4792,7 @@ public class ThirdPartyManager
    *
    *****************************************/
   
-  public String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
+  public String purchaseOffer(String subscriberID, String offerID, String offerDisplay, String salesChannelID, int quantity, 
       String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
@@ -4816,6 +4826,7 @@ public class ThirdPartyManager
     HashMap<String,Object> request = new HashMap<String,Object>();
     request.put("subscriberID", subscriberID);
     request.put("offerID", offerID);
+    request.put("offerDisplay", offerDisplay);
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
@@ -5096,7 +5107,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  public String getDateString(Date date)
+  public static String getDateString(Date date)
   {
     String result = null;
     if (date == null) return result;

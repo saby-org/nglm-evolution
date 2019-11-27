@@ -39,11 +39,13 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program_points_subscriber_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("tierName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("previousTierName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tierEnrollmentDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("statusPoints", SchemaBuilder.int32().defaultValue(0).schema());
+    schemaBuilder.field("rewardPoints", SchemaBuilder.int32().defaultValue(0).schema());
     schemaBuilder.field("loyaltyProgramHistory", LoyaltyProgramHistory.schema());
     schema = schemaBuilder.build();
   };
@@ -70,6 +72,8 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   private String tierName;
   private String previousTierName;
   private Date tierEnrollmentDate;
+  private int statusPoints;
+  private int rewardPoints;
   private LoyaltyProgramHistory loyaltyProgramHistory;
   
   /*****************************************
@@ -81,7 +85,16 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   public String getTierName() { return tierName; }
   public String getPreviousTierName() { return previousTierName; }
   public Date getTierEnrollmentDate() { return tierEnrollmentDate; }
+  public int getStatusPoints() { return statusPoints; }
+  public int getRewardPoints() { return rewardPoints; }
   public LoyaltyProgramHistory getLoyaltyProgramHistory() { return loyaltyProgramHistory; }
+
+  //
+  //  setters
+  //
+
+  public void setStatusPoints(int statusPoints) { this.statusPoints = statusPoints; }
+  public void setRewardPoints(int rewardPoints) { this.rewardPoints = rewardPoints; }
 
   /*****************************************
   *
@@ -95,6 +108,8 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
     this.tierName = tierName;
     this.previousTierName = previousTierName;
     this.tierEnrollmentDate = tierEnrollmentDate;
+    this.statusPoints = 0;
+    this.rewardPoints = 0;
     this.loyaltyProgramHistory = loyaltyProgramHistory;
   }
 
@@ -104,12 +119,14 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramPointsState(SchemaAndValue schemaAndValue, String tierName, String previousTierName, Date tierEnrollmentDate, LoyaltyProgramHistory loyaltyProgramHistory)
+  public LoyaltyProgramPointsState(SchemaAndValue schemaAndValue, String tierName, String previousTierName, Date tierEnrollmentDate, int statusPoints, int rewardPoints, LoyaltyProgramHistory loyaltyProgramHistory)
   {
     super(schemaAndValue);
     this.tierName = tierName;
     this.previousTierName = previousTierName;
     this.tierEnrollmentDate = tierEnrollmentDate;
+    this.statusPoints = statusPoints;
+    this.rewardPoints = rewardPoints;
     this.loyaltyProgramHistory = loyaltyProgramHistory;
   }
 
@@ -121,13 +138,15 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
 
   public static Object pack(Object value)
   {
-    LoyaltyProgramPointsState subscriberState = (LoyaltyProgramPointsState) value;
+    LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) value;
     Struct struct = new Struct(schema);
-    packCommon(struct, subscriberState);
-    struct.put("tierName", subscriberState.getTierName());
-    struct.put("previousTierName", subscriberState.getPreviousTierName());
-    struct.put("tierEnrollmentDate", subscriberState.getTierEnrollmentDate());
-    struct.put("loyaltyProgramHistory", LoyaltyProgramHistory.serde().pack(subscriberState.getLoyaltyProgramHistory()));
+    packCommon(struct, loyaltyProgramPointsState);
+    struct.put("tierName", loyaltyProgramPointsState.getTierName());
+    struct.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName());
+    struct.put("tierEnrollmentDate", loyaltyProgramPointsState.getTierEnrollmentDate());
+    struct.put("statusPoints", loyaltyProgramPointsState.getStatusPoints());
+    struct.put("rewardPoints", loyaltyProgramPointsState.getRewardPoints());
+    struct.put("loyaltyProgramHistory", LoyaltyProgramHistory.serde().pack(loyaltyProgramPointsState.getLoyaltyProgramHistory()));
     return struct;
   }
 
@@ -145,7 +164,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
 
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
-    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+    Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
 
     //
     //  unpack
@@ -155,13 +174,15 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
     String tierName = valueStruct.getString("tierName");
     String previousTierName = valueStruct.getString("previousTierName");
     Date tierEnrollmentDate = (Date) valueStruct.get("tierEnrollmentDate");
+    int statusPoints = (schemaVersion >= 2) ? valueStruct.getInt32("statusPoints") : 0;
+    int rewardPoints = (schemaVersion >= 2) ? valueStruct.getInt32("rewardPoints") : 0;
     LoyaltyProgramHistory loyaltyProgramHistory = LoyaltyProgramHistory.serde().unpack(new SchemaAndValue(schema.field("loyaltyProgramHistory").schema(), valueStruct.get("loyaltyProgramHistory")));
     
     //  
     //  return
     //
 
-    return new LoyaltyProgramPointsState(schemaAndValue, tierName, previousTierName, tierEnrollmentDate, loyaltyProgramHistory);
+    return new LoyaltyProgramPointsState(schemaAndValue, tierName, previousTierName, tierEnrollmentDate, statusPoints, rewardPoints, loyaltyProgramHistory);
   }
   
   /*****************************************
@@ -235,5 +256,4 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
     }
     
   }
-
 }

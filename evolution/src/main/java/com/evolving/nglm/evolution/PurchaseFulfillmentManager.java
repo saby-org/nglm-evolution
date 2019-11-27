@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -249,9 +250,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_purchasefulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("offerDisplay", Schema.STRING_SCHEMA);
       schemaBuilder.field("quantity", Schema.INT32_SCHEMA);
       schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
@@ -279,6 +281,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *****************************************/
 
     private String offerID;
+    private String offerDisplay;
     private int quantity;
     private String salesChannelID;
     private PurchaseFulfillmentStatus status;
@@ -290,6 +293,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     public String getOfferID() { return offerID; }
+    public String getOfferDisplay() { return offerDisplay; }
     public int getQuantity() { return quantity; }
     public String getSalesChannelID() { return salesChannelID; }
     public PurchaseFulfillmentStatus getStatus() { return status; }
@@ -302,6 +306,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setStatus(PurchaseFulfillmentStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+    public void setOfferDisplay(String offerDisplay) { this.offerDisplay = offerDisplay; }
 
     //
     //  offer delivery accessors
@@ -310,7 +315,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public int getOfferDeliveryReturnCode() { return getReturnCode(); }
     public String getOfferDeliveryReturnCodeDetails() { return null; }
     public String getOfferDeliveryOrigin() { return null; }
-    public String getOfferDeliveryOfferId() { return getOfferID(); }
+    public String getOfferDeliveryOfferDisplay() { return getOfferID(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
     public int getOfferDeliveryOfferPrice() { return 1; }
@@ -326,10 +331,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID)
+    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, String offerDisplay, int quantity, String salesChannelID)
     {
       super(context, "purchaseFulfillment", deliveryRequestSource);
       this.offerID = offerID;
+      this.offerDisplay = offerDisplay;
       this.quantity = quantity;
       this.salesChannelID = salesChannelID;
       this.status = PurchaseFulfillmentStatus.PENDING;
@@ -346,6 +352,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       super(jsonRoot);
       this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
+      this.offerDisplay = JSONUtilities.decodeString(jsonRoot, "offerDisplay", true);
       this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
       this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
       this.status = PurchaseFulfillmentStatus.PENDING;
@@ -359,10 +366,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, int quantity, String salesChannelID, PurchaseFulfillmentStatus status)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status)
     {
       super(schemaAndValue);
       this.offerID = offerID;
+      this.offerDisplay = offerDisplay;
       this.quantity = quantity;
       this.salesChannelID = salesChannelID;
       this.status = status;
@@ -379,6 +387,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       super(purchaseFulfillmentRequest);
       this.offerID = purchaseFulfillmentRequest.getOfferID();
+      this.offerDisplay = purchaseFulfillmentRequest.getOfferDisplay();
       this.quantity = purchaseFulfillmentRequest.getQuantity();
       this.salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
       this.returnCode = purchaseFulfillmentRequest.getReturnCode();
@@ -408,6 +417,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       Struct struct = new Struct(schema);
       packCommon(struct, purchaseFulfillmentRequest);
       struct.put("offerID", purchaseFulfillmentRequest.getOfferID());
+      struct.put("offerDisplay", purchaseFulfillmentRequest.getOfferDisplay());
       struct.put("quantity", purchaseFulfillmentRequest.getQuantity());
       struct.put("salesChannelID", purchaseFulfillmentRequest.getSalesChannelID());
       struct.put("return_code", purchaseFulfillmentRequest.getReturnCode());
@@ -441,6 +451,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
       Struct valueStruct = (Struct) value;
       String offerID = valueStruct.getString("offerID");
+      String offerDisplay = (schemaVersion >= 2) ? valueStruct.getString("offerDisplay") : "";
       int quantity = valueStruct.getInt32("quantity");
       String salesChannelID = valueStruct.getString("salesChannelID");
       Integer returnCode = valueStruct.getInt32("return_code");
@@ -450,7 +461,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, quantity, salesChannelID, status);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay,quantity, salesChannelID, status);
     }
 
     /*****************************************
@@ -466,6 +477,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       b.append(super.toStringFields());
       b.append("," + getSubscriberID());
       b.append("," + offerID);
+      b.append("," + offerDisplay);
       b.append("," + quantity);
       b.append("," + salesChannelID);
       b.append("," + returnCode);
@@ -2030,7 +2042,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       offerID = (offerID != null) ? offerID : "0";
-
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
+      String offerDisplay = (offer == null) ? "<unknown>" : offer.getDisplay();
+      
       /*****************************************
       *
       *  request arguments
@@ -2045,9 +2059,26 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, offerDisplay, quantity, salesChannelID);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
+      // TODO : to be enabled later (EVCOR-157)
+//      String offerContent = "";
+//      boolean firstTime = true;
+//      Set<OfferProduct> offerProducts = offer.getOfferProducts();
+//      for (OfferProduct offerProduct : offerProducts)
+//        {
+//          if (firstTime)
+//            {
+//              firstTime = false;
+//            }
+//          else
+//            {
+//              offerContent += ", ";
+//            }
+//          offerContent += offerProduct.getQuantity() + " " + offerProduct.getJSONRepresentation().get("display");
+//        }
+//        request.setOfferContent(offerContent);
 
       /*****************************************
       *

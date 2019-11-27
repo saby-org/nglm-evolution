@@ -33,6 +33,9 @@ public class LoyaltyProgramPointsESSinkConnector extends SimpleESSinkConnector
   
   @Override public Class<? extends Task> taskClass()
   {
+    DynamicCriterionFieldService dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "loyaltyprogramessinkconnector-dynamiccriterionfieldservice-001", Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
     return LoyaltyProgramPointsESSinkTask.class;
   }
 
@@ -44,8 +47,8 @@ public class LoyaltyProgramPointsESSinkConnector extends SimpleESSinkConnector
   
   public static class LoyaltyProgramPointsESSinkTask extends ChangeLogESSinkTask
   {
-	private CatalogCharacteristicService catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "loyaltyprogramessinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), true);
-
+    private CatalogCharacteristicService catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "loyaltyprogramessinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), true);
+	
 	@Override
 	public String getDocumentID(SinkRecord sinkRecord) {
      /****************************************

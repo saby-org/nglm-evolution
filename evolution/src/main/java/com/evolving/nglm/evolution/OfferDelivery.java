@@ -29,13 +29,13 @@ public interface OfferDelivery
   public int getOfferDeliveryReturnCode();
   public String getOfferDeliveryReturnCodeDetails();
   public String getOfferDeliveryOrigin();
-  public String getOfferDeliveryOfferId();
+  public String getOfferDeliveryOfferDisplay();
   public int getOfferDeliveryOfferQty();
   public String getOfferDeliverySalesChannelId();
   public int getOfferDeliveryOfferPrice();
   public String getOfferDeliveryMeanOfPayment();
-  public int getOfferDeliveryOfferStock();
   public String getOfferDeliveryOfferContent();
   public String getOfferDeliveryVoucherCode();
   public String getOfferDeliveryVoucherPartnerId();
+  
 }

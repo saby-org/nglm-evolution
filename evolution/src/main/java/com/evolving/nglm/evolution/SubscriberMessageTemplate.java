@@ -152,10 +152,9 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       {
         for (String dialogMessageField : getDialogMessageFields())
           {
-            this.dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, CriterionContext.Profile));
+            this.dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, CriterionContext.DynamicProfile));
           }
       }
-
   }
 
   /*****************************************
