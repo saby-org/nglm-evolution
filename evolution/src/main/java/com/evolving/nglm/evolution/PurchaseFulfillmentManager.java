@@ -253,7 +253,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("offerDisplay", Schema.STRING_SCHEMA);
+      schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("quantity", Schema.INT32_SCHEMA);
       schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
@@ -306,7 +306,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setStatus(PurchaseFulfillmentStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
-    public void setOfferDisplay(String offerDisplay) { this.offerDisplay = offerDisplay; }
 
     //
     //  offer delivery accessors
@@ -315,7 +314,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public int getOfferDeliveryReturnCode() { return getReturnCode(); }
     public String getOfferDeliveryReturnCodeDetails() { return null; }
     public String getOfferDeliveryOrigin() { return null; }
-    public String getOfferDeliveryOfferDisplay() { return getOfferID(); }
+    public String getOfferDeliveryOfferDisplay() { return getOfferDisplay(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
     public int getOfferDeliveryOfferPrice() { return 1; }
@@ -461,7 +460,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay,quantity, salesChannelID, status);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status);
     }
 
     /*****************************************
