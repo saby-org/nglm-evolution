@@ -257,6 +257,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("quantity", Schema.INT32_SCHEMA);
       schemaBuilder.field("salesChannelID", Schema.STRING_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
+      schemaBuilder.field("offerContent", Schema.STRING_SCHEMA);
+      schemaBuilder.field("meanOfPayment", Schema.STRING_SCHEMA);
+      schemaBuilder.field("offerPrice", Schema.INT64_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -287,6 +290,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private PurchaseFulfillmentStatus status;
     private int returnCode;
     private String returnCodeDetails;
+    private String offerContent;
+    private String meanOfPayment;
+    private long offerPrice;
     
     //
     //  accessors
@@ -298,7 +304,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getSalesChannelID() { return salesChannelID; }
     public PurchaseFulfillmentStatus getStatus() { return status; }
     public int getReturnCode() { return returnCode; }
-
+    public String getOfferContent() { return offerContent; }
+    public String getMeanOfPayment() { return meanOfPayment; }
+    public long getOfferPrice() { return offerPrice; }
+    
     //
     //  setters
     //
@@ -306,6 +315,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setStatus(PurchaseFulfillmentStatus status) { this.status = status; }
     public void setReturnCode(Integer returnCode) { this.returnCode = returnCode; }
     public void setReturnCodeDetails(String returnCodeDetails) { this.returnCodeDetails = returnCodeDetails; }
+    public void setOfferDisplay(String offerDisplay) { this.offerDisplay = offerDisplay; }
+    public void setOfferContent(String offerContent) { this.offerContent = offerContent; }
+    public void setMeanOfPayment(String meanOfPayment) { this.meanOfPayment = meanOfPayment; }
+    public void setOfferPrice(Long offerPrice) { this.offerPrice = offerPrice; }
 
     //
     //  offer delivery accessors
@@ -317,55 +330,129 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryOfferDisplay() { return getOfferDisplay(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
-    public int getOfferDeliveryOfferPrice() { return 1; }
-    public String getOfferDeliveryMeanOfPayment() { return "MOP"; }
-    public int getOfferDeliveryOfferStock() { return 1000; }
-    public String getOfferDeliveryOfferContent() { return ""; }
+    public long getOfferDeliveryOfferPrice() { return getOfferDeliveryOfferPrice(); }
+    public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
     public String getOfferDeliveryVoucherCode() { return ""; }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }
-
+    public String getOfferDeliveryOfferContent() { return getOfferContent(); }
+    
     /*****************************************
     *
     *  constructor
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, String offerDisplay, int quantity, String salesChannelID)
+    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID)
     {
       super(context, "purchaseFulfillment", deliveryRequestSource);
       this.offerID = offerID;
-      this.offerDisplay = offerDisplay;
       this.quantity = quantity;
       this.salesChannelID = salesChannelID;
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
+      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.now());
     }
 
+    /*****************************************
+    *
+    *  updatePurchaseFulfillmentRequest
+    *
+    *****************************************/
+
+    private void updatePurchaseFulfillmentRequest(OfferService offerService, PaymentMeanService paymentMeanService, Date now)
+    {
+
+      //
+      // offerDisplay
+      //
+      
+      Offer offer = offerService.getActiveOffer(offerID, now);
+      String offerDisplay = (offer == null || offer.getDisplay() == null) ? "" : offer.getDisplay();
+      this.offerDisplay = offerDisplay;
+
+      //
+      // offerContent
+      //
+      
+      String offerContent = "";
+      boolean firstTime = true;
+      if (offer != null)
+        {
+          for (OfferProduct offerProduct : offer.getOfferProducts())
+            {
+              if (firstTime)
+                {
+                  firstTime = false;
+                }
+              else
+                {
+                  offerContent += ", ";
+                }
+              offerContent += offerProduct.getQuantity() + " " + offerProduct.getJSONRepresentation().get("display");
+            }
+        }
+        this.offerContent = offerContent;
+
+        //
+        // meanOfPayment
+        // offerPrice
+        //
+        
+        String meanOfPayment = "";
+        long offerPrice = 0;
+        if (offer != null)
+          {
+            if (offer != null)
+              {
+                for (OfferSalesChannelsAndPrice oscap : offer.getOfferSalesChannelsAndPrices())
+                  {
+                    if (oscap.getSalesChannelIDs().contains(salesChannelID))
+                      {
+                        OfferPrice price = oscap.getPrice();
+                        if (price != null) 
+                          {
+                            String meanOfPaymentID = price.getPaymentMeanID();
+                            PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(meanOfPaymentID, now);
+                            meanOfPayment = (paymentMean == null) ? "" : paymentMean.getDisplay(); 
+                            offerPrice =  price.getAmount();
+                          }
+                        break;
+                      }
+                  }
+              }
+          }
+        this.offerPrice = offerPrice;
+        this.meanOfPayment = meanOfPayment;   
+    }
+    
     /*****************************************
     *
     *  constructor -- external
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager)
+    public PurchaseFulfillmentRequest(JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, OfferService offerService, PaymentMeanService paymentMeanService, Date now)
     {
       super(jsonRoot);
       this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
-      this.offerDisplay = JSONUtilities.decodeString(jsonRoot, "offerDisplay", true);
       this.quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
       this.salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
       this.returnCodeDetails = "";
+      updatePurchaseFulfillmentRequest(offerService, paymentMeanService, now);
     }
 
     /*****************************************
     *
     *  constructor -- unpack
+     * @param offerPrice 
+     * @param meanOfPayment 
+     * @param offerContent 
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -374,6 +461,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.salesChannelID = salesChannelID;
       this.status = status;
       this.returnCode = status.getReturnCode();
+      this.offerContent = offerContent;
+      this.meanOfPayment = meanOfPayment;
+      this.offerPrice = offerPrice;
     }
 
     /*****************************************
@@ -391,6 +481,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.salesChannelID = purchaseFulfillmentRequest.getSalesChannelID();
       this.returnCode = purchaseFulfillmentRequest.getReturnCode();
       this.status = purchaseFulfillmentRequest.getStatus();
+      this.offerContent = purchaseFulfillmentRequest.getOfferContent();
+      this.meanOfPayment = purchaseFulfillmentRequest.getMeanOfPayment();
+      this.offerPrice = purchaseFulfillmentRequest.getOfferPrice();
     }
 
     /*****************************************
@@ -420,6 +513,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("quantity", purchaseFulfillmentRequest.getQuantity());
       struct.put("salesChannelID", purchaseFulfillmentRequest.getSalesChannelID());
       struct.put("return_code", purchaseFulfillmentRequest.getReturnCode());
+      struct.put("offerContent", purchaseFulfillmentRequest.getOfferContent());
+      struct.put("meanOfPayment", purchaseFulfillmentRequest.getMeanOfPayment());
+      struct.put("offerPrice", purchaseFulfillmentRequest.getOfferPrice());
       return struct;
     }
 
@@ -455,12 +551,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String salesChannelID = valueStruct.getString("salesChannelID");
       Integer returnCode = valueStruct.getInt32("return_code");
       PurchaseFulfillmentStatus status = PurchaseFulfillmentStatus.fromReturnCode(returnCode);
+      String offerContent = (schemaVersion >= 2) ? valueStruct.getString("offerContent") : "";
+      String meanOfPayment = (schemaVersion >= 2) ? valueStruct.getString("meanOfPayment") : "";
+      long offerPrice = (schemaVersion >= 2) ? valueStruct.getInt64("offerPrice") : 0;
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice);
     }
 
     /*****************************************
@@ -481,6 +580,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       b.append("," + salesChannelID);
       b.append("," + returnCode);
       b.append("," + returnCodeDetails);
+      b.append("," + offerContent);
+      b.append("," + meanOfPayment);
+      b.append("," + offerPrice);
       b.append("}");
       return b.toString();
     }
@@ -2043,8 +2145,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *****************************************/
 
       offerID = (offerID != null) ? offerID : "0";
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
-      String offerDisplay = (offer == null) ? "<unknown>" : offer.getDisplay();
       
       /*****************************************
       *
@@ -2060,26 +2160,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, offerDisplay, quantity, salesChannelID);
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
-      // TODO : to be enabled later (EVCOR-157)
-//      String offerContent = "";
-//      boolean firstTime = true;
-//      Set<OfferProduct> offerProducts = offer.getOfferProducts();
-//      for (OfferProduct offerProduct : offerProducts)
-//        {
-//          if (firstTime)
-//            {
-//              firstTime = false;
-//            }
-//          else
-//            {
-//              offerContent += ", ";
-//            }
-//          offerContent += offerProduct.getQuantity() + " " + offerProduct.getJSONRepresentation().get("display");
-//        }
-//        request.setOfferContent(offerContent);
 
       /*****************************************
       *

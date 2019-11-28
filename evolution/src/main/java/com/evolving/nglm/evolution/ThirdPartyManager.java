@@ -3782,8 +3782,7 @@ public class ThirdPartyManager
       String featureID = "acceptOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
       Offer offer = offerService.getActiveOffer(offerID, now);
-      String offerDisplay = (offer == null) ? "<unknown>" : offer.getDisplay();
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, offerDisplay, salesChannelID, 1, moduleID, featureID, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -3942,7 +3941,7 @@ public class ThirdPartyManager
       
       String featureID = "purchaseOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, offerName, salesChannelID, quantity, moduleID, featureID, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, kafkaProducer);
       
       //
       // TODO how do we deal with the offline errors ? 
@@ -4792,7 +4791,7 @@ public class ThirdPartyManager
    *
    *****************************************/
   
-  public String purchaseOffer(String subscriberID, String offerID, String offerDisplay, String salesChannelID, int quantity, 
+  public String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
       String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
@@ -4820,13 +4819,12 @@ public class ThirdPartyManager
     String topic = deliveryManagerDeclaration.getDefaultRequestTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
-
+    
     String deliveryRequestID = zuks.getStringKey();
     // Build a json doc to create the PurchaseFulfillmentRequest
     HashMap<String,Object> request = new HashMap<String,Object>();
     request.put("subscriberID", subscriberID);
     request.put("offerID", offerID);
-    request.put("offerDisplay", offerDisplay);
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
@@ -4836,7 +4834,7 @@ public class ThirdPartyManager
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration);
+    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, new Date());
 
     // Write it to the right topic
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(

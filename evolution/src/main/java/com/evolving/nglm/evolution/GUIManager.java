@@ -21842,7 +21842,7 @@ public class GUIManager
                     {
                       LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", loyaltyProgram.getGUIManagedObjectID());
+                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
                       availableValue.put("display", loyaltyProgram.getLoyaltyProgramName());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }

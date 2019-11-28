@@ -203,6 +203,7 @@ public class EvolutionEngine
   private static Method evolutionEngineExternalAPIMethod;
   private static TimerService timerService;
   private static PointService pointService;
+  private static PaymentMeanService paymentMeanService;
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private static ReadOnlyKeyValueStore<StringKey, ExtendedSubscriberProfile> extendedSubscriberProfileStore = null;
@@ -464,6 +465,13 @@ public class EvolutionEngine
     pointService = new PointService(bootstrapServers, "evolutionengine-pointservice-" + evolutionEngineKey, Deployment.getPointTopic(), false);
     pointService.start();
     
+    //
+    // pointService
+    //
+    
+    paymentMeanService = new PaymentMeanService(bootstrapServers, "evolutionengine-paymentmeanservice-" + evolutionEngineKey, Deployment.getPaymentMeanTopic(), false);
+    paymentMeanService.start();
+
     //
     // exclusionInclusionTargetService
     //
@@ -1294,7 +1302,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader,subscriberProfileServer, internalServer));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader,subscriberProfileServer, internalServer));
 
     /*****************************************
     *
@@ -1518,6 +1526,7 @@ public class EvolutionEngine
     private SegmentContactPolicyService segmentContactPolicyService;
     private TimerService timerService;
     private PointService pointService;
+    private PaymentMeanService paymentMeanService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private HttpServer subscriberProfileServer;
     private HttpServer internalServer;
@@ -1526,7 +1535,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, HttpServer subscriberProfileServer, HttpServer internalServer)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1552,6 +1561,7 @@ public class EvolutionEngine
       this.productTypeService = productTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
+      this.paymentMeanService = paymentMeanService;
       this.propensityDataReader = propensityDataReader; 
       this.subscriberProfileServer = subscriberProfileServer;
       this.internalServer = internalServer;
@@ -1595,6 +1605,7 @@ public class EvolutionEngine
       productTypeService.stop();
       catalogCharacteristicService.stop();
       dnboMatrixService.stop();
+      paymentMeanService.stop();
       tokenTypeService.stop();
       subscriberMessageTemplateService.stop();
       deliverableService.stop();
@@ -1652,7 +1663,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = (currentSubscriberState != null) ? new SubscriberState(currentSubscriberState) : new SubscriberState(evolutionEvent.getSubscriberID());
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, communicationChannelService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, extendedSubscriberProfile, subscriberGroupEpochReader, subscriberMessageTemplateService, communicationChannelService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, propensityDataReader, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean subscriberStateUpdated = (currentSubscriberState != null) ? false : true;
 
     /*****************************************
@@ -5551,6 +5562,7 @@ public class EvolutionEngine
     private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader; 
     
     private TokenTypeService tokenTypeService;
+    private PaymentMeanService paymentMeanService;
     private SegmentContactPolicyService segmentContactPolicyService;
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
@@ -5562,7 +5574,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberMessageTemplateService subscriberMessageTemplateService, CommunicationChannelService communicationChannelService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader, KStreamsUniqueKeyServer uniqueKeyServer, Date now)
     {
       this.subscriberState = subscriberState;
       this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -5581,6 +5593,7 @@ public class EvolutionEngine
       this.productTypeService = productTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
+      this.paymentMeanService = paymentMeanService;
       this.propensityDataReader = propensityDataReader; 
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
@@ -5610,6 +5623,7 @@ public class EvolutionEngine
     public DNBOMatrixService getDnboMatrixService() { return dnboMatrixService; }
     public ReferenceDataReader<PropensityKey, PropensityState> getPropensityDataReader() { return propensityDataReader; }
     public TokenTypeService getTokenTypeService() { return tokenTypeService; }
+    public PaymentMeanService getPaymentMeanService() { return paymentMeanService; }
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
     public KStreamsUniqueKeyServer getUniqueKeyServer() { return uniqueKeyServer; }
     public List<String> getSubscriberTraceDetails() { return subscriberTraceDetails; }
