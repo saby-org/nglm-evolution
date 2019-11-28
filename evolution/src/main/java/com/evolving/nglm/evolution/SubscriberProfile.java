@@ -369,44 +369,49 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
           {
             LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramService.getStoredLoyaltyProgram(program.getKey());
             Map<String, Object> loyalty = new HashMap<String, Object>();
-            loyalty.put("programID", program.getKey());
-            loyalty.put("loyaltyProgramType", program.getValue().getLoyaltyProgramType().getExternalRepresentation());
-            loyalty.put("loyaltyProgramEpoch", program.getValue().getLoyaltyProgramEpoch());
-            loyalty.put("loyaltyProgramName", program.getValue().getLoyaltyProgramName());
-            loyalty.put("loyaltyProgramEnrollmentDate", program.getValue().getLoyaltyProgramEnrollmentDate().getTime());
-            loyalty.put("loyaltyProgramExitDate", program.getValue().getLoyaltyProgramExitDate());
             
-            if(loyaltyProgram instanceof LoyaltyProgramPoints) 
-              {                
-                LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
-                LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) program.getValue();
-                if(loyaltyProgramPointsState.getTierName() != null){ loyalty.put("tierName", loyaltyProgramPointsState.getTierName()); }
-                if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyalty.put("tierUpdateDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
-                if(loyaltyProgramPointsState.getPreviousTierName() != null){ loyalty.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName()); }
-                Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
-                Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
-                loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
-              
-                if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
-                  { 
-                    if(loyaltyProgramPoints.getRewardPointsID() != null)
-                      {
-                        loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString());
-                        int balance = 0;
-                        if(this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()) != null){
-                          balance = this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()).getBalance(now);
-                        }
-                        loyalty.put("rewardPointBalance", balance);
+            if(loyaltyProgram != null)
+              {
+                loyalty.put("programID", program.getKey());
+                loyalty.put("loyaltyProgramType", program.getValue().getLoyaltyProgramType().getExternalRepresentation());
+                loyalty.put("loyaltyProgramEpoch", program.getValue().getLoyaltyProgramEpoch());
+                loyalty.put("loyaltyProgramName", loyaltyProgram.getLoyaltyProgramName());
+                loyalty.put("loyaltyProgramDisplay", loyaltyProgram.getLoyaltyProgramDisplay());
+                loyalty.put("loyaltyProgramEnrollmentDate", program.getValue().getLoyaltyProgramEnrollmentDate().getTime());
+                loyalty.put("loyaltyProgramExitDate", program.getValue().getLoyaltyProgramExitDate());
+                
+                if(loyaltyProgram instanceof LoyaltyProgramPoints) 
+                  {                
+                    LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+                    LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) program.getValue();
+                    if(loyaltyProgramPointsState.getTierName() != null){ loyalty.put("tierName", loyaltyProgramPointsState.getTierName()); }
+                    if(loyaltyProgramPointsState.getTierEnrollmentDate() != null){ loyalty.put("tierUpdateDate", loyaltyProgramPointsState.getTierEnrollmentDate()); }
+                    if(loyaltyProgramPointsState.getPreviousTierName() != null){ loyalty.put("previousTierName", loyaltyProgramPointsState.getPreviousTierName()); }
+                    Tier tier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getTierName());
+                    Tier previousTier = loyaltyProgramPoints.getTier(loyaltyProgramPointsState.getPreviousTierName());
+                    loyalty.put("tierChangeType", Tier.changeFromTierToTier(previousTier, tier).getExternalRepresentation());
+                  
+                    if(this.pointBalances != null && !this.pointBalances.isEmpty()) 
+                      { 
+                        if(loyaltyProgramPoints.getRewardPointsID() != null)
+                          {
+                            loyalty.put("rewardPointName", pointService.getStoredPoint(loyaltyProgramPoints.getRewardPointsID()).getJSONRepresentation().get("display").toString());
+                            int balance = 0;
+                            if(this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()) != null){
+                              balance = this.pointBalances.get(loyaltyProgramPoints.getRewardPointsID()).getBalance(now);
+                            }
+                            loyalty.put("rewardPointBalance", balance);
+                          }
+                        if(loyaltyProgramPoints.getStatusPointsID() != null)
+                          {
+                            loyalty.put("statusPointName", pointService.getStoredPoint(loyaltyProgramPoints.getStatusPointsID()).getJSONRepresentation().get("display").toString());
+                            int balance = 0;
+                            if(this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()) != null){
+                              balance = this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now);
+                            }
+                            loyalty.put("statusPointBalance", balance);
+                          } 
                       }
-                    if(loyaltyProgramPoints.getStatusPointsID() != null)
-                      {
-                        loyalty.put("statusPointName", pointService.getStoredPoint(loyaltyProgramPoints.getStatusPointsID()).getJSONRepresentation().get("display").toString());
-                        int balance = 0;
-                        if(this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()) != null){
-                          balance = this.pointBalances.get(loyaltyProgramPoints.getStatusPointsID()).getBalance(now);
-                        }
-                        loyalty.put("statusPointBalance", balance);
-                      } 
                   }
               }
             
@@ -483,14 +488,6 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
       }
     return result;
   }
-  
-  /****************************************
-  *
-  *  accessors - loyalty programs
-  *
-  ****************************************/
-
-  //TODO SCH : think of what we need to retrieve ... ... ... ... ... ... ... ... ... 
   
   /****************************************
   *
@@ -664,7 +661,8 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             //
             
             LoyaltyProgramState loyaltyProgramState = loyaltyPrograms.get(loyaltyProgramID);
-            loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgramState.getLoyaltyProgramName());
+            loyaltyProgramPresentation.put("loyaltyProgramName", loyaltyProgram.getLoyaltyProgramName());
+            loyaltyProgramPresentation.put("loyaltyProgramDisplay", loyaltyProgram.getLoyaltyProgramDisplay());
             loyaltyProgramPresentation.put("loyaltyProgramEnrollmentDate", loyaltyProgramState.getLoyaltyProgramEnrollmentDate());
             loyaltyProgramPresentation.put("loyaltyProgramExitDate", loyaltyProgramState.getLoyaltyProgramExitDate());
             
