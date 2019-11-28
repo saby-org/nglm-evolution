@@ -90,7 +90,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
   public String getLoyaltyProgramRequestID() { return loyaltyProgramRequestID; }
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public Date getEventDate() { return eventDate; }
-  @Override public Integer getActivityType() { return ActivityType.LoyaltyProgram.getExternalRepresentation(); }
+  @Override public ActivityType getActivityType() { return ActivityType.LoyaltyProgram; }
   
   //
   //  bonus delivery accessors
