@@ -7,10 +7,13 @@
 package com.evolving.nglm.evolution.datacubes;
 
 import com.evolving.nglm.core.*;
-import com.evolving.nglm.core.utilities.UtilitiesException;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnTodayJob;
+import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnYesterdayJob;
+import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnTodayJob;
+import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnYesterdayJob;
+import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
+import com.evolving.nglm.evolution.datacubes.tiers.TiersDatacubeOnTodayJob;
+import com.evolving.nglm.evolution.datacubes.tiers.TiersDatacubeOnYesterdayJob;
 
 import org.apache.http.HttpHost;
 
@@ -99,7 +102,7 @@ public class DatacubeManager
 
   public void run()
   {
-    DatacubeScheduler datacubeScheduler = new DatacubeScheduler();
+    JobScheduler datacubeScheduler = new JobScheduler();
     
     //
     // Adding datacubes scheduling
@@ -107,41 +110,48 @@ public class DatacubeManager
     
     long uniqueID = 0;
     
-    DatacubeScheduling yesOdr = new YesterdayODRDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    ScheduledJob yesOdr = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient);
     if(yesOdr.properlyConfigured)
       {
         datacubeScheduler.schedule(yesOdr);
       }
     
-    DatacubeScheduling todOdr = new TodayODRDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    ScheduledJob todOdr = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient);
     if(todOdr.properlyConfigured)
       {
         datacubeScheduler.schedule(todOdr);
       }
     
-    DatacubeScheduling yesLoy = new YesterdayLoyaltyDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    ScheduledJob yesLoy = new LoyaltyDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient);
     if(yesLoy.properlyConfigured)
       {
         datacubeScheduler.schedule(yesLoy);
       }
     
-    DatacubeScheduling todLoy = new TodayLoyaltyDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    ScheduledJob todLoy = new LoyaltyDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient);
     if(todLoy.properlyConfigured)
       {
         datacubeScheduler.schedule(todLoy);
       }
     
-    DatacubeScheduling yesTier = new YesterdayTierDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    ScheduledJob yesTier = new TiersDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient);
     if(yesTier.properlyConfigured)
       {
         datacubeScheduler.schedule(yesTier);
       }
     
-    DatacubeScheduling todTier = new TodayTierDatacubeScheduling(uniqueID++, elasticsearchRestClient);
+    ScheduledJob todTier = new TiersDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient);
     if(todTier.properlyConfigured)
       {
         datacubeScheduler.schedule(todTier);
       }
+    
+    ScheduledJob subscriberprofileSnapshot = new SubscriberProfileSnapshot(uniqueID++, elasticsearchRestClient);
+    if(subscriberprofileSnapshot.properlyConfigured)
+      {
+        datacubeScheduler.schedule(subscriberprofileSnapshot);
+      }
+    
     
 
     log.info("Starting scheduler");

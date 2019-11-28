@@ -22,7 +22,6 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -34,7 +33,7 @@ import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceB
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.json.simple.JSONObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +52,7 @@ public abstract class DatacubeGenerator
   protected static final Logger log = LoggerFactory.getLogger(DatacubeGenerator.class);
   
   //
-  // Other
+  //  others
   //
   
   /** The maximum number of buckets allowed in a single response is limited by a dynamic cluster
@@ -68,8 +67,10 @@ public abstract class DatacubeGenerator
   *
   *****************************************/
   
+  private RestHighLevelClient elasticsearch;
+  
+  protected String datacubeName;
   protected String compositeAggregationName = "DATACUBE";
-  protected final String datacubeName;
   protected ByteBuffer tmpBuffer = null;
 
   /*****************************************
@@ -78,18 +79,11 @@ public abstract class DatacubeGenerator
   *
   *****************************************/
   
-  public DatacubeGenerator(String datacubeName) 
+  public DatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch) 
   {
     this.datacubeName = datacubeName;
+    this.elasticsearch = elasticsearch;
   }
-  
-  /*****************************************
-  *
-  *  getter
-  *
-  *****************************************/
-  
-  public String getDatacubeName() { return this.datacubeName; }
   
   /*****************************************
   *
@@ -105,17 +99,6 @@ public abstract class DatacubeGenerator
   protected abstract void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException;
   protected abstract void embellishFilters(Map<String, Object> filters);
   protected abstract Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException;
-
-  /*****************************************
-  *
-  *  extractDateStringFromDate
-  *
-  *****************************************/
-  
-  protected String extractDateStringFromDate(Date date) 
-  {
-    return DATE_FORMAT.format(date);
-  }
   
   /*****************************************
   *
@@ -202,14 +185,13 @@ public abstract class DatacubeGenerator
     return new SearchRequest(ESIndex).source(datacubeRequest);
   }
 
-  
   /*****************************************
   *
-  *  executeRequest
+  *  executeESSearchRequest
   *
   *****************************************/
   
-  protected SearchResponse executeESRequest(SearchRequest request, RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException 
+  protected SearchResponse executeESSearchRequest(SearchRequest request, RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException 
   {
     try 
       {
@@ -342,38 +324,6 @@ public abstract class DatacubeGenerator
       elasticsearch.update(request, RequestOptions.DEFAULT);
     }
   }
-  
-  /*****************************************
-  *
-  *  utilities
-  *
-  *****************************************/
-  
-  protected SearchRequest retrieveESIndex(String ESIndex) 
-  {
-    SearchSourceBuilder request = new SearchSourceBuilder()
-        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        .query(QueryBuilders.matchAllQuery())
-        .size(BUCKETS_MAX_NBR);
-    
-    return new SearchRequest(ESIndex).source(request);
-  }
-  
-  protected SearchHits extractESRows(SearchResponse response) throws ClassCastException 
-  {
-    List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
-    
-    if (response.isTimedOut()
-        || response.getFailedShards() > 0
-        || response.getSkippedShards() > 0
-        || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {}", this.datacubeName);
-      return null;
-    }
-    
-    return response.getHits();
-  }
-  
 
   /*****************************************
   *
@@ -381,9 +331,9 @@ public abstract class DatacubeGenerator
   *
   *****************************************/
   
-  public void run(Date date, RestHighLevelClient elasticsearch) 
+  public void run(Date targetDate) 
   {
-    String requestedDate = extractDateStringFromDate(date);
+    String requestedDate = DATE_FORMAT.format(targetDate);
   
     try 
       {
@@ -391,7 +341,7 @@ public abstract class DatacubeGenerator
         // Pre-generation phase (for retrieving some mapping infos)
         //
         
-        runPreGenerationPhase(elasticsearch);
+        runPreGenerationPhase(this.elasticsearch);
         
         //
         // Generate Elasticsearch request
@@ -404,7 +354,7 @@ public abstract class DatacubeGenerator
         // Execute Elasticsearch request
         //
 
-        SearchResponse response = executeESRequest(request, elasticsearch);
+        SearchResponse response = executeESSearchRequest(request, this.elasticsearch);
         if(response == null) {
           log.warn("[{}]: cannot retrieve any ES response, datacube generation stop here.", this.datacubeName);
           return;
@@ -423,7 +373,7 @@ public abstract class DatacubeGenerator
         //
 
         log.info("[{}]: pushing {} datacube rows in ES.", this.datacubeName, datacubeRows.size());
-        pushDatacubeRows(datacubeRows, elasticsearch);
+        pushDatacubeRows(datacubeRows, this.elasticsearch);
         
       } 
     catch(IOException|ElasticsearchException|ClassCastException e)

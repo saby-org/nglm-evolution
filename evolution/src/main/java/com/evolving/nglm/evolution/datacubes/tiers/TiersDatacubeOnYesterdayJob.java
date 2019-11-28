@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.tiers;
 
 import java.util.Date;
 
@@ -7,43 +7,48 @@ import org.elasticsearch.client.RestHighLevelClient;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 
-public class YesterdayODRDatacubeScheduling extends DatacubeScheduling
+public class TiersDatacubeOnYesterdayJob extends ScheduledJob
 {
   /*****************************************
   *
   *  data
   *
   *****************************************/
-  
-  RestHighLevelClient elasticsearch;
+
+  private TiersDatacubeGenerator datacube;
   
   /*****************************************
   *
   *  constructor
   *  
-  *  This ODR datacube will be generated every day at 1:00 am
+  *  This LoyaltyProgramsChanges datacube will be generated every day at 1:00 am
   *  and it will aggregate data from the previous day.
   *
   *****************************************/
-  public YesterdayODRDatacubeScheduling(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  
+  public TiersDatacubeOnYesterdayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
   {
-    super(schedulingUniqueID, new ODRDatacubeGenerator("Yesterday-ODR"), SystemTime.getCurrentTime(), Deployment.getYesterdayODRDatacubePeriodCronEntryString(), Deployment.getBaseTimeZone());
-    this.elasticsearch = elasticsearch;
+    super(schedulingUniqueID, 
+        "Yesterday-Tiers", 
+        Deployment.getYesterdayTiersDatacubePeriodCronEntryString(), 
+        Deployment.getBaseTimeZone(),
+        true);
+    this.datacube = new TiersDatacubeGenerator(this.jobName, elasticsearch);
   }
   
-
   /*****************************************
   *
   *  DatacubeScheduling
   *
   *****************************************/
   @Override
-  protected void callDatacubeGenerator()
+  protected void run()
   {
     Date now = SystemTime.getCurrentTime();
     Date yesterday = RLMDateUtils.addDays(now, -1, Deployment.getBaseTimeZone());
-    this.datacube.run(yesterday, elasticsearch);
+    this.datacube.run(yesterday);
   }
 
 }

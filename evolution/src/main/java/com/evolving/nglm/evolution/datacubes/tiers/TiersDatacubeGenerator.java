@@ -1,10 +1,9 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.tiers;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,27 +11,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.metrics.ParsedSum;
-import org.json.simple.JSONObject;
 
-import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
-public class TierDatacubeGenerator extends DatacubeGenerator
+public class TiersDatacubeGenerator extends DatacubeGenerator
 {
   private List<String> filterFields;
   private String allFilters = "filters";
@@ -46,9 +37,9 @@ public class TierDatacubeGenerator extends DatacubeGenerator
   private final String datacubeESIndex = "datacube_loyaltyprogramschanges";
   private final String dataESIndexPrefix = "subscriberprofile";
   
-  public TierDatacubeGenerator(String datacubeName) 
+  public TiersDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
-    super(datacubeName);
+    super(datacubeName, elasticsearch);
     
     //
     // Filter fields

@@ -1,14 +1,14 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.loyalty;
 
 import java.util.Date;
 
 import org.elasticsearch.client.RestHighLevelClient;
 
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 
-public class TodayLoyaltyDatacubeScheduling extends DatacubeScheduling
+public class LoyaltyDatacubeOnTodayJob extends ScheduledJob
 {
   /*****************************************
   *
@@ -16,7 +16,7 @@ public class TodayLoyaltyDatacubeScheduling extends DatacubeScheduling
   *
   *****************************************/
   
-  RestHighLevelClient elasticsearch;
+  private LoyaltyDatacubeGenerator datacube;
   
   /*****************************************
   *
@@ -26,12 +26,16 @@ public class TodayLoyaltyDatacubeScheduling extends DatacubeScheduling
   *  Every hour will update the previous datacube of the day, according to new data.
   *
   *****************************************/
-  public TodayLoyaltyDatacubeScheduling(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
-  {
-    super(schedulingUniqueID, new LoyaltyDatacubeGenerator("Today-Loyalty"), SystemTime.getCurrentTime(), Deployment.getTodayLoyaltyDatacubePeriodCronEntryString(), Deployment.getBaseTimeZone());
-    this.elasticsearch = elasticsearch;
-  }
   
+  public LoyaltyDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  {
+    super(schedulingUniqueID, 
+        "Today-Loyalty", 
+        Deployment.getTodayLoyaltyDatacubePeriodCronEntryString(), 
+        Deployment.getBaseTimeZone(),
+        true);
+    this.datacube = new LoyaltyDatacubeGenerator(this.jobName, elasticsearch);
+  }
 
   /*****************************************
   *
@@ -39,10 +43,10 @@ public class TodayLoyaltyDatacubeScheduling extends DatacubeScheduling
   *
   *****************************************/
   @Override
-  protected void callDatacubeGenerator()
+  protected void run()
   {
     Date now = SystemTime.getCurrentTime();
-    this.datacube.run(now, elasticsearch);
+    this.datacube.run(now);
   }
 
 }

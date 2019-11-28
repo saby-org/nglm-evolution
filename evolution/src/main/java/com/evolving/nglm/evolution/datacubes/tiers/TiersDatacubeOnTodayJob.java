@@ -1,22 +1,22 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.tiers;
 
 import java.util.Date;
 
 import org.elasticsearch.client.RestHighLevelClient;
 
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 
-public class TodayTierDatacubeScheduling extends DatacubeScheduling
+public class TiersDatacubeOnTodayJob extends ScheduledJob
 {
   /*****************************************
   *
   *  data
   *
   *****************************************/
-  
-  RestHighLevelClient elasticsearch;
+
+  private TiersDatacubeGenerator datacube;
   
   /*****************************************
   *
@@ -26,23 +26,27 @@ public class TodayTierDatacubeScheduling extends DatacubeScheduling
   *  Every hour will update the previous datacube of the day, according to new data.
   *
   *****************************************/
-  public TodayTierDatacubeScheduling(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  
+  public TiersDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
   {
-    super(schedulingUniqueID, new TierDatacubeGenerator("Today-Tier"), SystemTime.getCurrentTime(), Deployment.getTodayTierDatacubePeriodCronEntryString(), Deployment.getBaseTimeZone());
-    this.elasticsearch = elasticsearch;
+    super(schedulingUniqueID, 
+        "Today-Tiers", 
+        Deployment.getTodayTiersDatacubePeriodCronEntryString(), 
+        Deployment.getBaseTimeZone(),
+        true);
+    this.datacube = new TiersDatacubeGenerator(this.jobName, elasticsearch);
   }
   
-
   /*****************************************
   *
   *  DatacubeScheduling
   *
   *****************************************/
   @Override
-  protected void callDatacubeGenerator()
+  protected void run()
   {
     Date now = SystemTime.getCurrentTime();
-    this.datacube.run(now, elasticsearch);
+    this.datacube.run(now);
   }
 
 }

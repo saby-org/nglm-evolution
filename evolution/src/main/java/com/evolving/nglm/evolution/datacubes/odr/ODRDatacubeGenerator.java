@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.odr;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,10 +15,9 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
-import org.json.simple.JSONObject;
+
+import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
 public class ODRDatacubeGenerator extends DatacubeGenerator
 {
@@ -35,9 +34,9 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   private final String datacubeESIndex = "datacube_odr";
   private final String dataESIndexPrefix = "detailedrecords_offers-";
   
-  public ODRDatacubeGenerator(String datacubeName) 
+  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
-    super(datacubeName);
+    super(datacubeName, elasticsearch);
     
     //
     // Filter fields

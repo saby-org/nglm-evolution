@@ -15,9 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.CronFormat;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 
-public abstract class DatacubeScheduling implements Comparable<DatacubeScheduling>
+public abstract class ScheduledJob implements Comparable<ScheduledJob>
 {
   /*****************************************
   *
@@ -29,7 +30,7 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(DatacubeScheduling.class);
+  private static final Logger log = LoggerFactory.getLogger(ScheduledJob.class);
   
   /*****************************************
   *
@@ -38,9 +39,10 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *****************************************/
 
   private long schedulingUniqueID;
-  protected DatacubeGenerator datacube;
   private Date nextGenerationDate;
   private CronFormat periodicGeneration;
+
+  protected final String jobName;
   protected boolean properlyConfigured;
 
   /*****************************************
@@ -49,15 +51,15 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *
   *****************************************/
 
-  public DatacubeScheduling(long schedulingUniqueID, DatacubeGenerator datacube, Date nextGenerationDate, String periodicGenerationCronEntry, String baseTimeZone)
+  public ScheduledJob(long schedulingUniqueID, String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
   {
     this.schedulingUniqueID = schedulingUniqueID;
     this.properlyConfigured = true;
-    this.datacube = datacube;
-    this.nextGenerationDate = nextGenerationDate;
+    this.jobName = jobName;
     try
       {
         this.periodicGeneration = new CronFormat(periodicGenerationCronEntry, TimeZone.getTimeZone(baseTimeZone));
+        this.nextGenerationDate = (scheduleAtStart) ? SystemTime.getCurrentTime() : this.periodicGeneration.next();
       } 
     catch (UtilitiesException e)
       {
@@ -84,8 +86,8 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *  absract
   *
   *****************************************/
-  
-  protected abstract void callDatacubeGenerator();
+
+  protected abstract void run();
   
   /*****************************************
   *
@@ -100,7 +102,7 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *
   *****************************************/
   @Override
-  public int compareTo(DatacubeScheduling o)
+  public int compareTo(ScheduledJob o)
   {
     if(this.schedulingUniqueID == o.schedulingUniqueID)
       {
@@ -125,14 +127,14 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   *
   *****************************************/
 
-  public void generate() 
+  public void call() 
   {
-    log.info("Start [" + this.datacube.getDatacubeName() + "] generation, scheduled for " + this.nextGenerationDate.toLocaleString());
+    log.info("Start [" + this.jobName + "], scheduled for " + this.nextGenerationDate.toLocaleString());
     
-    this.callDatacubeGenerator();
+    this.run(); // TODO: Maybe add scheduled date later, if needed.
     
     this.nextGenerationDate = periodicGeneration.next();
-    log.info("End [" + this.datacube.getDatacubeName() + "] generation with success, next generation is scheduled for " + this.nextGenerationDate.toLocaleString());
+    log.info("End [" + this.jobName + "] with success, next call is scheduled for " + this.nextGenerationDate.toLocaleString());
   }
 
   
@@ -144,6 +146,6 @@ public abstract class DatacubeScheduling implements Comparable<DatacubeSchedulin
   
   @Override
   public String toString() {
-    return "{ID:" + this.schedulingUniqueID + ", " + this.datacube.datacubeName + ": " + this.getNextGenerationDate().toLocaleString() + "}";
+    return "{ID:" + this.schedulingUniqueID + ", " + this.jobName + ": " + this.getNextGenerationDate().toLocaleString() + "}";
   }
 }

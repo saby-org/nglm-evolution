@@ -128,8 +128,9 @@
   "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
   "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 2 * * *",
   "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
-  "yesterdayTierDatacubePeriodCronEntryString"           : "0 2 * * *",
-  "todayTierDatacubePeriodCronEntryString"               : "0 * * * *",
+  "yesterdayTiersDatacubePeriodCronEntryString"          : "0 2 * * *",
+  "todayTiersDatacubePeriodCronEntryString"              : "0 * * * *",
+  "subscriberProfileSnapshotPeriodCronEntryString"       : "0 1 * * *",
 
   -- 
   --  supportedDataTypes

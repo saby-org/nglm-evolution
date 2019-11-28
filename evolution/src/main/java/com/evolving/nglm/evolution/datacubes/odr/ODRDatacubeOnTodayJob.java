@@ -1,22 +1,22 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.odr;
 
 import java.util.Date;
 
 import org.elasticsearch.client.RestHighLevelClient;
 
-import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.datacubes.ScheduledJob;
 
-public class TodayODRDatacubeScheduling extends DatacubeScheduling
+public class ODRDatacubeOnTodayJob extends ScheduledJob
 {
   /*****************************************
   *
   *  data
   *
   *****************************************/
-  
-  RestHighLevelClient elasticsearch;
+
+  private ODRDatacubeGenerator datacube;
   
   /*****************************************
   *
@@ -26,23 +26,27 @@ public class TodayODRDatacubeScheduling extends DatacubeScheduling
   *  Every hour will update the previous datacube of the day, according to new data.
   *
   *****************************************/
-  public TodayODRDatacubeScheduling(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  
+  public ODRDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
   {
-    super(schedulingUniqueID, new ODRDatacubeGenerator("Today-ODR"), SystemTime.getCurrentTime(), Deployment.getTodayODRDatacubePeriodCronEntryString(), Deployment.getBaseTimeZone());
-    this.elasticsearch = elasticsearch;
+    super(schedulingUniqueID, 
+        "Today-ODR", 
+        Deployment.getTodayODRDatacubePeriodCronEntryString(), 
+        Deployment.getBaseTimeZone(),
+        true);
+    this.datacube = new ODRDatacubeGenerator(this.jobName, elasticsearch);
   }
   
-
   /*****************************************
   *
   *  DatacubeScheduling
   *
   *****************************************/
   @Override
-  protected void callDatacubeGenerator()
+  protected void run()
   {
     Date now = SystemTime.getCurrentTime();
-    this.datacube.run(now, elasticsearch);
+    this.datacube.run(now);
   }
 
 }

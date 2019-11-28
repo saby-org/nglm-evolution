@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class DatacubeScheduler
+public class JobScheduler
 {
   /*****************************************
   *
@@ -28,7 +28,7 @@ public class DatacubeScheduler
   //  logger
   //
 
-  private static final Logger log = LoggerFactory.getLogger(DatacubeScheduler.class);
+  private static final Logger log = LoggerFactory.getLogger(JobScheduler.class);
   
   /*****************************************
   *
@@ -37,7 +37,7 @@ public class DatacubeScheduler
   *****************************************/
 
   private volatile boolean stopRequested = false;
-  private SortedSet<DatacubeScheduling> schedule = new TreeSet<DatacubeScheduling>();
+  private SortedSet<ScheduledJob> schedule = new TreeSet<ScheduledJob>();
   
   /*****************************************
   *
@@ -45,7 +45,7 @@ public class DatacubeScheduler
   *
   *****************************************/
 
-  public DatacubeScheduler()
+  public JobScheduler()
   {
   }
 
@@ -55,7 +55,7 @@ public class DatacubeScheduler
   *
   *****************************************/
 
-  public void schedule(DatacubeScheduling datacube)
+  public void schedule(ScheduledJob datacube)
   {
     synchronized (this)
       {
@@ -79,7 +79,7 @@ public class DatacubeScheduler
   *
   *****************************************/
 
-  public void deschedule(DatacubeScheduling datacube)
+  public void deschedule(ScheduledJob datacube)
   {
     synchronized (this)
       {
@@ -152,13 +152,13 @@ public class DatacubeScheduler
             
             while (! stopRequested)
               {
-                DatacubeScheduling datacube = schedule.first();
-                if(datacube == null) 
+                ScheduledJob job = schedule.first();
+                if(job == null) 
                   {
                     break;
                   }
 
-                Date nextPeriodicEvaluation = datacube.getNextGenerationDate();
+                Date nextPeriodicEvaluation = job.getNextGenerationDate();
                 if (now.before(nextPeriodicEvaluation))
                   {
                     nextWaitDuration = nextPeriodicEvaluation.getTime() - now.getTime();
@@ -169,9 +169,9 @@ public class DatacubeScheduler
                 //  generate datacube
                 //
                 
-                schedule.remove(datacube);
-                datacube.generate();
-                schedule.add(datacube);
+                schedule.remove(job);
+                job.call();
+                schedule.add(job);
                 
                 now = SystemTime.getCurrentTime();
               }

@@ -5,12 +5,14 @@
   #################################################################################
 
   #
-  #  manually create subscriberprofile index
+  #  manually create subscriberprofile template
+  #   - this template will be used by the subscriberprofile index, and also subscriberprofile snapshots
   #   - these settings are for index heavy load
   #
-
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/subscriberprofile -H'Content-Type: application/json' -d'
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile -H'Content-Type: application/json' -d'
     {
+      "index_patterns": ["subscriberprofile*"],
       "settings" :
         {
           "index" :
@@ -49,6 +51,46 @@
                   "pointFluctuations" : { "type" : "object"},
                   "pointBalances" : { "type" : "keyword", "index" : "false"}
                 }
+        }
+    }'
+  echo
+  
+  #
+  #  override subscriberprofile template for snapshots ONLY with cleaning policy
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriberprofile_snapshot -H'Content-Type: application/json' -d'
+    {
+      "index_patterns": ["subscriberprofile_snapshot-*"],
+      "settings" :
+        {
+          "index" :
+            {
+              "lifecycle.name": "subscriberprofile_snapshot_policy"
+            }
+        }
+    }'
+  echo
+  
+  #
+  #  create a cleaning policy for subscriberprofile snapshots
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/subscriberprofile_snapshot_policy -H'Content-Type: application/json' -d'
+    {
+      "policy": 
+        {
+          "phases": 
+            {
+              "delete": 
+                {
+                  "min_age": "'$ELASTICSEARCH_SUBSCRIBERPROFILE_SNAPSHOT_CLEANING'",
+                  "actions": 
+                    {
+                      "delete": {}
+                    }
+                }
+            }
         }
     }'
   echo

@@ -1,10 +1,9 @@
-package com.evolving.nglm.evolution.datacubes;
+package com.evolving.nglm.evolution.datacubes.loyalty;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,8 +11,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
@@ -23,14 +25,14 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
-import org.json.simple.JSONObject;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 
-import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
 public class LoyaltyDatacubeGenerator extends DatacubeGenerator
 {
@@ -54,9 +56,9 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   private final String datacubeESIndex = "datacube_loyaltyprogramshistory";
   private final String dataESIndexPrefix = "subscriberprofile";
   
-  public LoyaltyDatacubeGenerator(String datacubeName) 
+  public LoyaltyDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
-    super(datacubeName);
+    super(datacubeName, elasticsearch);
     
     //
     // Filter fields
@@ -90,11 +92,23 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
     //
     
     this.loyaltyProgramMapping = new HashMap<String, String>();
+
+    SearchSourceBuilder request = new SearchSourceBuilder()
+        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
+        .query(QueryBuilders.matchAllQuery())
+        .size(BUCKETS_MAX_NBR);
     
-    SearchResponse response = executeESRequest(retrieveESIndex("mapping_loyaltyprograms"), elasticsearch);
+    SearchResponse response = executeESSearchRequest(new SearchRequest("mapping_loyaltyprograms").source(request), elasticsearch);
     if(response == null) { return; }
+    if(response.isTimedOut()
+        || response.getFailedShards() > 0
+        || response.getSkippedShards() > 0
+        || response.status() != RestStatus.OK) {
+      log.error("Elasticsearch search response return with bad status in {}", this.datacubeName);
+      return;
+    }
     
-    SearchHits hits = extractESRows(response);
+    SearchHits hits = response.getHits();
     if(hits == null) { return; }
     
     for(SearchHit hit: hits) {
