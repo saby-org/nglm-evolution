@@ -101,7 +101,7 @@ public class DialogMessage
   *
   *****************************************/
 
-  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, CriterionContext criterionContext) throws GUIManagerException
+  public DialogMessage(JSONArray messagesJSON, String messageTextAttribute, boolean mandatory, CriterionContext criterionContext) throws GUIManagerException
   {
     Map<CriterionField,String> tagReplacements = new HashMap<CriterionField,String>();
     for (int i=0; i<messagesJSON.size(); i++)
@@ -130,7 +130,7 @@ public class DialogMessage
         *
         *****************************************/
 
-        String unprocessedMessageText = JSONUtilities.decodeString(messageJSON, messageTextAttribute, true);
+        String unprocessedMessageText = JSONUtilities.decodeString(messageJSON, messageTextAttribute, mandatory);
 
         /*****************************************
         *
@@ -138,36 +138,38 @@ public class DialogMessage
         *
         *****************************************/
 
-        Pattern p = Pattern.compile("\\{(.*?)\\}");
-        Matcher m = p.matcher(unprocessedMessageText);
-        Map<String,String> rawTagReplacements = new HashMap<String,String>();
-        while (m.find())
-          {
-            /*****************************************
-            *
-            *  resolve reference
-            *
-            *****************************************/
+        String messageText = null;
+        if(unprocessedMessageText != null){
+          Pattern p = Pattern.compile("\\{(.*?)\\}");
+          Matcher m = p.matcher(unprocessedMessageText);
+          Map<String,String> rawTagReplacements = new HashMap<String,String>();
+          while (m.find())
+            {
+              /*****************************************
+              *
+              *  resolve reference
+              *
+              *****************************************/
 
-            //
-            //  criterionField
-            //
+              //
+              //  criterionField
+              //
 
-            String rawTag = m.group();
-            String criterionFieldName = m.group(1).trim();
-            CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
-            boolean parameterTag = false;
-            if (criterionField == null)
-              {
-                criterionField = new CriterionField(criterionFieldName);
-                parameterTag = true;
-              }
+              String rawTag = m.group();
+              String criterionFieldName = m.group(1).trim();
+              CriterionField criterionField = criterionContext.getCriterionFields().get(criterionFieldName);
+              boolean parameterTag = false;
+              if (criterionField == null)
+                {
+                  criterionField = new CriterionField(criterionFieldName);
+                  parameterTag = true;
+                }
 
-            //
-            //  valid data type
-            //
+              //
+              //  valid data type
+              //
 
-            switch (criterionField.getFieldDataType())
+              switch (criterionField.getFieldDataType())
               {
                 case IntegerCriterion:
                 case DoubleCriterion:
@@ -209,11 +211,12 @@ public class DialogMessage
         *
         *****************************************/
 
-        String messageText = unprocessedMessageText;
+        messageText = unprocessedMessageText;
         for (String rawTag : rawTagReplacements.keySet())
           {
             messageText = messageText.replace(rawTag, rawTagReplacements.get(rawTag));
           }
+        }
         
         /*****************************************
         *

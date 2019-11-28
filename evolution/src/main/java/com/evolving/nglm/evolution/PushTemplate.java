@@ -6,8 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -16,8 +16,6 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
@@ -199,7 +197,7 @@ public class PushTemplate extends SubscriberMessageTemplate
     
     this.communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", true);
 
-    this.dialogMessageFields = new ArrayList<String>();
+    this.dialogMessageFields = new HashMap<String, Boolean>();
     Date now = SystemTime.getCurrentTime();
     CommunicationChannel communicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
     if(communicationChannel == null)
@@ -210,7 +208,8 @@ public class PushTemplate extends SubscriberMessageTemplate
       {
         for(String communicationChannelParameter : communicationChannel.getParameters().keySet())
           {
-            dialogMessageFields.add(communicationChannelParameter); 
+            CriterionField criterionField = communicationChannel.getParameters().get(communicationChannelParameter);
+            dialogMessageFields.put(communicationChannelParameter, criterionField.getMandatoryParameter()); 
           }
       }
   }

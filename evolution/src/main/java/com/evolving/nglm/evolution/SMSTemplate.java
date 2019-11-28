@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -65,14 +65,18 @@ public class SMSTemplate extends SubscriberMessageTemplate
 
   public String getSMSTemplateID() { return getGUIManagedObjectID(); }
   public String getSMSTemplateName() { return getGUIManagedObjectName(); }
-  public DialogMessage getMessageText() { return super.getDialogMessages().get(0); }
+  public DialogMessage getMessageText() { return super.getDialogMessages().get("messageText"); }
   
   //
   //  abstract
   //
 
   @Override public String getTemplateType() { return "sms"; }
-  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException { this.dialogMessageFields = Arrays.asList("messageText"); }
+  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException 
+  { 
+    this.dialogMessageFields = new HashMap<String, Boolean>();
+    dialogMessageFields.put("messageText", true);
+  }
 
   /*****************************************
   *

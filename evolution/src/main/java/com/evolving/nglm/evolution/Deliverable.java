@@ -79,6 +79,7 @@ public class Deliverable extends GUIManagedObject
 
   public String getDeliverableID() { return getGUIManagedObjectID(); }
   public String getDeliverableName() { return getGUIManagedObjectName(); }
+  public String getDeliverableDisplay() { return getGUIManagedObjectDisplay(); }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
   public String getExternalAccountID() { return externalAccountID; }
   public int getUnitaryCost() { return unitaryCost; }

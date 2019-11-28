@@ -28,7 +28,6 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -722,7 +721,7 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
 //          log.info("destAddress = "+destAddress);
 
           tags = new HashMap<String, List<String>>();
-          for(String messageField : template.getDialogMessageFields()){
+          for(String messageField : template.getDialogMessageFields().keySet()){
             DialogMessage dialogMessage = template.getDialogMessage(messageField);
             List<String> dialogMessageTags = (dialogMessage != null) ? dialogMessage.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
             tags.put(messageField, dialogMessageTags);

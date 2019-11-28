@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -13689,12 +13690,14 @@ public class GUIManager
 
         if (mailTemplate.getParameterTags().size() > 0)
           {
-            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : mailTemplate.getParameterTags())
+            Map<String,JSONObject> parameterTags = new HashMap<String,JSONObject>();
+            for (Entry<String,CriterionField> parameterTag : mailTemplate.getParameterTags().entrySet())
               {
-                parameterTags.add(parameterTag.getJSONRepresentation());
+                String key = parameterTag.getKey();
+                CriterionField value = parameterTag.getValue();
+                parameterTags.put(key, value.getJSONRepresentation());
               }
-            mailTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
+            mailTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeObject(parameterTags));
           }
 
         /*****************************************
@@ -13986,12 +13989,14 @@ public class GUIManager
 
         if (smsTemplate.getParameterTags().size() > 0)
           {
-            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : smsTemplate.getParameterTags())
+            Map<String,JSONObject> parameterTags = new HashMap<String,JSONObject>();
+            for (Entry<String,CriterionField> parameterTag : smsTemplate.getParameterTags().entrySet())
               {
-                parameterTags.add(parameterTag.getJSONRepresentation());
+                String key = parameterTag.getKey();
+                CriterionField value = parameterTag.getValue();
+                parameterTags.put(key, value.getJSONRepresentation());
               }
-            smsTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
+            smsTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeObject(parameterTags));
           }
 
         /*****************************************
@@ -14295,12 +14300,14 @@ public class GUIManager
 
         if (pushTemplate.getParameterTags().size() > 0)
           {
-            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
-            for (CriterionField parameterTag : pushTemplate.getParameterTags())
+            Map<String,JSONObject> parameterTags = new HashMap<String,JSONObject>();
+            for (Entry<String,CriterionField> parameterTag : pushTemplate.getParameterTags().entrySet())
               {
-                parameterTags.add(parameterTag.getJSONRepresentation());
+                String key = parameterTag.getKey();
+                CriterionField value = parameterTag.getValue();
+                parameterTags.put(key, value.getJSONRepresentation());
               }
-            pushTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
+            pushTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeObject(parameterTags));
           }
 
         /*****************************************
@@ -19576,10 +19583,10 @@ public class GUIManager
         *****************************************/
 
         Map<String,Map<String,Object>> messageByLanguage = new HashMap<String,Map<String,Object>>();
-        for (int i=0; i<template.getDialogMessages().size(); i++)
+        for (Entry<String, DialogMessage> entry : template.getDialogMessages().entrySet())
           {
-            String messageTextField = template.getDialogMessageFields().get(i);
-            DialogMessage messageText = template.getDialogMessages().get(i);
+            String messageTextField = entry.getKey();
+            DialogMessage messageText = entry.getValue();
             for (String language : messageText.getMessageTextByLanguage().keySet())
               {
                 //
@@ -21559,7 +21566,7 @@ public class GUIManager
                           if(deliverable.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", deliverable.getDeliverableID());
-                            availableValue.put("display", deliverable.getDeliverableName());
+                            availableValue.put("display", deliverable.getDeliverableDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
@@ -21637,7 +21644,7 @@ public class GUIManager
                       LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramName());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }

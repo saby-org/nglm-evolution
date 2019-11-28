@@ -107,6 +107,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   public static final String OFFERSTOCK = "offerStock";
   public static final String OFFERCONTENT = "offerContent";
   public static final String MEANOFPAYMENT = "meanOfPayment";
+  public static final String PAYMENTPROVIDERID = "paymentProviderID";
   public static final String VOUCHERCODE = "voucherCode";
   public static final String VOUCHERPARTNERID = "voucherPartnerId";
   
@@ -151,10 +152,11 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
   
   public enum ActivityType
   {
+    Other(0),
     BDR(1),
     ODR(2),
     Messages(3),
-    Other(0),
+    LoyaltyProgram(4),
     Unknown(-1);
     private Integer externalRepresentation;
     private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }

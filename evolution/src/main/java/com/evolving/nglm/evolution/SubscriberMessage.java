@@ -6,9 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
@@ -44,7 +42,7 @@ public abstract class SubscriberMessage
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("subscriberMessageTemplateID", Schema.STRING_SCHEMA);
     schemaBuilder.field("parameterTags", SimpleParameterMap.schema());
-    schemaBuilder.field("dialogMessages", SchemaBuilder.array(DialogMessage.schema()).schema());
+    schemaBuilder.field("dialogMessages", SchemaBuilder.map(Schema.STRING_SCHEMA, DialogMessage.schema()).name("message_dialog_messages").schema());
     commonSchema = schemaBuilder.build();
   };
 
@@ -62,7 +60,7 @@ public abstract class SubscriberMessage
 
   private String subscriberMessageTemplateID = null;
   private SimpleParameterMap parameterTags = new SimpleParameterMap();
-  private List<DialogMessage> dialogMessages = new ArrayList<DialogMessage>();
+  private Map<String, DialogMessage> dialogMessages = new HashMap<String, DialogMessage>();
 
   /*****************************************
   *
@@ -72,7 +70,7 @@ public abstract class SubscriberMessage
 
   public String getSubscriberMessageTemplateID() { return subscriberMessageTemplateID; }
   public SimpleParameterMap getParameterTags() { return parameterTags; }
-  public List<DialogMessage> getDialogMessages() { return dialogMessages; }
+  public Map<String, DialogMessage> getDialogMessages() { return dialogMessages; }
   
   /****************************************
   *
@@ -88,7 +86,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  protected SubscriberMessage(Object subscriberMessageJSON, List<String> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
+  protected SubscriberMessage(Object subscriberMessageJSON, Map<String, Boolean> dialogMessageFields, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
     /*****************************************
     *
@@ -137,10 +135,11 @@ public abstract class SubscriberMessage
         //  messageText
         //
 
-        dialogMessages = new ArrayList<DialogMessage>();
-        for (String dialogMessageField : dialogMessageFields)
+        dialogMessages = new HashMap<String, DialogMessage>();
+        for (String dialogMessageField : dialogMessageFields.keySet())
           {
-            dialogMessages.add(new DialogMessage(messagesJSON, dialogMessageField, criterionContext));
+            boolean mandatory = dialogMessageFields.get(dialogMessageField);
+            dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, criterionContext));
           }
       }
   }
@@ -160,7 +159,7 @@ public abstract class SubscriberMessage
     *****************************************/
 
     Map<String,CriterionField> parameterTagsByID = new HashMap<String,CriterionField>();
-    for (CriterionField parameterTag : subscriberMessageTemplate.getParameterTags())
+    for (CriterionField parameterTag : subscriberMessageTemplate.getParameterTags().values())
       {
         parameterTagsByID.put(parameterTag.getID(), parameterTag);
       }
@@ -241,7 +240,7 @@ public abstract class SubscriberMessage
     Struct valueStruct = (Struct) value;
     String subscriberMessageTemplateID = valueStruct.getString("subscriberMessageTemplateID");
     SimpleParameterMap parameterTags = SimpleParameterMap.unpack(new SchemaAndValue(schema.field("parameterTags").schema(), valueStruct.get("parameterTags")));    
-    List<DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (List<Object>) valueStruct.get("dialogMessages"));
+    Map<String,DialogMessage> dialogMessages = unpackDialogMessages(schema.field("dialogMessages").schema(), (Map<String,Object>) valueStruct.get("dialogMessages"));
     
     //
     //  return
@@ -257,7 +256,7 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  private static List<DialogMessage> unpackDialogMessages(Schema schema, List<Object> value)
+  private static Map<String,DialogMessage> unpackDialogMessages(Schema schema, Map<String,Object> dialogMessages)
   {
     //
     //  get schema
@@ -269,17 +268,17 @@ public abstract class SubscriberMessage
     //  unpack
     //
 
-    List<DialogMessage> result = new ArrayList<DialogMessage>();
-    List<Object> valueArray = (List<Object>) value;
-    for (Object dialogMessage : valueArray)
+    Map<String,DialogMessage> result = new HashMap<String,DialogMessage>();
+    for (String dialogMessageFieldName : dialogMessages.keySet())
       {
-        result.add(DialogMessage.unpack(new SchemaAndValue(dialogMessageSchema, dialogMessage)));
+        DialogMessage dialogMessage = DialogMessage.unpack(new SchemaAndValue(dialogMessageSchema, dialogMessages.get(dialogMessageFieldName)));
+        result.put(dialogMessageFieldName, dialogMessage);
       }
 
     //
     //  return
     //
-
+    
     return result;
   }
 
@@ -305,12 +304,13 @@ public abstract class SubscriberMessage
   *
   *****************************************/
 
-  private static List<Object> packDialogMessages(List<DialogMessage> dialogMessages)
+  private static Map<String,Object> packDialogMessages(Map<String,DialogMessage> dialogMessages)
   {
-    List<Object> result = new ArrayList<Object>();
-    for (DialogMessage dialogMessage : dialogMessages)
+    Map<String,Object> result = new HashMap<String,Object>();
+    for (String dialogMessageFieldName : dialogMessages.keySet())
       {
-        result.add(DialogMessage.pack(dialogMessage));
+        DialogMessage communicationChannelParameter = dialogMessages.get(dialogMessageFieldName);
+        result.put(dialogMessageFieldName,DialogMessage.pack(communicationChannelParameter));
       }
     return result;
   }

@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -65,16 +65,22 @@ public class MailTemplate extends SubscriberMessageTemplate
 
   public String getMailTemplateID() { return getGUIManagedObjectID(); }
   public String getMailTemplateName() { return getGUIManagedObjectName(); }
-  public DialogMessage getSubject() { return super.getDialogMessages().get(0); }
-  public DialogMessage getHTMLBody() { return super.getDialogMessages().get(1); }
-  public DialogMessage getTextBody() { return super.getDialogMessages().get(2); }
+  public DialogMessage getSubject() { return super.getDialogMessages().get("subject"); }
+  public DialogMessage getHTMLBody() { return super.getDialogMessages().get("htmlBody"); }
+  public DialogMessage getTextBody() { return super.getDialogMessages().get("textBody"); }
   
   //
   //  abstract
   //
 
   @Override public String getTemplateType() { return "mail"; }
-  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException { this.dialogMessageFields = Arrays.asList("subject", "htmlBody", "textBody"); }
+  @Override public void retrieveDialogMessageFields(CommunicationChannelService communicationChannelService, JSONObject jsonRoot) throws GUIManagerException 
+  { 
+    this.dialogMessageFields = new HashMap<String, Boolean>();
+    dialogMessageFields.put("subject", true);
+    dialogMessageFields.put("htmlBody", true);
+    dialogMessageFields.put("textBody", true); 
+  }
 
   /*****************************************
   *
@@ -119,9 +125,9 @@ public class MailTemplate extends SubscriberMessageTemplate
   *
   *****************************************/
 
-  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getSubject().resolveX(subscriberEvaluationRequest); }
-  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getHTMLBody().resolveX(subscriberEvaluationRequest); }
-  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return getTextBody().resolveX(subscriberEvaluationRequest); }
+  public String resolveSubject(SubscriberEvaluationRequest subscriberEvaluationRequest) { return (getSubject() != null ? getSubject().resolveX(subscriberEvaluationRequest) : null); }
+  public String resolveHTMLBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return (getHTMLBody() != null ? getHTMLBody().resolveX(subscriberEvaluationRequest) : null); }
+  public String resolveTextBody(SubscriberEvaluationRequest subscriberEvaluationRequest) { return (getTextBody() != null ? getTextBody().resolveX(subscriberEvaluationRequest) : null); }
 
   /*****************************************
   *

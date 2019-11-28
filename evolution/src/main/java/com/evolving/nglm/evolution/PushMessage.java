@@ -6,7 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -63,7 +63,7 @@ public class PushMessage extends SubscriberMessage
 
   public PushMessage(Object pushMessageJSON, SubscriberMessageTemplateService subscriberMessageTemplateService, CriterionContext criterionContext) throws GUIManagerException
   {
-    super(pushMessageJSON, new ArrayList<String>(), subscriberMessageTemplateService, criterionContext);
+    super(pushMessageJSON, new HashMap<String, Boolean>(), subscriberMessageTemplateService, criterionContext);
     
   }
   /*****************************************

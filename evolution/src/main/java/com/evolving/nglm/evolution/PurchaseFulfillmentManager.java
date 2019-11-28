@@ -530,6 +530,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                       if(paymentMean != null) {
                         guiPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
                         guiPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                        guiPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
                       }
                     }
                   }
@@ -602,6 +603,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                   if(paymentMean != null) {
                     thirdPartyPresentationMap.put(OFFERPRICE, channel.getPrice().getAmount());
                     thirdPartyPresentationMap.put(MEANOFPAYMENT, paymentMean.getDisplay());
+                    thirdPartyPresentationMap.put(PAYMENTPROVIDERID, paymentMean.getFulfillmentProviderID());
                   }
                 }
               }
