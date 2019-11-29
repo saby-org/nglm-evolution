@@ -74,6 +74,7 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -7023,6 +7024,12 @@ public class GUIManager
                 range = range.addRange(new Range(segment.getName(), (segment.getRangeMin() != null)? new Double (segment.getRangeMin()) : null, (segment.getRangeMax() != null)? new Double (segment.getRangeMax()) : null));
               }
             aggregation.subAggregation(range);
+            //add no value aggrebation for null values for range field
+            BoolQueryBuilder builder = QueryBuilders.boolQuery();
+            ExistsQueryBuilder existsQueryBuilder = QueryBuilders.existsQuery(criterionField.getESField());
+            builder.mustNot().add(existsQueryBuilder);
+            AggregationBuilder noValueAgg = AggregationBuilders.filter(RANGE_AGG_PREFIX+baseSplit.getSplitName()+"NOVALUE",builder);
+            aggregation.subAggregation(noValueAgg);
           }
       }
 
@@ -7033,7 +7040,7 @@ public class GUIManager
     *  construct response (JSON object)
     *
     *****************************************/
-
+//trebuie inteles aici cum se conpun array-urile pentru citirea raspunsului
     JSONObject responseJSON = new JSONObject();
     List<JSONObject> responseBaseSplits = new ArrayList<JSONObject>();
     for(int i = 0; i < nbBaseSplits; i++)
@@ -7106,6 +7113,7 @@ public class GUIManager
       {
         Filters.Bucket bucket = mainAggregationResult.getBucketByKey((String) responseBaseSplit.get("splitName"));
         ParsedAggregation segmentAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString());
+        ParsedAggregation noValueAggregationResult = bucket.getAggregations().get(RANGE_AGG_PREFIX+bucket.getKeyAsString()+"NOVALUE");
         if (segmentAggregationResult instanceof ParsedFilter)
           {
             //
@@ -7116,10 +7124,15 @@ public class GUIManager
 
             //
             //  fill the "count" field of the response JSON object (for each segments)
-            for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments"))
+            List<JSONObject> responseSegments = (List<JSONObject>)responseBaseSplit.get("segments");
+            for(JSONObject responseSegment : responseSegments)
               {
                 responseSegment.put("count", other.getDocCount());
               }
+            JSONObject noValueSegment = new JSONObject();
+            noValueSegment.put("name", "no value");
+            noValueSegment.put("count",((ParsedFilter)noValueAggregationResult).getDocCount());
+            responseSegments.add(noValueSegment);
           }
         else
           {
@@ -7142,12 +7155,17 @@ public class GUIManager
 
             //
             //  fill the "count" field of the response JSON object (for each segments)
-            // 
-
-            for(JSONObject responseSegment : (List<JSONObject>) responseBaseSplit.get("segments"))
+            //
+            List<JSONObject> responseSegments = (List<JSONObject>)responseBaseSplit.get("segments");
+            for(JSONObject responseSegment : responseSegments)
               {
                 responseSegment.put("count", bucketMap.get(responseSegment.get("name")).getDocCount());
               }
+            //read no value aggregation values and add for each segment
+            JSONObject noValueSegment = new JSONObject();
+            noValueSegment.put("name", "no available values");
+            noValueSegment.put("count",((ParsedFilter)noValueAggregationResult).getDocCount());
+            responseSegments.add(noValueSegment);
           }
       }
     responseJSON.put("baseSplit", responseBaseSplits);

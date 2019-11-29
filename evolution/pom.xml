@@ -59,7 +59,7 @@
     <gui-iar.version>1.0.35</gui-iar.version>
     <gui-opr.version>1.0.38</gui-opr.version>
     <gui-stg.version>1.0.62</gui-stg.version>
-    <gui-sbm.version>1.0.75</gui-sbm.version>
+    <gui-sbm.version>1.0.79</gui-sbm.version>
     <gui-lpm.version>1.0.6</gui-lpm.version>
     <gui-csrmockup.version>1.0.2</gui-csrmockup.version>
     <gui-audit.version>1.0.3</gui-audit.version>
