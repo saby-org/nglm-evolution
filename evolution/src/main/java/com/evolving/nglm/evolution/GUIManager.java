@@ -5844,6 +5844,7 @@ public class GUIManager
     boolean appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", true);
     String userIdentifier = JSONUtilities.decodeString(jsonRoot, "userID", "");
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", "");
+    boolean active = JSONUtilities.decodeBoolean(jsonRoot, "active", Boolean.FALSE);
     
     /*****************************************
     *
@@ -5915,6 +5916,7 @@ public class GUIManager
         campaignJSONRepresentation.put("appendExclusionLists", appendExclusionLists);
         campaignJSONRepresentation.put("userID", userIdentifier);
         campaignJSONRepresentation.put("userName", userName);
+        campaignJSONRepresentation.put("active", active);
 
         //
         //  campaignJSON

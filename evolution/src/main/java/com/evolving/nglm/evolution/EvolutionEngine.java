@@ -2838,43 +2838,52 @@ public class EvolutionEngine
           {
 
             //
-            //  determine new tier
+            //  get point loyalty program 
             //
-
-            String currentTier = loyaltyProgramPointState.getTierName();
             
-            //
-            //  determine new tier
-            //
-
             LoyaltyProgram loyaltyProgram = loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramState.getLoyaltyProgramID(), now);
-            LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
-            String newTierName = determineLoyaltyProgramPointsTier(subscriberProfile, loyaltyProgramPoints, now);
+            if(loyaltyProgram != null){ // may be suspended
 
-            //
-            //  compare to current tier
-            //
 
-            if((currentTier != null && !currentTier.equals(newTierName)) || (currentTier == null && newTierName != null))
-              {
+              //
+              //  determine current tier
+              //
 
-                //
-                //  update loyalty program state
-                //
+              String currentTier = loyaltyProgramPointState.getTierName();
 
-                loyaltyProgramPointState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newTierName, now, deliveryRequestID);
+              //
+              //  determine new tier
+              //
 
-                //
-                //  generate new event (tier changed)
-                //
-                
-                ParameterMap info = new ParameterMap();
-                info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), currentTier);
-                info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTierName);
-                ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
-                subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+              LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgram;
+              String newTierName = determineLoyaltyProgramPointsTier(subscriberProfile, loyaltyProgramPoints, now);
 
-              }
+              //
+              //  compare to current tier
+              //
+
+              if((currentTier != null && !currentTier.equals(newTierName)) || (currentTier == null && newTierName != null))
+                {
+
+                  //
+                  //  update loyalty program state
+                  //
+
+                  loyaltyProgramPointState.update(loyaltyProgram.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgram.getLoyaltyProgramName(), newTierName, now, deliveryRequestID);
+
+                  //
+                  //  generate new event (tier changed)
+                  //
+
+                  ParameterMap info = new ParameterMap();
+                  info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), currentTier);
+                  info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTierName);
+                  ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
+                  subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+
+                }
+            }
+
           }
       }
   }

@@ -360,7 +360,14 @@ public abstract class CriterionFieldRetriever
       {
         case "balance":
           PointBalance pointBalance = evaluationRequest.getSubscriberProfile().getPointBalances().get(pointID);
-          result = new Integer(pointBalance.getBalance(evaluationRequest.getEvaluationDate()));
+          if(pointBalance != null)
+            {
+              result = new Integer(pointBalance.getBalance(evaluationRequest.getEvaluationDate()));
+            }
+          else
+            {
+              result = new Integer(0);
+            }
           break;
       }
 
