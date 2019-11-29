@@ -325,6 +325,7 @@ public abstract class CriterionFieldRetriever
 
             case "earliestexpiryquantity":
               result = earliestExpiryQuantity;
+              break;
 
             default:
               throw new CriterionException("invalid request " + criterionFieldBaseName + " " + request);

@@ -22318,7 +22318,7 @@ public class GUIManager
             if (existingSubscriberMessageTemplate instanceof SMSTemplate) subscriberMessageTemplate = new SMSTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
             if (existingSubscriberMessageTemplate instanceof MailTemplate) subscriberMessageTemplate = new MailTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
             if (existingSubscriberMessageTemplate instanceof PushTemplate) subscriberMessageTemplate = new PushTemplate(communicationChannelService, existingSubscriberMessageTemplate.getJSONRepresentation(), epoch, existingSubscriberMessageTemplate);
-            if (subscriberMessageTemplate == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");            
+            if ( !(existingSubscriberMessageTemplate instanceof IncompleteObject) && subscriberMessageTemplate == null) throw new ServerRuntimeException("illegal subscriberMessageTemplate");            
             modifiedSubscriberMessageTemplate = subscriberMessageTemplate;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -22330,7 +22330,7 @@ public class GUIManager
         //  changed?
         //
 
-        if (existingSubscriberMessageTemplate.getAccepted() != modifiedSubscriberMessageTemplate.getAccepted())
+        if (modifiedSubscriberMessageTemplate != null && existingSubscriberMessageTemplate.getAccepted() != modifiedSubscriberMessageTemplate.getAccepted())
           {
             modifiedSubscriberMessageTemplates.add(modifiedSubscriberMessageTemplate);
           }
