@@ -80,6 +80,7 @@ public class ProductType extends GUIManagedObject
 
   public String getProductTypeID() { return getGUIManagedObjectID(); }
   public String getProductTypeName() { return getGUIManagedObjectName(); }
+  public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public List<String> getCatalogCharacteristics() { return catalogCharacteristics; }
   
   /*****************************************

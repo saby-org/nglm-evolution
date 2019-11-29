@@ -21563,7 +21563,7 @@ public class GUIManager
                       OfferObjective offerObjective = (OfferObjective) offerObjectiveUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offerObjective.getOfferObjectiveID());
-                      availableValue.put("display", offerObjective.getOfferObjectiveName());
+                      availableValue.put("display", offerObjective.getDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -21647,7 +21647,7 @@ public class GUIManager
                       ProductType productType = (ProductType) productTypeUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", productType.getProductTypeID());
-                      availableValue.put("display", productType.getProductTypeName());
+                      availableValue.put("display", productType.getDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
