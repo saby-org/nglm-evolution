@@ -337,6 +337,10 @@ public class ThirdPartyManager
     subscriberProfileService = new EngineSubscriberProfileService(subscriberProfileEndpoints);
     subscriberProfileService.start();
 
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "thirdpartymanager-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
+
     // Services
     
     offerService = new OfferService(bootstrapServers, "thirdpartymanager-offerservice-" + apiProcessKey, offerTopic, false);
@@ -390,10 +394,6 @@ public class ThirdPartyManager
     catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "thirdpartymanager-catalogcharacteristicservice-" + apiProcessKey, Deployment.getCatalogCharacteristicTopic(), false);
     catalogCharacteristicService.start();
     
-    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "thirdpartymanager-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
-    dynamicCriterionFieldService.start();
-    CriterionContext.initialize(dynamicCriterionFieldService);
-
     
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
