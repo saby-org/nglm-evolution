@@ -215,7 +215,7 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
       this.loyaltyProgramEpoch = loyaltyProgramEpoch;
       this.loyaltyProgramName = loyaltyProgramName;
       if(this.loyaltyProgramEnrollmentDate == null){ this.loyaltyProgramEnrollmentDate = enrollmentDate; }
-      if(this.loyaltyProgramExitDate == null){ this.loyaltyProgramExitDate = null; }
+      if(this.loyaltyProgramExitDate != null){ this.loyaltyProgramExitDate = null; }
       
       this.previousTierName = fromTier;
       this.tierName = toTier;
