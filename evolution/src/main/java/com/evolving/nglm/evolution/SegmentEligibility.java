@@ -115,12 +115,12 @@ public class SegmentEligibility implements Segment
 
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.Profile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile);
         this.dependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullDynamicProfile);
         this.dependentOnExtendedSubscriberProfile = true;
       }
   }

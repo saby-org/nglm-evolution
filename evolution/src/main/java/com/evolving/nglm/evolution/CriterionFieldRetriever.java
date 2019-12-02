@@ -264,8 +264,8 @@ public abstract class CriterionFieldRetriever
     //  in program?
     //
 
-    if (loyaltyProgramState == null) throw new CriterionException("subscriber not in loyaltyprogram " + loyaltyProgramID);
-    if (! (loyaltyProgramState instanceof LoyaltyProgramPointsState)) throw new CriterionException("loyaltyProgram "+ loyaltyProgramID + " is not a point program : "+criterionFieldBaseName.getClass().getName());
+    if (loyaltyProgramState == null) return null;
+    if (! (loyaltyProgramState instanceof LoyaltyProgramPointsState)) return null;
 
     //
     //  retrieve
