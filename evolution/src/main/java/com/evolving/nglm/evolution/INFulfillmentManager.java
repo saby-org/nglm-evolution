@@ -203,10 +203,11 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_infulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("commodityName", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("externalAccountID", Schema.STRING_SCHEMA);
       schemaBuilder.field("operation", Schema.STRING_SCHEMA);
       schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
@@ -238,6 +239,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
     private String providerID;
     private String commodityID;
+    private String commodityName;
     private String externalAccountID;
     private CommodityDeliveryOperation operation;
     private int amount;
@@ -253,6 +255,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
 
     public String getProviderID() { return providerID; }
     public String getCommodityID() { return commodityID; }
+    public String getCommodityName() { return commodityName; }
     public String getExternalAccountID() { return externalAccountID; }
     public CommodityDeliveryOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
@@ -279,6 +282,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     public String getBonusDeliveryOrigin() { return ""; }
     public String getBonusDeliveryProviderId() { return getProviderID(); }
     public String getBonusDeliveryDeliverableId() { return getCommodityID(); }
+    public String getBonusDeliveryDeliverableName() { return getCommodityName(); }
     public int getBonusDeliveryDeliverableQty() { return getAmount(); }
     public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
 
@@ -288,11 +292,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
+    public INFulfillmentRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String providerID, String commodityID, String commodityName, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity)
     {
       super(context, deliveryType, deliveryRequestSource);
       this.providerID = providerID;
       this.commodityID = commodityID;
+      this.commodityName = commodityName;
       this.externalAccountID = externalAccountID;
       this.operation = operation;
       this.amount = amount;
@@ -314,6 +319,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       super(jsonRoot);
       this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", true);
       this.commodityID = JSONUtilities.decodeString(jsonRoot, "commodityID", true);
+      this.commodityName = JSONUtilities.decodeString(jsonRoot, "commodityName", false);
       this.externalAccountID = JSONUtilities.decodeString(jsonRoot, "externalAccountID", true);
       this.operation = CommodityDeliveryOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
       this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", false);
@@ -330,11 +336,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, INFulfillmentStatus status)
+    private INFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, String commodityName, String externalAccountID, CommodityDeliveryOperation operation, int amount, TimeUnit validityPeriodType, Integer validityPeriodQuantity, INFulfillmentStatus status)
     {
       super(schemaAndValue);
       this.providerID = providerID;
       this.commodityID = commodityID;
+      this.commodityName = commodityName;
       this.externalAccountID = externalAccountID;
       this.operation = operation;
       this.amount = amount;
@@ -355,6 +362,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       super(inFulfillmentRequest);
       this.providerID = inFulfillmentRequest.getProviderID();
       this.commodityID = inFulfillmentRequest.getCommodityID();
+      this.commodityName = inFulfillmentRequest.getCommodityName();
       this.externalAccountID = inFulfillmentRequest.getExternalAccountID();
       this.operation = inFulfillmentRequest.getOperation();
       this.amount = inFulfillmentRequest.getAmount();
@@ -389,6 +397,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       packCommon(struct, inFulfillmentRequest);
       struct.put("providerID", inFulfillmentRequest.getProviderID());
       struct.put("commodityID", inFulfillmentRequest.getCommodityID());
+      struct.put("commodityName", inFulfillmentRequest.getCommodityName());
       struct.put("externalAccountID", inFulfillmentRequest.getExternalAccountID());
       struct.put("operation", inFulfillmentRequest.getOperation().getExternalRepresentation());
       struct.put("amount", inFulfillmentRequest.getAmount());
@@ -426,6 +435,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       Struct valueStruct = (Struct) value;
       String providerID = valueStruct.getString("providerID");
       String commodityID = valueStruct.getString("commodityID");
+      String commodityName = (schemaVersion >= 2) ? valueStruct.getString("commodityName") : "";
       String externalAccountID = valueStruct.getString("externalAccountID");
       CommodityDeliveryOperation operation = CommodityDeliveryOperation.fromExternalRepresentation(valueStruct.getString("operation"));
       int amount = valueStruct.getInt32("amount");
@@ -438,7 +448,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       //  return
       //
 
-      return new INFulfillmentRequest(schemaAndValue, providerID, commodityID, externalAccountID, operation, amount, validityPeriodType, validityPeriodQuantity, status);
+      return new INFulfillmentRequest(schemaAndValue, providerID, commodityID, commodityName, externalAccountID, operation, amount, validityPeriodType, validityPeriodQuantity, status);
     }
 
     /*****************************************
@@ -455,6 +465,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       b.append("," + getSubscriberID());
       b.append("," + providerID);
       b.append("," + commodityID);
+      b.append("," + commodityName);
       b.append("," + externalAccountID);
       b.append("," + operation);
       b.append("," + amount);

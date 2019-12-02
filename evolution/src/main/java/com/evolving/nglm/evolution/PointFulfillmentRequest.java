@@ -42,9 +42,10 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("service_pointfulfillment_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("pointID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("pointName", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("operation", Schema.STRING_SCHEMA);
     schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("validityPeriodType", Schema.OPTIONAL_STRING_SCHEMA);
@@ -74,6 +75,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   *****************************************/
 
   private String pointID;
+  private String pointName;
   private CommodityDeliveryOperation operation;
   private int amount;
   private TimeUnit validityPeriodType;
@@ -85,6 +87,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   //
 
   public String getPointID() { return pointID; }
+  public String getPointName() { return pointName; }
   public CommodityDeliveryOperation getOperation() { return operation; }
   public int getAmount() { return amount; }
   public TimeUnit getValidityPeriodType() { return validityPeriodType; }
@@ -114,6 +117,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
   public String getBonusDeliveryOrigin() { return ""; }
   public String getBonusDeliveryProviderId() { return ""; }
   public String getBonusDeliveryDeliverableId() { return getPointID(); }
+  public String getBonusDeliveryDeliverableName() { return getPointName(); }
   public int getBonusDeliveryDeliverableQty() { return getAmount(); }
   public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
   
@@ -208,6 +212,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
     Struct struct = new Struct(schema);
     packCommon(struct, pointFulfillmentRequest);
     struct.put("pointID", pointFulfillmentRequest.getPointID());
+    struct.put("pointName", pointFulfillmentRequest.getPointName());
     struct.put("operation", pointFulfillmentRequest.getOperation().getExternalRepresentation());
     struct.put("amount", pointFulfillmentRequest.getAmount());
     struct.put("validityPeriodType", pointFulfillmentRequest.getValidityPeriodType().getExternalRepresentation());
@@ -243,6 +248,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
 
     Struct valueStruct = (Struct) value;
     String pointID = valueStruct.getString("pointID");
+    String pointName = (schemaVersion >= 2) ? valueStruct.getString("pointName") : "";
     CommodityDeliveryOperation operation = CommodityDeliveryOperation.fromExternalRepresentation(valueStruct.getString("operation"));
     int amount = valueStruct.getInt32("amount");
     TimeUnit validityPeriodType = TimeUnit.fromExternalRepresentation(valueStruct.getString("validityPeriodType"));
@@ -310,6 +316,7 @@ public class PointFulfillmentRequest extends DeliveryRequest implements BonusDel
     b.append(super.toStringFields());
     b.append("," + getSubscriberID());
     b.append("," + pointID);
+    b.append("," + pointName);
     b.append("," + operation);
     b.append("," + amount);
     b.append("," + validityPeriodType);

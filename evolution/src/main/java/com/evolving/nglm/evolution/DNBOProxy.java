@@ -195,7 +195,7 @@ public class DNBOProxy
     dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "dnboproxy-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
     dynamicCriterionFieldService.start();
     CriterionContext.initialize(dynamicCriterionFieldService);  
-    
+
     offerService = new OfferService(Deployment.getBrokerServers(), "dnboproxy-offerservice-" + apiProcessKey, Deployment.getOfferTopic(), false);
     productService = new ProductService(Deployment.getBrokerServers(), "dnboproxy-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
     productTypeService = new ProductTypeService(Deployment.getBrokerServers(), "dnboproxy-producttypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);

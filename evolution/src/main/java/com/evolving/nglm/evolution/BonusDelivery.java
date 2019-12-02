@@ -37,6 +37,7 @@ public interface BonusDelivery
   public String getBonusDeliveryOrigin();
   public String getBonusDeliveryProviderId();
   public String getBonusDeliveryDeliverableId();
+  public String getBonusDeliveryDeliverableName();
   public int getBonusDeliveryDeliverableQty();
   public String getBonusDeliveryOperation();
 }

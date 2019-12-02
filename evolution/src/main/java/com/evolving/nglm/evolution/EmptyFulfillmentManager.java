@@ -192,10 +192,11 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_emptyfulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("providerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("commodityID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("commodityName", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("operation", Schema.STRING_SCHEMA);
       schemaBuilder.field("amount", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("return_code", Schema.INT32_SCHEMA);
@@ -233,6 +234,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
 
     public String providerID;
     private String commodityID;
+    private String commodityName;
     private EmptyFulfillmentOperation operation;
     private int amount;
     private int returnCode;
@@ -245,6 +247,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
 
     public String getProviderID() { return providerID; }
     public String getCommodityID() { return commodityID; }
+    public String getCommodityName() { return commodityName; }
     public EmptyFulfillmentOperation getOperation() { return operation; }
     public int getAmount() { return amount; }
     public Integer getReturnCode() { return returnCode; }
@@ -268,6 +271,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     public String getBonusDeliveryOrigin() { return ""; }
     public String getBonusDeliveryProviderId() { return getProviderID(); }
     public String getBonusDeliveryDeliverableId() { return getCommodityID(); }
+    public String getBonusDeliveryDeliverableName() { return getCommodityName(); }
     public int getBonusDeliveryDeliverableQty() { return getAmount(); }
     public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
 
@@ -313,11 +317,12 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
     *
     *****************************************/
 
-    private EmptyFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, EmptyFulfillmentOperation operation, int amount, EmptyFulfillmentStatus status)
+    private EmptyFulfillmentRequest(SchemaAndValue schemaAndValue, String providerID, String commodityID, String commodityName, EmptyFulfillmentOperation operation, int amount, EmptyFulfillmentStatus status)
     {
       super(schemaAndValue);
       this.providerID = providerID;
       this.commodityID = commodityID;
+      this.commodityName = commodityName;
       this.operation = operation;
       this.amount = amount;
       this.status = status;
@@ -366,6 +371,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       packCommon(struct, emptyFulfillmentRequest);
       struct.put("providerID", emptyFulfillmentRequest.getProviderID());
       struct.put("commodityID", emptyFulfillmentRequest.getCommodityID());
+      struct.put("commodityName", emptyFulfillmentRequest.getCommodityName());
       struct.put("operation", emptyFulfillmentRequest.getOperation().getExternalRepresentation());
       struct.put("amount", emptyFulfillmentRequest.getAmount());
       struct.put("return_code", emptyFulfillmentRequest.getReturnCode());
@@ -400,6 +406,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       Struct valueStruct = (Struct) value;
       String providerID = valueStruct.getString("providerID");
       String commodityID = valueStruct.getString("commodityID");
+      String commodityName = (schemaVersion >= 2) ? valueStruct.getString("commodityName") : "";    
       EmptyFulfillmentOperation operation = EmptyFulfillmentOperation.fromExternalRepresentation(valueStruct.getString("operation"));
       int amount = valueStruct.getInt32("amount");
       Integer returnCode = valueStruct.getInt32("return_code");
@@ -409,7 +416,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       //  return
       //
 
-      return new EmptyFulfillmentRequest(schemaAndValue, providerID, commodityID, operation, amount, status);
+      return new EmptyFulfillmentRequest(schemaAndValue, providerID, commodityID, commodityName, operation, amount, status);
     }
 
     /*****************************************
@@ -426,6 +433,7 @@ public class EmptyFulfillmentManager extends DeliveryManager implements Runnable
       b.append("," + getSubscriberID());
       b.append("," + providerID);
       b.append("," + commodityID);
+      b.append("," + commodityName);
       b.append("," + operation);
       b.append("," + amount);
       b.append("," + returnCode);

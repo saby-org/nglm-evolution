@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -58,6 +59,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchGenerationException;
@@ -145,6 +147,11 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
+import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
+import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -429,6 +436,10 @@ public class GUIManager
     removeCriterionFieldAvailableValues("removeCriterionFieldAvailableValues"),
     getEffectiveSystemTime("getEffectiveSystemTime"),
 
+    getCustomerNBOs("getCustomerNBOs"),
+    getTokensCodesList("getTokensCodesList"),
+    acceptOffer("acceptOffer"),
+
     //
     //  configAdaptor APIs
     //
@@ -534,6 +545,7 @@ public class GUIManager
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private ReferenceDataReader<String,JourneyTrafficHistory> journeyTrafficReader;
   private ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
+  private ReferenceDataReader<PropensityKey, PropensityState> propensityDataReader;
   private DeliverableSourceService deliverableSourceService;
   private String getCustomerAlternateID;
   private UploadedFileService uploadedFileService;
@@ -812,6 +824,7 @@ public class GUIManager
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", apiProcessKey, bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     journeyTrafficReader = ReferenceDataReader.<String,JourneyTrafficHistory>startReader("guimanager-journeytrafficservice", apiProcessKey, bootstrapServers, journeyTrafficChangeLogTopic, JourneyTrafficHistory::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", apiProcessKey, bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
+    propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("guimanager-propensitystate", "guimanager-propensityreader-"+apiProcessKey, bootstrapServers, Deployment.getPropensityLogTopic(), PropensityState::unpack);
     deliverableSourceService = new DeliverableSourceService(bootstrapServers, "guimanager-deliverablesourceservice-" + apiProcessKey, deliverableSourceTopic);
     uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
@@ -1868,6 +1881,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putCriterionFieldAvailableValues", new APISimpleHandler(API.putCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/removeCriterionFieldAvailableValues", new APISimpleHandler(API.removeCriterionFieldAvailableValues));
         restServer.createContext("/nglm-guimanager/getEffectiveSystemTime", new APISimpleHandler(API.getEffectiveSystemTime));
+        restServer.createContext("/nglm-guimanager/getCustomerNBOs", new APISimpleHandler(API.getCustomerNBOs));
+        restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
+        restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
+        
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
       }
@@ -3306,7 +3323,20 @@ public class GUIManager
 
                 case getEffectiveSystemTime:
                   jsonResponse = processGetEffectiveSystemTime(userID, jsonRoot);
-                  break;                                    
+                  break;
+                  
+                case getCustomerNBOs:
+                  jsonResponse = processGetCustomerNBOs(userID, jsonRoot);
+                  break;
+
+                case getTokensCodesList:
+                  jsonResponse = processGetTokensCodesList(userID, jsonRoot);
+                  break;
+
+                case acceptOffer:
+                  jsonResponse = processAcceptOffer(userID, jsonRoot);
+                  break;
+                  
               }
           }
         else
@@ -20561,6 +20591,595 @@ public class GUIManager
   }
 
   /*****************************************
+   *
+   *  processGetTokensCodesList
+   *
+   *****************************************/
+
+  private JSONObject processGetTokensCodesList(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+     *
+     *  arguments
+     *
+     ****************************************/
+    
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String tokenStatus = JSONUtilities.decodeString(jsonRoot, "tokenStatus", false);
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    if (tokenStatus != null)
+      {
+        boolean found = false;
+        for (TokenStatus enumeratedValue : TokenStatus.values())
+          {
+            if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(tokenStatus))
+              {
+                found = true;
+                break; 
+              }
+          }
+        if (!found)
+          {
+            String str = "bad tokenStatus : " + tokenStatus;
+            log.error(str);
+            response.put("responseCode", str);
+            return JSONUtilities.encodeObject(response);
+          }
+      }
+    String tokenStatusForStreams = tokenStatus; // We need a 'final-like' variable to process streams later
+    boolean hasFilter = (tokenStatusForStreams != null);
+
+    /*****************************************
+     *
+     *  getSubscriberProfile
+     *
+     *****************************************/
+
+    try
+    {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      if (subscriberProfile == null)
+        {
+          response.put("responseCode", "CustomerNotFound");
+        } 
+      else
+        {
+          List<JSONObject> tokensJson;
+          List<Token> tokens = subscriberProfile.getTokens();
+          if (tokens == null)
+            {
+              tokensJson = new ArrayList<>();
+            }
+          else 
+            {
+              Stream<Token> tokenStream = tokens.stream();
+              if (hasFilter)
+                {
+                  if (log.isTraceEnabled()) log.trace("Filter provided : "+tokenStatus);
+                  tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
+                }
+              tokensJson = tokenStream
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService))
+                  .collect(Collectors.toList());
+            }
+
+          /*****************************************
+          *
+          *  decorate and response
+          *
+          *****************************************/
+
+          response.put("tokens", JSONUtilities.encodeArray(tokensJson));
+          response.put("responseCode", "ok");
+        }
+    }
+    catch (SubscriberProfileServiceException e)
+    {
+      throw new GUIManagerException(e);
+    }
+
+    /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+
+  /*****************************************
+   *
+   *  processGetCustomerNBOs
+   *
+   *****************************************/
+
+  private JSONObject processGetCustomerNBOs(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    Date now = SystemTime.getCurrentTime();
+
+    /*****************************************
+     *
+     *  getSubscriberProfile
+     *
+     *****************************************/
+
+    try
+    {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      if (subscriberProfile == null)
+        {
+          response.put("responseCode", "CustomerNotFound");
+        } 
+      else
+        {
+
+          Token subscriberToken = null;
+          if (tokenCode != null)
+            {
+              for (Token token : subscriberProfile.getTokens())
+                {
+                  if (tokenCode.equals(token.getTokenCode()))
+                    {
+                      subscriberToken = token;
+                      break;
+                    }
+                }
+            }
+          if (subscriberToken == null)
+            {
+              String str = "No tokens returned";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          if (!(subscriberToken instanceof DNBOToken))
+            {
+              // TODO can this really happen ?
+              String str = "Bad token type";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          DNBOToken subscriberStoredToken = (DNBOToken) subscriberToken;
+          List<String> sss = subscriberStoredToken.getScoringStrategyIDs();
+          if (sss == null)
+            {
+              String str = "Bad strategy : null value";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+          String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
+          ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
+          if (scoringStrategy == null)
+            {
+              String str = "Bad strategy : unknown id : "+strategyID;
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          StringBuffer returnedLog = new StringBuffer();
+          double rangeValue = 0; // Not significant
+          DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
+
+          // Allocate offers for this subscriber, and associate them in the token
+          // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
+          Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
+              now, null,
+              subscriberProfile, scoringStrategy, productService,
+              productTypeService, catalogCharacteristicService,
+              propensityDataReader,
+              subscriberGroupEpochReader,
+              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
+              );
+
+          if (!presentedOffers.isEmpty())
+            {
+              // Send a PresentationLog to EvolutionEngine
+
+              String channelID = "channelID";
+              String presentationStrategyID = strategyID; // HACK, see above
+              String controlGroupState = "controlGroupState";
+
+              List<Integer> positions = new ArrayList<Integer>();
+              List<Double> presentedOfferScores = new ArrayList<Double>();
+              List<String> scoringStrategyIDs = new ArrayList<String>();
+              int position = 0;
+              ArrayList<String> presentedOfferIDs = new ArrayList<>();
+              for (ProposedOfferDetails presentedOffer : presentedOffers)
+                {
+                  presentedOfferIDs.add(presentedOffer.getOfferId());
+                  positions.add(new Integer(position));
+                  position++;
+                  presentedOfferScores.add(1.0);
+                  scoringStrategyIDs.add(strategyID);
+                }
+              String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
+              int transactionDurationMs = 0; // TODO
+              PresentationLog presentationLog = new PresentationLog(
+                  subscriberID, subscriberID, now, 
+                  "callUniqueIdentifier", channelID, salesChannelID, userID,
+                  tokenCode, 
+                  presentationStrategyID, transactionDurationMs, 
+                  presentedOfferIDs, presentedOfferScores, positions, 
+                  controlGroupState, scoringStrategyIDs, null, null, null
+                  );
+
+              //
+              //  submit to kafka
+              //
+
+              String topic = Deployment.getPresentationLogTopic();
+              Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+              Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
+              kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                  topic,
+                  keySerializer.serialize(topic, new StringKey(subscriberID)),
+                  valueSerializer.serialize(topic, presentationLog)
+                  ));
+
+              // Update token locally, so that it is correctly displayed in the response
+              // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
+
+              subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
+              subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID);
+              subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+              if (subscriberStoredToken.getCreationDate() == null)
+                {
+                  subscriberStoredToken.setCreationDate(now);
+                }
+              subscriberStoredToken.setBoundDate(now);
+              subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
+
+            }
+
+          /*****************************************
+           *
+           *  decorate and response
+           *
+           *****************************************/
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService);
+          response.put("responseCode", "ok");
+        }
+    }
+    catch (SubscriberProfileServiceException e)
+    {
+      throw new GUIManagerException(e);
+    }
+    catch (GetOfferException e) 
+    {
+      log.error(e.getLocalizedMessage());
+      throw new GUIManagerException(e) ;
+    }    
+
+    /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+
+  }
+
+  /*****************************************
+   *
+   *  processAcceptOffer
+   *
+   *****************************************/
+
+  private JSONObject processAcceptOffer(String userID, JSONObject jsonRoot) throws GUIManagerException
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+
+    /*****************************************
+     *
+     *  resolve subscriberID
+     *
+     *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+     *
+     *  getSubscriberProfile
+     *
+     *****************************************/
+    String deliveryRequestID = "";
+
+    try
+    {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      if (subscriberProfile == null)
+        {
+          response.put("responseCode", "CustomerNotFound");
+        } 
+      else
+        {
+          Token subscriberToken = null;
+          List<Token> tokens = subscriberProfile.getTokens();
+          for (Token token : tokens)
+            {
+              if (token.getTokenCode().equals(tokenCode))
+                {
+                  subscriberToken = token;
+                  break;
+                }
+            }
+          if (subscriberToken == null)
+            {
+              String str = "No tokens returned";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          if (!(subscriberToken instanceof DNBOToken))
+            {
+              // TODO can this really happen ?
+              String str = "Bad token type";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          DNBOToken subscriberStoredToken = (DNBOToken) subscriberToken;
+
+          if (subscriberStoredToken.getTokenStatus() == TokenStatus.Redeemed)
+            {
+              String str = "Token already in Redeemed state";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          if (subscriberStoredToken.getTokenStatus() != TokenStatus.Bound)
+            {
+              String str = "No offers allocated for this token";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+
+          // Check that offer has been presented to customer
+
+          List<String> offers = subscriberStoredToken.getPresentedOfferIDs();
+          int position = 0;
+          boolean found = false;
+          for (String offID : offers)
+            {
+              if (offID.equals(offerID))
+                {
+                  found = true;
+                  break;
+                }
+              position++;
+            }
+          if (!found)
+            {
+              String str = "Offer has not been presented";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
+          String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
+          String featureID = "acceptOffer";
+          String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
+          Offer offer = offerService.getActiveOffer(offerID, now);
+          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
+
+          // Redeem the token : Send an AcceptanceLog to EvolutionEngine
+
+          String msisdn = subscriberID; // TODO check this
+          String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
+
+          // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
+          String callUniqueIdentifier = origin;
+          String controlGroupState = "controlGroupState";
+          String channelID = "channelID";
+          Integer actionCall = 1;
+          int transactionDurationMs = 0;
+          // TODO END
+
+          Date fulfilledDate = now;
+
+          AcceptanceLog acceptanceLog = new AcceptanceLog(
+              msisdn, subscriberID, now, 
+              callUniqueIdentifier, channelID, salesChannelID,
+              userID, tokenCode,
+              presentationStrategyID, transactionDurationMs,
+              controlGroupState, offerID, fulfilledDate, position, actionCall);
+
+          //
+          //  submit to kafka
+          //
+
+          {
+            String topic = Deployment.getAcceptanceLogTopic();
+            Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+            Serializer<AcceptanceLog> valueSerializer = AcceptanceLog.serde().serializer();
+            kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                topic,
+                keySerializer.serialize(topic, new StringKey(subscriberID)),
+                valueSerializer.serialize(topic, acceptanceLog)
+                ));
+          }
+
+          //
+          // trigger event (for campaigns)
+          //
+
+          {
+            TokenRedeemed tokenRedeemed = new TokenRedeemed(subscriberID, now, subscriberStoredToken.getTokenTypeID(), offerID);
+            String topic = Deployment.getTokenRedeemedTopic();
+            Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+            Serializer<TokenRedeemed> valueSerializer = TokenRedeemed.serde().serializer();
+            kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                topic,
+                keySerializer.serialize(topic, new StringKey(subscriberID)),
+                valueSerializer.serialize(topic, tokenRedeemed)
+                ));
+          }
+          response.put("responseCode", "ok");
+        }
+    }
+    catch (SubscriberProfileServiceException e) 
+    {
+      throw new GUIManagerException(e);
+    } 
+
+    /*****************************************
+     *
+     *  decorate and response
+     *
+     *****************************************/
+    response.put("deliveryRequestID", deliveryRequestID);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
+
+  /*****************************************
+   *
+   *  purchaseOffer
+   *
+   *****************************************/
+  
+  private String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
+      String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+  {
+    DeliveryManagerDeclaration deliveryManagerDeclaration = null;
+    for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
+      {
+        String className = dmd.getRequestClassName();
+        try
+        {
+          if (PURCHASE_FULFILLMENT_REQUEST_CLASS.isAssignableFrom(Class.forName(className)))
+            {
+              deliveryManagerDeclaration = dmd;
+              // TODO : if we have multiple delivery managers of the right class, we should not always take the first one (for load balancing)
+              break;
+            }
+        }
+        catch (ClassNotFoundException e) {
+          log.warn("DeliveryManager with wrong classname, skip it : "+className);
+        }
+      }
+    if (deliveryManagerDeclaration == null)
+      {
+        String str = "Internal error, cannot find a deliveryManager with a RequestClassName as com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest"; 
+        log.error(str);
+        throw new GUIManagerException("Internal error", str);
+      }
+    String topic = deliveryManagerDeclaration.getDefaultRequestTopic();
+    Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+    Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
+    
+    String deliveryRequestID = zuks.getStringKey();
+    // Build a json doc to create the PurchaseFulfillmentRequest
+    HashMap<String,Object> request = new HashMap<String,Object>();
+    request.put("subscriberID", subscriberID);
+    request.put("offerID", offerID);
+    request.put("quantity", quantity);
+    request.put("salesChannelID", salesChannelID); 
+    request.put("deliveryRequestID", deliveryRequestID);
+    request.put("eventID", "0"); // No event here
+    request.put("moduleID", moduleID);
+    request.put("featureID", featureID);
+    request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
+    JSONObject valueRes = JSONUtilities.encodeObject(request);
+    
+    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, new Date());
+
+    // Write it to the right topic
+    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+        topic,
+        keySerializer.serialize(topic, new StringKey(deliveryRequestID)),
+        valueSerializer.serialize(topic, pfr)
+        ));
+    return deliveryRequestID;
+  }
+
+  /*****************************************
   *
   *  processPutFile
   *
@@ -21927,6 +22546,24 @@ public class GUIManager
             }
           break;
 
+
+        case "deliverableNames":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverablesUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", deliverable.getDeliverableName());
+                      availableValue.put("display", deliverable.getDeliverableName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+          
         default:
           boolean foundValue = false;
           if(includeDynamic)

@@ -142,6 +142,7 @@ public class RewardManagerRequest extends DeliveryRequest implements BonusDelive
   public String getBonusDeliveryOrigin() { return null; }
   public String getBonusDeliveryProviderId() { return getProviderID(); }
   public String getBonusDeliveryDeliverableId() { return getDeliverableID(); }
+  public String getBonusDeliveryDeliverableName() { return getDeliverableName(); }
   public int getBonusDeliveryDeliverableQty() { return (int) getAmount(); }
   public String getBonusDeliveryOperation() { return null; }
 

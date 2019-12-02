@@ -101,6 +101,7 @@ public class LoyaltyProgramRequest extends DeliveryRequest implements BonusDeliv
   public String getBonusDeliveryOrigin() { return ""; }
   public String getBonusDeliveryProviderId() { return ""; }
   public String getBonusDeliveryDeliverableId() { return ""; }
+  public String getBonusDeliveryDeliverableName() { return ""; }
   public int getBonusDeliveryDeliverableQty() { return 0; }
   public String getBonusDeliveryOperation() { return getOperation().getExternalRepresentation(); }
 

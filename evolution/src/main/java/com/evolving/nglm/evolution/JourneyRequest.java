@@ -117,6 +117,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   public String getBonusDeliveryOrigin() { return null; }
   public String getBonusDeliveryProviderId() { return null; }
   public String getBonusDeliveryDeliverableId() { return null; }
+  public String getBonusDeliveryDeliverableName() { return null; }
   public int getBonusDeliveryDeliverableQty() { return 0; }
   public String getBonusDeliveryOperation() { return null; }
   
