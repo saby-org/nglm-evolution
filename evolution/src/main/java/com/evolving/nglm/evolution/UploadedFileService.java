@@ -23,10 +23,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UploadedFileService extends GUIService
 {
@@ -180,6 +186,7 @@ public class UploadedFileService extends GUIService
     //
     // validate 
     //
+    
     if (guiManagedObject instanceof UploadedFile)
       {
         UploadedFile uploadededFile = (UploadedFile) guiManagedObject;
@@ -188,38 +195,51 @@ public class UploadedFileService extends GUIService
         //
         // count segments
         //
+        
         if(uploadededFile.getApplicationID().equals(basemanagementApplicationID))
           {
             Map<String, Integer> count = new HashMap<String,Integer>();
-            BufferedReader reader;
-            try
-            {
-              reader = new BufferedReader(new FileReader(UploadedFile.OUTPUT_FOLDER+filename));
-              for (String line; (line = reader.readLine()) != null && !line.isEmpty();)
-                {
-                  String split[] = line.split(Deployment.getUploadedFileSeparator());
-                  //Minimum two values (subscriberID;segment)
-                  if(split.length >=2)
-                    {   
-                      String subscriberIDFromFile = split[0];
-                      String segmentName = split[1];
-                      if(segmentName != null && subscriberIDFromFile != null)
-                        {
-                          //Valid
-                          count.put(segmentName, count.get(segmentName)!=null?count.get(segmentName)+1:1);
-                        }
-                    }
-                  else
-                    {
-                      log.warn("UploadedFileService.putUploadedFile(not two values, skip. line="+line+")");
-                    }
-                }
-              reader.close();
-            }
+            List<String> lines = new ArrayList<String>();
+            
+            //
+            //  read file
+            //
+            
+            try (Stream<String> stream = Files.lines(Paths.get(UploadedFile.OUTPUT_FOLDER + filename)))
+              {
+                lines = stream.filter(line -> (line != null && !line.trim().isEmpty())).map(String::trim).collect(Collectors.toList());
+                for (String line : lines)
+                  {
+                    String subscriberIDSegementName[] = line.split(Deployment.getUploadedFileSeparator());
+                    if (subscriberIDSegementName.length >= 2)
+                      {
+                      
+                        //
+                        //  details
+                        //
+                      
+                        String subscriberID = subscriberIDSegementName[0];
+                        String segmentName = subscriberIDSegementName[1];
+                      
+                        //
+                        //  count
+                        //
+                      
+                        if (segmentName != null && !segmentName.trim().isEmpty() && subscriberID != null && !subscriberID.trim().isEmpty())
+                          {
+                            count.put(segmentName.trim(), count.get(segmentName.trim()) != null ? count.get(segmentName.trim()) + 1 : 1);
+                          }
+                      }
+                    else
+                      {
+                        log.warn("UploadedFileService.putUploadedFile(not two values, skip. line="+line+")");
+                      }
+                  }
+              }
             catch (IOException e)
-            {
-              log.warn("UploadedFileService.putUploadedFile(problem with file parsing)", e);
-            }
+              {
+                log.warn("UploadedFileService.putUploadedFile(problem with file parsing)", e);
+              }
             
             //
             // add metadata
