@@ -148,7 +148,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
         for (String dialogMessageField : getDialogMessageFields().keySet())
           {
             boolean mandatory = getDialogMessageFields().get(dialogMessageField);
-            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.Profile));
+            this.dialogMessages.put(dialogMessageField, new DialogMessage(messagesJSON, dialogMessageField, mandatory, CriterionContext.DynamicProfile));
           }
       }
   }

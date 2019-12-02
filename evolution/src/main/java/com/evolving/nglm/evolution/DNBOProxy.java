@@ -191,7 +191,11 @@ public class DNBOProxy
     *  services - construct
     *
     *****************************************/
-
+    
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "dnboproxy-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);  
+    
     offerService = new OfferService(Deployment.getBrokerServers(), "dnboproxy-offerservice-" + apiProcessKey, Deployment.getOfferTopic(), false);
     productService = new ProductService(Deployment.getBrokerServers(), "dnboproxy-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
     productTypeService = new ProductTypeService(Deployment.getBrokerServers(), "dnboproxy-producttypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);
@@ -203,7 +207,6 @@ public class DNBOProxy
     propensityDataReader = ReferenceDataReader.<PropensityKey, PropensityState>startReader("dnboproxy-propensitystate", "dnboproxy-propensityreader-"+apiProcessKey, Deployment.getBrokerServers(), Deployment.getPropensityLogTopic(), PropensityState::unpack);
     segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "dnboproxy-segmentationdimensionservice-"+apiProcessKey, Deployment.getSegmentationDimensionTopic(), false);
     dnboMatrixService = new DNBOMatrixService(Deployment.getBrokerServers(),"dnboproxy-matrixservice"+apiProcessKey,Deployment.getDNBOMatrixTopic(),false);
-    dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "dnboproxy-dynamiccriterionfieldservice-"+apiProcessKey, Deployment.getDynamicCriterionFieldTopic(), false);
     subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "dnboproxy-" + apiProcessKey);
     
     /*****************************************
@@ -221,8 +224,6 @@ public class DNBOProxy
     subscriberProfileService.start();
     segmentationDimensionService.start();
     dnboMatrixService.start();
-    dynamicCriterionFieldService.start();
-    CriterionContext.initialize(dynamicCriterionFieldService);  
 
     /*****************************************
     *

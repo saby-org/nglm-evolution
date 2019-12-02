@@ -376,7 +376,7 @@ public abstract class DatacubeGenerator
         pushDatacubeRows(datacubeRows, this.elasticsearch);
         
       } 
-    catch(IOException|ElasticsearchException|ClassCastException e)
+    catch(IOException|RuntimeException e)
       {
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));

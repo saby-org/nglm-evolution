@@ -751,7 +751,7 @@ public class MailNotificationManager extends DeliveryManager implements Runnable
         }
       else
         {
-          log.info("MailNotificationManager unknown email for subscriberID {}" + subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
+          log.info("MailNotificationManager unknown email for subscriberID {}", subscriberEvaluationRequest.getSubscriberProfile().getSubscriberID());
         }
 
       /*****************************************

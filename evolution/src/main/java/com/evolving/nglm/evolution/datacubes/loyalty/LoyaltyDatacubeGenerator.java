@@ -179,10 +179,28 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
         return dataAggregations;
       }
     
+    List<String> pointIDs = new ArrayList<String>();
+    
     for(String programID : this.loyaltyProgramMapping.keySet()) 
       {
-        String pointID = this.loyaltyProgramMapping.get(programID);
-        
+        String newPointID = this.loyaltyProgramMapping.get(programID);
+        boolean found = false;
+        for(String pointID: pointIDs) 
+          {
+            if(pointID.equals(newPointID)) 
+              {
+                found = true;
+                break;
+              }
+          }
+        if(!found && newPointID != null) 
+          {
+            pointIDs.add(newPointID);
+          }
+      }
+    
+    for(String pointID: pointIDs) 
+      {
         AggregationBuilder pointEarned = AggregationBuilders.sum(pointID + dataPointEarned)
             .script(new Script(ScriptType.INLINE, "painless", "def left = 0; if(params._source['pointFluctuations']['"+pointID+"']?.toString() != null){ if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ oneDayAfter +"'){ left = params._source['pointFluctuations']['"+pointID+"']['yesterday']['earned']; } else if(doc['lastUpdateDate'].value.toString('YYYY-MM-dd') == '"+ requestedDate +"') {left = params._source['pointFluctuations']['"+pointID+"']['today']['earned']; } } return left;", Collections.emptyMap()));
         dataAggregations.add(pointEarned);
