@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,7 +80,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   public String getSubscriberMessageTemplateName() { return getGUIManagedObjectName(); }
   public Map<String,DialogMessage> getDialogMessages() { return dialogMessages; }
   public String getReadOnlyCopyID() { return readOnlyCopyID; }
-  public Map<String, Boolean> getDialogMessageFields(){ return dialogMessageFields;}
+  public Map<String, Boolean> getDialogMessageFields() { return dialogMessageFields;}
   public DialogMessage getDialogMessage(String messageField) 
   {    
     DialogMessage result = getDialogMessages().get(messageField); 
@@ -325,6 +326,11 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     struct.put("dialogMessageFields", (subscriberMessageTemplate.getDialogMessageFields() == null ? new HashMap<String, Boolean>() : subscriberMessageTemplate.getDialogMessageFields()));
   }
   
+  //
+  //  packCommon (alternate signature)
+  //
+
+
   protected static Object packCommon(Schema schema, Object value)
   {
     SubscriberMessageTemplate subscriberMessageTemplate = (SubscriberMessageTemplate) value;
@@ -356,7 +362,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public Map<String,CriterionField> getParameterTags()
+  public List<CriterionField> getParameterTags()
   {
     return resolveParameterTags(dialogMessages);
   }
@@ -367,30 +373,21 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
   *
   *****************************************/
 
-  public static Map<String,CriterionField> resolveParameterTags(Map<String,DialogMessage> dialogMessages)
+  public static List<CriterionField> resolveParameterTags(Map<String,DialogMessage> dialogMessages)
   {
-    Map<String,CriterionField> parameterTags = new HashMap<String,CriterionField>();
-    Map<String,Set<String>> parameterTagIDs = new HashMap<String,Set<String>>();
-
-    for (Entry<String,DialogMessage> dialogMessageEntry : dialogMessages.entrySet())
+    List<CriterionField> parameterTags = new ArrayList<CriterionField>();
+    Set<String> parameterTagIDs = new HashSet<String>();
+    for (DialogMessage dialogMessage : dialogMessages.values())
       {
-        
-        String dialogMessageFieldName = dialogMessageEntry.getKey();
-        DialogMessage dialogMessage = dialogMessageEntry.getValue();
-        if (! parameterTagIDs.keySet().contains(dialogMessageFieldName))
-          {
-            parameterTagIDs.put(dialogMessageFieldName, new HashSet<String>());
-          }
-        
         for (CriterionField parameterTag : dialogMessage.getParameterTags())
           {
-            if (! parameterTagIDs.get(dialogMessageFieldName).contains(parameterTag.getID())){
-              parameterTags.put(dialogMessageFieldName, parameterTag);
-              parameterTagIDs.get(dialogMessageFieldName).add(parameterTag.getID());
-            }
+            if (! parameterTagIDs.contains(parameterTag.getID()))
+              {
+                parameterTags.add(parameterTag);
+                parameterTagIDs.add(parameterTag.getID());
+              }
           }
       }
-    
     return parameterTags;
   }
 
@@ -457,5 +454,4 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       }
     return result; 
   }
-  
 }

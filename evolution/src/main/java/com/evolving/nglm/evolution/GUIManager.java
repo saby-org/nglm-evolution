@@ -13740,14 +13740,12 @@ public class GUIManager
 
         if (mailTemplate.getParameterTags().size() > 0)
           {
-            Map<String,JSONObject> parameterTags = new HashMap<String,JSONObject>();
-            for (Entry<String,CriterionField> parameterTag : mailTemplate.getParameterTags().entrySet())
+            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
+            for (CriterionField parameterTag : mailTemplate.getParameterTags())
               {
-                String key = parameterTag.getKey();
-                CriterionField value = parameterTag.getValue();
-                parameterTags.put(key, value.getJSONRepresentation());
+                parameterTags.add(parameterTag.getJSONRepresentation());
               }
-            mailTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeObject(parameterTags));
+            mailTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
           }
 
         /*****************************************
@@ -14039,14 +14037,12 @@ public class GUIManager
 
         if (smsTemplate.getParameterTags().size() > 0)
           {
-            Map<String,JSONObject> parameterTags = new HashMap<String,JSONObject>();
-            for (Entry<String,CriterionField> parameterTag : smsTemplate.getParameterTags().entrySet())
+            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
+            for (CriterionField parameterTag : smsTemplate.getParameterTags())
               {
-                String key = parameterTag.getKey();
-                CriterionField value = parameterTag.getValue();
-                parameterTags.put(key, value.getJSONRepresentation());
+                parameterTags.add(parameterTag.getJSONRepresentation());
               }
-            smsTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeObject(parameterTags));
+            smsTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
           }
 
         /*****************************************
@@ -14350,14 +14346,12 @@ public class GUIManager
 
         if (pushTemplate.getParameterTags().size() > 0)
           {
-            Map<String,JSONObject> parameterTags = new HashMap<String,JSONObject>();
-            for (Entry<String,CriterionField> parameterTag : pushTemplate.getParameterTags().entrySet())
+            List<JSONObject> parameterTags = new ArrayList<JSONObject>();
+            for (CriterionField parameterTag : pushTemplate.getParameterTags())
               {
-                String key = parameterTag.getKey();
-                CriterionField value = parameterTag.getValue();
-                parameterTags.put(key, value.getJSONRepresentation());
+                parameterTags.add(parameterTag.getJSONRepresentation());
               }
-            pushTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeObject(parameterTags));
+            pushTemplate.getJSONRepresentation().put("parameterTags", JSONUtilities.encodeArray(parameterTags));
           }
 
         /*****************************************
