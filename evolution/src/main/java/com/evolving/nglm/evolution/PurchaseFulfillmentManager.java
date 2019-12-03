@@ -330,7 +330,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryOfferDisplay() { return getOfferDisplay(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
-    public long getOfferDeliveryOfferPrice() { return getOfferDeliveryOfferPrice(); }
+    public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
     public String getOfferDeliveryVoucherCode() { return ""; }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }
