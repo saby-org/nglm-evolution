@@ -139,6 +139,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   
   private SubscriberProfileService subscriberProfileService;
+  private DynamicCriterionFieldService dynamicCriterionFieldService;
   private OfferService offerService;
   private ProductService productService;
   private SalesChannelService salesChannelService;
@@ -175,6 +176,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints());
     subscriberProfileService.start();
+    
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "PurchaseMgr-dynamiccriterionfieldservice-"+deliveryManagerKey, Deployment.getDynamicCriterionFieldTopic(), false);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
     
     offerService = new OfferService(Deployment.getBrokerServers(), "PurchaseMgr-offerservice-"+deliveryManagerKey, Deployment.getOfferTopic(), false);
     offerService.start();
