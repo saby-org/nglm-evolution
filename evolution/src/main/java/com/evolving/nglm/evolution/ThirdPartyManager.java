@@ -2597,6 +2597,18 @@ public class ThirdPartyManager
                          loyaltyProgramPresentation.put("rewardsPointsEarned", rewardBalance.getEarnedHistory().getAllTimeBucket());
                          loyaltyProgramPresentation.put("rewardsPointsConsumed", rewardBalance.getConsumedHistory().getAllTimeBucket());
                          loyaltyProgramPresentation.put("rewardsPointsExpired", rewardBalance.getExpiredHistory().getAllTimeBucket());
+                         Date firstExpirationDate = rewardBalance.getFirstExpirationDate(now);
+                         if(firstExpirationDate != null)
+                           {
+                             int firstExpirationQty = rewardBalance.getBalance(firstExpirationDate);
+                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(firstExpirationDate));
+                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", firstExpirationQty);
+                           }
+                         else
+                           {
+                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
+                             loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
+                           }
                        }
                      else
                        {
@@ -2604,6 +2616,8 @@ public class ThirdPartyManager
                          loyaltyProgramPresentation.put("rewardsPointsEarned", 0);
                          loyaltyProgramPresentation.put("rewardsPointsConsumed", 0);
                          loyaltyProgramPresentation.put("rewardsPointsExpired", 0);
+                         loyaltyProgramPresentation.put("rewardsPointsEarliestexpirydate", getDateString(now));
+                         loyaltyProgramPresentation.put("rewardsPointsEarliestexpiryquantity", 0);
                        }
 
                      //
