@@ -18323,6 +18323,7 @@ public class GUIManager
         *****************************************/
 
         revalidateSubscriberMessageTemplates(now);
+        revalidateOffers(now);
         revalidateTargets(now);
         revalidateJourneys(now);
 
@@ -18431,6 +18432,7 @@ public class GUIManager
         //
 
         revalidateSubscriberMessageTemplates(now);
+        revalidateOffers(now);
         revalidateTargets(now);
         revalidateJourneys(now);
       }

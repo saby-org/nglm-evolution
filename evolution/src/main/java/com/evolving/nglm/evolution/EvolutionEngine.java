@@ -2550,9 +2550,12 @@ public class EvolutionEngine
                   {
                     case ELIGIBILITY:
                       SegmentationDimensionEligibility segmentationDimensionEligibility = (SegmentationDimensionEligibility) segmentationDimension;
-                      for(SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
+                      for (SegmentEligibility segment : segmentationDimensionEligibility.getSegments())
                         {
                           boolean addSegment = !inGroup && EvaluationCriterion.evaluateCriteria(evaluationRequest, segment.getProfileCriteria());
+                          context.subscriberTrace("SegmentEligibility: segment {0} match {1}", segment.getName(), addSegment);
+                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                          evaluationRequest.clearSubscriberTrace();
                           subscriberProfile.setSegment(segmentationDimension.getSegmentationDimensionID(), segment.getID(), subscriberGroupEpoch.getEpoch(), addSegment);
                           if (addSegment) inGroup = true;
                           subscriberProfileUpdated = true;
@@ -2658,15 +2661,17 @@ public class EvolutionEngine
     *  process rule based target lists
     *
     *****************************************/
-    for(Target target : targetService.getActiveTargets(now)) {
-      SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
-      if(target.getTargetingType().equals(Target.TargetingType.Eligibility))
-        {
-          boolean addTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, target.getTargetingCriteria());
-          subscriberProfile.setTarget(target.getTargetID(), subscriberGroupEpochReader.get(target.getTargetID()) != null ? subscriberGroupEpochReader.get(target.getTargetID()).getEpoch() : 0, addTarget);
-          subscriberProfileUpdated = true;
-        }          
-    }
+
+    for(Target target : targetService.getActiveTargets(now))
+      {
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, now);
+        if (target.getTargetingType().equals(Target.TargetingType.Eligibility))
+          {
+            boolean addTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, target.getTargetingCriteria());
+            subscriberProfile.setTarget(target.getTargetID(), subscriberGroupEpochReader.get(target.getTargetID()) != null ? subscriberGroupEpochReader.get(target.getTargetID()).getEpoch() : 0, addTarget);
+            subscriberProfileUpdated = true;
+          }          
+      }
     
     /*****************************************
     *

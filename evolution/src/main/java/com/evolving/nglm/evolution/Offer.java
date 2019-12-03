@@ -521,7 +521,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
     for (int i=0; i<jsonArray.size(); i++)
       {
-        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.Profile));
+        result.add(new EvaluationCriterion((JSONObject) jsonArray.get(i), CriterionContext.DynamicProfile));
       }
     return result;
   }

@@ -128,4 +128,18 @@ public class SubscriberEvaluationRequest
         traceDetails.add(MessageFormat.format(messageFormatString, args));
       }
   }
+
+  /*****************************************
+  *
+  *  clearTrace
+  *
+  *****************************************/
+
+  public void clearSubscriberTrace()
+  {
+    if (getSubscriberTraceEnabled())
+      {
+        traceDetails.clear();
+      }
+  }
 }  
