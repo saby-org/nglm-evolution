@@ -333,6 +333,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryReturnCodeDetails() { return null; }
     public String getOfferDeliveryOrigin() { return null; }
     public String getOfferDeliveryOfferDisplay() { return getOfferDisplay(); }
+    public String getOfferDeliveryOfferID() { return getOfferID(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }

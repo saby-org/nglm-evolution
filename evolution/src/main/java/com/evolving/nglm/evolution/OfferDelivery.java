@@ -30,6 +30,7 @@ public interface OfferDelivery
   public String getOfferDeliveryReturnCodeDetails();
   public String getOfferDeliveryOrigin();
   public String getOfferDeliveryOfferDisplay();
+  public String getOfferDeliveryOfferID();
   public int getOfferDeliveryOfferQty();
   public String getOfferDeliverySalesChannelId();
   public long getOfferDeliveryOfferPrice();
