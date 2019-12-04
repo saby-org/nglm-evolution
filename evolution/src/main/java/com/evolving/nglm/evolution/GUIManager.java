@@ -6039,7 +6039,7 @@ public class GUIManager
         switch (journeyTemplate.getGUIManagedObjectType())
           {
             case JourneyTemplate:
-              journeyTemplates.add(journeyTemplateService.generateResponseJSON(journeyTemplate, fullDetails, now));
+              journeyTemplates.add(resolveJourneyParameters(journeyTemplateService.generateResponseJSON(journeyTemplate, fullDetails, now), now));
               break;
           }
       }
@@ -6072,6 +6072,14 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
 
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
     /****************************************
     *
     *  argument
@@ -6088,7 +6096,7 @@ public class GUIManager
 
     GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID, includeArchived);
     journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate : null;
-    JSONObject journeyTemplateJSON = journeyTemplateService.generateResponseJSON(journeyTemplate, true, SystemTime.getCurrentTime());
+    JSONObject journeyTemplateJSON = resolveJourneyParameters(journeyTemplateService.generateResponseJSON(journeyTemplate, true, now), now);
 
     /*****************************************
     *
@@ -22444,19 +22452,15 @@ public class GUIManager
         case "smsTemplates":
           if (includeDynamic)
             {
-              for (SubscriberMessageTemplate messageTemplate : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now))
+              for (GUIManagedObject messageTemplateUnchecked : subscriberMessageTemplateService.getStoredSMSTemplates(true, false))
                 {
-                  if (messageTemplate.getAccepted())
+                  if (messageTemplateUnchecked.getAccepted())
                     {
-                      switch (messageTemplate.getTemplateType())
-                        {
-                          case "sms":
-                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                            availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                            availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
-                            result.add(JSONUtilities.encodeObject(availableValue));
-                            break;
-                        }
+                      SMSTemplate messageTemplate = (SMSTemplate) messageTemplateUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
+                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }
@@ -23613,6 +23617,55 @@ public class GUIManager
         result = cal.getTime();
       }
     return result;
+  }
+
+  /*****************************************
+  *
+  *  resolveJourneyParameters
+  *
+  *****************************************/
+
+  private JSONObject resolveJourneyParameters(JSONObject journeyJSON, Date now)
+  {
+    //
+    //  resolve
+    //
+
+    List<JSONObject>  resolvedParameters = new ArrayList<JSONObject>();
+    JSONArray parameters = JSONUtilities.decodeJSONArray(journeyJSON, "journeyParameters", new JSONArray());
+    for (int i=0; i<parameters.size(); i++)
+      {
+        //
+        //  clone (so we can modify the result)
+        //
+
+        JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+        //
+        //  availableValues
+        //
+
+        List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now);
+        parameterJSON.put("availableValues", (availableValues != null) ? JSONUtilities.encodeArray(availableValues) : null);
+
+        //
+        //  result
+        //
+
+        resolvedParameters.add(parameterJSON);
+      }
+
+    //
+    //  replace
+    //
+
+    journeyJSON.put("journeyParameters", JSONUtilities.encodeArray(resolvedParameters));
+
+    //
+    //  return
+    //
+
+    return journeyJSON;
   }
 
   /*****************************************
