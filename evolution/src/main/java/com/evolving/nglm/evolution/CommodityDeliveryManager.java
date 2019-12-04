@@ -1380,8 +1380,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       rewardRequestData.put("deliverableName", deliverable.getDeliverableName());
       rewardRequestData.put("operation", commodityDeliveryRequest.getOperation().getExternalRepresentation());
       rewardRequestData.put("amount", commodityDeliveryRequest.getAmount());
-      rewardRequestData.put("periodQuantity", validityPeriodQuantity);
-      rewardRequestData.put("periodType", validityPeriodType);
+      rewardRequestData.put("periodQuantity", (validityPeriodQuantity == null ? 1 : validityPeriodQuantity)); //mandatory in RewardManagerRequest => set default value if nul
+      rewardRequestData.put("periodType", (validityPeriodType == null ? TimeUnit.Day.getExternalRepresentation() : validityPeriodType)); //mandatory in RewardManagerRequest => set default value if nul
 
       //
       //  send
