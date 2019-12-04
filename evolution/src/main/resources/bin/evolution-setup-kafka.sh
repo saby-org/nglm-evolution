@@ -136,15 +136,7 @@
   #  wait for schema registry
   #
 
-  echo waiting for schema registry cluster ...
-  for REGISTRY_SERVER in `echo $REGISTRY_SERVERS | sed 's/,/ /g' | uniq`
-  do
-    export REGISTRY_HOST=`echo $REGISTRY_SERVER | cut -d: -f1`
-    export REGISTRY_PORT=`echo $REGISTRY_SERVER | cut -d: -f2`
-    /app/bin/ev-cub sr-ready $REGISTRY_HOST $REGISTRY_PORT $SETUP_CUB_REGISTRY_TIMEOUT
-    echo schema registry $REGISTRY_SERVER ready
-  done 
-  echo schema registry cluster ready
+  /app/bin/ev-cub sr-ready $REGISTRY_SERVERS $CUB_REGISTRY_MIN_NODES $SETUP_CUB_REGISTRY_TIMEOUT
 
   #
   #  register schemas - evolution
