@@ -571,7 +571,7 @@
               "properties" :
                 {
                   "computationDate" : { "type" : "long" },
-                  "filter.dataDate" : { "type" : "keyword" },
+                  "filter.dataDate" : { "type" : "date", "format":"yyyy-MM-dd" },
                   "filter.offer.id" : { "type" : "keyword" },
                   "filter.offer.display" : { "type" : "keyword" },
                   "filter.module.id" : { "type" : "keyword" },
@@ -624,7 +624,7 @@
               "properties" :
                 {
                   "computationDate" : { "type" : "long" },
-                  "filter.dataDate" : { "type" : "keyword" },
+                  "filter.dataDate" : { "type" : "date", "format":"yyyy-MM-dd" },
                   "filter.loyaltyProgram.id" : { "type" : "keyword" },
                   "filter.loyaltyProgram.display" : { "type" : "keyword" },
                   "filter.tierName" : { "type" : "keyword" },
@@ -674,7 +674,7 @@
               "properties" :
                 {
                   "computationDate" : { "type" : "long" },
-                  "filter.tierChangeDate" : { "type" : "keyword" },
+                  "filter.tierChangeDate" : { "type" : "date", "format":"yyyy-MM-dd" },
                   "filter.loyaltyProgram.id" : { "type" : "keyword" },
                   "filter.loyaltyProgram.display" : { "type" : "keyword" },
                   "filter.newTierName" : { "type" : "keyword" },
