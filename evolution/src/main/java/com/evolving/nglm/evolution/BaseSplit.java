@@ -116,9 +116,9 @@ public class BaseSplit
     if(variableName != null && !variableName.isEmpty())
       {
         CriterionField rangeVariable = null;
-        if (CriterionContext.Profile.getCriterionFields().get(variableName) != null)
+        if (CriterionContext.DynamicProfile.getCriterionFields().get(variableName) != null)
           {
-            rangeVariable = CriterionContext.Profile.getCriterionFields().get(variableName);
+            rangeVariable = CriterionContext.DynamicProfile.getCriterionFields().get(variableName);
             rangeVariableDependentOnExtendedSubscriberProfile = false;
           }
         else if (CriterionContext.FullProfile.getCriterionFields().get(variableName) != null)
@@ -153,7 +153,7 @@ public class BaseSplit
     boolean profileCriteriaDependentOnExtendedSubscriberProfile = false;
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.Profile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile);
         profileCriteriaDependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
