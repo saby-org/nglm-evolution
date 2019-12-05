@@ -2480,7 +2480,7 @@ public abstract class Expression
             break;
 
           default:
-            parseError(tokenPosition,"expected <primary>");
+            parseError(tokenPosition,"expected <primary> in " + expressionString);
             throw new ExpressionParseException(parseErrors);
         }
       return result;
