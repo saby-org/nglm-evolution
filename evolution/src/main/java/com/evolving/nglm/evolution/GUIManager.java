@@ -22164,7 +22164,7 @@ public class GUIManager
                           if(paymentMean.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", paymentMean.getPaymentMeanID());
-                            availableValue.put("display", paymentMean.getPaymentMeanName());
+                            availableValue.put("display", paymentMean.getPaymentMeanDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
