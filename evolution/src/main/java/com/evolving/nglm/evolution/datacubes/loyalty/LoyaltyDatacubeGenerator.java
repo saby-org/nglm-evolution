@@ -38,14 +38,15 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
 {
   private List<String> filterFields;
   private List<CompositeValuesSourceBuilder<?>> filterComplexSources;
-  private String filterLoyaltyProgramTier = "loyaltyProgramTier";
+  private final String filterLoyaltyProgramTier = "loyaltyProgramTier";
   
   private String dataPointEarned = "_Earned";
   private String dataPointRedeemed = "_Redeemed";
   private String dataPointExpired = "_Expired";
   private String dataPointRedeemerCount = "_RedeemerCount";
   
-  private Map<String,String> loyaltyProgramMapping = new HashMap<>(); // Mapping (LoyaltyProgramID,PointID)
+  private Map<String,String> loyaltyProgramMapping = new HashMap<>();           // Mapping (LoyaltyProgramID,PointID)
+  private Map<String,String> loyaltyProgramDisplayMapping = new HashMap<>();    // Mapping (LoyaltyProgramID,loyaltyProgramName)
   
   private Pattern loyaltyTierPattern = Pattern.compile("\\[(.*), (.*)\\]");
   
@@ -55,6 +56,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   
   private final String datacubeESIndex = "datacube_loyaltyprogramshistory";
   private final String dataESIndexPrefix = "subscriberprofile";
+  private final String mappingLoyalty = "mapping_loyaltyprograms";
   
   public LoyaltyDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
@@ -88,17 +90,20 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   protected void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException
   {
     // 
-    // Retrieve (LoyaltyProgramID, PointID) mapping
+    // Retrieve
+    // - (LoyaltyProgramID, PointID) mapping
+    // - (LoyaltyProgramID, loyaltyProgramName) mapping
     //
     
     this.loyaltyProgramMapping = new HashMap<String, String>();
+    this.loyaltyProgramDisplayMapping = new HashMap<String, String>();
 
     SearchSourceBuilder request = new SearchSourceBuilder()
         .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
         .query(QueryBuilders.matchAllQuery())
         .size(BUCKETS_MAX_NBR);
     
-    SearchResponse response = executeESSearchRequest(new SearchRequest("mapping_loyaltyprograms").source(request), elasticsearch);
+    SearchResponse response = executeESSearchRequest(new SearchRequest(mappingLoyalty).source(request), elasticsearch);
     if(response == null) { return; }
     if(response.isTimedOut()
         || response.getFailedShards() > 0
@@ -114,6 +119,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
     for(SearchHit hit: hits) {
       Map<String, Object> source = hit.getSourceAsMap();
       this.loyaltyProgramMapping.put((String) source.get("loyaltyProgramID"), (String) source.get("rewardPointsID"));
+      this.loyaltyProgramDisplayMapping.put((String) source.get("loyaltyProgramID"), (String) source.get("loyaltyProgramName"));
     }
   }
 
@@ -143,10 +149,16 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
       {
         log.warn("Unable to parse "+ filterLoyaltyProgramTier + " field.");
       }
+    
     filters.put("tierName", tierName);
+    
     filters.put("loyaltyProgram.id", loyaltyProgramID);
-    // TODO : extract loyaltyProgram.display 
-    filters.put("loyaltyProgram.display", loyaltyProgramID);
+    String loyaltyProgramDisplay = this.loyaltyProgramDisplayMapping.get(loyaltyProgramID);
+    filters.put("loyaltyProgram.display", (loyaltyProgramDisplay != null)? loyaltyProgramDisplay : loyaltyProgramID);
+    if(loyaltyProgramDisplay == null)
+      {
+        log.warn("Unable to retrieve loyaltyProgram.display for loyaltyProgram.id: "+ loyaltyProgramID);
+      }
   }
 
   @Override

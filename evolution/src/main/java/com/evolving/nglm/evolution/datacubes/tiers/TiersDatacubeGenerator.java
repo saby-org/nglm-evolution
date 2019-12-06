@@ -11,13 +11,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
@@ -26,9 +35,11 @@ import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 public class TiersDatacubeGenerator extends DatacubeGenerator
 {
   private List<String> filterFields;
-  private String allFilters = "filters";
+  private final String allFilters = "filters";
   
-  private Pattern loyaltyTiersPattern = Pattern.compile("\\[(.*), (.*), (.*), (.*)\\]");
+  private final Pattern loyaltyTiersPattern = Pattern.compile("\\[(.*), (.*), (.*), (.*)\\]");
+  
+  private Map<String,String> loyaltyProgramDisplayMapping = new HashMap<>();    // Mapping (LoyaltyProgramID,loyaltyProgramName)
   
   //
   // Elasticsearch indexes
@@ -36,6 +47,7 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
   
   private final String datacubeESIndex = "datacube_loyaltyprogramschanges";
   private final String dataESIndexPrefix = "subscriberprofile";
+  private final String mappingLoyalty = "mapping_loyaltyprograms";
   
   public TiersDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
@@ -60,6 +72,34 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
   @Override
   protected void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException
   {
+    // 
+    // Retrieve (LoyaltyProgramID, loyaltyProgramName) mapping
+    //
+    
+    this.loyaltyProgramDisplayMapping = new HashMap<String, String>();
+
+    SearchSourceBuilder request = new SearchSourceBuilder()
+        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
+        .query(QueryBuilders.matchAllQuery())
+        .size(BUCKETS_MAX_NBR);
+    
+    SearchResponse response = executeESSearchRequest(new SearchRequest(mappingLoyalty).source(request), elasticsearch);
+    if(response == null) { return; }
+    if(response.isTimedOut()
+        || response.getFailedShards() > 0
+        || response.getSkippedShards() > 0
+        || response.status() != RestStatus.OK) {
+      log.error("Elasticsearch search response return with bad status in {}", this.datacubeName);
+      return;
+    }
+    
+    SearchHits hits = response.getHits();
+    if(hits == null) { return; }
+    
+    for(SearchHit hit: hits) {
+      Map<String, Object> source = hit.getSourceAsMap();
+      this.loyaltyProgramDisplayMapping.put((String) source.get("loyaltyProgramID"), (String) source.get("loyaltyProgramName"));
+    }
   }
 
   @Override
@@ -95,9 +135,14 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
     filters.put("newTierName", newTierName);
     filters.put("previousTierName", previousTierName);
     filters.put("tierChangeType", tierChangeType);
+    
     filters.put("loyaltyProgram.id", loyaltyProgramID);
-    // TODO : extract loyaltyProgram.display 
-    filters.put("loyaltyProgram.display", loyaltyProgramID);
+    String loyaltyProgramDisplay = this.loyaltyProgramDisplayMapping.get(loyaltyProgramID);
+    filters.put("loyaltyProgram.display", (loyaltyProgramDisplay != null)? loyaltyProgramDisplay : loyaltyProgramID);
+    if(loyaltyProgramDisplay == null)
+      {
+        log.warn("Unable to retrieve loyaltyProgram.display for loyaltyProgram.id: "+ loyaltyProgramID);
+      }
   }
 
   @Override
