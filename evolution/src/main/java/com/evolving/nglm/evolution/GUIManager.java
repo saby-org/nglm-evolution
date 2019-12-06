@@ -5604,6 +5604,18 @@ public class GUIManager
 
         /*****************************************
         *
+        *  evaluate targets
+        *
+        *****************************************/
+
+        if (active && element.getTargetID() != null)
+          {
+            EvaluateTargets evaluateTargets = new EvaluateTargets(element.getTargetID());
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets.serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
+          }
+        
+        /*****************************************
+        *
         *  response
         *
         *****************************************/
@@ -23888,7 +23900,7 @@ public class GUIManager
       do
         {
           //
-          // poll
+          //  poll
           //
 
           ConsumerRecords<byte[], byte[]> deliverableSourceRecords;

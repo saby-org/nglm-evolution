@@ -97,6 +97,7 @@ public class Deployment
   private static String ucgStateTopic;
   private static String renamedProfileCriterionFieldTopic;
   private static String timedEvaluationTopic;
+  private static String evaluateTargetsTopic;
   private static String subscriberProfileForceUpdateTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
@@ -312,6 +313,7 @@ public class Deployment
   public static String getUCGStateTopic() { return ucgStateTopic; }
   public static String getRenamedProfileCriterionFieldTopic() { return renamedProfileCriterionFieldTopic; }
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
+  public static String getEvaluateTargetsTopic() { return evaluateTargetsTopic; }
   public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
@@ -1464,6 +1466,19 @@ public class Deployment
     try
       {
         timedEvaluationTopic = JSONUtilities.decodeString(jsonRoot, "timedEvaluationTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
+    //  evaluateTargetsTopic
+    //
+
+    try
+      {
+        evaluateTargetsTopic = JSONUtilities.decodeString(jsonRoot, "evaluateTargetsTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

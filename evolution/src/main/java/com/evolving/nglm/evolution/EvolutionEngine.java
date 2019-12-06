@@ -358,7 +358,7 @@ public class EvolutionEngine
     //  timerService (DO NOT START until streams is started)
     //
 
-    timerService = new TimerService(this, bootstrapServers);
+    timerService = new TimerService(this, bootstrapServers, evolutionEngineKey);
 
     //
     //  segmentationDimensionService
@@ -1306,11 +1306,11 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  start streams
+    *  start timerService
     *
     *****************************************/
 
-    timerService.start(subscriberStateStore);
+    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService);
 
     /*****************************************
     *
