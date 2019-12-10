@@ -390,8 +390,8 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "mapping_deliverables",
-	"batchRecordCount" : "'$CONNECT_ES_DELIVERABLE_BATCHRECORDCOUNT'",
-	"batchSize" : "'$CONNECT_ES_DELIVERABLE_BATCHSIZEMB'"
+	    "batchRecordCount" : "'$CONNECT_ES_DELIVERABLE_BATCHRECORDCOUNT'",
+	    "batchSize" : "'$CONNECT_ES_DELIVERABLE_BATCHSIZEMB'"
         }
     }' &
 
@@ -415,8 +415,8 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "mapping_paymentmeans",
-	"batchRecordCount" : "'$CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT'",
-	"batchSize" : "'$CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB'"
+	    "batchRecordCount" : "'$CONNECT_ES_PAYMENTMEAN_BATCHRECORDCOUNT'",
+	    "batchSize" : "'$CONNECT_ES_PAYMENTMEAN_BATCHSIZEMB'"
         }
     }' &
 
@@ -440,8 +440,8 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "mapping_offers",
-	"batchRecordCount" : "'$CONNECT_ES_OFFER_BATCHRECORDCOUNT'",
-	"batchSize" : "'$CONNECT_ES_OFFER_BATCHSIZEMB'"
+	    "batchRecordCount" : "'$CONNECT_ES_OFFER_BATCHRECORDCOUNT'",
+	    "batchSize" : "'$CONNECT_ES_OFFER_BATCHSIZEMB'"
         }
     }' &
 
@@ -465,8 +465,8 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "mapping_products",
-	"batchRecordCount" : "'$CONNECT_ES_PRODUCT_BATCHRECORDCOUNT'",
-	"batchSize" : "'$CONNECT_ES_PRODUCT_BATCHSIZEMB'"
+	    "batchRecordCount" : "'$CONNECT_ES_PRODUCT_BATCHRECORDCOUNT'",
+	    "batchSize" : "'$CONNECT_ES_PRODUCT_BATCHSIZEMB'"
         }
     }' &
 
@@ -490,8 +490,58 @@
         "connectionPort" : "'$MASTER_ESROUTER_PORT'",
         "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
         "indexName" : "mapping_loyaltyprograms",
-	"batchRecordCount" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT'",
-	"batchSize" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB'"
+	    "batchRecordCount" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHRECORDCOUNT'",
+        "batchSize" : "'$CONNECT_ES_LOYALTYPROGRAM_BATCHSIZEMB'"
+        }
+    }' &
+
+  #
+  #  sink connector -- Journey (elasticsearch)
+  #
+
+  export CONNECT_URL_JOURNEY_ES=${CONNECT_URL_JOURNEY_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_JOURNEY_SINK_TASKS=${CONNECT_ES_JOURNEY_SINK_TASKS:-'1'}
+  export CONNECT_ES_JOURNEY_BATCHRECORDCOUNT=${CONNECT_ES_JOURNEY_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_JOURNEY_BATCHSIZEMB=${CONNECT_ES_JOURNEY_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_JOURNEY_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "journey_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.JourneyESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_JOURNEY_SINK_TASKS',
+        "topics" : "${topic.journey}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_journeys",
+	    "batchRecordCount" : "'$CONNECT_ES_JOURNEY_BATCHRECORDCOUNT'",
+	    "batchSize" : "'$CONNECT_ES_JOURNEY_BATCHSIZEMB'"
+        }
+    }' &
+
+  #
+  #  sink connector -- Sales Channel (elasticsearch)
+  #
+
+  export CONNECT_URL_SALESCHANNEL_ES=${CONNECT_URL_SALESCHANNEL_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_SALESCHANNEL_SINK_TASKS=${CONNECT_ES_SALESCHANNEL_SINK_TASKS:-'1'}
+  export CONNECT_ES_SALESCHANNEL_BATCHRECORDCOUNT=${CONNECT_ES_SALESCHANNEL_BATCHRECORDCOUNT:-'1000'}
+  export CONNECT_ES_SALESCHANNEL_BATCHSIZEMB=${CONNECT_ES_SALESCHANNEL_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_SALESCHANNEL_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "saleschannel_es_sink_connector",
+      "config" :
+        {
+        "connector.class" : "com.evolving.nglm.evolution.SalesChannelESSinkConnector",
+        "tasks.max" : '$CONNECT_ES_SALESCHANNEL_SINK_TASKS',
+        "topics" : "${topic.saleschannel}",
+        "connectionHost" : "'$MASTER_ESROUTER_HOST'",
+        "connectionPort" : "'$MASTER_ESROUTER_PORT'",
+        "batchRecordCount" : "'$ES_BATCH_RECORD_COUNT'",
+        "indexName" : "mapping_saleschannels",
+	    "batchRecordCount" : "'$CONNECT_ES_SALESCHANNEL_BATCHRECORDCOUNT'",
+	    "batchSize" : "'$CONNECT_ES_SALESCHANNEL_BATCHSIZEMB'"
         }
     }' &
 
