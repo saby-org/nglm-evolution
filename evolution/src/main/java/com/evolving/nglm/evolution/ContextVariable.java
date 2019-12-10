@@ -168,6 +168,8 @@ public class ContextVariable
   public boolean getValidated() { return validated; }
   public Expression getExpression() { return expression; }
   public CriterionDataType getType() { return type; }
+  public String getTagFormat() { return (expression != null) ? expression.getEffectiveTagFormat() : null; }
+  public Integer getTagMaxLength() { return (expression != null) ? expression.getEffectiveTagMaxLength() : null; }
 
   /*****************************************
   *

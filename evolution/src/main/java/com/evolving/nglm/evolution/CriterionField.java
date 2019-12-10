@@ -251,6 +251,8 @@ public class CriterionField extends DeploymentManagedObject
     criterionFieldJSON.put("display", contextVariable.getName());
     criterionFieldJSON.put("dataType", contextVariable.getType().getExternalRepresentation());
     criterionFieldJSON.put("retriever", "getJourneyParameter");
+    criterionFieldJSON.put("tagFormat", contextVariable.getTagFormat());
+    criterionFieldJSON.put("tagMaxLength", contextVariable.getTagMaxLength());
     return JSONUtilities.encodeObject(criterionFieldJSON);
   }
 

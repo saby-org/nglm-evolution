@@ -191,6 +191,8 @@ public abstract class Expression
 
   protected ExpressionDataType type;
   protected String nodeID;
+  protected String tagFormat;
+  protected Integer tagMaxLength;
 
   /*****************************************
   *
@@ -212,28 +214,30 @@ public abstract class Expression
 
   public ExpressionDataType getType() { return type; }
   public String getNodeID() { return nodeID; }
+  public String getTagFormat() { return tagFormat; }
+  public Integer getTagMaxLength() { return tagMaxLength; }
+  public String getEffectiveTagFormat() { return (tagFormat != errorTagFormat) ? tagFormat : null; }
+  public Integer getEffectiveTagMaxLength() { return (tagMaxLength != errorTagMaxLength) ? tagMaxLength : null; }
 
   /*****************************************
   *
-  *  setType
+  *  setters
   *
   *****************************************/
 
-  public void setType(ExpressionDataType type)
-  {
-    this.type = type;
-  }
+  public void setType(ExpressionDataType type) { this.type = type; }
+  public void setNodeID(int preorderNumber) { this.nodeID = Integer.toString(preorderNumber); }
+  public void setTagFormat(String tagFormat) { this.tagFormat = tagFormat; }
+  public void setTagMaxLength(Integer tagMaxLength) { this.tagMaxLength = tagMaxLength; }
 
   /*****************************************
   *
-  *  setNodeID
+  *  errorConstants
   *
   *****************************************/
 
-  public void setNodeID(int preorderNumber)
-  {
-    this.nodeID = Integer.toString(preorderNumber);
-  }
+  private static String errorTagFormat = new String("(error)");
+  private static Integer errorTagMaxLength = new Integer(0);
 
   /*****************************************
   *
@@ -245,6 +249,8 @@ public abstract class Expression
   {
     this.type = null;
     this.nodeID = null;
+    this.tagFormat = null;
+    this.tagMaxLength = null;
   }
 
   /*****************************************
@@ -443,6 +449,13 @@ public abstract class Expression
               }
             break;
         }
+
+      //
+      //  tagFormat/tagMaxLength
+      //
+
+      setTagFormat(reference.getTagFormat());
+      setTagMaxLength(reference.getTagMaxLength());
     }
 
     /*****************************************
@@ -696,6 +709,36 @@ public abstract class Expression
           default:
             throw new ExpressionTypeCheckException("type exception");
         }
+
+      //
+      //  tagFormat
+      //
+
+      if (leftArgument.getTagFormat() == errorTagFormat || rightArgument.getTagFormat() == errorTagFormat)
+        setTagFormat(errorTagFormat);
+      else if (Objects.equals(leftArgument.getTagFormat(), rightArgument.getTagFormat()))
+        setTagFormat(leftArgument.getTagFormat());
+      else if (leftArgument.getTagFormat() == null)
+        setTagFormat(rightArgument.getTagFormat());
+      else if (rightArgument.getTagFormat() == null)
+        setTagFormat(leftArgument.getTagFormat());
+      else
+        setTagFormat(errorTagFormat);
+
+      //
+      //  tagMaxLength
+      //
+
+      if (leftArgument.getTagMaxLength() == errorTagMaxLength || rightArgument.getTagMaxLength() == errorTagMaxLength)
+        setTagMaxLength(errorTagMaxLength);
+      else if (Objects.equals(leftArgument.getTagMaxLength(), rightArgument.getTagMaxLength()))
+        setTagMaxLength(leftArgument.getTagMaxLength());
+      else if (leftArgument.getTagMaxLength() == null)
+        setTagMaxLength(rightArgument.getTagMaxLength());
+      else if (rightArgument.getTagMaxLength() == null)
+        setTagMaxLength(leftArgument.getTagMaxLength());
+      else
+        setTagMaxLength(errorTagMaxLength);
     }
 
     /*****************************************
@@ -920,6 +963,13 @@ public abstract class Expression
           default:
             throw new ExpressionTypeCheckException("type exception");
         }
+
+      //
+      //  tagFormat/tagMaxLength
+      //
+
+      setTagFormat(unaryArgument.getTagFormat());
+      setTagMaxLength(unaryArgument.getTagMaxLength());
     }
 
     /*****************************************
@@ -1303,6 +1353,15 @@ public abstract class Expression
       ****************************************/
       
       setType(ExpressionDataType.DateExpression);
+
+      /*****************************************
+      *
+      *  tagFormat/tagMaxLength
+      *
+      *****************************************/
+
+      setTagFormat(arg1.getTagFormat());
+      setTagMaxLength(arg1.getTagMaxLength());
     }
 
     /*****************************************
