@@ -2128,7 +2128,7 @@ public class ThirdPartyManager
                   Map<String, Object> currentState = new HashMap<String, Object>();
                   NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
                   currentState.put("nodeID", nodeHistory.getToNodeID());
-                  currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
+                  currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeJourney.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                   JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                   //
@@ -2141,8 +2141,8 @@ public class ThirdPartyManager
                       Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                       nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
                       nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
-                      nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
-                      nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                      nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                      nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
                       nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                       nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                       nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
@@ -2439,7 +2439,7 @@ public class ThirdPartyManager
                   NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
                   Map<String, Object> currentState = new HashMap<String, Object>();
                   currentState.put("nodeID", nodeHistory.getToNodeID());
-                  currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
+                  currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                   JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                   //
@@ -2452,8 +2452,8 @@ public class ThirdPartyManager
                       Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                       nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
                       nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
-                      nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
-                      nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                      nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                      nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
                       nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                       nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                       nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());

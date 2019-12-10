@@ -15828,7 +15828,7 @@ public class GUIManager
                         Map<String, Object> currentState = new HashMap<String, Object>();
                         NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
                         currentState.put("nodeID", nodeHistory.getToNodeID());
-                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
+                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeJourney.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                         JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                         //
@@ -15841,8 +15841,8 @@ public class GUIManager
                             Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                             nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
                             nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
                             nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                             nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
@@ -16146,7 +16146,7 @@ public class GUIManager
                         Map<String, Object> currentState = new HashMap<String, Object>();
                         NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
                         currentState.put("nodeID", nodeHistory.getToNodeID());
-                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
+                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                         JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                         //
@@ -16159,8 +16159,8 @@ public class GUIManager
                             Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                             nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
                             nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
                             nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                             nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
@@ -19345,7 +19345,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
 
     /*****************************************
     *
@@ -19424,7 +19424,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
