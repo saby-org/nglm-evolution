@@ -1625,7 +1625,9 @@ public abstract class DeliveryManager
       {
         try
           {
+            log.info("DeliveryManager processSubmitCorrelatorUpdate (" + correlator + ", "+correlatorUpdate+") ...");
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), stringValueSerde.serializer().serialize(routingTopic, new StringValue(correlatorUpdate.toString())))).get();
+            log.info("DeliveryManager processSubmitCorrelatorUpdate (" + correlator + ", "+correlatorUpdate+") done");
             break;
           }
         catch (InterruptedException e)

@@ -763,6 +763,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *****************************************/
         
         DeliveryRequest deliveryRequest = nextRequest();
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager : NEW REQUEST ("+deliveryRequest.getDeliveryRequestID()+") (thread name = "+Thread.currentThread().getName()+")");
         PurchaseFulfillmentRequest purchaseRequest = ((PurchaseFulfillmentRequest)deliveryRequest);
 
         /*****************************************
@@ -774,6 +775,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         String correlator = deliveryRequest.getDeliveryRequestID();
         deliveryRequest.setCorrelator(correlator);
         updateRequest(deliveryRequest);
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : correlator set ");
         
         /*****************************************
         *
@@ -932,6 +934,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *
         *****************************************/
 
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
         proceedPurchase(purchaseStatus);
         
       }
@@ -952,6 +955,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   }
   
   private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus){
+    log.info("PurchaseFulfillmentManager.submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", "+purchaseStatus.getJSONRepresentation()+") ");
     submitCorrelatorUpdate(purchaseStatus.getCorrelator(), purchaseStatus.getJSONRepresentation());
   }
 

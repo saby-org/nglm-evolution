@@ -51,16 +51,16 @@
     <nglm.core.version>4.8.1-build191209-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>1.0.45</gui-fwk.version>
-    <gui-csr.version>1.0.35</gui-csr.version>
-    <gui-itm.version>1.0.18</gui-itm.version>
-    <gui-jmr.version>1.0.66</gui-jmr.version>
-    <gui-opc.version>1.2.29</gui-opc.version>
-    <gui-iar.version>1.0.37</gui-iar.version>
+    <gui-fwk.version>1.0.49</gui-fwk.version>
+    <gui-csr.version>1.0.37</gui-csr.version>
+    <gui-itm.version>1.0.19</gui-itm.version>
+    <gui-jmr.version>1.0.67</gui-jmr.version>
+    <gui-opc.version>1.2.32</gui-opc.version>
+    <gui-iar.version>1.0.38</gui-iar.version>
     <gui-opr.version>1.0.38</gui-opr.version>
-    <gui-stg.version>1.0.65</gui-stg.version>
-    <gui-sbm.version>1.0.80</gui-sbm.version>
-    <gui-lpm.version>1.0.8</gui-lpm.version>
+    <gui-stg.version>1.0.69</gui-stg.version>
+    <gui-sbm.version>1.0.84</gui-sbm.version>
+    <gui-lpm.version>1.0.12</gui-lpm.version>
     <gui-csrmockup.version>1.0.2</gui-csrmockup.version>
     <gui-audit.version>1.0.3</gui-audit.version>
 
