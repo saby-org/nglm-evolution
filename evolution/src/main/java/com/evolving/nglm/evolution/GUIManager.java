@@ -22443,7 +22443,6 @@ public class GUIManager
                 }
             }
           break;
-
           
         case "deliveryStatuses":
           if (includeDynamic)
@@ -22501,6 +22500,78 @@ public class GUIManager
                       availableValue.put("id", deliverable.getDeliverableName());
                       availableValue.put("display", deliverable.getDeliverableDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalJourneys":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Journey)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalBulkCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "subscriberJourneyStatuses":
+          if (includeDynamic)
+            {
+              for (SubscriberJourneyStatus subscriberJourneyStatus : Journey.SubscriberJourneyStatus.values())
+                {
+                  switch (subscriberJourneyStatus)
+                    {
+                      case Unknown:
+                        break;
+
+                      default:
+                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                        availableValue.put("id", subscriberJourneyStatus.getExternalRepresentation());
+                        availableValue.put("display", subscriberJourneyStatus.getDisplay());
+                        result.add(JSONUtilities.encodeObject(availableValue));
+                        break;
                     }
                 }
             }
@@ -24242,7 +24313,7 @@ public class GUIManager
 
     public String toString()
     {
-      return super.toString() + "(" + responseParameter + ")";
+      return super.toString() + " (" + responseParameter + ")";
     }
   }
 

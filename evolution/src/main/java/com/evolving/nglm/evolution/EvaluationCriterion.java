@@ -720,6 +720,14 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    boolean result = false;
+
     /****************************************
     *
     *  retrieve fieldValue
@@ -751,6 +759,19 @@ public class EvaluationCriterion
           }
         evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
         return false;
+      }
+
+    /*****************************************
+    *
+    *  handle evaluation variables
+    *
+    *****************************************/
+
+    if (criterionField.getEvaluationVariable())
+      {
+        evaluationRequest.getEvaluationVariables().put((String) criterionFieldValue, evaluatedArgument);
+        result = traceCondition(evaluationRequest, true, criterionFieldValue, evaluatedArgument);
+        return result;
       }
 
     /****************************************
@@ -894,7 +915,6 @@ public class EvaluationCriterion
     *
     ****************************************/
 
-    boolean result = false;
     switch (criterionOperator)
       {
         /*****************************************
@@ -1100,6 +1120,12 @@ public class EvaluationCriterion
         b.append(" ]");
         evaluationRequest.subscriberTrace("{0}", b.toString());
       }
+
+    //
+    //  clear evaluationVariables
+    //
+
+    evaluationRequest.getEvaluationVariables().clear();
 
     //
     //  evaluate
