@@ -18,25 +18,42 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.mapping.DeliverableDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.JourneyDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.MeansOfPaymentDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.ModuleDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.OfferDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelDisplayMapping;
 
 public class ODRDatacubeGenerator extends DatacubeGenerator
 {
+  private static final String dataTotalAmount = "totalAmount";
+  private static final String datacubeESIndex = "datacube_odr";
+  private static final String dataESIndexPrefix = "detailedrecords_offers-";
+  
   private List<String> filterFields;
   private List<CompositeValuesSourceBuilder<?>> filterComplexSources;
-  
   private List<AggregationBuilder> dataAggregations;
-  private String dataTotalAmount = "totalAmount";
-  
-  //
-  // Elasticsearch indexes
-  //
-  
-  private final String datacubeESIndex = "datacube_odr";
-  private final String dataESIndexPrefix = "detailedrecords_offers-";
+  private OfferDisplayMapping offerDisplayMapping;
+  private ModuleDisplayMapping moduleDisplayMapping;
+  private SalesChannelDisplayMapping salesChannelDisplayMapping;
+  private MeansOfPaymentDisplayMapping meansOfPaymentDisplayMapping;
+  private LoyaltyProgramDisplayMapping loyaltyProgramDisplayMapping;
+  private DeliverableDisplayMapping deliverableDisplayMapping;
+  private JourneyDisplayMapping journeyDisplayMapping;
   
   public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
     super(datacubeName, elasticsearch);
+
+    this.offerDisplayMapping = new OfferDisplayMapping();
+    this.moduleDisplayMapping = new ModuleDisplayMapping();
+    this.salesChannelDisplayMapping = new SalesChannelDisplayMapping();
+    this.meansOfPaymentDisplayMapping = new MeansOfPaymentDisplayMapping();
+    this.loyaltyProgramDisplayMapping = new LoyaltyProgramDisplayMapping();
+    this.deliverableDisplayMapping = new DeliverableDisplayMapping();
+    this.journeyDisplayMapping = new JourneyDisplayMapping();
     
     //
     // Filter fields
@@ -67,10 +84,17 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
             .script(new Script(ScriptType.INLINE, "painless", "doc['offerPrice'].value * doc['offerQty'].value", Collections.emptyMap()));
     dataAggregations.add(totalAmount);
   }
-
+    
   @Override
   protected void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException
   {
+    offerDisplayMapping.updateFromElasticsearch(elasticsearch);
+    moduleDisplayMapping.updateFromElasticsearch(elasticsearch);
+    salesChannelDisplayMapping.updateFromElasticsearch(elasticsearch);
+    meansOfPaymentDisplayMapping.updateFromElasticsearch(elasticsearch);
+    loyaltyProgramDisplayMapping.updateFromElasticsearch(elasticsearch);
+    deliverableDisplayMapping.updateFromElasticsearch(elasticsearch);
+    journeyDisplayMapping.updateFromElasticsearch(elasticsearch);
   }
 
   @Override
@@ -78,30 +102,44 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   {
     String offerID = (String) filters.remove("offerID");
     filters.put("offer.id", offerID);
-    // TODO : extract offer.display 
-    filters.put("offer.display", offerID);
+    filters.put("offer.display", offerDisplayMapping.getDisplay(offerID));
 
     String moduleID = (String) filters.remove("moduleID");
     filters.put("module.id", moduleID);
-    // TODO : extract module.display 
-    filters.put("module.display", moduleID);
+    filters.put("module.display", moduleDisplayMapping.getDisplay(moduleID));
 
     String featureID = (String) filters.remove("featureID");
     filters.put("feature.id", featureID);
-    // TODO : extract feature.display 
-    filters.put("feature.display", featureID);
+    
+    String featureDisplay = featureID; // default
+    switch(moduleDisplayMapping.getFeature(moduleID))
+      {
+        case JourneyID:
+          featureDisplay = journeyDisplayMapping.getDisplay(featureID);
+          break;
+        case LoyaltyProgramID:
+          featureDisplay = loyaltyProgramDisplayMapping.getDisplay(featureID);
+          break;
+        case OfferID:
+          featureDisplay = offerDisplayMapping.getDisplay(featureID);
+          break;
+        case DeliverableID:
+          featureDisplay = deliverableDisplayMapping.getDisplay(featureID);
+          break;
+        default:
+          // For None feature we let the featureID as a display (it is usually a string)
+          break;
+      }
+    filters.put("feature.display", featureDisplay);
 
     String salesChannelID = (String) filters.remove("salesChannelID");
     filters.put("salesChannel.id", salesChannelID);
-    // TODO : extract salesChannel.display 
-    filters.put("salesChannel.display", salesChannelID);
+    filters.put("salesChannel.display", salesChannelDisplayMapping.getDisplay(salesChannelID));
 
     String meanOfPayment = (String) filters.remove("meanOfPayment");
     filters.put("meanOfPayment.id", meanOfPayment);
-    // TODO : extract meanOfPayment.display 
-    filters.put("meanOfPayment.display", meanOfPayment);
-    // TODO : extract meanOfPayment.paymentProviderID (default ATM)
-    filters.put("meanOfPayment.paymentProviderID", "provider_Point");
+    filters.put("meanOfPayment.display", meansOfPaymentDisplayMapping.getDisplay(meanOfPayment));
+    filters.put("meanOfPayment.paymentProviderID", meansOfPaymentDisplayMapping.getProviderID(meanOfPayment));
   }
 
   @Override
@@ -144,12 +182,12 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   @Override
   protected String getDataESIndex(String date)
   {
-    return (this.dataESIndexPrefix+date);
+    return (dataESIndexPrefix+date);
   }
 
   @Override
   protected String getDatacubeESIndex()
   {
-    return this.datacubeESIndex;
+    return datacubeESIndex;
   }
 }

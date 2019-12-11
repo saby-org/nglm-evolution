@@ -842,43 +842,43 @@
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : ""
+      "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : "journeyID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : ""
+      "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : "loyaltyProgramID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : ""
+      "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : "offerID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : ""
+      "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : "deliverableID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : ""
+      "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : "none"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : ""
+      "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : "none"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : ""
+      "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : "none"
     }'
   echo
 
