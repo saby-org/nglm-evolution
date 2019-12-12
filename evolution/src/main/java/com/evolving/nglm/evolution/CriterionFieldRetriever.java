@@ -501,7 +501,7 @@ public abstract class CriterionFieldRetriever
         ParameterExpression parameterExpression = (ParameterExpression) parameterValue;
         Expression expression = parameterExpression.getExpression();
         TimeUnit baseTimeUnit = parameterExpression.getBaseTimeUnit();
-        result = expression.evaluate(evaluationRequest, baseTimeUnit);
+        result = expression.evaluateExpression(evaluationRequest, baseTimeUnit);
       }
     return result;
   }

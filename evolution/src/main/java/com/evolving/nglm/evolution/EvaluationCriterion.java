@@ -746,7 +746,7 @@ public class EvaluationCriterion
     Object evaluatedArgument = null;
     try
       {
-        evaluatedArgument = (argument != null) ? argument.evaluate(evaluationRequest, argumentBaseTimeUnit) : null;
+        evaluatedArgument = (argument != null) ? argument.evaluateExpression(evaluationRequest, argumentBaseTimeUnit) : null;
       }
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
@@ -1470,7 +1470,7 @@ public class EvaluationCriterion
           //  evaluate constant right hand-side
           //
 
-          String argumentValue = (String) argument.evaluate(null, TimeUnit.Unknown);
+          String argumentValue = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
 
           //
           //  script

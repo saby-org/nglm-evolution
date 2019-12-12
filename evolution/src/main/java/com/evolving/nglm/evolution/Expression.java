@@ -203,7 +203,7 @@ public abstract class Expression
   public abstract void typeCheck(ExpressionContext expressionContext, TimeUnit baseTimeUnit);
   public abstract int assignNodeID(int preorderNumber);
   public boolean isConstant() { return false; }
-  public abstract Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit);
+  protected abstract Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit);
   public abstract void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException;
 
   /*****************************************
@@ -229,6 +229,26 @@ public abstract class Expression
   public void setNodeID(int preorderNumber) { this.nodeID = Integer.toString(preorderNumber); }
   public void setTagFormat(String tagFormat) { this.tagFormat = tagFormat; }
   public void setTagMaxLength(Integer tagMaxLength) { this.tagMaxLength = tagMaxLength; }
+
+  /*****************************************
+  *
+  *  evaluateExpression
+  *
+  *****************************************/
+
+  public Object evaluateExpression(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+  {
+    Object result;
+    try
+      {
+        result = evaluate(subscriberEvaluationRequest, baseTimeUnit);
+      }
+    catch (ExpressionNullException e)
+      {
+        result = null;
+      }
+    return result;
+  }
 
   /*****************************************
   *
@@ -303,7 +323,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+    @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
       return constant;
     }
@@ -484,7 +504,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+    @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
       //
       //  retrieve
@@ -496,7 +516,7 @@ public abstract class Expression
       //  null check
       //
 
-      if (referenceValue == null) throw new ExpressionEvaluationException(reference);
+      if (referenceValue == null) throw new ExpressionNullException(reference);
 
       //
       //  normalize
@@ -761,7 +781,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+    @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
       /*****************************************
       *
@@ -991,7 +1011,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+    @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
       /*****************************************
       *
@@ -1386,7 +1406,7 @@ public abstract class Expression
     *
     *****************************************/
 
-    @Override public Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+    @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
     {
       /*****************************************
       *
@@ -2647,6 +2667,39 @@ public abstract class Expression
     public ExpressionEvaluationException()
     {
       this.criterionField = null;
+    }
+  }
+
+  /*****************************************
+  *
+  *  ExpressionNullException
+  *
+  *****************************************/
+
+  private static class ExpressionNullException extends ExpressionEvaluationException
+  {
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    //
+    //  constructor (criterionField)
+    //
+    
+    private ExpressionNullException(CriterionField criterionField)
+    {
+      super(criterionField);
+    }
+    
+    //
+    //  constructor (empty)
+    //
+    
+    private ExpressionNullException()
+    {
+      super();
     }
   }
 }

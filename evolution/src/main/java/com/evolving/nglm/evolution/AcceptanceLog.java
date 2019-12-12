@@ -195,7 +195,7 @@ public class AcceptanceLog implements SubscriberStreamEvent
     struct.put("transactionDurationMs", acceptanceLog.getTransactionDurationMs());
     struct.put("controlGroupState", acceptanceLog.getControlGroupState());
     struct.put("offerID", acceptanceLog.getOfferID());
-    struct.put("fulfilledDate", acceptanceLog.getFulfilledDate().getTime());
+    struct.put("fulfilledDate", (acceptanceLog.getFulfilledDate() != null ? acceptanceLog.getFulfilledDate().getTime() : null));
     struct.put("position", acceptanceLog.getPosition());
     struct.put("actionCall", acceptanceLog.getActionCall());
     return struct;

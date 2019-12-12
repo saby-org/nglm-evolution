@@ -4215,7 +4215,7 @@ public class EvolutionEngine
                         try
                           {
                             SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
-                            Object contextVariableValue = contextVariable.getExpression().evaluate(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                            Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
                             journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
                             context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
                           }
@@ -4414,7 +4414,7 @@ public class EvolutionEngine
                         try
                           {
                             SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                            Object contextVariableValue = contextVariable.getExpression().evaluate(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                            Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
                             journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
                             context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
                           }
