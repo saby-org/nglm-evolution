@@ -797,7 +797,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(quantity < 1){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
-          return;
+          continue;
         }
         
         //
@@ -807,7 +807,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(subscriberID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
-          return;
+          continue;
         }
         SubscriberProfile subscriberProfile = null;
         try{
@@ -815,14 +815,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(subscriberProfile == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
-            return;
+            continue;
           }else{
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
           }
         }catch (SubscriberProfileServiceException e) {
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
-          return;
+          continue;
         }
 
         //
@@ -832,13 +832,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(offerID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
-          return;
+          continue;
         }
         Offer offer = offerService.getActiveOffer(offerID, now);
         if(offer == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
-          return;
+          continue;
         }else{
           if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
         }
@@ -851,7 +851,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(salesChannel == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
-          return;
+          continue;
         }else{
           if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
         }
@@ -877,7 +877,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!priceFound){ //need this boolean since price can be null (if offer is free)
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
-          return;
+          continue;
         }
         purchaseStatus.addPaymentToBeDebited(offerPrice);
 
@@ -894,7 +894,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!offerService.isActiveOffer(offer, now)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+now+")");
-          return;
+          continue;
         }
         purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
 
@@ -907,7 +907,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(product == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
-            return;
+            continue;
           }else{
             purchaseStatus.addProductStockToBeDebited(offerProduct);
             purchaseStatus.addProductToBeCredited(offerProduct);
@@ -922,7 +922,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!offer.evaluateProfileCriteria(evaluationRequest)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-          return;
+          continue;
         }
         
         //TODO : still to be done :
