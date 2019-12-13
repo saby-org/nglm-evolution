@@ -3796,7 +3796,7 @@ public class ThirdPartyManager
       String featureID = "acceptOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
       Offer offer = offerService.getActiveOffer(offerID, now);
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
       
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -3901,6 +3901,7 @@ public class ThirdPartyManager
     String offerName = JSONUtilities.decodeString(jsonRoot, "offerName", true);
     String salesChannel = JSONUtilities.decodeString(jsonRoot, "salesChannel", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -3955,7 +3956,7 @@ public class ThirdPartyManager
       
       String featureID = "purchaseOffer";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, kafkaProducer);
+      deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, kafkaProducer);
       
       //
       // TODO how do we deal with the offline errors ? 
@@ -4806,7 +4807,7 @@ public class ThirdPartyManager
    *****************************************/
   
   public String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
-      String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
+      String moduleID, String featureID, String origin, KafkaProducer<byte[],byte[]> kafkaProducer) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -4845,6 +4846,7 @@ public class ThirdPartyManager
     request.put("eventID", "0"); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
+    request.put("origin", origin);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     

@@ -6,14 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -255,7 +253,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_purchasefulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
@@ -265,6 +263,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("offerContent", Schema.STRING_SCHEMA);
       schemaBuilder.field("meanOfPayment", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerPrice", Schema.INT64_SCHEMA);
+      schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -298,6 +297,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private String offerContent;
     private String meanOfPayment;
     private long offerPrice;
+    private String origin;
     
     //
     //  accessors
@@ -312,6 +312,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferContent() { return offerContent; }
     public String getMeanOfPayment() { return meanOfPayment; }
     public long getOfferPrice() { return offerPrice; }
+    public String getOrigin() { return origin; }
     
     //
     //  setters
@@ -331,7 +332,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     public int getOfferDeliveryReturnCode() { return getReturnCode(); }
     public String getOfferDeliveryReturnCodeDetails() { return null; }
-    public String getOfferDeliveryOrigin() { return null; }
+    public String getOfferDeliveryOrigin() { return getOrigin(); }
     public String getOfferDeliveryOfferDisplay() { return getOfferDisplay(); }
     public String getOfferDeliveryOfferID() { return getOfferID(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
@@ -348,7 +349,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID)
+    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID, String origin)
     {
       super(context, "purchaseFulfillment", deliveryRequestSource);
       this.offerID = offerID;
@@ -356,6 +357,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.salesChannelID = salesChannelID;
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
+      this.origin = origin;
       updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.now());
     }
 
@@ -446,6 +448,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
       this.returnCodeDetails = "";
+      this.origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, now);
     }
 
@@ -458,7 +461,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -470,6 +473,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerContent = offerContent;
       this.meanOfPayment = meanOfPayment;
       this.offerPrice = offerPrice;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -490,6 +494,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerContent = purchaseFulfillmentRequest.getOfferContent();
       this.meanOfPayment = purchaseFulfillmentRequest.getMeanOfPayment();
       this.offerPrice = purchaseFulfillmentRequest.getOfferPrice();
+      this.origin = purchaseFulfillmentRequest.getOrigin();
     }
 
     /*****************************************
@@ -522,6 +527,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("offerContent", purchaseFulfillmentRequest.getOfferContent());
       struct.put("meanOfPayment", purchaseFulfillmentRequest.getMeanOfPayment());
       struct.put("offerPrice", purchaseFulfillmentRequest.getOfferPrice());
+      struct.put("origin", purchaseFulfillmentRequest.getOrigin());
       return struct;
     }
 
@@ -560,12 +566,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String offerContent = (schemaVersion >= 2) ? valueStruct.getString("offerContent") : "";
       String meanOfPayment = (schemaVersion >= 2) ? valueStruct.getString("meanOfPayment") : "";
       long offerPrice = (schemaVersion >= 2) ? valueStruct.getInt64("offerPrice") : 0;
+      String origin = (schemaVersion >= 3) ? valueStruct.getString("origin") : "";
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin);
     }
 
     /*****************************************
@@ -589,6 +596,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       b.append("," + offerContent);
       b.append("," + meanOfPayment);
       b.append("," + offerPrice);
+      b.append("," + origin);
       b.append("}");
       return b.toString();
     }
@@ -667,7 +675,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(FEATUREID, getFeatureID());
           guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
+          guiPresentationMap.put(ORIGIN, getOrigin());
           guiPresentationMap.put(RETURNCODE, getReturnCode());
           guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
           guiPresentationMap.put(VOUCHERCODE, "");
@@ -737,7 +745,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(ORIGIN, getDeliveryRequestSource());
+      thirdPartyPresentationMap.put(ORIGIN, getOrigin());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(VOUCHERCODE, "");
@@ -2170,7 +2178,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "");
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

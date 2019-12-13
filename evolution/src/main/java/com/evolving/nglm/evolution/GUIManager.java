@@ -20971,10 +20971,10 @@ public class GUIManager
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
-          String featureID = "acceptOffer";
+          String featureID = userID;
           String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
           Offer offer = offerService.getActiveOffer(offerID, now);
-          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
+          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -21054,7 +21054,7 @@ public class GUIManager
    *****************************************/
   
   private String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
-      String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+      String moduleID, String featureID, String origin, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -21094,6 +21094,7 @@ public class GUIManager
     request.put("eventID", "0"); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
+    request.put("origin", origin);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
