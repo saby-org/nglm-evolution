@@ -145,7 +145,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private DeliverableService deliverableService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private ODRStatistics odrStats = null;
-  
+  private ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
   private String application_ID;
   
   /*****************************************
@@ -167,6 +167,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     application_ID = "application-deliverymanager-purchasefulfillment-" + deliveryManagerKey;
+
+    //
+    //  unique key server
+    //
+    
+    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("purchasefulfillmentmanager");
     
     //
     //  plugin instanciation
@@ -992,7 +998,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   @Override protected void shutdown()
   {
     log.info("PurchaseFulfillmentManager: shutdown called");
-    stockService.close();
+    if (stockService != null) stockService.close();
+    if (zookeeperUniqueKeyServer != null) zookeeperUniqueKeyServer.close();
     log.info("PurchaseFulfillmentManager: shutdown DONE");
   }
   
@@ -1315,8 +1322,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(offerPrice != null){
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
       purchaseStatus.incrementNewRequestCounter();
-      ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-      String deliveryRequestID = zuks.getStringKey();
+      String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
       CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0);
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
     }
@@ -1333,8 +1339,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
-          ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-          String deliveryRequestID = zuks.getStringKey();
+          String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
           CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
         }else{
@@ -1359,8 +1364,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(offerPriceRollback != null){
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
       purchaseStatus.incrementNewRequestCounter();
-      ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-      String deliveryRequestID = zuks.getStringKey();
+      String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
       CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0);
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
     }
@@ -1377,8 +1381,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
-          ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-          String deliveryRequestID = zuks.getStringKey();
+          String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
           CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
         }else{
