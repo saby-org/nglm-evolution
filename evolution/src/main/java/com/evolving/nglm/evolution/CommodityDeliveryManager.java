@@ -187,6 +187,8 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   private Map<String, KafkaProducer> providerRequestProducers = new HashMap<String/*providerID*/, KafkaProducer>();
   private Map<String, KafkaConsumer> providerResponseConsumers = new HashMap<String/*providerID*/, KafkaConsumer>();
 
+  private ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
+
   /****************************************
   *
   *  accessors
@@ -226,6 +228,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     deliverableService = new DeliverableService(Deployment.getBrokerServers(), "CommodityMgr-deliverableservice-"+deliveryManagerKey, Deployment.getDeliverableTopic(), false);
     deliverableService.start();
 
+    //
+    //  unique key server
+    //
+    
+    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("purchasefulfillmentmanager");
+    
     //
     // get list of paymentMeans and list of commodities
     //
@@ -341,6 +349,12 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
                       log.info("---  ---  ---  ---  ---  ---  ---  ---  ---  ---");
                     }
                   }
+
+                //
+                //  commit offsets
+                //
+
+                consumer.commitSync();
 
               }
             }
@@ -883,6 +897,11 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
               }
             }
 
+          //
+          //  commit offsets
+          //
+
+          consumer.commitSync();
         }
       }
     }, "consumer_"+prefix+"_"+index);
@@ -1263,6 +1282,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
     String validityPeriodType = commodityDeliveryRequest.getValidityPeriodType() != null ? commodityDeliveryRequest.getValidityPeriodType().getExternalRepresentation() : null;
     Integer validityPeriodQuantity = commodityDeliveryRequest.getValidityPeriodQuantity();
+    String newDeliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
     switch (commodityType) {
     case IN:
       
@@ -1274,7 +1294,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       HashMap<String,Object> inRequestData = new HashMap<String,Object>();
       
-      inRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      inRequestData.put("deliveryRequestID", newDeliveryRequestID);
       inRequestData.put("originatingRequest", false);
       inRequestData.put("deliveryType", deliveryType);
 
@@ -1320,7 +1340,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       HashMap<String,Object> pointRequestData = new HashMap<String,Object>();
       
-      pointRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      pointRequestData.put("deliveryRequestID", newDeliveryRequestID);
       pointRequestData.put("originatingRequest", false);
       pointRequestData.put("deliveryType", deliveryType);
 
@@ -1366,7 +1386,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       //
 
       HashMap<String,Object> rewardRequestData = new HashMap<String,Object>();
-      rewardRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      rewardRequestData.put("deliveryRequestID", newDeliveryRequestID);
       rewardRequestData.put("originatingRequest", false);
       rewardRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
       rewardRequestData.put("eventID", commodityDeliveryRequest.getEventID());
@@ -1413,7 +1433,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
       HashMap<String,Object> journeyRequestData = new HashMap<String,Object>();
       
-      journeyRequestData.put("deliveryRequestID", commodityDeliveryRequest.getDeliveryRequestID());
+      journeyRequestData.put("deliveryRequestID", newDeliveryRequestID);
       journeyRequestData.put("originatingRequest", false);
       journeyRequestData.put("deliveryType", deliveryType);
 
