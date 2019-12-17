@@ -328,8 +328,8 @@ public class TokenUtils
           {
             for (String loopSalesChannelID : salesChannelAndPrice.getSalesChannelIDs()) 
               {
-                if (loopSalesChannelID.equals(salesChannelID)) 
-                  {
+                if ((salesChannelID == null) || (loopSalesChannelID.equals(salesChannelID)))
+                 {
                     String offerId = offer.getOfferID();
                     boolean offerIsAlreadyInList = false;
                     for (ProposedOfferDetails offerAvail : offerAvailabilityFromPropensityAlgo)

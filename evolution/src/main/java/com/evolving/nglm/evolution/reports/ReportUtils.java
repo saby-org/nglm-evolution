@@ -370,8 +370,12 @@ public class ReportUtils {
   //
   public static String format(String s)
   {
+    String res = s;
+    // Replace simple quotes by spaces
+    res = res.replaceAll("'", " ");
     // Surround s with double quotes, and escape double quotes inside it
-    return "\""+s.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
+    res = "\""+res.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
+    return res;
   }
 
 }

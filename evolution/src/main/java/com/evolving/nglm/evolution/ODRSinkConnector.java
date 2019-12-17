@@ -163,6 +163,13 @@ public class ODRSinkConnector extends SimpleESSinkConnector
           String offerContent = sb.toString().substring(0, sb.toString().length()-1);
           documentMap.put("offerContent", offerContent);
         }
+
+        // populate with default values (for reports)
+        if (documentMap.get("offerPrice") == null) documentMap.put("offerPrice", 0L);
+        if (documentMap.get("meanOfPayment") == null) documentMap.put("meanOfPayment", "");
+        if (documentMap.get("offerStock") == null) documentMap.put("offerStock", -1);
+        if (documentMap.get("offerContent") == null) documentMap.put("offerContent", "");
+        
         documentMap.put("moduleID", purchaseManager.getModuleID());
         documentMap.put("featureID", purchaseManager.getFeatureID());
         documentMap.put("origin", purchaseManager.getOrigin());

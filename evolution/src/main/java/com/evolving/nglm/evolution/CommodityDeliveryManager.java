@@ -160,7 +160,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
   //  variables
   //
   
-  private int threadNumber = 5;   //TODO : make this configurable
+  private int threadNumber = 6;   //TODO : make this configurable
   private static String SEPARATOR = "-";
   
   public static final String APPLICATION_ID = "application_id";
@@ -259,6 +259,10 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
       {
         threads.add(new Thread(this, "CommodityDeliveryManagerThread_"+i));
       }
+        
+    for(Thread t : threads) {
+      t.start();
+    }
     
     //
     //  startDelivery
@@ -1249,11 +1253,6 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     
     CommodityDeliveryManager manager = new CommodityDeliveryManager(deliveryManagerKey);
 
-    //
-    //  run
-    //
-
-    manager.run();
   }
   
   /*****************************************

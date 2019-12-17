@@ -20971,7 +20971,7 @@ public class GUIManager
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
-          String featureID = userID;
+          String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
           String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
           Offer offer = offerService.getActiveOffer(offerID, now);
           deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);

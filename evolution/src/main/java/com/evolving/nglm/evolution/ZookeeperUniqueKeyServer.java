@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
@@ -38,6 +39,7 @@ public class ZookeeperUniqueKeyServer
 
   private static final String UniqueKeyServerBasepath = "/uniqueKeyServer";
   private static final int LENGTH_OF_PREFIX = 3; // Number of digits to come from ZK
+  private static final int TEN_POWER_LENGTH_OF_PREFIX = 1000; // 10^LENGTH_OF_PREFIX
   private final ZooKeeper zooKeeper;
   private UniqueKeyServer uniqueKeyServer;
   private long prefix;
@@ -131,23 +133,39 @@ public class ZookeeperUniqueKeyServer
     try
     {
       //
-      // Create new ephemeral node, which will have a brand-new sequence number
+      // find a sequential node that is not already used
       //
-      
-      String node = zookeeper.create(nodeName, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+      boolean found = false;
+      for (long i=0; i<TEN_POWER_LENGTH_OF_PREFIX; i++)
+        {
+          String path = nodeName + String.format("%010d", i); // same pattern as sequential nodes : groupID0000000000
+          if (zookeeper.exists(path, false) == null)
+            {
+              //
+              // Node does not exist, might be a good candidate.
+              //
 
-      //
-      // take LENGTH_OF_PREFIX rightmost chars of sequential suffix
-      //
-      
-      String prefixStr = node.substring(node.length()-LENGTH_OF_PREFIX);
-      prefix = Long.parseLong(prefixStr); // remove leading '0's
+              try {
+                //
+                // Create ephemeral node
+                //
+                
+                zookeeper.create(path, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL); // ignore result
+                prefix = i;
+                found = true;
+                break;
+              }
+              catch (KeeperException.NodeExistsException ex) // bad luck, node has been taken since we checked, just continue
+              {
+              }
+            }
+        }
+      if (!found)
+        {
+          log.error("openZooKeeperAndCreateNode() - impossible to find an unused node after " + TEN_POWER_LENGTH_OF_PREFIX + " tries");
+          throw new ServerRuntimeException("openZooKeeperAndCreateNode impossible to find an unused node");
+        }
     }
-    catch (KeeperException.NodeExistsException e)
-      {
-        log.error("openZooKeeperAndCreateNode() - create() - exception should never be thrown when creating a sequential node");
-        throw new ServerRuntimeException("zookeeper", e);
-      }
     catch (KeeperException e)
       {
         log.error("openZooKeeperAndCreateNode() - create() - KeeperException code {}", e.code());
