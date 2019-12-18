@@ -213,7 +213,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //  variables
     //
     
-    COMMODITY_DELIVERY_ID_VALUE = "deliverymanager-commodityDelivery" + SEPARATOR + deliveryManagerKey;
+    COMMODITY_DELIVERY_ID_VALUE = "deliverymanager-commodityDelivery";
     
     //
     //  plugin instanciation
@@ -232,7 +232,7 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
     //  unique key server
     //
     
-    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("purchasefulfillmentmanager");
+    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("commoditydelivery");
     
     //
     // get list of paymentMeans and list of commodities

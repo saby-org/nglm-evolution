@@ -694,7 +694,7 @@ public class GUIManager
     // ZookeeperUniqueKeyServer
     //
  
-    zuks = new ZookeeperUniqueKeyServer("guimanager");
+    zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
 
     /*****************************************
     *

@@ -166,13 +166,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     // variables
     //
     
-    application_ID = "application-deliverymanager-purchasefulfillment-" + deliveryManagerKey;
+    application_ID = "application-deliverymanager-purchasefulfillment";
 
     //
     //  unique key server
     //
     
-    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("purchasefulfillmentmanager");
+    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("commoditydelivery");
     
     //
     //  plugin instanciation

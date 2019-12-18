@@ -309,7 +309,7 @@ public class ThirdPartyManager
     // ZookeeperUniqueKeyServer
     //
     
-    zuks = new ZookeeperUniqueKeyServer("thirdpartymanager");
+    zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
 
     /*****************************************
      *
