@@ -18,7 +18,9 @@ import com.evolving.nglm.core.SystemTime;
 import org.json.simple.JSONObject;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -160,10 +162,10 @@ public class GUIService
     //
 
     Properties producerProperties = new Properties();
-    producerProperties.put("bootstrap.servers", bootstrapServers);
-    producerProperties.put("acks", "all");
-    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    producerProperties.put(ProducerConfig.ACKS_CONFIG, "all");
+    producerProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
     kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
     
     //
@@ -171,12 +173,12 @@ public class GUIService
     //
 
     Properties consumerProperties = new Properties();
-    consumerProperties.put("bootstrap.servers", bootstrapServers);
-    consumerProperties.put("group.id", groupID);
-    consumerProperties.put("auto.offset.reset", "earliest");
-    consumerProperties.put("enable.auto.commit", "false");
-    consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, groupID);
+    consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     guiManagedObjectsConsumer = new KafkaConsumer<>(consumerProperties);
     
     //

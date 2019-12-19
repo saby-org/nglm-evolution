@@ -206,7 +206,7 @@ public class ReportEsReader {
           SearchResponse searchResponse;
           searchResponse = elasticsearchReaderClient.search(searchRequest, RequestOptions.DEFAULT);
 
-          String scrollId = searchResponse.getScrollId();
+          String scrollId = searchResponse.getScrollId(); // always null
           SearchHit[] searchHits = searchResponse.getHits().getHits();
           log.trace("searchHits = "+searchHits);
           if (searchHits != null) {
@@ -215,8 +215,7 @@ public class ReportEsReader {
             log.info("getSkippedShards = "+searchResponse.getSkippedShards());
             log.info("getTotalShards = "+searchResponse.getTotalShards());
             log.info("getTook = "+searchResponse.getTook());
-            log.info("searchHits.length = "+searchHits.length
-                +" totalHits = "+searchResponse.getHits().getTotalHits());
+            log.info("searchHits.length = "+searchHits.length +" totalHits = "+searchResponse.getHits().getTotalHits());
           }
           while (searchHits != null && searchHits.length > 0) {
             log.debug("got "+searchHits.length+" hits");
@@ -270,7 +269,7 @@ public class ReportEsReader {
               count.getAndIncrement();
               producerReportElement.send(record
                   , (mdata, e) -> {
-                    System.out.println("Marker was sent to partition "+mdata.partition());
+                    log.debug("Marker was sent to partition "+mdata.partition());
                     nbReallySent.incrementAndGet();
                     lastTS.set(mdata.timestamp());
                   });
@@ -278,9 +277,12 @@ public class ReportEsReader {
           } else {
             log.debug("Finished with index "+i); // Markers are sent at the end
           }
-          ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
-          clearScrollRequest.addScrollId(scrollId);
-          elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+          if (scrollId != null)
+            {
+              ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+              clearScrollRequest.addScrollId(scrollId);
+              elasticsearchReaderClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            }
         } catch (IOException e) {
           e.printStackTrace();
         }

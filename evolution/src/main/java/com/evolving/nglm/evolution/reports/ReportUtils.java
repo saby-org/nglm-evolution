@@ -270,7 +270,7 @@ public class ReportUtils {
 		String nbPartitionsStr = System.getenv().get(ENV_NB_PARTITIONS);
 		if (nbPartitionsStr != null)
 			nbPartitions = Integer.parseInt(nbPartitionsStr);
-		log.info("Using "+nbPartitions+" as clientId for Kafka producer");
+		log.debug("Using "+nbPartitions+" as clientId for Kafka producer");
 		return nbPartitions;
 	}
 	

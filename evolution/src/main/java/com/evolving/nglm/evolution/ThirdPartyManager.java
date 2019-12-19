@@ -3511,6 +3511,7 @@ public class ThirdPartyManager
     }
     
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+    Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
     Date now = SystemTime.getCurrentTime();
     
     /*****************************************
@@ -3577,80 +3578,82 @@ public class ThirdPartyManager
           return JSONUtilities.encodeObject(response);          
         }
       
-      StringBuffer returnedLog = new StringBuffer();
-      double rangeValue = 0; // Not significant
-      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
-
-      // Allocate offers for this subscriber, and associate them in the token
-      // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
-      Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-          now, null,
-          subscriberProfile, scoringStrategy, productService,
-          productTypeService, catalogCharacteristicService,
-          propensityDataReader,
-          subscriberGroupEpochReader,
-          segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
-          );
-      
-      if (!presentedOffers.isEmpty())
+      if (!viewOffersOnly)
         {
-          // Send a PresentationLog to EvolutionEngine
+          StringBuffer returnedLog = new StringBuffer();
+          double rangeValue = 0; // Not significant
+          DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
 
-          String channelID = "channelID";
-          String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
-          String presentationStrategyID = strategyID; // HACK, see above
-          String controlGroupState = "controlGroupState";
-
-          List<Integer> positions = new ArrayList<Integer>();
-          List<Double> presentedOfferScores = new ArrayList<Double>();
-          List<String> scoringStrategyIDs = new ArrayList<String>();
-          int position = 0;
-          ArrayList<String> presentedOfferIDs = new ArrayList<>();
-          for (ProposedOfferDetails presentedOffer : presentedOffers)
-            {
-              presentedOfferIDs.add(presentedOffer.getOfferId());
-              positions.add(new Integer(position));
-              position++;
-              presentedOfferScores.add(1.0);
-              scoringStrategyIDs.add(strategyID);
-            }
-          String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
-          int transactionDurationMs = 0; // TODO
-          PresentationLog presentationLog = new PresentationLog(
-              subscriberID, subscriberID, now, 
-              "callUniqueIdentifier", channelID, salesChannelID, userID,
-              tokenCode, 
-              presentationStrategyID, transactionDurationMs, 
-              presentedOfferIDs, presentedOfferScores, positions, 
-              controlGroupState, scoringStrategyIDs, null, null, null
+          // Allocate offers for this subscriber, and associate them in the token
+          // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
+          Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
+              now, null,
+              subscriberProfile, scoringStrategy, productService,
+              productTypeService, catalogCharacteristicService,
+              propensityDataReader,
+              subscriberGroupEpochReader,
+              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
               );
 
-          //
-          //  submit to kafka
-          //
-
-          String topic = Deployment.getPresentationLogTopic();
-          Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-          Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
-          kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-              topic,
-              keySerializer.serialize(topic, new StringKey(subscriberID)),
-              valueSerializer.serialize(topic, presentationLog)
-              ));
-
-          // Update token locally, so that it is correctly displayed in the response
-          // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
-
-          subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
-          subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID);
-          subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
-          if (subscriberStoredToken.getCreationDate() == null)
+          if (!presentedOffers.isEmpty())
             {
-              subscriberStoredToken.setCreationDate(now);
-            }
-          subscriberStoredToken.setBoundDate(now);
-          subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
+              // Send a PresentationLog to EvolutionEngine
 
+              String channelID = "channelID";
+              String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
+              String presentationStrategyID = strategyID; // HACK, see above
+              String controlGroupState = "controlGroupState";
+
+              List<Integer> positions = new ArrayList<Integer>();
+              List<Double> presentedOfferScores = new ArrayList<Double>();
+              List<String> scoringStrategyIDs = new ArrayList<String>();
+              int position = 0;
+              ArrayList<String> presentedOfferIDs = new ArrayList<>();
+              for (ProposedOfferDetails presentedOffer : presentedOffers)
+                {
+                  presentedOfferIDs.add(presentedOffer.getOfferId());
+                  positions.add(new Integer(position));
+                  position++;
+                  presentedOfferScores.add(1.0);
+                  scoringStrategyIDs.add(strategyID);
+                }
+              String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
+              int transactionDurationMs = 0; // TODO
+              PresentationLog presentationLog = new PresentationLog(
+                  subscriberID, subscriberID, now, 
+                  "callUniqueIdentifier", channelID, salesChannelID, userID,
+                  tokenCode, 
+                  presentationStrategyID, transactionDurationMs, 
+                  presentedOfferIDs, presentedOfferScores, positions, 
+                  controlGroupState, scoringStrategyIDs, null, null, null
+                  );
+
+              //
+              //  submit to kafka
+              //
+
+              String topic = Deployment.getPresentationLogTopic();
+              Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+              Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
+              kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                  topic,
+                  keySerializer.serialize(topic, new StringKey(subscriberID)),
+                  valueSerializer.serialize(topic, presentationLog)
+                  ));
+
+              // Update token locally, so that it is correctly displayed in the response
+              // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
+
+              subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
+              subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID);
+              subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+              if (subscriberStoredToken.getCreationDate() == null)
+                {
+                  subscriberStoredToken.setCreationDate(now);
+                }
+              subscriberStoredToken.setBoundDate(now);
+              subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
+            }
         }
 
       /*****************************************
@@ -3658,7 +3661,7 @@ public class ThirdPartyManager
        *  decorate and response
        *
        *****************************************/
-      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService);
+      response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService);
       response.putAll(resolveAllSubscriberIDs(subscriberProfile));
       response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
       response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
@@ -4064,7 +4067,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService))
               .collect(Collectors.toList());
         }
 
