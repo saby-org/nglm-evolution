@@ -22350,14 +22350,14 @@ public class GUIManager
         case "pushTemplates_app":
           if (includeDynamic)
             {
-              filterPushTemplates("3", result, now);  //Note : "app" is the id of the communication channel (defined in deployment.json)
+              filterPushTemplates("3", result, now);  //Note : "3" is the id of the communication channel (defined in deployment.json)
             }
           break;
           
         case "pushTemplates_USSD":
           if (includeDynamic)
             {
-              filterPushTemplates("4", result, now);  //Note : "USSD" is the id of the communication channel (defined in deployment.json)
+              filterPushTemplates("4", result, now);  //Note : "4" is the id of the communication channel (defined in deployment.json)
             }
           break;
           
@@ -22631,7 +22631,9 @@ public class GUIManager
               if(pushTemplate.getCommunicationChannelID().equals(communicationChannelID)){
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
                 availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
+                //TODO : Gui is not sending the display field yet. Change this when GUI will be updated ...
+                //availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
+                availableValue.put("display", ((messageTemplate.getSubscriberMessageTemplateDisplay() != null && !messageTemplate.getSubscriberMessageTemplateDisplay().isEmpty()) ? messageTemplate.getSubscriberMessageTemplateDisplay() : messageTemplate.getSubscriberMessageTemplateName()));
                 result.add(JSONUtilities.encodeObject(availableValue));
                 break;
               }

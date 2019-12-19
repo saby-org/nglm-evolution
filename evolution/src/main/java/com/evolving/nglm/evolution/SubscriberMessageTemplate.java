@@ -78,6 +78,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
 
   public String getSubscriberMessageTemplateID() { return getGUIManagedObjectID(); }
   public String getSubscriberMessageTemplateName() { return getGUIManagedObjectName(); }
+  public String getSubscriberMessageTemplateDisplay() { return getGUIManagedObjectDisplay(); }
   public Map<String,DialogMessage> getDialogMessages() { return dialogMessages; }
   public String getReadOnlyCopyID() { return readOnlyCopyID; }
   public Map<String, Boolean> getDialogMessageFields() { return dialogMessageFields;}
