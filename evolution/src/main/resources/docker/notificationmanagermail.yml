@@ -1,4 +1,4 @@
-notificationmanagermail-<_KEY_>:
+notificationmail-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-notificationmanagermail:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:

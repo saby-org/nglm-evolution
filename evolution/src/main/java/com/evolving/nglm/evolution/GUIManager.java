@@ -5776,7 +5776,7 @@ public class GUIManager
       }
     String bulkCampaignName = JSONUtilities.decodeString(jsonRoot, "name", true);
     String bulkCampaignDisplay = JSONUtilities.decodeString(jsonRoot, "display", true);
-    String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", true);
+    String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", false);
     String bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
     String bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
     JSONArray bulkCampaignTargetIDs = JSONUtilities.decodeJSONArray(jsonRoot, "targetID", true);

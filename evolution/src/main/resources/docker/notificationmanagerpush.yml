@@ -1,4 +1,4 @@
-notificationmanagerpush-<_KEY_>:
+notificationpush-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-notificationmanagerpush:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
