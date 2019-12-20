@@ -7,6 +7,7 @@ sbm-api-<_KEY_>:
     SBMSettings__SBMApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
     SBMSettings__DateTimeFormat: 'yyyy-MM-ddTHH:mm:ss:fff+0600'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
+    SBMSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     SBM_API_PORT: <_PORT_>
   volumes:
