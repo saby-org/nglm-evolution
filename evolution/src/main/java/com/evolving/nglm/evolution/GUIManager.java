@@ -5082,8 +5082,15 @@ public class GUIManager
       {
         if (journey.getGUIManagedObjectType().equals(objectType))
           {
-            JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);            
-            int subscriberCount = journeyTrafficReader.get(journey.getGUIManagedObjectID()).getCurrentData().getGlobal().getSubscriberCount();
+            JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
+            int subscriberCount = 0;
+            JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
+            if (journeyTrafficHistory != null &&
+                journeyTrafficHistory.getCurrentData() != null &&
+                journeyTrafficHistory.getCurrentData().getGlobal() != null)
+              {
+                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberCount();
+              }
             journeyInfo.put("journeySubscriberCount", subscriberCount);
             journeys.add(journeyInfo);
           }
@@ -22018,28 +22025,121 @@ public class GUIManager
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
-        case "supportedLanguages":
-          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+
+        case "callableCampaigns":
+          if (includeDynamic)
             {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedLanguage.getID());
-              availableValue.put("display", supportedLanguage.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
+              for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (campaignUnchecked.getAccepted())
+                    {
+                      Journey campaign = (Journey) campaignUnchecked;
+                      switch (campaign.getTargetingType())
+                        {
+                          case Manual:
+                            switch (campaign.getGUIManagedObjectType())
+                              {
+                                case Campaign:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", campaign.getJourneyID());
+                                  availableValue.put("display", campaign.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
             }
           break;
 
-        case "segments":
+        case "callableLoyaltyPrograms":
           if (includeDynamic)
             {
-              for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+              for (GUIManagedObject loyaltyProgramUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
                 {
-                  for (Segment segment : dimension.getSegments())
+                  if (loyaltyProgramUnchecked.getAccepted())
                     {
+                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", segment.getID());
-                      availableValue.put("display", dimension.getSegmentationDimensionName() + ":" + segment.getName());
+                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
+                }
+            }
+          break;
+
+        case "callableJourneys":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (journeyUnchecked.getAccepted())
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      switch (journey.getTargetingType())
+                        {
+                          case Manual:
+                            switch (journey.getGUIManagedObjectType())
+                              {
+                                case Journey:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", journey.getJourneyID());
+                                  availableValue.put("display", journey.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "deliverableIds":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverablesUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", deliverable.getGUIManagedObjectID());
+                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "deliverableNames":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverablesUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", deliverable.getDeliverableName());
+                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+          
+        case "deliveryStatuses":
+          if (includeDynamic)
+            {
+              for (DeliveryStatus deliveryStatus : DeliveryManager.DeliveryStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", deliveryStatus.getExternalRepresentation());
+                  availableValue.put("display", deliveryStatus.name());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
@@ -22051,6 +22151,74 @@ public class GUIManager
               availableValue.put("id", evolutionEngineEventDeclaration.getName());
               availableValue.put("display", evolutionEngineEventDeclaration.getName());
               result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "historicalBulkCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalJourneys":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Journey)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "loyaltyPrograms":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject loyaltyProgramsUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
+                {
+                  if (loyaltyProgramsUnchecked.getAccepted())
+                    {
+                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
             }
           break;
 
@@ -22074,20 +22242,16 @@ public class GUIManager
                 }
             }
           break;
-
-        case "paymentMeans":
+          
+        case "moduleIds":
           if (includeDynamic)
             {
-              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+              for (Module module : DeliveryRequest.Module.values())
                 {
-                  if (paymentMeanUnchecked.getAccepted())
-                    {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", paymentMean.getPaymentMeanID());
-                      availableValue.put("display", paymentMean.getDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", module.getExternalRepresentation());
+                  availableValue.put("display", module.name());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
@@ -22137,6 +22301,45 @@ public class GUIManager
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", offerObjective.getOfferObjectiveID());
                       availableValue.put("display", offerObjective.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "offersPresentationTokenTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
+                {
+                  if (tokenTypeUnchecked.getAccepted())
+                    {
+                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
+                      switch (tokenType.getTokenTypeKind())
+                        {
+                          case OffersPresentation:
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", tokenType.getTokenTypeID());
+                            availableValue.put("display", tokenType.getTokenTypeDisplay());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "paymentMeans":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+                {
+                  if (paymentMeanUnchecked.getAccepted())
+                    {
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", paymentMean.getPaymentMeanID());
+                      availableValue.put("display", paymentMean.getDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -22193,6 +22396,23 @@ public class GUIManager
             }
           break;
 
+        case "presentationStrategies":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
+                {
+                  if (presentationStrategyUnchecked.getAccepted())
+                    {
+                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
+                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
         case "products":
           if (includeDynamic)
             {
@@ -22227,129 +22447,15 @@ public class GUIManager
             }
           break;
 
-        case "callableLoyaltyPrograms":
+        case "providerIds":
           if (includeDynamic)
             {
-              for (GUIManagedObject loyaltyProgramUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
+              for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
                 {
-                  if (loyaltyProgramUnchecked.getAccepted())
-                    {
-                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "callableCampaigns":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
-                {
-                  if (campaignUnchecked.getAccepted())
-                    {
-                      Journey campaign = (Journey) campaignUnchecked;
-                      switch (campaign.getTargetingType())
-                        {
-                          case Manual:
-                            switch (campaign.getGUIManagedObjectType())
-                              {
-                                case Campaign:
-                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                  availableValue.put("id", campaign.getJourneyID());
-                                  availableValue.put("display", campaign.getJourneyName());
-                                  result.add(JSONUtilities.encodeObject(availableValue));
-                                  break;
-                              }
-                            break;
-                        }
-                    }
-                }
-            }
-          break;
-
-        case "callableJourneys":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
-                {
-                  if (journeyUnchecked.getAccepted())
-                    {
-                      Journey journey = (Journey) journeyUnchecked;
-                      switch (journey.getTargetingType())
-                        {
-                          case Manual:
-                            switch (journey.getGUIManagedObjectType())
-                              {
-                                case Journey:
-                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                  availableValue.put("id", journey.getJourneyID());
-                                  availableValue.put("display", journey.getJourneyName());
-                                  result.add(JSONUtilities.encodeObject(availableValue));
-                                  break;
-                              }
-                            break;
-                        }
-                    }
-                }
-            }
-          break;
-
-        case "presentationStrategies":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
-                {
-                  if (presentationStrategyUnchecked.getAccepted())
-                    {
-                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
-                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "scoringStrategies":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject scoringStrategyUnchecked : scoringStrategyService.getStoredScoringStrategies())
-                {
-                  if (scoringStrategyUnchecked.getAccepted())
-                    {
-                      ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", scoringStrategy.getScoringStrategyID());
-                      availableValue.put("display", scoringStrategy.getGUIManagedObjectName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "offersPresentationTokenTypes":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
-                {
-                  if (tokenTypeUnchecked.getAccepted())
-                    {
-                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
-                      switch (tokenType.getTokenTypeKind())
-                        {
-                          case OffersPresentation:
-                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                            availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeName());
-                            result.add(JSONUtilities.encodeObject(availableValue));
-                            break;
-                        }
-                    }
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", deliveryManager.getProviderID());
+                  availableValue.put("display", deliveryManager.getProviderName());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
@@ -22367,6 +22473,39 @@ public class GUIManager
               filterPushTemplates("4", result, now);  //Note : "4" is the id of the communication channel (defined in deployment.json)
             }
           break;
+
+        case "scoringStrategies":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject scoringStrategyUnchecked : scoringStrategyService.getStoredScoringStrategies())
+                {
+                  if (scoringStrategyUnchecked.getAccepted())
+                    {
+                      ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", scoringStrategy.getScoringStrategyID());
+                      availableValue.put("display", scoringStrategy.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "segments":
+          if (includeDynamic)
+            {
+              for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+                {
+                  for (Segment segment : dimension.getSegments())
+                    {
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", segment.getID());
+                      availableValue.put("display", dimension.getSegmentationDimensionDisplay() + ":" + segment.getName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
           
         case "smsTemplates":
           if (includeDynamic)
@@ -22378,186 +22517,7 @@ public class GUIManager
                       SMSTemplate messageTemplate = (SMSTemplate) messageTemplateUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-          
-        case "supportedShortCodes":
-          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedShortCode.getID());
-              availableValue.put("display", supportedShortCode.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          break;
-
-        case "supportedEmailAddresses":
-          for (SupportedEmailAddress supportedEmailAddress : Deployment.getSupportedEmailAddresses().values())
-            {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedEmailAddress.getID());
-              availableValue.put("display", supportedEmailAddress.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
-            }
-          break;
-
-        case "tokenTypes":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject tokenTypesUnchecked : tokenTypeService.getStoredTokenTypes())
-                {
-                  if (tokenTypesUnchecked.getAccepted())
-                    {
-                      TokenType tokenType = (TokenType) tokenTypesUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", tokenType.getGUIManagedObjectID());
-                      availableValue.put("display", tokenType.getTokenTypeName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "loyaltyPrograms":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject loyaltyProgramsUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
-                {
-                  if (loyaltyProgramsUnchecked.getAccepted())
-                    {
-                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-          
-        case "moduleIds":
-          if (includeDynamic)
-            {
-              for (Module module : DeliveryRequest.Module.values())
-                {
-                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", module.getExternalRepresentation());
-                  availableValue.put("display", module.name());
-                  result.add(JSONUtilities.encodeObject(availableValue));
-                }
-            }
-          break;
-          
-        case "deliveryStatuses":
-          if (includeDynamic)
-            {
-              for (DeliveryStatus deliveryStatus : DeliveryManager.DeliveryStatus.values())
-                {
-                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", deliveryStatus.getExternalRepresentation());
-                  availableValue.put("display", deliveryStatus.name());
-                  result.add(JSONUtilities.encodeObject(availableValue));
-                }
-            }
-          break;
-
-        case "providerIds":
-          if (includeDynamic)
-            {
-              for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
-                {
-                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", deliveryManager.getProviderID());
-                  availableValue.put("display", deliveryManager.getProviderName());
-                  result.add(JSONUtilities.encodeObject(availableValue));
-                }
-            }
-          break;
-
-        case "deliverableIds":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
-                {
-                  if (deliverablesUnchecked.getAccepted())
-                    {
-                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", deliverable.getGUIManagedObjectID());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-
-        case "deliverableNames":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
-                {
-                  if (deliverablesUnchecked.getAccepted())
-                    {
-                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", deliverable.getDeliverableName());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "historicalJourneys":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
-                {
-                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Journey)
-                    {
-                      Journey journey = (Journey) journeyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", journey.getJourneyID());
-                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "historicalCampaigns":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
-                {
-                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)
-                    {
-                      Journey journey = (Journey) journeyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", journey.getJourneyID());
-                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "historicalBulkCampaigns":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
-                {
-                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)
-                    {
-                      Journey journey = (Journey) journeyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", journey.getJourneyID());
-                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -22580,6 +22540,53 @@ public class GUIManager
                         availableValue.put("display", subscriberJourneyStatus.getDisplay());
                         result.add(JSONUtilities.encodeObject(availableValue));
                         break;
+                    }
+                }
+            }
+          break;
+
+        case "supportedEmailAddresses":
+          for (SupportedEmailAddress supportedEmailAddress : Deployment.getSupportedEmailAddresses().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedEmailAddress.getID());
+              availableValue.put("display", supportedEmailAddress.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "supportedLanguages":
+          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedLanguage.getID());
+              availableValue.put("display", supportedLanguage.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+          
+        case "supportedShortCodes":
+          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedShortCode.getID());
+              availableValue.put("display", supportedShortCode.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "tokenTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject tokenTypesUnchecked : tokenTypeService.getStoredTokenTypes())
+                {
+                  if (tokenTypesUnchecked.getAccepted())
+                    {
+                      TokenType tokenType = (TokenType) tokenTypesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", tokenType.getGUIManagedObjectID());
+                      availableValue.put("display", tokenType.getTokenTypeDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }

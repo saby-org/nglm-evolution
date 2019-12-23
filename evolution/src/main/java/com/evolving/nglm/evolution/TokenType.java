@@ -96,6 +96,7 @@ public class TokenType extends GUIManagedObject
 
   public String getTokenTypeID() { return getGUIManagedObjectID(); }
   public String getTokenTypeName() { return getGUIManagedObjectName(); }
+  public String getTokenTypeDisplay() { return getGUIManagedObjectDisplay(); }
   public TokenTypeKind getTokenTypeKind() { return tokenTypeKind; }
   public TokenTypeValidity getValidity() { return validity; }
   public String getCodeFormat() { return codeFormat; }

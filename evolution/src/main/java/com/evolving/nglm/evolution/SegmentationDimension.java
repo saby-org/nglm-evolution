@@ -96,6 +96,7 @@ public abstract class SegmentationDimension extends GUIManagedObject
 
   public String getSegmentationDimensionID() { return getGUIManagedObjectID(); }
   public String getSegmentationDimensionName() { return getGUIManagedObjectName(); }
+  public String getSegmentationDimensionDisplay() { return getGUIManagedObjectDisplay(); }
   public SegmentationDimensionTargetingType getTargetingType() { return targetingType; }
   public String getDefaultSegmentID() { return defaultSegmentID; }
   public boolean getIsSimpleProfileDimension() { return isSimpleProfileDimension; }
