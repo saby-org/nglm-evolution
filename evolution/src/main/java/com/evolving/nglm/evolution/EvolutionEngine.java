@@ -1249,8 +1249,8 @@ public class EvolutionEngine
     //
 
     PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
-    httpClientConnectionManager.setDefaultMaxPerRoute(50);
-    httpClientConnectionManager.setMaxTotal(150);
+    httpClientConnectionManager.setDefaultMaxPerRoute(50*numberOfStreamThreads);
+    httpClientConnectionManager.setMaxTotal(100*numberOfStreamThreads);
 
     //
     //  httpClient
@@ -1271,7 +1271,7 @@ public class EvolutionEngine
         InetSocketAddress addr = new InetSocketAddress(subscriberProfilePort);
         subscriberProfileServer = HttpServer.create(addr, 0);
         subscriberProfileServer.createContext("/nglm-evolutionengine/getSubscriberProfile", new APIHandler(API.getSubscriberProfile));
-        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(50));
+        subscriberProfileServer.setExecutor(Executors.newFixedThreadPool(50*numberOfStreamThreads));
       }
     catch (IOException e)
       {
@@ -1289,7 +1289,7 @@ public class EvolutionEngine
         InetSocketAddress addr = new InetSocketAddress(internalPort);
         internalServer = HttpServer.create(addr, 0);
         internalServer.createContext("/nglm-evolutionengine/retrieveSubscriberProfile", new APIHandler(API.retrieveSubscriberProfile));
-        internalServer.setExecutor(Executors.newFixedThreadPool(50));
+        internalServer.setExecutor(Executors.newFixedThreadPool(50*numberOfStreamThreads));
       }
     catch (IOException e)
       {

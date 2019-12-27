@@ -47,4 +47,4 @@ echo deployment complete
 #  run
 #
 
-exec kafka-run-class -name commodityDeliveryManager -loggc com.evolving.nglm.evolution.CommodityDeliveryManager $KEY
+exec kafka-run-class -name commodityDeliveryManager -loggc com.evolving.nglm.evolution.CommodityDeliveryManager $KEY $COMMODITYDELIVERYMANAGER_INSTANCES

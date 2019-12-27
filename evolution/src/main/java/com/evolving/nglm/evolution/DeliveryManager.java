@@ -771,7 +771,7 @@ public abstract class DeliveryManager
                 //  register correlator
                 //
 
-                log.debug("waitingForCorrelatorUpdate.put (restart): {} {}", deliveryRequest.getCorrelator(), deliveryRequest);
+                if(log.isDebugEnabled()) log.debug("waitingForCorrelatorUpdate.put (restart): {} {}", deliveryRequest.getCorrelator(), deliveryRequest);
                 waitingForCorrelatorUpdate.put(deliveryRequest.getCorrelator(), deliveryRequest);
 
                 //
@@ -1172,7 +1172,7 @@ public abstract class DeliveryManager
     *
     *****************************************/
 
-    log.debug("submitDeliveryRequest: {}", deliveryRequest);
+    if(log.isDebugEnabled()) log.debug("submitDeliveryRequest: {}", deliveryRequest);
 
     /****************************************
     *
@@ -1280,7 +1280,7 @@ public abstract class DeliveryManager
         *
         *****************************************/
 
-        log.debug("processUpdateRequest: {}", deliveryRequest);
+        if(log.isDebugEnabled()) log.debug("processUpdateRequest: {}", deliveryRequest);
 
         /*****************************************
         *
@@ -1374,7 +1374,7 @@ public abstract class DeliveryManager
             //  register correlator
             //
 
-            log.debug("waitingForCorrelatorUpdate.put (processUpdateRequest): {} {}", deliveryRequest.getCorrelator(), deliveryRequest);
+            if(log.isDebugEnabled()) log.debug("waitingForCorrelatorUpdate.put (processUpdateRequest): {} {}", deliveryRequest.getCorrelator(), deliveryRequest);
             waitingForCorrelatorUpdate.put(deliveryRequest.getCorrelator(), deliveryRequest);
 
             //
@@ -1404,7 +1404,7 @@ public abstract class DeliveryManager
         *
         *****************************************/
 
-        log.debug("processCompleteRequest: {}", deliveryRequest);
+        if(log.isDebugEnabled()) log.debug("processCompleteRequest: {}", deliveryRequest);
 
         /*****************************************
         *
@@ -1625,9 +1625,9 @@ public abstract class DeliveryManager
       {
         try
           {
-            log.info("DeliveryManager processSubmitCorrelatorUpdate (" + correlator + ", "+correlatorUpdate+") ...");
+            if(log.isDebugEnabled()) log.debug("DeliveryManager processSubmitCorrelatorUpdate (" + correlator + ", "+correlatorUpdate+") ...");
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), stringValueSerde.serializer().serialize(routingTopic, new StringValue(correlatorUpdate.toString())))).get();
-            log.info("DeliveryManager processSubmitCorrelatorUpdate (" + correlator + ", "+correlatorUpdate+") done");
+            if(log.isDebugEnabled()) log.debug("DeliveryManager processSubmitCorrelatorUpdate (" + correlator + ", "+correlatorUpdate+") done");
             break;
           }
         catch (InterruptedException e)
@@ -1782,7 +1782,7 @@ public abstract class DeliveryManager
             //  log (debug)
             //
 
-            log.debug("receiveCorrelatorUpdate: {} {} {}", correlator, correlatorUpdate, deliveryRequest);
+            if(log.isDebugEnabled()) log.debug("receiveCorrelatorUpdate: {} {} {}", correlator, correlatorUpdate, deliveryRequest);
 
             //
             //  update (if necessary)
