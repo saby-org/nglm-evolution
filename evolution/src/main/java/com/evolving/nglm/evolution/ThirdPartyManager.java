@@ -70,7 +70,9 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
+import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -79,6 +81,7 @@ import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -198,7 +201,9 @@ public class ThirdPartyManager
     acceptOffer,
     purchaseOffer,
     triggerEvent,
-    enterCampaign;
+    enterCampaign,
+    loyaltyProgramOptIn,
+    loyaltyProgramOptOut;
   }
 
   //
@@ -436,6 +441,8 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/purchaseOffer", new APIHandler(API.purchaseOffer));
       restServer.createContext("/nglm-thirdpartymanager/triggerEvent", new APIHandler(API.triggerEvent));
       restServer.createContext("/nglm-thirdpartymanager/enterCampaign", new APIHandler(API.enterCampaign));
+      restServer.createContext("/nglm-thirdpartymanager/loyaltyProgramOptIn", new APIHandler(API.loyaltyProgramOptIn));
+      restServer.createContext("/nglm-thirdpartymanager/loyaltyProgramOptOut", new APIHandler(API.loyaltyProgramOptOut));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -757,6 +764,12 @@ public class ThirdPartyManager
               break;
             case enterCampaign:
               jsonResponse = processEnterCampaign(jsonRoot);
+              break;
+            case loyaltyProgramOptIn:
+              jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, true);
+              break;
+            case loyaltyProgramOptOut:
+              jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, false);
               break;
           }
         }
@@ -3980,6 +3993,139 @@ public class ThirdPartyManager
      *
      *****************************************/
     response.put("deliveryRequestID", deliveryRequestID);
+    response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+   *
+   *  processLoyaltyProgramOptInOut
+   *
+   *****************************************/
+
+  private JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn) throws ThirdPartyManagerException
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+
+    String subscriberID;
+    try {
+      subscriberID = resolveSubscriberID(jsonRoot, response);
+    } catch (ThirdPartyManagerException e) {
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    String loyaltyProgramName = JSONUtilities.decodeString(jsonRoot, "loyaltyProgram", true);
+    String loyaltyProgramRequestID = "";
+
+    /*****************************************
+     *
+     * getSubscriberProfile - no history
+     *
+     *****************************************/
+
+    try
+    {
+      SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false, false);
+      if (subscriberProfile == null)
+        {
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+          if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+          return JSONUtilities.encodeObject(response);
+        }
+
+      Date now = SystemTime.getCurrentTime();
+
+      String loyaltyProgramID = null;
+      for (LoyaltyProgram loyaltyProgram : loyaltyProgramService.getActiveLoyaltyPrograms(now))
+        {
+          if (loyaltyProgramName.equals(loyaltyProgram.getLoyaltyProgramDisplay()))
+            {
+              loyaltyProgramID = loyaltyProgram.getGUIManagedObjectID();
+              break;
+            }
+        }
+      if (loyaltyProgramID == null)
+        {
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseCode());
+          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseMessage());
+          return JSONUtilities.encodeObject(response);          
+        }
+      String topic = Deployment.getLoyaltyProgramRequestTopic();
+      Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+      Serializer<LoyaltyProgramRequest> valueSerializer = LoyaltyProgramRequest.serde().serializer();
+      
+      String deliveryRequestSource = "0" ; // TODO is JourneyID when in a journey, what to put here ?
+      String operation = optIn ? "opt-in" : "opt-out";
+      String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
+      loyaltyProgramRequestID = zuks.getStringKey();
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+            
+      // Build a json doc to create the LoyaltyProgramRequest
+      HashMap<String,Object> request = new HashMap<String,Object>();
+      
+      // Fields for LoyaltyProgramRequest
+      request.put("operation", operation);
+      request.put("loyaltyProgramRequestID", loyaltyProgramRequestID);
+      request.put("loyaltyProgramID", loyaltyProgramID);
+      request.put("eventDate", now);
+      
+      // Fields for DeliveryRequest
+      request.put("deliveryRequestID", loyaltyProgramRequestID);
+      request.put("subscriberID", subscriberID);
+      request.put("eventID", "0"); // No event here
+      request.put("moduleID", moduleID);
+      request.put("featureID", deliveryRequestSource);
+      request.put("deliveryType", "loyaltyProgramFulfillment");
+      
+      JSONObject valueRes = JSONUtilities.encodeObject(request);
+
+      LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(valueRes, null);
+
+      // Write it to the right topic
+      kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+          topic,
+          keySerializer.serialize(topic, new StringKey(subscriberID)),
+          valueSerializer.serialize(topic, loyaltyProgramRequest)
+          ));
+
+      //
+      // TODO how do we deal with the offline errors ? 
+      //
+      
+      // TODO trigger event (for campaign) ?
+      
+    }
+    catch (SubscriberProfileServiceException e) 
+    {
+      log.error("unable to process request processLoyaltyProgramOptInOut {} ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode()) ;
+    } 
+
+    /*****************************************
+     *
+     *  decorate and response
+     *
+     *****************************************/
+    response.put("deliveryRequestID", loyaltyProgramRequestID);
     response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
     response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
     return JSONUtilities.encodeObject(response);

@@ -397,6 +397,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "custom
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo
+
 --
 --  dnbo proxy
 --
