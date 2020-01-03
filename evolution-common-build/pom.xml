@@ -156,6 +156,7 @@
     <topic.presentationlog_fileconnector>presentationlog-fileconnector</topic.presentationlog_fileconnector>
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
+    <topic.tokenchange>tokenchange</topic.tokenchange>
     <topic.propensitylog>propensitylog</topic.propensitylog>
     <topic.profilechangeevent>profilechangeevent</topic.profilechangeevent>
     <topic.profilesegmentchangeevent>profilesegmentchangeevent</topic.profilesegmentchangeevent>

@@ -72,6 +72,7 @@
   "journeyTrafficChangeLog"                              : "${changelog.journeytrafficengine.journeytraffic}",
   "journeyTrafficChangeLogTopic"                         : "${changelog.journeytrafficengine.journeytraffic.topic}",
   "journeyTrafficTopic"                                  : "${topic.journeytraffic}",
+  "tokenChangeTopic"                                     : "${topic.tokenchange}",
   "autoProvisionedSubscriberChangeLog"                   : "${changelog.subscribermanager.autoprovisionedsubscriber}",
   "autoProvisionedSubscriberChangeLogTopic"              : "${changelog.subscribermanager.autoprovisionedsubscriber.topic}",
   "rekeyedAutoProvisionedAssignSubscriberIDsStreamTopic" : "${rekeyed.subscribermanager.autoprovisionedsubscriber.topic}",

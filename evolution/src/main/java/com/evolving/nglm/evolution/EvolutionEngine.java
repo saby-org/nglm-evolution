@@ -291,6 +291,7 @@ public class EvolutionEngine
     String journeyResponseTopic = Deployment.getJourneyResponseTopic();
     String loyaltyProgramResponseTopic = Deployment.getLoyaltyProgramResponseTopic();
     String journeyTrafficTopic = Deployment.getJourneyTrafficTopic();
+    String tokenChangeTopic = Deployment.getTokenChangeTopic();
 
     //
     //  changelogs
@@ -650,6 +651,7 @@ public class EvolutionEngine
     final ConnectSerde<PropensityKey> propensityKeySerde = PropensityKey.serde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
     final Serde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
+    final Serde<TokenChange> tokenChangeSerde = TokenChange.serde();
 
     //
     //  special serdes
@@ -883,9 +885,10 @@ public class EvolutionEngine
         (key,value) -> (value instanceof SubscriberTrace),
         (key,value) -> (value instanceof PropensityEventOutput),
         (key,value) -> (value instanceof ExternalAPIOutput),
-		(key,value) -> (value instanceof ProfileChangeEvent), 
+	      (key,value) -> (value instanceof ProfileChangeEvent),
         (key,value) -> (value instanceof ProfileSegmentChangeEvent),
-        (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent));
+        (key,value) -> (value instanceof ProfileLoyaltyProgramChangeEvent),
+        (key,value) -> (value instanceof TokenChange));
     KStream<StringKey, JourneyRequest> journeyResponseStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[0];
     KStream<StringKey, JourneyRequest> journeyRequestStream = (KStream<StringKey, JourneyRequest>) branchedEvolutionEngineOutputs[1];
     KStream<StringKey, LoyaltyProgramRequest> loyaltyProgramResponseStream = (KStream<StringKey, LoyaltyProgramRequest>) branchedEvolutionEngineOutputs[2];
@@ -902,6 +905,7 @@ public class EvolutionEngine
     KStream<StringKey, ProfileChangeEvent> profileChangeEventsStream = (KStream<StringKey, ProfileChangeEvent>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventsStream = (KStream<StringKey, ProfileSegmentChangeEvent>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventsStream = (KStream<StringKey, ProfileLoyaltyProgramChangeEvent>) branchedEvolutionEngineOutputs[14];
+    KStream<StringKey, TokenChange> tokenChangeStream = (KStream<StringKey, TokenChange>) branchedEvolutionEngineOutputs[15];
  
 
     //
@@ -1039,6 +1043,7 @@ public class EvolutionEngine
     profileLoyaltyProgramChangeEventsStream.to(profileLoyaltyProgramChangeEventTopic, Produced.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     rekeyedJourneyStatisticStream.to(journeyTrafficTopic, Produced.with(stringKeySerde, journeyStatisticWrapperSerde));
     rekeyedPropensityStream.to(propensityOutputTopic, Produced.with(propensityKeySerde, propensityEventOutputSerde));
+    tokenChangeStream.to(tokenChangeTopic, Produced.with(stringKeySerde, tokenChangeSerde));
     
     //
     //  sink - delivery request streams
@@ -1748,6 +1753,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateJourneys(context, evolutionEvent) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update Tokens
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateTokens(context, evolutionEvent) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -2006,7 +2019,6 @@ public class EvolutionEngine
         subscriberStateUpdated = true;
       }
 
-        
     //
     //  profileChangeEvents cleaning
     //
@@ -2014,6 +2026,16 @@ public class EvolutionEngine
     if (subscriberState.getProfileChangeEvents() != null)
       {
         subscriberState.getProfileChangeEvents().clear();
+        subscriberStateUpdated = true;
+      }
+
+    //
+    //  tokenChange cleaning
+    //
+
+    if (subscriberState.getTokenChanges() != null)
+      {
+        subscriberState.getTokenChanges().clear();
         subscriberStateUpdated = true;
       }
     
@@ -3424,6 +3446,7 @@ public class EvolutionEngine
     if (evolutionEvent instanceof PresentationLog || evolutionEvent instanceof AcceptanceLog)
       {
         String eventTokenCode = null;
+        String eventID = null;
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         DNBOToken subscriberStoredToken = null;
         TokenType defaultDNBOTokenType = tokenTypeService.getActiveTokenType("external", SystemTime.getCurrentTime());
@@ -3440,10 +3463,12 @@ public class EvolutionEngine
         if (evolutionEvent instanceof PresentationLog)
           {
             eventTokenCode = ((PresentationLog) evolutionEvent).getPresentationToken();
+            eventID = ((PresentationLog)evolutionEvent).getCallUniqueIdentifier();
           }
         else if (evolutionEvent instanceof AcceptanceLog)
           {
             eventTokenCode = ((AcceptanceLog) evolutionEvent).getPresentationToken();
+            eventID = ((AcceptanceLog)evolutionEvent).getCallUniqueIdentifier();
           }
 
         //
@@ -3504,6 +3529,7 @@ public class EvolutionEngine
           {
             subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
             subscriberTokens.add(subscriberStoredToken);
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "returnStatus", evolutionEvent.getClass().getSimpleName()));
             subscriberStateUpdated = true;
           }
 
@@ -3526,6 +3552,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, presentationLog.getCallUniqueIdentifier(), eventTokenCode, "Allocate", "returnStatus", "PresentationLog"));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -3568,6 +3595,7 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), acceptanceLog.getCallUniqueIdentifier(), eventTokenCode, "Redeem", "returnStatus", "AcceptanceLog"));
               }
             subscriberStateUpdated = true;
           }
@@ -3590,6 +3618,33 @@ public class EvolutionEngine
               }
           }
       }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return subscriberStateUpdated;
+  }
+
+  /*****************************************
+  *
+  *  updateTokens
+  *
+  *****************************************/
+
+  private static boolean updateTokens(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberStateUpdated = false;
 
     /*****************************************
     *
@@ -4384,6 +4439,31 @@ public class EvolutionEngine
                                 case TokenUpdate:
                                   Token token = (Token) action;
                                   subscriberState.getSubscriberProfile().getTokens().add(token);
+                                  String act = "";
+                                  Date date = new Date();
+                                  switch (token.getTokenStatus())
+                                  {
+                                    case New:
+                                      act = "Create";
+                                      date = token.getCreationDate();
+                                      break;
+                                    case Bound:
+                                      act = "Allocate";
+                                      date = token.getBoundDate();
+                                      break;
+                                    case Redeemed:
+                                      act = "Redeem";
+                                      date = token.getRedeemedDate();
+                                      break;
+                                    case Expired :
+                                      act = "Refuse";
+                                      date = token.getTokenExpirationDate();
+                                      break;
+                                    default :
+                                      act = "Unknown";
+                                      break;
+                                  }
+                                  subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), date, journey.getJourneyID(), token.getTokenCode(), act, "returnStatus", "Journey"));
                                   break;
 
                                 default:
@@ -5139,6 +5219,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getPropensityOutputs());
         result.addAll((subscriberState.getExternalAPIOutput() != null) ? Collections.<ExternalAPIOutput>singletonList(subscriberState.getExternalAPIOutput()) : Collections.<ExternalAPIOutput>emptyList());
         result.addAll(subscriberState.getProfileChangeEvents());
+        result.addAll(subscriberState.getTokenChanges());
         result.addAll(subscriberState.getProfileSegmentChangeEvents());
         result.addAll(subscriberState.getProfileLoyaltyProgramChangeEvents());
       }

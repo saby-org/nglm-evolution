@@ -127,6 +127,7 @@ public class Deployment
   private static String journeyTrafficChangeLog;
   private static String journeyTrafficChangeLogTopic;
   private static String journeyTrafficTopic;
+  private static String tokenChangeTopic;
   private static String subscriberProfileRegistrySubject;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
@@ -343,6 +344,7 @@ public class Deployment
   public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
   public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
   public static String getJourneyTrafficTopic() { return journeyTrafficTopic; }
+  public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
@@ -1864,6 +1866,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  tokenChangeTopic
+    //
+
+    try
+      {
+        tokenChangeTopic = JSONUtilities.decodeString(jsonRoot, "tokenChangeTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  subscriberProfileRegistrySubject
     //

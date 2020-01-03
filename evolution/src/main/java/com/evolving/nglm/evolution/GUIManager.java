@@ -7298,7 +7298,7 @@ public class GUIManager
         JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
         for (int i=0; i<jsonCriteriaList.size(); i++)
           {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullProfile));
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile));
           }
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -22320,7 +22320,7 @@ public class GUIManager
                           case OffersPresentation:
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeDisplay());
+                            availableValue.put("display", tokenType.getTokenTypeName());
                             result.add(JSONUtilities.encodeObject(availableValue));
                             break;
                         }
