@@ -2352,19 +2352,24 @@ public abstract class Expression
       //
 
       Expression result = parseTerm();
-      Token token = peekToken();
-      switch (token)
+      boolean parsingExpression = true;
+      while (parsingExpression)
         {
-          case PLUS:
-          case MINUS:
-            token = nextToken();
-            ExpressionOperator operator = ExpressionOperator.fromOperatorName(token);
-            Expression right = parseTerm();
-            result = new OperatorExpression(operator, result, right);
-            break;
+          Token token = peekToken();
+          switch (token)
+            {
+              case PLUS:
+              case MINUS:
+                token = nextToken();
+                ExpressionOperator operator = ExpressionOperator.fromOperatorName(token);
+                Expression right = parseTerm();
+                result = new OperatorExpression(operator, result, right);
+                break;
 
-          default:
-            break;
+              default:
+                parsingExpression = false;
+                break;
+            }
         }
       return result;
     }
@@ -2382,19 +2387,24 @@ public abstract class Expression
       //
 
       Expression result = parsePrimary();
-      Token token = peekToken();
-      switch (token)
+      boolean parsingTerm = true;
+      while (parsingTerm)
         {
-          case MULTIPLY:
-          case DIVIDE:
-            token = nextToken();
-            ExpressionOperator operator = ExpressionOperator.fromOperatorName(token);
-            Expression right = parsePrimary();
-            result = new OperatorExpression(operator, result, right);
-            break;
+          Token token = peekToken();
+          switch (token)
+            {
+              case MULTIPLY:
+              case DIVIDE:
+                token = nextToken();
+                ExpressionOperator operator = ExpressionOperator.fromOperatorName(token);
+                Expression right = parsePrimary();
+                result = new OperatorExpression(operator, result, right);
+                break;
 
-          default:
-            break;
+              default:
+                parsingTerm = false;
+                break;
+            }
         }
       return result;
     }
