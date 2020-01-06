@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
@@ -37,7 +38,8 @@ public class ZookeeperUniqueKeyServer
   //
 
   private static final String UniqueKeyServerBasepath = "/uniqueKeyServer";
-  private static final int LENGTH_OF_PREFIX = 6; // Number of digits to come from ZK
+  private static final int LENGTH_OF_PREFIX = 3; // Number of digits to come from ZK
+  private static final int TEN_POWER_LENGTH_OF_PREFIX = 1000; // 10^LENGTH_OF_PREFIX
   private final ZooKeeper zooKeeper;
   private UniqueKeyServer uniqueKeyServer;
   private long prefix;
@@ -54,9 +56,9 @@ public class ZookeeperUniqueKeyServer
 
   /**
    * Returns a key (a long) that is guaranteed to be different than any other key yet produced on any container.
-   * 6 first characters come from zookeeper, and are incremented every time this class is instantiated, in any container.
-   * 12 last chars are unique on a given instance of this class.
-   * Note : if this class is instantiated more than one million times in a given deployment (with all instances active),
+   * 3 first characters come from zookeeper, and are incremented every time this class is instantiated, in any container.
+   * 15 last chars are unique on a given instance of this class.
+   * Note : if this class is instantiated more than one thousand times in a given deployment (with all instances active),
    * some keys might be reused.
    * @return A long that is guaranteed to be unique.
    */
@@ -76,8 +78,8 @@ public class ZookeeperUniqueKeyServer
   // No need to synchronise, uniqueKeyServer.getKey() is already synchronised
   public String getStringKey()
   {
-    long suffix = uniqueKeyServer.getKey() % 1_000_000_000_000L; // only get 12 least significant digits
-    return String.format("%d%012d", prefix, suffix); // prefix is max 6 chars long, total is 18 digits, which fits in a long
+    long suffix = uniqueKeyServer.getKey() % 1_000_000_000_000_000L; // only get 15 least significant digits
+    return String.format("%d%015d", prefix, suffix); // prefix is max 3 chars long, total is 18 digits, which fits in a long
   }
   
   /****************************************
@@ -131,23 +133,39 @@ public class ZookeeperUniqueKeyServer
     try
     {
       //
-      // Create new ephemeral node, which will have a brand-new sequence number
+      // find a sequential node that is not already used
       //
-      
-      String node = zookeeper.create(nodeName, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+      boolean found = false;
+      for (long i=0; i<TEN_POWER_LENGTH_OF_PREFIX; i++)
+        {
+          String path = nodeName + String.format("%010d", i); // same pattern as sequential nodes : groupID0000000000
+          if (zookeeper.exists(path, false) == null)
+            {
+              //
+              // Node does not exist, might be a good candidate.
+              //
 
-      //
-      // take LENGTH_OF_PREFIX rightmost chars of sequential suffix
-      //
-      
-      String prefixStr = node.substring(node.length()-LENGTH_OF_PREFIX);
-      prefix = Long.parseLong(prefixStr); // remove leading '0's
+              try {
+                //
+                // Create ephemeral node
+                //
+                
+                zookeeper.create(path, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL); // ignore result
+                prefix = i;
+                found = true;
+                break;
+              }
+              catch (KeeperException.NodeExistsException ex) // bad luck, node has been taken since we checked, just continue
+              {
+              }
+            }
+        }
+      if (!found)
+        {
+          log.error("openZooKeeperAndCreateNode() - impossible to find an unused node after " + TEN_POWER_LENGTH_OF_PREFIX + " tries");
+          throw new ServerRuntimeException("openZooKeeperAndCreateNode impossible to find an unused node");
+        }
     }
-    catch (KeeperException.NodeExistsException e)
-      {
-        log.error("openZooKeeperAndCreateNode() - create() - exception should never be thrown when creating a sequential node");
-        throw new ServerRuntimeException("zookeeper", e);
-      }
     catch (KeeperException e)
       {
         log.error("openZooKeeperAndCreateNode() - create() - KeeperException code {}", e.code());
@@ -172,13 +190,13 @@ public class ZookeeperUniqueKeyServer
   *
   ****************************************/
 
-  public void closeZooKeeper(ZooKeeper zookeeper)
+  public void close()
   {
     //
     //  ensure connected
     //
 
-    ensureZooKeeper(zookeeper);
+    ensureZooKeeper(zooKeeper);
 
     //
     //  release group
@@ -192,7 +210,7 @@ public class ZookeeperUniqueKeyServer
 
     try
       {
-        zookeeper.close();
+        zooKeeper.close();
       }
     catch (InterruptedException e)
       {
@@ -236,5 +254,4 @@ public class ZookeeperUniqueKeyServer
     ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("evolution");
     IntStream.range(0,5).forEach(i->{long k=zuks.getKey();System.out.printf("Unique key #%d : %d\n",i,k);});
   }
-  
 }

@@ -56,7 +56,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
     schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -81,6 +81,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     schemaBuilder.field("subscriberTraceMessage", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("externalAPIOutput", ExternalAPIOutput.serde().optionalSchema()); // TODO : check this 
     schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
+    schemaBuilder.field("tokenChanges", SchemaBuilder.array(TokenChange.schema()));
     schema = schemaBuilder.build();
   };
 
@@ -129,6 +130,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   private SubscriberTrace subscriberTrace;
   private ExternalAPIOutput externalAPIOutput;
   private List<UUID> trackingIDs;
+  private List<TokenChange> tokenChanges;
 
   //
   //  in memory only
@@ -166,6 +168,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public SubscriberTrace getSubscriberTrace() { return subscriberTrace; }
   public ExternalAPIOutput getExternalAPIOutput() { return externalAPIOutput; }
   public List<UUID> getTrackingIDs() { return trackingIDs; }
+  public List<TokenChange> getTokenChanges() { return tokenChanges; }
 
   //
   //  kafkaRepresentation
@@ -183,6 +186,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   public void setLastEvaluationDate(Date lastEvaluationDate) { this.lastEvaluationDate = lastEvaluationDate; }
   public void setSubscriberTrace(SubscriberTrace subscriberTrace) { this.subscriberTrace = subscriberTrace; }
   public void setExternalAPIOutput(ExternalAPIOutput externalAPIOutput) { this.externalAPIOutput = externalAPIOutput; }
+  public void setTokenChanges(List<TokenChange> tokenChanges) { this.tokenChanges = tokenChanges; }
   public void setTrackingID(UUID trackingID) 
   { 
     if(trackingID == null) 
@@ -222,7 +226,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     this.ucgEpoch = ucgState.getRefreshEpoch();
     this.ucgRefreshDay = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Calendar.SUNDAY, Deployment.getBaseTimeZone());
   }
-
+  
   /*****************************************
   *
   *  constructor (simple)
@@ -258,6 +262,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.externalAPIOutput = null;
         this.kafkaRepresentation = null;
         this.trackingIDs = new ArrayList<UUID>();
+        this.tokenChanges = new ArrayList<TokenChange>();
       }
     catch (InvocationTargetException e)
       {
@@ -275,7 +280,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
   *
   *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyState> recentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<JourneyRequest> journeyRequests, List<JourneyRequest> journeyResponses, List<LoyaltyProgramRequest> loyaltyProgramRequests, List<LoyaltyProgramRequest> loyaltyProgramResponses, List<PointFulfillmentRequest> pointFulfillmentResponses, List<DeliveryRequest> deliveryRequests, List<JourneyStatisticWrapper> journeyStatisticWrappers, List<JourneyMetric> journeyMetrics, List<PropensityEventOutput> propensityOutputs, List<ProfileChangeEvent> profileChangeEvents, List<ProfileSegmentChangeEvent> profileSegmentChangeEvents, List<ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEvents, SubscriberTrace subscriberTrace, ExternalAPIOutput externalAPIOutput, List<UUID> trackingIDs, List<TokenChange> tokenChanges)
   {
     this.subscriberID = subscriberID;
     this.subscriberProfile = subscriberProfile;
@@ -303,6 +308,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     this.externalAPIOutput = externalAPIOutput;
     this.kafkaRepresentation = null;  
     this.trackingIDs = trackingIDs;
+    this.tokenChanges = tokenChanges;
   }
 
   /*****************************************
@@ -342,6 +348,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
         this.externalAPIOutput = subscriberState.getExternalAPIOutput();
         this.kafkaRepresentation = null;
         this.trackingIDs = subscriberState.getTrackingIDs();
+        this.tokenChanges = subscriberState.getTokenChanges();
 
         //
         //  deep copy of journey states
@@ -407,6 +414,7 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     struct.put("subscriberTraceMessage", subscriberState.getSubscriberTrace() != null ? subscriberState.getSubscriberTrace().getSubscriberTraceMessage() : null);
     struct.put("externalAPIOutput", subscriberState.getExternalAPIOutput() != null ? ExternalAPIOutput.serde().packOptional(subscriberState.getExternalAPIOutput()) : null);
     struct.put("trackingID", EvolutionUtilities.getBytesFromUUIDs(subscriberState.getTrackingIDs()));
+    struct.put("tokenChanges", packTokenChanges(subscriberState.getTokenChanges()));
     return struct;
   }
 
@@ -604,6 +612,22 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
 
   /*****************************************
   *
+  *  packTokenChanges
+  *
+  *****************************************/
+
+  private static List<Object> packTokenChanges(List<TokenChange> tokenChanges)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (TokenChange tokenChange : tokenChanges)
+      {
+        result.add(TokenChange.pack(tokenChange));
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
   *  unpack
   *
   *****************************************/
@@ -647,13 +671,13 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     SubscriberTrace subscriberTrace = valueStruct.getString("subscriberTraceMessage") != null ? new SubscriberTrace(valueStruct.getString("subscriberTraceMessage")) : null;
     ExternalAPIOutput externalAPIOutput = valueStruct.get("externalAPIOutput") != null ? ExternalAPIOutput.unpack(new SchemaAndValue(schema.field("externalAPIOutput").schema(), valueStruct.get("externalAPIOutput"))) : null;
     List<UUID> trackingIDs = schemaVersion >= 4 ? EvolutionUtilities.getUUIDsFromBytes(valueStruct.getBytes("trackingID")) : null;
-
+    List<TokenChange> tokenChanges = schemaVersion >= 5 ? unpackTokenChanges(schema.field("tokenChanges").schema(), valueStruct.get("tokenChanges")) : new ArrayList<TokenChange>();
 
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, recentJourneyStates, scheduledEvaluations, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, journeyRequests, journeyResponses, loyaltyProgramRequests, loyaltyProgramResponses,pointFulfillmentResponses, deliveryRequests, journeyStatisticWrappers, journeyMetrics, propensityOutputs, profileChangeEvents, profileSegmentChangeEvents, profileLoyaltyProgramChangeEvents, subscriberTrace, externalAPIOutput, trackingIDs, tokenChanges);
   }
 
   /*****************************************
@@ -1052,5 +1076,37 @@ public class SubscriberState implements SubscriberStreamOutput, StateStore
     return result;
   }
 
-  
+  /*****************************************
+  *
+  *  unpackTokenChanges
+  *
+  *****************************************/
+
+  private static List<TokenChange> unpackTokenChanges(Schema schema, Object value)
+  {
+    //
+    //  get schema for TokenChange
+    //
+
+    Schema tokenChangeSchema = schema.valueSchema();
+    
+    //
+    //  unpack
+    //
+
+    List<TokenChange> result = new ArrayList<>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object output : valueArray)
+      {
+        TokenChange tokenChange = TokenChange.unpack(new SchemaAndValue(tokenChangeSchema, output));
+        result.add(tokenChange);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
 }

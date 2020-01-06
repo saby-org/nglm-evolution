@@ -39,7 +39,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -247,12 +247,12 @@ public class DNBOProxy
     //
 
     Properties consumerProperties = new Properties();
-    consumerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
-    consumerProperties.put("group.id", "dnboproxy-subscriberprovisioning-" + apiProcessKey);
-    consumerProperties.put("auto.offset.reset", "earliest");
-    consumerProperties.put("enable.auto.commit", "false");
-    consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Deployment.getBrokerServers());
+    consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "dnboproxy-subscriberprovisioning-" + apiProcessKey);
+    consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     kafkaConsumer = new KafkaConsumer<>(consumerProperties);
     kafkaConsumer.subscribe(Arrays.asList(Deployment.getRecordSubscriberIDTopic()));
 

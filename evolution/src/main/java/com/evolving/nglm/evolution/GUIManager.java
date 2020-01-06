@@ -52,6 +52,7 @@ import org.apache.commons.fileupload.FileUpload;
 import org.apache.commons.fileupload.RequestContext;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.http.HttpHost;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -62,19 +63,11 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchGenerationException;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -129,7 +122,6 @@ import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentReque
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
@@ -147,7 +139,6 @@ import com.evolving.nglm.evolution.Report.SchedulingInterval;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
@@ -223,6 +214,8 @@ public class GUIManager
     getBulkCampaign("getBulkCampaign"),
     putBulkCampaign("putBulkCampaign"),
     removeBulkCampaign("removeBulkCampaign"),
+    startBulkCampaign("startBulkCampaign"),
+    stopBulkCampaign("stopBulkCampaign"),
     getJourneyTemplateList("getJourneyTemplateList"),
     getJourneyTemplateSummaryList("getJourneyTemplateSummaryList"),
     getJourneyTemplate("getJourneyTemplate"),
@@ -702,7 +695,7 @@ public class GUIManager
     // ZookeeperUniqueKeyServer
     //
  
-    zuks = new ZookeeperUniqueKeyServer("guimanager");
+    zuks = new ZookeeperUniqueKeyServer("commoditydelivery");
 
     /*****************************************
     *
@@ -1649,6 +1642,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
         restServer.createContext("/nglm-guimanager/putBulkCampaign", new APISimpleHandler(API.putBulkCampaign));
         restServer.createContext("/nglm-guimanager/removeBulkCampaign", new APISimpleHandler(API.removeBulkCampaign));
+        restServer.createContext("/nglm-guimanager/startBulkCampaign", new APISimpleHandler(API.startBulkCampaign));
+        restServer.createContext("/nglm-guimanager/stopBulkCampaign", new APISimpleHandler(API.stopBulkCampaign));
         restServer.createContext("/nglm-guimanager/getJourneyTemplateList", new APISimpleHandler(API.getJourneyTemplateList));
         restServer.createContext("/nglm-guimanager/getJourneyTemplateSummaryList", new APISimpleHandler(API.getJourneyTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getJourneyTemplate", new APISimpleHandler(API.getJourneyTemplate));
@@ -2362,11 +2357,11 @@ public class GUIManager
                   break;
 
                 case startJourney:
-                  jsonResponse = processJourneySetActive(userID, jsonRoot, true);
+                  jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.Journey, true);
                   break;
 
                 case stopJourney:
-                  jsonResponse = processJourneySetActive(userID, jsonRoot, false);
+                  jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.Journey, false);
                   break;
 
                 case getCampaignToolbox:
@@ -2394,11 +2389,11 @@ public class GUIManager
                   break;
 
                 case startCampaign:
-                  jsonResponse = processCampaignSetActive(userID, jsonRoot, true);
+                  jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.Campaign, true);
                   break;
 
                 case stopCampaign:
-                  jsonResponse = processCampaignSetActive(userID, jsonRoot, false);
+                  jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.Campaign, false);
                   break;
 
                 case getBulkCampaignList:
@@ -2419,6 +2414,14 @@ public class GUIManager
 
                 case removeBulkCampaign:
                   jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign);
+                  break;
+
+                case startBulkCampaign:
+                  jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true);
+                  break;
+
+                case stopBulkCampaign:
+                  jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, false);
                   break;
 
                 case getJourneyTemplateList:
@@ -5079,7 +5082,17 @@ public class GUIManager
       {
         if (journey.getGUIManagedObjectType().equals(objectType))
           {
-            journeys.add(journeyService.generateResponseJSON(journey, fullDetails, now));
+            JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
+            int subscriberCount = 0;
+            JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
+            if (journeyTrafficHistory != null &&
+                journeyTrafficHistory.getCurrentData() != null &&
+                journeyTrafficHistory.getCurrentData().getGlobal() != null)
+              {
+                subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberCount();
+              }
+            journeyInfo.put("journeySubscriberCount", subscriberCount);
+            journeys.add(journeyInfo);
           }
       }
 
@@ -5491,11 +5504,11 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processJourneySetActive
+  *  processSetActive
   *
   *****************************************/
 
-  private JSONObject processJourneySetActive(String userID, JSONObject jsonRoot, boolean active)
+  private JSONObject processSetActive(String userID, JSONObject jsonRoot, GUIManagedObjectType type, boolean active)
   {
     /****************************************
     *
@@ -5519,40 +5532,60 @@ public class GUIManager
     *
     ****************************************/
 
-    String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String elementID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
     /*****************************************
     *
-    *  validate existing journey
+    *  validate existing object (journey, campaign or bulk campaign)
     *  - exists
     *  - valid
     *  - not read-only
     *
     *****************************************/
 
-    GUIManagedObject existingJourney = journeyService.getStoredJourney(journeyID);
+    GUIManagedObject existingElement = journeyService.getStoredJourney(elementID);
     String responseCode = null;
-    responseCode = (responseCode == null && existingJourney == null) ? "journeyNotFound" : responseCode;
-    responseCode = (responseCode == null && existingJourney.getGUIManagedObjectType() != GUIManagedObjectType.Journey) ? "journeyNotFound" : responseCode;
-    responseCode = (responseCode == null && ! existingJourney.getAccepted()) ? "journeyNotValid" : responseCode;
-    responseCode = (responseCode == null && existingJourney.getReadOnly()) ? "failedReadOnly" : responseCode;
+    
+    switch (type) {
+    case Journey:
+      responseCode = (responseCode == null && existingElement == null) ? "journeyNotFound" : responseCode;
+      responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Journey) ? "journeyNotFound" : responseCode;
+      responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "journeyNotValid" : responseCode;
+      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
+      break;
+
+    case Campaign:
+      responseCode = (responseCode == null && existingElement == null) ? "campaignNotFound" : responseCode;
+      responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Campaign) ? "campaignNotFound" : responseCode;
+      responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "campaignNotValid" : responseCode;
+      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
+      break;
+
+    case BulkCampaign:
+      responseCode = (responseCode == null && existingElement == null) ? "bulkCampaignNotFound" : responseCode;
+      responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.BulkCampaign) ? "bulkCampaignNotFound" : responseCode;
+      responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "bulkCampaignNotValid" : responseCode;
+      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
+      break;
+    }
+    
     if (responseCode != null)
       {
-        response.put("id", journeyID);
-        if (existingJourney != null) response.put("accepted", existingJourney.getAccepted());
-        if (existingJourney != null) response.put("valid", existingJourney.getAccepted());
-        if (existingJourney != null) response.put("processing", journeyService.isActiveJourney(existingJourney, now));
+        response.put("id", elementID);
+        if (existingElement != null) response.put("accepted", existingElement.getAccepted());
+        if (existingElement != null) response.put("valid", existingElement.getAccepted());
+        if (existingElement != null) response.put("processing", journeyService.isActiveJourney(existingElement, now));
         response.put("responseCode", responseCode);
         return JSONUtilities.encodeObject(response);
       }
 
     /*****************************************
     *
-    *  process journey
+    *  process element (journey, campaign or bulk campaign)
     *
     *****************************************/
 
-    JSONObject journeyRoot = (JSONObject) existingJourney.getJSONRepresentation().clone();
+    JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
     long epoch = epochServer.getKey();
     try
       {
@@ -5562,15 +5595,15 @@ public class GUIManager
         *
         ****************************************/
 
-        journeyRoot.put("active", active);
+        elementRoot.put("active", active);
 
         /****************************************
         *
-        *  instantiate journey
+        *  instantiate element (journey, campaign or bulk campaign)
         *
         ****************************************/
 
-        Journey journey = new Journey(journeyRoot, GUIManagedObjectType.Journey, epoch, existingJourney, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+        Journey element = new Journey(elementRoot, type, epoch, existingElement, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
         /*****************************************
         *
@@ -5578,18 +5611,30 @@ public class GUIManager
         *
         *****************************************/
 
-        journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+        journeyService.putJourney(element, journeyObjectiveService, catalogCharacteristicService, targetService, (existingElement == null), userID);
 
+        /*****************************************
+        *
+        *  evaluate targets
+        *
+        *****************************************/
+
+        if (active && element.getTargetID() != null)
+          {
+            EvaluateTargets evaluateTargets = new EvaluateTargets(element.getTargetID());
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets.serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
+          }
+        
         /*****************************************
         *
         *  response
         *
         *****************************************/
 
-        response.put("id", journey.getJourneyID());
-        response.put("accepted", journey.getAccepted());
-        response.put("valid", journey.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(journey, now));
+        response.put("id", element.getJourneyID());
+        response.put("accepted", element.getAccepted());
+        response.put("valid", element.getAccepted());
+        response.put("processing", journeyService.isActiveJourney(element, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -5599,13 +5644,13 @@ public class GUIManager
         //  incompleteObject
         //
 
-        IncompleteObject incompleteObject = new IncompleteObject(journeyRoot, GUIManagedObjectType.Journey, epoch);
+        IncompleteObject incompleteObject = new IncompleteObject(elementRoot, type, epoch);
 
         //
         //  store
         //
 
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingJourney == null), userID);
+        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingElement == null), userID);
 
         //
         //  log
@@ -5619,8 +5664,23 @@ public class GUIManager
         //  response
         //
 
-        response.put("journeyID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "journeyNotValid");
+        switch (type) {
+        case Journey:
+          response.put("journeyID", incompleteObject.getGUIManagedObjectID());
+          response.put("responseCode", "journeyNotValid");
+          break;
+
+        case Campaign:
+          response.put("campaignID", incompleteObject.getGUIManagedObjectID());
+          response.put("responseCode", "campaignNotValid");
+          break;
+
+        case BulkCampaign:
+          response.put("bulkCampaignID", incompleteObject.getGUIManagedObjectID());
+          response.put("responseCode", "bulkCampaignNotValid");
+          break;
+        }
+        
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
@@ -5658,144 +5718,6 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
     return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
-  *  processCampaignSetActive
-  *
-  *****************************************/
-
-  private JSONObject processCampaignSetActive(String userID, JSONObject jsonRoot, boolean active)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /*****************************************
-    *
-    *  now
-    *
-    *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String campaignID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  validate existing campaign
-    *  - exists
-    *  - valid
-    *  - not read-only
-    *
-    *****************************************/
-
-    GUIManagedObject existingCampaign = journeyService.getStoredJourney(campaignID);
-    String responseCode = null;
-    responseCode = (responseCode == null && existingCampaign == null) ? "campaignNotFound" : responseCode;
-    responseCode = (responseCode == null && existingCampaign.getGUIManagedObjectType() != GUIManagedObjectType.Campaign) ? "campaignNotFound" : responseCode;
-    responseCode = (responseCode == null && ! existingCampaign.getAccepted()) ? "campaignNotValid" : responseCode;
-    responseCode = (responseCode == null && existingCampaign.getReadOnly()) ? "failedReadOnly" : responseCode;
-    if (responseCode != null)
-      {
-        response.put("id", campaignID);
-        if (existingCampaign != null) response.put("accepted", existingCampaign.getAccepted());
-        if (existingCampaign != null) response.put("valid", existingCampaign.getAccepted());
-        if (existingCampaign != null) response.put("processing", journeyService.isActiveJourney(existingCampaign, now));
-        response.put("responseCode", responseCode);
-        return JSONUtilities.encodeObject(response);
-      }
-
-    /*****************************************
-    *
-    *  process campaign
-    *
-    *****************************************/
-
-    JSONObject campaignRoot = (JSONObject) existingCampaign.getJSONRepresentation().clone();
-    long epoch = epochServer.getKey();
-    try
-      {
-        /****************************************
-        *
-        *  set active
-        *
-        ****************************************/
-
-        campaignRoot.put("active", active);
-
-        /****************************************
-        *
-        *  instantiate campaign
-        *
-        ****************************************/
-
-        Journey campaign = new Journey(campaignRoot, GUIManagedObjectType.Campaign, epoch, existingCampaign, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
-
-        /*****************************************
-        *
-        *  store
-        *
-        *****************************************/
-
-        journeyService.putJourney(campaign, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
-
-        /*****************************************
-        *
-        *  response
-        *
-        *****************************************/
-
-        response.put("id", campaign.getJourneyID());
-        response.put("accepted", campaign.getAccepted());
-        response.put("valid", campaign.getAccepted());
-        response.put("processing", journeyService.isActiveJourney(campaign, now));
-        response.put("responseCode", "ok");
-        return JSONUtilities.encodeObject(response);
-      }
-    catch (GUIManagerException e)
-      {
-        //
-        //  incompleteObject
-        //
-
-        IncompleteObject incompleteObject = new IncompleteObject(campaignRoot, GUIManagedObjectType.Campaign, epoch);
-
-        //
-        //  store
-        //
-
-        journeyService.putJourney(incompleteObject, journeyObjectiveService, catalogCharacteristicService, targetService, (existingCampaign == null), userID);
-
-        //
-        //  log
-        //
-
-        StringWriter stackTraceWriter = new StringWriter();
-        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
-
-        //
-        //  response
-        //
-
-        response.put("campaignID", incompleteObject.getGUIManagedObjectID());
-        response.put("responseCode", "campaignNotValid");
-        response.put("responseMessage", e.getMessage());
-        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
-        return JSONUtilities.encodeObject(response);
-      }
   }
 
   /*****************************************
@@ -5865,7 +5787,7 @@ public class GUIManager
       }
     String bulkCampaignName = JSONUtilities.decodeString(jsonRoot, "name", true);
     String bulkCampaignDisplay = JSONUtilities.decodeString(jsonRoot, "display", true);
-    String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", true);
+    String bulkCampaignDescription = JSONUtilities.decodeString(jsonRoot, "description", false);
     String bulkCampaignEffectiveStartDate = JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", true);
     String bulkCampaignEffectiveEndDate = JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", true);
     JSONArray bulkCampaignTargetIDs = JSONUtilities.decodeJSONArray(jsonRoot, "targetID", true);
@@ -7376,7 +7298,7 @@ public class GUIManager
         JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
         for (int i=0; i<jsonCriteriaList.size(); i++)
           {
-            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullProfile));
+            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile));
           }
       }
     catch (JSONUtilitiesException|GUIManagerException e)
@@ -15917,7 +15839,7 @@ public class GUIManager
                         Map<String, Object> currentState = new HashMap<String, Object>();
                         NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
                         currentState.put("nodeID", nodeHistory.getToNodeID());
-                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
+                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeJourney.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                         JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                         //
@@ -15930,8 +15852,8 @@ public class GUIManager
                             Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                             nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
                             nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeJourney.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeJourney.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
                             nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                             nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
@@ -16235,7 +16157,7 @@ public class GUIManager
                         Map<String, Object> currentState = new HashMap<String, Object>();
                         NodeHistory nodeHistory = subsLatestStatistic.getLastNodeEntered();
                         currentState.put("nodeID", nodeHistory.getToNodeID());
-                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName());
+                        currentState.put("nodeName", nodeHistory.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(nodeHistory.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(nodeHistory.getToNodeID()).getNodeName()));
                         JSONObject currentStateJson = JSONUtilities.encodeObject(currentState);
 
                         //
@@ -16248,8 +16170,8 @@ public class GUIManager
                             Map<String, Object> nodeHistoriesMap = new HashMap<String, Object>();
                             nodeHistoriesMap.put("fromNodeID", journeyHistories.getFromNodeID());
                             nodeHistoriesMap.put("toNodeID", journeyHistories.getToNodeID());
-                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName());
-                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName());
+                            nodeHistoriesMap.put("fromNode", journeyHistories.getFromNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getFromNodeID()).getNodeName()));
+                            nodeHistoriesMap.put("toNode", journeyHistories.getToNodeID() == null ? null : (storeCampaign.getJourneyNode(journeyHistories.getToNodeID()) == null ? "node has been removed" : storeCampaign.getJourneyNode(journeyHistories.getToNodeID()).getNodeName()));
                             nodeHistoriesMap.put("transitionDate", getDateString(journeyHistories.getTransitionDate()));
                             nodeHistoriesMap.put("linkID", journeyHistories.getLinkID());
                             nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
@@ -19434,7 +19356,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, null, 0);
 
     /*****************************************
     *
@@ -19513,7 +19435,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.REST_API.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
+    CommodityDeliveryManager.sendCommodityDeliveryRequest(null, null, deliveryRequestID, null, true, deliveryRequestID, Module.Customer_Care.getExternalRepresentation(), origin, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, 0);
     
     /*****************************************
     *
@@ -20699,7 +20621,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService))
                   .collect(Collectors.toList());
             }
 
@@ -20751,6 +20673,7 @@ public class GUIManager
      ****************************************/
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+    Boolean viewOffersOnly = JSONUtilities.decodeBoolean(jsonRoot, "viewOffersOnly", Boolean.FALSE);
 
     /*****************************************
      *
@@ -20832,79 +20755,81 @@ public class GUIManager
               return JSONUtilities.encodeObject(response);
             }
 
-          StringBuffer returnedLog = new StringBuffer();
-          double rangeValue = 0; // Not significant
-          DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
-
-          // Allocate offers for this subscriber, and associate them in the token
-          // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
-          Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
-              now, null,
-              subscriberProfile, scoringStrategy, productService,
-              productTypeService, catalogCharacteristicService,
-              propensityDataReader,
-              subscriberGroupEpochReader,
-              segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
-              );
-
-          if (!presentedOffers.isEmpty())
+          if (!viewOffersOnly)
             {
-              // Send a PresentationLog to EvolutionEngine
+              StringBuffer returnedLog = new StringBuffer();
+              double rangeValue = 0; // Not significant
+              DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
 
-              String channelID = "channelID";
-              String presentationStrategyID = strategyID; // HACK, see above
-              String controlGroupState = "controlGroupState";
-
-              List<Integer> positions = new ArrayList<Integer>();
-              List<Double> presentedOfferScores = new ArrayList<Double>();
-              List<String> scoringStrategyIDs = new ArrayList<String>();
-              int position = 0;
-              ArrayList<String> presentedOfferIDs = new ArrayList<>();
-              for (ProposedOfferDetails presentedOffer : presentedOffers)
-                {
-                  presentedOfferIDs.add(presentedOffer.getOfferId());
-                  positions.add(new Integer(position));
-                  position++;
-                  presentedOfferScores.add(1.0);
-                  scoringStrategyIDs.add(strategyID);
-                }
-              String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
-              int transactionDurationMs = 0; // TODO
-              PresentationLog presentationLog = new PresentationLog(
-                  subscriberID, subscriberID, now, 
-                  "callUniqueIdentifier", channelID, salesChannelID, userID,
-                  tokenCode, 
-                  presentationStrategyID, transactionDurationMs, 
-                  presentedOfferIDs, presentedOfferScores, positions, 
-                  controlGroupState, scoringStrategyIDs, null, null, null
+              // Allocate offers for this subscriber, and associate them in the token
+              // Here we have no saleschannel (we pass null), this means only the first salesChannelsAndPrices of the offer will be used and returned.  
+              Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(
+                  now, null,
+                  subscriberProfile, scoringStrategy, productService,
+                  productTypeService, catalogCharacteristicService,
+                  propensityDataReader,
+                  subscriberGroupEpochReader,
+                  segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
                   );
 
-              //
-              //  submit to kafka
-              //
-
-              String topic = Deployment.getPresentationLogTopic();
-              Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-              Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
-              kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-                  topic,
-                  keySerializer.serialize(topic, new StringKey(subscriberID)),
-                  valueSerializer.serialize(topic, presentationLog)
-                  ));
-
-              // Update token locally, so that it is correctly displayed in the response
-              // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
-
-              subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
-              subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID);
-              subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
-              if (subscriberStoredToken.getCreationDate() == null)
+              if (!presentedOffers.isEmpty())
                 {
-                  subscriberStoredToken.setCreationDate(now);
-                }
-              subscriberStoredToken.setBoundDate(now);
-              subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
+                  // Send a PresentationLog to EvolutionEngine
 
+                  String channelID = "channelID";
+                  String presentationStrategyID = strategyID; // HACK, see above
+                  String controlGroupState = "controlGroupState";
+
+                  List<Integer> positions = new ArrayList<Integer>();
+                  List<Double> presentedOfferScores = new ArrayList<Double>();
+                  List<String> scoringStrategyIDs = new ArrayList<String>();
+                  int position = 0;
+                  ArrayList<String> presentedOfferIDs = new ArrayList<>();
+                  for (ProposedOfferDetails presentedOffer : presentedOffers)
+                    {
+                      presentedOfferIDs.add(presentedOffer.getOfferId());
+                      positions.add(new Integer(position));
+                      position++;
+                      presentedOfferScores.add(1.0);
+                      scoringStrategyIDs.add(strategyID);
+                    }
+                  String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
+                  int transactionDurationMs = 0; // TODO
+                  PresentationLog presentationLog = new PresentationLog(
+                      subscriberID, subscriberID, now, 
+                      "callUniqueIdentifier", channelID, salesChannelID, userID,
+                      tokenCode, 
+                      presentationStrategyID, transactionDurationMs, 
+                      presentedOfferIDs, presentedOfferScores, positions, 
+                      controlGroupState, scoringStrategyIDs, null, null, null
+                      );
+
+                  //
+                  //  submit to kafka
+                  //
+
+                  String topic = Deployment.getPresentationLogTopic();
+                  Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+                  Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
+                  kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+                      topic,
+                      keySerializer.serialize(topic, new StringKey(subscriberID)),
+                      valueSerializer.serialize(topic, presentationLog)
+                      ));
+
+                  // Update token locally, so that it is correctly displayed in the response
+                  // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
+
+                  subscriberStoredToken.setPresentedOfferIDs(presentedOfferIDs);
+                  subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID);
+                  subscriberStoredToken.setTokenStatus(TokenStatus.Bound);
+                  if (subscriberStoredToken.getCreationDate() == null)
+                    {
+                      subscriberStoredToken.setCreationDate(now);
+                    }
+                  subscriberStoredToken.setBoundDate(now);
+                  subscriberStoredToken.setBoundCount(subscriberStoredToken.getBoundCount()+1); // might not be accurate due to maxNumberofPlays
+                }
             }
 
           /*****************************************
@@ -20912,7 +20837,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService);
           response.put("responseCode", "ok");
         }
     }
@@ -21060,10 +20985,10 @@ public class GUIManager
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
-          String featureID = "acceptOffer";
+          String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
           String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
           Offer offer = offerService.getActiveOffer(offerID, now);
-          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, kafkaProducer);
+          deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
 
           // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
@@ -21143,7 +21068,7 @@ public class GUIManager
    *****************************************/
   
   private String purchaseOffer(String subscriberID, String offerID, String salesChannelID, int quantity, 
-      String moduleID, String featureID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+      String moduleID, String featureID, String origin, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -21183,6 +21108,7 @@ public class GUIManager
     request.put("eventID", "0"); // No event here
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
+    request.put("origin", origin);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
@@ -22099,28 +22025,121 @@ public class GUIManager
     List<JSONObject> result = new ArrayList<JSONObject>();
     switch (reference)
       {
-        case "supportedLanguages":
-          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+
+        case "callableCampaigns":
+          if (includeDynamic)
             {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedLanguage.getID());
-              availableValue.put("display", supportedLanguage.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
+              for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (campaignUnchecked.getAccepted())
+                    {
+                      Journey campaign = (Journey) campaignUnchecked;
+                      switch (campaign.getTargetingType())
+                        {
+                          case Manual:
+                            switch (campaign.getGUIManagedObjectType())
+                              {
+                                case Campaign:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", campaign.getJourneyID());
+                                  availableValue.put("display", campaign.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
             }
           break;
 
-        case "segments":
+        case "callableLoyaltyPrograms":
           if (includeDynamic)
             {
-              for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
+              for (GUIManagedObject loyaltyProgramUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
                 {
-                  for (Segment segment : dimension.getSegments())
+                  if (loyaltyProgramUnchecked.getAccepted())
                     {
+                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", segment.getID());
-                      availableValue.put("display", dimension.getSegmentationDimensionName() + ":" + segment.getName());
+                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
+                }
+            }
+          break;
+
+        case "callableJourneys":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (journeyUnchecked.getAccepted())
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      switch (journey.getTargetingType())
+                        {
+                          case Manual:
+                            switch (journey.getGUIManagedObjectType())
+                              {
+                                case Journey:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", journey.getJourneyID());
+                                  availableValue.put("display", journey.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "deliverableIds":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverablesUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", deliverable.getGUIManagedObjectID());
+                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "deliverableNames":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
+                {
+                  if (deliverablesUnchecked.getAccepted())
+                    {
+                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", deliverable.getDeliverableName());
+                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+          
+        case "deliveryStatuses":
+          if (includeDynamic)
+            {
+              for (DeliveryStatus deliveryStatus : DeliveryManager.DeliveryStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", deliveryStatus.getExternalRepresentation());
+                  availableValue.put("display", deliveryStatus.name());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
@@ -22132,6 +22151,74 @@ public class GUIManager
               availableValue.put("id", evolutionEngineEventDeclaration.getName());
               availableValue.put("display", evolutionEngineEventDeclaration.getName());
               result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "historicalBulkCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalCampaigns":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Campaign)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "historicalJourneys":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys(false))
+                {
+                  if (journeyUnchecked.getAccepted() && journeyUnchecked.getGUIManagedObjectType() == GUIManagedObjectType.Journey)
+                    {
+                      Journey journey = (Journey) journeyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", journey.getJourneyID());
+                      availableValue.put("display", journey.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
+        case "loyaltyPrograms":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject loyaltyProgramsUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
+                {
+                  if (loyaltyProgramsUnchecked.getAccepted())
+                    {
+                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
+                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
             }
           break;
 
@@ -22155,20 +22242,16 @@ public class GUIManager
                 }
             }
           break;
-
-        case "paymentMeans":
+          
+        case "moduleIds":
           if (includeDynamic)
             {
-              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+              for (Module module : DeliveryRequest.Module.values())
                 {
-                  if (paymentMeanUnchecked.getAccepted())
-                    {
-                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", paymentMean.getPaymentMeanID());
-                      availableValue.put("display", paymentMean.getDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", module.getExternalRepresentation());
+                  availableValue.put("display", module.name());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
@@ -22224,6 +22307,45 @@ public class GUIManager
             }
           break;
 
+        case "offersPresentationTokenTypes":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
+                {
+                  if (tokenTypeUnchecked.getAccepted())
+                    {
+                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
+                      switch (tokenType.getTokenTypeKind())
+                        {
+                          case OffersPresentation:
+                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                            availableValue.put("id", tokenType.getTokenTypeID());
+                            availableValue.put("display", tokenType.getTokenTypeName());
+                            result.add(JSONUtilities.encodeObject(availableValue));
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "paymentMeans":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject paymentMeanUnchecked : paymentMeanService.getStoredPaymentMeans())
+                {
+                  if (paymentMeanUnchecked.getAccepted())
+                    {
+                      PaymentMean paymentMean = (PaymentMean) paymentMeanUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", paymentMean.getPaymentMeanID());
+                      availableValue.put("display", paymentMean.getDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
+
         case "pointDeliverables":
           if (includeDynamic)
             {
@@ -22265,12 +22387,29 @@ public class GUIManager
                           if(paymentMean.getFulfillmentProviderID().equals(providerID)){
                             HashMap<String,Object> availableValue = new HashMap<String,Object>();
                             availableValue.put("id", paymentMean.getPaymentMeanID());
-                            availableValue.put("display", paymentMean.getPaymentMeanName());
+                            availableValue.put("display", paymentMean.getPaymentMeanDisplay());
                             result.add(JSONUtilities.encodeObject(availableValue));
                           }
                         }
                     }
                }
+            }
+          break;
+
+        case "presentationStrategies":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
+                {
+                  if (presentationStrategyUnchecked.getAccepted())
+                    {
+                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
+                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
             }
           break;
 
@@ -22308,91 +22447,30 @@ public class GUIManager
             }
           break;
 
-        case "callableLoyaltyPrograms":
+        case "providerIds":
           if (includeDynamic)
             {
-              for (GUIManagedObject loyaltyProgramUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
+              for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
                 {
-                  if (loyaltyProgramUnchecked.getAccepted())
-                    {
-                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", deliveryManager.getProviderID());
+                  availableValue.put("display", deliveryManager.getProviderName());
+                  result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
           break;
 
-        case "callableCampaigns":
+        case "pushTemplates_app":
           if (includeDynamic)
             {
-              for (GUIManagedObject campaignUnchecked : journeyService.getStoredJourneys())
-                {
-                  if (campaignUnchecked.getAccepted())
-                    {
-                      Journey campaign = (Journey) campaignUnchecked;
-                      switch (campaign.getTargetingType())
-                        {
-                          case Manual:
-                            switch (campaign.getGUIManagedObjectType())
-                              {
-                                case Campaign:
-                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                  availableValue.put("id", campaign.getJourneyID());
-                                  availableValue.put("display", campaign.getJourneyName());
-                                  result.add(JSONUtilities.encodeObject(availableValue));
-                                  break;
-                              }
-                            break;
-                        }
-                    }
-                }
+              filterPushTemplates("3", result, now);  //Note : "3" is the id of the communication channel (defined in deployment.json)
             }
           break;
-
-        case "callableJourneys":
+          
+        case "pushTemplates_USSD":
           if (includeDynamic)
             {
-              for (GUIManagedObject journeyUnchecked : journeyService.getStoredJourneys())
-                {
-                  if (journeyUnchecked.getAccepted())
-                    {
-                      Journey journey = (Journey) journeyUnchecked;
-                      switch (journey.getTargetingType())
-                        {
-                          case Manual:
-                            switch (journey.getGUIManagedObjectType())
-                              {
-                                case Journey:
-                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                                  availableValue.put("id", journey.getJourneyID());
-                                  availableValue.put("display", journey.getJourneyName());
-                                  result.add(JSONUtilities.encodeObject(availableValue));
-                                  break;
-                              }
-                            break;
-                        }
-                    }
-                }
-            }
-          break;
-
-        case "presentationStrategies":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject presentationStrategyUnchecked : presentationStrategyService.getStoredPresentationStrategies())
-                {
-                  if (presentationStrategyUnchecked.getAccepted())
-                    {
-                      PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", presentationStrategy.getPresentationStrategyID());
-                      availableValue.put("display", presentationStrategy.getGUIManagedObjectName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
+              filterPushTemplates("4", result, now);  //Note : "4" is the id of the communication channel (defined in deployment.json)
             }
           break;
 
@@ -22406,46 +22484,26 @@ public class GUIManager
                       ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", scoringStrategy.getScoringStrategyID());
-                      availableValue.put("display", scoringStrategy.getGUIManagedObjectName());
+                      availableValue.put("display", scoringStrategy.getGUIManagedObjectDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }
           break;
 
-        case "offersPresentationTokenTypes":
+        case "segments":
           if (includeDynamic)
             {
-              for (GUIManagedObject tokenTypeUnchecked : tokenTypeService.getStoredTokenTypes())
+              for (SegmentationDimension dimension : segmentationDimensionService.getActiveSegmentationDimensions(now))
                 {
-                  if (tokenTypeUnchecked.getAccepted())
+                  for (Segment segment : dimension.getSegments())
                     {
-                      TokenType tokenType = (TokenType) tokenTypeUnchecked;
-                      switch (tokenType.getTokenTypeKind())
-                        {
-                          case OffersPresentation:
-                            HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                            availableValue.put("id", tokenType.getTokenTypeID());
-                            availableValue.put("display", tokenType.getTokenTypeName());
-                            result.add(JSONUtilities.encodeObject(availableValue));
-                            break;
-                        }
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", segment.getID());
+                      availableValue.put("display", dimension.getSegmentationDimensionDisplay() + ":" + segment.getName());
+                      result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
-            }
-          break;
-
-        case "pushTemplates_app":
-          if (includeDynamic)
-            {
-              filterPushTemplates("3", result, now);  //Note : "app" is the id of the communication channel (defined in deployment.json)
-            }
-          break;
-          
-        case "pushTemplates_USSD":
-          if (includeDynamic)
-            {
-              filterPushTemplates("4", result, now);  //Note : "USSD" is the id of the communication channel (defined in deployment.json)
             }
           break;
           
@@ -22459,20 +22517,31 @@ public class GUIManager
                       SMSTemplate messageTemplate = (SMSTemplate) messageTemplateUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
+                      availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
             }
           break;
-          
-        case "supportedShortCodes":
-          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
+
+        case "subscriberJourneyStatuses":
+          if (includeDynamic)
             {
-              HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedShortCode.getID());
-              availableValue.put("display", supportedShortCode.getDisplay());
-              result.add(JSONUtilities.encodeObject(availableValue));
+              for (SubscriberJourneyStatus subscriberJourneyStatus : Journey.SubscriberJourneyStatus.values())
+                {
+                  switch (subscriberJourneyStatus)
+                    {
+                      case Unknown:
+                        break;
+
+                      default:
+                        HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                        availableValue.put("id", subscriberJourneyStatus.getExternalRepresentation());
+                        availableValue.put("display", subscriberJourneyStatus.getDisplay());
+                        result.add(JSONUtilities.encodeObject(availableValue));
+                        break;
+                    }
+                }
             }
           break;
 
@@ -22482,6 +22551,26 @@ public class GUIManager
               HashMap<String,Object> availableValue = new HashMap<String,Object>();
               availableValue.put("id", supportedEmailAddress.getID());
               availableValue.put("display", supportedEmailAddress.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+
+        case "supportedLanguages":
+          for (SupportedLanguage supportedLanguage : Deployment.getSupportedLanguages().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedLanguage.getID());
+              availableValue.put("display", supportedLanguage.getDisplay());
+              result.add(JSONUtilities.encodeObject(availableValue));
+            }
+          break;
+          
+        case "supportedShortCodes":
+          for (SupportedShortCode supportedShortCode : Deployment.getSupportedShortCodes().values())
+            {
+              HashMap<String,Object> availableValue = new HashMap<String,Object>();
+              availableValue.put("id", supportedShortCode.getID());
+              availableValue.put("display", supportedShortCode.getDisplay());
               result.add(JSONUtilities.encodeObject(availableValue));
             }
           break;
@@ -22496,99 +22585,7 @@ public class GUIManager
                       TokenType tokenType = (TokenType) tokenTypesUnchecked;
                       HashMap<String,Object> availableValue = new HashMap<String,Object>();
                       availableValue.put("id", tokenType.getGUIManagedObjectID());
-                      availableValue.put("display", tokenType.getTokenTypeName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-        case "loyaltyPrograms":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject loyaltyProgramsUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms())
-                {
-                  if (loyaltyProgramsUnchecked.getAccepted())
-                    {
-                      LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyProgramsUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
-                      availableValue.put("display", loyaltyProgram.getLoyaltyProgramName());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-          
-        case "moduleIds":
-          if (includeDynamic)
-            {
-              for (Module module : DeliveryRequest.Module.values())
-                {
-                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", module.getExternalRepresentation());
-                  availableValue.put("display", module.name());
-                  result.add(JSONUtilities.encodeObject(availableValue));
-                }
-            }
-          break;
-
-          
-        case "deliveryStatuses":
-          if (includeDynamic)
-            {
-              for (DeliveryStatus deliveryStatus : DeliveryManager.DeliveryStatus.values())
-                {
-                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", deliveryStatus.getExternalRepresentation());
-                  availableValue.put("display", deliveryStatus.name());
-                  result.add(JSONUtilities.encodeObject(availableValue));
-                }
-            }
-          break;
-
-        case "providerIds":
-          if (includeDynamic)
-            {
-              for(DeliveryManagerDeclaration deliveryManager : Deployment.getFulfillmentProviders().values())
-                {
-                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                  availableValue.put("id", deliveryManager.getProviderID());
-                  availableValue.put("display", deliveryManager.getProviderName());
-                  result.add(JSONUtilities.encodeObject(availableValue));
-                }
-            }
-          break;
-
-        case "deliverableIds":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
-                {
-                  if (deliverablesUnchecked.getAccepted())
-                    {
-                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", deliverable.getGUIManagedObjectID());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
-                      result.add(JSONUtilities.encodeObject(availableValue));
-                    }
-                }
-            }
-          break;
-
-
-        case "deliverableNames":
-          if (includeDynamic)
-            {
-              for (GUIManagedObject deliverablesUnchecked : deliverableService.getStoredDeliverables())
-                {
-                  if (deliverablesUnchecked.getAccepted())
-                    {
-                      Deliverable deliverable = (Deliverable) deliverablesUnchecked;
-                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                      availableValue.put("id", deliverable.getDeliverableName());
-                      availableValue.put("display", deliverable.getDeliverableDisplay());
+                      availableValue.put("display", tokenType.getTokenTypeDisplay());
                       result.add(JSONUtilities.encodeObject(availableValue));
                     }
                 }
@@ -22648,7 +22645,9 @@ public class GUIManager
               if(pushTemplate.getCommunicationChannelID().equals(communicationChannelID)){
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
                 availableValue.put("id", messageTemplate.getSubscriberMessageTemplateID());
-                availableValue.put("display", messageTemplate.getSubscriberMessageTemplateName());
+                //TODO : Gui is not sending the display field yet. Change this when GUI will be updated ...
+                //availableValue.put("display", messageTemplate.getSubscriberMessageTemplateDisplay());
+                availableValue.put("display", ((messageTemplate.getSubscriberMessageTemplateDisplay() != null && !messageTemplate.getSubscriberMessageTemplateDisplay().isEmpty()) ? messageTemplate.getSubscriberMessageTemplateDisplay() : messageTemplate.getSubscriberMessageTemplateName()));
                 result.add(JSONUtilities.encodeObject(availableValue));
                 break;
               }
@@ -23910,12 +23909,12 @@ public class GUIManager
       //
 
       Properties consumerProperties = new Properties();
-      consumerProperties.put("bootstrap.servers", bootstrapServers);
-      consumerProperties.put("group.id", groupID);
-      consumerProperties.put("auto.offset.reset", "earliest");
-      consumerProperties.put("enable.auto.commit", "false");
-      consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-      consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+      consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, groupID);
+      consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+      consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+      consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       deliverableSourceConsumer = new KafkaConsumer<>(consumerProperties);
 
       //
@@ -23989,7 +23988,7 @@ public class GUIManager
       do
         {
           //
-          // poll
+          //  poll
           //
 
           ConsumerRecords<byte[], byte[]> deliverableSourceRecords;
@@ -24331,7 +24330,7 @@ public class GUIManager
 
     public String toString()
     {
-      return super.toString() + "(" + responseParameter + ")";
+      return super.toString() + " (" + responseParameter + ")";
     }
   }
 

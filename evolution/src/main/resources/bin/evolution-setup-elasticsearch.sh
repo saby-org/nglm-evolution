@@ -842,43 +842,43 @@
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/1 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : ""
+      "moduleID" : "1", "moduleName": "Journey_Manager", "moduleDisplay" : "Journey Manager", "moduleFeature" : "journeyID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/2 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : ""
+      "moduleID" : "2", "moduleName": "Loyalty_Program", "moduleDisplay" : "Loyalty Program", "moduleFeature" : "loyaltyProgramID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/3 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : ""
+      "moduleID" : "3", "moduleName": "Offer_Catalog", "moduleDisplay" : "Offer Catalog", "moduleFeature" : "offerID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/4 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : ""
+      "moduleID" : "4", "moduleName": "Delivery_Manager", "moduleDisplay" : "Delivery Manager", "moduleFeature" : "deliverableID"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/5 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : ""
+      "moduleID" : "5", "moduleName": "Customer_Care", "moduleDisplay" : "Customer Care", "moduleFeature" : "none"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/6 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : ""
+      "moduleID" : "6", "moduleName": "REST_API", "moduleDisplay" : "REST API", "moduleFeature" : "none"
     }'
   echo
 
   curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_modules/_doc/999 -H'Content-Type: application/json' -d'
     {
-      "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : ""
+      "moduleID" : "999", "moduleName": "Unknown", "moduleDisplay" : "Unknown", "moduleFeature" : "none"
     }'
   echo
 
@@ -1092,4 +1092,130 @@
     }'
   echo
   
+  #
+  #  manually create mapping_journeys index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_journeys -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "journeyID" : { "type" : "keyword" },
+                  "journeyName" : { "type" : "keyword" },
+                  "journeyActive" : { "type" : "boolean" }
+                }
+        }
+    }'
+  echo
+  
+  #
+  #  manually create mapping_saleschannels index
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/mapping_saleschannels -H'Content-Type: application/json' -d'
+    {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "properties" :
+                {
+                  "salesChannelID" : { "type" : "keyword" },
+                  "salesChannelName" : { "type" : "keyword" },
+                  "salesChannelActive" : { "type" : "boolean" }
+                }
+        }
+    }'
+  echo
+
+  #
+  #  manually create token template
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -H'Content-Type: application/json' -d'
+     {
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+          "properties" :
+            {
+	          "subscriberID"  : { "type" : "keyword" },
+	          "tokenCode"     : { "type" : "keyword" },
+	          "action"        : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date"},
+	          "eventID"       : { "type" : "keyword" },
+	          "returnCode"    : { "type" : "keyword" },
+	          "origin"        : { "type" : "keyword", "index" : "false" }
+            }
+        }
+    }'
+  echo
   

@@ -270,7 +270,7 @@ public class ReportUtils {
 		String nbPartitionsStr = System.getenv().get(ENV_NB_PARTITIONS);
 		if (nbPartitionsStr != null)
 			nbPartitions = Integer.parseInt(nbPartitionsStr);
-		log.info("Using "+nbPartitions+" as clientId for Kafka producer");
+		log.debug("Using "+nbPartitions+" as clientId for Kafka producer");
 		return nbPartitions;
 	}
 	
@@ -370,8 +370,12 @@ public class ReportUtils {
   //
   public static String format(String s)
   {
+    String res = s;
+    // Replace simple quotes by spaces
+    res = res.replaceAll("'", " ");
     // Surround s with double quotes, and escape double quotes inside it
-    return "\""+s.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
+    res = "\""+res.replaceAll("\"", Matcher.quoteReplacement("\\\""))+"\"";
+    return res;
   }
 
 }

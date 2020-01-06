@@ -1,4 +1,4 @@
-notificationmanagersms-<_KEY_>:
+notificationsms-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-notificationmanagersms:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:

@@ -55,6 +55,7 @@ public abstract class CriterionFieldRetriever
   public static Object getEvaluationDate(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return evaluationRequest.getEvaluationDate(); }
   public static Object getJourneyEvaluationEventName(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return (evaluationRequest.getSubscriberStreamEvent() != null && evaluationRequest.getSubscriberStreamEvent() instanceof EvolutionEngineEvent) ? ((EvolutionEngineEvent) evaluationRequest.getSubscriberStreamEvent()).getEventName() : null; } 
   public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return ThreadLocalRandom.current().nextInt(100); }
+  public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
   public static Object getFalse(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.FALSE; }
   public static Object getUnsupportedField(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return null; }
 
@@ -465,6 +466,29 @@ public abstract class CriterionFieldRetriever
 
   /*****************************************
   *
+  *  evaluation variables
+  *
+  *****************************************/
+
+  //
+  //  getEvaluationJourney
+  //
+
+  public static Object getEvaluationJourney(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return "evaluation.variable.journey"; }
+
+  //
+  //  getEvaluationJourneyStatus
+  //
+  
+  public static Object getEvaluationJourneyStatus(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    String journeyID = (String) evaluationRequest.getEvaluationVariables().get("evaluation.variable.journey");
+    if (journeyID == null) throw new CriterionException("invalid journey status request");
+    return (evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID) != null) ? evaluationRequest.getSubscriberProfile().getSubscriberJourneys().get(journeyID).getExternalRepresentation() : null;
+  }
+
+  /*****************************************
+  *
   *  evaluateParameter
   *
   *****************************************/
@@ -477,7 +501,7 @@ public abstract class CriterionFieldRetriever
         ParameterExpression parameterExpression = (ParameterExpression) parameterValue;
         Expression expression = parameterExpression.getExpression();
         TimeUnit baseTimeUnit = parameterExpression.getBaseTimeUnit();
-        result = expression.evaluate(evaluationRequest, baseTimeUnit);
+        result = expression.evaluateExpression(evaluationRequest, baseTimeUnit);
       }
     return result;
   }

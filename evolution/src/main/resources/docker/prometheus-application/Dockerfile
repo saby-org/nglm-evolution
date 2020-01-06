@@ -11,6 +11,7 @@ RUN chmod 0777 -R /etc/prometheus
 #
 
 COPY bin/prometheus-application-run.sh /app/bin/prometheus-application-run.sh
+USER root
 RUN chmod 0755 /app/bin/prometheus-application-run.sh
 
 #

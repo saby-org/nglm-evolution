@@ -39,19 +39,19 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>4.8.1-build191204-SNAPSHOT</version>
+    <version>4.8.1-build191231-SNAPSHOT</version>
     <relativePath/>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>4.8.1-build191204-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>4.8.1-build191231-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.38</flyway.gui.version>
+    <flyway.gui.version>1.0.39</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
@@ -138,6 +138,7 @@
     <topic.ucgstate>ucgstate</topic.ucgstate>
     <topic.renamedprofilecriterionfield>renamedprofilecriterionfield</topic.renamedprofilecriterionfield>
     <topic.timedevaluation>timedevaluation</topic.timedevaluation>
+    <topic.evaluatetargets>evaluatetargets</topic.evaluatetargets>
     <topic.periodicevaluation_fileconnector>periodicevaluation-fileconnector</topic.periodicevaluation_fileconnector>
     <topic.subscriberprofileforceupdate>subscriberprofileforceupdate</topic.subscriberprofileforceupdate>
     <topic.subscriberprofileforceupdate_fileconnector>subscriberprofileforceupdate-fileconnector</topic.subscriberprofileforceupdate_fileconnector>
@@ -155,6 +156,7 @@
     <topic.presentationlog_fileconnector>presentationlog-fileconnector</topic.presentationlog_fileconnector>
     <topic.acceptancelog>acceptancelog</topic.acceptancelog>
     <topic.acceptancelog_fileconnector>acceptancelog-fileconnector</topic.acceptancelog_fileconnector>
+    <topic.tokenchange>tokenchange</topic.tokenchange>
     <topic.propensitylog>propensitylog</topic.propensitylog>
     <topic.profilechangeevent>profilechangeevent</topic.profilechangeevent>
     <topic.profilesegmentchangeevent>profilesegmentchangeevent</topic.profilesegmentchangeevent>

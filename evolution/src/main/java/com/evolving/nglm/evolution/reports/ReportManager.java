@@ -275,7 +275,7 @@ public class ReportManager implements Watcher{
 
   private void handleReport(String reportName, Report report, String restOfLine)
   {
-    log.trace("Processing "+reportName+" "+restOfLine);
+    log.trace("---> Starting report "+reportName+" "+restOfLine);
     String[] params = null;
     if (!"".equals(restOfLine)) 
       {
@@ -320,6 +320,7 @@ public class ReportManager implements Watcher{
       Constructor<ReportDriver> cons = reportClass.getConstructor();
       ReportDriver rd = cons.newInstance((Object[]) null);
       rd.produceReport(report, zkHostList, brokerServers, esNode, csvFilename, params);
+      log.trace("---> Finished report "+reportName);
     } catch (ClassNotFoundException e)
     {
       log.error("Undefined class name "+e.getLocalizedMessage(), e);

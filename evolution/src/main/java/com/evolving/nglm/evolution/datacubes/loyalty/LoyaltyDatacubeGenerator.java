@@ -11,54 +11,44 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.SubscriberStatusDisplayMapping;
 
 public class LoyaltyDatacubeGenerator extends DatacubeGenerator
 {
+  private static final String filterLoyaltyProgramTier = "loyaltyProgramTier";
+  private static final String dataPointEarned = "_Earned";
+  private static final String dataPointRedeemed = "_Redeemed";
+  private static final String dataPointExpired = "_Expired";
+  private static final String dataPointRedeemerCount = "_RedeemerCount";
+  private static final String datacubeESIndex = "datacube_loyaltyprogramshistory";
+  private static final String dataESIndexPrefix = "subscriberprofile";
+  private static final Pattern loyaltyTierPattern = Pattern.compile("\\[(.*), (.*)\\]");
+
   private List<String> filterFields;
   private List<CompositeValuesSourceBuilder<?>> filterComplexSources;
-  private String filterLoyaltyProgramTier = "loyaltyProgramTier";
-  
-  private String dataPointEarned = "_Earned";
-  private String dataPointRedeemed = "_Redeemed";
-  private String dataPointExpired = "_Expired";
-  private String dataPointRedeemerCount = "_RedeemerCount";
-  
-  private Map<String,String> loyaltyProgramMapping = new HashMap<>(); // Mapping (LoyaltyProgramID,PointID)
-  
-  private Pattern loyaltyTierPattern = Pattern.compile("\\[(.*), (.*)\\]");
-  
-  //
-  // Elasticsearch indexes
-  //
-  
-  private final String datacubeESIndex = "datacube_loyaltyprogramshistory";
-  private final String dataESIndexPrefix = "subscriberprofile";
+  private LoyaltyProgramDisplayMapping loyaltyProgramDisplayMapping;
+  private SubscriberStatusDisplayMapping subscriberStatusDisplayMapping;
   
   public LoyaltyDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
     super(datacubeName, elasticsearch);
+
+    this.loyaltyProgramDisplayMapping = new LoyaltyProgramDisplayMapping();
+    this.subscriberStatusDisplayMapping = new SubscriberStatusDisplayMapping();
     
     //
     // Filter fields
@@ -87,34 +77,8 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   @Override
   protected void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException
   {
-    // 
-    // Retrieve (LoyaltyProgramID, PointID) mapping
-    //
-    
-    this.loyaltyProgramMapping = new HashMap<String, String>();
-
-    SearchSourceBuilder request = new SearchSourceBuilder()
-        .sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-        .query(QueryBuilders.matchAllQuery())
-        .size(BUCKETS_MAX_NBR);
-    
-    SearchResponse response = executeESSearchRequest(new SearchRequest("mapping_loyaltyprograms").source(request), elasticsearch);
-    if(response == null) { return; }
-    if(response.isTimedOut()
-        || response.getFailedShards() > 0
-        || response.getSkippedShards() > 0
-        || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch search response return with bad status in {}", this.datacubeName);
-      return;
-    }
-    
-    SearchHits hits = response.getHits();
-    if(hits == null) { return; }
-    
-    for(SearchHit hit: hits) {
-      Map<String, Object> source = hit.getSourceAsMap();
-      this.loyaltyProgramMapping.put((String) source.get("loyaltyProgramID"), (String) source.get("rewardPointsID"));
-    }
+    loyaltyProgramDisplayMapping.updateFromElasticsearch(elasticsearch);
+    subscriberStatusDisplayMapping.updateFromElasticsearch(elasticsearch);
   }
 
   @Override
@@ -122,8 +86,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   {
     String status = (String) filters.remove("evolutionSubscriberStatus");
     filters.put("evolutionSubscriberStatus.id", status);
-    // TODO : extract evolutionSubscriberStatus.display 
-    filters.put("evolutionSubscriberStatus.display", status);
+    filters.put("evolutionSubscriberStatus.display", subscriberStatusDisplayMapping.getDisplay(status));
     
     String loyaltyTier = (String) filters.remove(filterLoyaltyProgramTier);
     String loyaltyProgramID = "undefined";
@@ -143,10 +106,11 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
       {
         log.warn("Unable to parse "+ filterLoyaltyProgramTier + " field.");
       }
+    
     filters.put("tierName", tierName);
+    
     filters.put("loyaltyProgram.id", loyaltyProgramID);
-    // TODO : extract loyaltyProgram.display 
-    filters.put("loyaltyProgram.display", loyaltyProgramID);
+    filters.put("loyaltyProgram.display", loyaltyProgramDisplayMapping.getDisplay(loyaltyProgramID));
   }
 
   @Override
@@ -181,9 +145,9 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
     
     List<String> pointIDs = new ArrayList<String>();
     
-    for(String programID : this.loyaltyProgramMapping.keySet()) 
+    for(String programID : loyaltyProgramDisplayMapping.getLoyaltyPrograms()) 
       {
-        String newPointID = this.loyaltyProgramMapping.get(programID);
+        String newPointID = loyaltyProgramDisplayMapping.getRewardPointsID(programID);
         boolean found = false;
         for(String pointID: pointIDs) 
           {
@@ -231,7 +195,7 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
     }
 
     String programID = (String) contextFilters.get("loyaltyProgram.id");
-    String pointID = this.loyaltyProgramMapping.get(programID);
+    String pointID = loyaltyProgramDisplayMapping.getRewardPointsID(programID);
     if (pointID == null) {
       log.error("Unable to extract "+programID+" points information from loyalty programs mapping.");
       return data;
@@ -271,12 +235,12 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   @Override
   protected String getDataESIndex(String date)
   {
-    return this.dataESIndexPrefix;
+    return dataESIndexPrefix;
   }
 
   @Override
   protected String getDatacubeESIndex()
   {
-    return this.datacubeESIndex;
+    return datacubeESIndex;
   }
 }

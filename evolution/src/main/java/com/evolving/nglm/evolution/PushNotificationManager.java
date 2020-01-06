@@ -822,7 +822,11 @@ public class PushNotificationManager extends DeliveryManager implements Runnable
           }
         else
           {
-            log.info("PushNotificationManagerRequest run deliveryRequest : ERROR : template not found");
+            log.info("PushNotificationManagerRequest run deliveryRequest : ERROR : template with id '"+pushRequest.getTemplateID()+"' not found");
+            log.info("subscriberMessageTemplateService contains :");
+            for(GUIManagedObject obj : subscriberMessageTemplateService.getActiveSubscriberMessageTemplates(now)){
+              log.info("   - "+obj.getGUIManagedObjectName()+" (id "+obj.getGUIManagedObjectID()+") : "+obj.getClass().getName());
+            }
             pushRequest.setDeliveryStatus(DeliveryStatus.Failed);
             pushRequest.setReturnCode(PushMessageStatus.UNKNOWN.getReturnCode());
             pushRequest.setMessageStatus(PushMessageStatus.UNKNOWN);

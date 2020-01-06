@@ -97,6 +97,7 @@ public class Deployment
   private static String ucgStateTopic;
   private static String renamedProfileCriterionFieldTopic;
   private static String timedEvaluationTopic;
+  private static String evaluateTargetsTopic;
   private static String subscriberProfileForceUpdateTopic;
   private static String subscriberStateChangeLog;
   private static String subscriberStateChangeLogTopic;
@@ -126,6 +127,7 @@ public class Deployment
   private static String journeyTrafficChangeLog;
   private static String journeyTrafficChangeLogTopic;
   private static String journeyTrafficTopic;
+  private static String tokenChangeTopic;
   private static String subscriberProfileRegistrySubject;
   private static int journeyTrafficArchivePeriodInSeconds;
   private static int journeyTrafficArchiveMaxNumberOfPeriods;
@@ -312,6 +314,7 @@ public class Deployment
   public static String getUCGStateTopic() { return ucgStateTopic; }
   public static String getRenamedProfileCriterionFieldTopic() { return renamedProfileCriterionFieldTopic; }
   public static String getTimedEvaluationTopic() { return timedEvaluationTopic; }
+  public static String getEvaluateTargetsTopic() { return evaluateTargetsTopic; }
   public static String getSubscriberProfileForceUpdateTopic() { return subscriberProfileForceUpdateTopic; }
   public static String getSubscriberStateChangeLog() { return subscriberStateChangeLog; }
   public static String getSubscriberStateChangeLogTopic() { return subscriberStateChangeLogTopic; }
@@ -341,6 +344,7 @@ public class Deployment
   public static String getJourneyTrafficChangeLog() { return journeyTrafficChangeLog; }
   public static String getJourneyTrafficChangeLogTopic() { return journeyTrafficChangeLogTopic; }
   public static String getJourneyTrafficTopic() { return journeyTrafficTopic; }
+  public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getSubscriberProfileRegistrySubject() { return subscriberProfileRegistrySubject; }
   public static int getJourneyTrafficArchivePeriodInSeconds() { return journeyTrafficArchivePeriodInSeconds; }
   public static int getJourneyTrafficArchiveMaxNumberOfPeriods() { return journeyTrafficArchiveMaxNumberOfPeriods; }
@@ -1471,6 +1475,19 @@ public class Deployment
       }
 
     //
+    //  evaluateTargetsTopic
+    //
+
+    try
+      {
+        evaluateTargetsTopic = JSONUtilities.decodeString(jsonRoot, "evaluateTargetsTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
+    //
     //  subscriberProfileForceUpdateTopic
     //
 
@@ -1849,6 +1866,19 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  tokenChangeTopic
+    //
+
+    try
+      {
+        tokenChangeTopic = JSONUtilities.decodeString(jsonRoot, "tokenChangeTopic", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  subscriberProfileRegistrySubject
     //

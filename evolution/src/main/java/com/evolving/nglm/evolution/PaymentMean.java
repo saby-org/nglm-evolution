@@ -83,6 +83,7 @@ public class PaymentMean extends GUIManagedObject
 
   public String getPaymentMeanID() { return getGUIManagedObjectID(); }
   public String getPaymentMeanName() { return getGUIManagedObjectName(); }
+  public String getPaymentMeanDisplay() { return getGUIManagedObjectDisplay(); }
   public String getFulfillmentProviderID() { return fulfillmentProviderID; }
   public String getExternalAccountID() { return externalAccountID; }
   public String getDisplay() { return display; }

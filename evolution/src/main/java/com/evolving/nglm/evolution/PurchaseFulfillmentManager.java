@@ -6,14 +6,12 @@
 
 package com.evolving.nglm.evolution;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -147,7 +145,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   private DeliverableService deliverableService;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private ODRStatistics odrStats = null;
-  
+  private ZookeeperUniqueKeyServer zookeeperUniqueKeyServer;
   private String application_ID;
   
   /*****************************************
@@ -168,7 +166,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     // variables
     //
     
-    application_ID = "application-deliverymanager-purchasefulfillment-" + deliveryManagerKey;
+    application_ID = "application-deliverymanager-purchasefulfillment";
+
+    //
+    //  unique key server
+    //
+    
+    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer("commoditydelivery");
     
     //
     //  plugin instanciation
@@ -255,7 +259,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_purchasefulfillment_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
@@ -265,6 +269,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("offerContent", Schema.STRING_SCHEMA);
       schemaBuilder.field("meanOfPayment", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerPrice", Schema.INT64_SCHEMA);
+      schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -298,6 +303,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private String offerContent;
     private String meanOfPayment;
     private long offerPrice;
+    private String origin;
     
     //
     //  accessors
@@ -312,6 +318,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferContent() { return offerContent; }
     public String getMeanOfPayment() { return meanOfPayment; }
     public long getOfferPrice() { return offerPrice; }
+    public String getOrigin() { return origin; }
     
     //
     //  setters
@@ -331,7 +338,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     public int getOfferDeliveryReturnCode() { return getReturnCode(); }
     public String getOfferDeliveryReturnCodeDetails() { return null; }
-    public String getOfferDeliveryOrigin() { return null; }
+    public String getOfferDeliveryOrigin() { return getOrigin(); }
     public String getOfferDeliveryOfferDisplay() { return getOfferDisplay(); }
     public String getOfferDeliveryOfferID() { return getOfferID(); }
     public int getOfferDeliveryOfferQty() { return getQuantity(); }
@@ -348,7 +355,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID)
+    public PurchaseFulfillmentRequest(EvolutionEventContext context, String deliveryRequestSource, String offerID, int quantity, String salesChannelID, String origin)
     {
       super(context, "purchaseFulfillment", deliveryRequestSource);
       this.offerID = offerID;
@@ -356,6 +363,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.salesChannelID = salesChannelID;
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
+      this.origin = origin;
       updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.now());
     }
 
@@ -446,6 +454,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.status = PurchaseFulfillmentStatus.PENDING;
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
       this.returnCodeDetails = "";
+      this.origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, now);
     }
 
@@ -458,7 +467,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -470,6 +479,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerContent = offerContent;
       this.meanOfPayment = meanOfPayment;
       this.offerPrice = offerPrice;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -490,6 +500,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.offerContent = purchaseFulfillmentRequest.getOfferContent();
       this.meanOfPayment = purchaseFulfillmentRequest.getMeanOfPayment();
       this.offerPrice = purchaseFulfillmentRequest.getOfferPrice();
+      this.origin = purchaseFulfillmentRequest.getOrigin();
     }
 
     /*****************************************
@@ -522,6 +533,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("offerContent", purchaseFulfillmentRequest.getOfferContent());
       struct.put("meanOfPayment", purchaseFulfillmentRequest.getMeanOfPayment());
       struct.put("offerPrice", purchaseFulfillmentRequest.getOfferPrice());
+      struct.put("origin", purchaseFulfillmentRequest.getOrigin());
       return struct;
     }
 
@@ -560,12 +572,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String offerContent = (schemaVersion >= 2) ? valueStruct.getString("offerContent") : "";
       String meanOfPayment = (schemaVersion >= 2) ? valueStruct.getString("meanOfPayment") : "";
       long offerPrice = (schemaVersion >= 2) ? valueStruct.getInt64("offerPrice") : 0;
+      String origin = (schemaVersion >= 3) ? valueStruct.getString("origin") : "";
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin);
     }
 
     /*****************************************
@@ -589,6 +602,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       b.append("," + offerContent);
       b.append("," + meanOfPayment);
       b.append("," + offerPrice);
+      b.append("," + origin);
       b.append("}");
       return b.toString();
     }
@@ -667,7 +681,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           guiPresentationMap.put(FEATUREID, getFeatureID());
           guiPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
           guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-          guiPresentationMap.put(ORIGIN, getDeliveryRequestSource());
+          guiPresentationMap.put(ORIGIN, getOrigin());
           guiPresentationMap.put(RETURNCODE, getReturnCode());
           guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
           guiPresentationMap.put(VOUCHERCODE, "");
@@ -737,7 +751,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
       thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
       thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(module, getFeatureID(), journeyService, offerService, loyaltyProgramService));
-      thirdPartyPresentationMap.put(ORIGIN, getDeliveryRequestSource());
+      thirdPartyPresentationMap.put(ORIGIN, getOrigin());
       thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       thirdPartyPresentationMap.put(VOUCHERCODE, "");
@@ -763,6 +777,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *****************************************/
         
         DeliveryRequest deliveryRequest = nextRequest();
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager : NEW REQUEST ("+deliveryRequest.getDeliveryRequestID()+") (thread name = "+Thread.currentThread().getName()+")");
         PurchaseFulfillmentRequest purchaseRequest = ((PurchaseFulfillmentRequest)deliveryRequest);
 
         /*****************************************
@@ -774,6 +789,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         String correlator = deliveryRequest.getDeliveryRequestID();
         deliveryRequest.setCorrelator(correlator);
         updateRequest(deliveryRequest);
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : correlator set ");
         
         /*****************************************
         *
@@ -795,7 +811,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(quantity < 1){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
-          return;
+          continue;
         }
         
         //
@@ -805,7 +821,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(subscriberID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
-          return;
+          continue;
         }
         SubscriberProfile subscriberProfile = null;
         try{
@@ -813,14 +829,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(subscriberProfile == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
-            return;
+            continue;
           }else{
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
           }
         }catch (SubscriberProfileServiceException e) {
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
-          return;
+          continue;
         }
 
         //
@@ -830,13 +846,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(offerID == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
-          return;
+          continue;
         }
         Offer offer = offerService.getActiveOffer(offerID, now);
         if(offer == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
-          return;
+          continue;
         }else{
           if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
         }
@@ -849,7 +865,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(salesChannel == null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
-          return;
+          continue;
         }else{
           if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
         }
@@ -875,7 +891,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!priceFound){ //need this boolean since price can be null (if offer is free)
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
-          return;
+          continue;
         }
         purchaseStatus.addPaymentToBeDebited(offerPrice);
 
@@ -892,7 +908,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!offerService.isActiveOffer(offer, now)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+now+")");
-          return;
+          continue;
         }
         purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
 
@@ -905,7 +921,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(product == null){
             log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
-            return;
+            continue;
           }else{
             purchaseStatus.addProductStockToBeDebited(offerProduct);
             purchaseStatus.addProductToBeCredited(offerProduct);
@@ -920,7 +936,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(!offer.evaluateProfileCriteria(evaluationRequest)){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-          return;
+          continue;
         }
         
         //TODO : still to be done :
@@ -932,6 +948,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *
         *****************************************/
 
+        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
         proceedPurchase(purchaseStatus);
         
       }
@@ -952,6 +969,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   }
   
   private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus){
+    log.info("PurchaseFulfillmentManager.submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", "+purchaseStatus.getJSONRepresentation()+") ");
     submitCorrelatorUpdate(purchaseStatus.getCorrelator(), purchaseStatus.getJSONRepresentation());
   }
 
@@ -980,7 +998,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   @Override protected void shutdown()
   {
     log.info("PurchaseFulfillmentManager: shutdown called");
-    stockService.close();
+    if (stockService != null) stockService.close();
+    if (zookeeperUniqueKeyServer != null) zookeeperUniqueKeyServer.close();
     log.info("PurchaseFulfillmentManager: shutdown DONE");
   }
   
@@ -1303,8 +1322,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(offerPrice != null){
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
       purchaseStatus.incrementNewRequestCounter();
-      ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-      String deliveryRequestID = zuks.getStringKey();
+      String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
       CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0);
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
     }
@@ -1321,8 +1339,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
-          ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-          String deliveryRequestID = zuks.getStringKey();
+          String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
           CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
         }else{
@@ -1347,8 +1364,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(offerPriceRollback != null){
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
       purchaseStatus.incrementNewRequestCounter();
-      ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-      String deliveryRequestID = zuks.getStringKey();
+      String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
       CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0);
       log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
     }
@@ -1365,8 +1381,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if(deliverable != null){
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
-          ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("guimanager");
-          String deliveryRequestID = zuks.getStringKey();
+          String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
           CommodityDeliveryManager.sendCommodityDeliveryRequest(purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, offerProduct.getQuantity() * purchaseStatus.getQuantity(), null, 0);
           log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
         }else{
@@ -2166,7 +2181,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
 
-      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID);
+      PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "");
       request.setModuleID(moduleID);
       request.setFeatureID(deliveryRequestSource);
 

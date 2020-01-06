@@ -299,9 +299,9 @@ public class CriterionContext
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_context");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("criterionContextType", Schema.STRING_SCHEMA);
-    schemaBuilder.field("journeyCriterionFields", SchemaBuilder.array(CriterionField.schema()).schema());
+    schemaBuilder.field("additionalCriterionFields", SchemaBuilder.array(CriterionField.schema()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -325,7 +325,7 @@ public class CriterionContext
   *****************************************/
 
   private CriterionContextType criterionContextType;
-  private Map<String,CriterionField> journeyCriterionFields;
+  private Map<String,CriterionField> additionalCriterionFields;
 
   /*****************************************
   *
@@ -334,7 +334,7 @@ public class CriterionContext
   *****************************************/
 
   public CriterionContextType getCriterionContextType() { return criterionContextType; }
-  public Map<String,CriterionField> getJourneyCriterionFields() { return journeyCriterionFields; }
+  public Map<String,CriterionField> getAdditionalCriterionFields() { return additionalCriterionFields; }
 
   /*****************************************
   *
@@ -345,7 +345,7 @@ public class CriterionContext
   public CriterionContext(CriterionContextType criterionContextType)
   {
     this.criterionContextType = criterionContextType;
-    this.journeyCriterionFields = Collections.<String,CriterionField>emptyMap();
+    this.additionalCriterionFields = Collections.<String,CriterionField>emptyMap();
   }
   
   /*****************************************
@@ -357,12 +357,12 @@ public class CriterionContext
   public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
   {
     this.criterionContextType = CriterionContextType.Journey;
-    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
-    this.journeyCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
-    this.journeyCriterionFields.putAll(journeyParameters);
+    this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
+    this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+    this.additionalCriterionFields.putAll(journeyParameters);
     for (CriterionField contextVariable : contextVariables.values())
       {
-        this.journeyCriterionFields.put(contextVariable.getID(), contextVariable);
+        this.additionalCriterionFields.put(contextVariable.getID(), contextVariable);
       }
   }
 
@@ -375,8 +375,8 @@ public class CriterionContext
   public CriterionContext(CriterionContext baseCriterionContext, Map<String,CriterionField> additionalCriterionFields)
   {
     this.criterionContextType = CriterionContextType.JourneyNode;
-    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>(baseCriterionContext.getJourneyCriterionFields());
-    this.journeyCriterionFields.putAll(additionalCriterionFields);
+    this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>(baseCriterionContext.getAdditionalCriterionFields());
+    this.additionalCriterionFields.putAll(additionalCriterionFields);
   }
 
   /*****************************************
@@ -397,24 +397,24 @@ public class CriterionContext
 
     /*****************************************
     *
-    *  journeyCriterionFields -- standard node
+    *  additionalCriterionFields -- standard node
     *
     *****************************************/
 
-    this.journeyCriterionFields = new LinkedHashMap<String,CriterionField>();
+    this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>();
     if (! journeyNodeType.getStartNode())
       {
         //
         //  standard journey top-level fields
         //
 
-        this.journeyCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
+        this.additionalCriterionFields.put(journeyEntryDate.getID(), journeyEntryDate);
 
         //
         //  journey parameters
         //
 
-        this.journeyCriterionFields.putAll(journeyParameters);
+        this.additionalCriterionFields.putAll(journeyParameters);
 
         //
         //  context variables
@@ -422,28 +422,28 @@ public class CriterionContext
 
         for (CriterionField contextVariable : contextVariables.values())
           {
-            this.journeyCriterionFields.put(contextVariable.getID(), contextVariable);
+            this.additionalCriterionFields.put(contextVariable.getID(), contextVariable);
           }
 
         //
         //  standard journey node-level fields
         //
 
-        this.journeyCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
-        this.journeyCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
-        this.journeyCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
+        this.additionalCriterionFields.put(nodeEntryDate.getID(), nodeEntryDate);
+        this.additionalCriterionFields.put(journeyActionDeliveryStatus.getID(), journeyActionDeliveryStatus);
+        this.additionalCriterionFields.put(journeyActionJourneyStatus.getID(), journeyActionJourneyStatus);
 
         //
         //  node-level parameters
         //
 
-        this.journeyCriterionFields.putAll(journeyNodeType.getParameters());
+        this.additionalCriterionFields.putAll(journeyNodeType.getParameters());
 
         //
         //  action-manager parameters
         //
 
-        this.journeyCriterionFields.putAll((journeyNodeType.getActionManager() != null) ? journeyNodeType.getActionManager().getOutputAttributes() : Collections.<String,CriterionField>emptyMap());
+        this.additionalCriterionFields.putAll((journeyNodeType.getActionManager() != null) ? journeyNodeType.getActionManager().getOutputAttributes() : Collections.<String,CriterionField>emptyMap());
 
         //
         //  link-level  parameters
@@ -451,7 +451,7 @@ public class CriterionContext
 
         if (includeLinkParameters)
           {
-            this.journeyCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
+            this.additionalCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
           }
 
         //
@@ -460,7 +460,7 @@ public class CriterionContext
 
         if (journeyEvent != null)
           {
-            this.journeyCriterionFields.putAll(journeyEvent.getEventCriterionFields());
+            this.additionalCriterionFields.putAll(journeyEvent.getEventCriterionFields());
           }
       }
   }
@@ -471,10 +471,10 @@ public class CriterionContext
   *
   *****************************************/
 
-  private CriterionContext(CriterionContextType criterionContextType, Map<String,CriterionField> journeyCriterionFields)
+  private CriterionContext(CriterionContextType criterionContextType, Map<String,CriterionField> additionalCriterionFields)
   {
     this.criterionContextType = criterionContextType;
-    this.journeyCriterionFields = journeyCriterionFields;
+    this.additionalCriterionFields = additionalCriterionFields;
   }
 
   /*****************************************
@@ -488,20 +488,20 @@ public class CriterionContext
     CriterionContext criterionContext = (CriterionContext) value;
     Struct struct = new Struct(schema);
     struct.put("criterionContextType", criterionContext.getCriterionContextType().getExternalRepresentation());
-    struct.put("journeyCriterionFields", packJourneyCriterionFields(criterionContext.getJourneyCriterionFields()));
+    struct.put("additionalCriterionFields", packAdditionalCriterionFields(criterionContext.getAdditionalCriterionFields()));
     return struct;
   }
 
   /****************************************
   *
-  *  packJourneyCriterionFields
+  *  packAdditionalCriterionFields
   *
   ****************************************/
 
-  private static List<Object> packJourneyCriterionFields(Map<String,CriterionField> journeyCriterionFields)
+  private static List<Object> packAdditionalCriterionFields(Map<String,CriterionField> additionalCriterionFields)
   {
     List<Object> result = new ArrayList<Object>();
-    for (CriterionField criterionField : journeyCriterionFields.values())
+    for (CriterionField criterionField : additionalCriterionFields.values())
       {
         result.add(CriterionField.pack(criterionField));
       }
@@ -530,22 +530,22 @@ public class CriterionContext
 
     Struct valueStruct = (Struct) value;
     CriterionContextType criterionContextType = CriterionContextType.fromExternalRepresentation(valueStruct.getString("criterionContextType"));
-    Map<String,CriterionField> journeyCriterionFields = unpackJourneyCriterionFields(schema.field("journeyCriterionFields").schema(), valueStruct.get("journeyCriterionFields"));
+    Map<String,CriterionField> additionalCriterionFields = (schemaVersion >= 2) ? unpackAdditionalCriterionFields(schema.field("additionalCriterionFields").schema(), valueStruct.get("additionalCriterionFields")) : unpackAdditionalCriterionFields(schema.field("journeyCriterionFields").schema(), valueStruct.get("journeyCriterionFields"));
 
     //
     //  return
     //
 
-    return new CriterionContext(criterionContextType, journeyCriterionFields);
+    return new CriterionContext(criterionContextType, additionalCriterionFields);
   }
 
   /*****************************************
   *
-  *  unpackJourneyCriterionFields
+  *  unpackAdditionalCriterionFields
   *
   *****************************************/
 
-  private static Map<String,CriterionField> unpackJourneyCriterionFields(Schema schema, Object value)
+  private static Map<String,CriterionField> unpackAdditionalCriterionFields(Schema schema, Object value)
   {
     //
     //  get schema for CriterionField
@@ -618,7 +618,7 @@ public class CriterionContext
         case Journey:
         case JourneyNode:
           result = new LinkedHashMap<String,CriterionField>();
-          result.putAll(journeyCriterionFields);
+          result.putAll(additionalCriterionFields);
           result.putAll(DynamicProfile.getCriterionFields());
           break;
 

@@ -9,13 +9,19 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.CronFormat;
 import com.evolving.nglm.core.NGLMRuntime;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
@@ -28,11 +34,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 public class TimerService
 {
@@ -64,12 +75,21 @@ public class TimerService
   private volatile boolean stopRequested = false;
   private EvolutionEngine evolutionEngine = null;
   private ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
+  private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
+  private TargetService targetService = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
   private SortedSet<TimedEvaluation> schedule = new TreeSet<TimedEvaluation>();
+  private SynchronousQueue<EvaluateTargets> evaluateTargetsToProcess = new SynchronousQueue<EvaluateTargets>();
+  private KafkaConsumer<byte[], byte[]> evaluateTargetsConsumer;
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
   private ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
+  Thread scheduleLoaderThread = null;
+  Thread schedulerThread = null;
+  Thread periodicEvaluatorThread = null;
+  Thread evaluateTargetsReaderThread = null;
+  Thread evaluateTargetsWorkerThread = null;
   
   /*****************************************
   *
@@ -77,7 +97,7 @@ public class TimerService
   *
   *****************************************/
 
-  public TimerService(EvolutionEngine evolutionEngine, String bootstrapServers)
+  public TimerService(EvolutionEngine evolutionEngine, String bootstrapServers, String apiKey)
   {
     /*****************************************
     *
@@ -86,6 +106,21 @@ public class TimerService
     *****************************************/
 
     this.evolutionEngine = evolutionEngine;
+
+    /*****************************************
+    *
+    *  set up consumer
+    *
+    *****************************************/
+
+    Properties consumerProperties = new Properties();
+    consumerProperties.put("bootstrap.servers", bootstrapServers);
+    consumerProperties.put("group.id", "timerService-evaluateTargets-" + apiKey);
+    consumerProperties.put("auto.offset.reset", "earliest");
+    consumerProperties.put("enable.auto.commit", "false");
+    consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    evaluateTargetsConsumer = new KafkaConsumer<>(consumerProperties);
 
     /*****************************************
     *
@@ -107,7 +142,7 @@ public class TimerService
   *
   *****************************************/
 
-  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore)
+  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService)
   {
     /*****************************************
     *
@@ -119,35 +154,45 @@ public class TimerService
 
     /*****************************************
     *
-    *  subscriberStateStore
+    *  fields
     *
     *****************************************/
 
     this.subscriberStateStore = subscriberStateStore;
+    this.subscriberGroupEpochReader = subscriberGroupEpochReader;
+    this.targetService = targetService;
 
     /*****************************************
     *
-    *  reader thread
+    *  subscribe
+    *
+    *****************************************/
+
+    evaluateTargetsConsumer.subscribe(Arrays.asList(Deployment.getEvaluateTargetsTopic()));
+    
+    /*****************************************
+    *
+    *  scheduler reader thread
     *
     *****************************************/
 
     if (! stopRequested)
       {
         Runnable scheduleLoader = new Runnable() { @Override public void run() { runScheduleLoader(); } };
-        Thread scheduleLoaderThread = new Thread(scheduleLoader, "TimerService-ScheduleLoader");
+        scheduleLoaderThread = new Thread(scheduleLoader, "TimerService-ScheduleLoader");
         scheduleLoaderThread.start();
       }
 
     /*****************************************
     *
-    *  scheduler thread
+    *  scheduler worker thread
     *
     *****************************************/
 
     if (! stopRequested)
       {
         Runnable scheduler = new Runnable() { @Override public void run() { runScheduler(); } };
-        Thread schedulerThread = new Thread(scheduler, "TimerService-Scheduler");
+        schedulerThread = new Thread(scheduler, "TimerService-Scheduler");
         schedulerThread.start();
       }
 
@@ -160,8 +205,34 @@ public class TimerService
     if (! stopRequested)
       {
         Runnable periodicEvaluator = new Runnable() { @Override public void run() { runPeriodicEvaluator(); } };
-        Thread periodicEvaluatorThread = new Thread(periodicEvaluator, "TimerService-PeriodicEvaluator");
+        periodicEvaluatorThread = new Thread(periodicEvaluator, "TimerService-PeriodicEvaluator");
         periodicEvaluatorThread.start();
+      }
+    
+    /*****************************************
+    *
+    *  evaluate targets reader thread
+    *
+    *****************************************/
+
+    if (! stopRequested)
+      {
+        Runnable evaluateTargetsReader = new Runnable() { @Override public void run() { runEvaluateTargetsReader(); } };
+        evaluateTargetsReaderThread = new Thread(evaluateTargetsReader, "TimerService-EvaluateTargetsReader");
+        evaluateTargetsReaderThread.start();
+      }
+    
+    /*****************************************
+    *
+    *  evaluate targets worker thread
+    *
+    *****************************************/
+
+    if (! stopRequested)
+      {
+        Runnable evaluateTargetsWorker = new Runnable() { @Override public void run() { runEvaluateTargetsWorker(); } };
+        evaluateTargetsWorkerThread = new Thread(evaluateTargetsWorker, "TimerService-EvaluateTargetsWorker");
+        evaluateTargetsWorkerThread.start();
       }
   }
 
@@ -241,6 +312,11 @@ public class TimerService
     synchronized (this)
       {
         stopRequested = true;
+        scheduleLoaderThread.interrupt();
+        schedulerThread.interrupt();
+        periodicEvaluatorThread.interrupt();
+        evaluateTargetsReaderThread.interrupt();
+        evaluateTargetsWorkerThread.interrupt();
         this.notifyAll();
       }
   }
@@ -608,6 +684,278 @@ public class TimerService
 
         nextPeriodicEvaluation = periodicEvaluation.next(RLMDateUtils.addSeconds(nextPeriodicEvaluation,1));
         log.info("periodicEvaluation {} (next)", nextPeriodicEvaluation);
+      }
+  }
+
+  /*****************************************
+  *
+  *  runEvaluateTargetsReader
+  *
+  *****************************************/
+
+  private void runEvaluateTargetsReader()
+  {
+    EvaluateTargets currentEvaluateTargetsJob = null;
+    NGLMRuntime.registerSystemTimeDependency(this);
+    Date now = SystemTime.getCurrentTime();
+    while (! stopRequested)
+      {
+        /*****************************************
+        *
+        *  poll
+        *
+        *****************************************/
+
+        ConsumerRecords<byte[], byte[]> evaluateTargetsSourceRecords;
+        try
+          {
+            evaluateTargetsSourceRecords = evaluateTargetsConsumer.poll(5000);
+          }
+        catch (WakeupException e)
+          {
+            evaluateTargetsSourceRecords = ConsumerRecords.<byte[], byte[]>empty();
+          }
+
+        /*****************************************
+        *
+        *  processing?
+        *
+        *****************************************/
+
+        if (stopRequested) continue;
+
+        /*****************************************
+        *
+        *  complete outstanding job (if necessary)
+        *
+        *****************************************/
+
+        if (evaluateTargetsSourceRecords.count() == 0 && currentEvaluateTargetsJob != null && currentEvaluateTargetsJob.getCompleted())
+          {
+            evaluateTargetsConsumer.commitSync();
+            currentEvaluateTargetsJob = null;
+          }
+
+        /*****************************************
+        *
+        *  process incoming records request
+        *
+        *****************************************/
+
+        if (evaluateTargetsSourceRecords.count() > 0)
+          {
+            Set<String> targetIDs = new HashSet<String>();
+
+            //
+            //  outstanding job
+            //
+
+            if (currentEvaluateTargetsJob != null)
+              {
+                currentEvaluateTargetsJob.markAborted();
+                targetIDs.addAll(currentEvaluateTargetsJob.getTargetIDs());
+                currentEvaluateTargetsJob = null;
+              }
+
+            //
+            //  requested targetIDs
+            //
+
+            for (ConsumerRecord<byte[], byte[]> evaluateTargetsSourceRecord : evaluateTargetsSourceRecords)
+              {
+                //
+                //  parse
+                //
+
+                EvaluateTargets evaluateTargets = null;
+                try
+                  {
+                    evaluateTargets = EvaluateTargets.serde().deserializer().deserialize(Deployment.getEvaluateTargetsTopic(), evaluateTargetsSourceRecord.value());
+                  }
+                catch (SerializationException e)
+                  {
+                    log.info("error reading evaluateTargets: {}", e.getMessage());
+                  }
+                if (evaluateTargets != null) log.info("read evaluateTargets {}", evaluateTargets);
+
+                //
+                //  process
+                //
+
+                if (evaluateTargets != null)
+                  {
+                    targetIDs.addAll(evaluateTargets.getTargetIDs());
+                  }
+              }
+
+            //
+            //  submit job
+            //
+
+            if (targetIDs.size() > 0)
+              {
+                EvaluateTargets evaluateTargets = new EvaluateTargets(targetIDs);
+                currentEvaluateTargetsJob = evaluateTargets;
+                while (! stopRequested)
+                  {
+                    try { evaluateTargetsToProcess.put(evaluateTargets); break; } catch (InterruptedException e) { }
+                  }
+              }
+          }
+      }
+  }
+  
+  /*****************************************
+  *
+  *  runEvaluateTargetsWorker
+  *
+  *****************************************/
+
+  private void runEvaluateTargetsWorker()
+  {
+    NGLMRuntime.registerSystemTimeDependency(this);
+    Date now = SystemTime.getCurrentTime();
+    EvaluateTargets evaluateTargetsJob = null;
+    while (! stopRequested)
+      {
+        /*****************************************
+        *
+        *  poll (if no outstanding work)
+        *
+        *****************************************/
+
+        if (evaluateTargetsJob == null)
+          {
+            while (! stopRequested)
+              {
+                try { evaluateTargetsJob = evaluateTargetsToProcess.poll(5L, TimeUnit.SECONDS); break; } catch (InterruptedException e) { }
+              }
+          }
+
+        /*****************************************
+        *
+        *  processing?
+        *
+        *****************************************/
+
+        if (stopRequested) continue;
+
+        /*****************************************
+        *
+        *  process job
+        *
+        *****************************************/
+
+        if (evaluateTargetsJob != null)
+          {
+            //
+            //  waitForStreams
+            //
+            
+            evolutionEngine.waitForStreams();
+            
+            //
+            //  now
+            //
+
+            now = SystemTime.getCurrentTime();
+
+            //
+            //  job
+            //
+
+            try
+              {
+                //
+                //  submit events
+                //
+
+                KeyValueIterator<StringKey,SubscriberState> subscriberStateStoreIterator = subscriberStateStore.all();
+                while (! stopRequested && ! evaluateTargetsJob.getAborted() && subscriberStateStoreIterator.hasNext())
+                  {
+                    //
+                    //  subscriber state
+                    //
+
+                    SubscriberState subscriberState = subscriberStateStoreIterator.next().value;
+
+                    //
+                    //  subscriber targets
+                    //
+
+                    Set<String> subscriberTargets = subscriberState.getSubscriberProfile().getTargets(subscriberGroupEpochReader);
+
+                    //
+                    //  (re-) evaluate rules based target lists
+                    //
+
+                    for (Target target : targetService.getActiveTargets(now))
+                      {
+                        if (evaluateTargetsJob.getTargetIDs().contains(target.getTargetID()))
+                          {
+                            switch (target.getTargetingType())
+                              {
+                                case Eligibility:
+                                  SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                                  boolean addTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, target.getTargetingCriteria());
+                                  if (addTarget)
+                                    {
+                                      subscriberTargets.add(target.getTargetID());
+                                    }
+                                  break;
+                              }
+                          }
+                      }
+
+                    //
+                    //  match?
+                    //
+
+                    boolean match = false;
+                    for (String targetID : evaluateTargetsJob.getTargetIDs())
+                      {
+                        if (subscriberTargets.contains(targetID))
+                          {
+                            match = true;
+                            break;
+                          }
+                      }
+
+                    //
+                    // generate event (if necessary)
+                    //
+                    
+                    if (match)
+                      {
+                        TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now);
+                        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getTimedEvaluationTopic(), stringKeySerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), new StringKey(scheduledEvaluation.getSubscriberID())), timedEvaluationSerde.serializer().serialize(Deployment.getTimedEvaluationTopic(), scheduledEvaluation)));
+                      }
+                  }
+
+                //
+                //  mark completed if finished successfully
+                //
+
+                if (! stopRequested && ! evaluateTargetsJob.getAborted() && ! subscriberStateStoreIterator.hasNext())
+                  {
+                    evaluateTargetsJob.markCompleted();
+                  }
+                
+                //
+                //  finish job
+                //
+                
+                subscriberStateStoreIterator.close();
+                evaluateTargetsJob = null;
+              }
+            catch (InvalidStateStoreException e)
+              {
+                log.error("evaluateTargets exception {}", e.getMessage());
+                StringWriter stackTraceWriter = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                log.info(stackTraceWriter.toString());
+              }
+          }
       }
   }
 }

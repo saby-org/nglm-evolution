@@ -33,6 +33,7 @@ public class SubscriberEvaluationRequest
   private SubscriberStreamEvent subscriberStreamEvent;
   private Date evaluationDate;
   private SortedSet<Date> nextEvaluationDates;
+  private ParameterMap evaluationVariables;
   private List<String> traceDetails;
 
   /*****************************************
@@ -56,6 +57,7 @@ public class SubscriberEvaluationRequest
     this.subscriberStreamEvent = subscriberStreamEvent;
     this.evaluationDate = evaluationDate;
     this.nextEvaluationDates = new TreeSet<Date>();
+    this.evaluationVariables = new ParameterMap();
     this.traceDetails = new ArrayList<String>();
   }
 
@@ -90,6 +92,7 @@ public class SubscriberEvaluationRequest
   public JourneyLink getJourneyLink() { return journeyLink; }
   public SubscriberStreamEvent getSubscriberStreamEvent() { return subscriberStreamEvent; }
   public Date getEvaluationDate() { return evaluationDate; }
+  public ParameterMap getEvaluationVariables() { return evaluationVariables; }
   public List<String> getTraceDetails() { return traceDetails; }
   public SortedSet<Date> getNextEvaluationDates() { return nextEvaluationDates; }
   public boolean getSubscriberTraceEnabled() { return subscriberProfile.getSubscriberTraceEnabled(); }

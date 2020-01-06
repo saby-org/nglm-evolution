@@ -1,4 +1,4 @@
-purchasefulfillmentmanager-<_KEY_>:
+purchasemanager-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-purchasefulfillmentmanager:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:

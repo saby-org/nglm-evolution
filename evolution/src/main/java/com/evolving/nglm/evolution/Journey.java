@@ -91,17 +91,19 @@ public class Journey extends GUIManagedObject
 
   public enum SubscriberJourneyStatus
   {
-    NotEligible("notEligible"),
-    Entered("entered"),
-    Notified("notified"),
-    ConvertedNotNotified("unnotified_converted"),
-    ConvertedNotified("notified_converted"),
-    ControlGroupEntered("controlGroup_entered"),
-    ControlGroupConverted("controlGroup_converted"),
-    Unknown("(unknown)");
+    NotEligible("notEligible", "Not Eligible"),
+    Entered("entered", "Entered"),
+    Notified("notified", "Notified"),
+    ConvertedNotNotified("unnotified_converted", "Not-Notified/Converted"),
+    ConvertedNotified("notified_converted", "Notified/Converted"),
+    ControlGroupEntered("controlGroup_entered", "Entered (control)"),
+    ControlGroupConverted("controlGroup_converted", "Converted (control)"),
+    Unknown("(unknown)", "(unknown)");
     private String externalRepresentation;
-    private SubscriberJourneyStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    private String display;
+    private SubscriberJourneyStatus(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
     public String getExternalRepresentation() { return externalRepresentation; }
+    public String getDisplay() { return display; }
     public static SubscriberJourneyStatus fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatus enumeratedValue : SubscriberJourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
 
@@ -435,6 +437,19 @@ public class Journey extends GUIManagedObject
   public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyStatistic journeyStatistic)
   {
     return getSubscriberJourneyStatus(journeyStatistic.getJourneyComplete(), journeyStatistic.getStatusConverted(), journeyStatistic.getStatusNotified(), journeyStatistic.getStatusControlGroup());
+  }
+
+  //
+  //  journeyState
+  //
+
+  public static SubscriberJourneyStatus getSubscriberJourneyStatus(JourneyState journeyState)
+  {
+    boolean journeyComplete = journeyState.getJourneyExitDate() != null;
+    boolean statusConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+    boolean statusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+    boolean statusControlGroup = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusControlGroup.getJourneyParameterName()) : Boolean.FALSE;
+    return getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusControlGroup);
   }
 
   //

@@ -22,24 +22,23 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramDisplayMapping;
 
 public class TiersDatacubeGenerator extends DatacubeGenerator
 {
+  private static final String allFilters = "filters";
+  private static final String datacubeESIndex = "datacube_loyaltyprogramschanges";
+  private static final String dataESIndexPrefix = "subscriberprofile";
+  private static final Pattern loyaltyTiersPattern = Pattern.compile("\\[(.*), (.*), (.*), (.*)\\]");
+
   private List<String> filterFields;
-  private String allFilters = "filters";
-  
-  private Pattern loyaltyTiersPattern = Pattern.compile("\\[(.*), (.*), (.*), (.*)\\]");
-  
-  //
-  // Elasticsearch indexes
-  //
-  
-  private final String datacubeESIndex = "datacube_loyaltyprogramschanges";
-  private final String dataESIndexPrefix = "subscriberprofile";
+  private LoyaltyProgramDisplayMapping loyaltyProgramDisplayMapping;
   
   public TiersDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
   {
     super(datacubeName, elasticsearch);
+    
+    this.loyaltyProgramDisplayMapping = new LoyaltyProgramDisplayMapping();
     
     //
     // Filter fields
@@ -60,6 +59,7 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
   @Override
   protected void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException
   {
+    loyaltyProgramDisplayMapping.updateFromElasticsearch(elasticsearch);
   }
 
   @Override
@@ -92,12 +92,13 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
       {
         log.warn("Unable to parse " + allFilters + " field.");
       }
+    
     filters.put("newTierName", newTierName);
     filters.put("previousTierName", previousTierName);
     filters.put("tierChangeType", tierChangeType);
+    
     filters.put("loyaltyProgram.id", loyaltyProgramID);
-    // TODO : extract loyaltyProgram.display 
-    filters.put("loyaltyProgram.display", loyaltyProgramID);
+    filters.put("loyaltyProgram.display", loyaltyProgramDisplayMapping.getDisplay(loyaltyProgramID));
   }
 
   @Override
@@ -154,12 +155,12 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
   @Override
   protected String getDataESIndex(String date)
   {
-    return this.dataESIndexPrefix;
+    return dataESIndexPrefix;
   }
 
   @Override
   protected String getDatacubeESIndex()
   {
-    return this.datacubeESIndex;
+    return datacubeESIndex;
   }
 }

@@ -72,6 +72,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http:
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/bulk.sms.campaign.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBulkCampaign; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBulkCampaign; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBulkCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/startBulkCampaign; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/stopBulkCampaign; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCampaignSummaryList; echo
@@ -311,6 +313,12 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCr
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 
+--
+-- EVPRO-78 Method to count the number of customers fitting with eligibility criteria
+-- (including dynamic criteria)
+--
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/evaluateProfileCriteria.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria
+
 
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/dnboMatrix.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putDNBOMatrix; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDNBOMatrixList; echo
@@ -394,6 +402,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "login
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121", "tokenStatus":"Bounded" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getTokensCodesList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getCustomerNBOs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "customerID" : "121","tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/acceptOffer; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "loginName" : "Administrator", "password" : "password", "customerID" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo
 
 --
 --  dnbo proxy

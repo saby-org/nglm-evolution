@@ -720,6 +720,14 @@ public class EvaluationCriterion
 
   public boolean evaluate(SubscriberEvaluationRequest evaluationRequest)
   {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    boolean result = false;
+
     /****************************************
     *
     *  retrieve fieldValue
@@ -738,7 +746,7 @@ public class EvaluationCriterion
     Object evaluatedArgument = null;
     try
       {
-        evaluatedArgument = (argument != null) ? argument.evaluate(evaluationRequest, argumentBaseTimeUnit) : null;
+        evaluatedArgument = (argument != null) ? argument.evaluateExpression(evaluationRequest, argumentBaseTimeUnit) : null;
       }
     catch (ExpressionEvaluationException|ArithmeticException e)
       {
@@ -751,6 +759,19 @@ public class EvaluationCriterion
           }
         evaluationRequest.subscriberTrace("FalseCondition : invalid argument {0}", argumentExpression);
         return false;
+      }
+
+    /*****************************************
+    *
+    *  handle evaluation variables
+    *
+    *****************************************/
+
+    if (criterionField.getEvaluationVariable())
+      {
+        evaluationRequest.getEvaluationVariables().put((String) criterionFieldValue, evaluatedArgument);
+        result = traceCondition(evaluationRequest, true, criterionFieldValue, evaluatedArgument);
+        return result;
       }
 
     /****************************************
@@ -894,7 +915,6 @@ public class EvaluationCriterion
     *
     ****************************************/
 
-    boolean result = false;
     switch (criterionOperator)
       {
         /*****************************************
@@ -1100,6 +1120,12 @@ public class EvaluationCriterion
         b.append(" ]");
         evaluationRequest.subscriberTrace("{0}", b.toString());
       }
+
+    //
+    //  clear evaluationVariables
+    //
+
+    evaluationRequest.getEvaluationVariables().clear();
 
     //
     //  evaluate
@@ -1444,7 +1470,7 @@ public class EvaluationCriterion
           //  evaluate constant right hand-side
           //
 
-          String argumentValue = (String) argument.evaluate(null, TimeUnit.Unknown);
+          String argumentValue = (String) argument.evaluateExpression(null, TimeUnit.Unknown);
 
           //
           //  script

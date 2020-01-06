@@ -19,6 +19,13 @@ global:
 rule_files:
   - "prometheus-application-alert.rules"
 
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+       - <_MONITORING_HOST_>:<_ALERTMANAGER_PORT_>
+
 # 
 #  scrape configs
 #
