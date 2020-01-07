@@ -15095,11 +15095,10 @@ public class GUIManager
                     //
 
                     Date startDate = null;
-                    Date now = SystemTime.getCurrentTime();
 
                     if (startDateReq == null || startDateReq.isEmpty())
                       {
-                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                        startDate = new Date(0L);
                       }
                     else
                       {
@@ -15283,11 +15282,10 @@ public class GUIManager
                     //
 
                     Date startDate = null;
-                    Date now = SystemTime.getCurrentTime();
 
                     if (startDateReq == null || startDateReq.isEmpty())
                       {
-                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                        startDate = new Date(0L);
                       }
                     else
                       {
@@ -15494,11 +15492,10 @@ public class GUIManager
                     //
 
                     Date startDate = null;
-                    Date now = SystemTime.getCurrentTime();
 
                     if (startDateReq == null || startDateReq.isEmpty())
                       {
-                        startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                        startDate = new Date(0L);
                       }
                     else
                       {

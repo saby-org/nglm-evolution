@@ -47,6 +47,7 @@ public class DeliveryManagerDeclaration
   private int correlatorUpdateTimeoutSeconds;
   private String providerID;
   private String providerName;
+  private String profileExternalSubscriberIDField;
 
   /*****************************************
   *
@@ -68,6 +69,7 @@ public class DeliveryManagerDeclaration
   public int getCorrelatorUpdateTimeoutSeconds() { return correlatorUpdateTimeoutSeconds; }
   public String getProviderID() { return providerID; }
   public String getProviderName() { return providerName; }
+  public String getProfileExternalSubscriberIDField() { return profileExternalSubscriberIDField; }
 
   //
   // derived
@@ -122,6 +124,7 @@ public class DeliveryManagerDeclaration
     this.correlatorUpdateTimeoutSeconds = JSONUtilities.decodeInteger(jsonRoot, "correlatorUpdateTimeoutSeconds", 600);
     this.providerID = JSONUtilities.decodeString(jsonRoot, "providerID", false);
     this.providerName = JSONUtilities.decodeString(jsonRoot, "providerName", false);
+    this.profileExternalSubscriberIDField = JSONUtilities.decodeString(jsonRoot, "profileExternalSubscriberIDField", false);
   }
 
   /*****************************************

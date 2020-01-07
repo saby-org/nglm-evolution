@@ -1113,7 +1113,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String startDateReq = readString(jsonRoot, "startDate", true);
+    String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
@@ -1166,11 +1166,10 @@ public class ThirdPartyManager
               //
 
               Date startDate = null;
-              Date now = SystemTime.getCurrentTime();
 
               if (startDateReq == null) 
                 {
-                  startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                  startDate = new Date(0L);
                 }
               else
                 {
@@ -1290,7 +1289,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String startDateReq = readString(jsonRoot, "startDate", true);
+    String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
@@ -1345,11 +1344,10 @@ public class ThirdPartyManager
               //
 
               Date startDate = null;
-              Date now = SystemTime.getCurrentTime();
 
               if (startDateReq == null) 
                 {
-                  startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                  startDate = new Date(0L);
                 }
               else
                 {
@@ -1777,7 +1775,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String startDateReq = readString(jsonRoot, "startDate", true);
+    String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
 
@@ -1829,11 +1827,10 @@ public class ThirdPartyManager
               //
 
               Date startDate = null;
-              Date now = SystemTime.getCurrentTime();
 
               if (startDateReq == null || startDateReq.isEmpty()) 
                 {
-                  startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                  startDate = new Date(0L);
                 }
               else
                 {
