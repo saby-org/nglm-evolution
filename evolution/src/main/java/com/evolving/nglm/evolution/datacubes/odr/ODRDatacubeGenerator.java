@@ -1,8 +1,11 @@
 package com.evolving.nglm.evolution.datacubes.odr;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,42 +21,47 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.mapping.DeliverableDisplayMapping;
-import com.evolving.nglm.evolution.datacubes.mapping.JourneyDisplayMapping;
-import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramDisplayMapping;
-import com.evolving.nglm.evolution.datacubes.mapping.MeansOfPaymentDisplayMapping;
-import com.evolving.nglm.evolution.datacubes.mapping.ModuleDisplayMapping;
-import com.evolving.nglm.evolution.datacubes.mapping.OfferDisplayMapping;
-import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelDisplayMapping;
+import com.evolving.nglm.evolution.datacubes.mapping.DeliverablesMap;
+import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
+import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
+import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
+import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
+import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
+import com.evolving.nglm.evolution.datacubes.mapping.PaymentMeansMap;
+import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
 
 public class ODRDatacubeGenerator extends DatacubeGenerator
 {
-  private static final String dataTotalAmount = "totalAmount";
-  private static final String datacubeESIndex = "datacube_odr";
-  private static final String dataESIndexPrefix = "detailedrecords_offers-";
-  
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+  private static final String DATACUBE_ES_INDEX = "datacube_odr";
+  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_offers-";
+  private static final String DATA_TOTAL_AMOUNT = "totalAmount";
+
+  private GUIManagerClient guiClient;
   private List<String> filterFields;
-  private List<CompositeValuesSourceBuilder<?>> filterComplexSources;
   private List<AggregationBuilder> dataAggregations;
-  private OfferDisplayMapping offerDisplayMapping;
-  private ModuleDisplayMapping moduleDisplayMapping;
-  private SalesChannelDisplayMapping salesChannelDisplayMapping;
-  private MeansOfPaymentDisplayMapping meansOfPaymentDisplayMapping;
-  private LoyaltyProgramDisplayMapping loyaltyProgramDisplayMapping;
-  private DeliverableDisplayMapping deliverableDisplayMapping;
-  private JourneyDisplayMapping journeyDisplayMapping;
+  private OffersMap offersMap;
+  private ModulesMap modulesMap;
+  private SalesChannelsMap salesChannelsMap;
+  private PaymentMeansMap paymentMeansMap;
+  private LoyaltyProgramsMap loyaltyProgramsMap;
+  private DeliverablesMap deliverablesMap;
+  private JourneysMap journeysMap;
   
-  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch)  
+  private String targetDate;
+  
+  public ODRDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, GUIManagerClient guiClient)  
   {
     super(datacubeName, elasticsearch);
 
-    this.offerDisplayMapping = new OfferDisplayMapping();
-    this.moduleDisplayMapping = new ModuleDisplayMapping();
-    this.salesChannelDisplayMapping = new SalesChannelDisplayMapping();
-    this.meansOfPaymentDisplayMapping = new MeansOfPaymentDisplayMapping();
-    this.loyaltyProgramDisplayMapping = new LoyaltyProgramDisplayMapping();
-    this.deliverableDisplayMapping = new DeliverableDisplayMapping();
-    this.journeyDisplayMapping = new JourneyDisplayMapping();
+    this.guiClient = guiClient;
+    this.offersMap = new OffersMap();
+    this.modulesMap = new ModulesMap();
+    this.salesChannelsMap = new SalesChannelsMap();
+    this.paymentMeansMap = new PaymentMeansMap();
+    this.loyaltyProgramsMap = new LoyaltyProgramsMap();
+    this.deliverablesMap = new DeliverablesMap();
+    this.journeysMap = new JourneysMap();
     
     //
     // Filter fields
@@ -67,34 +75,39 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
     this.filterFields.add("meanOfPayment");
     
     //
-    // Filter Complex Sources
-    // - nothing ...
-    //
-    
-    this.filterComplexSources = new ArrayList<CompositeValuesSourceBuilder<?>>();
-    
-    //
     // Data Aggregations
     // - totalAmount
     //
     
     this.dataAggregations = new ArrayList<AggregationBuilder>();
     
-    AggregationBuilder totalAmount = AggregationBuilders.sum(dataTotalAmount)
+    AggregationBuilder totalAmount = AggregationBuilders.sum(DATA_TOTAL_AMOUNT)
             .script(new Script(ScriptType.INLINE, "painless", "doc['offerPrice'].value * doc['offerQty'].value", Collections.emptyMap()));
     dataAggregations.add(totalAmount);
   }
+
+  @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
+  @Override protected String getDataESIndex() { return (DATA_ES_INDEX_PREFIX+targetDate); }
+  @Override protected List<String> getFilterFields() { return filterFields; }
+  @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return Collections.emptyList(); }
+  @Override protected List<AggregationBuilder> getDataAggregations() { return this.dataAggregations; }
     
   @Override
-  protected void runPreGenerationPhase(RestHighLevelClient elasticsearch) throws ElasticsearchException, IOException, ClassCastException
+  protected void runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
-    offerDisplayMapping.updateFromElasticsearch(elasticsearch);
-    moduleDisplayMapping.updateFromElasticsearch(elasticsearch);
-    salesChannelDisplayMapping.updateFromElasticsearch(elasticsearch);
-    meansOfPaymentDisplayMapping.updateFromElasticsearch(elasticsearch);
-    loyaltyProgramDisplayMapping.updateFromElasticsearch(elasticsearch);
-    deliverableDisplayMapping.updateFromElasticsearch(elasticsearch);
-    journeyDisplayMapping.updateFromElasticsearch(elasticsearch);
+    offersMap.updateFromGUIManager(guiClient);
+    modulesMap.updateFromElasticsearch(elasticsearch);
+    salesChannelsMap.updateFromGUIManager(guiClient);
+    paymentMeansMap.updateFromGUIManager(guiClient);
+    loyaltyProgramsMap.updateFromGUIManager(guiClient);
+    deliverablesMap.updateFromElasticsearch(elasticsearch);
+    journeysMap.updateFromGUIManager(guiClient);
+  }
+
+  @Override
+  protected void addStaticFilters(Map<String, Object> filters)
+  {
+    filters.put("dataDate", targetDate);
   }
 
   @Override
@@ -102,29 +115,29 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
   {
     String offerID = (String) filters.remove("offerID");
     filters.put("offer.id", offerID);
-    filters.put("offer.display", offerDisplayMapping.getDisplay(offerID));
+    filters.put("offer.display", offersMap.getDisplay(offerID, "offer"));
 
     String moduleID = (String) filters.remove("moduleID");
     filters.put("module.id", moduleID);
-    filters.put("module.display", moduleDisplayMapping.getDisplay(moduleID));
+    filters.put("module.display", modulesMap.getDisplay(moduleID, "module"));
 
     String featureID = (String) filters.remove("featureID");
     filters.put("feature.id", featureID);
     
     String featureDisplay = featureID; // default
-    switch(moduleDisplayMapping.getFeature(moduleID))
+    switch(modulesMap.getFeature(moduleID, "feature"))
       {
         case JourneyID:
-          featureDisplay = journeyDisplayMapping.getDisplay(featureID);
+          featureDisplay = journeysMap.getDisplay(featureID, "feature");
           break;
         case LoyaltyProgramID:
-          featureDisplay = loyaltyProgramDisplayMapping.getDisplay(featureID);
+          featureDisplay = loyaltyProgramsMap.getDisplay(featureID, "feature");
           break;
         case OfferID:
-          featureDisplay = offerDisplayMapping.getDisplay(featureID);
+          featureDisplay = offersMap.getDisplay(featureID, "feature");
           break;
         case DeliverableID:
-          featureDisplay = deliverableDisplayMapping.getDisplay(featureID);
+          featureDisplay = deliverablesMap.getDisplay(featureID, "feature");
           break;
         default:
           // For None feature we let the featureID as a display (it is usually a string)
@@ -134,32 +147,14 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
 
     String salesChannelID = (String) filters.remove("salesChannelID");
     filters.put("salesChannel.id", salesChannelID);
-    filters.put("salesChannel.display", salesChannelDisplayMapping.getDisplay(salesChannelID));
+    filters.put("salesChannel.display", salesChannelsMap.getDisplay(salesChannelID, "salesChannel"));
 
     String meanOfPayment = (String) filters.remove("meanOfPayment");
     filters.put("meanOfPayment.id", meanOfPayment);
-    filters.put("meanOfPayment.display", meansOfPaymentDisplayMapping.getDisplay(meanOfPayment));
-    filters.put("meanOfPayment.paymentProviderID", meansOfPaymentDisplayMapping.getProviderID(meanOfPayment));
+    filters.put("meanOfPayment.display", paymentMeansMap.getDisplay(meanOfPayment, "meanOfPayment"));
+    filters.put("meanOfPayment.paymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment"));
   }
-
-  @Override
-  protected List<String> getFilterFields()
-  {
-    return filterFields;
-  }
-
-  @Override
-  protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources(String date)
-  {
-    return this.filterComplexSources;
-  }
-
-  @Override
-  protected List<AggregationBuilder> getDataAggregations(String date)
-  {
-    return this.dataAggregations;
-  }
-
+  
   @Override
   protected Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException
   {
@@ -169,25 +164,25 @@ public class ODRDatacubeGenerator extends DatacubeGenerator
       return data;
     }
     
-    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(dataTotalAmount);
+    ParsedSum dataTotalAmountBucket = compositeBucket.getAggregations().get(DATA_TOTAL_AMOUNT);
     if (dataTotalAmountBucket == null) {
       log.error("Unable to extract totalAmount data, aggregation is missing.");
       return data;
     }
-    data.put(dataTotalAmount, (int) dataTotalAmountBucket.getValue());
+    data.put(DATA_TOTAL_AMOUNT, (int) dataTotalAmountBucket.getValue());
     
     return data;
   }
 
-  @Override
-  protected String getDataESIndex(String date)
+  /*****************************************
+  *
+  *  run
+  *
+  *****************************************/
+  
+  public void run(Date targetDate)
   {
-    return (dataESIndexPrefix+date);
-  }
-
-  @Override
-  protected String getDatacubeESIndex()
-  {
-    return datacubeESIndex;
+    this.targetDate = DATE_FORMAT.format(targetDate);
+    this.run();
   }
 }

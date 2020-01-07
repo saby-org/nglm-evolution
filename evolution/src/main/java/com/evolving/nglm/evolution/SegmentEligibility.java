@@ -104,7 +104,7 @@ public class SegmentEligibility implements Segment
   *
   *****************************************/
 
-  SegmentEligibility(JSONObject jsonRoot) throws GUIManagerException
+  SegmentEligibility(JSONObject jsonRoot, boolean dynamic) throws GUIManagerException
   {
     this.id = JSONUtilities.decodeString(jsonRoot, "id", true);
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
@@ -115,12 +115,12 @@ public class SegmentEligibility implements Segment
 
     try
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.DynamicProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), (dynamic) ? CriterionContext.DynamicProfile : CriterionContext.Profile);
         this.dependentOnExtendedSubscriberProfile = false;
       }
     catch (GUIManagerException e)
       {
-        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), CriterionContext.FullDynamicProfile);
+        this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), (dynamic) ? CriterionContext.FullDynamicProfile : CriterionContext.FullProfile);
         this.dependentOnExtendedSubscriberProfile = true;
       }
   }

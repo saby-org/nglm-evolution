@@ -7,6 +7,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 
 public class LoyaltyDatacubeOnTodayJob extends ScheduledJob
 {
@@ -27,14 +28,14 @@ public class LoyaltyDatacubeOnTodayJob extends ScheduledJob
   *
   *****************************************/
   
-  public LoyaltyDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  public LoyaltyDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, GUIManagerClient guiClient) 
   {
     super(schedulingUniqueID, 
         "Today-Loyalty", 
         Deployment.getTodayLoyaltyDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
-    this.datacube = new LoyaltyDatacubeGenerator(this.jobName, elasticsearch);
+    this.datacube = new LoyaltyDatacubeGenerator(this.jobName, elasticsearch, guiClient);
   }
 
   /*****************************************

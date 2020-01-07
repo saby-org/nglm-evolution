@@ -1,9 +1,11 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
@@ -20,9 +22,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
-
-public abstract class DisplayMapping<T>
+public abstract class ESObjectList<T>
 {  
   /*****************************************
   *
@@ -30,8 +30,8 @@ public abstract class DisplayMapping<T>
   *
   *****************************************/
   
-  protected static final Logger log = LoggerFactory.getLogger(DisplayMapping.class);
-  protected static final int BUCKETS_MAX_NBR = 10000;
+  protected static final Logger log = LoggerFactory.getLogger(ESObjectList.class);
+  protected static final int BUCKETS_MAX_NBR = 10000;  // TODO: factorize in ES client later (with some generic ES calls)
   
   /*****************************************
   *
@@ -41,8 +41,8 @@ public abstract class DisplayMapping<T>
   *****************************************/
   
   protected final String mappingEsIndex;
-  protected Map<String, T> mapping;
-  protected Map<String, Boolean> missing;
+  protected Map<String, T> mapping;             // (objectID,object)
+  protected Set<String> warnings; // TODO: factorize with GUIManagerObjectList later 
 
   /*****************************************
   *
@@ -50,11 +50,11 @@ public abstract class DisplayMapping<T>
   *
   *****************************************/
   
-  public DisplayMapping(String mappingEsIndex) 
+  public ESObjectList(String mappingEsIndex) 
   {
     this.mappingEsIndex = mappingEsIndex;
-    this.mapping = new HashMap<String, T>();
-    this.missing = new HashMap<String, Boolean>();
+    this.mapping = Collections.emptyMap();
+    this.warnings = Collections.emptySet();
   }
 
   /*****************************************
@@ -74,7 +74,7 @@ public abstract class DisplayMapping<T>
   private void reset() 
   {
     this.mapping = new HashMap<String, T>();
-    this.missing = new HashMap<String, Boolean>();
+    this.warnings = new HashSet<String>();
   }
   
   /*****************************************
@@ -83,11 +83,11 @@ public abstract class DisplayMapping<T>
   *
   *****************************************/
 
-  protected void logWarningOnlyOnce(String offerID, String msg)
+  protected void logWarningOnlyOnce(String msg)
   {
-    if(this.missing.get(offerID) == null)
+    if(!this.warnings.contains(msg))
       {
-        this.missing.put(offerID, true);
+        this.warnings.add(msg);
         log.warn(msg);
       }
   }
@@ -125,17 +125,19 @@ public abstract class DisplayMapping<T>
     if(response.isTimedOut()
         || response.getFailedShards() > 0
         || response.getSkippedShards() > 0
-        || response.status() != RestStatus.OK) {
-      log.error("Elasticsearch index {} search response returned with bad status.", mappingEsIndex);
-      return;
-    }
+        || response.status() != RestStatus.OK) 
+      {
+        log.error("Elasticsearch index {} search response returned with bad status.", mappingEsIndex);
+        return;
+      }
     
     SearchHits hits = response.getHits();
     if(hits == null) { return; }
     
-    for(SearchHit hit: hits) {
-      Map<String, Object> source = hit.getSourceAsMap();
-      this.updateMapping(source);
-    }
+    for(SearchHit hit: hits) 
+      {
+        Map<String, Object> source = hit.getSourceAsMap();
+        this.updateMapping(source);
+      }
   }
 }

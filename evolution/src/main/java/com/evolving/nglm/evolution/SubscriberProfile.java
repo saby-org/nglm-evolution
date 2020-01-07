@@ -357,6 +357,37 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     return result;
   }
   
+  //
+  //  getUCGStratum (map of <dimensionID,segmentID> for the UCG dimensions set)
+  //
+  
+  public Map<String, String> getUCGStratum(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader)
+  { 
+    Map<String, String> result = new HashMap<String, String>();
+    UCGState ucgState = ucgStateReader.get(UCGState.getSingletonKey());
+    if (ucgState != null) 
+      {
+        List<String> dimensions = ucgState.getUCGRule().getSelectedDimensions();
+        Map<String, String> subscriberGroups = getSegmentsMap(subscriberGroupEpochReader);
+        
+        for(String dimensionID : dimensions) 
+          {
+            String segmentID = subscriberGroups.get(dimensionID);
+            if(segmentID != null)
+              {
+                result.put(dimensionID, segmentID);
+              }
+            else
+              {
+                // This should not happen
+                throw new IllegalStateException("Required dimension (dimensionID: " + dimensionID + ") for UCG could not be found in the subscriber profile (subscriberID: " + getSubscriberID() + ").");
+              }
+          }
+      }
+    
+    return result;
+  }
+  
   /******************************************
   *
   *  getLoyaltyProgramsJSON - LoyaltyPrograms

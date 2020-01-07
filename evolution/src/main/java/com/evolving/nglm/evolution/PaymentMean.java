@@ -156,6 +156,18 @@ public class PaymentMean extends GUIManagedObject
         this.setEpoch(epoch);
       }
   }
+
+  /*****************************************
+  *
+  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
+  *
+  *****************************************/
+
+  public PaymentMean(JSONObject jsonRoot) throws GUIManagerException
+  {
+    this(jsonRoot, 0, null);
+  }
+  
   /*****************************************
   *
   *  pack

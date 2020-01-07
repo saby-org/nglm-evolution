@@ -132,6 +132,7 @@
   "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
   "yesterdayTiersDatacubePeriodCronEntryString"          : "0 2 * * *",
   "todayTiersDatacubePeriodCronEntryString"              : "0 * * * *",
+  "journeyTrafficDatacubePeriodCronEntryString"          : "0 * * * *",
   "subscriberProfileSnapshotPeriodCronEntryString"       : "0 1 * * *",
 
   -- 

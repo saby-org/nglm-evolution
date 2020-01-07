@@ -467,27 +467,37 @@
         },
       "mappings" :
         {
-              "properties" :
-                {
-                  "journeyInstanceID" : { "type" : "keyword" },
-                  "journeyID" : { "type" : "keyword" },
-                  "subscriberID" : { "type" : "keyword" },
-                  "transitionDate" : { "type" : "date" },
-                  "nodeHistory" : { "type" : "keyword" },
-                  "statusHistory" : { "type" : "keyword" },
-                  "rewardHistory" : { "type" : "keyword" },
-                  "fromNodeID" : { "type" : "keyword" },
-                  "toNodeID" : { "type" : "keyword" },
-                  "deliveryRequestID" : { "type" : "keyword" },
-                  "sample" : { "type" : "keyword" },
-                  "markNotified" : { "type" : "boolean" },
-                  "markConverted" : { "type" : "boolean" },
-                  "statusNotified" : { "type" : "boolean" },
-                  "statusConverted" : { "type" : "boolean" },
-                  "statusControlGroup" : { "type" : "boolean" },
-                  "statusUniversalControlGroup" : { "type" : "boolean" },
-                  "journeyComplete" : { "type" : "boolean" }
+            "dynamic_templates": [
+              {
+                "strings_as_keywords": {
+                  "match_mapping_type": "string",
+                  "mapping": {
+                    "type": "keyword"
+                  }
                 }
+              }
+            ],
+            "properties" :
+              {
+                "journeyInstanceID" : { "type" : "keyword" },
+                "journeyID" : { "type" : "keyword" },
+                "subscriberID" : { "type" : "keyword" },
+                "transitionDate" : { "type" : "date" },
+                "nodeHistory" : { "type" : "keyword" },
+                "statusHistory" : { "type" : "keyword" },
+                "rewardHistory" : { "type" : "keyword" },
+                "fromNodeID" : { "type" : "keyword" },
+                "toNodeID" : { "type" : "keyword" },
+                "deliveryRequestID" : { "type" : "keyword" },
+                "sample" : { "type" : "keyword" },
+                "markNotified" : { "type" : "boolean" },
+                "markConverted" : { "type" : "boolean" },
+                "statusNotified" : { "type" : "boolean" },
+                "statusConverted" : { "type" : "boolean" },
+                "statusControlGroup" : { "type" : "boolean" },
+                "statusUniversalControlGroup" : { "type" : "boolean" },
+                "journeyComplete" : { "type" : "boolean" }
+              }
         }
     }'
   echo

@@ -7,6 +7,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 
 public class ODRDatacubeOnTodayJob extends ScheduledJob
 {
@@ -27,14 +28,14 @@ public class ODRDatacubeOnTodayJob extends ScheduledJob
   *
   *****************************************/
   
-  public ODRDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  public ODRDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, GUIManagerClient guiClient) 
   {
     super(schedulingUniqueID, 
         "Today-ODR", 
         Deployment.getTodayODRDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
-    this.datacube = new ODRDatacubeGenerator(this.jobName, elasticsearch);
+    this.datacube = new ODRDatacubeGenerator(this.jobName, elasticsearch, guiClient);
   }
   
   /*****************************************

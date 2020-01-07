@@ -2,11 +2,11 @@ package com.evolving.nglm.evolution.datacubes.mapping;
 
 import java.util.Map;
 
-public class SubscriberStatusDisplayMapping extends DisplayMapping<String>
+public class DeliverablesMap extends ESObjectList<String>
 {
-  public static final String ESIndex = "mapping_evolutionsubscriberstatus";
+  public static final String ESIndex = "mapping_deliverables";
   
-  public SubscriberStatusDisplayMapping() 
+  public DeliverablesMap() 
   {
     super(ESIndex);
   }
@@ -14,7 +14,7 @@ public class SubscriberStatusDisplayMapping extends DisplayMapping<String>
   @Override
   protected void updateMapping(Map<String, Object> row)
   {
-    this.mapping.put((String) row.get("fieldID"), (String) row.get("fieldDisplay"));
+    this.mapping.put((String) row.get("deliverableID"), (String) row.get("deliverableName"));
   }
 
   /*****************************************
@@ -23,7 +23,7 @@ public class SubscriberStatusDisplayMapping extends DisplayMapping<String>
   *
   *****************************************/
   
-  public String getDisplay(String id)
+  public String getDisplay(String id, String fieldName)
   {
     String result = this.mapping.get(id);
     if(result != null)
@@ -32,7 +32,7 @@ public class SubscriberStatusDisplayMapping extends DisplayMapping<String>
       }
     else
       {
-        logWarningOnlyOnce(id, "Unable to retrieve evolutionSubscriberStatus.display for evolutionSubscriberStatus.id: " + id);
+        logWarningOnlyOnce("Unable to retrieve "+fieldName+".display for "+fieldName+".id: " + id);
         return id; // When missing, return the ID by default.
       }
   }

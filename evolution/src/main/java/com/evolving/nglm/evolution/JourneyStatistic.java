@@ -26,7 +26,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStreamOutput, Comparable
 {
@@ -66,6 +68,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     schemaBuilder.field("journeyNodeHistory", SchemaBuilder.array(NodeHistory.schema()).schema());
     schemaBuilder.field("journeyStatusHistory", SchemaBuilder.array(StatusHistory.schema()).schema());
     schemaBuilder.field("journeyRewardHistory", SchemaBuilder.array(RewardHistory.schema()).schema());
+    schemaBuilder.field("subscriberStratum", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
 
@@ -109,6 +112,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   private List<NodeHistory> journeyNodeHistory;
   private List<StatusHistory> journeyStatusHistory;
   private List<RewardHistory> journeyRewardHistory;
+  private Map<String, String> subscriberStratum;
 
   /*****************************************
   *
@@ -138,6 +142,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   public List<StatusHistory> getJourneyStatusHistory() { return journeyStatusHistory; }
   public List<RewardHistory> getJourneyRewardHistory() { return journeyRewardHistory; }
   public SubscriberJourneyStatus getSubscriberJourneyStatus() { return Journey.getSubscriberJourneyStatus(this); }
+  public Map<String, String> getSubscriberStratum() { return subscriberStratum; }
 
   /*****************************************
   *
@@ -145,7 +150,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Map<String, String> subscriberStratum)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -167,6 +172,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.subscriberStratum = subscriberStratum;
   }
 
   /*****************************************
@@ -175,7 +181,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, JourneyLink journeyLink, boolean markNotified, boolean markConverted, String sample, Map<String, String> subscriberStratum)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -197,6 +203,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.subscriberStratum = subscriberStratum;
   }
 
   /*****************************************
@@ -205,7 +212,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Date exitDate)
+  public JourneyStatistic(EvolutionEventContext context, String subscriberID, JourneyHistory journeyHistory, JourneyState journeyState, Map<String, String> subscriberStratum, Date exitDate)
   {
     this.journeyStatisticID = context.getUniqueKey();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
@@ -226,6 +233,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyNodeHistory = prepareJourneyNodeSummary(journeyHistory);
     this.journeyStatusHistory = prepareJourneyStatusSummary(journeyHistory);
     this.journeyRewardHistory = prepareJourneyRewardsSummary(journeyHistory);
+    this.subscriberStratum = subscriberStratum;
   }
 
   /*****************************************
@@ -234,7 +242,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   *
   *****************************************/
 
-  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory)
+  private JourneyStatistic(String journeyStatisticID, String journeyInstanceID, String journeyID, String subscriberID, Date transitionDate, String linkID, String fromNodeID, String toNodeID, String deliveryRequestID, String sample, boolean markNotified, boolean markConverted, boolean statusNotified, boolean statusConverted, boolean statusControlGroup, boolean statusUniversalControlGroup, boolean journeyComplete, List<NodeHistory> journeyNodeHistory, List<StatusHistory> journeyStatusHistory, List<RewardHistory> journeyRewardHistory, Map<String, String> subscriberStratum)
   {
     this.journeyStatisticID = journeyStatisticID;
     this.journeyInstanceID = journeyInstanceID;
@@ -256,6 +264,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     this.journeyNodeHistory = journeyNodeHistory;
     this.journeyStatusHistory = journeyStatusHistory;
     this.journeyRewardHistory = journeyRewardHistory;
+    this.subscriberStratum = subscriberStratum;
   }
 
   /*****************************************
@@ -300,6 +309,12 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     for(RewardHistory reward : journeyStatistic.getJourneyRewardHistory())
       {
         this.journeyRewardHistory.add(reward);
+      }
+    
+    this.subscriberStratum = new HashMap<String, String>();
+    for(String key: journeyStatistic.getSubscriberStratum().keySet())
+      {
+        this.subscriberStratum.put(key, journeyStatistic.getSubscriberStratum().get(key));
       }
   }
   
@@ -375,6 +390,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     struct.put("journeyNodeHistory", packNodeHistory(journeyStatistic.getJourneyNodeHistory()));
     struct.put("journeyStatusHistory", packStatusHistory(journeyStatistic.getJourneyStatusHistory()));
     struct.put("journeyRewardHistory", packRewardHistory(journeyStatistic.getJourneyRewardHistory()));
+    struct.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
     return struct;
   }
   
@@ -431,7 +447,7 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
   //
 
   public Object subscriberStreamEventPack(Object value) { return pack(value); }
-
+  
   /*****************************************
   *
   *  unpack
@@ -473,12 +489,13 @@ public class JourneyStatistic implements SubscriberStreamEvent, SubscriberStream
     List<RewardHistory> journeyRewardHistory =  unpackRewardHistory(schema.field("journeyRewardHistory").schema(), valueStruct.get("journeyRewardHistory"));
     List<NodeHistory> journeyNodeHistory =  unpackNodeHistory(schema.field("journeyNodeHistory").schema(), valueStruct.get("journeyNodeHistory"));
     List<StatusHistory> journeyStatusHistory =  unpackStatusHistory(schema.field("journeyStatusHistory").schema(), valueStruct.get("journeyStatusHistory"));
+    Map<String, String> subscriberStratum = (Map<String,String>) valueStruct.get("subscriberStratum");
     
     //
     //  return
     //
 
-    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory);
+    return new JourneyStatistic(journeyStatisticID, journeyInstanceID, journeyID, subscriberID, transitionDate, linkID, fromNodeID, toNodeID, deliveryRequestID, sample, markNotified, markConverted, statusNotified, statusConverted, statusControlGroup, statusUniversalControlGroup, journeyComplete, journeyNodeHistory, journeyStatusHistory, journeyRewardHistory, subscriberStratum);
   }
   
   /*****************************************
