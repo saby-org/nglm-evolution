@@ -1080,12 +1080,12 @@ public class SimpleSMSSender extends SMSSenderListener {
                 }
             }
             if (messageId != null && messageStatus != null) {
-                String idReceipt = ("" + messageId).toLowerCase();
-
+                messageId = ("" + messageId).toLowerCase();
+                
                 // remove the starting 0 if present...
                 // 160413 retrofit of E4O Master (fduclos 141106 problem encountered at Digicel Jamaica)
-                while(idReceipt != null && idReceipt.length() > 1 && idReceipt.startsWith("0")){
-                    idReceipt = idReceipt.substring(1);
+                while(messageId != null && messageId.length() > 1 && messageId.startsWith("0")){
+                	messageId = messageId.substring(1);
                 }
 
 
@@ -1093,7 +1093,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                 if (tmp.equals("UNKNOWN")) {
                     logger.info("SimpleSMSSender.onDeliverSM: unknown messageStatus: "+ messageStatus);
                 }
-                    logger.info("SimpleSMSSender.onDeliverSM: Statut of seqNum: "+seqNum+", idreceipt: "+idReceipt
+                    logger.info("SimpleSMSSender.onDeliverSM: Statut of seqNum: "+seqNum+", idreceipt: "+messageId
                             + " = " + messageStatus+" ("+tmp+")");
                 
                 SMSMessageStatus evolutionCode = null;
