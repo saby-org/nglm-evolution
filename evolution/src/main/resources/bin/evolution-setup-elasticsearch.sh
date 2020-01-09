@@ -237,6 +237,97 @@
   echo
   
   #
+  #  manually create token template
+  #   - these settings are for index heavy load
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -H'Content-Type: application/json' -d'
+     {
+      "index_patterns": ["detailedrecords_tokens-*"],
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                },
+              "lifecycle.name": "token_policy"
+            }
+        },
+      "mappings" :
+        {
+          "properties" :
+            {
+	          "subscriberID"  : { "type" : "keyword" },
+	          "tokenCode"     : { "type" : "keyword" },
+	          "action"        : { "type" : "keyword" },
+	          "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ},
+	          "eventID"       : { "type" : "keyword" },
+	          "returnCode"    : { "type" : "keyword" },
+	          "origin"        : { "type" : "keyword", "index" : "false" }
+            }
+        }
+    }'
+  echo
+
+  #
+  #  create a cleaning policy for tokens
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ilm/policy/token_policy -H'Content-Type: application/json' -d'
+    {
+      "policy": 
+        {
+          "phases": 
+            {
+              "delete": 
+                {
+                  "min_age": "'$ELASTICSEARCH_TOKEN_CLEANING'",
+                  "actions": 
+                    {
+                      "delete": {}
+                    }
+                }
+            }
+        }
+    }'
+  echo
+
+  #
+  #  manually create token pipeline
+  #
+
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_ingest/pipeline/token-daily -H 'Content-Type: application/json' -d'
+    {
+      "description": "daily token index naming",
+      "processors" : [
+        {
+          "date_index_name" : {
+            "field" : "eventDatetime",
+            "index_name_prefix" : "detailedrecords_tokens-",
+            "index_name_format" : "yyyy-MM-dd",
+            "date_formats" : ["yyyy-MM-dd HH:mm:ss.SSSZZ"],
+            "date_rounding" : "d"
+          }
+        }
+      ]
+    }'
+  echo
+  
+  #
   #  create a cleaning policy for odr
   #
   
@@ -1183,49 +1274,3 @@
         }
     }'
   echo
-
-  #
-  #  manually create token template
-  #   - these settings are for index heavy load
-  #
-
-  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -H'Content-Type: application/json' -d'
-     {
-      "settings" :
-        {
-          "index" :
-            {
-              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
-              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
-              "refresh_interval" : "30s",
-              "translog" : 
-                { 
-                  "durability" : "async", 
-                  "sync_interval" : "10s" 
-                },
-              "routing" : 
-                {
-                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
-                },
-              "merge" : 
-                {
-                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
-                }
-            }
-        },
-      "mappings" :
-        {
-          "properties" :
-            {
-	          "subscriberID"  : { "type" : "keyword" },
-	          "tokenCode"     : { "type" : "keyword" },
-	          "action"        : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date"},
-	          "eventID"       : { "type" : "keyword" },
-	          "returnCode"    : { "type" : "keyword" },
-	          "origin"        : { "type" : "keyword", "index" : "false" }
-            }
-        }
-    }'
-  echo
-  

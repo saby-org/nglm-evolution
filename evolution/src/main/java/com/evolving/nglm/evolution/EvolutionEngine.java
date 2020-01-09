@@ -3529,7 +3529,7 @@ public class EvolutionEngine
           {
             subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
             subscriberTokens.add(subscriberStoredToken);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "returnStatus", evolutionEvent.getClass().getSimpleName()));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName()));
             subscriberStateUpdated = true;
           }
 
@@ -3552,7 +3552,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, presentationLog.getCallUniqueIdentifier(), eventTokenCode, "Allocate", "returnStatus", "PresentationLog"));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, presentationLog.getCallUniqueIdentifier(), eventTokenCode, "Allocate", "OK", "PresentationLog"));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -3595,7 +3595,7 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), acceptanceLog.getCallUniqueIdentifier(), eventTokenCode, "Redeem", "returnStatus", "AcceptanceLog"));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), acceptanceLog.getCallUniqueIdentifier(), eventTokenCode, "Redeem", "OK", "AcceptanceLog"));
               }
             subscriberStateUpdated = true;
           }
@@ -4444,26 +4444,33 @@ public class EvolutionEngine
                                   switch (token.getTokenStatus())
                                   {
                                     case New:
-                                      act = "Create";
+                                      act = TokenChange.CREATE;
                                       date = token.getCreationDate();
                                       break;
                                     case Bound:
-                                      act = "Allocate";
+                                      act = TokenChange.ALLOCATE;
                                       date = token.getBoundDate();
                                       break;
                                     case Redeemed:
-                                      act = "Redeem";
+                                      act = TokenChange.REDEEM;
                                       date = token.getRedeemedDate();
                                       break;
                                     case Expired :
-                                      act = "Refuse";
+                                      act = TokenChange.REFUSE; // TODO
                                       date = token.getTokenExpirationDate();
                                       break;
                                     default :
                                       act = "Unknown";
                                       break;
                                   }
-                                  subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), date, journey.getJourneyID(), token.getTokenCode(), act, "returnStatus", "Journey"));
+                                  subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), date, journey.getJourneyID(), token.getTokenCode(), act, "OK", "Journey"));
+                                  break;
+
+                                case TokenChange:
+                                  TokenChange tokenChange = (TokenChange) action;
+                                  tokenChange.setEventID(journey.getJourneyID());
+                                  tokenChange.setOrigin("Journey");
+                                  subscriberState.getTokenChanges().add(tokenChange);
                                   break;
 
                                 default:

@@ -125,30 +125,6 @@
     }' &
 
   #
-  #  sink connector -- tokenchange (elasticsearch)
-  #
-
-  export CONNECT_URL_TOKENCHANGE_ES=${CONNECT_URL_TOKENCHANGE_ES:-$DEFAULT_CONNECT_URL}
-  export CONNECT_ES_TOKENCHANGE_SINK_TASKS=${CONNECT_ES_TOKENCHANGE_SINK_TASKS:-'1'}
-  export CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT=${CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT:-'1'}
-  export CONNECT_ES_TOKENCHANGE_BATCHSIZEMB=${CONNECT_ES_TOKENCHANGE_BATCHSIZEMB:-'5'}
-  curl -XPOST $CONNECT_URL_TOKENCHANGE_ES/connectors -H "Content-Type: application/json" -d '
-    {
-      "name" : "tokenchange_es_sink_connector",
-      "config" :
-        {
-          "connector.class"  : "com.evolving.nglm.evolution.TokenChangeESSinkConnector",
-          "tasks.max"        : '$CONNECT_ES_TOKENCHANGE_SINK_TASKS',
-          "topics"           : "${topic.tokenchange}",
-          "connectionHost"   : "'$MASTER_ESROUTER_HOST'",
-          "connectionPort"   : "'$MASTER_ESROUTER_PORT'",
-          "indexName"        : "token",
-	      "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
-	      "batchSize"        : "'$CONNECT_ES_TOKENCHANGE_BATCHSIZEMB'"
-        }
-    }' &
-
-  #
   #  source connector -- externalDeliveryRequest
   #
 
@@ -317,6 +293,31 @@
          }
      }' &
    
+  #
+  #  sink connector -- tokenchange (elasticsearch)
+  #
+
+  export CONNECT_URL_TOKENCHANGE_ES=${CONNECT_URL_TOKENCHANGE_ES:-$DEFAULT_CONNECT_URL}
+  export CONNECT_ES_TOKENCHANGE_SINK_TASKS=${CONNECT_ES_TOKENCHANGE_SINK_TASKS:-'1'}
+  export CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT=${CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT:-'1'}
+  export CONNECT_ES_TOKENCHANGE_BATCHSIZEMB=${CONNECT_ES_TOKENCHANGE_BATCHSIZEMB:-'5'}
+  curl -XPOST $CONNECT_URL_TOKENCHANGE_ES/connectors -H "Content-Type: application/json" -d '
+    {
+      "name" : "tokenchange_es_sink_connector",
+      "config" :
+        {
+          "connector.class"  : "com.evolving.nglm.evolution.TokenChangeESSinkConnector",
+          "tasks.max"        : '$CONNECT_ES_TOKENCHANGE_SINK_TASKS',
+          "topics"           : "${topic.tokenchange}",
+          "connectionHost"   : "'$MASTER_ESROUTER_HOST'",
+          "connectionPort"   : "'$MASTER_ESROUTER_PORT'",
+          "indexName"        : "detailedrecords_tokens",
+          "pipelineName"     : "token-daily",
+	      "batchRecordCount" : "'$CONNECT_ES_TOKENCHANGE_BATCHRECORDCOUNT'",
+	      "batchSize"        : "'$CONNECT_ES_TOKENCHANGE_BATCHSIZEMB'"
+        }
+    }' &
+
   #
   #  sink connector -- BDR (elasticsearch)
   #

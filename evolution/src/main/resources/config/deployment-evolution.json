@@ -283,6 +283,7 @@
         "detailedrecords_bonuses-*",
         "detailedrecords_offers-*",
         "detailedrecords_messages-*",
+        "detailedrecords_tokens-*",
         "journeystatistic*",
         "journeymetric",
         "regr_criteria"

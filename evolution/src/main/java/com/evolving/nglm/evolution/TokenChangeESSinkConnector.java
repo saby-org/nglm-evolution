@@ -16,12 +16,17 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TokenChangeESSinkConnector extends SimpleESSinkConnector
 {
+  private static String elasticSearchDateFormat = Deployment.getElasticSearchDateFormat();
+  private static DateFormat dateFormat = new SimpleDateFormat(elasticSearchDateFormat);
+  
   /****************************************
   *
   *  taskClass
@@ -41,6 +46,9 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
   
   public static class TokenChangeESSinkTask extends StreamESSinkTask
   {
+    public static final String ES_FIELD_SUBSCRIBER_ID = "subscriberID";
+    public static final String ES_FIELD_TOKEN_CODE = "tokenCode";
+
     @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
     {
       /****************************************
@@ -65,11 +73,10 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       //  flat fields
       //
       
-      documentMap.put("tokenCode", tokenChange.getTokenCode());
+      documentMap.put(ES_FIELD_TOKEN_CODE, tokenChange.getTokenCode());
+      documentMap.put(ES_FIELD_SUBSCRIBER_ID, tokenChange.getSubscriberID());
       documentMap.put("action", tokenChange.getAction());
-      documentMap.put("eventDatetime", tokenChange.geteventDateTime());
-      
-      documentMap.put("subscriberID", tokenChange.getSubscriberID());
+      documentMap.put("eventDatetime", tokenChange.getEventDate()!=null?dateFormat.format(tokenChange.getEventDate()):"");
       documentMap.put("eventID", tokenChange.getEventID());
       documentMap.put("returnCode", tokenChange.getReturnStatus());
       documentMap.put("origin", tokenChange.getOrigin());

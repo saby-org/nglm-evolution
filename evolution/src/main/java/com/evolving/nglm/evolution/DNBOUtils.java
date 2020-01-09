@@ -43,6 +43,21 @@ public class DNBOUtils
   
   public static final int MAX_PRESENTED_OFFERS = 5;
   private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE = 100;
+
+  /*****************************************
+  *
+  *  generateTokenChange 
+  *
+  *****************************************/
+
+  private static TokenChange generateTokenChange(EvolutionEventContext evolutionEventContext, String tokenCode, String action, String str)
+  {
+    String eventID = ""; // will be filled by EvolutionEngine when processing the Action
+    String origin = ""; // will be filled by EvolutionEngine when processing the Action
+    String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
+    Date date = evolutionEventContext.now();
+    return new TokenChange(subscriberID, date, eventID, tokenCode, action, str, origin);
+  }
   
   /*****************************************
   *
@@ -68,8 +83,8 @@ public class DNBOUtils
     *  handleToken
     *
     *****************************************/
-        
-    protected Object[] handleToken(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    // returns TokenChange if error, otherwise 5 elements
+    protected Object[] handleToken(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, String action)
     {
       log.info("ActionManagerDNBO.handleToken() method call");
     	
@@ -89,8 +104,9 @@ public class DNBOUtils
       ScoringStrategy scoringStrategy = evolutionEventContext.getScoringStrategyService().getActiveScoringStrategy(scoringStrategyID, evolutionEventContext.now());
       if (scoringStrategy == null)
         {
-          log.error("invalid scoring strategy {}", scoringStrategyID);
-          return new Object[] {Collections.<Action>emptyList()};
+          String str = "invalid scoring strategy " + scoringStrategyID;
+          log.error(str);
+          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, "", action, str))};
         }
 
       log.info("ActionManagerDNBO.handleToken() scoringStrategy valid");
@@ -103,8 +119,9 @@ public class DNBOUtils
       TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.now());
       if (tokenType == null)
         {
-          log.error("no token type {}", tokenTypeID);
-          return new Object[] {Collections.<Action>emptyList()};
+          String str = "unknown token type " + tokenTypeID; 
+          log.error(str);
+          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, "", action, str))};
         }
 
       log.info("ActionManagerDNBO.handleToken() tokenType valid");
@@ -129,8 +146,9 @@ public class DNBOUtils
       }
       if (!newTokenGenerated)
         {
-          if (log.isTraceEnabled()) log.trace("After {} tries, unable to generate a new token code with pattern {}", HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE, codeFormat);
-          return new Object[] {Collections.<Action>emptyList()};
+          String str = "After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE + " tries, unable to generate a new token code with pattern " + codeFormat;
+          if (log.isTraceEnabled()) log.trace(str);
+          return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, "", action, str))};
         }
       
       log.info("ActionManagerDNBO.handleToken() token code generated " + tokenCode);
@@ -169,8 +187,8 @@ public class DNBOUtils
     *  handleAllocate
     *
     *****************************************/
-        
-    protected Collection<ProposedOfferDetails> handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenContextUpdate)
+    // returns TokenChange if error, otherwise Collection<ProposedOfferDetails>
+    protected Object handleAllocate(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest, ScoringStrategy scoringStrategy, DNBOToken token, TokenType tokenType, ContextUpdate tokenContextUpdate, String action)
     {
       /*****************************************
       *
@@ -182,8 +200,9 @@ public class DNBOUtils
       int maxNumberofPlays = (maxNumberofPlaysInt == null) ? Integer.MAX_VALUE : maxNumberofPlaysInt.intValue();
       if (boundCount >= maxNumberofPlays)
         {
-            log.error("maxNumberofPlays has been reached {}", maxNumberofPlays);
-            return Collections.<ProposedOfferDetails>emptyList();
+          String str = "maxNumberofPlays has been reached " + maxNumberofPlays;
+            log.error(str);
+            return generateTokenChange(evolutionEventContext, token.getTokenCode(), action, str);
         }
       token.setBoundCount(boundCount+1);
       
@@ -223,8 +242,9 @@ public class DNBOUtils
         }
       catch (GetOfferException e)
         {
-          log.error("unknown offer while scoring {}", e.getLocalizedMessage());
-          return Collections.<ProposedOfferDetails>emptyList();
+          String str = "unknown offer while scoring " + e.getLocalizedMessage();
+          log.error(str);
+          return generateTokenChange(evolutionEventContext, token.getTokenCode(), action, str);
         }
 
       /*****************************************
@@ -242,8 +262,9 @@ public class DNBOUtils
           Offer offer = offerService.getActiveOffer(offerId, now);
           if (offer == null)
             {
-              log.error("invalid offer returned by scoring {}", offerId);
-              return Collections.<ProposedOfferDetails>emptyList();
+              String str = "invalid offer returned by scoring " + offerId;
+              log.error(str);
+              return generateTokenChange(evolutionEventContext, token.getTokenCode(), action, str);
             }
           tokenContextUpdate.getParameters().put("action.presented.offer." + (index+1), offer.getDisplay());
           if (++index == MAX_PRESENTED_OFFERS)
@@ -296,7 +317,7 @@ public class DNBOUtils
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       log.info("ActionManagerToken.executeOnEntry() method call");
-      Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest);
+      Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest, TokenChange.CREATE);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];
 
@@ -337,7 +358,7 @@ public class DNBOUtils
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       log.info("ActionManagerAllocate.executeOnEntry() method call");
-      Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest);
+      Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest, TokenChange.ALLOCATE);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];
       if (res.length == 1)
@@ -355,7 +376,11 @@ public class DNBOUtils
       *
       *****************************************/
       
-      handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenContextUpdate);
+      Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenContextUpdate, TokenChange.ALLOCATE);
+      if (resAllocate instanceof TokenChange)
+        {
+          return Collections.<Action>singletonList((TokenChange) resAllocate);
+        }
       token.setTokenStatus(TokenStatus.Bound);
       token.setAutoBounded(true);
       token.setAutoRedeemed(false);
@@ -398,7 +423,7 @@ public class DNBOUtils
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
       log.info("ActionManagerPurchase.executeOnEntry() method call");
-      Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest);
+      Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest, TokenChange.REDEEM);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];
       if (res.length == 1)
@@ -416,11 +441,18 @@ public class DNBOUtils
       *
       *****************************************/
       
-      Collection<ProposedOfferDetails> presentedOfferDetailsList = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenUpdate);
+      Object resAllocate = handleAllocate(evolutionEventContext, subscriberEvaluationRequest, scoringStrategy, token, tokenType, tokenUpdate, TokenChange.REDEEM);
+      if (resAllocate instanceof TokenChange)
+        {
+          return Collections.<Action>singletonList((TokenChange) resAllocate);
+        }
+      Collection<ProposedOfferDetails> presentedOfferDetailsList = (Collection<ProposedOfferDetails>) resAllocate;
+      
       if (presentedOfferDetailsList.isEmpty())
         {
-          log.error("cannot select first offer because list is empty");
-          return Collections.<Action>emptyList();
+          String str = "cannot select first offer because list is empty";
+          log.error(str);
+          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, token.getTokenCode(), TokenChange.REDEEM, str));
         }
 
       //   select 1st offer of the list
@@ -431,8 +463,9 @@ public class DNBOUtils
       Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
-          log.error("invalid offer returned by scoring {}", offerID);
-          return Collections.<Action>emptyList();
+          String str = "invalid offer returned by scoring " + offerID; 
+          log.error(str);
+          return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, token.getTokenCode(), TokenChange.REDEEM, str));
         }
       tokenUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());
       

@@ -65,13 +65,18 @@ import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
@@ -432,6 +437,7 @@ public class GUIManager
     getCustomerNBOs("getCustomerNBOs"),
     getTokensCodesList("getTokensCodesList"),
     acceptOffer("acceptOffer"),
+    getTokenEventDetails("getTokenEventDetails"),
 
     //
     //  configAdaptor APIs
@@ -1879,6 +1885,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerNBOs", new APISimpleHandler(API.getCustomerNBOs));
         restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
         restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
+        restServer.createContext("/nglm-guimanager/getTokenEventDetails", new APISimpleHandler(API.getTokenEventDetails));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -3340,6 +3347,9 @@ public class GUIManager
                   jsonResponse = processAcceptOffer(userID, jsonRoot);
                   break;
                   
+                case getTokenEventDetails:
+                  jsonResponse = processGetTokenEventDetails(userID, jsonRoot);
+                  break;
               }
           }
         else
@@ -20703,7 +20713,6 @@ public class GUIManager
         } 
       else
         {
-
           Token subscriberToken = null;
           if (tokenCode != null)
             {
@@ -20721,6 +20730,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20730,6 +20740,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20749,6 +20760,7 @@ public class GUIManager
               String str = "Bad strategy : unknown id : "+strategyID;
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20769,7 +20781,11 @@ public class GUIManager
                   segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
                   );
 
-              if (!presentedOffers.isEmpty())
+              if (presentedOffers.isEmpty())
+                {
+                  generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented");
+                }
+              else
                 {
                   // Send a PresentationLog to EvolutionEngine
 
@@ -20794,7 +20810,7 @@ public class GUIManager
                   int transactionDurationMs = 0; // TODO
                   PresentationLog presentationLog = new PresentationLog(
                       subscriberID, subscriberID, now, 
-                      "callUniqueIdentifier", channelID, salesChannelID, userID,
+                      "guiManager", channelID, salesChannelID, userID,
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
@@ -20857,7 +20873,7 @@ public class GUIManager
     return JSONUtilities.encodeObject(response);
 
   }
-
+  
   /*****************************************
    *
    *  processAcceptOffer
@@ -20930,6 +20946,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20939,6 +20956,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20949,6 +20967,7 @@ public class GUIManager
               String str = "Token already in Redeemed state";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20957,6 +20976,7 @@ public class GUIManager
               String str = "No offers allocated for this token";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20979,6 +20999,7 @@ public class GUIManager
               String str = "Offer has not been presented";
               log.error(str);
               response.put("responseCode", str);
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
@@ -21055,7 +21076,80 @@ public class GUIManager
     response.put("deliveryRequestID", deliveryRequestID);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetTokenEventDetails
+  *
+  *****************************************/
 
+ private JSONObject processGetTokenEventDetails(String userID, JSONObject jsonRoot) throws GUIManagerException
+ {
+   /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();
+   Date now = SystemTime.getCurrentTime();
+
+   /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+   String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+   List<Object> res = new ArrayList<>();
+   try
+   {
+     String queryString = "("+TokenChangeESSinkConnector.TokenChangeESSinkTask.ES_FIELD_SUBSCRIBER_ID+":\""+customerID+"\")"; // (subscriberID:"106")
+     if (tokenCode != null)
+       {
+         queryString += " AND ("+TokenChangeESSinkConnector.TokenChangeESSinkTask.ES_FIELD_TOKEN_CODE+":\""+tokenCode+"\")"; // (subscriberID:"106") AND (tokenCode:"YCWXT")
+       }
+     QueryBuilder query = QueryBuilders.queryStringQuery(queryString);
+     SearchRequest searchRequest = new SearchRequest("detailedrecords_tokens-*").source(new SearchSourceBuilder().query(query)); 
+     Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+     searchRequest.scroll(scroll);
+     searchRequest.source().size(1000);
+     SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+     String scrollId = searchResponse.getScrollId(); // always null
+     SearchHit[] searchHits = searchResponse.getHits().getHits();
+     while (searchHits != null && searchHits.length > 0)
+       {
+         for (SearchHit searchHit : searchHits)
+           {
+             res.add(JSONUtilities.encodeObject(searchHit.getSourceAsMap()));
+           }
+         SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+         scrollRequest.scroll(scroll);
+         searchResponse = elasticsearch.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+         scrollId = searchResponse.getScrollId();
+         searchHits = searchResponse.getHits().getHits();
+       }
+   }
+   catch (IOException e)
+     {
+       String str = "Error when searching ElasticSearch";
+       log.error(str);
+       response.put("responseCode", str);
+       response.put("responseMessage", e.getMessage());
+       response.put("responseParameter", null);
+       return JSONUtilities.encodeObject(response);
+     }
+   response.put("tokens", JSONUtilities.encodeArray(res));
+   response.put("responseCode", "ok");
+   
+   /*****************************************
+    *
+    *  decorate and response
+    *
+    *****************************************/
+   return JSONUtilities.encodeObject(response);
+ }
+  
   private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
 
   /*****************************************
@@ -24406,5 +24500,25 @@ public class GUIManager
           }
       }
     return false;
+  }  
+
+  /*****************************************
+  *
+  *  generateTokenChange
+  *
+  *****************************************/
+
+  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String action, String str)
+  {
+    String topic = Deployment.getTokenChangeTopic();
+    Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+    Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager");
+    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+        topic,
+        keySerializer.serialize(topic, new StringKey(subscriberID)),
+        valueSerializer.serialize(topic, tokenChange)
+        ));
   }
+
 }
