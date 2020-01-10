@@ -143,7 +143,8 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       List<String> journeyReward = new ArrayList<String>();
       for(RewardHistory history : journeyStatistic.getJourneyRewardHistory()) {
         journeyReward.add(history.toString());
-        int sum = rewards.get(history.getRewardID()) + history.getAmount(); 
+        Integer previousValue = rewards.get(history.getRewardID());
+        Integer sum = ((previousValue != null )? previousValue : 0) + history.getAmount(); 
         rewards.put(history.getRewardID(), sum);
       }
       

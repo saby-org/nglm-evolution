@@ -202,7 +202,7 @@ public class JourneyStatisticWrapper implements SubscriberStreamOutput
     this.journeyStatistic = null;
     if(journeyStatisticWrapper.getJourneyStatistic() != null)
       {
-        new JourneyStatistic(journeyStatisticWrapper.getJourneyStatistic());
+        this.journeyStatistic = new JourneyStatistic(journeyStatisticWrapper.getJourneyStatistic());
       }
   }
   

@@ -69,7 +69,7 @@ public class JourneyHistory
   private String journeyID;
   private List<NodeHistory> nodeHistory;
   private List<StatusHistory> statusHistory;
-  private List<RewardHistory> rewardHistory;
+  private List<RewardHistory> rewardHistory; // List of each rewards attributions (thus we need to sum them if we want the total for every different rewardID)
   
   /*****************************************
   *

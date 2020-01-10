@@ -32,8 +32,8 @@ public abstract class GUIManagedObjectList<T extends GUIManagedObject>
   {
     this.guiManagedObjects = Collections.emptyMap();
     
-    // TODO: we force the init of GUIManagedObject class by calling a static function
-    // Otherwise there is a bug with static code calls between GUIManagedObject class and those which extends GUIManagedObject.
+    // Workaround: we force the initialization of GUIManagedObject class by calling a static function
+    // Otherwise there is a bug due to a circular dependency in GUIManagedObject static code and all classes that extends GUIManagedObject.
     GUIManagedObject.commonSchema();
   }
 
