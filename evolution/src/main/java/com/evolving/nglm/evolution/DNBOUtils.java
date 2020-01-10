@@ -372,7 +372,7 @@ public class DNBOUtils
       
       /*****************************************
       *
-      *  action -- score offers (ignore returned value)
+      *  action -- score offers (ignore returned value except for error)
       *
       *****************************************/
       

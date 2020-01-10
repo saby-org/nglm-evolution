@@ -21100,15 +21100,12 @@ public class GUIManager
     *
     ****************************************/
    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
-   String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
+   String tokenCode  = JSONUtilities.decodeString(jsonRoot, "tokenCode",  true);
    List<Object> res = new ArrayList<>();
    try
    {
-     String queryString = "("+TokenChangeESSinkConnector.TokenChangeESSinkTask.ES_FIELD_SUBSCRIBER_ID+":\""+customerID+"\")"; // (subscriberID:"106")
-     if (tokenCode != null)
-       {
-         queryString += " AND ("+TokenChangeESSinkConnector.TokenChangeESSinkTask.ES_FIELD_TOKEN_CODE+":\""+tokenCode+"\")"; // (subscriberID:"106") AND (tokenCode:"YCWXT")
-       }
+     // (subscriberID:"106") AND (tokenCode:"YCWXT")
+     String queryString = "("+TokenChangeESSinkConnector.TokenChangeESSinkTask.ES_FIELD_SUBSCRIBER_ID+":\""+customerID+"\") AND ("+TokenChangeESSinkConnector.TokenChangeESSinkTask.ES_FIELD_TOKEN_CODE+":\""+tokenCode+"\")";
      QueryBuilder query = QueryBuilders.queryStringQuery(queryString);
      SearchRequest searchRequest = new SearchRequest("detailedrecords_tokens-*").source(new SearchSourceBuilder().query(query)); 
      Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
@@ -21121,7 +21118,10 @@ public class GUIManager
        {
          for (SearchHit searchHit : searchHits)
            {
-             res.add(JSONUtilities.encodeObject(searchHit.getSourceAsMap()));
+             Map<String, Object> map = searchHit.getSourceAsMap();
+             map.remove("subscriberID");
+             map.remove("tokenCode");
+             res.add(JSONUtilities.encodeObject(map));
            }
          SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
          scrollRequest.scroll(scroll);
@@ -21139,7 +21139,9 @@ public class GUIManager
        response.put("responseParameter", null);
        return JSONUtilities.encodeObject(response);
      }
-   response.put("tokens", JSONUtilities.encodeArray(res));
+   response.put("customerID", customerID);
+   response.put("tokenCode", tokenCode);
+   response.put("events", JSONUtilities.encodeArray(res));
    response.put("responseCode", "ok");
    
    /*****************************************

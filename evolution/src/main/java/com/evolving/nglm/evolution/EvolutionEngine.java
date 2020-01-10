@@ -4439,31 +4439,27 @@ public class EvolutionEngine
                                 case TokenUpdate:
                                   Token token = (Token) action;
                                   subscriberState.getSubscriberProfile().getTokens().add(token);
-                                  String act = "";
-                                  Date date = new Date();
                                   switch (token.getTokenStatus())
                                   {
                                     case New:
-                                      act = TokenChange.CREATE;
-                                      date = token.getCreationDate();
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
                                       break;
-                                    case Bound:
-                                      act = TokenChange.ALLOCATE;
-                                      date = token.getBoundDate();
+                                    case Bound: // must record the token creation
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getBoundDate(),    journey.getJourneyID(), token.getTokenCode(), TokenChange.ALLOCATE, "OK", "Journey"));
                                       break;
-                                    case Redeemed:
-                                      act = TokenChange.REDEEM;
-                                      date = token.getRedeemedDate();
+                                    case Redeemed: // must record the token creation & allocation
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getBoundDate(),    journey.getJourneyID(), token.getTokenCode(), TokenChange.ALLOCATE, "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.REDEEM,   "OK", "Journey"));
                                       break;
                                     case Expired :
-                                      act = TokenChange.REFUSE; // TODO
-                                      date = token.getTokenExpirationDate();
+                                      // TODO
                                       break;
                                     default :
-                                      act = "Unknown";
+                                      log.error("unsupported token status {} for {} on actionManager.executeOnExit", token.getTokenStatus(), token.getTokenCode());
                                       break;
                                   }
-                                  subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), date, journey.getJourneyID(), token.getTokenCode(), act, "OK", "Journey"));
                                   break;
 
                                 case TokenChange:
