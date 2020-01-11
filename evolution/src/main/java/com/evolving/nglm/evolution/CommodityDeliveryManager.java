@@ -285,18 +285,18 @@ public class CommodityDeliveryManager extends DeliveryManager implements Runnabl
 
                 //  process records
 
-                for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords)
-                  {
-                    //  parse
-                    DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
-                    if(response.getDiplomaticBriefcase() != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID) != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID).equals(COMMODITY_DELIVERY_ID_VALUE)){
-                      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
-                      handleThirdPartyResponse(response);
-                      consumer.commitSync(Collections.singletonMap(new TopicPartition(fileRecord.topic(),fileRecord.partition()),new OffsetAndMetadata(fileRecord.offset()+1)));
-                      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
-                    }
-                    }
-                  }
+                for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords) {
+                  //  parse
+				  DeliveryRequest response = deliveryManager.getRequestSerde().deserializer().deserialize(responseTopic, fileRecord.value());
+				  if(response.getDiplomaticBriefcase() != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID) != null && response.getDiplomaticBriefcase().get(COMMODITY_DELIVERY_ID).equals(COMMODITY_DELIVERY_ID_VALUE)){
+					if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic ...");
+					handleThirdPartyResponse(response);
+					consumer.commitSync(Collections.singletonMap(new TopicPartition(fileRecord.topic(),fileRecord.partition()),new OffsetAndMetadata(fileRecord.offset()+1)));
+					if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" CommodityDeliveryManager : reading response from "+commodityType+" "+responseTopic+" topic DONE");
+				  }
+				}
+                consumer.commitSync();
+              }
 
               // thread leaving the main loop !
               consumer.close();
