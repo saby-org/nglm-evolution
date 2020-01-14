@@ -5631,7 +5631,7 @@ public class GUIManager
 
         if (active && element.getTargetID() != null)
           {
-            EvaluateTargets evaluateTargets = new EvaluateTargets(element.getTargetID());
+            EvaluateTargets evaluateTargets = new EvaluateTargets(Collections.<String>singleton(element.getJourneyID()), element.getTargetID());
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getEvaluateTargetsTopic(), EvaluateTargets.serde().serializer().serialize(Deployment.getEvaluateTargetsTopic(), evaluateTargets)));
           }
         

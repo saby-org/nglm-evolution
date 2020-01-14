@@ -1315,7 +1315,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService);
+    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService);
 
     /*****************************************
     *

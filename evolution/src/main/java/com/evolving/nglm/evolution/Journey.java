@@ -1662,70 +1662,172 @@ public class Journey extends GUIManagedObject
   {
     CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables);
     ParameterMap boundParameters = new ParameterMap();
-    for (int i=0; i<jsonArray.size(); i++)
+    for (int i = 0; i < jsonArray.size(); i++)
       {
         JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
         String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
         CriterionField parameter = journeyParameters.get(parameterName);
         if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
-         switch (parameter.getFieldDataType())
+        if (!isExpressionValuedParameterValue(parameterJSON))
           {
-            case IntegerCriterion:
-              boundParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
-              break;
+            switch (parameter.getFieldDataType())
+              {
+              case IntegerCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
+                break;
 
-            case DoubleCriterion:
-              boundParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
-              break;
+              case DoubleCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
+                break;
 
-            case StringCriterion:
-              boundParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
-              break;
+              case StringCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
-            case BooleanCriterion:
-              boundParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
-              break;
+              case BooleanCriterion:
+                boundParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
+                break;
 
-            case DateCriterion:
-              boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
-              break;
+              case DateCriterion:
+                boundParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
+                break;
 
-            case StringSetCriterion:
-              Set<String> stringSetValue = new HashSet<String>();
-              JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
-              for (int j=0; j<stringSetArray.size(); j++)
-                {
-                  stringSetValue.add((String) stringSetArray.get(j));
-                }
-              boundParameters.put(parameterName, stringSetValue);
-              break;
+              case StringSetCriterion:
+                Set<String> stringSetValue = new HashSet<String>();
+                JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+                for (int j = 0; j < stringSetArray.size(); j++)
+                  {
+                    stringSetValue.add((String) stringSetArray.get(j));
+                  }
+                boundParameters.put(parameterName, stringSetValue);
+                break;
 
-            case EvaluationCriteriaParameter:
-              List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
-              JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
-              for (int j=0; j<evaluationCriteriaArray.size(); j++)
-                {
-                  evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
-                }
-              boundParameters.put(parameterName, evaluationCriteriaValue);
-              break;
+              case EvaluationCriteriaParameter:
+                List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
+                JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+                for (int j = 0; j < evaluationCriteriaArray.size(); j++)
+                  {
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                  }
+                boundParameters.put(parameterName, evaluationCriteriaValue);
+                break;
 
-            case SMSMessageParameter:
-              SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-              boundParameters.put(parameterName, smsMessageValue);
-              break;
+              case SMSMessageParameter:
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                boundParameters.put(parameterName, smsMessageValue);
+                break;
 
-            case EmailMessageParameter:
-              EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-              boundParameters.put(parameterName, emailMessageValue);
-              break;
+              case EmailMessageParameter:
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                boundParameters.put(parameterName, emailMessageValue);
+                break;
 
-            case PushMessageParameter:
-              PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-              boundParameters.put(parameterName, pushMessageValue);
-              break;
+              case PushMessageParameter:
+                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                boundParameters.put(parameterName, pushMessageValue);
+                break;
+              }
+          }
+        else
+          {
+            /*****************************************
+             *
+             * expression
+             *
+             *****************************************/
+
+            //
+            // parse
+            //
+
+            ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+            boundParameters.put(parameterName, parameterExpressionValue);
+
+            //
+            // valid combination
+            //
+
+            boolean validCombination = false;
+            switch (parameter.getFieldDataType())
+              {
+              case IntegerCriterion:
+              case DoubleCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case IntegerExpression:
+                  case DoubleExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+
+              case StringCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case StringExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+
+              case BooleanCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case BooleanExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+
+              case DateCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case DateExpression:
+                    validCombination = true;
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+
+              case EvaluationCriteriaParameter:
+              case SMSMessageParameter:
+              case EmailMessageParameter:
+              case PushMessageParameter:
+                switch (parameterExpressionValue.getType())
+                  {
+                  case OpaqueReferenceExpression:
+                    validCombination = ((ReferenceExpression) (parameterExpressionValue.getExpression())).getCriterionDataType() == parameter.getFieldDataType();
+                    break;
+                  default:
+                    validCombination = false;
+                    break;
+                  }
+                break;
+
+              default:
+                validCombination = false;
+                break;
+              }
+
+            //
+            // validate
+            //
+
+            if (!validCombination) throw new GUIManagerException("dataType/expression combination", parameter.getFieldDataType().getExternalRepresentation() + "/" + parameterExpressionValue.getType());
           }
       }
+
     return boundParameters;
   }
 

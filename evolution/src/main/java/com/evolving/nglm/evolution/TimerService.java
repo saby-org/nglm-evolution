@@ -14,6 +14,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.utilities.UtilitiesException;
+import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -77,6 +78,7 @@ public class TimerService
   private ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private TargetService targetService = null;
+  private JourneyService journeyService = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
   private SortedSet<TimedEvaluation> schedule = new TreeSet<TimedEvaluation>();
@@ -142,7 +144,7 @@ public class TimerService
   *
   *****************************************/
 
-  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService)
+  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService)
   {
     /*****************************************
     *
@@ -161,6 +163,30 @@ public class TimerService
     this.subscriberStateStore = subscriberStateStore;
     this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     this.targetService = targetService;
+    this.journeyService = journeyService;
+
+    /*****************************************
+    *
+    *  journeyService listener
+    *
+    *****************************************/
+
+    //
+    //  listener
+    //
+
+    GUIManagedObjectListener journeyListener = new GUIManagedObjectListener()
+    {
+      @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { processJourneyActivated(); }
+      @Override public void guiManagedObjectDeactivated(String guiManagedObjectID) { }
+    };
+
+    //
+    //  register
+    //
+
+    journeyService.registerListener(journeyListener);
+
 
     /*****************************************
     *
@@ -697,7 +723,6 @@ public class TimerService
   {
     EvaluateTargets currentEvaluateTargetsJob = null;
     NGLMRuntime.registerSystemTimeDependency(this);
-    Date now = SystemTime.getCurrentTime();
     while (! stopRequested)
       {
         /*****************************************
@@ -744,6 +769,7 @@ public class TimerService
 
         if (evaluateTargetsSourceRecords.count() > 0)
           {
+            Set<String> campaignIDs = new HashSet<String>();
             Set<String> targetIDs = new HashSet<String>();
 
             //
@@ -753,6 +779,7 @@ public class TimerService
             if (currentEvaluateTargetsJob != null)
               {
                 currentEvaluateTargetsJob.markAborted();
+                campaignIDs.addAll(currentEvaluateTargetsJob.getCampaignIDs());
                 targetIDs.addAll(currentEvaluateTargetsJob.getTargetIDs());
                 currentEvaluateTargetsJob = null;
               }
@@ -784,9 +811,68 @@ public class TimerService
 
                 if (evaluateTargets != null)
                   {
+                    campaignIDs.addAll(evaluateTargets.getCampaignIDs());
                     targetIDs.addAll(evaluateTargets.getTargetIDs());
                   }
               }
+
+            //
+            //  wait for active campaigns
+            //
+
+            Date now = SystemTime.getCurrentTime();
+            Date timeout = RLMDateUtils.addSeconds(now, 30);
+            Set<String> activeCampaignIDs = new HashSet<>();
+            while (activeCampaignIDs.size() < campaignIDs.size() && now.before(timeout))
+              {
+                //
+                //  all campaigns active?
+                //
+
+                activeCampaignIDs = new HashSet<>();
+                for (String campaignID : campaignIDs)
+                  {
+                    Journey campaign = journeyService.getActiveJourney(campaignID, now);
+                    if (campaign != null)
+                      {
+                        activeCampaignIDs.add(campaignID);
+                      }
+                  }
+
+                //
+                //  wait (if necessary)
+                //
+
+                if (activeCampaignIDs.size() < campaignIDs.size())
+                  {
+                    synchronized (this)
+                      {
+                        try
+                          {
+                            this.wait(timeout.getTime() - now.getTime());
+                          }
+                        catch (InterruptedException e)
+                          {
+                            // ignore
+                          }
+                      }
+                  }
+
+                //
+                //  now
+                //
+
+                now = SystemTime.getCurrentTime();
+              }
+
+            //
+            //  log 
+            //
+
+            if (activeCampaignIDs.size() == campaignIDs.size())
+              log.info("schedule evaluateTargets {}", targetIDs);
+            else
+              log.error("schedule evaluateTargets (not all campaigns active) {} / {}", campaignIDs, activeCampaignIDs);
 
             //
             //  submit job
@@ -794,7 +880,7 @@ public class TimerService
 
             if (targetIDs.size() > 0)
               {
-                EvaluateTargets evaluateTargets = new EvaluateTargets(targetIDs);
+                EvaluateTargets evaluateTargets = new EvaluateTargets(campaignIDs, targetIDs);
                 currentEvaluateTargetsJob = evaluateTargets;
                 while (! stopRequested)
                   {
@@ -956,6 +1042,20 @@ public class TimerService
                 log.info(stackTraceWriter.toString());
               }
           }
+      }
+  }
+
+  /*****************************************
+  *
+  *  processJourneyActivated
+  *
+  *****************************************/
+
+  private void processJourneyActivated()
+  {
+    synchronized (this)
+      {
+        this.notifyAll();
       }
   }
 }

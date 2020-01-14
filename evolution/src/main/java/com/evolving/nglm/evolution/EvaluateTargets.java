@@ -42,7 +42,8 @@ public class EvaluateTargets
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("evaluate_targets");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.field("campaignIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     schemaBuilder.field("targetIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schema = schemaBuilder.build();
   };
@@ -66,6 +67,7 @@ public class EvaluateTargets
   *
   *****************************************/
 
+  private Set<String> campaignIDs;
   private Set<String> targetIDs;
 
   //
@@ -81,6 +83,7 @@ public class EvaluateTargets
   *
   *****************************************/
 
+  public Set<String> getCampaignIDs() { return campaignIDs; }
   public Set<String> getTargetIDs() { return targetIDs; }
   public boolean getAborted() { return aborted; }
   public boolean getCompleted() { return completed; }
@@ -102,17 +105,18 @@ public class EvaluateTargets
   //  EvaluateTargets
   //  
 
-  public EvaluateTargets(String targetID)
+  public EvaluateTargets(String campaignID, String targetID)
   {
-    this(Collections.<String>singleton(targetID));
+    this(Collections.<String>singleton(campaignID), Collections.<String>singleton(targetID));
   }
 
   //
   //  EvaluateTargets
   //
 
-  public EvaluateTargets(Collection<String> targetIDs)
+  public EvaluateTargets(Collection<String> campaignIDs, Collection<String> targetIDs)
   {
+    this.campaignIDs = new HashSet<String>(campaignIDs);
     this.targetIDs = new HashSet<String>(targetIDs);
   }
 
@@ -126,6 +130,7 @@ public class EvaluateTargets
   {
     EvaluateTargets evaluateTargets = (EvaluateTargets) value;
     Struct struct = new Struct(schema);
+    struct.put("campaignIDs", new ArrayList<Object>(evaluateTargets.getCampaignIDs()));
     struct.put("targetIDs", new ArrayList<Object>(evaluateTargets.getTargetIDs()));
     return struct;
   }
@@ -151,13 +156,14 @@ public class EvaluateTargets
     //
 
     Struct valueStruct = (Struct) value;
+    Set<String> campaignIDs = (schemaVersion >= 2) ? new HashSet<String>((List<String>) valueStruct.get("campaignIDs")) : new HashSet<String>();
     Set<String> targetIDs = new HashSet<String>((List<String>) valueStruct.get("targetIDs"));
 
     //
     //  return
     //
 
-    return new EvaluateTargets(targetIDs);
+    return new EvaluateTargets(campaignIDs, targetIDs);
   }
 
   /*****************************************
@@ -173,8 +179,25 @@ public class EvaluateTargets
       {
         EvaluateTargets entry = (EvaluateTargets) obj;
         result = true;
+        result = result && Objects.equals(campaignIDs, entry.getCampaignIDs());
         result = result && Objects.equals(targetIDs, entry.getTargetIDs());
       }
     return result;
+  }
+
+  /*****************************************
+  *
+  *  toString
+  *
+  *****************************************/
+
+  public String toString()
+  {
+    StringBuilder builder = new StringBuilder();
+    builder.append("EvaluateTargets {");
+    builder.append(campaignIDs + ",");
+    builder.append(targetIDs);
+    builder.append("}");
+    return builder.toString();
   }
 }
