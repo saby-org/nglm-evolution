@@ -33,7 +33,8 @@ public abstract class ActionManager
     JourneyRequest,
     JourneyContextUpdate,
     ActionManagerContextUpdate,
-    TokenUpdate;
+    TokenUpdate,
+    TokenChange;
   }
 
   /*****************************************

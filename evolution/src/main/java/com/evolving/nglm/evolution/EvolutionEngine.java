@@ -3529,7 +3529,7 @@ public class EvolutionEngine
           {
             subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
             subscriberTokens.add(subscriberStoredToken);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "returnStatus", evolutionEvent.getClass().getSimpleName()));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName()));
             subscriberStateUpdated = true;
           }
 
@@ -3552,7 +3552,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, presentationLog.getCallUniqueIdentifier(), eventTokenCode, "Allocate", "returnStatus", "PresentationLog"));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, presentationLog.getCallUniqueIdentifier(), eventTokenCode, "Allocate", "OK", "PresentationLog"));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -3595,7 +3595,7 @@ public class EvolutionEngine
                 subscriberStoredToken.setTokenStatus(TokenStatus.Redeemed);
                 subscriberStoredToken.setRedeemedDate(acceptanceLog.getEventDate());
                 subscriberStoredToken.setAcceptedOfferID(acceptanceLog.getOfferID());
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), acceptanceLog.getCallUniqueIdentifier(), eventTokenCode, "Redeem", "returnStatus", "AcceptanceLog"));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), acceptanceLog.getCallUniqueIdentifier(), eventTokenCode, "Redeem", "OK", "AcceptanceLog"));
               }
             subscriberStateUpdated = true;
           }
@@ -3994,7 +3994,7 @@ public class EvolutionEngine
                 journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(),journeyState, false);
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState)));
+                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader))));
                 subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(), Journey.getSubscriberJourneyStatus(journeyState));
                 subscriberStateUpdated = true;
 
@@ -4155,7 +4155,7 @@ public class EvolutionEngine
           {
             journeyState.setJourneyExitDate(now);
             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, now)));
+            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), now)));
             inactiveJourneyStates.add(journeyState);
             continue;
           }
@@ -4292,7 +4292,7 @@ public class EvolutionEngine
 
                             journeyState.setJourneyExitDate(now);
                             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getCurrentTime())));
+                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -4439,31 +4439,34 @@ public class EvolutionEngine
                                 case TokenUpdate:
                                   Token token = (Token) action;
                                   subscriberState.getSubscriberProfile().getTokens().add(token);
-                                  String act = "";
-                                  Date date = new Date();
                                   switch (token.getTokenStatus())
                                   {
                                     case New:
-                                      act = "Create";
-                                      date = token.getCreationDate();
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
                                       break;
-                                    case Bound:
-                                      act = "Allocate";
-                                      date = token.getBoundDate();
+                                    case Bound: // must record the token creation
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getBoundDate(),    journey.getJourneyID(), token.getTokenCode(), TokenChange.ALLOCATE, "OK", "Journey"));
                                       break;
-                                    case Redeemed:
-                                      act = "Redeem";
-                                      date = token.getRedeemedDate();
+                                    case Redeemed: // must record the token creation & allocation
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getCreationDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.CREATE,   "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getBoundDate(),    journey.getJourneyID(), token.getTokenCode(), TokenChange.ALLOCATE, "OK", "Journey"));
+                                      subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), token.getRedeemedDate(), journey.getJourneyID(), token.getTokenCode(), TokenChange.REDEEM,   "OK", "Journey"));
                                       break;
                                     case Expired :
-                                      act = "Refuse";
-                                      date = token.getTokenExpirationDate();
+                                      // TODO
                                       break;
                                     default :
-                                      act = "Unknown";
+                                      log.error("unsupported token status {} for {} on actionManager.executeOnExit", token.getTokenStatus(), token.getTokenCode());
                                       break;
                                   }
-                                  subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), date, journey.getJourneyID(), token.getTokenCode(), act, "returnStatus", "Journey"));
+                                  break;
+
+                                case TokenChange:
+                                  TokenChange tokenChange = (TokenChange) action;
+                                  tokenChange.setEventID(journey.getJourneyID());
+                                  tokenChange.setOrigin("Journey");
+                                  subscriberState.getTokenChanges().add(tokenChange);
                                   break;
 
                                 default:
@@ -4516,7 +4519,7 @@ public class EvolutionEngine
 
                             journeyState.setJourneyExitDate(now);
                             boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, SystemTime.getCurrentTime())));
+                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
                             inactiveJourneyStates.add(journeyState);
                             break;
                           }
@@ -4608,7 +4611,7 @@ public class EvolutionEngine
                 //
                 
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, firedLink.getDestination().getExitNode());
-                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample)));
+                subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader))));
 
                 /*****************************************
                 *

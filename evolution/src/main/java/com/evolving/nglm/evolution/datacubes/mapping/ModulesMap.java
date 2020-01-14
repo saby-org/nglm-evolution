@@ -4,11 +4,11 @@ import java.util.Map;
 
 import com.evolving.nglm.evolution.datacubes.mapping.ModuleInformation.ModuleFeature;
 
-public class ModuleDisplayMapping extends DisplayMapping<ModuleInformation>
+public class ModulesMap extends ESObjectList<ModuleInformation>
 {
   public static final String ESIndex = "mapping_modules";
   
-  public ModuleDisplayMapping() 
+  public ModulesMap() 
   {
     super(ESIndex);
   }
@@ -25,7 +25,7 @@ public class ModuleDisplayMapping extends DisplayMapping<ModuleInformation>
   *
   *****************************************/
   
-  public String getDisplay(String id)
+  public String getDisplay(String id, String fieldName)
   {
     ModuleInformation result = this.mapping.get(id);
     if(result != null)
@@ -34,12 +34,12 @@ public class ModuleDisplayMapping extends DisplayMapping<ModuleInformation>
       }
     else
       {
-        logWarningOnlyOnce(id, "Unable to retrieve module.display and module.feature for module.id: " + id);
+        logWarningOnlyOnce("Unable to retrieve "+fieldName+".display for "+fieldName+".id: " + id);
         return id; // When missing, return the ID by default.
       }
   }
   
-  public ModuleFeature getFeature(String id)
+  public ModuleFeature getFeature(String id, String fieldName)
   {
     ModuleInformation result = this.mapping.get(id);
     if(result != null)
@@ -48,7 +48,7 @@ public class ModuleDisplayMapping extends DisplayMapping<ModuleInformation>
       }
     else
       {
-        logWarningOnlyOnce(id, "Unable to retrieve module.display and module.feature for module.id: " + id);
+        logWarningOnlyOnce("Unable to retrieve "+fieldName+".feature for "+fieldName+".id: " + id);
         return ModuleFeature.None; // When missing, return None by default.
       }
   }

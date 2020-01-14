@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.evolving.nglm.core.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.connect.data.Schema;
@@ -97,6 +98,17 @@ public class PointBalance
   *  data
   *
   *****************************************/
+
+  private static KafkaProducer commodityDeliveryProducer;
+  static{
+    Properties kafkaProducerProperties = new Properties();
+    kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
+    kafkaProducerProperties.put("acks", "all");
+    kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    commodityDeliveryProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
+    NGLMRuntime.addShutdownHook(notused->commodityDeliveryProducer.close());
+  }
 
   private SortedMap<Date,Integer> balances;
   private MetricHistory earnedHistory;
@@ -535,15 +547,7 @@ public class PointBalance
     commodityDeliveryRequest.setStatusMessage("Success");
     commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
-    Properties kafkaProducerProperties = new Properties();
-    kafkaProducerProperties.put("bootstrap.servers", Deployment.getBrokerServers());
-    kafkaProducerProperties.put("acks", "all");
-    kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    KafkaProducer commodityDeliveryProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
-    if(commodityDeliveryProducer != null){
-      commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest))); 
-    }
+    commodityDeliveryProducer.send(new ProducerRecord<byte[], byte[]>(commodityDeliveryResponseTopic, StringKey.serde().serializer().serialize(commodityDeliveryResponseTopic, new StringKey(commodityDeliveryRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)commodityDeliveryManagerDeclaration.getRequestSerde()).serializer().serialize(commodityDeliveryResponseTopic, commodityDeliveryRequest)));
 
   }
 }

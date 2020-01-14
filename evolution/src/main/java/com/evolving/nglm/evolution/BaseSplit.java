@@ -202,7 +202,7 @@ public class BaseSplit
       {
         JSONObject segment = (JSONObject) jsonArray.get(i);
         String segmentID = JSONUtilities.decodeString(segment, "id", false);
-        if (segmentID == null || resetSegmentIDs)
+        if ( (segmentID == null || resetSegmentIDs) && segmentationDimensionService != null)
           {
             segmentID = segmentationDimensionService.generateSegmentID();
             segment.put("id", segmentID);

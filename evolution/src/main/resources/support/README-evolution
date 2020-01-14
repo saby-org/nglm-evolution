@@ -313,6 +313,9 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCr
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : ">=", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.todayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1, "profileCriteria":[{ "criterionField" : "subscriber.statusChangeDate", "criterionOperator" : "<", "argument" : { "timeUnit" : "day", "expression" : "dateConstant('\'${sampledata.detailed.yesterdayMinus396}T12:30:00\'')" } }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/evaluateProfileCriteria; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"106"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenEventDetails; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1 , "customerID":"106", "tokenCode" : "YCWXT"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getTokenEventDetails; echo
+
 --
 -- EVPRO-78 Method to count the number of customers fitting with eligibility criteria
 -- (including dynamic criteria)

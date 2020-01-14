@@ -17,10 +17,22 @@ import org.apache.kafka.connect.data.Timestamp;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 
 
-public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
+public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput, Action
 {
+  
+  // static
+  
+  public static String CREATE   = "Create";
+  public static String ALLOCATE = "Allocate";
+  public static String REDEEM   = "Redeem";
+  public static String RESEND   = "Resend";
+  public static String REFUSE   = "Refuse";
+  public static String EXTEND   = "Extend";
+  
   /*****************************************
   *
   * schema
@@ -92,6 +104,7 @@ public class TokenChange implements EvolutionEngineEvent, SubscriberStreamOutput
   public String getAction() { return action; }
   public String getReturnStatus() { return returnStatus; }
   public String getOrigin() { return origin; }
+  public ActionType getActionType() { return ActionType.TokenChange; }
 
   //
   //  setters

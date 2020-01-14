@@ -243,6 +243,32 @@ public abstract class LoyaltyProgram extends GUIManagedObject
     this.characteristics = decodeLoyaltyProgramCharacteristics(JSONUtilities.decodeJSONArray(jsonRoot, "characteristics", false), catalogCharacteristicService);
     
   }
+
+  /*****************************************
+  *
+  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
+  *
+  *****************************************/
+
+  public LoyaltyProgram(JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+     *
+     *  super
+     *
+     *****************************************/
+
+    super(jsonRoot, 0);
+
+    /*****************************************
+     *
+     *  attributes
+     *
+     *****************************************/
+    
+    this.loyaltyProgramType = LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "loyaltyProgramType", true));
+    this.loyaltyProgramDescription = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramDescription", false);
+  }
   
   /*****************************************
   *

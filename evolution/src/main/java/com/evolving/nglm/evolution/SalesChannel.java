@@ -213,6 +213,17 @@ public class SalesChannel extends GUIManagedObject
 
   /*****************************************
   *
+  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
+  *
+  *****************************************/
+
+  public SalesChannel(JSONObject jsonRoot) throws GUIManagerException
+  {
+    this(jsonRoot, 0, null);
+  }
+
+  /*****************************************
+  *
   *  decodeIDs
   *
   *****************************************/

@@ -137,6 +137,7 @@ public class Deployment
   private static String todayLoyaltyDatacubePeriodCronEntryString;
   private static String yesterdayTiersDatacubePeriodCronEntryString;
   private static String todayTiersDatacubePeriodCronEntryString;
+  private static String journeyTrafficDatacubePeriodCronEntryString;
   private static String subscriberProfileSnapshotPeriodCronEntryString;
   private static PropensityRule propensityRule;
   private static Map<String,SupportedLanguage> supportedLanguages = new LinkedHashMap<String,SupportedLanguage>();
@@ -354,6 +355,7 @@ public class Deployment
   public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
   public static String getYesterdayTiersDatacubePeriodCronEntryString() { return yesterdayTiersDatacubePeriodCronEntryString; }
   public static String getTodayTiersDatacubePeriodCronEntryString() { return todayTiersDatacubePeriodCronEntryString; }
+  public static String getJourneyTrafficDatacubePeriodCronEntryString() { return journeyTrafficDatacubePeriodCronEntryString; }
   public static String getSubscriberProfileSnapshotPeriodCronEntryString() { return subscriberProfileSnapshotPeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
   public static Map<String,SupportedLanguage> getSupportedLanguages() { return supportedLanguages; }
@@ -1990,6 +1992,19 @@ public class Deployment
     try
       {
         todayTiersDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayTiersDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  journeyTrafficDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        journeyTrafficDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "journeyTrafficDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

@@ -129,12 +129,12 @@ public abstract class ScheduledJob implements Comparable<ScheduledJob>
 
   public void call() 
   {
-    log.info("Start [" + this.jobName + "], scheduled for " + this.nextGenerationDate.toLocaleString());
+    log.info("[" + this.jobName + "] Start (scheduled for " + this.nextGenerationDate.toLocaleString() + ")");
     
     this.run(); // TODO: Maybe add scheduled date later, if needed.
     
     this.nextGenerationDate = periodicGeneration.next();
-    log.info("End [" + this.jobName + "] with success, next call is scheduled for " + this.nextGenerationDate.toLocaleString());
+    log.info("[" + this.jobName + "] End with success. Next call is scheduled for " + this.nextGenerationDate.toLocaleString());
   }
 
   

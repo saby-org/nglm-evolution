@@ -138,9 +138,14 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       //
       //  flat fields
       //
+      
+      Map<String, Integer> rewards = new HashMap<String, Integer>();
       List<String> journeyReward = new ArrayList<String>();
       for(RewardHistory history : journeyStatistic.getJourneyRewardHistory()) {
         journeyReward.add(history.toString());
+        Integer previousValue = rewards.get(history.getRewardID());
+        Integer sum = ((previousValue != null )? previousValue : 0) + history.getAmount(); 
+        rewards.put(history.getRewardID(), sum);
       }
       
       List<String> journeyNode = new ArrayList<String>();
@@ -159,9 +164,10 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("transitionDate", journeyStatistic.getTransitionDate());
       documentMap.put("nodeHistory", journeyNode);
       documentMap.put("statusHistory", journeyStatus);
-      documentMap.put("fromNodeID", journeyStatistic.getFromNodeID());
-      documentMap.put("toNodeID", journeyStatistic.getToNodeID());
       documentMap.put("rewardHistory", journeyReward);
+      
+      documentMap.put("fromNodeID", journeyStatistic.getFromNodeID()); // TODO delete ?
+      documentMap.put("toNodeID", journeyStatistic.getToNodeID()); // TODO delete ?
       documentMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
       documentMap.put("sample", journeyStatistic.getSample());
       documentMap.put("markNotified", journeyStatistic.getMarkNotified());
@@ -171,6 +177,11 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("statusControlGroup", journeyStatistic.getStatusControlGroup());
       documentMap.put("statusUniversalControlGroup", journeyStatistic.getStatusUniversalControlGroup());
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
+      
+      documentMap.put("nodeID", journeyStatistic.getToNodeID());
+      documentMap.put("status", journeyStatistic.getSubscriberJourneyStatus());
+      documentMap.put("subscriberStratum", journeyStatistic.getSubscriberStratum());
+      documentMap.put("rewards", rewards);
 
       // 
       //  return

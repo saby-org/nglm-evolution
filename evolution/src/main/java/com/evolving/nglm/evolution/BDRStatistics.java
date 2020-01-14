@@ -92,7 +92,7 @@ public class BDRStatistics implements BDRStatisticsMBean, NGLMMonitoringObject
   *****************************************/
   
   public synchronized void updateBDREventCount(int amount, DeliveryStatus status){
-    log.info("BDRStatistics.updateBDREventCount: updating stats, amount="+amount+" status="+status);
+    if(log.isDebugEnabled()) log.debug("BDRStatistics.updateBDREventCount: updating stats, amount="+amount+" status="+status);
     if(status != null){
       
       BDRStatistics stats = evolutionBDRCounts.get(name);

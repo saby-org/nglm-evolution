@@ -1113,7 +1113,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String startDateReq = readString(jsonRoot, "startDate", true);
+    String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     JSONArray deliverableIDs = JSONUtilities.decodeJSONArray(jsonRoot, "deliverableIDs", false);
@@ -1166,11 +1166,10 @@ public class ThirdPartyManager
               //
 
               Date startDate = null;
-              Date now = SystemTime.getCurrentTime();
 
               if (startDateReq == null) 
                 {
-                  startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                  startDate = new Date(0L);
                 }
               else
                 {
@@ -1290,7 +1289,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String startDateReq = readString(jsonRoot, "startDate", true);
+    String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
@@ -1345,11 +1344,10 @@ public class ThirdPartyManager
               //
 
               Date startDate = null;
-              Date now = SystemTime.getCurrentTime();
 
               if (startDateReq == null) 
                 {
-                  startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                  startDate = new Date(0L);
                 }
               else
                 {
@@ -1777,7 +1775,7 @@ public class ThirdPartyManager
      *
      ****************************************/
 
-    String startDateReq = readString(jsonRoot, "startDate", true);
+    String startDateReq = readString(jsonRoot, "startDate", false);
     String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
     String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
 
@@ -1829,11 +1827,10 @@ public class ThirdPartyManager
               //
 
               Date startDate = null;
-              Date now = SystemTime.getCurrentTime();
 
               if (startDateReq == null || startDateReq.isEmpty()) 
                 {
-                  startDate = RLMDateUtils.addDays(now, -7, Deployment.getBaseTimeZone());
+                  startDate = new Date(0L);
                 }
               else
                 {
@@ -3559,7 +3556,9 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
           return JSONUtilities.encodeObject(response);
         }
  
@@ -3568,7 +3567,9 @@ public class ThirdPartyManager
           // TODO can this really happen ?
           log.error(RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
           return JSONUtilities.encodeObject(response);          
         }
       
@@ -3578,7 +3579,9 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" null value");
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
           return JSONUtilities.encodeObject(response);                    
         }
       String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
@@ -3587,7 +3590,9 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+strategyID);
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
           return JSONUtilities.encodeObject(response);          
         }
       
@@ -3608,7 +3613,11 @@ public class ThirdPartyManager
               segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID
               );
 
-          if (!presentedOffers.isEmpty())
+          if (presentedOffers.isEmpty())
+            {
+              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented");
+            }
+          else
             {
               // Send a PresentationLog to EvolutionEngine
 
@@ -3634,7 +3643,7 @@ public class ThirdPartyManager
               int transactionDurationMs = 0; // TODO
               PresentationLog presentationLog = new PresentationLog(
                   subscriberID, subscriberID, now, 
-                  "callUniqueIdentifier", channelID, salesChannelID, userID,
+                  "3rdParty", channelID, salesChannelID, userID,
                   tokenCode, 
                   presentationStrategyID, transactionDurationMs, 
                   presentedOfferIDs, presentedOfferScores, positions, 
@@ -3756,7 +3765,9 @@ public class ThirdPartyManager
           // Token has not been assigned to this subscriber
           log.error(RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
           return JSONUtilities.encodeObject(response);
         }
       
@@ -3765,7 +3776,9 @@ public class ThirdPartyManager
           // TODO can this happen ?
           log.error(RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
           return JSONUtilities.encodeObject(response);          
         }
       
@@ -3775,7 +3788,9 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
           return JSONUtilities.encodeObject(response);
         }
 
@@ -3783,7 +3798,9 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
           return JSONUtilities.encodeObject(response);
         }
 
@@ -3805,7 +3822,9 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericResponseCode());
-          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericResponseMessage());
+          String str = RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_MSG, str);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
           return JSONUtilities.encodeObject(response);          
         }
       String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
@@ -5343,4 +5362,24 @@ public class ThirdPartyManager
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + " ("+key+") ", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseCode());
       }
   }
+
+  /*****************************************
+  *
+  *  generateTokenChange
+  *
+  *****************************************/
+
+  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String action, String str)
+  {
+    String topic = Deployment.getTokenChangeTopic();
+    Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+    Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "3rdParty");
+    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+        topic,
+        keySerializer.serialize(topic, new StringKey(subscriberID)),
+        valueSerializer.serialize(topic, tokenChange)
+        ));
+  }
+
 }

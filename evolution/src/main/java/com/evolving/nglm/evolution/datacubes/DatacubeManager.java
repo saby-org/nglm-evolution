@@ -7,8 +7,12 @@
 package com.evolving.nglm.evolution.datacubes;
 
 import com.evolving.nglm.core.*;
+import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeDefinitiveJob;
+import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeTemporaryJob;
 import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnTodayJob;
 import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnYesterdayJob;
+import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnTodayJob;
 import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnYesterdayJob;
 import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
@@ -44,6 +48,7 @@ public class DatacubeManager
   *****************************************/
   
   private RestHighLevelClient elasticsearchRestClient;
+  private GUIManagerClient guiManagerClient;
 
   /*****************************************
   *
@@ -61,6 +66,8 @@ public class DatacubeManager
     
     String elasticsearchServerHost = args[2];
     Integer elasticsearchServerPort = Integer.parseInt(args[3]);
+    String guiManagerServerHost = args[4];
+    String guiManagerServerPort = args[5];
     
     /*****************************************
     *
@@ -80,10 +87,11 @@ public class DatacubeManager
 
     /*****************************************
     *
-    *  initialize Elasticsearch REST client
+    *  initialize ES client & GUI client
     *  
     *****************************************/
     
+    guiManagerClient = new GUIManagerClient(guiManagerServerHost, guiManagerServerPort);
     try
       {
         elasticsearchRestClient = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
@@ -110,49 +118,71 @@ public class DatacubeManager
     
     long uniqueID = 0;
     
-    ScheduledJob yesOdr = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient);
-    if(yesOdr.properlyConfigured)
+    //
+    // Temporary datacubes (will be updated later by the definitive version)
+    //
+    
+    ScheduledJob temporaryODR = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(temporaryODR.properlyConfigured)
       {
-        datacubeScheduler.schedule(yesOdr);
+        datacubeScheduler.schedule(temporaryODR);
       }
     
-    ScheduledJob todOdr = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient);
-    if(todOdr.properlyConfigured)
+    ScheduledJob temporaryLoyalty = new LoyaltyDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(temporaryLoyalty.properlyConfigured)
       {
-        datacubeScheduler.schedule(todOdr);
+        datacubeScheduler.schedule(temporaryLoyalty);
       }
     
-    ScheduledJob yesLoy = new LoyaltyDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient);
-    if(yesLoy.properlyConfigured)
+    ScheduledJob temporaryTiers = new TiersDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(temporaryTiers.properlyConfigured)
       {
-        datacubeScheduler.schedule(yesLoy);
+        datacubeScheduler.schedule(temporaryTiers);
       }
     
-    ScheduledJob todLoy = new LoyaltyDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient);
-    if(todLoy.properlyConfigured)
+//    ScheduledJob temporaryJourneyTraffic = new JourneyTrafficDatacubeTemporaryJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+//    if(temporaryJourneyTraffic.properlyConfigured)
+//      {
+//        datacubeScheduler.schedule(temporaryJourneyTraffic);
+//      }
+    
+    //
+    // Definitives datacubes 
+    //
+    
+    ScheduledJob definitiveODR = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(definitiveODR.properlyConfigured)
       {
-        datacubeScheduler.schedule(todLoy);
+        datacubeScheduler.schedule(definitiveODR);
       }
     
-    ScheduledJob yesTier = new TiersDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient);
-    if(yesTier.properlyConfigured)
+    ScheduledJob definitiveLoyalty = new LoyaltyDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(definitiveLoyalty.properlyConfigured)
       {
-        datacubeScheduler.schedule(yesTier);
+        datacubeScheduler.schedule(definitiveLoyalty);
       }
     
-    ScheduledJob todTier = new TiersDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient);
-    if(todTier.properlyConfigured)
+    ScheduledJob definitiveTiers = new TiersDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(definitiveTiers.properlyConfigured)
       {
-        datacubeScheduler.schedule(todTier);
+        datacubeScheduler.schedule(definitiveTiers);
       }
+    
+    ScheduledJob definitiveJourneyTraffic = new JourneyTrafficDatacubeDefinitiveJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    if(definitiveJourneyTraffic.properlyConfigured)
+      {
+        datacubeScheduler.schedule(definitiveJourneyTraffic);
+      }
+    
+    //
+    // Snapshots
+    //
     
     ScheduledJob subscriberprofileSnapshot = new SubscriberProfileSnapshot(uniqueID++, elasticsearchRestClient);
     if(subscriberprofileSnapshot.properlyConfigured)
       {
         datacubeScheduler.schedule(subscriberprofileSnapshot);
       }
-    
-    
 
     log.info("Starting scheduler");
     datacubeScheduler.runScheduler();

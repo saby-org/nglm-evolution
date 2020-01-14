@@ -7,6 +7,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.datacubes.ScheduledJob;
+import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 
 public class TiersDatacubeOnTodayJob extends ScheduledJob
 {
@@ -27,14 +28,14 @@ public class TiersDatacubeOnTodayJob extends ScheduledJob
   *
   *****************************************/
   
-  public TiersDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch) 
+  public TiersDatacubeOnTodayJob(long schedulingUniqueID, RestHighLevelClient elasticsearch, GUIManagerClient guiClient) 
   {
     super(schedulingUniqueID, 
         "Today-Tiers", 
         Deployment.getTodayTiersDatacubePeriodCronEntryString(), 
         Deployment.getBaseTimeZone(),
         true);
-    this.datacube = new TiersDatacubeGenerator(this.jobName, elasticsearch);
+    this.datacube = new TiersDatacubeGenerator(this.jobName, elasticsearch, guiClient);
   }
   
   /*****************************************

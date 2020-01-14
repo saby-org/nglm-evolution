@@ -512,6 +512,38 @@ public class Offer extends GUIManagedObject implements StockableItem
 
   /*****************************************
   *
+  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
+  *
+  *****************************************/
+
+  public Offer(JSONObject jsonRoot) throws GUIManagerException
+  {
+    /*****************************************
+    *
+    *  super
+    *
+    *****************************************/
+
+    super(jsonRoot, 0);
+    
+    /*****************************************
+    *
+    *  attributes
+    *
+    *****************************************/
+    
+    this.initialPropensity = JSONUtilities.decodeDouble(jsonRoot, "initialPropensity", true);
+    this.stock = JSONUtilities.decodeInteger(jsonRoot, "presentationStock", false);
+    this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", true);
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true));
+    this.offerSalesChannelsAndPrices = decodeOfferSalesChannelsAndPrices(JSONUtilities.decodeJSONArray(jsonRoot, "salesChannelsAndPrices", true));
+    this.offerProducts = decodeOfferProducts(JSONUtilities.decodeJSONArray(jsonRoot, "products", false));
+    this.offerTranslations = decodeOfferTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "offerTranslations", false));
+    this.stockableItemID = "offer-" + getOfferID();
+  }
+
+  /*****************************************
+  *
   *  decodeProfileCriteria
   *
   *****************************************/
