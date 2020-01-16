@@ -4353,6 +4353,14 @@ public class EvolutionEngine
                         log.error(stackTraceWriter.toString());
                       }
                   }
+                
+                /*****************************************
+                *
+                *  mark visited
+                *
+                *****************************************/
+
+                visited.add(journeyNode);
 
                 /*****************************************
                 *
@@ -4379,15 +4387,7 @@ public class EvolutionEngine
                   {
                     terminateCycle = true;
                   }
-
-                /*****************************************
-                *
-                *  mark visited
-                *
-                *****************************************/
-
-                visited.add(journeyNode);
-
+                
                 /*****************************************
                 *
                 *  enter node action
