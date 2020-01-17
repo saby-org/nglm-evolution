@@ -571,6 +571,12 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
     return result;
   }
   
+  /*****************************************
+  *
+  *  accessors inclusionExclusion
+  *
+  *****************************************/
+
   //
   //  getExclusionInclusionTargetNames (set of target name)
   //
@@ -1642,13 +1648,11 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
             *
             *****************************************/
 
-            if (subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID()) != null)
+            Integer epoch = exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID());
+            if (epoch != null && epoch.intValue() == ((subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()) != null) ? subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()).getEpoch() : 0))
               {
-                if (Objects.equals(subscriberGroupEpochReader.get(inclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(inclusionTarget.getExclusionInclusionTargetID())))
-                  {
-                    result = true;
-                    break;
-                  }
+                result = true;
+                break;
               }
           }
         else if (inclusionTarget.getCriteriaList().size() > 0)
@@ -1687,13 +1691,12 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
              *  file-based inclusion/exclusion target
              *
              *****************************************/
-            if (subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()) != null && exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID()) != null)
+
+            Integer epoch = exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID());
+            if (epoch != null && epoch.intValue() == ((subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()) != null) ? subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()).getEpoch() : 0))
               {
-                if (Objects.equals(subscriberGroupEpochReader.get(exclusionTarget.getExclusionInclusionTargetID()), exclusionInclusionTargets.get(exclusionTarget.getExclusionInclusionTargetID())))
-                  {
-                    result = true;
-                    break;
-                  }
+                result = true;
+                break;
               }
           }
         else if (exclusionTarget.getCriteriaList().size() > 0)
