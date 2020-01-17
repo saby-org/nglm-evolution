@@ -238,8 +238,10 @@ public class ExclusionInclusionTarget extends GUIManagedObject
     *****************************************/
     
     this.targetType = TargetType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetType", true));
-    this.fileID = JSONUtilities.decodeString(jsonRoot, "fileID", false);
-    this.criteriaList = decodeCriteriaList(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
+    this.fileID = JSONUtilities.decodeString(jsonRoot, "targetFileID", false);
+    JSONArray segments = JSONUtilities.decodeJSONArray(jsonRoot, "segments", new JSONArray());
+    JSONObject segment0 = (segments.size() > 0) ? (JSONObject) segments.get(0) : null;
+    this.criteriaList = (segment0 != null) ? decodeCriteriaList(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", false), new ArrayList<EvaluationCriterion>()) : new ArrayList<EvaluationCriterion>();
 
     /*****************************************
     *
