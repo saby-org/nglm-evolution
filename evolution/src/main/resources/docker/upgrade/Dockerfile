@@ -13,7 +13,7 @@ RUN apt-get install -y curl tar
 
 RUN mkdir -p /app
 
-RUN curl -O http://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/5.2.1/flyway-commandline-5.2.1.tar.gz && \
+RUN curl -O https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/5.2.1/flyway-commandline-5.2.1.tar.gz && \
   tar -xzf flyway-commandline-5.2.1.tar.gz
 
 RUN chmod 0755 /flyway-5.2.1/flyway
