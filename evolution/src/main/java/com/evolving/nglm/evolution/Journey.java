@@ -174,7 +174,7 @@ public class Journey extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("effectiveEntryPeriodEndDate", Timestamp.builder().optional().schema());
     schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_journey_parameters").schema());
@@ -189,6 +189,8 @@ public class Journey extends GUIManagedObject
     schemaBuilder.field("journeyNodes", SchemaBuilder.array(JourneyNode.schema()).schema());
     schemaBuilder.field("journeyLinks", SchemaBuilder.array(JourneyLink.schema()).schema());
     schemaBuilder.field("boundParameters", ParameterMap.schema());
+    schemaBuilder.field("appendInclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("appendExclusionLists", SchemaBuilder.bool().defaultValue(false).schema());
     schema = schemaBuilder.build();
   };
 
@@ -224,6 +226,8 @@ public class Journey extends GUIManagedObject
   private Map<String,JourneyNode> journeyNodes;
   private Map<String,JourneyLink> journeyLinks;
   private ParameterMap boundParameters;
+  private boolean appendInclusionLists;
+  private boolean appendExclusionLists;
 
   /****************************************
   *
@@ -251,6 +255,8 @@ public class Journey extends GUIManagedObject
   public JourneyNode getJourneyNode(String nodeID) { return journeyNodes.get(nodeID); }
   public JourneyLink getJourneyLink(String linkID) { return journeyLinks.get(linkID); }
   public ParameterMap getBoundParameters() { return boundParameters; }
+  public boolean getAppendInclusionLists() { return appendInclusionLists; }
+  public boolean getAppendExclusionLists() { return appendExclusionLists; }
 
   //
   //  package protected
@@ -478,7 +484,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
@@ -494,6 +500,8 @@ public class Journey extends GUIManagedObject
     this.journeyNodes = journeyNodes;
     this.journeyLinks = journeyLinks;
     this.boundParameters = boundParameters;
+    this.appendInclusionLists = appendInclusionLists;
+    this.appendExclusionLists = appendExclusionLists;
   }
 
   /*****************************************
@@ -520,6 +528,8 @@ public class Journey extends GUIManagedObject
     struct.put("journeyNodes", packJourneyNodes(journey.getJourneyNodes()));
     struct.put("journeyLinks", packJourneyLinks(journey.getJourneyLinks()));
     struct.put("boundParameters", ParameterMap.pack(journey.getBoundParameters()));
+    struct.put("appendInclusionLists", journey.getAppendInclusionLists());
+    struct.put("appendExclusionLists", journey.getAppendExclusionLists());
     return struct;
   }
 
@@ -659,6 +669,8 @@ public class Journey extends GUIManagedObject
     Map<String,JourneyNode> journeyNodes = unpackJourneyNodes(schema.field("journeyNodes").schema(), valueStruct.get("journeyNodes"));
     Map<String,JourneyLink> journeyLinks = unpackJourneyLinks(schema.field("journeyLinks").schema(), valueStruct.get("journeyLinks"));
     ParameterMap boundParameters = (schemaVersion >= 2) ? ParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new ParameterMap();
+    boolean appendInclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendInclusionLists") : false;
+    boolean appendExclusionLists = (schemaVersion >= 3) ? valueStruct.getBoolean("appendExclusionLists") : false;
 
     /*****************************************
     *
@@ -720,7 +732,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists);
   }
   
   /*****************************************
@@ -924,6 +936,8 @@ public class Journey extends GUIManagedObject
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
     this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
+    this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
+    this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
     Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
@@ -942,6 +956,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
 
     this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables, subscriberMessageTemplateService);
+
 
     /*****************************************
     *
@@ -2825,6 +2840,8 @@ public class Journey extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(journeyNodes, existingJourney.getJourneyNodes());
         epochChanged = epochChanged || ! Objects.equals(journeyLinks, existingJourney.getJourneyLinks());
         epochChanged = epochChanged || ! Objects.equals(boundParameters, existingJourney.getBoundParameters());
+        epochChanged = epochChanged || ! Objects.equals(appendInclusionLists, existingJourney.getAppendInclusionLists());
+        epochChanged = epochChanged || ! Objects.equals(appendExclusionLists, existingJourney.getAppendExclusionLists());
         return epochChanged;
       }
     else

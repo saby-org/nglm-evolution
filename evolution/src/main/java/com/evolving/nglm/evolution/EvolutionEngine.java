@@ -3925,7 +3925,7 @@ public class EvolutionEngine
                 switch (journey.getTargetingType())
                   {
                     case Target:
-                      if (exclusionList)
+                      if (!journey.getAppendExclusionLists() && exclusionList)
                         {
                           enterJourney = false;
                           context.subscriberTrace("NotEligible: user is in exclusion list {0}", journey.getJourneyID());
@@ -3947,7 +3947,7 @@ public class EvolutionEngine
                 switch (journey.getTargetingType())
                   {
                     case Target:
-                      if (! inclusionList && ! targetingCriteria)
+                      if (!(journey.getAppendInclusionLists() && inclusionList) && ! targetingCriteria)
                         {
                           enterJourney = false;
                           context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
