@@ -294,82 +294,61 @@ public class Journey extends GUIManagedObject
   //  getAllCriteria
   //
 
-  public List<EvaluationCriterion> getAllCriteria(TargetService targetService, Date now)
+  public List<List<EvaluationCriterion>> getAllTargetsCriteria(TargetService targetService, Date now)
   {
     try
       {
         //
-        //  result
+        // result
         //
 
-        List<EvaluationCriterion> result = new ArrayList<EvaluationCriterion>();
+        List<List<EvaluationCriterion>> result = new ArrayList<List<EvaluationCriterion>>();
 
         //
-        //  eligibilityCriteria
-        //
-
-        result.addAll(eligibilityCriteria);
-
-        //
-        //  targetingCriteria
-        //
-
-        result.addAll(targetingCriteria);
-
-        //
-        //  target
+        // target
         //
 
         if (targetID != null && !targetID.isEmpty())
           {
-            
-            for(String currentTargetID : targetID){
-              
-              //
-              //  get the target
-              //
 
-              Target target = targetService.getActiveTarget(currentTargetID, now);
+            for (String currentTargetID : targetID)
+              {
+                //
+                // get the target
+                //
 
-              //
-              //  target not active -- automatic false criteria
-              //
+                Target target = targetService.getActiveTarget(currentTargetID, now);
 
-              if (target == null)
-                {
-                  Map<String,Object> falseCriterionArgumentJSON = new LinkedHashMap<String,Object>();
-                  Map<String,Object> falseCriterionJSON = new LinkedHashMap<String,Object>();
-                  falseCriterionArgumentJSON.put("expression", "false");
-                  falseCriterionJSON.put("criterionField", "internal.false");
-                  falseCriterionJSON.put("criterionOperator", "<>");
-                  falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
-                  result.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile));
-                }
+                //
+                // target not active -- automatic false criteria
+                //
 
-              //
-              //  target criteria
-              //
+                if (target == null)
+                  {
+                    Map<String, Object> falseCriterionArgumentJSON = new LinkedHashMap<String, Object>();
+                    Map<String, Object> falseCriterionJSON = new LinkedHashMap<String, Object>();
+                    falseCriterionArgumentJSON.put("expression", "false");
+                    falseCriterionJSON.put("criterionField", "internal.false");
+                    falseCriterionJSON.put("criterionOperator", "<>");
+                    falseCriterionJSON.put("argument", JSONUtilities.encodeObject(falseCriterionArgumentJSON));
+                    List<EvaluationCriterion> toAdd = new ArrayList<>();
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(falseCriterionJSON), CriterionContext.Profile));
+                    result.add(toAdd);
+                  }
 
-              if (target != null)
-                {
-                  result.addAll(target.getTargetingCriteria());
-                }
-
-              //
-              // target "file" criteria
-              //
-
-              if (target != null && target.getTargetFileID() != null)
-                {
-                  Map<String,Object> targetCriterionArgumentJSON = new LinkedHashMap<String,Object>();
-                  Map<String,Object> targetCriterionJSON = new LinkedHashMap<String,Object>();
-                  targetCriterionArgumentJSON.put("expression", "'" + currentTargetID + "'");
-                  targetCriterionJSON.put("criterionField", "internal.targets");
-                  targetCriterionJSON.put("criterionOperator", "contains");
-                  targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
-                  result.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile));
-                }
-            }
+                else
+                  {
+                    Map<String, Object> targetCriterionArgumentJSON = new LinkedHashMap<String, Object>();
+                    Map<String, Object> targetCriterionJSON = new LinkedHashMap<String, Object>();
+                    targetCriterionArgumentJSON.put("expression", "'" + currentTargetID + "'");
+                    targetCriterionJSON.put("criterionField", "internal.targets");
+                    targetCriterionJSON.put("criterionOperator", "contains");
+                    targetCriterionJSON.put("argument", JSONUtilities.encodeObject(targetCriterionArgumentJSON));
+                    List<EvaluationCriterion> toAdd = new ArrayList<>();
+                    toAdd.add(new EvaluationCriterion(JSONUtilities.encodeObject(targetCriterionJSON), CriterionContext.Profile));
+                    result.add(toAdd);
+                  }
+              }
           }
 
         //

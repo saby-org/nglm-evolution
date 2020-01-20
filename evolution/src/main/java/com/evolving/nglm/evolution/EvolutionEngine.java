@@ -3943,11 +3943,33 @@ public class EvolutionEngine
             if (enterJourney)
               {
                 SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                boolean targetingCriteria = EvaluationCriterion.evaluateCriteria(evaluationRequest, journey.getAllCriteria(targetService, now));
+                List<EvaluationCriterion> eligibilityAndTargetting = new ArrayList<>();
+                eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
+                eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
+                boolean subscriberToBeProvisionned = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                
+                List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
+                boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
+                List<EvaluationCriterion> targets = new ArrayList<>();
+                
+                for(List<EvaluationCriterion> current : journey.getAllTargetsCriteria(targetService, now))
+                  {
+                    if(inAnyTarget == false) { // avoid evaluating target is already true
+                      evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                      eligibilityAndTargetting.addAll(current);
+                      boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                      if(inThisTarget)
+                        {
+                          inAnyTarget = true;
+                        }
+                    }                    
+                  }
+                
+                boolean targeting = subscriberToBeProvisionned && inAnyTarget;
                 switch (journey.getTargetingType())
                   {
                     case Target:
-                      if (!(journey.getAppendInclusionLists() && inclusionList) && ! targetingCriteria)
+                      if (!(journey.getAppendInclusionLists() && inclusionList) && ! targeting)
                         {
                           enterJourney = false;
                           context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
@@ -3957,7 +3979,7 @@ public class EvolutionEngine
 
                     case Event:
                     case Manual:
-                      if (! targetingCriteria)
+                      if (! targeting)
                         {
                           enterJourney = false;
                           context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
