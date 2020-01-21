@@ -956,7 +956,6 @@ public class Journey extends GUIManagedObject
 
     this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables, subscriberMessageTemplateService);
 
-
     /*****************************************
     *
     *  jsonNodes

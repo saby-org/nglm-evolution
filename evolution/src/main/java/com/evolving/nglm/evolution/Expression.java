@@ -204,6 +204,7 @@ public abstract class Expression
   public abstract int assignNodeID(int preorderNumber);
   public boolean isConstant() { return false; }
   protected abstract Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit);
+  public Object evaluateConstant() { throw new ServerRuntimeException("constant expression"); }
   public abstract void esQuery(StringBuilder script, TimeUnit baseTimeUnit) throws CriterionException;
 
   /*****************************************
@@ -324,6 +325,17 @@ public abstract class Expression
     *****************************************/
 
     @Override protected Object evaluate(SubscriberEvaluationRequest subscriberEvaluationRequest, TimeUnit baseTimeUnit)
+    {
+      return constant;
+    }
+
+    /*****************************************
+    *
+    *  evaluateConstant
+    *
+    *****************************************/
+
+    @Override public Object evaluateConstant()
     {
       return constant;
     }

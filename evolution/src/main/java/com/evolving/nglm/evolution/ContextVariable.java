@@ -43,6 +43,25 @@ public class ContextVariable
   *
   *****************************************/
 
+  //
+  //  VariableType
+  //
+
+  public enum VariableType
+  {
+    Local("local"),
+    Parameter("parameter"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private VariableType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static VariableType fromExternalRepresentation(String externalRepresentation) { for (VariableType enumeratedValue : VariableType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  //
+  //  Assignment
+  //
+
   public enum Assignment
   {
     Direct("="),
@@ -69,13 +88,14 @@ public class ContextVariable
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("context_variable");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("id", Schema.STRING_SCHEMA);
     schemaBuilder.field("name", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("expressionString", Schema.STRING_SCHEMA);
     schemaBuilder.field("assignment", SchemaBuilder.string().defaultValue("=").schema());
     schemaBuilder.field("baseTimeUnit", Schema.STRING_SCHEMA);
+    schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
     schema = schemaBuilder.build();
   };
 
@@ -104,6 +124,7 @@ public class ContextVariable
   private String expressionString;
   private Assignment assignment;
   private TimeUnit baseTimeUnit;
+  private VariableType variableType;
 
   //
   //  derived
@@ -119,7 +140,7 @@ public class ContextVariable
   *
   *****************************************/
 
-  private ContextVariable(String id, String name, String expressionString, Assignment assignment, TimeUnit baseTimeUnit)
+  private ContextVariable(String id, String name, String expressionString, Assignment assignment, TimeUnit baseTimeUnit, VariableType variableType)
   {
     this.id = id;
     this.name = name;
@@ -127,6 +148,7 @@ public class ContextVariable
     this.expressionString = expressionString;
     this.assignment = assignment;
     this.baseTimeUnit = baseTimeUnit;
+    this.variableType = variableType;
     this.validated = false;
     this.expression = null;
     this.type = CriterionDataType.Unknown;
@@ -147,6 +169,7 @@ public class ContextVariable
     this.expressionString = (jsonValue != null) ? JSONUtilities.decodeString(jsonValue, "expression", false) : null;
     this.assignment = Assignment.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "assignment", "="));
     this.baseTimeUnit = (jsonValue != null) ? TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonValue, "timeUnit", "(unknown)")) : TimeUnit.Unknown;
+    this.variableType = (jsonValue != null) ? (JSONUtilities.decodeBoolean(jsonValue, "isParameter", Boolean.FALSE) ? VariableType.Parameter : VariableType.Local) : VariableType.Local;
     this.validated = false;
     this.expression = null;
     this.type = CriterionDataType.Unknown;
@@ -165,6 +188,7 @@ public class ContextVariable
   public String getExpressionString() { return expressionString; }
   public Assignment getAssignment() { return assignment; }
   public TimeUnit getBaseTimeUnit() { return baseTimeUnit; }
+  public VariableType getVariableType() { return variableType; }
   public boolean getValidated() { return validated; }
   public Expression getExpression() { return expression; }
   public CriterionDataType getType() { return type; }
@@ -197,6 +221,7 @@ public class ContextVariable
     struct.put("expressionString", contextVariable.getExpressionString());
     struct.put("assignment", contextVariable.getAssignment().getExternalRepresentation());
     struct.put("baseTimeUnit", contextVariable.getBaseTimeUnit().getExternalRepresentation());
+    struct.put("variableType", contextVariable.getVariableType().getExternalRepresentation());
     return struct;
   }
 
@@ -227,12 +252,13 @@ public class ContextVariable
     String expressionString = valueStruct.getString("expressionString");
     Assignment assignment = (schemaVersion >= 2) ? Assignment.fromExternalRepresentation(valueStruct.getString("assignment")) : Assignment.Direct;
     TimeUnit baseTimeUnit = TimeUnit.fromExternalRepresentation(valueStruct.getString("baseTimeUnit"));
+    VariableType variableType = (schemaVersion >= 3) ? VariableType.fromExternalRepresentation(valueStruct.getString("variableType")) : VariableType.Local;
 
     //
     //  construct 
     //
 
-    ContextVariable result = new ContextVariable(id, name, expressionString, assignment, baseTimeUnit);
+    ContextVariable result = new ContextVariable(id, name, expressionString, assignment, baseTimeUnit, variableType);
 
     //
     //  validate
@@ -296,70 +322,120 @@ public class ContextVariable
 
   public void validate(CriterionContext criterionContext) throws GUIManagerException
   {
-    try
+    switch (variableType)
       {
-        //
-        //  assignment
-        //
+        case Local:
+          try
+            {
+              //
+              //  assignment
+              //
 
-        String expressionString = this.expressionString;
-        switch (assignment)
+              String expressionString = this.expressionString;
+              switch (assignment)
+                {
+                  case Increment:
+                    expressionString = this.getID() + "+" + "(" + expressionString + ")";
+                    break;
+                }
+
+              //
+              //  parse expression
+              //
+
+              ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
+              Expression expression = expressionReader.parse(ExpressionContext.ContextVariable);
+              if (expression == null) throw new GUIManagerException("no expression", expressionString);
+
+              //
+              //  validate type
+              //
+
+              switch (expression.getType())
+                {
+                  case IntegerExpression:
+                    this.type = CriterionDataType.IntegerCriterion;
+                    break;
+                  case DoubleExpression:
+                    this.type = CriterionDataType.DoubleCriterion;
+                    break;
+                  case StringExpression:
+                    this.type = CriterionDataType.StringCriterion;
+                    break;
+                  case BooleanExpression:
+                    this.type = CriterionDataType.BooleanCriterion;
+                    break;
+                  case DateExpression:
+                    this.type = CriterionDataType.DateCriterion;
+                    break;
+                  case StringSetExpression:
+                    this.type = CriterionDataType.StringSetCriterion;
+                    break;
+                  case OpaqueReferenceExpression:
+                    this.type = ((ReferenceExpression) expression).getCriterionDataType();
+                    break;
+                  default:
+                    throw new GUIManagerException("unsupported context variable type", expression.getType().toString());
+                }
+
+              //
+              //  set validated fields
+              //
+
+              this.expression = expression;
+              this.criterionContext = criterionContext;
+              this.validated = true;
+            }
+          catch (ExpressionParseException|ExpressionTypeCheckException e)
+            {
+              throw new GUIManagerException(e);
+            }
+          break;
+
+        case Parameter:
           {
-            case Increment:
-              expressionString = this.getID() + "+" + "(" + expressionString + ")";
-              break;
+            //
+            //  parse expression
+            //
+
+            ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
+            Expression expression = expressionReader.parse(ExpressionContext.ContextVariable);
+            if (expression == null) throw new GUIManagerException("no expression", expressionString);
+
+            //
+            //  validate type
+            //
+
+            if (expression.isConstant() && expression.evaluateConstant() instanceof String)
+              {
+                this.type = CriterionDataType.fromExternalRepresentation((String) (expression.evaluateConstant()));
+                switch (this.type)
+                  {
+                    case IntegerCriterion:
+                    case DoubleCriterion:
+                    case StringCriterion:
+                    case BooleanCriterion:
+                    case DateCriterion:
+                      break;
+
+                    default:
+                      throw new GUIManagerException("unsupported context variable parameter type", (String) expression.evaluateConstant());
+                  }
+              }
+            else
+              {
+                throw new GUIManagerException("malformed context variable parameter", "(n/a)");
+              }
+
+            //
+            //  set validated fields
+            //
+
+            this.expression = expression;
+            this.criterionContext = criterionContext;
+            this.validated = true;
           }
-
-        //
-        //  parse expression
-        //
-
-        ExpressionReader expressionReader = new ExpressionReader(criterionContext, expressionString, this.baseTimeUnit);
-        Expression expression = expressionReader.parse(ExpressionContext.ContextVariable);
-        if (expression == null) throw new GUIManagerException("no expression", expressionString);
-
-        //
-        //  validate type
-        //
-
-        switch (expression.getType())
-          {
-            case IntegerExpression:
-              this.type = CriterionDataType.IntegerCriterion;
-              break;
-            case DoubleExpression:
-              this.type = CriterionDataType.DoubleCriterion;
-              break;
-            case StringExpression:
-              this.type = CriterionDataType.StringCriterion;
-              break;
-            case BooleanExpression:
-              this.type = CriterionDataType.BooleanCriterion;
-              break;
-            case DateExpression:
-              this.type = CriterionDataType.DateCriterion;
-              break;
-            case StringSetExpression:
-              this.type = CriterionDataType.StringSetCriterion;
-              break;
-            case OpaqueReferenceExpression:
-              this.type = ((ReferenceExpression) expression).getCriterionDataType();
-              break;
-            default:
-              throw new GUIManagerException("unsupported context variable type", expression.getType().toString());
-          }
-
-        //
-        //  set validated fields
-        //
-
-        this.expression = expression;
-        this.criterionContext = criterionContext;
-        this.validated = true;
-      }
-    catch (ExpressionParseException|ExpressionTypeCheckException e)
-      {
-        throw new GUIManagerException(e);
+          break;
       }
   }
 }
