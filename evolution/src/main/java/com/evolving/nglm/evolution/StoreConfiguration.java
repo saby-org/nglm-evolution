@@ -189,9 +189,9 @@ public class StoreConfiguration
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getCommunicationChannelList", "communicationChannels", "putCommunicationChannel"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getBlackoutPeriodsList", "blackoutPeriods", "putBlackoutPeriods"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPartnerList", "partners", "putPartner"));
-    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getMailTemplateList", "templates", "putMailTemplate"));
-    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getSMSTemplateList", "templates", "putSMSTemplate"));
-    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPushTemplateList", "templates", "putPushTemplate"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getFullMailTemplateList", "templates", "putMailTemplate"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getFullSMSTemplateList", "templates", "putSMSTemplate"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getFullPushTemplateList", "templates", "putPushTemplate"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getOfferList", "offers", "putOffer"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getLoyaltyProgramList", "loyaltyPrograms", "putLoyaltyProgram"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getExclusionInclusionTargetList", "exclusionInclusionTargets", "putExclusionInclusionTarget"));
@@ -199,6 +199,7 @@ public class StoreConfiguration
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getJourneyTemplateList", "journeyTemplates", "putJourneyTemplate"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getJourneyList", "journeys", "putJourney"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getCampaignList", "campaigns", "putCampaign"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getFullWorkflowList", "workflows", "putWorkflow"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getBulkCampaignList", "bulkCampaigns", "putBulkCampaign"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getScoringStrategyList", "scoringStrategies", "putScoringStrategy"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPresentationStrategyList", "presentationStrategies", "putPresentationStrategy"));

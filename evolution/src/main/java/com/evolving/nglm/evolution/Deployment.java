@@ -195,6 +195,7 @@ public class Deployment
   private static Map<String,NodeType> nodeTypes = new LinkedHashMap<String,NodeType>();
   private static Map<String,ToolboxSection> journeyToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ToolboxSection> campaignToolbox = new LinkedHashMap<String,ToolboxSection>();
+  private static Map<String,ToolboxSection> workflowToolbox = new LinkedHashMap<String,ToolboxSection>();
   private static Map<String,ThirdPartyMethodAccessLevel> thirdPartyMethodPermissionsMap = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String,NotificationDailyWindows> notificationTimeWindowsMap = new LinkedHashMap<String,NotificationDailyWindows>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -412,6 +413,7 @@ public class Deployment
   public static Map<String,NodeType> getNodeTypes() { return nodeTypes; }
   public static Map<String,ToolboxSection> getJourneyToolbox() { return journeyToolbox; }
   public static Map<String,ToolboxSection> getCampaignToolbox() { return campaignToolbox; }
+  public static Map<String,ToolboxSection> getWorkflowToolbox() { return workflowToolbox; }
   public static Map<String,ThirdPartyMethodAccessLevel> getThirdPartyMethodPermissionsMap() { return thirdPartyMethodPermissionsMap; }
   public static Integer getAuthResponseCacheLifetimeInMinutes() { return authResponseCacheLifetimeInMinutes; }
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; }
@@ -2849,6 +2851,25 @@ public class Deployment
         throw new ServerRuntimeException("deployment", e);
       }
     
+    //
+    //  workflowToolboxSections
+    //
+
+    try
+      {
+        JSONArray workflowToolboxSectionValues = JSONUtilities.decodeJSONArray(jsonRoot, "workflowToolbox", new JSONArray());
+        for (int i=0; i<workflowToolboxSectionValues.size(); i++)
+          {
+            JSONObject workflowToolboxSectionValueJSON = (JSONObject) workflowToolboxSectionValues.get(i);
+            ToolboxSection workflowToolboxSection = new ToolboxSection(workflowToolboxSectionValueJSON);
+            workflowToolbox.put(workflowToolboxSection.getID(), workflowToolboxSection);
+          }
+      }
+    catch (JSONUtilitiesException | NoSuchMethodException | IllegalAccessException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+
     //
     //  thirdPartyMethodPermissions
     //

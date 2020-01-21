@@ -896,6 +896,26 @@ public class Journey extends GUIManagedObject
 
     /*****************************************
     *
+    *  universal eligibility criteria
+    *
+    *****************************************/
+
+    List<EvaluationCriterion> journeyUniversalEligibilityCriteria = null;
+    switch (journeyType)
+      {
+        case Journey:
+        case Campaign:
+        case BulkCampaign:
+          journeyUniversalEligibilityCriteria = Deployment.getJourneyUniversalEligibilityCriteria();
+          break;
+
+        case Workflow:
+          journeyUniversalEligibilityCriteria = new ArrayList<EvaluationCriterion>();
+          break;
+      }
+
+    /*****************************************
+    *
     *  existingJourney
     *
     *****************************************/
@@ -911,7 +931,7 @@ public class Journey extends GUIManagedObject
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
     this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
-    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), Deployment.getJourneyUniversalEligibilityCriteria());
+    this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), journeyUniversalEligibilityCriteria);
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
     this.targetID = decodeTargetIDs(JSONUtilities.decodeJSONArray(jsonRoot, "targetID", new JSONArray()));
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
@@ -963,6 +983,9 @@ public class Journey extends GUIManagedObject
             {
               case Journey:
               case Campaign:
+                if (this.journeyParameters.size() > 0) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
+                break;
+
               case BulkCampaign:
                 if (this.journeyParameters.size() > 0 && this.journeyParameters.size() != this.boundParameters.size()) throw new GUIManagerException("autoTargeted Journey may not have parameters", this.getJourneyID());
                 break;
@@ -977,6 +1000,60 @@ public class Journey extends GUIManagedObject
     for (GUINode jsonNode : jsonNodes.values())
       {
         if (jsonNode.getNodeType() == null) throw new GUIManagerException("unknown nodeType", jsonNode.getNodeID());
+      }
+
+    //
+    //  workflows
+    //
+
+    switch (journeyType)
+      {
+        case Workflow:
+
+          //
+          //  only "manual" targeting
+          //
+
+          switch (this.targetingType)
+            {
+              case Manual:
+                break;
+
+              default:
+                throw new GUIManagerException("workflow must have manual targeting", this.getJourneyID());
+            }
+
+          //
+          //  no eligibility criteria
+          //
+
+          if (this.eligibilityCriteria.size() > 0) throw new GUIManagerException("workflow may not have eligibility criteria", this.getJourneyID());
+          
+          //
+          //  no targeting criteria
+          //
+
+          if (this.targetingCriteria.size() > 0) throw new GUIManagerException("workflow may not have targeting criteria", this.getJourneyID());
+
+          //
+          //  no start/end dates
+          //
+
+          if (getRawEffectiveStartDate() != null) throw new GUIManagerException("unsupported start date", JSONUtilities.decodeString(jsonRoot, "effectiveStartDate", false));
+          if (getRawEffectiveEndDate() != null) throw new GUIManagerException("unsupported end date", JSONUtilities.decodeString(jsonRoot, "effectiveEndDate", false));
+          if (getRawEffectiveEntryPeriodEndDate() != null) throw new GUIManagerException("unsupported entry period end date", JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
+
+          //
+          //  no journey objectives
+          //
+
+          if (this.journeyObjectiveInstances.size() > 0) throw new GUIManagerException("workflow may not have objectives", this.getJourneyID());
+
+          //
+          //  break
+          //
+
+          break;
       }
 
     /*****************************************

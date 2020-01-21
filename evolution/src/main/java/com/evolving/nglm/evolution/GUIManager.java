@@ -214,6 +214,13 @@ public class GUIManager
     removeCampaign("removeCampaign"),
     startCampaign("startCampaign"),
     stopCampaign("stopCampaign"),
+    getWorkflowToolbox("getWorkflowToolbox"),
+    getFullWorkflowList("getFullWorkflowList"),
+    getWorkflowList("getWorkflowList"),
+    getWorkflowSummaryList("getWorkflowSummaryList"),
+    getWorkflow("getWorkflow"),
+    putWorkflow("putWorkflow"),
+    removeWorkflow("removeWorkflow"),
     getBulkCampaignList("getBulkCampaignList"),
     getBulkCampaignSummaryList("getBulkCampaignSummaryList"),
     getBulkCampaign("getBulkCampaign"),
@@ -344,16 +351,19 @@ public class GUIManager
     removeVoucher("removeVoucher"),
 
     getMailTemplateList("getMailTemplateList"),
+    getFullMailTemplateList("getFullMailTemplateList"),
     getMailTemplateSummaryList("getMailTemplateSummaryList"),
     getMailTemplate("getMailTemplate"),
     putMailTemplate("putMailTemplate"),
     removeMailTemplate("removeMailTemplate"),
     getSMSTemplateList("getSMSTemplateList"),
+    getFullSMSTemplateList("getFullSMSTemplateList"),
     getSMSTemplateSummaryList("getSMSTemplateSummaryList"),
     getSMSTemplate("getSMSTemplate"),
     putSMSTemplate("putSMSTemplate"),
     removeSMSTemplate("removeSMSTemplate"),
     getPushTemplateList("getPushTemplateList"),
+    getFullPushTemplateList("getFullPushTemplateList"),
     getPushTemplateSummaryList("getPushTemplateSummaryList"),
     getPushTemplate("getPushTemplate"),
     putPushTemplate("putPushTemplate"),
@@ -1643,6 +1653,12 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeCampaign", new APISimpleHandler(API.removeCampaign));
         restServer.createContext("/nglm-guimanager/startCampaign", new APISimpleHandler(API.startCampaign));
         restServer.createContext("/nglm-guimanager/stopCampaign", new APISimpleHandler(API.stopCampaign));
+        restServer.createContext("/nglm-guimanager/getWorkflowToolbox", new APISimpleHandler(API.getWorkflowToolbox));
+        restServer.createContext("/nglm-guimanager/getWorkflowList", new APISimpleHandler(API.getWorkflowList));
+        restServer.createContext("/nglm-guimanager/getWorkflowSummaryList", new APISimpleHandler(API.getWorkflowSummaryList));
+        restServer.createContext("/nglm-guimanager/getWorkflow", new APISimpleHandler(API.getWorkflow));
+        restServer.createContext("/nglm-guimanager/putWorkflow", new APISimpleHandler(API.putWorkflow));
+        restServer.createContext("/nglm-guimanager/removeWorkflow", new APISimpleHandler(API.removeWorkflow));
         restServer.createContext("/nglm-guimanager/getBulkCampaignList", new APISimpleHandler(API.getBulkCampaignList));
         restServer.createContext("/nglm-guimanager/getBulkCampaignSummaryList", new APISimpleHandler(API.getBulkCampaignSummaryList));
         restServer.createContext("/nglm-guimanager/getBulkCampaign", new APISimpleHandler(API.getBulkCampaign));
@@ -1773,11 +1789,13 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeVoucher", new APISimpleHandler(API.removeVoucher));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
+        restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
         restServer.createContext("/nglm-guimanager/getMailTemplateSummaryList", new APISimpleHandler(API.getMailTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getMailTemplate", new APISimpleHandler(API.getMailTemplate));
         restServer.createContext("/nglm-guimanager/putMailTemplate", new APISimpleHandler(API.putMailTemplate));
         restServer.createContext("/nglm-guimanager/removeMailTemplate", new APISimpleHandler(API.removeMailTemplate));
         restServer.createContext("/nglm-guimanager/getSMSTemplateList", new APISimpleHandler(API.getSMSTemplateList));
+        restServer.createContext("/nglm-guimanager/getFullSMSTemplateList", new APISimpleHandler(API.getFullSMSTemplateList));
         restServer.createContext("/nglm-guimanager/getSMSTemplateSummaryList", new APISimpleHandler(API.getSMSTemplateSummaryList));
         restServer.createContext("/nglm-guimanager/getSMSTemplate", new APISimpleHandler(API.getSMSTemplate));
         restServer.createContext("/nglm-guimanager/putSMSTemplate", new APISimpleHandler(API.putSMSTemplate));
@@ -2344,15 +2362,15 @@ public class GUIManager
                   break;
 
                 case getJourneyList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, true, includeArchived);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, true, true, includeArchived);
                   break;
 
                 case getJourneySummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, false, includeArchived);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Journey, false, true, includeArchived);
                   break;
 
                 case getJourney:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Journey, includeArchived);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Journey, true, includeArchived);
                   break;
 
                 case putJourney:
@@ -2376,15 +2394,15 @@ public class GUIManager
                   break;
 
                 case getCampaignList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, true, includeArchived);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, true, true, includeArchived);
                   break;
 
                 case getCampaignSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, false, includeArchived);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Campaign, false, true, includeArchived);
                   break;
 
                 case getCampaign:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Campaign, includeArchived);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Campaign, true, includeArchived);
                   break;
 
                 case putCampaign:
@@ -2403,16 +2421,44 @@ public class GUIManager
                   jsonResponse = processSetActive(userID, jsonRoot, GUIManagedObjectType.Campaign, false);
                   break;
 
+                case getWorkflowToolbox:
+                  jsonResponse = processGetWorkflowToolbox(userID, jsonRoot);
+                  break;
+
+                case getWorkflowList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Workflow, true, true, includeArchived);
+                  break;
+
+                case getFullWorkflowList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Workflow, true, false, includeArchived);
+                  break;
+
+                case getWorkflowSummaryList:
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.Workflow, false, true, includeArchived);
+                  break;
+
+                case getWorkflow:
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.Workflow, true, includeArchived);
+                  break;
+
+                case putWorkflow:
+                  jsonResponse = processPutJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
+                  break;
+
+                case removeWorkflow:
+                  jsonResponse = processRemoveJourney(userID, jsonRoot, GUIManagedObjectType.Workflow);
+                  break;
+
                 case getBulkCampaignList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, includeArchived);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, true, includeArchived);
                   break;
 
                 case getBulkCampaignSummaryList:
-                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, false, includeArchived);
+                  jsonResponse = processGetJourneyList(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, false, true, includeArchived);
                   break;
 
                 case getBulkCampaign:
-                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, includeArchived);
+                  jsonResponse = processGetJourney(userID, jsonRoot, GUIManagedObjectType.BulkCampaign, true, includeArchived);
                   break;
 
                 case putBulkCampaign:
@@ -2900,11 +2946,15 @@ public class GUIManager
                   break;
 
                 case getMailTemplateList:
-                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true, true, includeArchived);
+                  break;
+
+                case getFullMailTemplateList:
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, true, false, includeArchived);
                   break;
 
                 case getMailTemplateSummaryList:
-                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = processGetMailTemplateList(userID, jsonRoot, false, true, includeArchived);
                   break;
 
                 case getMailTemplate:
@@ -2920,11 +2970,15 @@ public class GUIManager
                   break;
 
                 case getSMSTemplateList:
-                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true, true, includeArchived);
+                  break;
+
+                case getFullSMSTemplateList:
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, true, false, includeArchived);
                   break;
 
                 case getSMSTemplateSummaryList:
-                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = processGetSMSTemplateList(userID, jsonRoot, false, true, includeArchived);
                   break;
 
                 case getSMSTemplate:
@@ -2940,11 +2994,15 @@ public class GUIManager
                   break;
 
                 case getPushTemplateList:
-                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, true, includeArchived);
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, true, true, includeArchived);
+                  break;
+
+                case getFullPushTemplateList:
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, true, false, includeArchived);
                   break;
 
                 case getPushTemplateSummaryList:
-                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, false, includeArchived);
+                  jsonResponse = processGetPushTemplateList(userID, jsonRoot, false, true, includeArchived);
                   break;
 
                 case getPushTemplate:
@@ -3849,6 +3907,19 @@ public class GUIManager
 
     /*****************************************
     *
+    *  retrieve workflowToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> workflowToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection workflowToolboxSection : Deployment.getWorkflowToolbox().values())
+      {
+        JSONObject workflowToolboxSectionJSON = workflowToolboxSection.getJSONRepresentation();
+        workflowToolboxSections.add(workflowToolboxSectionJSON);
+      }
+
+    /*****************************************
+    *
     *  response
     *
     *****************************************/
@@ -3869,6 +3940,7 @@ public class GUIManager
     response.put("nodeTypes", JSONUtilities.encodeArray(nodeTypes));
     response.put("journeyToolbox", JSONUtilities.encodeArray(journeyToolboxSections));
     response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
+    response.put("workflowToolbox", JSONUtilities.encodeArray(workflowToolboxSections));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5078,7 +5150,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean includeArchived)
+  private JSONObject processGetJourneyList(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean fullDetails, boolean externalOnly, boolean includeArchived)
   {
     /*****************************************
     *
@@ -5090,14 +5162,12 @@ public class GUIManager
     List<JSONObject> journeys = new ArrayList<JSONObject>();
     for (GUIManagedObject journey : journeyService.getStoredJourneys(includeArchived))
       {
-        if (journey.getGUIManagedObjectType().equals(objectType))
+        if (journey.getGUIManagedObjectType().equals(objectType) && (! externalOnly || ! journey.getInternalOnly()))
           {
             JSONObject journeyInfo = journeyService.generateResponseJSON(journey, fullDetails, now);
             int subscriberCount = 0;
             JourneyTrafficHistory journeyTrafficHistory = journeyTrafficReader.get(journey.getGUIManagedObjectID());
-            if (journeyTrafficHistory != null &&
-                journeyTrafficHistory.getCurrentData() != null &&
-                journeyTrafficHistory.getCurrentData().getGlobal() != null)
+            if (journeyTrafficHistory != null && journeyTrafficHistory.getCurrentData() != null && journeyTrafficHistory.getCurrentData().getGlobal() != null)
               {
                 subscriberCount = journeyTrafficHistory.getCurrentData().getGlobal().getSubscriberCount();
               }
@@ -5114,13 +5184,18 @@ public class GUIManager
 
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
-    switch (objectType) {
+    switch (objectType)
+      {
         case Journey:
           response.put("journeys", JSONUtilities.encodeArray(journeys));
           break;
 
         case Campaign:
           response.put("campaigns", JSONUtilities.encodeArray(journeys));
+          break;
+
+        case Workflow:
+          response.put("workflows", JSONUtilities.encodeArray(journeys));
           break;
 
         case BulkCampaign:
@@ -5130,7 +5205,7 @@ public class GUIManager
         default:
           response.put("journeys", JSONUtilities.encodeArray(journeys));
           break;
-    }
+      }
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5140,7 +5215,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean includeArchived)
+  private JSONObject processGetJourney(String userID, JSONObject jsonRoot, GUIManagedObjectType objectType, boolean externalOnly, boolean includeArchived)
   {
     /****************************************
     *
@@ -5165,7 +5240,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID, includeArchived);
-    journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
+    journey = (journey != null && journey.getGUIManagedObjectType() == objectType && (! externalOnly || ! journey.getInternalOnly())) ? journey : null;
     JSONObject journeyJSON = journeyService.generateResponseJSON(journey, true, SystemTime.getCurrentTime());
 
     /*****************************************
@@ -5174,7 +5249,8 @@ public class GUIManager
     *
     *****************************************/
 
-    switch (objectType) {
+    switch (objectType)
+      {
         case Journey:
           response.put("responseCode", (journey != null) ? "ok" : "journeyNotFound");
           if (journey != null) response.put("journey", journeyJSON);
@@ -5183,6 +5259,11 @@ public class GUIManager
         case Campaign:
           response.put("responseCode", (journey != null) ? "ok" : "campaignNotFound");
           if (journey != null) response.put("campaign", journeyJSON);
+          break;
+
+        case Workflow:
+          response.put("responseCode", (journey != null) ? "ok" : "workflowNotFound");
+          if (journey != null) response.put("workflow", journeyJSON);
           break;
 
         case BulkCampaign:
@@ -5194,7 +5275,7 @@ public class GUIManager
           response.put("responseCode", (journey != null) ? "ok" : "notFound");
           if (journey != null) response.put("journey", journeyJSON);
           break;
-    }
+      }
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5381,6 +5462,10 @@ public class GUIManager
               response.put("responseCode", "campaignNotValid");
               break;
 
+            case Workflow:
+              response.put("responseCode", "workflowNotValid");
+              break;
+
             case BulkCampaign:
               response.put("responseCode", "bulkCampaignNotValid");
               break;
@@ -5448,7 +5533,7 @@ public class GUIManager
         // remove related deliverable
         //
 
-        if(GUIManagedObjectType.Campaign.equals(objectType))
+        if (GUIManagedObjectType.Campaign.equals(objectType))
           {
             //
             // TODO SCH : what if deliverable is used in an offer ?
@@ -5490,6 +5575,10 @@ public class GUIManager
 
           case Campaign:
             responseCode = "campaignNotFound";
+            break;
+
+          case Workflow:
+            responseCode = "workflowNotFound";
             break;
 
           case BulkCampaign:
@@ -5555,29 +5644,32 @@ public class GUIManager
 
     GUIManagedObject existingElement = journeyService.getStoredJourney(elementID);
     String responseCode = null;
-    
-    switch (type) {
-    case Journey:
-      responseCode = (responseCode == null && existingElement == null) ? "journeyNotFound" : responseCode;
-      responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Journey) ? "journeyNotFound" : responseCode;
-      responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "journeyNotValid" : responseCode;
-      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
-      break;
+    switch (type)
+      {
+        case Journey:
+          responseCode = (responseCode == null && existingElement == null) ? "journeyNotFound" : responseCode;
+          responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Journey) ? "journeyNotFound" : responseCode;
+          responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "journeyNotValid" : responseCode;
+          responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
+          break;
 
-    case Campaign:
-      responseCode = (responseCode == null && existingElement == null) ? "campaignNotFound" : responseCode;
-      responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Campaign) ? "campaignNotFound" : responseCode;
-      responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "campaignNotValid" : responseCode;
-      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
-      break;
+        case Campaign:
+          responseCode = (responseCode == null && existingElement == null) ? "campaignNotFound" : responseCode;
+          responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.Campaign) ? "campaignNotFound" : responseCode;
+          responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "campaignNotValid" : responseCode;
+          responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
+          break;
 
-    case BulkCampaign:
-      responseCode = (responseCode == null && existingElement == null) ? "bulkCampaignNotFound" : responseCode;
-      responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.BulkCampaign) ? "bulkCampaignNotFound" : responseCode;
-      responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "bulkCampaignNotValid" : responseCode;
-      responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
-      break;
-    }
+        case BulkCampaign:
+          responseCode = (responseCode == null && existingElement == null) ? "bulkCampaignNotFound" : responseCode;
+          responseCode = (responseCode == null && existingElement.getGUIManagedObjectType() != GUIManagedObjectType.BulkCampaign) ? "bulkCampaignNotFound" : responseCode;
+          responseCode = (responseCode == null && ! existingElement.getAccepted()) ? "bulkCampaignNotValid" : responseCode;
+          responseCode = (responseCode == null && existingElement.getReadOnly()) ? "failedReadOnly" : responseCode;
+          break;
+
+        default:
+          throw new ServerRuntimeException("invalid guimanagedobject type");
+      }
     
     if (responseCode != null)
       {
@@ -5727,6 +5819,39 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("campaignToolbox", JSONUtilities.encodeArray(campaignToolboxSections));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  getWorkflowToolbox
+  *
+  *****************************************/
+
+  private JSONObject processGetWorkflowToolbox(String userID, JSONObject jsonRoot)
+  {
+    /*****************************************
+    *
+    *  retrieve workflowToolboxSections
+    *
+    *****************************************/
+
+    List<JSONObject> workflowToolboxSections = new ArrayList<JSONObject>();
+    for (ToolboxSection workflowToolboxSection : Deployment.getWorkflowToolbox().values())
+      {
+        JSONObject workflowToolboxSectionJSON = workflowToolboxSection.getJSONRepresentation();
+        workflowToolboxSections.add(workflowToolboxSectionJSON);
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("workflowToolbox", JSONUtilities.encodeArray(workflowToolboxSections));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -6263,7 +6388,7 @@ public class GUIManager
     //
     
     String campaignID = JSONUtilities.decodeString(jsonRoot, "campaignID", false);
-    if(campaignID != null && campaignID != "") 
+    if (campaignID != null && campaignID != "")
       {
         journeyID = campaignID;
         Object previousValue = jsonRoot.put("journeyID", campaignID);
@@ -13529,7 +13654,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetMailTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  private JSONObject processGetMailTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean externalOnly, boolean includeArchived)
   {
     /*****************************************
     *
@@ -13539,7 +13664,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredMailTemplates(true, includeArchived))
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredMailTemplates(externalOnly, includeArchived))
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -13826,7 +13951,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetSMSTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  private JSONObject processGetSMSTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean externalOnly, boolean includeArchived)
   {
     /*****************************************
     *
@@ -13836,7 +13961,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSMSTemplates(true, includeArchived))
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredSMSTemplates(externalOnly, includeArchived))
       {
         templates.add(subscriberMessageTemplateService.generateResponseJSON(template, fullDetails, now));
       }
@@ -14123,7 +14248,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private JSONObject processGetPushTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived)
+  private JSONObject processGetPushTemplateList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean externalOnly, boolean includeArchived)
   {
     
     /****************************************
@@ -14142,7 +14267,7 @@ public class GUIManager
 
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> templates = new ArrayList<JSONObject>();
-    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(true, includeArchived))
+    for (GUIManagedObject template : subscriberMessageTemplateService.getStoredPushTemplates(externalOnly, includeArchived))
       {
         String templateCommunicationChannelID = (String) template.getJSONRepresentation().get("communicationChannelID");
         if(communicationChannelID == null || communicationChannelID.isEmpty() || communicationChannelID.equals(templateCommunicationChannelID)){
@@ -14749,6 +14874,7 @@ public class GUIManager
     response.put("responseCode", "ok");
     response.put("journeyCount", journeyCount(GUIManagedObjectType.Journey));
     response.put("campaignCount", journeyCount(GUIManagedObjectType.Campaign));
+    response.put("workflowCount", journeyCount(GUIManagedObjectType.Workflow));
     response.put("bulkCampaignCount", journeyCount(GUIManagedObjectType.BulkCampaign));
     response.put("segmentationDimensionCount", segmentationDimensionService.getStoredSegmentationDimensions(includeArchived).size());
     response.put("pointCount", pointService.getStoredPoints(includeArchived).size());
@@ -22136,6 +22262,33 @@ public class GUIManager
                                   HashMap<String,Object> availableValue = new HashMap<String,Object>();
                                   availableValue.put("id", campaign.getJourneyID());
                                   availableValue.put("display", campaign.getJourneyName());
+                                  result.add(JSONUtilities.encodeObject(availableValue));
+                                  break;
+                              }
+                            break;
+                        }
+                    }
+                }
+            }
+          break;
+
+        case "callableWorkflows":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject workflowUnchecked : journeyService.getStoredJourneys())
+                {
+                  if (workflowUnchecked.getAccepted())
+                    {
+                      Journey workflow = (Journey) workflowUnchecked;
+                      switch (workflow.getTargetingType())
+                        {
+                          case Manual:
+                            switch (workflow.getGUIManagedObjectType())
+                              {
+                                case Workflow:
+                                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                                  availableValue.put("id", workflow.getJourneyID());
+                                  availableValue.put("display", workflow.getJourneyName());
                                   result.add(JSONUtilities.encodeObject(availableValue));
                                   break;
                               }

@@ -668,7 +668,7 @@ public abstract class DeliveryRequest implements EvolutionEngineEvent, Subscribe
       {
         case Journey_Manager:
           GUIManagedObject journey = journeyService.getStoredJourney(featureId);
-          journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
+          journey = (journey != null && (journey.getGUIManagedObjectType() == GUIManagedObjectType.Journey || journey.getGUIManagedObjectType() == GUIManagedObjectType.Campaign || journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow || journey.getGUIManagedObjectType() == GUIManagedObjectType.BulkCampaign)) ? journey : null;
           featureName = journey == null ? null : journey.getGUIManagedObjectName();
           break;
 

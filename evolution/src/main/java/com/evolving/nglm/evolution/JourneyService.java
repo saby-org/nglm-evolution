@@ -135,9 +135,10 @@ public class JourneyService extends GUIService
   {
     JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
     result.put("status", getJourneyStatus(guiManagedObject).getExternalRepresentation());
-    if(guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign)){
-      result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
-    }
+    if (guiManagedObject.getGUIManagedObjectType().equals(GUIManagedObjectType.BulkCampaign))
+      {
+        result.put("journeyTemplateID", guiManagedObject.getJSONRepresentation().get("journeyTemplateID"));
+      }
     return result;
   }
   

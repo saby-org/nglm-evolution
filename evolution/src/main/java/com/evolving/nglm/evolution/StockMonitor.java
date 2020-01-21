@@ -364,14 +364,14 @@ public class StockMonitor implements Runnable
     while (running)
       {
         //
-        //  campaignsToProcess
+        //  stockableToProcess
         //
 
         stockableItemsToProcess.clear();
         synchronized (this)
           {
             //
-            //  updatedCampaigns
+            //  updatedStockableItems
             //
 
             stockableItemsToProcess.addAll(updatedStockableItems);
