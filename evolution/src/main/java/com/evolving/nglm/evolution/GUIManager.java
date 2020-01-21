@@ -60,6 +60,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.zookeeper.ZooKeeper;
 import org.elasticsearch.ElasticsearchException;
@@ -741,8 +742,8 @@ public class GUIManager
                         String topic = apiTopic.getName();
                         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
                             topic,
-                            StringKey.serde().serializer().serialize(topic, new StringKey(journey.getJourneyID())),
-                            StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
+                            new Serdes.StringSerde().serializer().serialize(topic, journey.getJourneyID()),
+                            new Serdes.StringSerde().serializer().serialize(topic, json.toJSONString())));
                       }
                     else
                       {
@@ -774,8 +775,8 @@ public class GUIManager
                       String topic = apiTopic.getName();
                       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
                           topic,
-                          StringKey.serde().serializer().serialize(topic, new StringKey(guiManagedObjectID)),
-                          StringValue.serde().serializer().serialize(topic, new StringValue(json.toJSONString()))));
+                          new Serdes.StringSerde().serializer().serialize(topic, guiManagedObjectID),
+                          new Serdes.StringSerde().serializer().serialize(topic, json.toJSONString())));
                     }
                   else
                     {
@@ -21205,7 +21206,7 @@ public class GUIManager
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
-    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, new Date());
+    PurchaseFulfillmentRequest pfr = new PurchaseFulfillmentRequest(valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, SystemTime.getCurrentTime());
 
     // Write it to the right topic
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(

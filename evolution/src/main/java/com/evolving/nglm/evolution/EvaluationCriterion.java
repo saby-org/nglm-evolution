@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionDataType;
@@ -28,9 +29,10 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
-
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 
@@ -1278,9 +1280,128 @@ public class EvaluationCriterion
     *****************************************/
 
     String esField = criterionField.getESField();
+    
     if (esField == null)
       {
         throw new CriterionException("invalid criterionField " + criterionField);
+      }
+    
+    //
+    // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
+    //
+    
+    if (esField.startsWith("loyaltyprogram."))
+      {
+        Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
+        if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + esField);
+        String loyaltyProgramID = fieldNameMatcher.group(1);
+        String criterionFieldBaseName = fieldNameMatcher.group(2);
+        QueryBuilder queryLPID = QueryBuilders.termQuery("loyaltyPrograms.programID.keyword", loyaltyProgramID);
+        QueryBuilder query = null;
+        String termQuery = "";
+        switch (criterionFieldBaseName)
+        {
+          case "tier":
+            query = handleLoyaltyProgramTier(esField, criterionFieldBaseName, queryLPID);
+            break;
+
+          case "statuspoint.balance":
+            query = handleLoyaltyProgramBalance(esField, criterionFieldBaseName, queryLPID, "loyaltyPrograms.statusPointBalance");
+            break;
+
+          case "rewardpoint.balance":
+            query = handleLoyaltyProgramBalance(esField, criterionFieldBaseName, queryLPID, "loyaltyPrograms.rewardPointBalance");
+            break;
+  
+          default:
+            Pattern pointsPattern = Pattern.compile("^([^.]+)\\.([^.]+)\\.(.+)$"); // "statuspoint.POINT001.earliestexpirydate"
+            Matcher pointsMatcher = pointsPattern.matcher(criterionFieldBaseName);
+            if (! pointsMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
+            String pointKind = pointsMatcher.group(1); // statuspoint , rewardpoint
+            String pointID = pointsMatcher.group(2); // POINT001
+            String whatWeNeed = pointsMatcher.group(3); // earliestexpirydate , earliestexpiryquantity
+            QueryBuilder queryPoint = QueryBuilders.termQuery("loyaltyPrograms."+(pointKind.equals("statuspoint")?"statusPointID":"rewardPointID"), pointID);           
+            QueryBuilder queryExpiry = null;
+            switch (whatWeNeed)
+            {
+              case "earliestexpirydate" :
+                // TODO
+                break;
+                
+              case "earliestexpiryquantity" :
+                queryExpiry = handleEarliestExpiryQuantity(esField, criterionFieldBaseName, "pointBalances.earliestExpirationQuantity");
+                break;
+                
+              default:
+                throw new CriterionException("Internal error, unknown criterion field : " + esField);
+            }
+            query = QueryBuilders.boolQuery()
+                .filter(QueryBuilders.nestedQuery("loyaltyPrograms",
+                            QueryBuilders.boolQuery()
+                                  .filter(queryLPID)
+                                  .filter(queryPoint), ScoreMode.Total))
+                .filter(queryExpiry);
+        }
+        return query;
+      }
+
+    //
+    // Handle dynamic criterion "point.POINT001.balance"
+    //
+    
+    if (esField.startsWith("point."))
+      {
+        Pattern fieldNamePattern = Pattern.compile("^point\\.([^.]+)\\.(.+)$");
+        Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
+        if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + esField);
+        String pointID = fieldNameMatcher.group(1);
+        String criterionFieldBaseName = fieldNameMatcher.group(2);
+        QueryBuilder queryPointID = QueryBuilders.termQuery("pointBalances.pointID.keyword", pointID);
+        QueryBuilder query = null;
+        String termQuery = "";
+        if (!"balance".equals(criterionFieldBaseName))
+          {
+            throw new CriterionException("Internal error, unknown criterion field : " + esField);
+          }
+        termQuery = "pointBalances.currentBalance";
+        if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+        Expression.ConstantExpression pointBalance = (Expression.ConstantExpression) argument;
+        if (pointBalance.getType() != ExpressionDataType.IntegerExpression) throw new CriterionException(criterionFieldBaseName+" can only be compared to integers " + esField + ", "+pointBalance.getType());
+        String balance = ((Number) (pointBalance.evaluate(null, null))).toString();
+        QueryBuilder queryBalance = null;
+        switch (criterionOperator)
+        {
+          case EqualOperator:
+            queryBalance = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(termQuery, balance));
+            break;
+
+          case NotEqualOperator:
+            queryBalance = QueryBuilders.boolQuery().mustNot(QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(termQuery, balance)));
+            break;
+
+          case GreaterThanOperator:
+            queryBalance = QueryBuilders.rangeQuery(termQuery).gt(balance);
+            break;
+
+          case GreaterThanOrEqualOperator:
+            queryBalance = QueryBuilders.rangeQuery(termQuery).gte(balance);
+            break;
+
+          case LessThanOperator:
+            queryBalance = QueryBuilders.rangeQuery(termQuery).lt(balance);
+            break;
+
+          case LessThanOrEqualOperator:
+            queryBalance = QueryBuilders.rangeQuery(termQuery).lte(balance);
+            break;
+
+          default:
+            throw new CriterionException("not yet implemented : " + criterionOperator);
+        }
+
+        query = QueryBuilders.nestedQuery("pointBalances", QueryBuilders.boolQuery().filter(queryPointID).filter(queryBalance), ScoreMode.Total);
+        return query;
       }
 
     /*****************************************
@@ -1607,6 +1728,236 @@ public class EvaluationCriterion
     *
     *****************************************/
     
+    return query;
+  }
+
+  public QueryBuilder handleEarliestExpiryQuantity(String esField, String criterionFieldBaseName, String termQuery) throws CriterionException
+  {
+    /*   ES data :
+    "pointBalances": [
+       {
+           "expirationDates": [
+               {
+                   "date": 1592057176842,
+                   "amount": 1000
+               }
+           ],
+           "currentBalance" : 1000,
+           "earliestExpirationDate": 17653425343,
+           "earliestExpirationQuantity": 1000,
+           "pointID": "LPStatusPoint004"
+       },{
+           "expirationDates": [
+               {
+                   "date": 1610636776842,
+                   "amount": 3000
+               }
+           ],
+           "currentBalance" : 1000,
+           "earliestExpirationDate": 17653425343,
+           "earliestExpirationQuantity": 1000,
+           "pointID": "LPRewardPoint004"
+       } ]
+       
+        {
+          "nested": {
+            "path": "pointBalances",
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "term": {
+                      "pointBalances.earliestExpirationQuantity": {
+                        "value": 1000
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+
+     */
+
+    QueryBuilder query;
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    Expression.ConstantExpression pointBalance = (Expression.ConstantExpression) argument;
+    if (pointBalance.getType() != ExpressionDataType.IntegerExpression) throw new CriterionException(criterionFieldBaseName+" can only be compared to integers " + esField + ", "+pointBalance.getType());
+    String balance = ((Number) (pointBalance.evaluate(null, null))).toString();
+    QueryBuilder queryBalance = null;
+
+    switch (criterionOperator)
+    {
+      case EqualOperator:
+        queryBalance = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(termQuery, balance));
+        break;
+
+      case NotEqualOperator:
+        queryBalance = QueryBuilders.boolQuery().mustNot(QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(termQuery, balance)));
+        break;
+
+      case GreaterThanOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).gt(balance);
+        break;
+
+      case GreaterThanOrEqualOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).gte(balance);
+        break;
+
+      case LessThanOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).lt(balance);
+        break;
+
+      case LessThanOrEqualOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).lte(balance);
+        break;
+
+      default:
+        throw new CriterionException("not yet implemented : " + criterionOperator);
+    }
+
+    query = QueryBuilders.nestedQuery("pointBalances", QueryBuilders.boolQuery().filter(queryBalance), ScoreMode.Total);
+    return query;
+  }
+
+  public QueryBuilder handleLoyaltyProgramBalance(String esField, String criterionFieldBaseName, QueryBuilder queryLPID, String termQuery) throws CriterionException
+  {
+    QueryBuilder query;
+    /*   ES data :
+         "pointBalances": [
+            {
+                "expirationDates": [
+                    {
+                        "date": 1592057176842,
+                        "amount": 1000
+                    }
+                ],
+                "currentBalance" : 1000,
+                "pointID": "LPStatusPoint004"
+            },{
+                "expirationDates": [
+                    {
+                        "date": 1610636776842,
+                        "amount": 3000
+                    }
+                ],
+                "currentBalance" : 3000,
+                "pointID": "LPRewardPoint004"
+            } ]
+  -----------------------------
+          "loyaltyPrograms": [ {
+              "loyaltyProgramExitDate": 1579100777605,
+              "statusPointName": "Status Points",
+              "loyaltyProgramEpoch": 1579096875185356,
+              "tierChangeType": "opt-out",
+              "rewardPointBalance": 3000,
+              "statusPointBalance": 1000,
+              "loyaltyProgramName": "PTT-LoyaltyProgram Points 004",
+              "loyaltyProgramDisplay": "PTT-LoyaltyProgram Points 004",
+              "loyaltyProgramEnrollmentDate": 1579100726961,
+              "rewardPointName": "Reward Points",
+              "loyaltyProgramType": "POINTS",
+              "programID": "loyaltyProgramPOINTS004"
+          } ]
+-------------------------
+    {
+      "nested": {
+        "path": "loyaltyPrograms",
+        "query": {
+          "bool": {
+            "filter": [
+                {
+                  "term": {
+                    "loyaltyPrograms.programID.keyword": "loyaltyProgramPOINTS001"
+                  }
+                },
+                {
+                  "range": {
+                      "loyaltyPrograms.statusPointBalance": {
+                      "gt": "123"
+                }
+             ]
+          }
+        }
+      }
+    }
+     }
+    */
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    Expression.ConstantExpression pointBalance = (Expression.ConstantExpression) argument;
+    if (pointBalance.getType() != ExpressionDataType.IntegerExpression) throw new CriterionException(criterionFieldBaseName+" can only be compared to integers " + esField + ", "+pointBalance.getType());
+    String balance = ((Number) (pointBalance.evaluate(null, null))).toString();
+    QueryBuilder queryBalance = null;
+    switch (criterionOperator)
+    {
+      case EqualOperator:
+        queryBalance = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(termQuery, balance));
+        break;
+
+      case NotEqualOperator:
+        queryBalance = QueryBuilders.boolQuery().mustNot(QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(termQuery, balance)));
+        break;
+
+      case GreaterThanOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).gt(balance);
+        break;
+
+      case GreaterThanOrEqualOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).gte(balance);
+        break;
+
+      case LessThanOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).lt(balance);
+        break;
+
+      case LessThanOrEqualOperator:
+        queryBalance = QueryBuilders.rangeQuery(termQuery).lte(balance);
+        break;
+        
+      default:
+        throw new CriterionException("not yet implemented : " + criterionOperator);
+    }
+        
+    query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLPID).filter(queryBalance), ScoreMode.Total);
+    return query;
+  }
+
+  public QueryBuilder handleLoyaltyProgramTier(String esField, String criterionFieldBaseName, QueryBuilder queryLPID) throws CriterionException
+  {
+    QueryBuilder query;
+    String termQuery;
+    termQuery = "loyaltyPrograms.tierName.keyword";
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    Expression.ConstantExpression tierValue = (Expression.ConstantExpression) argument;
+    if (tierValue.getType() != ExpressionDataType.StringExpression) throw new CriterionException(criterionFieldBaseName+" can only be compared to strings " + esField + ", "+tierValue.getType());
+    String tierName = (String) (tierValue.evaluate(null, null));
+    QueryBuilder queryTierName = QueryBuilders.termQuery(termQuery, tierName);
+    query = QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(queryLPID).filter(queryTierName), ScoreMode.Total);
+    /*
+        {
+          "nested": {
+            "path": "loyaltyPrograms",
+            "query": {
+              "bool": {
+                "filter": [
+                  {
+                    "term": {
+                      "loyaltyPrograms.programID.keyword": "loyaltyProgramPOINTS001"
+                    }
+                  },
+                  {
+                    "term": {
+                      "loyaltyPrograms.tierName.keyword": "Gold"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    */
     return query;
   }
 

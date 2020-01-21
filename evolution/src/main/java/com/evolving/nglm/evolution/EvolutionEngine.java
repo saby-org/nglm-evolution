@@ -1120,9 +1120,9 @@ public class EvolutionEngine
           {
             KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
             // Only send the json part to the output topic 
-            KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
-                (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJsonString())));
-            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, StringValue.serde()));
+            KStream<String, String> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                (key,value) -> new KeyValue<String, String>(value.getTopicID(), value.getJsonString()));
+            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(new Serdes.StringSerde(), new Serdes.StringSerde()));
           }
       }
     
@@ -3529,7 +3529,7 @@ public class EvolutionEngine
           {
             subscriberStoredToken = new DNBOToken(eventTokenCode, subscriberProfile.getSubscriberID(), defaultDNBOTokenType);
             subscriberTokens.add(subscriberStoredToken);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), new Date(), eventID, eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName()));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), eventID, eventTokenCode, "Create", "OK", evolutionEvent.getClass().getSimpleName()));
             subscriberStateUpdated = true;
           }
 
