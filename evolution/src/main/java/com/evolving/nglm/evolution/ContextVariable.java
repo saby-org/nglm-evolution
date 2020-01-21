@@ -11,6 +11,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.evolution.CriterionField.VariableType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -42,25 +43,6 @@ public class ContextVariable
   *  enum
   *
   *****************************************/
-
-  //
-  //  VariableType
-  //
-
-  public enum VariableType
-  {
-    Local("local"),
-    Parameter("parameter"),
-    Unknown("(unknown)");
-    private String externalRepresentation;
-    private VariableType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
-    public String getExternalRepresentation() { return externalRepresentation; }
-    public static VariableType fromExternalRepresentation(String externalRepresentation) { for (VariableType enumeratedValue : VariableType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-  }
-  
-  //
-  //  Assignment
-  //
 
   public enum Assignment
   {
@@ -163,7 +145,6 @@ public class ContextVariable
   public ContextVariable(JSONObject jsonRoot) throws GUIManagerException
   {
     this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
-    this.id  = generateID(this.name);
     this.criterionContext = null;
     JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "value", false);
     this.expressionString = (jsonValue != null) ? JSONUtilities.decodeString(jsonValue, "expression", false) : null;
@@ -173,6 +154,7 @@ public class ContextVariable
     this.validated = false;
     this.expression = null;
     this.type = CriterionDataType.Unknown;
+    this.id = generateID(this.name);
   }
 
   /*****************************************
@@ -293,7 +275,15 @@ public class ContextVariable
     //
     
     StringBuilder result = new StringBuilder();
-    result.append("variable");
+    switch (variableType)
+      {
+        case Local:
+          result.append("variable");
+          break;
+        case Parameter:
+          result.append("workflow.parameter");
+          break;
+      }
 
     //
     //  append words in name to result

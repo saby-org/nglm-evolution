@@ -54,6 +54,23 @@ public class CriterionField extends DeploymentManagedObject
 {
   /*****************************************
   *
+  *  enum
+  *
+  *****************************************/
+
+  public enum VariableType
+  {
+    Local("local"),
+    Parameter("parameter"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private VariableType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static VariableType fromExternalRepresentation(String externalRepresentation) { for (VariableType enumeratedValue : VariableType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  /*****************************************
+  *
   *  configuration
   *
   *****************************************/
@@ -79,7 +96,7 @@ public class CriterionField extends DeploymentManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_field");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldDataType", Schema.STRING_SCHEMA);
     schemaBuilder.field("mandatoryParameter", Schema.BOOLEAN_SCHEMA);
@@ -91,6 +108,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("evaluationVariable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tagFormat", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tagMaxLength", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
     schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
     schema = schemaBuilder.build();
   };
@@ -124,6 +142,7 @@ public class CriterionField extends DeploymentManagedObject
   private boolean evaluationVariable;
   private String tagFormat;
   private Integer tagMaxLength;
+  private VariableType variableType;
   private boolean profileChangeEvent;
 
   //
@@ -148,6 +167,7 @@ public class CriterionField extends DeploymentManagedObject
   public boolean getEvaluationVariable() { return evaluationVariable; }
   public String getTagFormat() { return tagFormat; }
   public Integer getTagMaxLength() { return tagMaxLength; }
+  public VariableType getVariableType() { return variableType; }
   public boolean getProfileChangeEvent() { return profileChangeEvent; }
 
   /*****************************************
@@ -187,6 +207,7 @@ public class CriterionField extends DeploymentManagedObject
     this.evaluationVariable = JSONUtilities.decodeBoolean(jsonRoot, "evaluationVariable", Boolean.FALSE);
     this.tagFormat = JSONUtilities.decodeString(jsonRoot, "tagFormat", false);
     this.tagMaxLength = JSONUtilities.decodeInteger(jsonRoot, "tagMaxLength", false);
+    this.variableType = VariableType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "variableType", "local"));
     this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
 
     //
@@ -257,6 +278,8 @@ public class CriterionField extends DeploymentManagedObject
     criterionFieldJSON.put("retriever", "getJourneyParameter");
     criterionFieldJSON.put("tagFormat", contextVariable.getTagFormat());
     criterionFieldJSON.put("tagMaxLength", contextVariable.getTagMaxLength());
+    criterionFieldJSON.put("variableType", contextVariable.getVariableType().getExternalRepresentation());
+    criterionFieldJSON.put("expressionValuedParameter", true);
     return JSONUtilities.encodeObject(criterionFieldJSON);
   }
 
@@ -352,7 +375,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, boolean profileChangeEvent)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent)
   {
     //
     //  super
@@ -375,6 +398,7 @@ public class CriterionField extends DeploymentManagedObject
     this.evaluationVariable = evaluationVariable;
     this.tagFormat = tagFormat;
     this.tagMaxLength = tagMaxLength;
+    this.variableType = variableType;
     this.profileChangeEvent = profileChangeEvent;
 
     //
@@ -417,6 +441,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("evaluationVariable", criterionField.getEvaluationVariable());
     struct.put("tagFormat", criterionField.getTagFormat());
     struct.put("tagMaxLength", criterionField.getTagMaxLength());
+    struct.put("variableType", criterionField.getVariableType().getExternalRepresentation());
     struct.put("profileChangeEvent", criterionField.getProfileChangeEvent());
     return struct;
   }
@@ -453,13 +478,14 @@ public class CriterionField extends DeploymentManagedObject
     boolean evaluationVariable = (schemaVersion >= 4) ? valueStruct.getBoolean("evaluationVariable") : false;
     String tagFormat = valueStruct.getString("tagFormat");
     Integer tagMaxLength = valueStruct.getInt32("tagMaxLength");
+    VariableType variableType = (schemaVersion >= 5) ? VariableType.fromExternalRepresentation(valueStruct.getString("variableType")) : VariableType.Local;
     boolean profileChangeEvent = (schemaVersion >= 2) ? valueStruct.getBoolean("profileChangeEvent") : false;
 
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, profileChangeEvent);
+    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent);
   }
 
   /*****************************************
@@ -809,6 +835,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && evaluationVariable == criterionField.getEvaluationVariable();
         result = result && Objects.equals(tagFormat, criterionField.getTagFormat());
         result = result && Objects.equals(tagMaxLength, criterionField.getTagMaxLength());
+        result = result && Objects.equals(variableType, criterionField.getVariableType());
         result = result && profileChangeEvent == criterionField.getProfileChangeEvent();
       }
     return result;

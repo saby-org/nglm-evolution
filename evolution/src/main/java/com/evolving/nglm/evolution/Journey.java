@@ -903,6 +903,7 @@ public class Journey extends GUIManagedObject
     List<EvaluationCriterion> journeyUniversalEligibilityCriteria = null;
     switch (journeyType)
       {
+        case JourneyTemplate:
         case Journey:
         case Campaign:
         case BulkCampaign:
@@ -946,7 +947,20 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    this.contextVariables = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+    this.contextVariables = new HashMap<String,CriterionField>();
+    for (CriterionField contextVariable : contextVariablesAndParameters.values())
+      {
+        switch (contextVariable.getVariableType())
+          {
+            case Local:
+              this.contextVariables.put(contextVariable.getID(), contextVariable);
+              break;
+            case Parameter:
+              this.journeyParameters.put(contextVariable.getID(), contextVariable);
+              break;
+          }
+      }
 
     /*****************************************
     *
@@ -1474,6 +1488,19 @@ public class Journey extends GUIManagedObject
             subscriberMessage.setSubscriberMessageTemplateID(matchingSubscriberMessage.getSubscriberMessageTemplateID());
           }
       }
+
+    /*****************************************
+    *
+    *  add journeyParameters to the jsonRepresentation
+    *
+    ****************************************/
+
+    List<JSONObject> journeyParametersJSON = new ArrayList<JSONObject>();
+    for (CriterionField journeyParameter : journeyParameters.values())
+      {
+        journeyParametersJSON.add(journeyParameter.getJSONRepresentation());
+      }
+    this.getJSONRepresentation().put("journeyParameters", JSONUtilities.encodeArray(journeyParametersJSON));
 
     /*****************************************
     *
