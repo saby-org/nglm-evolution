@@ -6568,6 +6568,26 @@ public class EvolutionEngine
   
   /*****************************************
   *
+  *  class EnterWorkflowAction
+  *
+  *****************************************/
+
+  public static class EnterWorkflowAction extends ActionManager
+  {
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public EnterWorkflowAction(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+    }
+  }
+
+  /*****************************************
+  *
   *  class OptAction
   *
   *****************************************/
