@@ -1315,7 +1315,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService);
+    timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService, exclusionInclusionTargetService);
 
     /*****************************************
     *
@@ -3947,17 +3947,18 @@ public class EvolutionEngine
                 eligibilityAndTargetting.addAll(journey.getEligibilityCriteria());
                 eligibilityAndTargetting.addAll(journey.getTargetingCriteria());
                 boolean subscriberToBeProvisionned = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                 
                 List<List<EvaluationCriterion>> targetsCriteria = journey.getAllTargetsCriteria(targetService, now);
                 boolean inAnyTarget = targetsCriteria.size() == 0 ? true : false; // if no target is defined into the journey, then this boolean is true otherwise, false by default 
                 List<EvaluationCriterion> targets = new ArrayList<>();
                 
-                for(List<EvaluationCriterion> current : journey.getAllTargetsCriteria(targetService, now))
+                for(List<EvaluationCriterion> current : targetsCriteria)
                   {
                     if(inAnyTarget == false) { // avoid evaluating target is already true
                       evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
-                      eligibilityAndTargetting.addAll(current);
-                      boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, eligibilityAndTargetting);
+                      context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
+                      boolean inThisTarget = EvaluationCriterion.evaluateCriteria(evaluationRequest, current);
                       if(inThisTarget)
                         {
                           inAnyTarget = true;
@@ -3972,7 +3973,6 @@ public class EvolutionEngine
                       if (!(journey.getAppendInclusionLists() && inclusionList) && ! targeting)
                         {
                           enterJourney = false;
-                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                           context.subscriberTrace("NotEligible: targeting criteria / inclusion list {0}", journey.getJourneyID());
                         }
                       break;
@@ -3982,7 +3982,6 @@ public class EvolutionEngine
                       if (! targeting)
                         {
                           enterJourney = false;
-                          context.getSubscriberTraceDetails().addAll(evaluationRequest.getTraceDetails());
                           context.subscriberTrace("NotEligible: targeting criteria {0}", journey.getJourneyID());
                         }
                       break;

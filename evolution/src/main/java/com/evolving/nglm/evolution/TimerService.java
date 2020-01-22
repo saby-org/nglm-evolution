@@ -79,6 +79,7 @@ public class TimerService
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = null;
   private TargetService targetService = null;
   private JourneyService journeyService = null;
+  private ExclusionInclusionTargetService exclusionInclusionTargetService = null;
   private boolean forceLoadSchedule = true;
   private Date earliestOutOfMemoryDate = NGLMRuntime.END_OF_TIME;
   private SortedSet<TimedEvaluation> schedule = new TreeSet<TimedEvaluation>();
@@ -144,7 +145,7 @@ public class TimerService
   *
   *****************************************/
 
-  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService)
+  public void start(ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, TargetService targetService, JourneyService journeyService, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     /*****************************************
     *
@@ -164,6 +165,7 @@ public class TimerService
     this.subscriberGroupEpochReader = subscriberGroupEpochReader;
     this.targetService = targetService;
     this.journeyService = journeyService;
+    this.exclusionInclusionTargetService = exclusionInclusionTargetService;
 
     /*****************************************
     *
@@ -1005,6 +1007,13 @@ public class TimerService
                             match = true;
                             break;
                           }
+                      }
+                    
+                    SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, now);
+                    boolean inclusionList = subscriberState.getSubscriberProfile().getInInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now);
+                    if(inclusionList)
+                      {
+                        match = true;
                       }
 
                     //
