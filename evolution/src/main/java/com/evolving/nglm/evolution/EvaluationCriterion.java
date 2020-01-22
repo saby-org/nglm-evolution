@@ -114,6 +114,7 @@ public class EvaluationCriterion
     SMSMessageParameter("smsMessage"),
     EmailMessageParameter("emailMessage"),
     PushMessageParameter("pushMessage"),
+    WorkflowParameter("workflow"),
 
     //
     //  only for criterionArguments

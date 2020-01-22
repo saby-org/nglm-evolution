@@ -1903,12 +1903,12 @@ public class Journey extends GUIManagedObject
               case PushMessageParameter:
                 switch (parameterExpressionValue.getType())
                   {
-                  case OpaqueReferenceExpression:
-                    validCombination = ((ReferenceExpression) (parameterExpressionValue.getExpression())).getCriterionDataType() == parameter.getFieldDataType();
-                    break;
-                  default:
-                    validCombination = false;
-                    break;
+                    case OpaqueReferenceExpression:
+                      validCombination = ((ReferenceExpression) (parameterExpressionValue.getExpression())).getCriterionDataType() == parameter.getFieldDataType();
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
                   }
                 break;
 
