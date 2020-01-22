@@ -884,7 +884,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, CommunicationChannelService communicationChannelService) throws GUIManagerException
+  public Journey(JSONObject jsonRoot, GUIManagedObjectType journeyType, long epoch, GUIManagedObject existingJourneyUnchecked, JourneyService journeyService, CatalogCharacteristicService catalogCharacteristicService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService, CommunicationChannelService communicationChannelService) throws GUIManagerException
   {
     /*****************************************
     *
@@ -938,7 +938,7 @@ public class Journey extends GUIManagedObject
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
-    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
     /*****************************************
@@ -968,7 +968,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables, subscriberMessageTemplateService);
+    this.boundParameters = decodeBoundParameters(JSONUtilities.decodeJSONArray(jsonRoot, "boundParameters", new JSONArray()), this.journeyParameters, this.contextVariables, journeyService, subscriberMessageTemplateService);
 
     /*****************************************
     *
@@ -976,7 +976,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+    Map<String,GUINode> jsonNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, contextVariables, false, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     
     /*****************************************
     *
@@ -1695,7 +1695,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
+  public static Map<String,GUINode> decodeNodes(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
   {
     Map<String,GUINode> nodes = new LinkedHashMap<String,GUINode>();
     if (jsonArray != null)
@@ -1707,7 +1707,7 @@ public class Journey extends GUIManagedObject
             //
 
             JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
-            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+            GUINode node = new GUINode(nodeJSON, journeyParameters, contextVariables, contextVariableProcessing, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
 
             //
             //  validate (if required)
@@ -1755,7 +1755,7 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  private ParameterMap decodeBoundParameters(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+  private ParameterMap decodeBoundParameters(JSONArray jsonArray, Map<String,CriterionField> journeyParameters, Map<String, CriterionField> contextVariables, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
   {
     CriterionContext criterionContext = new CriterionContext(journeyParameters, contextVariables);
     ParameterMap boundParameters = new ParameterMap();
@@ -1822,6 +1822,11 @@ public class Journey extends GUIManagedObject
               case PushMessageParameter:
                 PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 boundParameters.put(parameterName, pushMessageValue);
+                break;
+
+              case WorkflowParameter:
+                WorkflowParameter workflowParameterValue = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                boundParameters.put(parameterName, workflowParameterValue);
                 break;
               }
           }
@@ -1901,6 +1906,7 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
+              case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
                     case OpaqueReferenceExpression:
@@ -2345,7 +2351,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
+    public GUINode(JSONObject jsonRoot, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, boolean contextVariableProcessing, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
     {
       /*****************************************
       *
@@ -2406,14 +2412,14 @@ public class Journey extends GUIManagedObject
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext, subscriberMessageTemplateService));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext, journeyService, subscriberMessageTemplateService));
           this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
 
           //
           //  outputConnectors
           //
 
-          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext, subscriberMessageTemplateService);
+          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService);
         }
     }
 
@@ -2475,7 +2481,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeDependentNodeParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       ParameterMap nodeParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
@@ -2523,6 +2529,11 @@ public class Journey extends GUIManagedObject
               case PushMessageParameter:
                 PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                 nodeParameters.put(parameterName, pushMessageValue);
+                break;
+
+              case WorkflowParameter:
+                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                nodeParameters.put(parameterName, workflowParameter);
                 break;
             }
         }
@@ -2627,6 +2638,7 @@ public class Journey extends GUIManagedObject
               case SMSMessageParameter:
               case EmailMessageParameter:
               case PushMessageParameter:
+              case WorkflowParameter:
                 switch (parameterExpressionValue.getType())
                   {
                     case OpaqueReferenceExpression:
@@ -2658,13 +2670,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       List<OutgoingConnectionPoint> outgoingConnectionPoints = new ArrayList<OutgoingConnectionPoint>();
       for (int i=0; i<jsonArray.size(); i++)
         {
           JSONObject connectionPointJSON = (JSONObject) jsonArray.get(i);
-          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, subscriberMessageTemplateService);
+          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, journeyService, subscriberMessageTemplateService);
           outgoingConnectionPoints.add(outgoingConnectionPoint);
         }
       return outgoingConnectionPoints;
@@ -2733,11 +2745,11 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
       this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
-      this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext, subscriberMessageTemplateService);
+      this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext, journeyService, subscriberMessageTemplateService);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
       this.evaluateContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "evaluateContextVariables", Boolean.FALSE);
       this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
@@ -2750,7 +2762,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private ParameterMap decodeOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
       if (jsonArray != null)
@@ -2816,6 +2828,11 @@ public class Journey extends GUIManagedObject
                   case PushMessageParameter:
                     PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
                     outputConnectorParameters.put(parameterName, pushMessageValue);
+                    break;
+
+                  case WorkflowParameter:
+                    WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                    outputConnectorParameters.put(parameterName, workflowParameter);
                     break;
                 }
             }

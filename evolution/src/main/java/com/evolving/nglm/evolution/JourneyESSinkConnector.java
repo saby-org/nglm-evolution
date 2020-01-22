@@ -1,8 +1,8 @@
 /****************************************************************************
- *
- *  OfferESSinkConnector.java
- *
- ****************************************************************************/
+*
+*  OfferESSinkConnector.java
+*
+****************************************************************************/
 
 package com.evolving.nglm.evolution;
 
@@ -23,81 +23,99 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class JourneyESSinkConnector extends SimpleESSinkConnector
 {
-	/****************************************
-	 *
-	 *  taskClass
-	 *
-	 ****************************************/
+  /****************************************
+  *
+  *  taskClass
+  *
+  ****************************************/
 
-	@Override public Class<? extends Task> taskClass()
-	{
-		return OfferESSinkTask.class;
-	}
+  @Override public Class<? extends Task> taskClass()
+  {
+    return OfferESSinkTask.class;
+  }
 
-	/****************************************
-	 *
-	 *  taskClass
-	 *
-	 ****************************************/
+  /****************************************
+  *
+  *  taskClass
+  *
+  ****************************************/
 
-	public static class OfferESSinkTask extends ChangeLogESSinkTask
-	{
-		private CatalogCharacteristicService catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "journeyessinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), true);
-		private SubscriberMessageTemplateService subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "journeyessinkconnector-subscriberMessageTemplateService-" + getTaskNumber(), Deployment.getSubscriberMessageTemplateTopic(), true);
-		private DynamicEventDeclarationsService dynamicEventDeclarationsService = new DynamicEventDeclarationsService(Deployment.getBrokerServers(), "journeyessinkconnector-dynamicEventDeclarationsService-" + getTaskNumber(), Deployment.getDynamicEventDeclarationsTopic(), true);
-		private CommunicationChannelService communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "journeyessinkconnector-communicationChannelService-" + getTaskNumber(), Deployment.getCommunicationChannelTopic(), true);
+  public static class OfferESSinkTask extends ChangeLogESSinkTask
+  {
+    private JourneyService journeyService;
+    private CatalogCharacteristicService catalogCharacteristicService;
+    private SubscriberMessageTemplateService subscriberMessageTemplateService;
+    private DynamicEventDeclarationsService dynamicEventDeclarationsService;
+    private CommunicationChannelService communicationChannelService;
 
-		@Override
-		public String getDocumentID(SinkRecord sinkRecord) {
-			/****************************************
-			 *  extract OfferID
-			 ****************************************/
+    public OfferESSinkTask()
+    {
+      journeyService = new JourneyService(Deployment.getBrokerServers(), "journeyessinkconnector-journeyservice-" + getTaskNumber(), Deployment.getJourneyTopic(), false);
+      catalogCharacteristicService = new CatalogCharacteristicService(Deployment.getBrokerServers(), "journeyessinkconnector-catalogcharacteristicservice-" + getTaskNumber(), Deployment.getCatalogCharacteristicTopic(), false);
+      subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "journeyessinkconnector-subscriberMessageTemplateService-" + getTaskNumber(), Deployment.getSubscriberMessageTemplateTopic(), false);
+      dynamicEventDeclarationsService = new DynamicEventDeclarationsService(Deployment.getBrokerServers(), "journeyessinkconnector-dynamicEventDeclarationsService-" + getTaskNumber(), Deployment.getDynamicEventDeclarationsTopic(), false);
+      communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "journeyessinkconnector-communicationChannelService-" + getTaskNumber(), Deployment.getCommunicationChannelTopic(), false);
+      journeyService.start();
+      catalogCharacteristicService.start();
+      subscriberMessageTemplateService.start();
+      dynamicEventDeclarationsService.start();
+      communicationChannelService.start();
+    }
 
-			Object journeyIDValue = sinkRecord.key();
-			Schema journeyIDValueSchema = sinkRecord.keySchema();
-			StringKey journeyID = StringKey.unpack(new SchemaAndValue(journeyIDValueSchema, journeyIDValue));
+    @Override public String getDocumentID(SinkRecord sinkRecord)
+    {
+      /****************************************
+      *  extract OfferID
+      ****************************************/
 
-			/****************************************
-			 *  use offerID
-			 ****************************************/
+      Object journeyIDValue = sinkRecord.key();
+      Schema journeyIDValueSchema = sinkRecord.keySchema();
+      StringKey journeyID = StringKey.unpack(new SchemaAndValue(journeyIDValueSchema, journeyIDValue));
 
-			return "_" + journeyID.hashCode();    
-		}
+      /****************************************
+      *  use offerID
+      ****************************************/
 
-		@Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
-		{
-			/****************************************
-			 *
-			 *  extract Offer
-			 *
-			 ****************************************/
+      return "_" + journeyID.hashCode();    
+    }
 
-			Object guiManagedObjectValue = sinkRecord.value();
-			Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
-			GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+    @Override public Map<String,Object> getDocumentMap(SinkRecord sinkRecord)
+    {
+      /****************************************
+      *
+      *  extract Offer
+      *
+      ****************************************/
 
-			Map<String,Object> documentMap = new HashMap<String,Object>();
+      Object guiManagedObjectValue = sinkRecord.value();
+      Schema guiManagedObjectValueSchema = sinkRecord.valueSchema();
+      GUIManagedObject guiManagedObject = GUIManagedObject.commonSerde().unpack(new SchemaAndValue(guiManagedObjectValueSchema, guiManagedObjectValue));
+
+      Map<String,Object> documentMap = new HashMap<String,Object>();
 
 
-			try {
-				Journey journey = new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
+      try
+        {
+          Journey journey = new Journey(guiManagedObject.getJSONRepresentation(), guiManagedObject.getGUIManagedObjectType(), guiManagedObject.getEpoch(), guiManagedObject, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, communicationChannelService);
 
-				//
-				//  flat fields
-				//
+          //
+          //  flat fields
+          //
 
-				documentMap.put("journeyID", journey.getJourneyID());
-				documentMap.put("journeyName", journey.getGUIManagedObjectDisplay());
-				documentMap.put("journeyActive", journey.getActive());
+          documentMap.put("journeyID", journey.getJourneyID());
+          documentMap.put("journeyName", journey.getGUIManagedObjectDisplay());
+          documentMap.put("journeyActive", journey.getActive());
 
-			} catch (GUIManagerException e) {
-			}
+        }
+      catch (GUIManagerException e)
+        {
+        }
 
-			//
-			//  return
-			//
+      //
+      //  return
+      //
 
-			return documentMap;
-		}
-	}
+      return documentMap;
+    }
+  }
 }

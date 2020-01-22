@@ -461,6 +461,7 @@ public abstract class Expression
           case SMSMessageParameter:
           case EmailMessageParameter:
           case PushMessageParameter:
+          case WorkflowParameter:
             setType(ExpressionDataType.OpaqueReferenceExpression);
             break;
 
