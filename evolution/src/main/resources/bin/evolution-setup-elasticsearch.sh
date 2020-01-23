@@ -49,6 +49,7 @@
                   "segments" : { "type" : "keyword" },
                   "loyaltyPrograms" : { "type" : "nested"},
                   "pointFluctuations" : { "type" : "object"},
+                  "subscriberJourneys" : { "type" : "nested"},
                   "pointBalances" : { "type" : "nested"}
                 }
         }

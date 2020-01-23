@@ -8,6 +8,9 @@ package com.evolving.nglm.evolution.datacubes;
 
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeGenerator;
+import com.evolving.nglm.evolution.CriterionContext;
+import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeDefinitiveJob;
 import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeTemporaryJob;
 import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnTodayJob;
@@ -64,10 +67,22 @@ public class DatacubeManager
     *
     *****************************************/
     
+    String bootstrapServers = args[1];
     String elasticsearchServerHost = args[2];
     Integer elasticsearchServerPort = Integer.parseInt(args[3]);
     String guiManagerServerHost = args[4];
     String guiManagerServerPort = args[5];
+
+    /*****************************************
+    *
+    *  dynamic Criterion
+    *
+    *****************************************/
+
+    String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
+    DynamicCriterionFieldService dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "datacubeManager-dynamiccriterionfieldservice-001", dynamicCriterionFieldTopic, true);
+    dynamicCriterionFieldService.start();
+    CriterionContext.initialize(dynamicCriterionFieldService);
     
     /*****************************************
     *
@@ -83,8 +98,8 @@ public class DatacubeManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(this));
-
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this, dynamicCriterionFieldService));
+    
     /*****************************************
     *
     *  initialize ES client & GUI client
@@ -201,14 +216,16 @@ public class DatacubeManager
     //
 
     private DatacubeManager datacubemanager;
+    private DynamicCriterionFieldService dynamicCriterionFieldService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(DatacubeManager datacubemanager)
+    private ShutdownHook(DatacubeManager datacubemanager, DynamicCriterionFieldService dynamicCriterionFieldService)
     {
       this.datacubemanager = datacubemanager;
+      this.dynamicCriterionFieldService = dynamicCriterionFieldService;
     }
 
     //
@@ -218,6 +235,7 @@ public class DatacubeManager
     @Override public void shutdown(boolean normalShutdown)
     {
       datacubemanager.shutdownUCGEngine(normalShutdown);
+      if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
     }
   }
 

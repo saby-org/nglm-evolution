@@ -110,28 +110,22 @@ public class TokenType extends GUIManagedObject
   public Date getExpirationDate(Date creationDate) {    
     Date result = null;
     switch(this.validity.getPeriodType()) {
-    case Minutes:
+    case Minute:
       result = RLMDateUtils.addMinutes(creationDate, this.validity.getPeriodQuantity());
       break;
-    case Hours:
+    case Hour:
       result = RLMDateUtils.addHours(creationDate, this.validity.getPeriodQuantity());
       break;
-    case Days:
+    case Day:
       result = RLMDateUtils.addDays(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
       break;
-    case Weeks:
+    case Week:
       result = RLMDateUtils.addWeeks(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
       break;
-    case Months:
+    case Month:
       result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
       break;
-    case Quarters:
-      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity() * 3, Deployment.getBaseTimeZone());
-      break;
-    case Semesters:
-      result = RLMDateUtils.addMonths(creationDate, this.validity.getPeriodQuantity() * 6, Deployment.getBaseTimeZone());
-      break;
-    case Years:
+    case Year:
       result = RLMDateUtils.addYears(creationDate, this.validity.getPeriodQuantity(), Deployment.getBaseTimeZone());
       break;
     default:

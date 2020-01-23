@@ -57,6 +57,10 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public abstract class SubscriberProfile implements SubscriberStreamOutput
 {
+  public static final String CURRENT_BALANCE = "currentBalance";
+  public static final String EARLIEST_EXPIRATION_DATE = "earliestExpirationDate";
+  public static final String EARLIEST_EXPIRATION_QUANTITY = "earliestExpirationQuantity";
+
   /*****************************************
   *
   *  configuration
@@ -520,10 +524,33 @@ public abstract class SubscriberProfile implements SubscriberStreamOutput
                 expirationDates.add(pointInfo);
               }
             obj.put("expirationDates", JSONUtilities.encodeArray(expirationDates));
-            obj.put("earliestExpirationDate", earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
-            obj.put("earliestExpirationQuantity", earliestExpirationQuantity);
-            obj.put("currentBalance", point.getValue().getBalance(SystemTime.getCurrentTime()));
+            obj.put(EARLIEST_EXPIRATION_DATE, earliestExpirationDate != null ? earliestExpirationDate.getTime() : null);
+            obj.put(EARLIEST_EXPIRATION_QUANTITY, earliestExpirationQuantity);
+            obj.put(CURRENT_BALANCE, point.getValue().getBalance(SystemTime.getCurrentTime()));
             obj.put("pointID", point.getKey());
+            array.add(obj);
+          }
+      }
+    return array;
+  }
+
+  /****************************************
+  *
+  *  getSubscriberJourneysJSON - SubscriberJourneys
+  *
+  ****************************************/
+  
+  public JSONArray getSubscriberJourneysJSON()
+  {
+    JSONArray array = new JSONArray();
+    if(this.subscriberJourneys != null)
+      {
+        for(Entry<String, SubscriberJourneyStatus> journeyStatus : subscriberJourneys.entrySet())
+          {
+            JSONObject obj = new JSONObject();
+            String status = journeyStatus.getValue().getExternalRepresentation();
+            obj.put("status", status);
+            obj.put("journeyID", journeyStatus.getKey());
             array.add(obj);
           }
       }

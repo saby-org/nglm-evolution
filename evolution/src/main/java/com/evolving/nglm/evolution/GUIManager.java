@@ -5427,6 +5427,7 @@ public class GUIManager
     ****************************************/
 
     String journeyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -5436,7 +5437,7 @@ public class GUIManager
 
     GUIManagedObject journey = journeyService.getStoredJourney(journeyID);
     journey = (journey != null && journey.getGUIManagedObjectType() == objectType) ? journey : null;
-    if (journey != null && ! journey.getReadOnly()) 
+    if (journey != null && (force || !journey.getReadOnly())) 
       {
 
         //
@@ -5479,7 +5480,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (journey != null && ! journey.getReadOnly())
+    if (journey != null && (force || !journey.getReadOnly()))
       responseCode = "ok";
     else if (journey != null)
       responseCode = "failedReadOnly";
@@ -6200,6 +6201,7 @@ public class GUIManager
     ****************************************/
 
     String journeyTemplateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -6209,7 +6211,7 @@ public class GUIManager
 
     GUIManagedObject journeyTemplate = journeyTemplateService.getStoredJourneyTemplate(journeyTemplateID);
     journeyTemplate = (journeyTemplate != null && journeyTemplate.getGUIManagedObjectType() == GUIManagedObjectType.JourneyTemplate) ? journeyTemplate: null;
-    if (journeyTemplate != null && ! journeyTemplate.getReadOnly()) journeyTemplateService.removeJourneyTemplate(journeyTemplateID, userID);
+    if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly())) journeyTemplateService.removeJourneyTemplate(journeyTemplateID, userID);
 
     /*****************************************
     *
@@ -6218,7 +6220,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (journeyTemplate != null && ! journeyTemplate.getReadOnly())
+    if (journeyTemplate != null && (force || !journeyTemplate.getReadOnly()))
       responseCode = "ok";
     else if (journeyTemplate != null)
       responseCode = "failedReadOnly";
@@ -6655,6 +6657,7 @@ public class GUIManager
     ****************************************/
 
     String segmentationDimensionID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -6663,7 +6666,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject segmentationDimensionUnchecked = segmentationDimensionService.getStoredSegmentationDimension(segmentationDimensionID);
-    if (segmentationDimensionUnchecked != null && ! segmentationDimensionUnchecked.getReadOnly())
+    if (segmentationDimensionUnchecked != null && (force || !segmentationDimensionUnchecked.getReadOnly()))
       {
         /*****************************************
         *
@@ -6735,7 +6738,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (segmentationDimensionUnchecked != null && ! segmentationDimensionUnchecked.getReadOnly())
+    if (segmentationDimensionUnchecked != null && (force || !segmentationDimensionUnchecked.getReadOnly()))
       responseCode = "ok";
     else if (segmentationDimensionUnchecked != null)
       responseCode = "failedReadOnly";
@@ -7756,6 +7759,7 @@ public class GUIManager
     ****************************************/
 
     String pointID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -7810,7 +7814,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject point = pointService.getStoredPoint(pointID);
-    if (point != null && ! point.getReadOnly())
+    if (point != null && (force || !point.getReadOnly()))
       {
         //
         //  remove point
@@ -7840,7 +7844,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (point != null && ! point.getReadOnly())
+    if (point != null && (force || !point.getReadOnly()))
       responseCode = "ok";
     else if (point != null)
       responseCode = "failedReadOnly";
@@ -8083,6 +8087,7 @@ public class GUIManager
     ****************************************/
 
     String offerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -8091,7 +8096,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject offer = offerService.getStoredOffer(offerID);
-    if (offer != null && ! offer.getReadOnly()) offerService.removeOffer(offerID, userID);
+    if (offer != null && (force || !offer.getReadOnly())) offerService.removeOffer(offerID, userID);
 
     /*****************************************
     *
@@ -8100,7 +8105,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (offer != null && ! offer.getReadOnly())
+    if (offer != null && (force || !offer.getReadOnly()))
       responseCode = "ok";
     else if (offer != null)
       responseCode = "failedReadOnly";
@@ -8504,6 +8509,7 @@ public class GUIManager
     ****************************************/
 
     String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -8512,7 +8518,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject presentationStrategy = presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
-    if (presentationStrategy != null && ! presentationStrategy.getReadOnly()) presentationStrategyService.removePresentationStrategy(presentationStrategyID, userID);
+    if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly())) presentationStrategyService.removePresentationStrategy(presentationStrategyID, userID);
 
     /*****************************************
     *
@@ -8521,7 +8527,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (presentationStrategy != null && ! presentationStrategy.getReadOnly())
+    if (presentationStrategy != null && (force || !presentationStrategy.getReadOnly()))
       responseCode = "ok";
     else if (presentationStrategy != null)
       responseCode = "failedReadOnly";
@@ -8764,6 +8770,7 @@ public class GUIManager
     ****************************************/
 
     String dnboMatrixID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -8772,7 +8779,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject dnboMatrix = dnboMatrixService.getStoredDNBOMatrix(dnboMatrixID);
-    if (dnboMatrix != null && ! dnboMatrix.getReadOnly()) dnboMatrixService.removeDNBOMatrix(dnboMatrixID, userID);
+    if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly())) dnboMatrixService.removeDNBOMatrix(dnboMatrixID, userID);
 
     /*****************************************
     *
@@ -8781,7 +8788,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (dnboMatrix != null && ! dnboMatrix.getReadOnly())
+    if (dnboMatrix != null && (force || !dnboMatrix.getReadOnly()))
       responseCode = "ok";
     else if (dnboMatrix != null)
       responseCode = "failedReadOnly";
@@ -9046,6 +9053,7 @@ public class GUIManager
     ****************************************/
 
     String scoringStrategyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -9054,7 +9062,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject scoringStrategy = scoringStrategyService.getStoredScoringStrategy(scoringStrategyID);
-    if (scoringStrategy != null && ! scoringStrategy.getReadOnly()) scoringStrategyService.removeScoringStrategy(scoringStrategyID, userID);
+    if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly())) scoringStrategyService.removeScoringStrategy(scoringStrategyID, userID);
 
     /*****************************************
     *
@@ -9071,7 +9079,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (scoringStrategy != null && ! scoringStrategy.getReadOnly())
+    if (scoringStrategy != null && (force || !scoringStrategy.getReadOnly()))
       responseCode = "ok";
     else if (scoringStrategy != null)
       responseCode = "failedReadOnly";
@@ -9338,6 +9346,7 @@ public class GUIManager
     ****************************************/
 
     String callingChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -9346,7 +9355,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject callingChannel = callingChannelService.getStoredCallingChannel(callingChannelID);
-    if (callingChannel != null && ! callingChannel.getReadOnly()) callingChannelService.removeCallingChannel(callingChannelID, userID);
+    if (callingChannel != null && (force || !callingChannel.getReadOnly()) )callingChannelService.removeCallingChannel(callingChannelID, userID);
 
     /*****************************************
     *
@@ -9364,7 +9373,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (callingChannel != null && ! callingChannel.getReadOnly())
+    if (callingChannel != null && (force || !callingChannel.getReadOnly()))
       responseCode = "ok";
     else if (callingChannel != null)
       responseCode = "failedReadOnly";
@@ -9445,6 +9454,7 @@ public class GUIManager
     ****************************************/
 
     String criterionFieldAvailableValuesID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -9453,7 +9463,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject criterionFieldAvailableValues = criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValues(criterionFieldAvailableValuesID);
-    if (criterionFieldAvailableValues != null && ! criterionFieldAvailableValues.getReadOnly()) criterionFieldAvailableValuesService.removeCriterionFieldAvailableValues(criterionFieldAvailableValuesID, userID);
+    if (criterionFieldAvailableValues != null && (force || !criterionFieldAvailableValues.getReadOnly())) criterionFieldAvailableValuesService.removeCriterionFieldAvailableValues(criterionFieldAvailableValuesID, userID);
 
     /*****************************************
     *
@@ -9462,7 +9472,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (criterionFieldAvailableValues != null && ! criterionFieldAvailableValues.getReadOnly())
+    if (criterionFieldAvailableValues != null && (force || !criterionFieldAvailableValues.getReadOnly()))
       responseCode = "ok";
     else if (criterionFieldAvailableValues != null)
       responseCode = "failedReadOnly";
@@ -9917,6 +9927,7 @@ public class GUIManager
     ****************************************/
 
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -9925,7 +9936,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannel(salesChannelID);
-    if (salesChannel != null && ! salesChannel.getReadOnly()) salesChannelService.removeSalesChannel(salesChannelID, userID);
+    if (salesChannel != null && (force || !salesChannel.getReadOnly())) salesChannelService.removeSalesChannel(salesChannelID, userID);
 
     /*****************************************
     *
@@ -9942,7 +9953,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (salesChannel != null && ! salesChannel.getReadOnly())
+    if (salesChannel != null && (force || !salesChannel.getReadOnly()))
       responseCode = "ok";
     else if (salesChannel != null)
       responseCode = "failedReadOnly";
@@ -10207,6 +10218,7 @@ public class GUIManager
     ****************************************/
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -10215,7 +10227,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject supplier = supplierService.getStoredSupplier(supplierID);
-    if (supplier != null && ! supplier.getReadOnly()) supplierService.removeSupplier(supplierID, userID);
+    if (supplier != null && (force || !supplier.getReadOnly())) supplierService.removeSupplier(supplierID, userID);
 
     /*****************************************
     *
@@ -10232,7 +10244,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (supplier != null && ! supplier.getReadOnly())
+    if (supplier != null && (force || !supplier.getReadOnly()))
       responseCode = "ok";
     else if (supplier != null)
       responseCode = "failedReadOnly";
@@ -10497,6 +10509,7 @@ public class GUIManager
     ****************************************/
 
     String productID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -10505,7 +10518,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject product = productService.getStoredProduct(productID);
-    if (product != null && ! product.getReadOnly()) productService.removeProduct(productID, userID);
+    if (product != null && (force || !product.getReadOnly())) productService.removeProduct(productID, userID);
 
     /*****************************************
     *
@@ -10522,7 +10535,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (product != null && ! product.getReadOnly())
+    if (product != null && (force || !product.getReadOnly()))
       responseCode = "ok";
     else if (product != null)
       responseCode = "failedReadOnly";
@@ -10795,6 +10808,7 @@ public class GUIManager
     ****************************************/
 
     String catalogCharacteristicID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -10803,7 +10817,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject catalogCharacteristic = catalogCharacteristicService.getStoredCatalogCharacteristic(catalogCharacteristicID);
-    if (catalogCharacteristic != null && ! catalogCharacteristic.getReadOnly()) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID, userID);
+    if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly())) catalogCharacteristicService.removeCatalogCharacteristic(catalogCharacteristicID, userID);
 
     /*****************************************
     *
@@ -10824,7 +10838,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (catalogCharacteristic != null && ! catalogCharacteristic.getReadOnly())
+    if (catalogCharacteristic != null && (force || !catalogCharacteristic.getReadOnly()))
       responseCode = "ok";
     else if (catalogCharacteristic != null)
       responseCode = "failedReadOnly";
@@ -11089,6 +11103,7 @@ public class GUIManager
     ****************************************/
 
     String contactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -11097,7 +11112,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject contactPolicy = contactPolicyService.getStoredContactPolicy(contactPolicyID);
-    if (contactPolicy != null && ! contactPolicy.getReadOnly()) contactPolicyService.removeContactPolicy(contactPolicyID, userID);
+    if (contactPolicy != null && (force || !contactPolicy.getReadOnly())) contactPolicyService.removeContactPolicy(contactPolicyID, userID);
 
     /*****************************************
     *
@@ -11114,7 +11129,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (contactPolicy != null && ! contactPolicy.getReadOnly())
+    if (contactPolicy != null && (force || !contactPolicy.getReadOnly()))
       responseCode = "ok";
     else if (contactPolicy != null)
       responseCode = "failedReadOnly";
@@ -11382,6 +11397,7 @@ public class GUIManager
     ****************************************/
 
     String journeyObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -11390,7 +11406,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject journeyObjective = journeyObjectiveService.getStoredJourneyObjective(journeyObjectiveID);
-    if (journeyObjective != null && ! journeyObjective.getReadOnly()) journeyObjectiveService.removeJourneyObjective(journeyObjectiveID, userID);
+    if (journeyObjective != null && (force || !journeyObjective.getReadOnly())) journeyObjectiveService.removeJourneyObjective(journeyObjectiveID, userID);
 
     /*****************************************
     *
@@ -11408,7 +11424,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (journeyObjective != null && ! journeyObjective.getReadOnly())
+    if (journeyObjective != null && (force || !journeyObjective.getReadOnly()))
       responseCode = "ok";
     else if (journeyObjective != null)
       responseCode = "failedReadOnly";
@@ -11675,6 +11691,7 @@ public class GUIManager
     ****************************************/
 
     String offerObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -11683,7 +11700,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject offerObjective = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
-    if (offerObjective != null && ! offerObjective.getReadOnly()) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
+    if (offerObjective != null && (force || !offerObjective.getReadOnly())) offerObjectiveService.removeOfferObjective(offerObjectiveID, userID);
 
     /*****************************************
     *
@@ -11701,7 +11718,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (offerObjective != null && ! offerObjective.getReadOnly())
+    if (offerObjective != null && (force || !offerObjective.getReadOnly()))
       responseCode = "ok";
     else if (offerObjective != null)
       responseCode = "failedReadOnly";
@@ -11966,6 +11983,7 @@ public class GUIManager
     ****************************************/
 
     String productTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -11974,7 +11992,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject productType = productTypeService.getStoredProductType(productTypeID);
-    if (productType != null && ! productType.getReadOnly()) productTypeService.removeProductType(productTypeID, userID);
+    if (productType != null && (force || !productType.getReadOnly())) productTypeService.removeProductType(productTypeID, userID);
 
     /*****************************************
     *
@@ -11991,7 +12009,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (productType != null && ! productType.getReadOnly())
+    if (productType != null && (force || !productType.getReadOnly()))
       responseCode = "ok";
     else if (productType != null)
       responseCode = "failedReadOnly";
@@ -12253,6 +12271,7 @@ public class GUIManager
     ****************************************/
 
     String ucgRuleID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -12261,7 +12280,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(ucgRuleID);
-    if (ucgRule != null && ! ucgRule.getReadOnly()) ucgRuleService.removeUCGRule(ucgRuleID, userID);
+    if (ucgRule != null && (force || !ucgRule.getReadOnly())) ucgRuleService.removeUCGRule(ucgRuleID, userID);
 
 
     /*****************************************
@@ -12271,7 +12290,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (ucgRule != null && ! ucgRule.getReadOnly())
+    if (ucgRule != null && (force || !ucgRule.getReadOnly()))
       responseCode = "ok";
     else if (ucgRule != null)
       responseCode = "failedReadOnly";
@@ -12580,6 +12599,7 @@ public class GUIManager
     ****************************************/
 
     String deliverableID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -12588,7 +12608,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject deliverable = deliverableService.getStoredDeliverable(deliverableID);
-    if (deliverable != null && ! deliverable.getReadOnly()) deliverableService.removeDeliverable(deliverableID, userID);
+    if (deliverable != null && (force || !deliverable.getReadOnly())) deliverableService.removeDeliverable(deliverableID, userID);
 
     /*****************************************
     *
@@ -12605,7 +12625,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (deliverable != null && ! deliverable.getReadOnly())
+    if (deliverable != null && (force || !deliverable.getReadOnly()))
       responseCode = "ok";
     else if (deliverable != null)
       responseCode = "failedReadOnly";
@@ -12870,6 +12890,7 @@ public class GUIManager
     ****************************************/
 
     String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -12878,7 +12899,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject tokenType = tokenTypeService.getStoredTokenType(tokenTypeID);
-    if (tokenType != null && ! tokenType.getReadOnly()) tokenTypeService.removeTokenType(tokenTypeID, userID);
+    if (tokenType != null && (force || !tokenType.getReadOnly())) tokenTypeService.removeTokenType(tokenTypeID, userID);
 
     /*****************************************
     *
@@ -12895,7 +12916,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (tokenType != null && ! tokenType.getReadOnly())
+    if (tokenType != null && (force || !tokenType.getReadOnly()))
       responseCode = "ok";
     else if (tokenType != null)
       responseCode = "failedReadOnly";
@@ -13179,6 +13200,7 @@ public class GUIManager
     ****************************************/
 
     String voucherTypeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -13187,7 +13209,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject voucherType = voucherTypeService.getStoredVoucherType(voucherTypeID);
-    if (voucherType != null && ! voucherType.getReadOnly()) voucherTypeService.removeVoucherType(voucherTypeID, userID);
+    if (voucherType != null && (force || !voucherType.getReadOnly())) voucherTypeService.removeVoucherType(voucherTypeID, userID);
 
     /*****************************************
     *
@@ -13204,7 +13226,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (voucherType != null && ! voucherType.getReadOnly())
+    if (voucherType != null && (force || !voucherType.getReadOnly()))
       responseCode = "ok";
     else if (voucherType != null)
       responseCode = "failedReadOnly";
@@ -13482,6 +13504,7 @@ public class GUIManager
     ****************************************/
 
     String voucherID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -13490,7 +13513,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
-    if (voucher != null && ! voucher.getReadOnly()) voucherService.removeVoucher(voucherID, userID);
+    if (voucher != null && (force || !voucher.getReadOnly())) voucherService.removeVoucher(voucherID, userID);
 
     /*****************************************
     *
@@ -13507,7 +13530,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (voucher != null && ! voucher.getReadOnly())
+    if (voucher != null && (force || !voucher.getReadOnly()))
       responseCode = "ok";
     else if (voucher != null)
       responseCode = "failedReadOnly";
@@ -13786,6 +13809,7 @@ public class GUIManager
     ****************************************/
 
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -13795,7 +13819,7 @@ public class GUIManager
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.MailMessageTemplate) ? template : null;
-    if (template != null && ! template.getReadOnly()) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
     *
@@ -13804,7 +13828,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (template != null && ! template.getReadOnly())
+    if (template != null && (force || !template.getReadOnly()))
       responseCode = "ok";
     else if (template != null)
       responseCode = "failedReadOnly";
@@ -14083,6 +14107,7 @@ public class GUIManager
     ****************************************/
 
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -14092,7 +14117,7 @@ public class GUIManager
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.SMSMessageTemplate) ? template : null;
-    if (template != null && ! template.getReadOnly()) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
     *
@@ -14101,7 +14126,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (template != null && ! template.getReadOnly())
+    if (template != null && (force || !template.getReadOnly()))
       responseCode = "ok";
     else if (template != null)
       responseCode = "failedReadOnly";
@@ -14392,6 +14417,7 @@ public class GUIManager
     ****************************************/
 
     String templateID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -14401,7 +14427,7 @@ public class GUIManager
 
     GUIManagedObject template = subscriberMessageTemplateService.getStoredSubscriberMessageTemplate(templateID);
     template = (template != null && template.getGUIManagedObjectType() == GUIManagedObjectType.PushMessageTemplate) ? template : null;
-    if (template != null && ! template.getReadOnly()) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
+    if (template != null && (force || !template.getReadOnly())) subscriberMessageTemplateService.removeSubscriberMessageTemplate(templateID, userID);
 
     /*****************************************
     *
@@ -14410,7 +14436,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (template != null && ! template.getReadOnly())
+    if (template != null && (force || !template.getReadOnly()))
       responseCode = "ok";
     else if (template != null)
       responseCode = "failedReadOnly";
@@ -14704,6 +14730,7 @@ public class GUIManager
     ****************************************/
 
     String paymentMeanID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -14712,7 +14739,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject paymentMean = paymentMeanService.getStoredPaymentMean(paymentMeanID);
-    if (paymentMean != null && ! paymentMean.getReadOnly()) paymentMeanService.removePaymentMean(paymentMeanID, userID);
+    if (paymentMean != null && (force || !paymentMean.getReadOnly())) paymentMeanService.removePaymentMean(paymentMeanID, userID);
 
     /*****************************************
     *
@@ -14721,7 +14748,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (paymentMean != null && ! paymentMean.getReadOnly())
+    if (paymentMean != null && (force || !paymentMean.getReadOnly()))
       responseCode = "ok";
     else if (paymentMean != null)
       responseCode = "failedReadOnly";
@@ -16686,6 +16713,7 @@ public class GUIManager
     ****************************************/
 
     String uploadedFileID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -16694,7 +16722,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(uploadedFileID);
-    if (existingFileUpload != null && !existingFileUpload.getReadOnly())
+    if (existingFileUpload != null && (force || !existingFileUpload.getReadOnly()))
       {
         uploadedFileService.deleteUploadedFile(uploadedFileID, userID, (UploadedFile)existingFileUpload);
       }
@@ -16714,7 +16742,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingFileUpload != null && ! existingFileUpload.getReadOnly())
+    if (existingFileUpload != null && (force || !existingFileUpload.getReadOnly()))
       responseCode = "ok";
     else if (existingFileUpload != null) 
       responseCode = "failedReadOnly";
@@ -17155,6 +17183,7 @@ public class GUIManager
     ****************************************/
 
     String targetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -17163,7 +17192,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingTarget = targetService.getStoredTarget(targetID);
-    if (existingTarget != null && !existingTarget.getReadOnly()) {
+    if (existingTarget != null && (force || !existingTarget.getReadOnly()) ){
       targetService.removeTarget(targetID, userID);
     }
 
@@ -17174,7 +17203,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingTarget != null && !existingTarget.getReadOnly()) {
+    if (existingTarget != null && (force || !existingTarget.getReadOnly())) {
       responseCode = "ok";
     }
     else if (existingTarget != null) {
@@ -17738,6 +17767,7 @@ public class GUIManager
     ****************************************/
 
     String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -17746,7 +17776,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingCommunicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
-    if (existingCommunicationChannel != null && !existingCommunicationChannel.getReadOnly()) {
+    if (existingCommunicationChannel != null && (force || !existingCommunicationChannel.getReadOnly())) {
       communicationChannelService.removeCommunicationChannel(communicationChannelID, userID);
     }
 
@@ -17757,7 +17787,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingCommunicationChannel != null && !existingCommunicationChannel.getReadOnly()) {
+    if (existingCommunicationChannel != null && (force || !existingCommunicationChannel.getReadOnly())) {
       responseCode = "ok";
     }
     else if (existingCommunicationChannel != null) {
@@ -18004,6 +18034,7 @@ public class GUIManager
     ****************************************/
 
     String blackoutPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -18012,7 +18043,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingBlackoutPeriod = communicationChannelBlackoutService.getStoredCommunicationChannelBlackout(blackoutPeriodID);
-    if (existingBlackoutPeriod != null && !existingBlackoutPeriod.getReadOnly())
+    if (existingBlackoutPeriod != null && (force || !existingBlackoutPeriod.getReadOnly()))
       {
         communicationChannelBlackoutService.removeCommunicationChannelBlackout(blackoutPeriodID, userID);
       }
@@ -18024,7 +18055,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingBlackoutPeriod != null && !existingBlackoutPeriod.getReadOnly())
+    if (existingBlackoutPeriod != null && (force || !existingBlackoutPeriod.getReadOnly()))
       {
         responseCode = "ok";
       }
@@ -18351,6 +18382,7 @@ public class GUIManager
     ****************************************/
 
     String loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -18359,7 +18391,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingLoyaltyProgram = loyaltyProgramService.getStoredGUIManagedObject(loyaltyProgramID);
-    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly())
+    if (existingLoyaltyProgram != null && (force || !existingLoyaltyProgram.getReadOnly()))
       {
         //
         //  remove loyalty program
@@ -18390,7 +18422,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingLoyaltyProgram != null && !existingLoyaltyProgram.getReadOnly())
+    if (existingLoyaltyProgram != null && (force || !existingLoyaltyProgram.getReadOnly()))
       {
         responseCode = "ok";
       }
@@ -19050,6 +19082,7 @@ public class GUIManager
     ****************************************/
 
     String segmentContactPolicyID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -19058,7 +19091,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject segmentContactPolicy = segmentContactPolicyService.getStoredSegmentContactPolicy(segmentContactPolicyID);
-    if (segmentContactPolicy != null && ! segmentContactPolicy.getReadOnly()) segmentContactPolicyService.removeSegmentContactPolicy(segmentContactPolicyID, userID);
+    if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly())) segmentContactPolicyService.removeSegmentContactPolicy(segmentContactPolicyID, userID);
 
     /*****************************************
     *
@@ -19067,7 +19100,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (segmentContactPolicy != null && ! segmentContactPolicy.getReadOnly())
+    if (segmentContactPolicy != null && (force || !segmentContactPolicy.getReadOnly()))
       responseCode = "ok";
     else if (segmentContactPolicy != null)
       responseCode = "failedReadOnly";
@@ -19115,6 +19148,7 @@ public class GUIManager
     ****************************************/
 
     String exclusionInclusionTargetID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -19123,7 +19157,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject exclusionInclusionTarget = exclusionInclusionTargetService.getStoredExclusionInclusionTarget(exclusionInclusionTargetID);
-    if (exclusionInclusionTarget != null && ! exclusionInclusionTarget.getReadOnly()) exclusionInclusionTargetService.removeExclusionInclusionTarget(exclusionInclusionTargetID, userID);
+    if (exclusionInclusionTarget != null && (force || !exclusionInclusionTarget.getReadOnly())) exclusionInclusionTargetService.removeExclusionInclusionTarget(exclusionInclusionTargetID, userID);
 
     /*****************************************
     *
@@ -19132,7 +19166,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (exclusionInclusionTarget != null && ! exclusionInclusionTarget.getReadOnly())
+    if (exclusionInclusionTarget != null && (force || !exclusionInclusionTarget.getReadOnly()))
       responseCode = "ok";
     else if (exclusionInclusionTarget != null)
       responseCode = "failedReadOnly";
@@ -19479,6 +19513,7 @@ public class GUIManager
     ****************************************/
 
     String partnerID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
 
     /*****************************************
     *
@@ -19487,7 +19522,7 @@ public class GUIManager
     *****************************************/
 
     GUIManagedObject existingPartner = partnerService.getStoredGUIManagedObject(partnerID);
-    if (existingPartner != null && !existingPartner.getReadOnly())
+    if (existingPartner != null && (force || !existingPartner.getReadOnly()))
       {
         partnerService.removePartner(partnerID, userID);
       }
@@ -19499,7 +19534,7 @@ public class GUIManager
     *****************************************/
 
     String responseCode;
-    if (existingPartner != null && !existingPartner.getReadOnly())
+    if (existingPartner != null && (force || !existingPartner.getReadOnly()))
       {
         responseCode = "ok";
       }
