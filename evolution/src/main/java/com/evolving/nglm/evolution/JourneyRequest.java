@@ -46,11 +46,12 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("boundParameters", SimpleParameterMap.serde().optionalSchema());
     schema = schemaBuilder.build();
   };
 
@@ -77,6 +78,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   private String journeyRequestID;
   private Date eventDate;
   private String journeyID;
+  private SimpleParameterMap boundParameters;
 
   //
   //  transient
@@ -93,6 +95,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   public String getJourneyRequestID() { return journeyRequestID; }
   public Date getEventDate() { return eventDate; }
   public String getJourneyID() { return journeyID; }
+  public SimpleParameterMap getBoundParameters() { return boundParameters; }
   public boolean getEligible() { return eligible; }
   public ActionType getActionType() { return ActionType.JourneyRequest; }
 
@@ -133,9 +136,26 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
     this.journeyID = journeyID;
+    this.boundParameters = new SimpleParameterMap();
     this.eligible = false;
   }
   
+  /*****************************************
+  *
+  *  constructor -- journey (workflow)
+  *
+  *****************************************/
+
+  public JourneyRequest(EvolutionEventContext context, String deliveryRequestSource, WorkflowParameter workflowParameter)
+  {
+    super(context, "journeyFulfillment", deliveryRequestSource);
+    this.journeyRequestID = context.getUniqueKey();
+    this.eventDate = context.now();
+    this.journeyID = workflowParameter.getWorkflowID();
+    this.boundParameters = new SimpleParameterMap(workflowParameter.getWorkflowParameters());
+    this.eligible = false;
+  }
+
   /*****************************************
   *
   *  constructor -- enterCampaign
@@ -148,6 +168,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.journeyRequestID = uniqueKey;
     this.eventDate = SystemTime.getCurrentTime();
     this.journeyID = deliveryRequestSource;
+    this.boundParameters = new SimpleParameterMap();
     this.eligible = false;
   }
 
@@ -163,6 +184,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.journeyRequestID = JSONUtilities.decodeString(jsonRoot, "journeyRequestID", true);
     this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
     this.journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
+    this.boundParameters = new SimpleParameterMap();
     this.eligible = false;
   }
 
@@ -172,12 +194,13 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID)
+  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID, SimpleParameterMap boundParameters)
   {
     super(schemaAndValue);
     this.journeyRequestID = journeyRequestID;
     this.eventDate = eventDate;
     this.journeyID = journeyID;
+    this.boundParameters = boundParameters;
     this.eligible = false;
   }
 
@@ -193,6 +216,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.journeyRequestID = journeyRequest.getJourneyRequestID();
     this.eventDate = journeyRequest.getEventDate();
     this.journeyID = journeyRequest.getJourneyID();
+    this.boundParameters = new SimpleParameterMap(journeyRequest.getBoundParameters());
     this.eligible = journeyRequest.getEligible();
   }
 
@@ -221,6 +245,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     struct.put("journeyRequestID", journeyRequest.getJourneyRequestID());
     struct.put("eventDate", journeyRequest.getEventDate());
     struct.put("journeyID", journeyRequest.getJourneyID());
+    struct.put("boundParameters", SimpleParameterMap.pack(journeyRequest.getBoundParameters()));
     return struct;
   }
 
@@ -254,13 +279,13 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     String journeyRequestID = valueStruct.getString("journeyRequestID");
     Date eventDate = (Date) valueStruct.get("eventDate");
     String journeyID = valueStruct.getString("journeyID");
-
+    SimpleParameterMap boundParameters = (schemaVersion >= 2) ? SimpleParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new SimpleParameterMap();
     
     //
     //  return
     //
 
-    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID);
+    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID, boundParameters);
   }
   
   /****************************************
