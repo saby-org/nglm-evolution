@@ -291,6 +291,25 @@ public class Journey extends GUIManagedObject
   }
 
   //
+  //  workflow
+  //
+
+  public boolean isWorkflow()
+  {
+    boolean result = false;
+    switch (getGUIManagedObjectType())
+      {
+        case Workflow:
+          result = true;
+          break;
+        default:
+          result = false;
+          break;
+      }
+    return result;
+  }
+
+  //
   //  getAllCriteria
   //
 
