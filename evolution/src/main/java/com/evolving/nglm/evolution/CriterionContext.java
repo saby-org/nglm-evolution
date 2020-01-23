@@ -385,7 +385,7 @@ public class CriterionContext
   *
   *****************************************/
 
-  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, boolean includeLinkParameters)
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent)
   {
     /*****************************************
     *
@@ -446,15 +446,6 @@ public class CriterionContext
         this.additionalCriterionFields.putAll((journeyNodeType.getActionManager() != null) ? journeyNodeType.getActionManager().getOutputAttributes() : Collections.<String,CriterionField>emptyMap());
 
         //
-        //  link-level  parameters
-        //
-
-        if (includeLinkParameters)
-          {
-            this.additionalCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
-          }
-
-        //
         //  trigger-level fields
         //
 
@@ -462,6 +453,23 @@ public class CriterionContext
           {
             this.additionalCriterionFields.putAll(journeyEvent.getEventCriterionFields());
           }
+      }
+  }
+
+  /*****************************************
+  *
+  *  construcxtor -- journey link
+  *
+  *****************************************/
+
+  public CriterionContext(CriterionContext nodeCriterionContext, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent)
+  {
+    this.criterionContextType = CriterionContextType.JourneyNode;
+    this.additionalCriterionFields = new LinkedHashMap<String,CriterionField>(nodeCriterionContext.getAdditionalCriterionFields());
+    this.additionalCriterionFields.putAll(journeyNodeType.getOutputConnectorParameters());
+    if (journeyEvent != null)
+      {
+        this.additionalCriterionFields.putAll(journeyEvent.getEventCriterionFields());
       }
   }
 

@@ -2347,7 +2347,6 @@ public class Journey extends GUIManagedObject
     private List<OutgoingConnectionPoint> outgoingConnectionPoints;
     private List<ContextVariable> contextVariables;
     private CriterionContext nodeCriterionContext;
-    private CriterionContext linkCriterionContext;
 
     /*****************************************
     *
@@ -2362,7 +2361,6 @@ public class Journey extends GUIManagedObject
     public List<OutgoingConnectionPoint> getOutgoingConnectionPoints() { return outgoingConnectionPoints; }
     public List<ContextVariable> getContextVariables() { return contextVariables; }
     public CriterionContext getNodeCriterionContext() { return nodeCriterionContext; }
-    public CriterionContext getLinkCriterionContext() { return linkCriterionContext; }
 
     /*****************************************
     *
@@ -2393,10 +2391,10 @@ public class Journey extends GUIManagedObject
       if (this.nodeType == null) throw new GUIManagerException("unknown nodeType", JSONUtilities.decodeString(jsonRoot, "nodeTypeID"));
 
       //
-      //  nodeParameters (independent, i.e., not EvaluationCriteria or Messages)
+      //  nodeParameters (independent, i.e., not EvaluationCriteria or messages)
       //
 
-      this.nodeParameters = decodeIndependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType);
+      this.nodeParameters = decodeIndependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType);
 
       //
       //  eventName
@@ -2410,8 +2408,7 @@ public class Journey extends GUIManagedObject
       //  criterionContext
       //
 
-      this.nodeCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, false);
-      this.linkCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, true);
+      this.nodeCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent);
 
       //
       //  contextVariables
@@ -2431,14 +2428,14 @@ public class Journey extends GUIManagedObject
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext, journeyService, subscriberMessageTemplateService));
-          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", true), nodeType, nodeCriterionContext));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeCriterionContext, journeyService, subscriberMessageTemplateService));
+          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeCriterionContext));
 
           //
           //  outputConnectors
           //
 
-          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService);
+          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
         }
     }
 
@@ -2689,13 +2686,13 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private List<OutgoingConnectionPoint> decodeOutgoingConnectionPoints(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
     {
       List<OutgoingConnectionPoint> outgoingConnectionPoints = new ArrayList<OutgoingConnectionPoint>();
       for (int i=0; i<jsonArray.size(); i++)
         {
           JSONObject connectionPointJSON = (JSONObject) jsonArray.get(i);
-          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, journeyService, subscriberMessageTemplateService);
+          OutgoingConnectionPoint outgoingConnectionPoint = new OutgoingConnectionPoint(connectionPointJSON, nodeType, criterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
           outgoingConnectionPoints.add(outgoingConnectionPoint);
         }
       return outgoingConnectionPoints;
@@ -2743,6 +2740,7 @@ public class Journey extends GUIManagedObject
     private boolean evaluateContextVariables;
     private List<EvaluationCriterion> transitionCriteria;
     private String additionalCriteria;
+    private CriterionContext linkCriterionContext;
     
     /*****************************************
     *
@@ -2757,6 +2755,7 @@ public class Journey extends GUIManagedObject
     public boolean getEvaluateContextVariables() { return evaluateContextVariables; }
     public List<EvaluationCriterion> getTransitionCriteria() { return transitionCriteria; }
     public String getAdditionalCriteria() { return additionalCriteria; }
+    public CriterionContext getLinkCriterionContext() { return linkCriterionContext; }
 
     /*****************************************
     *
@@ -2764,97 +2763,276 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    public OutgoingConnectionPoint(JSONObject jsonRoot, NodeType nodeType, CriterionContext nodeCriterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DynamicEventDeclarationsService dynamicEventDeclarationsService) throws GUIManagerException
     {
+      //
+      //  data
+      //
+
       this.name = JSONUtilities.decodeString(jsonRoot, "name", true);
       this.display = JSONUtilities.decodeString(jsonRoot, "display", true);
-      this.outputConnectorParameters = decodeOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", false), nodeType, criterionContext, journeyService, subscriberMessageTemplateService);
       this.evaluationPriority = EvaluationPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "evaluationPriority", "normal"));
       this.evaluateContextVariables = JSONUtilities.decodeBoolean(jsonRoot, "evaluateContextVariables", Boolean.FALSE);
-      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), criterionContext);
       this.additionalCriteria = JSONUtilities.decodeString(jsonRoot, "additionalCriteria", false);
+
+      //
+      //  outputConnectorParameters (independent, i.e., not EvaluationCriteria or messages)
+      //
+
+      this.outputConnectorParameters = decodeIndependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType);
+
+      //
+      //  eventName
+      //
+
+      String eventName = this.outputConnectorParameters.containsKey("link.parameter.eventname") ? (String) this.outputConnectorParameters.get("link.parameter.eventname") : null;
+      EvolutionEngineEventDeclaration linkEvent = (eventName != null) ? dynamicEventDeclarationsService.getStaticAndDynamicEvolutionEventDeclarations().get(eventName) : null;
+      if (eventName != null && linkEvent == null) throw new GUIManagerException("unknown event", eventName);
+
+      //
+      //  criterionContext
+      //
+
+      this.linkCriterionContext = new CriterionContext(nodeCriterionContext, nodeType, linkEvent);
+
+      //
+      //  additional parameters
+      //
+
+      this.outputConnectorParameters.putAll(decodeDependentOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext, journeyService, subscriberMessageTemplateService));
+      this.outputConnectorParameters.putAll(decodeExpressionValuedOutputConnectorParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, linkCriterionContext));
+
+      //
+      //  transition criteria
+      //
+
+      this.transitionCriteria = decodeTransitionCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "transitionCriteria", false), linkCriterionContext);
     }
 
     /*****************************************
     *
-    *  decodeOutputConnectorParameters
+    *  decodeIndependentOutputConnectorParameters
     *
     *****************************************/
 
-    private ParameterMap decodeOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    private ParameterMap decodeIndependentOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType) throws GUIManagerException
     {
       ParameterMap outputConnectorParameters = new ParameterMap();
-      if (jsonArray != null)
+      for (int i=0; i<jsonArray.size(); i++)
         {
-          for (int i=0; i<jsonArray.size(); i++)
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getOutputConnectorParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          if (Journey.isExpressionValuedParameterValue(parameterJSON)) continue;
+          switch (parameter.getFieldDataType())
             {
-              JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
-              String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
-              CriterionField parameter = nodeType.getOutputConnectorParameters().get(parameterName);
-              if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
-              switch (parameter.getFieldDataType())
-                {
-                  case IntegerCriterion:
-                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
-                    break;
+              case IntegerCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeInteger(parameterJSON, "value", false));
+                break;
 
-                  case DoubleCriterion:
-                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
-                    break;
+              case DoubleCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeDouble(parameterJSON, "value", false));
+                break;
 
-                  case StringCriterion:
-                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
-                    break;
+              case StringCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeString(parameterJSON, "value", false));
+                break;
 
-                  case BooleanCriterion:
-                    outputConnectorParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
-                    break;
+              case BooleanCriterion:
+                outputConnectorParameters.put(parameterName, JSONUtilities.decodeBoolean(parameterJSON, "value", false));
+                break;
 
-                  case DateCriterion:
-                    outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
-                    break;
+              case DateCriterion:
+                outputConnectorParameters.put(parameterName, GUIManagedObject.parseDateField(JSONUtilities.decodeString(parameterJSON, "value", false)));
+                break;
 
-                  case StringSetCriterion:
-                    Set<String> stringSetValue = new HashSet<String>();
-                    JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
-                    for (int j=0; j<stringSetArray.size(); j++)
-                      {
-                        stringSetValue.add((String) stringSetArray.get(j));
-                      }
-                    outputConnectorParameters.put(parameterName, stringSetValue);
-                    break;
-
-                  case EvaluationCriteriaParameter:
-                    List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
-                    JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
-                    for (int j=0; j<evaluationCriteriaArray.size(); j++)
-                      {
-                        evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
-                      }
-                    outputConnectorParameters.put(parameterName, evaluationCriteriaValue);
-                    break;
-
-                  case SMSMessageParameter:
-                    SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                    outputConnectorParameters.put(parameterName, smsMessageValue);
-                    break;
-
-                  case EmailMessageParameter:
-                    EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                    outputConnectorParameters.put(parameterName, emailMessageValue);
-                    break;
-
-                  case PushMessageParameter:
-                    PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
-                    outputConnectorParameters.put(parameterName, pushMessageValue);
-                    break;
-
-                  case WorkflowParameter:
-                    WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
-                    outputConnectorParameters.put(parameterName, workflowParameter);
-                    break;
-                }
+              case StringSetCriterion:
+                Set<String> stringSetValue = new HashSet<String>();
+                JSONArray stringSetArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+                for (int j=0; j<stringSetArray.size(); j++)
+                  {
+                    stringSetValue.add((String) stringSetArray.get(j));
+                  }
+                outputConnectorParameters.put(parameterName, stringSetValue);
+                break;
             }
+        }
+      return outputConnectorParameters;
+    }
+
+    /*****************************************
+    *
+    *  decodeDependentOutputConnectorParameters
+    *
+    *****************************************/
+
+    private ParameterMap decodeDependentOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService) throws GUIManagerException
+    {
+      ParameterMap outputConnectorParameters = new ParameterMap();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getOutputConnectorParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          if (Journey.isExpressionValuedParameterValue(parameterJSON)) continue;
+          switch (parameter.getFieldDataType())
+            {
+              case EvaluationCriteriaParameter:
+                List<EvaluationCriterion> evaluationCriteriaValue = new ArrayList<EvaluationCriterion>();
+                JSONArray evaluationCriteriaArray = JSONUtilities.decodeJSONArray(parameterJSON, "value", new JSONArray());
+                for (int j=0; j<evaluationCriteriaArray.size(); j++)
+                  {
+                    evaluationCriteriaValue.add(new EvaluationCriterion((JSONObject) evaluationCriteriaArray.get(j), criterionContext));
+                  }
+                outputConnectorParameters.put(parameterName, evaluationCriteriaValue);
+                break;
+
+              case SMSMessageParameter:
+                SMSMessage smsMessageValue = new SMSMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                outputConnectorParameters.put(parameterName, smsMessageValue);
+                break;
+
+              case EmailMessageParameter:
+                EmailMessage emailMessageValue = new EmailMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                outputConnectorParameters.put(parameterName, emailMessageValue);
+                break;
+
+              case PushMessageParameter:
+                PushMessage pushMessageValue = new PushMessage(parameterJSON.get("value"), subscriberMessageTemplateService, criterionContext);
+                outputConnectorParameters.put(parameterName, pushMessageValue);
+                break;
+
+              case WorkflowParameter:
+                WorkflowParameter workflowParameter = new WorkflowParameter((JSONObject) parameterJSON.get("value"), journeyService, criterionContext);
+                outputConnectorParameters.put(parameterName, workflowParameter);
+                break;
+            }
+        }
+      return outputConnectorParameters;
+    }
+
+    /*****************************************
+    *
+    *  decodeExpressionValuedParameters
+    *
+    *****************************************/
+
+    private ParameterMap decodeExpressionValuedOutputConnectorParameters(JSONArray jsonArray, NodeType nodeType, CriterionContext criterionContext) throws GUIManagerException
+    {
+      ParameterMap outputConnectorParameters = new ParameterMap();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          /*****************************************
+          *
+          *  parameter
+          *
+          *****************************************/
+
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getOutputConnectorParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+          if (! isExpressionValuedParameterValue(parameterJSON)) continue;
+
+          /*****************************************
+          *
+          *  expression
+          *
+          *****************************************/
+
+          //
+          //  parse
+          //
+
+          ParameterExpression parameterExpressionValue = new ParameterExpression(JSONUtilities.decodeJSONObject(parameterJSON, "value", true), criterionContext);
+          outputConnectorParameters.put(parameterName, parameterExpressionValue);
+
+          //
+          //  valid combination
+          //
+
+          boolean validCombination = false;
+          switch (parameter.getFieldDataType())
+            {
+              case IntegerCriterion:
+              case DoubleCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case IntegerExpression:
+                    case DoubleExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+
+              case StringCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case StringExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+
+              case BooleanCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case BooleanExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+
+              case DateCriterion:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case DateExpression:
+                      validCombination = true;
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+
+
+              case EvaluationCriteriaParameter:
+              case SMSMessageParameter:
+              case EmailMessageParameter:
+              case PushMessageParameter:
+              case WorkflowParameter:
+                switch (parameterExpressionValue.getType())
+                  {
+                    case OpaqueReferenceExpression:
+                      validCombination = ((ReferenceExpression) (parameterExpressionValue.getExpression())).getCriterionDataType() == parameter.getFieldDataType();
+                      break;
+                    default:
+                      validCombination = false;
+                      break;
+                  }
+                break;
+
+              default:
+                validCombination = false;
+                break;
+            }
+
+          //
+          //  validate
+          //
+
+          if (!validCombination) throw new GUIManagerException("dataType/expression combination", parameter.getFieldDataType().getExternalRepresentation() + "/" + parameterExpressionValue.getType());
         }
       return outputConnectorParameters;
     }
