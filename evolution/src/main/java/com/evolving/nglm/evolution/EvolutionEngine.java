@@ -4024,7 +4024,7 @@ public class EvolutionEngine
                 if (calledJourney)
                   {
                     boundParameters = new ParameterMap(journey.getBoundParameters());
-                    boundParameters.addAll(((JourneyRequest) evolutionEvent).getBoundParameters());
+                    boundParameters.putAll(((JourneyRequest) evolutionEvent).getBoundParameters());
                   }
                 else
                   {
@@ -6630,11 +6630,56 @@ public class EvolutionEngine
 
       /*****************************************
       *
+      *  evaluate bound parameters
+      *
+      *****************************************/
+
+      boolean validParameters = true;
+      SimpleParameterMap boundParameters = new SimpleParameterMap();
+      for (String parameterName : workflowParameter.getWorkflowParameters().keySet())
+        {
+          if (workflowParameter.getWorkflowParameters().get(parameterName) instanceof ParameterExpression)
+            {
+              try
+                {
+                  Expression parameterExpression = ((ParameterExpression) workflowParameter.getWorkflowParameters().get(parameterName)).getExpression();
+                  TimeUnit baseTimeUnit = ((ParameterExpression) workflowParameter.getWorkflowParameters().get(parameterName)).getBaseTimeUnit();
+                  Object parameterValue = parameterExpression.evaluateExpression(subscriberEvaluationRequest, baseTimeUnit);
+                  boundParameters.put(parameterName, parameterValue);
+                }
+              catch (ExpressionEvaluationException|ArithmeticException e)
+                {
+                  //
+                  //  log
+                  //
+
+                  log.info("invalid workflow parameter {} = {}", parameterName, ((ParameterExpression) workflowParameter.getWorkflowParameters().get(parameterName)).getExpressionString());
+                  StringWriter stackTraceWriter = new StringWriter();
+                  e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                  log.debug(stackTraceWriter.toString());
+                  evolutionEventContext.subscriberTrace("Workflow Parameter {0}: {1} / {2}", parameterName, ((ParameterExpression) workflowParameter.getWorkflowParameters().get(parameterName)).getExpressionString(), e.getMessage());
+
+                  //
+                  //  abort
+                  //
+
+                  validParameters = false;
+                  break;
+                }
+            }
+          else
+            {
+              boundParameters.put(parameterName, workflowParameter.getWorkflowParameters().get(parameterName));
+            }
+        }
+
+      /*****************************************
+      *
       *  request
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, deliveryRequestSource, workflowParameter);
+      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
 
       /*****************************************
       *
@@ -6642,7 +6687,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      return Collections.<Action>singletonList(request);
+      return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
   }
 

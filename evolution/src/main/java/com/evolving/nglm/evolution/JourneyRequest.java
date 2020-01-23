@@ -146,13 +146,13 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(EvolutionEventContext context, String deliveryRequestSource, WorkflowParameter workflowParameter)
+  public JourneyRequest(EvolutionEventContext context, String deliveryRequestSource, String workflowID, SimpleParameterMap boundParameters)
   {
     super(context, "journeyFulfillment", deliveryRequestSource);
     this.journeyRequestID = context.getUniqueKey();
     this.eventDate = context.now();
-    this.journeyID = workflowParameter.getWorkflowID();
-    this.boundParameters = new SimpleParameterMap(workflowParameter.getWorkflowParameters());
+    this.journeyID = workflowID;
+    this.boundParameters = boundParameters;
     this.eligible = false;
   }
 
