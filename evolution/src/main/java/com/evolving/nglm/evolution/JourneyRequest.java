@@ -245,7 +245,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     struct.put("journeyRequestID", journeyRequest.getJourneyRequestID());
     struct.put("eventDate", journeyRequest.getEventDate());
     struct.put("journeyID", journeyRequest.getJourneyID());
-    struct.put("boundParameters", SimpleParameterMap.pack(journeyRequest.getBoundParameters()));
+    struct.put("boundParameters", SimpleParameterMap.serde().packOptional(journeyRequest.getBoundParameters()));
     return struct;
   }
 
@@ -279,7 +279,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     String journeyRequestID = valueStruct.getString("journeyRequestID");
     Date eventDate = (Date) valueStruct.get("eventDate");
     String journeyID = valueStruct.getString("journeyID");
-    SimpleParameterMap boundParameters = (schemaVersion >= 2) ? SimpleParameterMap.unpack(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new SimpleParameterMap();
+    SimpleParameterMap boundParameters = (schemaVersion >= 2) ? SimpleParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new SimpleParameterMap();
     
     //
     //  return
