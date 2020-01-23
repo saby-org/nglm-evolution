@@ -41,7 +41,7 @@ public class ParameterMap extends HashMap<String,Object>
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("parameter_map");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
     schemaBuilder.field("nullParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptySetParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptyListParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
@@ -369,7 +369,7 @@ public class ParameterMap extends HashMap<String,Object>
     Map<String,SMSMessage> smsMessageParameters = unpackSMSMessageParameters(schema.field("smsMessageParameters").schema(), (Map<String,Object>) valueStruct.get("smsMessageParameters"));
     Map<String,EmailMessage> emailMessageParameters = unpackEmailMessageParameters(schema.field("emailMessageParameters").schema(), (Map<String,Object>) valueStruct.get("emailMessageParameters"));
     Map<String,PushMessage> pushMessageParameters = unpackPushMessageParameters(schema.field("pushMessageParameters").schema(), (Map<String,Object>) valueStruct.get("pushMessageParameters"));
-    Map<String,WorkflowParameter> workflowParameters = unpackWorkflowParameters(schema.field("workflowParameters").schema(), (Map<String,Object>) valueStruct.get("workflowParameters"));
+    Map<String,WorkflowParameter> workflowParameters = (schemaVersion >= 3) ? unpackWorkflowParameters(schema.field("workflowParameters").schema(), (Map<String,Object>) valueStruct.get("workflowParameters")) : new HashMap<String,WorkflowParameter>();
     Map<String,ParameterExpression> parameterExpressionParameters = (schemaVersion >= 2) ? unpackParameterExpressionParameters(schema.field("parameterExpressionParameters").schema(), (Map<String,Object>) valueStruct.get("parameterExpressionParameters")) : new HashMap<String,ParameterExpression>();
 
     /*****************************************
