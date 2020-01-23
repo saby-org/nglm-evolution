@@ -125,9 +125,36 @@ public class JourneyNode
     this.nodeType = nodeType;
     this.nodeParameters = nodeParameters;
     this.evaluateContextVariables = false;
-    this.contextVariables = contextVariables;
     this.incomingLinkReferences = incomingLinkReferences;
     this.outgoingLinkReferences = outgoingLinkReferences;
+
+    //
+    //  filter context variables to include local (and exclude parameter declarations)
+    //
+
+    this.contextVariables = new ArrayList<ContextVariable>();
+    for (ContextVariable contextVariable : contextVariables)
+      {
+        switch (contextVariable.getVariableType())
+          {
+            case Local:
+
+              //
+              //  include (allows runtime evaluation)
+              //
+
+              this.contextVariables.add(contextVariable);
+              break;
+
+            case Parameter:
+
+              //
+              //  do NOT include (prevents runtime evaluation)
+              //
+
+              break;
+          }
+      }
   }
 
   /*****************************************

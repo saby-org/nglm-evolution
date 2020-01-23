@@ -3803,6 +3803,7 @@ public class EvolutionEngine
 
         boolean calledJourney = true;
         calledJourney = calledJourney && evolutionEvent instanceof JourneyRequest;
+        calledJourney = calledJourney && ((JourneyRequest) evolutionEvent).isPending();
         calledJourney = calledJourney && Objects.equals(((JourneyRequest) evolutionEvent).getJourneyID(), journey.getJourneyID());
         calledJourney = calledJourney && ! journey.getAutoTargeted();
 
