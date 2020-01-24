@@ -6581,7 +6581,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = new JourneyRequest(evolutionEventContext, deliveryRequestSource, journeyID);
+      JourneyRequest request = new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, journeyID);
 
       /*****************************************
       *
@@ -6680,7 +6680,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
+      JourneyRequest request = validParameters ? new JourneyRequest(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource, workflowParameter.getWorkflowID(), boundParameters) : null;
 
       /*****************************************
       *
