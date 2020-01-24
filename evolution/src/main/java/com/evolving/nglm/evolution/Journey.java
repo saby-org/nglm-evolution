@@ -2872,11 +2872,24 @@ public class Journey extends GUIManagedObject
       ParameterMap outputConnectorParameters = new ParameterMap();
       for (int i=0; i<jsonArray.size(); i++)
         {
+          /*****************************************
+          *
+          *  parameter
+          *
+          *****************************************/
+
           JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
           String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
           CriterionField parameter = nodeType.getOutputConnectorParameters().get(parameterName);
           if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
           if (Journey.isExpressionValuedParameterValue(parameterJSON)) continue;
+
+          /*****************************************
+          *
+          *  constant
+          *
+          *****************************************/
+          
           switch (parameter.getFieldDataType())
             {
               case EvaluationCriteriaParameter:
