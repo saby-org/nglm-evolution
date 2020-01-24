@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
 public class JourneyRequest extends DeliveryRequest implements SubscriberStreamEvent, SubscriberStreamOutput, Action, BonusDelivery
 {
@@ -54,6 +55,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     schemaBuilder.field("callingJourneyInstanceID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("waitForCompletion", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("boundParameters", SimpleParameterMap.serde().optionalSchema());
+    schemaBuilder.field("journeyStatus", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("journeyResults", SimpleParameterMap.serde().optionalSchema());
     schema = schemaBuilder.build();
   };
@@ -84,6 +86,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   private String callingJourneyInstanceID;
   private boolean waitForCompletion;
   private SimpleParameterMap boundParameters;
+  private SubscriberJourneyStatus subscriberJourneyStatus;
   private SimpleParameterMap journeyResults;
 
   //
@@ -104,6 +107,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   public String getCallingJourneyInstanceID() { return callingJourneyInstanceID; }
   public boolean getWaitForCompletion() { return waitForCompletion; }
   public SimpleParameterMap getBoundParameters() { return boundParameters; }
+  public SubscriberJourneyStatus getSubscriberJourneyStatus() { return subscriberJourneyStatus; }
   public SimpleParameterMap getJourneyResults() { return journeyResults; }
   public boolean getEligible() { return eligible; }
   public ActionType getActionType() { return ActionType.JourneyRequest; }
@@ -148,6 +152,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.callingJourneyInstanceID = subscriberEvaluationRequest.getJourneyState().getJourneyInstanceID();
     this.waitForCompletion = false;
     this.boundParameters = new SimpleParameterMap();
+    this.subscriberJourneyStatus = null;
     this.journeyResults = null;
     this.eligible = false;
   }
@@ -167,6 +172,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.callingJourneyInstanceID = subscriberEvaluationRequest.getJourneyState().getJourneyInstanceID();
     this.waitForCompletion = true;
     this.boundParameters = boundParameters;
+    this.subscriberJourneyStatus = null;
     this.journeyResults = null;
     this.eligible = false;
   }
@@ -186,6 +192,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.callingJourneyInstanceID = null;
     this.waitForCompletion = false;
     this.boundParameters = new SimpleParameterMap();
+    this.subscriberJourneyStatus = null;
     this.journeyResults = null;
     this.eligible = false;
   }
@@ -205,6 +212,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.callingJourneyInstanceID = null;
     this.waitForCompletion = false;
     this.boundParameters = new SimpleParameterMap();
+    this.subscriberJourneyStatus = null;
     this.journeyResults = null;
     this.eligible = false;
   }
@@ -215,7 +223,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID, String callingJourneyInstanceID, boolean waitForCompletion, SimpleParameterMap boundParameters, SimpleParameterMap journeyResults)
+  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID, String callingJourneyInstanceID, boolean waitForCompletion, SimpleParameterMap boundParameters, SubscriberJourneyStatus subscriberJourneyStatus, SimpleParameterMap journeyResults)
   {
     super(schemaAndValue);
     this.journeyRequestID = journeyRequestID;
@@ -224,6 +232,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.callingJourneyInstanceID = callingJourneyInstanceID;
     this.waitForCompletion = waitForCompletion;
     this.boundParameters = boundParameters;
+    this.subscriberJourneyStatus = subscriberJourneyStatus;
     this.journeyResults = journeyResults;
     this.eligible = false;
   }
@@ -243,6 +252,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.callingJourneyInstanceID = journeyRequest.getCallingJourneyInstanceID();
     this.waitForCompletion = journeyRequest.getWaitForCompletion();
     this.boundParameters = new SimpleParameterMap(journeyRequest.getBoundParameters());
+    this.subscriberJourneyStatus = journeyRequest.getSubscriberJourneyStatus();
     this.journeyResults = (journeyResults != null) ? new SimpleParameterMap(journeyRequest.getJourneyResults()) : null;
     this.eligible = journeyRequest.getEligible();
   }
@@ -275,6 +285,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     struct.put("callingJourneyInstanceID", journeyRequest.getCallingJourneyInstanceID());
     struct.put("waitForCompletion", journeyRequest.getWaitForCompletion());
     struct.put("boundParameters", SimpleParameterMap.serde().packOptional(journeyRequest.getBoundParameters()));
+    struct.put("subscriberJourneyStatus", (journeyRequest.getSubscriberJourneyStatus() != null) ? journeyRequest.getSubscriberJourneyStatus().getExternalRepresentation() : null);
     struct.put("journeyResults", SimpleParameterMap.serde().packOptional(journeyRequest.getBoundParameters()));
     return struct;
   }
@@ -312,13 +323,14 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     String callingJourneyInstanceID = valueStruct.getString("callingJourneyInstanceID");
     boolean waitForCompletion = valueStruct.getBoolean("waitForCompletion");
     SimpleParameterMap boundParameters = (schemaVersion >= 2) ? SimpleParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new SimpleParameterMap();
+    SubscriberJourneyStatus subscriberJourneyStatus = (schemaVersion >= 2) ? (valueStruct.get("subscriberJourneyStatus") != null ? SubscriberJourneyStatus.fromExternalRepresentation(valueStruct.getString("subscriberJourneyStatus")) : null) : null;
     SimpleParameterMap journeyResults = (schemaVersion >= 2) ? SimpleParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("journeyResults").schema(), valueStruct.get("journeyResults"))) : null;
     
     //
     //  return
     //
 
-    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID, callingJourneyInstanceID, waitForCompletion, boundParameters, journeyResults);
+    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID, callingJourneyInstanceID, waitForCompletion, boundParameters, subscriberJourneyStatus,journeyResults);
   }
   
   /****************************************
