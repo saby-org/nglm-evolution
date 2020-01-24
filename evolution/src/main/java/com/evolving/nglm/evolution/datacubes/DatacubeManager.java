@@ -11,16 +11,19 @@ import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeGene
 import com.evolving.nglm.evolution.CriterionContext;
 import com.evolving.nglm.evolution.Deployment;
 import com.evolving.nglm.evolution.DynamicCriterionFieldService;
-import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeDefinitiveJob;
-import com.evolving.nglm.evolution.datacubes.journeys.JourneyTrafficDatacubeTemporaryJob;
-import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnTodayJob;
-import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubeOnYesterdayJob;
-import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
+import com.evolving.nglm.evolution.JourneyService;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.PaymentMeanService;
+import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
+import com.evolving.nglm.evolution.datacubes.journeys.JourneyDatacubesDefinitiveJob;
+import com.evolving.nglm.evolution.datacubes.journeys.JourneyDatacubesTemporaryJob;
+import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubesOnTodayJob;
+import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubesOnYesterdayJob;
 import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnTodayJob;
 import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnYesterdayJob;
 import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
-import com.evolving.nglm.evolution.datacubes.tiers.TiersDatacubeOnTodayJob;
-import com.evolving.nglm.evolution.datacubes.tiers.TiersDatacubeOnYesterdayJob;
 
 import org.apache.http.HttpHost;
 
@@ -49,9 +52,19 @@ public class DatacubeManager
   *  data
   *
   *****************************************/
-  
-  private RestHighLevelClient elasticsearchRestClient;
-  private GUIManagerClient guiManagerClient;
+
+  //
+  //  static data (for the singleton instance)
+  //
+
+  private static DynamicCriterionFieldService dynamicCriterionFieldService; 
+  private static JourneyService journeyService;
+  private static LoyaltyProgramService loyaltyProgramService;
+  private static SegmentationDimensionService segmentationDimensionService;
+  private static OfferService offerService;
+  private static SalesChannelService salesChannelService;
+  private static PaymentMeanService paymentMeanService;
+  private static RestHighLevelClient elasticsearchRestClient;
 
   /*****************************************
   *
@@ -66,31 +79,68 @@ public class DatacubeManager
     *  args
     *
     *****************************************/
-    
     String bootstrapServers = args[1];
-    String elasticsearchServerHost = args[2];
-    Integer elasticsearchServerPort = Integer.parseInt(args[3]);
-    String guiManagerServerHost = args[4];
-    String guiManagerServerPort = args[5];
+    String applicationID = "datacubemanager";
+    String instanceID = args[2];
+    String elasticsearchServerHost = args[3];
+    Integer elasticsearchServerPort = Integer.parseInt(args[4]);
 
     /*****************************************
     *
-    *  dynamic Criterion
+    *  configuration
     *
     *****************************************/
+    
+    //
+    //  dynamicCriterionFieldsService
+    //
 
-    String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
-    DynamicCriterionFieldService dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, "datacubeManager-dynamiccriterionfieldservice-001", dynamicCriterionFieldTopic, true);
+    dynamicCriterionFieldService = new DynamicCriterionFieldService(bootstrapServers, applicationID + "dynamiccriterionfieldservice-" + instanceID, Deployment.getDynamicCriterionFieldTopic(), false);
     dynamicCriterionFieldService.start();
-    CriterionContext.initialize(dynamicCriterionFieldService);
+    CriterionContext.initialize(dynamicCriterionFieldService); // Workaround: CriterionContext must be initialized before creating the JourneyService. (explain ?)
+
+    //
+    //  journeyService
+    //
+
+    journeyService = new JourneyService(bootstrapServers, applicationID + "-journeyservice-" + instanceID, Deployment.getJourneyTopic(), false);
+    journeyService.start();
     
-    /*****************************************
-    *
-    *  runtime
-    *
-    *****************************************/
+    //
+    //  loyaltyProgramService
+    // 
     
-    NGLMRuntime.initialize(true);
+    loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, applicationID + "-loyaltyProgramService-" + instanceID, Deployment.getLoyaltyProgramTopic(), false);
+    loyaltyProgramService.start();
+
+    //
+    //  segmentationDimensionService
+    //
+
+    segmentationDimensionService = new SegmentationDimensionService(bootstrapServers, applicationID + "-segmentationdimensionservice-" + instanceID, Deployment.getSegmentationDimensionTopic(), false);
+    segmentationDimensionService.start();
+
+    //
+    //  offerService
+    //
+
+    offerService = new OfferService(bootstrapServers, applicationID + "-offer-" + instanceID, Deployment.getOfferTopic(), false);
+    offerService.start();
+
+    //
+    //  salesChannelService
+    //
+
+    salesChannelService = new SalesChannelService(bootstrapServers, applicationID + "-saleschannel-" + instanceID, Deployment.getSalesChannelTopic(), false);
+    salesChannelService.start();
+    
+    //
+    // pointService
+    //
+    
+    paymentMeanService = new PaymentMeanService(bootstrapServers, applicationID + "-paymentmeanservice-" + instanceID, Deployment.getPaymentMeanTopic(), false);
+    paymentMeanService.start();
+
 
     /*****************************************
     *
@@ -98,7 +148,7 @@ public class DatacubeManager
     *
     *****************************************/
     
-    NGLMRuntime.addShutdownHook(new ShutdownHook(this, dynamicCriterionFieldService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this));
     
     /*****************************************
     *
@@ -106,7 +156,6 @@ public class DatacubeManager
     *  
     *****************************************/
     
-    guiManagerClient = new GUIManagerClient(guiManagerServerHost, guiManagerServerPort);
     try
       {
         elasticsearchRestClient = new RestHighLevelClient(RestClient.builder(new HttpHost(elasticsearchServerHost, elasticsearchServerPort, "http")));
@@ -137,25 +186,19 @@ public class DatacubeManager
     // Temporary datacubes (will be updated later by the definitive version)
     //
     
-    ScheduledJob temporaryODR = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    ScheduledJob temporaryODR = new ODRDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
     if(temporaryODR.properlyConfigured)
       {
         datacubeScheduler.schedule(temporaryODR);
       }
     
-    ScheduledJob temporaryLoyalty = new LoyaltyDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    ScheduledJob temporaryLoyalty = new LoyaltyDatacubesOnTodayJob(uniqueID++, elasticsearchRestClient, loyaltyProgramService);
     if(temporaryLoyalty.properlyConfigured)
       {
         datacubeScheduler.schedule(temporaryLoyalty);
       }
     
-    ScheduledJob temporaryTiers = new TiersDatacubeOnTodayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
-    if(temporaryTiers.properlyConfigured)
-      {
-        datacubeScheduler.schedule(temporaryTiers);
-      }
-    
-//    ScheduledJob temporaryJourneyTraffic = new JourneyTrafficDatacubeTemporaryJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+//    ScheduledJob temporaryJourneyTraffic = new JourneyDatacubesTemporaryJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService, journeyService);
 //    if(temporaryJourneyTraffic.properlyConfigured)
 //      {
 //        datacubeScheduler.schedule(temporaryJourneyTraffic);
@@ -165,25 +208,19 @@ public class DatacubeManager
     // Definitives datacubes 
     //
     
-    ScheduledJob definitiveODR = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    ScheduledJob definitiveODR = new ODRDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, offerService, salesChannelService, paymentMeanService, loyaltyProgramService, journeyService);
     if(definitiveODR.properlyConfigured)
       {
         datacubeScheduler.schedule(definitiveODR);
       }
     
-    ScheduledJob definitiveLoyalty = new LoyaltyDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    ScheduledJob definitiveLoyalty = new LoyaltyDatacubesOnYesterdayJob(uniqueID++, elasticsearchRestClient, loyaltyProgramService);
     if(definitiveLoyalty.properlyConfigured)
       {
         datacubeScheduler.schedule(definitiveLoyalty);
       }
     
-    ScheduledJob definitiveTiers = new TiersDatacubeOnYesterdayJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
-    if(definitiveTiers.properlyConfigured)
-      {
-        datacubeScheduler.schedule(definitiveTiers);
-      }
-    
-    ScheduledJob definitiveJourneyTraffic = new JourneyTrafficDatacubeDefinitiveJob(uniqueID++, elasticsearchRestClient, guiManagerClient);
+    ScheduledJob definitiveJourneyTraffic = new JourneyDatacubesDefinitiveJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService, journeyService);
     if(definitiveJourneyTraffic.properlyConfigured)
       {
         datacubeScheduler.schedule(definitiveJourneyTraffic);
@@ -216,16 +253,14 @@ public class DatacubeManager
     //
 
     private DatacubeManager datacubemanager;
-    private DynamicCriterionFieldService dynamicCriterionFieldService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(DatacubeManager datacubemanager, DynamicCriterionFieldService dynamicCriterionFieldService)
+    private ShutdownHook(DatacubeManager datacubemanager)
     {
       this.datacubemanager = datacubemanager;
-      this.dynamicCriterionFieldService = dynamicCriterionFieldService;
     }
 
     //
@@ -235,7 +270,6 @@ public class DatacubeManager
     @Override public void shutdown(boolean normalShutdown)
     {
       datacubemanager.shutdownUCGEngine(normalShutdown);
-      if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
     }
   }
 
@@ -255,9 +289,17 @@ public class DatacubeManager
 
     /*****************************************
     *
-    *  close resources
+    *  stop services
     *
     *****************************************/
+
+    dynamicCriterionFieldService.stop(); 
+    journeyService.stop();
+    loyaltyProgramService.stop();
+    segmentationDimensionService.stop();
+    offerService.stop();
+    salesChannelService.stop();
+    paymentMeanService.stop();
 
     /*****************************************
     *
@@ -280,7 +322,9 @@ public class DatacubeManager
     //  instance  
     //
 
+    NGLMRuntime.initialize(true);
     DatacubeManager datacubemanager = new DatacubeManager(args);
+    
     log.info("Service initialized");
 
     //

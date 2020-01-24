@@ -1,15 +1,25 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
-import org.json.simple.JSONObject;
+import java.util.Collection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.SalesChannel;
+import com.evolving.nglm.evolution.SalesChannelService;
 
-public class SalesChannelsMap extends GUIManagedObjectList<SalesChannel>
+public class SalesChannelsMap extends GUIManagedObjectMap<SalesChannel>
 {
   protected static final Logger log = LoggerFactory.getLogger(SalesChannelsMap.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private SalesChannelService service;
   
   /*****************************************
   *
@@ -17,36 +27,17 @@ public class SalesChannelsMap extends GUIManagedObjectList<SalesChannel>
   *
   *****************************************/
   
-  public SalesChannelsMap() {
-    super();
+  public SalesChannelsMap(SalesChannelService service) {
+    super(SalesChannel.class);
+    this.service = service;
   }
   
   /*****************************************
   *
-  *  updateFromGUIManager
+  *  getCollection
   *
   *****************************************/
   
-  public void updateFromGUIManager(GUIManagerClient gmClient) {
-    this.reset();
-
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getSalesChannelList", "salesChannels"))
-      {
-        try
-          {
-            SalesChannel salesChannel = new SalesChannel(item);
-            guiManagedObjects.put(salesChannel.getGUIManagedObjectID(), salesChannel);
-          } 
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some salesChannels: {}",e.getMessage());
-          }
-      }
-  }
-  
-  /*****************************************
-  *
-  *  accessors
-  *
-  *****************************************/
+  // TODO: for the moment, we also retrieve archived objects
+  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredSalesChannels(true); }
 }

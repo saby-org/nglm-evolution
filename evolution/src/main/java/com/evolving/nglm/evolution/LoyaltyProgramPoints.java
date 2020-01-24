@@ -311,32 +311,6 @@ public class LoyaltyProgramPoints extends LoyaltyProgram
         this.setEpoch(epoch);
       }
   }
-
-  /*****************************************
-  *
-  *  constructor -- JSON without context -- for externals read-only (such as datacubes & reports)
-  *
-  *****************************************/
-
- public LoyaltyProgramPoints(JSONObject jsonRoot) throws GUIManagerException
- {
-   /*****************************************
-    *
-    *  super
-    *
-    *****************************************/
-
-   super(jsonRoot);
-
-   /*****************************************
-    *
-    *  attributes
-    *
-    *****************************************/
-   this.rewardPointID = JSONUtilities.decodeString(jsonRoot, "rewardPointID", true);
-   this.statusPointID = JSONUtilities.decodeString(jsonRoot, "statusPointID", true);
-   this.tiers = decodeLoyaltyProgramTiers(JSONUtilities.decodeJSONArray(jsonRoot, "tiers", true));
- }
   
   /*****************************************
   *

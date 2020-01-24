@@ -135,8 +135,6 @@ public class Deployment
   private static String todayODRDatacubePeriodCronEntryString;
   private static String yesterdayLoyaltyDatacubePeriodCronEntryString;
   private static String todayLoyaltyDatacubePeriodCronEntryString;
-  private static String yesterdayTiersDatacubePeriodCronEntryString;
-  private static String todayTiersDatacubePeriodCronEntryString;
   private static String journeyTrafficDatacubePeriodCronEntryString;
   private static String subscriberProfileSnapshotPeriodCronEntryString;
   private static PropensityRule propensityRule;
@@ -353,8 +351,6 @@ public class Deployment
   public static String getTodayODRDatacubePeriodCronEntryString() { return todayODRDatacubePeriodCronEntryString; }
   public static String getYesterdayLoyaltyDatacubePeriodCronEntryString() { return yesterdayLoyaltyDatacubePeriodCronEntryString; }
   public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
-  public static String getYesterdayTiersDatacubePeriodCronEntryString() { return yesterdayTiersDatacubePeriodCronEntryString; }
-  public static String getTodayTiersDatacubePeriodCronEntryString() { return todayTiersDatacubePeriodCronEntryString; }
   public static String getJourneyTrafficDatacubePeriodCronEntryString() { return journeyTrafficDatacubePeriodCronEntryString; }
   public static String getSubscriberProfileSnapshotPeriodCronEntryString() { return subscriberProfileSnapshotPeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
@@ -1966,32 +1962,6 @@ public class Deployment
     try
       {
         todayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayLoyaltyDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  yesterdayTierDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        yesterdayTiersDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayTiersDatacubePeriodCronEntryString", true);
-      }
-    catch (JSONUtilitiesException e)
-      {
-        throw new ServerRuntimeException("deployment", e);
-      }
-    
-    //
-    //  todayTierDatacubePeriodCronEntryString
-    //
-
-    try
-      {
-        todayTiersDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todayTiersDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

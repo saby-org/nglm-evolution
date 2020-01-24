@@ -1,4 +1,4 @@
-package com.evolving.nglm.evolution.datacubes.tiers;
+package com.evolving.nglm.evolution.datacubes.loyalty;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -7,7 +7,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -24,11 +23,11 @@ import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.Pa
 
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 
-public class TiersDatacubeGenerator extends DatacubeGenerator
+public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
 {
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
   private static final String DATACUBE_ES_INDEX = "datacube_loyaltyprogramschanges";
@@ -36,16 +35,14 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
   private static final String FILTER_ALL = "filters";
   private static final Pattern LOYALTY_TIERS_PATTERN = Pattern.compile("\\[(.*), (.*), (.*), (.*)\\]");
 
-  private GUIManagerClient guiClient;
   private LoyaltyProgramsMap loyaltyProgramsMap;
   
   private String generationDate;
   
-  public TiersDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, GUIManagerClient guiClient)
+  public ProgramsChangesDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
     super(datacubeName, elasticsearch);
-    this.guiClient = guiClient;
-    this.loyaltyProgramsMap = new LoyaltyProgramsMap();
+    this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
   }
 
   @Override protected String getDatacubeESIndex() { return DATACUBE_ES_INDEX; }
@@ -55,9 +52,11 @@ public class TiersDatacubeGenerator extends DatacubeGenerator
   @Override protected Map<String, Object> extractData(ParsedBucket compositeBucket, Map<String, Object> contextFilters) throws ClassCastException { return Collections.emptyMap(); }
 
   @Override
-  protected void runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
+  protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
-    loyaltyProgramsMap.updateFromGUIManager(guiClient);
+    loyaltyProgramsMap.update();
+    
+    return true;
   }
 
   @Override

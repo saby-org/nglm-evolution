@@ -1,17 +1,26 @@
 package com.evolving.nglm.evolution.datacubes.mapping;
 
-import org.json.simple.JSONObject;
+import java.util.Collection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
 import com.evolving.nglm.evolution.JourneyNode;
+import com.evolving.nglm.evolution.JourneyService;
 
-public class JourneysMap extends GUIManagedObjectList<Journey>
+public class JourneysMap extends GUIManagedObjectMap<Journey>
 {
   protected static final Logger log = LoggerFactory.getLogger(JourneysMap.class);
+
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  
+  private JourneyService service;
   
   /*****************************************
   *
@@ -19,47 +28,19 @@ public class JourneysMap extends GUIManagedObjectList<Journey>
   *
   *****************************************/
   
-  public JourneysMap() {
-    super();
+  public JourneysMap(JourneyService service) {
+    super(Journey.class);
+    this.service = service;
   }
   
   /*****************************************
   *
-  *  updateFromGUIManager
+  *  getCollection
   *
   *****************************************/
   
-  public void updateFromGUIManager(GUIManagerClient gmClient) {
-    this.reset();
-
-    // Retrieve all journeys 
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getJourneyList", "journeys"))
-      {
-        try
-          {
-            Journey journey = new Journey(item, GUIManagedObjectType.Journey);
-            guiManagedObjects.put(journey.getGUIManagedObjectID(), journey);
-          } 
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some journeys: {}",e.getMessage());
-          }
-      }
-    
-    // Retrieve all campaigns 
-    for (JSONObject item : this.getGUIManagedObjectList(gmClient, "getCampaignList", "campaigns"))
-      {
-        try
-          {
-            Journey journey = new Journey(item, GUIManagedObjectType.Campaign);
-            guiManagedObjects.put(journey.getGUIManagedObjectID(), journey);
-          } 
-        catch (GUIManagerException e)
-          {
-            log.warn("Unable to retrieve some campaigns: {}",e.getMessage());
-          }
-      }
-  }
+  // TODO: for the moment, we also retrieve archived objects
+  protected Collection<GUIManagedObject> getCollection() { return this.service.getStoredJourneys(true); }
   
   /*****************************************
   *

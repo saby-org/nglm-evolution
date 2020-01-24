@@ -26,12 +26,12 @@ import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Deployment;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
-import com.evolving.nglm.evolution.datacubes.mapping.GUIManagerClient;
 import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SubscriberStatusMap;
 
-public class LoyaltyDatacubeGenerator extends DatacubeGenerator
+public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
 {
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
   private static final String DATACUBE_ES_INDEX = "datacube_loyaltyprogramshistory";
@@ -43,7 +43,6 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_POINT_REDEEMER_COUNT = "_RedeemerCount";
   private static final Pattern LOYALTY_TIER_PATTERN = Pattern.compile("\\[(.*), (.*)\\]");
 
-  private GUIManagerClient guiClient;
   private List<String> filterFields;
   private List<CompositeValuesSourceBuilder<?>> filterComplexSources;
   private LoyaltyProgramsMap loyaltyProgramsMap;
@@ -51,12 +50,11 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   
   private String generationDate;
   
-  public LoyaltyDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, GUIManagerClient guiClient)  
+  public ProgramsHistoryDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, LoyaltyProgramService loyaltyProgramService)
   {
     super(datacubeName, elasticsearch);
 
-    this.guiClient = guiClient;
-    this.loyaltyProgramsMap = new LoyaltyProgramsMap();
+    this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.subscriberStatusDisplayMapping = new SubscriberStatusMap();
     
     //
@@ -84,10 +82,12 @@ public class LoyaltyDatacubeGenerator extends DatacubeGenerator
   @Override protected List<CompositeValuesSourceBuilder<?>> getFilterComplexSources() { return this.filterComplexSources; }
 
   @Override
-  protected void runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
+  protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
-    loyaltyProgramsMap.updateFromGUIManager(guiClient);
+    loyaltyProgramsMap.update();
     subscriberStatusDisplayMapping.updateFromElasticsearch(elasticsearch);
+    
+    return true;
   }
 
   @Override
