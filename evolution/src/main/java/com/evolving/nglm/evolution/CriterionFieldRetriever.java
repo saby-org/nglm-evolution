@@ -428,25 +428,30 @@ public abstract class CriterionFieldRetriever
   {
     /*****************************************
     *
-    *  awaited journey entry?
+    *  awaited journey response
     *
     *****************************************/
 
-    boolean awaitedJourneyEntry = true;
-    awaitedJourneyEntry = awaitedJourneyEntry && evaluationRequest.getJourneyState().getJourneyOutstandingJourneyRequestID() != null;
-    awaitedJourneyEntry = awaitedJourneyEntry && evaluationRequest.getSubscriberStreamEvent() instanceof JourneyRequest;
-    awaitedJourneyEntry = awaitedJourneyEntry && ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getJourneyRequestID().equals(evaluationRequest.getJourneyState().getJourneyOutstandingJourneyRequestID());
+    //
+    //  journey response?
+    //
 
-    /*****************************************
-    *
-    *  awaited journey transition?
-    *
-    *****************************************/
+    boolean isJourneyResponse = true;
+    isJourneyResponse = isJourneyResponse && evaluationRequest.getSubscriberStreamEvent() instanceof JourneyRequest;
+    isJourneyResponse = isJourneyResponse && ! ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).isPending();
 
-    boolean awaitedJourneyTransition = true;
-    awaitedJourneyTransition = awaitedJourneyTransition && evaluationRequest.getJourneyState().getJourneyOutstandingJourneyInstanceID() != null;
-    awaitedJourneyTransition = awaitedJourneyTransition && evaluationRequest.getSubscriberStreamEvent() instanceof JourneyStatistic;
-    awaitedJourneyTransition = awaitedJourneyTransition && ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getJourneyInstanceID().equals(evaluationRequest.getJourneyState().getJourneyOutstandingJourneyInstanceID());
+    //
+    //  awaited journey response
+    //
+
+    JourneyRequest journeyResponse = isJourneyResponse ? (JourneyRequest) evaluationRequest.getSubscriberStreamEvent() : null;
+    boolean awaitedJourneyResponse = false;
+    if (isJourneyResponse)
+      {
+        JourneyState journeyState = evaluationRequest.getJourneyState();
+        String journeyInstanceID = (journeyState != null) ? journeyState.getJourneyInstanceID() : null;
+        awaitedJourneyResponse = journeyResponse.getCallingJourneyInstanceID() != null && journeyInstanceID != null && journeyResponse.getCallingJourneyInstanceID().equals(journeyInstanceID);
+      }
 
     /*****************************************
     *
@@ -454,12 +459,8 @@ public abstract class CriterionFieldRetriever
     *
     *****************************************/
 
-    if (awaitedJourneyEntry && ! ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
-      return SubscriberJourneyStatus.NotEligible.getExternalRepresentation();
-    else if (awaitedJourneyEntry && ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).getEligible())
-      return SubscriberJourneyStatus.Entered.getExternalRepresentation();
-    else if (awaitedJourneyTransition)
-      return ((JourneyStatistic) evaluationRequest.getSubscriberStreamEvent()).getSubscriberJourneyStatus().getExternalRepresentation();
+    if (awaitedJourneyResponse)
+      return journeyResponse.getSubscriberJourneyStatus();
     else
       return null;
   }
