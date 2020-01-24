@@ -174,9 +174,10 @@ public class Journey extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("effectiveEntryPeriodEndDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("templateParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_template_parameters").defaultValue(new HashMap<String,CriterionField>()).schema());
     schemaBuilder.field("journeyParameters", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_journey_parameters").schema());
     schemaBuilder.field("contextVariables", SchemaBuilder.map(Schema.STRING_SCHEMA, CriterionField.schema()).name("journey_context_variables").schema());
     schemaBuilder.field("targetingType", Schema.STRING_SCHEMA);
@@ -214,6 +215,7 @@ public class Journey extends GUIManagedObject
   ****************************************/
 
   private Date effectiveEntryPeriodEndDate;
+  private Map<String,CriterionField> templateParameters;
   private Map<String,CriterionField> journeyParameters;
   private Map<String,CriterionField> contextVariables;
   private TargetingType targetingType;
@@ -241,6 +243,7 @@ public class Journey extends GUIManagedObject
 
   public String getJourneyID() { return getGUIManagedObjectID(); }
   public String getJourneyName() { return getGUIManagedObjectName(); }
+  public Map<String,CriterionField> getTemplateParameters() { return templateParameters; }
   public Map<String,CriterionField> getJourneyParameters() { return journeyParameters; }
   public Map<String,CriterionField> getContextVariables() { return contextVariables; }
   public TargetingType getTargetingType() { return targetingType; }
@@ -482,10 +485,11 @@ public class Journey extends GUIManagedObject
   *
   *****************************************/
 
-  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists)
+  public Journey(SchemaAndValue schemaAndValue, Date effectiveEntryPeriodEndDate, Map<String,CriterionField> templateParameters, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, TargetingType targetingType, List<EvaluationCriterion> eligibilityCriteria, List<EvaluationCriterion> targetingCriteria, List<String> targetID, String startNodeID, String endNodeID, Set<JourneyObjectiveInstance> journeyObjectiveInstances, Map<String,JourneyNode> journeyNodes, Map<String,JourneyLink> journeyLinks, ParameterMap boundParameters, boolean appendInclusionLists, boolean appendExclusionLists)
   {
     super(schemaAndValue);
     this.effectiveEntryPeriodEndDate = effectiveEntryPeriodEndDate;
+    this.templateParameters = templateParameters;
     this.journeyParameters = journeyParameters;
     this.contextVariables = contextVariables;
     this.targetingType = targetingType;
@@ -514,6 +518,7 @@ public class Journey extends GUIManagedObject
     Struct struct = new Struct(schema);
     packCommon(struct, journey);
     struct.put("effectiveEntryPeriodEndDate", journey.getRawEffectiveEntryPeriodEndDate());
+    struct.put("templateParameters", packJourneyParameters(journey.getTemplateParameters()));
     struct.put("journeyParameters", packJourneyParameters(journey.getJourneyParameters()));
     struct.put("contextVariables", packContextVariables(journey.getContextVariables()));
     struct.put("targetingType", journey.getTargetingType().getExternalRepresentation());
@@ -655,6 +660,7 @@ public class Journey extends GUIManagedObject
 
     Struct valueStruct = (Struct) value;
     Date effectiveEntryPeriodEndDate = (Date) valueStruct.get("effectiveEntryPeriodEndDate");
+    Map<String,CriterionField> templateParameters = (schemaVersion >= 4) ? unpackJourneyParameters(schema.field("journeyParameters").schema(), (Map<String,Object>) valueStruct.get("journeyParameters")) : new HashMap<String,CriterionField>();
     Map<String,CriterionField> journeyParameters = unpackJourneyParameters(schema.field("journeyParameters").schema(), (Map<String,Object>) valueStruct.get("journeyParameters"));
     Map<String,CriterionField> contextVariables = unpackContextVariables(schema.field("contextVariables").schema(), (Map<String,Object>) valueStruct.get("contextVariables"));
     TargetingType targetingType = TargetingType.fromExternalRepresentation(valueStruct.getString("targetingType"));
@@ -730,7 +736,7 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists);
+    return new Journey(schemaAndValue, effectiveEntryPeriodEndDate, templateParameters, journeyParameters, contextVariables, targetingType, eligibilityCriteria, targetingCriteria, targetID, startNodeID, endNodeID, journeyObjectiveInstances, journeyNodes, journeyLinks, boundParameters, appendInclusionLists, appendExclusionLists);
   }
   
   /*****************************************
@@ -949,7 +955,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
 
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
-    this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", false));
+    this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
     this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), journeyUniversalEligibilityCriteria);
     this.targetingCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "targetingCriteria", false), new ArrayList<EvaluationCriterion>());
@@ -957,7 +963,7 @@ public class Journey extends GUIManagedObject
     this.journeyObjectiveInstances = decodeJourneyObjectiveInstances(JSONUtilities.decodeJSONArray(jsonRoot, "journeyObjectives", false), catalogCharacteristicService);
     this.appendInclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendInclusionLists", Boolean.FALSE);
     this.appendExclusionLists = JSONUtilities.decodeBoolean(jsonRoot, "appendExclusionLists", Boolean.FALSE);
-    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.journeyParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+    Map<String,GUINode> contextVariableNodes = decodeNodes(JSONUtilities.decodeJSONArray(jsonRoot, "nodes", true), this.templateParameters, Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
     List<GUILink> jsonLinks = decodeLinks(JSONUtilities.decodeJSONArray(jsonRoot, "links", true));
 
     /*****************************************
@@ -966,8 +972,9 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, journeyParameters);
+    Map<String,CriterionField> contextVariablesAndParameters = Journey.processContextVariableNodes(contextVariableNodes, templateParameters);
     this.contextVariables = new HashMap<String,CriterionField>();
+    this.journeyParameters = new HashMap<String,CriterionField>(this.templateParameters);
     for (CriterionField contextVariable : contextVariablesAndParameters.values())
       {
         switch (contextVariable.getVariableType())
@@ -1556,6 +1563,7 @@ public class Journey extends GUIManagedObject
     *****************************************/
 
     this.effectiveEntryPeriodEndDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "effectiveEntryPeriodEndDate", false));
+    this.templateParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "templateParameters", false));
     this.journeyParameters = decodeJourneyParameters(JSONUtilities.decodeJSONArray(jsonRoot, "journeyParameters", false));
     this.targetingType = TargetingType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "targetingType", "criteria"));
     this.eligibilityCriteria = decodeCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "eligibilityCriteria", false), Deployment.getJourneyUniversalEligibilityCriteria());
