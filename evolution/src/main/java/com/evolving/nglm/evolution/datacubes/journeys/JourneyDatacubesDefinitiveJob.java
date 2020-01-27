@@ -40,7 +40,7 @@ public class JourneyDatacubesDefinitiveJob extends ScheduledJob
         true);
     this.journeysMap = new JourneysMap(journeyService);
     this.trafficDatacube = new JourneyTrafficDatacubeGenerator(this.jobName+":Traffic", elasticsearch, segmentationDimensionService, journeyService);
-    this.rewardsDatacube = new JourneyRewardsDatacubeGenerator(this.jobName+":Rewards", elasticsearch, segmentationDimensionService);
+    this.rewardsDatacube = new JourneyRewardsDatacubeGenerator(this.jobName+":Rewards", elasticsearch, segmentationDimensionService, journeyService);
   }
 
   /*****************************************

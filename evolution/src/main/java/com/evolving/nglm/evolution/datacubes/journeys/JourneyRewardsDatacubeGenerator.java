@@ -21,6 +21,7 @@ import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.mapping.JourneyRewardsMap;
+import com.evolving.nglm.evolution.datacubes.mapping.JourneysMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 
 public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
@@ -32,16 +33,18 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
 
   private List<String> filterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
+  private JourneysMap journeysMap;
   private JourneyRewardsMap journeyRewardsList;
   
   private String journeyID;
   private String generationDate;
   
-  public JourneyRewardsDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService)
+  public JourneyRewardsDatacubeGenerator(String datacubeName, RestHighLevelClient elasticsearch, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService)
   {
     super(datacubeName, elasticsearch);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
+    this.journeysMap = new JourneysMap(journeyService);
     this.journeyRewardsList = new JourneyRewardsMap();
     
     //
@@ -61,6 +64,7 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     this.segmentationDimensionList.update();
+    this.journeysMap.update();
     this.journeyRewardsList.updateFromElasticsearch(elasticsearch, this.getDataESIndex());
     
     if(this.journeyRewardsList.getRewardIDs().isEmpty())
@@ -82,6 +86,13 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
   @Override 
   protected void embellishFilters(Map<String, Object> filters) 
   {
+    //
+    // JourneyID (already in index name, added for Kibana)
+    //
+
+    filters.put("journey.id", journeyID);
+    filters.put("journey.display", journeysMap.getDisplay(journeyID, "journey"));
+    
     //
     // subscriberStratum dimensions
     //

@@ -275,7 +275,7 @@
 	          "subscriberID"  : { "type" : "keyword" },
 	          "tokenCode"     : { "type" : "keyword" },
 	          "action"        : { "type" : "keyword" },
-	          "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ},
+	          "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
 	          "eventID"       : { "type" : "keyword" },
 	          "returnCode"    : { "type" : "keyword" },
 	          "origin"        : { "type" : "keyword", "index" : "false" }
@@ -634,6 +634,121 @@
                   "maxNumberOfPeriods" : { "type" : "integer" },
                   "currentData" : { "type" : "object" },
                   "archivedData" : { "type" : "object" }
+                }
+        }
+    }'
+  echo
+  
+  #
+  #  manually create datacube_journeytraffic- index
+  #   - these settings are for index heavy load
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -H'Content-Type: application/json' -d'
+    {
+      "index_patterns": ["datacube_journeytraffic-*"],
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "dynamic_templates": [
+                {
+                  "strings_as_keywords": {
+                    "match_mapping_type": "string",
+                    "mapping": {
+                      "type": "keyword"
+                    }
+                  }
+                }
+              ],
+              "properties" :
+                {
+                  "computationDate" : { "type" : "long" },
+                  "filter.dataDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm" },
+                  "filter.node.id" : { "type" : "keyword" },
+                  "filter.node.display" : { "type" : "keyword" },
+                  "filter.status" : { "type" : "keyword" },
+                  "count" : { "type" : "integer" }
+                }
+        }
+    }'
+  echo
+  
+  #
+  #  manually create datacube_journeyrewards- index
+  #   - these settings are for index heavy load
+  #
+  
+  curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeyrewards- -H'Content-Type: application/json' -d'
+    {
+      "index_patterns": ["datacube_journeyrewards-*"],
+      "settings" :
+        {
+          "index" :
+            {
+              "number_of_shards" : "'$ELASTICSEARCH_SHARDS_SMALL'",
+              "number_of_replicas" : "'$ELASTICSEARCH_REPLICAS'",
+              "refresh_interval" : "30s",
+              "translog" : 
+                { 
+                  "durability" : "async", 
+                  "sync_interval" : "10s" 
+                },
+              "routing" : 
+                {
+                  "allocation" : { "total_shards_per_node" : '$ELASTICSEARCH_SHARDS_SMALL' }
+                },
+              "merge" : 
+                {
+                  "scheduler" : { "max_thread_count" : 4, "max_merge_count" : 100 }
+                }
+            }
+        },
+      "mappings" :
+        {
+              "dynamic_templates": [
+                {
+                  "strings_as_keywords": {
+                    "match_mapping_type": "string",
+                    "mapping": {
+                      "type": "keyword"
+                    }
+                  }
+                },
+                {
+                  "numerics_as_integers": {
+                    "match_mapping_type": "long",
+                    "mapping": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              ],
+              "properties" :
+                {
+                  "computationDate" : { "type" : "long" },
+                  "filter.dataDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm" },
+                  "count" : { "type" : "integer" }
                 }
         }
     }'

@@ -81,6 +81,13 @@ public class JourneyTrafficDatacubeGenerator extends DatacubeGenerator
   protected void embellishFilters(Map<String, Object> filters) 
   {
     //
+    // JourneyID (already in index name, added for Kibana)
+    //
+
+    filters.put("journey.id", journeyID);
+    filters.put("journey.display", journeysMap.getDisplay(journeyID, "journey"));
+    
+    //
     // nodeID
     //
 
