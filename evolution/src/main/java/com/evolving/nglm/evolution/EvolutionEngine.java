@@ -4117,18 +4117,23 @@ public class EvolutionEngine
                 JourneyRequest journeyRequest = (JourneyRequest) evolutionEvent;
                 if (journeyRequest.isPending())
                   {
-                    JourneyRequest journeyResponse = journeyRequest.copy();
-                    if(enterJourney)
+                    if (! journeyRequest.getEligible() || ! journeyRequest.getWaitForCompletion())
                       {
-                        journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
-                        journeyResponse.setDeliveryDate(now);
+                        JourneyRequest journeyResponse = journeyRequest.copy();
+                        if(enterJourney)
+                          {
+                            journeyResponse.setSubscriberJourneyStatus(SubscriberJourneyStatus.Entered);
+                            journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+                            journeyResponse.setDeliveryDate(now);
+                          }
+                        else
+                          {
+                            journeyResponse.setSubscriberJourneyStatus(SubscriberJourneyStatus.NotEligible);
+                            journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
+                          }
+                        context.getSubscriberState().getJourneyResponses().add(journeyResponse);
+                        subscriberStateUpdated = true;
                       }
-                    else
-                      {
-                        journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
-                      }
-                    context.getSubscriberState().getJourneyResponses().add(journeyResponse);
-                    subscriberStateUpdated = true;
                   }
               }
           }
@@ -4652,6 +4657,57 @@ public class EvolutionEngine
               }
           }
         while (firedLink != null && journeyState.getJourneyExitDate() == null);
+      }
+
+    //
+    //  journey end -- send response
+    //
+
+    for (JourneyState journeyState : inactiveJourneyStates)
+      {
+        if (journeyState.getCallingJourneyRequest() != null && journeyState.getCallingJourneyRequest().getWaitForCompletion())
+          {
+            //
+            //  response
+            //
+
+            JourneyRequest journeyResponse = journeyState.getCallingJourneyRequest().copy();
+
+            //
+            //  status
+            //
+                
+            journeyResponse.setSubscriberJourneyStatus(Journey.getSubscriberJourneyStatus(journeyState));
+            journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
+            journeyResponse.setDeliveryDate(SystemTime.getCurrentTime());
+
+            //
+            //  journeyResults
+            //
+
+            SimpleParameterMap journeyResults = new SimpleParameterMap();
+            Journey journey = journeyService.getActiveJourney(journeyState.getJourneyID(), now);
+            for (CriterionField contextVariable : journey.getContextVariables().values())
+              {
+                switch (contextVariable.getFieldDataType())
+                  {
+                    case IntegerCriterion:
+                    case DoubleCriterion:
+                    case StringCriterion:
+                    case BooleanCriterion:
+                    case DateCriterion:
+                      journeyResults.put(Journey.generateJourneyResultID(journey, contextVariable), journeyState.getJourneyParameters().get(contextVariable.getID()));
+                      break;
+                  }
+              }
+            journeyResponse.setJourneyResults(journeyResults);
+
+            //
+            //  send response
+            //
+            context.getSubscriberState().getJourneyResponses().add(journeyResponse);
+            subscriberStateUpdated = true;
+          }
       }
 
     //

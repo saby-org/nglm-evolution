@@ -117,6 +117,8 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   //
 
   public void setEligible(boolean eligible) { this.eligible = eligible; }
+  public void setSubscriberJourneyStatus(SubscriberJourneyStatus subscriberJourneyStatus) { this.subscriberJourneyStatus = subscriberJourneyStatus; }
+  public void setJourneyResults(SimpleParameterMap journeyResults) { this.journeyResults = journeyResults; }
 
   //
   //  structure

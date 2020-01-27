@@ -470,6 +470,27 @@ public class Journey extends GUIManagedObject
   
   /*****************************************
   *
+  *  generateJourneyResultID
+  *
+  *****************************************/
+
+  public static String generateJourneyResultID(Journey journey, CriterionField contextVariable)
+  {
+    switch (journey.getGUIManagedObjectType())
+      {
+        case Journey:
+          return "journey.result." + contextVariable.getID();
+        case Campaign:
+          return "campaign.result." + contextVariable.getID();
+        case Workflow:
+          return "workflow.result." + contextVariable.getID();
+        default:
+          return "journey.result." + contextVariable.getID();
+      }
+  }
+
+  /*****************************************
+  *
   *  evaluateEligibilityCriteria
   *
   *****************************************/
