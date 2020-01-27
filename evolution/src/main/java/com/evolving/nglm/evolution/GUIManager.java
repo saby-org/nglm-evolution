@@ -3877,7 +3877,15 @@ public class GUIManager
     *
     *****************************************/
 
-    List<JSONObject> nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap());
+    List<JSONObject> nodeTypes;
+    try
+      {
+        nodeTypes = processNodeTypes(Deployment.getNodeTypes(), Collections.<String,CriterionField>emptyMap(), Collections.<String,CriterionField>emptyMap());
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
 
     /*****************************************
     *
@@ -22058,7 +22066,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables)
+  private List<JSONObject> processNodeTypes(Map<String,NodeType> nodeTypes, Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables) throws GUIManagerException
   {
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> result = new ArrayList<JSONObject>();

@@ -385,7 +385,7 @@ public class CriterionContext
   *
   *****************************************/
 
-  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney)
+  public CriterionContext(Map<String,CriterionField> journeyParameters, Map<String,CriterionField> contextVariables, NodeType journeyNodeType, EvolutionEngineEventDeclaration journeyEvent, Journey selectedJourney) throws GUIManagerException
   {
     /*****************************************
     *
@@ -452,6 +452,18 @@ public class CriterionContext
         if (journeyEvent != null)
           {
             this.additionalCriterionFields.putAll(journeyEvent.getEventCriterionFields());
+          }
+
+        //
+        //  called-journey fields
+        //
+
+        if (selectedJourney != null)
+          {
+            for (CriterionField contextVariable : selectedJourney.getContextVariables().values())
+              {
+                this.additionalCriterionFields.put(Journey.generateJourneyResultID(selectedJourney, contextVariable), new CriterionField(selectedJourney, contextVariable));
+              }
           }
       }
   }

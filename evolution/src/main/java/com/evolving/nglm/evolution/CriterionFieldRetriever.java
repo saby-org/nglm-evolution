@@ -492,6 +492,53 @@ public abstract class CriterionFieldRetriever
 
   /*****************************************
   *
+  *   getJourneyResult
+  *
+  *****************************************/
+
+  public static Object getJourneyResult(SubscriberEvaluationRequest evaluationRequest, String fieldName)
+  {
+    /*****************************************
+    *
+    *  awaited journey response
+    *
+    *****************************************/
+
+    //
+    //  journey response?
+    //
+
+    boolean isJourneyResponse = true;
+    isJourneyResponse = isJourneyResponse && evaluationRequest.getSubscriberStreamEvent() instanceof JourneyRequest;
+    isJourneyResponse = isJourneyResponse && ! ((JourneyRequest) evaluationRequest.getSubscriberStreamEvent()).isPending();
+
+    //
+    //  awaited journey response
+    //
+
+    JourneyRequest journeyResponse = isJourneyResponse ? (JourneyRequest) evaluationRequest.getSubscriberStreamEvent() : null;
+    boolean awaitedJourneyResponse = false;
+    if (isJourneyResponse)
+      {
+        JourneyState journeyState = evaluationRequest.getJourneyState();
+        String journeyInstanceID = (journeyState != null) ? journeyState.getJourneyInstanceID() : null;
+        awaitedJourneyResponse = journeyResponse.getCallingJourneyInstanceID() != null && journeyInstanceID != null && journeyResponse.getCallingJourneyInstanceID().equals(journeyInstanceID);
+      }
+
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    if (awaitedJourneyResponse)
+      return journeyResponse.getJourneyResults().get(fieldName);
+    else
+      return null;
+  }
+
+  /*****************************************
+  *
   *  evaluateParameter
   *
   *****************************************/

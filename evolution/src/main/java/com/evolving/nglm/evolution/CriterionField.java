@@ -266,7 +266,7 @@ public class CriterionField extends DeploymentManagedObject
   }
 
   //
-  //  constructor -- context variable
+  //  generateCriterionField
   //
 
   private static JSONObject generateCriterionField(ContextVariable contextVariable)
@@ -277,6 +277,36 @@ public class CriterionField extends DeploymentManagedObject
     criterionFieldJSON.put("display", contextVariable.getName());
     criterionFieldJSON.put("dataType", contextVariable.getType().getExternalRepresentation());
     criterionFieldJSON.put("retriever", "getJourneyParameter");
+    criterionFieldJSON.put("tagFormat", contextVariable.getTagFormat());
+    criterionFieldJSON.put("tagMaxLength", contextVariable.getTagMaxLength());
+    criterionFieldJSON.put("variableType", contextVariable.getVariableType().getExternalRepresentation());
+    criterionFieldJSON.put("expressionValuedParameter", true);
+    return JSONUtilities.encodeObject(criterionFieldJSON);
+  }
+
+  /*****************************************
+  *
+  *  constructor -- JourneyResult
+  *
+  *****************************************/
+
+  public CriterionField(Journey selectedJourney, CriterionField contextVariable) throws GUIManagerException
+  {
+    this(generateCriterionField(contextVariable));
+  }
+
+  //
+  //  generateCriterionField
+  //
+
+  private static JSONObject generateCriterionField(CriterionField contextVariable)
+  {
+    Map<String,Object> criterionFieldJSON = new HashMap<String,Object>();
+    criterionFieldJSON.put("id", contextVariable.getID());
+    criterionFieldJSON.put("name", contextVariable.getName());
+    criterionFieldJSON.put("display", contextVariable.getName());
+    criterionFieldJSON.put("dataType", contextVariable.getFieldDataType().getExternalRepresentation());
+    criterionFieldJSON.put("retriever", "getJourneyResult");
     criterionFieldJSON.put("tagFormat", contextVariable.getTagFormat());
     criterionFieldJSON.put("tagMaxLength", contextVariable.getTagMaxLength());
     criterionFieldJSON.put("variableType", contextVariable.getVariableType().getExternalRepresentation());
