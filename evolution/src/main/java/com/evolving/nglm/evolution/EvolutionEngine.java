@@ -4021,14 +4021,17 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
+                JourneyRequest journeyRequest;
                 ParameterMap boundParameters;
                 if (calledJourney)
                   {
+                    journeyRequest = (JourneyRequest) evolutionEvent;
                     boundParameters = new ParameterMap(journey.getBoundParameters());
-                    boundParameters.putAll(((JourneyRequest) evolutionEvent).getBoundParameters());
+                    boundParameters.putAll(journeyRequest.getBoundParameters());
                   }
                 else
                   {
+                    journeyRequest = null;
                     boundParameters = journey.getBoundParameters();
                   }
 
@@ -4039,7 +4042,7 @@ public class EvolutionEngine
                 *****************************************/
 
                 JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-                JourneyState journeyState = new JourneyState(context, journey, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
+                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, boundParameters, SystemTime.getCurrentTime(), journeyHistory);
                 journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(),journeyState, false);
                 subscriberState.getJourneyStates().add(journeyState);
@@ -4099,16 +4102,6 @@ public class EvolutionEngine
 
                 if (calledJourney)
                   {
-                    //
-                    //  journey request
-                    //
-
-                    JourneyRequest journeyRequest = (JourneyRequest) evolutionEvent;
-
-                    //
-                    //  mark eligible
-                    //
-
                     journeyRequest.setEligible(true);
                   }
               }

@@ -40,6 +40,7 @@ public class JourneyState
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
+    schemaBuilder.field("callingJourneyRequest", JourneyRequest.serde().optionalSchema());
     schemaBuilder.field("journeyInstanceID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyNodeID", Schema.STRING_SCHEMA);
@@ -76,6 +77,7 @@ public class JourneyState
   *
   *****************************************/
 
+  private JourneyRequest callingJourneyRequest;
   private String journeyInstanceID;
   private String journeyID;
   private String journeyNodeID;
@@ -97,6 +99,7 @@ public class JourneyState
   *
   *****************************************/
 
+  public JourneyRequest getCallingJourneyRequest() { return callingJourneyRequest; }
   public String getJourneyInstanceID() { return journeyInstanceID; }
   public String getJourneyID() { return journeyID; }
   public String getJourneyNodeID() { return journeyNodeID; }
@@ -129,8 +132,9 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(EvolutionEventContext context, Journey journey, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory)
+  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory)
   {
+    this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = context.getUniqueKey();
     this.journeyID = journey.getJourneyID();
     this.journeyNodeID = journey.getStartNodeID();
@@ -153,8 +157,9 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(String journeyInstanceID, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory)
+  public JourneyState(String journeyInstanceID, JourneyRequest callingJourneyRequest, String journeyID, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyExitDate, Date journeyCloseDate, Map<String,Long> journeyMetricsPrior, Map<String,Long> journeyMetricsDuring, Map<String,Long> journeyMetricsPost, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, JourneyHistory journeyHistory)
   {
+    this.callingJourneyRequest = callingJourneyRequest;
     this.journeyInstanceID = journeyInstanceID;
     this.journeyID = journeyID;
     this.journeyNodeID = journeyNodeID;
@@ -179,6 +184,7 @@ public class JourneyState
 
   public JourneyState(JourneyState journeyState)
   {
+    this.callingJourneyRequest = journeyState.getCallingJourneyRequest();
     this.journeyInstanceID = journeyState.getJourneyInstanceID();
     this.journeyID = journeyState.getJourneyID();
     this.journeyNodeID = journeyState.getJourneyNodeID();
@@ -205,6 +211,7 @@ public class JourneyState
   {
     JourneyState journeyState = (JourneyState) value;
     Struct struct = new Struct(schema);
+    struct.put("callingJourneyRequest", JourneyRequest.serde().packOptional(journeyState.getCallingJourneyRequest()));
     struct.put("journeyInstanceID", journeyState.getJourneyInstanceID());
     struct.put("journeyID", journeyState.getJourneyID());
     struct.put("journeyNodeID", journeyState.getJourneyNodeID());
@@ -243,6 +250,7 @@ public class JourneyState
     //
 
     Struct valueStruct = (Struct) value;
+    JourneyRequest callingJourneyRequest = (schemaVersion >= 4) ? JourneyRequest.serde().unpackOptional(new SchemaAndValue(schema.field("callingJourneyRequest").schema(), valueStruct.get("callingJourneyRequest"))) : null;
     String journeyInstanceID = valueStruct.getString("journeyInstanceID");
     String journeyID = valueStruct.getString("journeyID");
     String journeyNodeID = valueStruct.getString("journeyNodeID");
@@ -262,6 +270,6 @@ public class JourneyState
     //  return
     //
 
-    return new JourneyState(journeyInstanceID, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory);
+    return new JourneyState(journeyInstanceID, callingJourneyRequest, journeyID, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyExitDate, journeyCloseDate, journeyMetricsPrior, journeyMetricsDuring, journeyMetricsPost, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, journeyHistory);
   }
 }
