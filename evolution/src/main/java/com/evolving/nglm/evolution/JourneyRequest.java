@@ -53,6 +53,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("callingJourneyInstanceID", SchemaBuilder.string().optional().defaultValue(null).schema());
+    schemaBuilder.field("callingJourneyNodeID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("waitForCompletion", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("boundParameters", SimpleParameterMap.serde().optionalSchema());
     schemaBuilder.field("journeyStatus", SchemaBuilder.string().optional().defaultValue(null).schema());
@@ -84,6 +85,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   private Date eventDate;
   private String journeyID;
   private String callingJourneyInstanceID;
+  private String callingJourneyNodeID;
   private boolean waitForCompletion;
   private SimpleParameterMap boundParameters;
   private SubscriberJourneyStatus subscriberJourneyStatus;
@@ -105,6 +107,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   public Date getEventDate() { return eventDate; }
   public String getJourneyID() { return journeyID; }
   public String getCallingJourneyInstanceID() { return callingJourneyInstanceID; }
+  public String getCallingJourneyNodeID() { return callingJourneyNodeID; }
   public boolean getWaitForCompletion() { return waitForCompletion; }
   public SimpleParameterMap getBoundParameters() { return boundParameters; }
   public SubscriberJourneyStatus getSubscriberJourneyStatus() { return subscriberJourneyStatus; }
@@ -152,6 +155,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.eventDate = context.now();
     this.journeyID = journeyID;
     this.callingJourneyInstanceID = subscriberEvaluationRequest.getJourneyState().getJourneyInstanceID();
+    this.callingJourneyNodeID = subscriberEvaluationRequest.getJourneyState().getJourneyNodeID();
     this.waitForCompletion = false;
     this.boundParameters = new SimpleParameterMap();
     this.subscriberJourneyStatus = null;
@@ -172,6 +176,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.eventDate = context.now();
     this.journeyID = workflowID;
     this.callingJourneyInstanceID = subscriberEvaluationRequest.getJourneyState().getJourneyInstanceID();
+    this.callingJourneyNodeID = subscriberEvaluationRequest.getJourneyState().getJourneyNodeID();
     this.waitForCompletion = true;
     this.boundParameters = boundParameters;
     this.subscriberJourneyStatus = null;
@@ -192,6 +197,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.eventDate = SystemTime.getCurrentTime();
     this.journeyID = deliveryRequestSource;
     this.callingJourneyInstanceID = null;
+    this.callingJourneyNodeID = null;
     this.waitForCompletion = false;
     this.boundParameters = new SimpleParameterMap();
     this.subscriberJourneyStatus = null;
@@ -212,6 +218,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
     this.journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
     this.callingJourneyInstanceID = null;
+    this.callingJourneyNodeID = null;
     this.waitForCompletion = false;
     this.boundParameters = new SimpleParameterMap();
     this.subscriberJourneyStatus = null;
@@ -225,13 +232,14 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
   *
   *****************************************/
 
-  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID, String callingJourneyInstanceID, boolean waitForCompletion, SimpleParameterMap boundParameters, SubscriberJourneyStatus subscriberJourneyStatus, SimpleParameterMap journeyResults)
+  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID, String callingJourneyInstanceID, String callingJourneyNodeID, boolean waitForCompletion, SimpleParameterMap boundParameters, SubscriberJourneyStatus subscriberJourneyStatus, SimpleParameterMap journeyResults)
   {
     super(schemaAndValue);
     this.journeyRequestID = journeyRequestID;
     this.eventDate = eventDate;
     this.journeyID = journeyID;
     this.callingJourneyInstanceID = callingJourneyInstanceID;
+    this.callingJourneyNodeID = callingJourneyNodeID;
     this.waitForCompletion = waitForCompletion;
     this.boundParameters = boundParameters;
     this.subscriberJourneyStatus = subscriberJourneyStatus;
@@ -252,6 +260,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     this.eventDate = journeyRequest.getEventDate();
     this.journeyID = journeyRequest.getJourneyID();
     this.callingJourneyInstanceID = journeyRequest.getCallingJourneyInstanceID();
+    this.callingJourneyNodeID = journeyRequest.getCallingJourneyNodeID();
     this.waitForCompletion = journeyRequest.getWaitForCompletion();
     this.boundParameters = new SimpleParameterMap(journeyRequest.getBoundParameters());
     this.subscriberJourneyStatus = journeyRequest.getSubscriberJourneyStatus();
@@ -285,6 +294,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     struct.put("eventDate", journeyRequest.getEventDate());
     struct.put("journeyID", journeyRequest.getJourneyID());
     struct.put("callingJourneyInstanceID", journeyRequest.getCallingJourneyInstanceID());
+    struct.put("callingJourneyNodeID", journeyRequest.getCallingJourneyNodeID());
     struct.put("waitForCompletion", journeyRequest.getWaitForCompletion());
     struct.put("boundParameters", SimpleParameterMap.serde().packOptional(journeyRequest.getBoundParameters()));
     struct.put("subscriberJourneyStatus", (journeyRequest.getSubscriberJourneyStatus() != null) ? journeyRequest.getSubscriberJourneyStatus().getExternalRepresentation() : null);
@@ -323,6 +333,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     Date eventDate = (Date) valueStruct.get("eventDate");
     String journeyID = valueStruct.getString("journeyID");
     String callingJourneyInstanceID = valueStruct.getString("callingJourneyInstanceID");
+    String callingJourneyNodeID = valueStruct.getString("callingJourneyNodeID");
     boolean waitForCompletion = valueStruct.getBoolean("waitForCompletion");
     SimpleParameterMap boundParameters = (schemaVersion >= 2) ? SimpleParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("boundParameters").schema(), valueStruct.get("boundParameters"))) : new SimpleParameterMap();
     SubscriberJourneyStatus subscriberJourneyStatus = (schemaVersion >= 2) ? (valueStruct.get("subscriberJourneyStatus") != null ? SubscriberJourneyStatus.fromExternalRepresentation(valueStruct.getString("subscriberJourneyStatus")) : null) : null;
@@ -332,7 +343,7 @@ public class JourneyRequest extends DeliveryRequest implements SubscriberStreamE
     //  return
     //
 
-    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID, callingJourneyInstanceID, waitForCompletion, boundParameters, subscriberJourneyStatus,journeyResults);
+    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID, callingJourneyInstanceID, callingJourneyNodeID, waitForCompletion, boundParameters, subscriberJourneyStatus,journeyResults);
   }
   
   /****************************************

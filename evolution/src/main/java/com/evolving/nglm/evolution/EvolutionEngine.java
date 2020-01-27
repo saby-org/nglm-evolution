@@ -4154,25 +4154,6 @@ public class EvolutionEngine
       {
         /*****************************************
         *
-        *   get reward information 
-        *
-        *****************************************/
-
-        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
-          {
-            DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
-            if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
-              {
-                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
-                if (lastRewards != null)
-                  {
-                    subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
-                  }
-              }
-          }
-        
-        /*****************************************
-        *
         *  get journey and journeyNode
         *
         *****************************************/
@@ -4195,6 +4176,109 @@ public class EvolutionEngine
             continue;
           }
 
+        /*****************************************
+        *
+        *  process journey response
+        *
+        *****************************************/
+
+        //
+        //  journey response?
+        //
+
+        boolean isJourneyResponse = true;
+        isJourneyResponse = isJourneyResponse && evolutionEvent instanceof JourneyRequest;
+        isJourneyResponse = isJourneyResponse && ! ((JourneyRequest) evolutionEvent).isPending();
+
+        //
+        //  awaited journey response
+        //
+
+        JourneyRequest journeyResponse = isJourneyResponse ? (JourneyRequest) evolutionEvent : null;
+        boolean awaitedJourneyResponse = false;
+        if (isJourneyResponse)
+          {
+            String journeyInstanceID = (journeyState != null) ? journeyState.getJourneyInstanceID() : null;
+            awaitedJourneyResponse = journeyResponse.getCallingJourneyInstanceID() != null && journeyInstanceID != null && journeyResponse.getCallingJourneyInstanceID().equals(journeyInstanceID);
+          }
+
+        //
+        //  process response
+        //
+
+        if (awaitedJourneyResponse)
+          {
+            JourneyNode callingJourneyNode = journey.getJourneyNodes().get(journeyResponse.getCallingJourneyNodeID());
+            if (callingJourneyNode != null)
+              {
+                for (ContextVariable contextVariable : callingJourneyNode.getContextVariables())
+                  {
+                    switch (contextVariable.getVariableType())
+                      {
+                        case JourneyResult:
+                          try
+                            {
+                              SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, callingJourneyNode, null, null, now);
+                              Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                              journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
+                              context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
+                            }
+                          catch (ExpressionEvaluationException|ArithmeticException e)
+                            {
+                              //
+                              //  log
+                              //
+
+                              log.debug("invalid context variable {}", contextVariable.getExpressionString());
+                              StringWriter stackTraceWriter = new StringWriter();
+                              e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                              log.debug(stackTraceWriter.toString());
+                              context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
+
+                              //
+                              //  abort
+                              //
+
+                              journeyState.setJourneyExitDate(now);
+                              boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
+                              subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
+                              inactiveJourneyStates.add(journeyState);
+                              break;
+                            }
+                          break;
+                      }
+                  }
+
+                //
+                //  abort?
+                //
+
+                if (journeyState.getJourneyExitDate() != null)
+                  {
+                    continue;
+                  }
+              }
+          }
+
+        /*****************************************
+        *
+        *   get reward information 
+        *
+        *****************************************/
+
+        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending)) 
+          {
+            DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
+            if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
+              {
+                RewardHistory lastRewards = journeyState.getJourneyHistory().addRewardInformation(deliveryResponse);
+                if (lastRewards != null)
+                  {
+                    subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, new RewardHistory(lastRewards), journeyState.getJourneyID()));
+                  }
+              }
+          }
+        
         /*****************************************
         *
         *  transition(s)
@@ -4302,34 +4386,39 @@ public class EvolutionEngine
                   {
                     for (ContextVariable contextVariable : journeyNode.getContextVariables())
                       {
-                        try
+                        switch (contextVariable.getVariableType())
                           {
-                            SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
-                            Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
-                            journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
-                            context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
-                          }
-                        catch (ExpressionEvaluationException|ArithmeticException e)
-                          {
-                            //
-                            //  log
-                            //
+                            case Local:
+                              try
+                                {
+                                  SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, firedLink, evolutionEvent, now);
+                                  Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                                  journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
+                                  context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
+                                }
+                              catch (ExpressionEvaluationException|ArithmeticException e)
+                                {
+                                  //
+                                  //  log
+                                  //
 
-                            log.debug("invalid context variable {}", contextVariable.getExpressionString());
-                            StringWriter stackTraceWriter = new StringWriter();
-                            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                            log.debug(stackTraceWriter.toString());
-                            context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
+                                  log.debug("invalid context variable {}", contextVariable.getExpressionString());
+                                  StringWriter stackTraceWriter = new StringWriter();
+                                  e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                                  log.debug(stackTraceWriter.toString());
+                                  context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
 
-                            //
-                            //  abort
-                            //
+                                  //
+                                  //  abort
+                                  //
 
-                            journeyState.setJourneyExitDate(now);
-                            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
-                            inactiveJourneyStates.add(journeyState);
-                            break;
+                                  journeyState.setJourneyExitDate(now);
+                                  boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
+                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
+                                  inactiveJourneyStates.add(journeyState);
+                                  break;
+                                }
+                              break;
                           }
                       }
 
@@ -4528,34 +4617,39 @@ public class EvolutionEngine
                   {
                     for (ContextVariable contextVariable : journeyNode.getContextVariables())
                       {
-                        try
+                        switch (contextVariable.getVariableType())
                           {
-                            SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
-                            Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
-                            journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
-                            context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
-                          }
-                        catch (ExpressionEvaluationException|ArithmeticException e)
-                          {
-                            //
-                            //  log
-                            //
+                            case Local:
+                              try
+                                {
+                                  SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now);
+                                  Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
+                                  journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
+                                  context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
+                                }
+                              catch (ExpressionEvaluationException|ArithmeticException e)
+                                {
+                                  //
+                                  //  log
+                                  //
 
-                            log.debug("invalid context variable {}", contextVariable.getExpressionString());
-                            StringWriter stackTraceWriter = new StringWriter();
-                            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                            log.debug(stackTraceWriter.toString());
-                            context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
+                                  log.debug("invalid context variable {}", contextVariable.getExpressionString());
+                                  StringWriter stackTraceWriter = new StringWriter();
+                                  e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                                  log.debug(stackTraceWriter.toString());
+                                  context.subscriberTrace("Context Variable {0}: {1} / {2}", contextVariable.getID(), contextVariable.getExpressionString(), e.getMessage());
 
-                            //
-                            //  abort
-                            //
+                                  //
+                                  //  abort
+                                  //
 
-                            journeyState.setJourneyExitDate(now);
-                            boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
-                            subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
-                            inactiveJourneyStates.add(journeyState);
-                            break;
+                                  journeyState.setJourneyExitDate(now);
+                                  boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
+                                  subscriberState.getJourneyStatisticWrappers().add(new JourneyStatisticWrapper(subscriberState.getSubscriberProfile(), subscriberGroupEpochReader, ucgStateReader, statusUpdated, new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getSegmentsMap(subscriberGroupEpochReader), SystemTime.getCurrentTime())));
+                                  inactiveJourneyStates.add(journeyState);
+                                  break;
+                                }
+                              break;
                           }
                       }
 
