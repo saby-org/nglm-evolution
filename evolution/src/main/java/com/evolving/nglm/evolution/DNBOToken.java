@@ -148,7 +148,7 @@ public class DNBOToken extends Token
          null,                                                            // redeemedDate
          tokenType.getExpirationDate(SystemTime.getCurrentTime()),        // tokenExpirationDate
          0,                                                               // boundedCount
-         null,                                                            // eventID
+         "",                                                              // eventID
          subscriberID,                                                    // subscriberID
          tokenType.getTokenTypeID(),                                      // tokenTypeID
          DeliveryRequest.Module.REST_API.getExternalRepresentation(),     // moduleID

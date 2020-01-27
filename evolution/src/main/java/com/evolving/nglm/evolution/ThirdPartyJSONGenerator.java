@@ -242,7 +242,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, OfferObjectiveService offerObjectiveService) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -259,7 +259,7 @@ public class ThirdPartyJSONGenerator
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
     Integer featureID = token.getFeatureID();
-    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : ThirdPartyManager.getFeatureName(module, featureID.toString(), journeyService, offerService));
+    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID.toString(), journeyService, offerService, loyaltyProgramService));
     tokenMap.put("tokenCode", token.getTokenCode());
     if (token instanceof DNBOToken)
       {

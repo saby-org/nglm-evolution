@@ -20664,7 +20664,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService))
                   .collect(Collectors.toList());
             }
 
@@ -20766,7 +20766,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20776,7 +20776,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20789,6 +20789,13 @@ public class GUIManager
               response.put("responseCode", str);
               return JSONUtilities.encodeObject(response);
             }
+          if (sss.size() == 0)
+            {
+              String str = "Bad strategy : empty list";
+              log.error(str);
+              response.put("responseCode", str);
+              return JSONUtilities.encodeObject(response);
+            }
           String strategyID = sss.get(0); // MK : not sure why we could have >1, only consider first one
           ScoringStrategy scoringStrategy = (ScoringStrategy) scoringStrategyService.getStoredScoringStrategy(strategyID);
           if (scoringStrategy == null)
@@ -20796,7 +20803,7 @@ public class GUIManager
               String str = "Bad strategy : unknown id : "+strategyID;
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20819,7 +20826,7 @@ public class GUIManager
 
               if (presentedOffers.isEmpty())
                 {
-                  generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented");
+                  generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented");
                 }
               else
                 {
@@ -20828,6 +20835,8 @@ public class GUIManager
                   String channelID = "channelID";
                   String presentationStrategyID = strategyID; // HACK, see above
                   String controlGroupState = "controlGroupState";
+                  String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
+                  String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
 
                   List<Integer> positions = new ArrayList<Integer>();
                   List<Double> presentedOfferScores = new ArrayList<Double>();
@@ -20844,13 +20853,15 @@ public class GUIManager
                     }
                   String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                   int transactionDurationMs = 0; // TODO
+                  String callUniqueIdentifier = ""; 
+
                   PresentationLog presentationLog = new PresentationLog(
                       subscriberID, subscriberID, now, 
-                      "guiManager", channelID, salesChannelID, userID,
+                      callUniqueIdentifier, channelID, salesChannelID, userID,
                       tokenCode, 
                       presentationStrategyID, transactionDurationMs, 
                       presentedOfferIDs, presentedOfferScores, positions, 
-                      controlGroupState, scoringStrategyIDs, null, null, null
+                      controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID
                       );
 
                   //
@@ -20886,7 +20897,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, offerObjectiveService, loyaltyProgramService);
           response.put("responseCode", "ok");
         }
     }
@@ -20982,7 +20993,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -20992,7 +21003,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -21003,7 +21014,7 @@ public class GUIManager
               String str = "Token already in Redeemed state";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -21012,7 +21023,7 @@ public class GUIManager
               String str = "No offers allocated for this token";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -21035,12 +21046,12 @@ public class GUIManager
               String str = "Offer has not been presented";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str);
+              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str);
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
           String featureID = (userID != null) ? userID : "1"; // for PTT tests, never happens when called by browser
-          String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation(); 
+          String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation(); 
           Offer offer = offerService.getActiveOffer(offerID, now);
           deliveryRequestID = purchaseOffer(subscriberID, offerID, salesChannelID, 1, moduleID, featureID, origin, kafkaProducer);
 
@@ -21050,7 +21061,7 @@ public class GUIManager
           String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
 
           // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
-          String callUniqueIdentifier = origin;
+          String callUniqueIdentifier = ""; 
           String controlGroupState = "controlGroupState";
           String channelID = "channelID";
           Integer actionCall = 1;
@@ -21064,7 +21075,7 @@ public class GUIManager
               callUniqueIdentifier, channelID, salesChannelID,
               userID, tokenCode,
               presentationStrategyID, transactionDurationMs,
-              controlGroupState, offerID, fulfilledDate, position, actionCall);
+              controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID);
 
           //
           //  submit to kafka
@@ -24546,12 +24557,21 @@ public class GUIManager
   *
   *****************************************/
 
-  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String action, String str)
+  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str)
   {
     String topic = Deployment.getTokenChangeTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager");
+    int userIDint = 1;
+    try
+    {
+      userIDint = (userID != null) ? Integer.parseInt(userID) : 1;
+    }
+    catch (NumberFormatException e)
+    {
+      log.warn("userID is not an integer : " + userID + " using " + userIDint);
+    }
+    TokenChange tokenChange = new TokenChange(subscriberID, now, "", tokenCode, action, str, "guiManager", Module.Customer_Care, userIDint); 
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),
