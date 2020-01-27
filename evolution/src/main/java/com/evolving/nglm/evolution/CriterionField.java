@@ -62,6 +62,7 @@ public class CriterionField extends DeploymentManagedObject
   {
     Local("local"),
     Parameter("parameter"),
+    JourneyResult("journeyResult"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private VariableType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

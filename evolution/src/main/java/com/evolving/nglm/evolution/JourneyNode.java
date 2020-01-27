@@ -138,6 +138,7 @@ public class JourneyNode
         switch (contextVariable.getVariableType())
           {
             case Local:
+            case JourneyResult:
 
               //
               //  include (allows runtime evaluation)

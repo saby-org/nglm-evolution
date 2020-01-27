@@ -33,6 +33,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
@@ -1002,6 +1003,7 @@ public class Journey extends GUIManagedObject
         switch (contextVariable.getVariableType())
           {
             case Local:
+            case JourneyResult:
               this.contextVariables.put(contextVariable.getID(), contextVariable);
               break;
             case Parameter:
@@ -1766,7 +1768,7 @@ public class Journey extends GUIManagedObject
               {
                 for (ContextVariable contextVariable : node.getContextVariables())
                   {
-                    contextVariable.validate(node.getNodeCriterionContext());
+                    contextVariable.validate(node.getNodeOnlyCriterionContext(), node.getNodeWithJourneyResultCriterionContext());
                   }
               }
 
@@ -2173,12 +2175,12 @@ public class Journey extends GUIManagedObject
     *
     *****************************************/
 
-    Map<ContextVariable,CriterionContext> contextVariables = new IdentityHashMap<ContextVariable,CriterionContext>();
+    Map<ContextVariable,Pair<CriterionContext,CriterionContext>> contextVariables = new IdentityHashMap<ContextVariable,Pair<CriterionContext,CriterionContext>>();
     for (GUINode guiNode : contextVariableNodes.values())
       {
         for (ContextVariable contextVariable : guiNode.getContextVariables())
           {
-            contextVariables.put(contextVariable, guiNode.getNodeCriterionContext());
+            contextVariables.put(contextVariable, new Pair<CriterionContext,CriterionContext>(guiNode.getNodeOnlyCriterionContext(), guiNode.getNodeWithJourneyResultCriterionContext()));
           }
       }
 
@@ -2217,13 +2219,14 @@ public class Journey extends GUIManagedObject
                 //  workingCriterionContext
                 //
 
-                CriterionContext workingCriterionContext = new CriterionContext(contextVariables.get(contextVariable), contextVariableFields);
+                CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields);
+                CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields);
 
                 //
                 //  validate
                 //
 
-                contextVariable.validate(workingCriterionContext);
+                contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext);
 
                 //
                 //  mark as validated
@@ -2376,7 +2379,8 @@ public class Journey extends GUIManagedObject
     private ParameterMap nodeParameters;
     private List<OutgoingConnectionPoint> outgoingConnectionPoints;
     private List<ContextVariable> contextVariables;
-    private CriterionContext nodeCriterionContext;
+    private CriterionContext nodeOnlyCriterionContext;
+    private CriterionContext nodeWithJourneyResultCriterionContext;
 
     /*****************************************
     *
@@ -2390,7 +2394,9 @@ public class Journey extends GUIManagedObject
     public ParameterMap getNodeParameters() { return nodeParameters; }
     public List<OutgoingConnectionPoint> getOutgoingConnectionPoints() { return outgoingConnectionPoints; }
     public List<ContextVariable> getContextVariables() { return contextVariables; }
-    public CriterionContext getNodeCriterionContext() { return nodeCriterionContext; }
+    public CriterionContext getNodeOnlyCriterionContext() { return nodeOnlyCriterionContext; }
+    public CriterionContext getNodeWithJourneyResultCriterionContext() { return nodeWithJourneyResultCriterionContext; }
+
 
     /*****************************************
     *
@@ -2446,7 +2452,8 @@ public class Journey extends GUIManagedObject
       //  criterionContext
       //
 
-      this.nodeCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, workflow);
+      this.nodeOnlyCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, (Journey) null);
+      this.nodeWithJourneyResultCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, workflow);
 
       //
       //  contextVariables
@@ -2466,14 +2473,14 @@ public class Journey extends GUIManagedObject
           //  nodeParameters (dependent, ie., EvaluationCriteria and Messages which are dependent on other parameters)
           //
 
-          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeCriterionContext, journeyService, subscriberMessageTemplateService));
-          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeCriterionContext));
+          this.nodeParameters.putAll(decodeDependentNodeParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService));
+          this.nodeParameters.putAll(decodeExpressionValuedParameters(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, nodeOnlyCriterionContext));
 
           //
           //  outputConnectors
           //
 
-          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
+          this.outgoingConnectionPoints = decodeOutgoingConnectionPoints(JSONUtilities.decodeJSONArray(jsonRoot, "outputConnectors", true), nodeType, nodeOnlyCriterionContext, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService);
         }
     }
 

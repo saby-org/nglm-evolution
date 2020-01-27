@@ -278,6 +278,7 @@ public class ContextVariable
     switch (variableType)
       {
         case Local:
+        case JourneyResult:
           result.append("variable");
           break;
         case Parameter:
@@ -310,11 +311,85 @@ public class ContextVariable
   *
   *****************************************/
 
-  public void validate(CriterionContext criterionContext) throws GUIManagerException
+  public void validate(CriterionContext nodeOnlyCriterionContext, CriterionContext nodeWithJourneyResultCriterionContext) throws GUIManagerException
   {
     switch (variableType)
       {
         case Local:
+        case JourneyResult:
+
+          /*****************************************
+          *
+          *  validate -- nodeOnly context
+          *
+          *****************************************/
+
+          boolean validated = false;
+          try
+            {
+              validate(nodeOnlyCriterionContext);
+              variableType = VariableType.Local;
+              validated = true;
+            }
+          catch (GUIManagerException e)
+            {
+              //
+              //  igore
+              //
+            }
+
+          /*****************************************
+          *
+          *  try again with journey result context (if necessary)
+          *
+          *****************************************/
+
+          if (! validated)
+            {
+              try
+                {
+                  validate(nodeWithJourneyResultCriterionContext);
+                  variableType = VariableType.JourneyResult;
+                }
+              catch (GUIManagerException e)
+                {
+                  throw e;
+                }
+            }
+
+          /*****************************************
+          *
+          *  break
+          *
+          *****************************************/
+
+          break;
+
+        case Parameter:
+          
+          /*****************************************
+          *
+          *  validate -- nodeOnly context
+          *
+          *****************************************/
+
+          validate(nodeOnlyCriterionContext);
+          break;
+      }
+  }
+
+  /*****************************************
+  *
+  *  validate
+  *
+  *****************************************/
+
+  private void validate(CriterionContext criterionContext) throws GUIManagerException
+  {
+    switch (variableType)
+      {
+        case Local:
+        case JourneyResult:
           try
             {
               //
