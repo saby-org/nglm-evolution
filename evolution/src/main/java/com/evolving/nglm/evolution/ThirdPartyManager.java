@@ -1889,7 +1889,7 @@ public class ThirdPartyManager
 
   private JSONObject processGetCustomerJourneys(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
-
+    Date now = SystemTime.getCurrentTime();
     Map<String, Object> response = new HashMap<String, Object>();
 
     /****************************************
@@ -2123,7 +2123,10 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
+                          characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
+                          characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
+                          characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
                           characteristics.put("value", catalogCharacteristicInstance.getValue());
                           resultCharacteristics.add(characteristics);
                         }
@@ -2195,7 +2198,7 @@ public class ThirdPartyManager
 
   private JSONObject processGetCustomerCampaigns(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
-
+    Date now = SystemTime.getCurrentTime();
     Map<String, Object> response = new HashMap<String, Object>();
 
     /****************************************
@@ -2435,7 +2438,10 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
+                          characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
+                          characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
+                          characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
                           characteristics.put("value", catalogCharacteristicInstance.getValue());
                           resultCharacteristics.add(characteristics);
                         }
@@ -3048,6 +3054,7 @@ public class ThirdPartyManager
 
   private JSONObject processGetCustomerAvailableCampaigns(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
+    Date now = SystemTime.getCurrentTime();
     Map<String, Object> response = new HashMap<String, Object>();
 
     /****************************************
@@ -3055,12 +3062,16 @@ public class ThirdPartyManager
      * argument
      *
      ****************************************/
+    
     String subscriberID;
-    try {
-      subscriberID = resolveSubscriberID(jsonRoot, response);
-    } catch (ThirdPartyManagerException e) {
-      return JSONUtilities.encodeObject(response);
-    }
+    try
+      {
+        subscriberID = resolveSubscriberID(jsonRoot, response);
+      } 
+    catch (ThirdPartyManagerException e)
+      {
+        return JSONUtilities.encodeObject(response);
+      }
     
     /*****************************************
      *
@@ -3078,7 +3089,6 @@ public class ThirdPartyManager
         } 
       else
         {
-          Date now = SystemTime.getCurrentTime();
           SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now);
           SubscriberHistory subscriberHistory = subscriberProfile.getSubscriberHistory();
           Map<String, List<JourneyHistory>> campaignStatisticsMap = new HashMap<String, List<JourneyHistory>>();
@@ -3147,7 +3157,10 @@ public class ThirdPartyManager
                       for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
                         {
                           JSONObject characteristics = new JSONObject();
-                          characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                          CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicInstance.getCatalogCharacteristicID(), now);
+                          characteristics.put("catalogCharacteristicID", catalogCharacteristic.getCatalogCharacteristicID());
+                          characteristics.put("catalogCharacteristicName", catalogCharacteristic.getCatalogCharacteristicName());
+                          characteristics.put("catalogCharacteristicDataType", catalogCharacteristic.getDataType().getExternalRepresentation());
                           characteristics.put("value", catalogCharacteristicInstance.getValue());
                           resultCharacteristics.add(characteristics);
                         }
