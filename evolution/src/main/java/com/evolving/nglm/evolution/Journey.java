@@ -35,6 +35,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
@@ -2434,10 +2435,18 @@ public class Journey extends GUIManagedObject
       if (eventName != null && nodeEvent == null) throw new GUIManagerException("unknown event", eventName);
 
       //
+      //  selectedjourney
+      //
+
+      WorkflowParameter workflowParameter = this.nodeParameters.containsKey("node.parameter.workflow") ? (WorkflowParameter) this.nodeParameters.get("node.parameter.workflow") : null;
+      Journey workflow = (workflowParameter != null) ? journeyService.getActiveJourney(workflowParameter.getWorkflowID(), SystemTime.getCurrentTime()) : null;
+      if (workflowParameter != null && workflow == null) throw new GUIManagerException("unknown workflow", workflowParameter.getWorkflowID());
+
+      //
       //  criterionContext
       //
 
-      this.nodeCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent);
+      this.nodeCriterionContext = new CriterionContext(journeyParameters, contextVariables, this.nodeType, nodeEvent, workflow);
 
       //
       //  contextVariables
