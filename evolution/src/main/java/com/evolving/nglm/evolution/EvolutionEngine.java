@@ -4110,18 +4110,6 @@ public class EvolutionEngine
                     //
 
                     journeyRequest.setEligible(true);
-
-                    //
-                    //  update calling journeyState with journeyInstanceID
-                    //
-
-                    for (JourneyState waitingJourneyState : subscriberState.getJourneyStates())
-                      {
-                        if (waitingJourneyState.getJourneyOutstandingJourneyRequestID() != null && Objects.equals(waitingJourneyState.getJourneyOutstandingJourneyRequestID(), journeyRequest.getJourneyRequestID()))
-                          {
-                            waitingJourneyState.setJourneyOutstandingJourneyInstanceID(journeyState.getJourneyInstanceID());
-                          }
-                      }
                   }
               }
             
@@ -4472,7 +4460,6 @@ public class EvolutionEngine
                                 case JourneyRequest:
                                   JourneyRequest journeyRequest = (JourneyRequest) action;
                                   subscriberState.getJourneyRequests().add(journeyRequest);
-                                  journeyState.setJourneyOutstandingJourneyRequestID(journeyRequest.getJourneyRequestID());
                                   break;
 
                                 case JourneyContextUpdate:

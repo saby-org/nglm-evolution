@@ -459,7 +459,9 @@ public abstract class CriterionFieldRetriever
     *
     *****************************************/
 
-    if (awaitedJourneyResponse)
+    if (awaitedJourneyResponse && ! journeyResponse.getEligible())
+      return SubscriberJourneyStatus.NotEligible.getExternalRepresentation();
+    else if (awaitedJourneyResponse)
       return journeyResponse.getSubscriberJourneyStatus();
     else
       return null;
