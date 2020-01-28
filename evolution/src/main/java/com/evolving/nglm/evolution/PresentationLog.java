@@ -365,9 +365,10 @@ public class PresentationLog implements SubscriberStreamEvent
     List<String> scoringStrategyIDs = (List<String>) valueStruct.get("scoringStrategyIDs");
     String retailerMsisdn = valueStruct.getString("retailerMsisdn");
     Double rechargeAmount = valueStruct.getFloat64("rechargeAmount");
-    Double balance = valueStruct.getFloat64("balance");    
-    String moduleID = valueStruct.getString("moduleID");
-    String featureID = valueStruct.getString("featureID");
+    Double balance = valueStruct.getFloat64("balance");
+    // xav : emergency fix for blk deploy record produced with version 1, I'm using "" to avoid possible NPE, no idea what is best...
+    String moduleID = schemaVersion>1?valueStruct.getString("moduleID"):"";
+    String featureID = schemaVersion>1?valueStruct.getString("featureID"):"";
 
     //
     //  return
