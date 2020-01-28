@@ -322,6 +322,15 @@
             ]
         },          
         { 
+          "name" : "journeyComplete",
+          "eventClass" : null,
+          "eventTopic" : null,
+          "eventRule"  : "internal",
+          "eventCriterionFields" : 
+            [
+            ]
+        },      
+        { 
           "name" : "bonusDelivery",
           "eventClass" : null,
           "eventTopic" : null,

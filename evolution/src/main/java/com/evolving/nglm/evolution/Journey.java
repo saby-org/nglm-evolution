@@ -2469,9 +2469,7 @@ public class Journey extends GUIManagedObject
       //  selectedjourney
       //
 
-      WorkflowParameter workflowParameter = this.nodeParameters.containsKey("node.parameter.workflow") ? (WorkflowParameter) this.nodeParameters.get("node.parameter.workflow") : null;
-      Journey workflow = (workflowParameter != null) ? journeyService.getActiveJourney(workflowParameter.getWorkflowID(), SystemTime.getCurrentTime()) : null;
-      if (workflowParameter != null && workflow == null) throw new GUIManagerException("unknown workflow", workflowParameter.getWorkflowID());
+      Journey workflow = decodeDependentWorkflow(JSONUtilities.decodeJSONArray(jsonRoot, "parameters", new JSONArray()), nodeType, journeyService);
 
       //
       //  criterionContext
@@ -2559,6 +2557,46 @@ public class Journey extends GUIManagedObject
             }
         }
       return nodeParameters;
+    }
+
+    /*****************************************
+    *
+    *  decodeDependentWorkflow
+    *
+    *****************************************/
+
+    private Journey decodeDependentWorkflow(JSONArray jsonArray, NodeType nodeType, JourneyService journeyService) throws GUIManagerException
+    {
+      Journey workflow = null;
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          /*****************************************
+          *
+          *  parameter
+          *
+          *****************************************/
+
+          JSONObject parameterJSON = (JSONObject) jsonArray.get(i);
+          String parameterName = JSONUtilities.decodeString(parameterJSON, "parameterName", true);
+          CriterionField parameter = nodeType.getParameters().get(parameterName);
+          if (parameter == null) throw new GUIManagerException("unknown parameter", parameterName);
+
+          /*****************************************
+          *
+          *  constant
+          *
+          *****************************************/
+
+          switch (parameter.getFieldDataType())
+            {
+              case WorkflowParameter:
+                String workflowID = JSONUtilities.decodeString((JSONObject) parameterJSON.get("value"), "workflowID", true);
+                workflow = journeyService.getActiveJourney(workflowID, SystemTime.getCurrentTime());
+                if (workflow == null) throw new GUIManagerException("unknown workflow", workflowID);
+                break;
+            }
+        }
+      return workflow;
     }
 
     /*****************************************
