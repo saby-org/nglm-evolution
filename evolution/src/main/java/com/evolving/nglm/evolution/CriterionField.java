@@ -291,19 +291,19 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  public CriterionField(Journey selectedJourney, CriterionField contextVariable) throws GUIManagerException
+  public CriterionField(String criterionFieldID, Journey selectedJourney, CriterionField contextVariable) throws GUIManagerException
   {
-    this(generateCriterionField(contextVariable));
+    this(generateCriterionField(criterionFieldID, contextVariable));
   }
 
   //
   //  generateCriterionField
   //
 
-  private static JSONObject generateCriterionField(CriterionField contextVariable)
+  private static JSONObject generateCriterionField(String criterionFieldID, CriterionField contextVariable)
   {
     Map<String,Object> criterionFieldJSON = new HashMap<String,Object>();
-    criterionFieldJSON.put("id", contextVariable.getID());
+    criterionFieldJSON.put("id", criterionFieldID);
     criterionFieldJSON.put("name", contextVariable.getName());
     criterionFieldJSON.put("display", contextVariable.getName());
     criterionFieldJSON.put("dataType", contextVariable.getFieldDataType().getExternalRepresentation());

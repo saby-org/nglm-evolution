@@ -462,7 +462,8 @@ public class CriterionContext
           {
             for (CriterionField contextVariable : selectedJourney.getContextVariables().values())
               {
-                this.additionalCriterionFields.put(Journey.generateJourneyResultID(selectedJourney, contextVariable), new CriterionField(selectedJourney, contextVariable));
+                String resultFieldID = Journey.generateJourneyResultID(selectedJourney, contextVariable);
+                this.additionalCriterionFields.put(resultFieldID, new CriterionField(resultFieldID, selectedJourney, contextVariable));
               }
           }
       }
