@@ -4122,13 +4122,13 @@ public class EvolutionEngine
                         JourneyRequest journeyResponse = journeyRequest.copy();
                         if(enterJourney)
                           {
-                            journeyResponse.setSubscriberJourneyStatus(SubscriberJourneyStatus.Entered);
+                            journeyResponse.setJourneyStatus(SubscriberJourneyStatus.Entered);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
                             journeyResponse.setDeliveryDate(now);
                           }
                         else
                           {
-                            journeyResponse.setSubscriberJourneyStatus(SubscriberJourneyStatus.NotEligible);
+                            journeyResponse.setJourneyStatus(SubscriberJourneyStatus.NotEligible);
                             journeyResponse.setDeliveryStatus(DeliveryStatus.Failed);
                           }
                         context.getSubscriberState().getJourneyResponses().add(journeyResponse);
@@ -4218,7 +4218,7 @@ public class EvolutionEngine
                         case JourneyResult:
                           try
                             {
-                              SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, callingJourneyNode, null, null, now);
+                              SubscriberEvaluationRequest contextVariableEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, callingJourneyNode, null, evolutionEvent, now);
                               Object contextVariableValue = contextVariable.getExpression().evaluateExpression(contextVariableEvaluationRequest, contextVariable.getBaseTimeUnit());
                               journeyState.getJourneyParameters().put(contextVariable.getID(), contextVariableValue);
                               context.getSubscriberTraceDetails().addAll(contextVariableEvaluationRequest.getTraceDetails());
@@ -4771,7 +4771,7 @@ public class EvolutionEngine
             //  status
             //
                 
-            journeyResponse.setSubscriberJourneyStatus(Journey.getSubscriberJourneyStatus(journeyState));
+            journeyResponse.setJourneyStatus(Journey.getSubscriberJourneyStatus(journeyState));
             journeyResponse.setDeliveryStatus(DeliveryStatus.Delivered);
             journeyResponse.setDeliveryDate(SystemTime.getCurrentTime());
 
