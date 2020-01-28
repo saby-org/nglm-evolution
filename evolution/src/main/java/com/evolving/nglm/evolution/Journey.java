@@ -2184,14 +2184,39 @@ public class Journey extends GUIManagedObject
           }
       }
 
+
+    /*****************************************
+    *
+    *  pre-validate parameters (to set correct type)
+    *
+    *****************************************/
+        
+    Map<String,CriterionField> contextVariableFields = new HashMap<String,CriterionField>();
+    Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>();
+    for (ContextVariable contextVariable : contextVariables.keySet())
+      {
+        switch (contextVariable.getVariableType())
+          {
+            case Parameter:
+              CriterionContext nodeOnlyWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getFirstElement(), contextVariableFields);
+              CriterionContext nodeWithJourneyResultWorkingCriterionContext = new CriterionContext(contextVariables.get(contextVariable).getSecondElement(), contextVariableFields);
+              contextVariable.validate(nodeOnlyWorkingCriterionContext, nodeWithJourneyResultWorkingCriterionContext);
+              CriterionField criterionField = new CriterionField(contextVariable);
+              contextVariableFields.put(criterionField.getID(), criterionField);
+              break;
+
+            default:
+              unvalidatedContextVariables.add(contextVariable);
+              break;
+          }
+      }
+
     /*****************************************
     *
     *  process
     *
     *****************************************/
 
-    Map<String,CriterionField> contextVariableFields = new HashMap<String,CriterionField>();
-    Set<ContextVariable> unvalidatedContextVariables = new HashSet<ContextVariable>(contextVariables.keySet());
     Set<ContextVariable> newlyValidatedContextVariables = new HashSet<ContextVariable>();
     do
       {
