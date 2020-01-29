@@ -255,9 +255,8 @@ public class AcceptanceLog implements SubscriberStreamEvent
     Date fulfilledDate = ((valueStruct.getInt64("fulfilledDate") != null) ? new Date(valueStruct.getInt64("fulfilledDate")) : null);
     Integer position = valueStruct.getInt32("position");
     Integer actionCall = valueStruct.getInt32("actionCall");
-    // xav : emergency fix for blk deploy record produced with version 1, I'm using "" to avoid possible NPE, no idea what is best...
-    String moduleID = schemaVersion>1?valueStruct.getString("moduleID"):"";
-    String featureID = schemaVersion>1?valueStruct.getString("featureID"):"";
+    String moduleID = (schemaVersion >= 2) ? valueStruct.getString("moduleID") : null;
+    String featureID = (schemaVersion >= 2) ? valueStruct.getString("featureID") : null;
     
     //
     //  return

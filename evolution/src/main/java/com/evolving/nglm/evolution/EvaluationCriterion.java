@@ -1334,6 +1334,15 @@ public class EvaluationCriterion
         return query;
       }
 
+    //
+    // Handle dynamic criterion "otherXXX"
+    //
+    
+    if (esField.startsWith("specialOther"))
+      {
+        QueryBuilder query = handleSpecialOtherCriterion(esField);
+        return query;
+      }
     /*****************************************
     *
     *  script
@@ -1661,6 +1670,63 @@ public class EvaluationCriterion
     return query;
   }
 
+  static String journeyNameOther = "";
+  static String campaignNameOther = "";
+  static String bulkcampaignNameOther = "";
+  
+  /*****************************************
+  *
+  *  handleSpecialOtherCriterion
+  *
+  *****************************************/
+  
+  public QueryBuilder handleSpecialOtherCriterion(String esField) throws CriterionException
+  {
+    Pattern fieldNamePattern = Pattern.compile("^specialOther([^.]+)$");
+    Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
+    if (! fieldNameMatcher.find()) throw new CriterionException("invalid other criterion field " + esField);
+    String criterion = fieldNameMatcher.group(1);
+    // TODO : necessary ? To be checked
+    if (!(argument instanceof Expression.ConstantExpression)) throw new CriterionException("dynamic criterion can only be compared to constants " + esField + ", " + argument);
+    String value = "";
+    switch (criterion)
+    {
+      case "Journey":
+        journeyNameOther = (String) (argument.evaluate(null, null));
+        return QueryBuilders.matchAllQuery();
+        
+      case "Campaign":
+        campaignNameOther = (String) (argument.evaluate(null, null));
+        return QueryBuilders.matchAllQuery();
+        
+      case "Bulkcampaign":
+        bulkcampaignNameOther = (String) (argument.evaluate(null, null));
+        return QueryBuilders.matchAllQuery();
+        
+      case "JourneyStatus":
+        value = journeyNameOther;
+        break;
+        
+      case "CampaignStatus":
+        value = campaignNameOther;
+        break;
+        
+      case "BulkcampaignStatus":
+        value = bulkcampaignNameOther;
+        break;
+        
+      default:
+        throw new CriterionException("unknown criteria : " + esField);
+    }
+    QueryBuilder queryID = buildCompareQueryWithValue("subscriberJourneys.journeyID.keyword", ExpressionDataType.StringExpression, value);
+    QueryBuilder queryStatus = buildCompareQuery("subscriberJourneys.status.keyword", ExpressionDataType.StringExpression);
+    QueryBuilder query = QueryBuilders.nestedQuery("subscriberJourneys",
+                                          QueryBuilders.boolQuery()
+                                                           .filter(queryID)
+                                                           .filter(queryStatus), ScoreMode.Total);
+    return query;
+  }
+  
   /*****************************************
   *
   *  handlePointDynamicCriterion
@@ -1772,8 +1838,19 @@ public class EvaluationCriterion
   
   private QueryBuilder buildCompareQuery(String field, ExpressionDataType expectedType) throws CriterionException
   {
-    QueryBuilder queryCompare = null;
     Object value = evaluateArgumentIfNecessary(expectedType);
+    return buildCompareQueryWithValue(field, expectedType, value);
+  }
+
+  /*****************************************
+  *
+  *  buildCompareQueryWithValue
+  *
+  *****************************************/
+  
+  private QueryBuilder buildCompareQueryWithValue(String field, ExpressionDataType expectedType, Object value) throws CriterionException
+  {
+    QueryBuilder queryCompare = null;
     switch (criterionOperator)
     {
       case EqualOperator:
@@ -1809,7 +1886,7 @@ public class EvaluationCriterion
       case IsNullOperator:
         queryCompare = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(field));
         break;
-        
+
       default:
         throw new CriterionException("not yet implemented : " + criterionOperator);
     }
@@ -1888,7 +1965,8 @@ public class EvaluationCriterion
           throw new CriterionException("datatype not yet implemented : " + expectedType);
       }
     }
-    catch (Exception e) {
+    catch (ExpressionParseException|ExpressionTypeCheckException e)
+    {
       throw new CriterionException("argument " + argument + " must be a constant " + expectedType);
     }
     return value;

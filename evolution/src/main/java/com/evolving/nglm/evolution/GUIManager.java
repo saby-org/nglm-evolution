@@ -95,6 +95,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7335,13 +7336,15 @@ public class GUIManager
         return JSONUtilities.encodeObject(response);
       }
 
+    Boolean returnQuery = JSONUtilities.decodeBoolean(jsonRoot, "returnQuery", Boolean.FALSE);
+
     /*****************************************
     *
     *  construct query
     *
     *****************************************/
 
-    BoolQueryBuilder query;
+    BoolQueryBuilder query = null;
     try
       {
         query = QueryBuilders.boolQuery();
@@ -7372,7 +7375,7 @@ public class GUIManager
 
     /*****************************************
     *
-    *  excecute query
+    *  execute query
     *
     *****************************************/
 
@@ -7410,6 +7413,18 @@ public class GUIManager
     *****************************************/
 
     response.put("result", result);
+    if (returnQuery && (query != null))
+      {
+        try
+          {
+            JSONObject queryJSON = (JSONObject) (new JSONParser()).parse(query.toString());
+            response.put("query", JSONUtilities.encodeObject(queryJSON));
+          }
+        catch (ParseException e)
+          {
+            log.debug("Cannot parse query string {} : {}", query.toString(), e.getLocalizedMessage());
+          }
+      }
     return JSONUtilities.encodeObject(response);
   }
 
@@ -24580,3 +24595,4 @@ public class GUIManager
   }
 
 }
+
