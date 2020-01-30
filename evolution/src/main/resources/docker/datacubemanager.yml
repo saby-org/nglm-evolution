@@ -1,4 +1,4 @@
-datacubemanager-<_KEY_>:
+datacubemanager:
   image: ${env.DOCKER_REGISTRY}ev-datacubemanager:${project.name}-${project.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
@@ -15,15 +15,14 @@ datacubemanager-<_KEY_>:
     CUB_SCHEMA_REGISTRY_TIMEOUT: <_STARTUP_DEPENDENCY_TIMEOUT_>
     ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
     TRACE_LEVEL: <_TRACE_LEVEL_>
-    KEY: "<_KEY_>"
     KAFKA_DEBUG: <_DATACUBEMANAGER_DEBUG_>
     ELASTICSEARCH_HOST: <_MASTER_ESROUTER_HOST_>
     ELASTICSEARCH_PORT: <_MASTER_ESROUTER_PORT_>
     GUIMANAGER_HOST: <_GUIMANAGER_HOST_>
     GUIMANAGER_PORT: <_GUIMANAGER_PORT_>
-    JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DEBUG_PORT_>,suspend=n
+    JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_DATACUBEMANAGER_DEBUG_PORT_>,suspend=n
     KAFKA_HEAP_OPTS: <_DATACUBEMANAGER_HEAP_OPTS_>
-    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_MONITORING_PORT_>:/app/config/datacubemanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_DATACUBEMANAGER_MONITORING_PORT_>:/app/config/datacubemanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_>
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
@@ -34,6 +33,6 @@ datacubemanager-<_KEY_>:
     replicas: 1
     placement:
       constraints:
-        - engine.labels.hostname == <_HOST_>
+        - engine.labels.hostname == <_DATACUBEMANAGER_HOST_>
   networks:
     - outside

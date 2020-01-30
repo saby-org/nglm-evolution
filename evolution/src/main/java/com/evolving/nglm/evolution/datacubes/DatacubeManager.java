@@ -33,6 +33,17 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * DatacubeManager is a singleton process.
+ * 
+ * In the future, it could be scalable on journey datacubes for instance.
+ *  Reminder: at the moment (2020-01-30) there is two datacubes for EACH active journey (journeytraffic & journeyrewards)
+ *  If each instance of datacubemanager is a consumer of journey topic AND partitioning of the journey topic change from 1 to many. 
+ *  Then it could help to split the work of computing those many datacubes if in the future it takes too much time.
+ *  
+ * @author Remi
+ */
+
 public class DatacubeManager
 {
   /*****************************************
