@@ -123,13 +123,15 @@
   "journeyTrafficArchiveMaxNumberOfPeriods"              : 168,
   
   --
-  --  datacube
+  --  datacubes
   --
 
   "yesterdayODRDatacubePeriodCronEntryString"            : "0 2 * * *",
   "todayODRDatacubePeriodCronEntryString"                : "0 * * * *",
   "yesterdayLoyaltyDatacubePeriodCronEntryString"        : "0 2 * * *",
   "todayLoyaltyDatacubePeriodCronEntryString"            : "0 * * * *",
+  "yesterdaySubscriberDatacubePeriodCronEntryString"     : "0 2 * * *",
+  "todaySubscriberDatacubePeriodCronEntryString"         : "0 * * * *",
   "journeyTrafficDatacubePeriodCronEntryString"          : "0 * * * *",
   "subscriberProfileSnapshotPeriodCronEntryString"       : "0 1 * * *",
 

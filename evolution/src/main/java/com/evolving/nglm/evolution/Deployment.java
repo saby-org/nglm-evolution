@@ -135,6 +135,8 @@ public class Deployment
   private static String todayODRDatacubePeriodCronEntryString;
   private static String yesterdayLoyaltyDatacubePeriodCronEntryString;
   private static String todayLoyaltyDatacubePeriodCronEntryString;
+  private static String yesterdaySubscriberDatacubePeriodCronEntryString;
+  private static String todaySubscriberDatacubePeriodCronEntryString;
   private static String journeyTrafficDatacubePeriodCronEntryString;
   private static String subscriberProfileSnapshotPeriodCronEntryString;
   private static PropensityRule propensityRule;
@@ -351,6 +353,8 @@ public class Deployment
   public static String getTodayODRDatacubePeriodCronEntryString() { return todayODRDatacubePeriodCronEntryString; }
   public static String getYesterdayLoyaltyDatacubePeriodCronEntryString() { return yesterdayLoyaltyDatacubePeriodCronEntryString; }
   public static String getTodayLoyaltyDatacubePeriodCronEntryString() { return todayLoyaltyDatacubePeriodCronEntryString; }
+  public static String getYesterdaySubscriberDatacubePeriodCronEntryString() { return yesterdaySubscriberDatacubePeriodCronEntryString; }
+  public static String getTodaySubscriberDatacubePeriodCronEntryString() { return todaySubscriberDatacubePeriodCronEntryString; }
   public static String getJourneyTrafficDatacubePeriodCronEntryString() { return journeyTrafficDatacubePeriodCronEntryString; }
   public static String getSubscriberProfileSnapshotPeriodCronEntryString() { return subscriberProfileSnapshotPeriodCronEntryString; }
   public static PropensityRule getPropensityRule() { return propensityRule; }
@@ -1949,6 +1953,32 @@ public class Deployment
     try
       {
         yesterdayLoyaltyDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdayLoyaltyDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  todaySubscriberDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        todaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "todaySubscriberDatacubePeriodCronEntryString", true);
+      }
+    catch (JSONUtilitiesException e)
+      {
+        throw new ServerRuntimeException("deployment", e);
+      }
+    
+    //
+    //  yesterdaySubscriberDatacubePeriodCronEntryString
+    //
+
+    try
+      {
+        yesterdaySubscriberDatacubePeriodCronEntryString = JSONUtilities.decodeString(jsonRoot, "yesterdaySubscriberDatacubePeriodCronEntryString", true);
       }
     catch (JSONUtilitiesException e)
       {

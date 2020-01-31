@@ -24,6 +24,8 @@ import com.evolving.nglm.evolution.datacubes.loyalty.LoyaltyDatacubesOnYesterday
 import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnTodayJob;
 import com.evolving.nglm.evolution.datacubes.odr.ODRDatacubeOnYesterdayJob;
 import com.evolving.nglm.evolution.datacubes.snapshots.SubscriberProfileSnapshot;
+import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubesOnTodayJob;
+import com.evolving.nglm.evolution.datacubes.subscriber.SubscriberProfileDatacubesOnYesterdayJob;
 
 import org.apache.http.HttpHost;
 
@@ -209,6 +211,12 @@ public class DatacubeManager
         datacubeScheduler.schedule(temporaryLoyalty);
       }
     
+    ScheduledJob temporarySubscriber = new SubscriberProfileDatacubesOnTodayJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService);
+    if(temporarySubscriber.properlyConfigured)
+      {
+        datacubeScheduler.schedule(temporarySubscriber);
+      }
+    
 //    ScheduledJob temporaryJourneyTraffic = new JourneyDatacubesTemporaryJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService, journeyService);
 //    if(temporaryJourneyTraffic.properlyConfigured)
 //      {
@@ -229,6 +237,12 @@ public class DatacubeManager
     if(definitiveLoyalty.properlyConfigured)
       {
         datacubeScheduler.schedule(definitiveLoyalty);
+      }
+    
+    ScheduledJob definitiveSubscriber = new SubscriberProfileDatacubesOnYesterdayJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService);
+    if(definitiveSubscriber.properlyConfigured)
+      {
+        datacubeScheduler.schedule(definitiveSubscriber);
       }
     
     ScheduledJob definitiveJourneyTraffic = new JourneyDatacubesDefinitiveJob(uniqueID++, elasticsearchRestClient, segmentationDimensionService, journeyService);

@@ -105,11 +105,6 @@ public class JourneyRewardsDatacubeGenerator extends DatacubeGenerator
         filters.put(fieldName + ".id", segmentID);
         filters.put(fieldName + ".display", segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
-    
-    //
-    // rewards
-    //
-    
   }
 
   @Override
