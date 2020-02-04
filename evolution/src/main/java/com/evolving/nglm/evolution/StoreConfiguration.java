@@ -188,7 +188,7 @@ public class StoreConfiguration
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPaymentMeanList", "paymentMeans", "putPaymentMean"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getCommunicationChannelList", "communicationChannels", "putCommunicationChannel"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getBlackoutPeriodsList", "blackoutPeriods", "putBlackoutPeriods"));
-    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPartnerList", "partners", "putPartner"));
+    records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getResellerList", "resellers", "putReseller"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getMailTemplateList", "templates", "putMailTemplate"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getSMSTemplateList", "templates", "putSMSTemplate"));
     records.addAll(retrieveConfiguration(guiManagerHost, guiManagerPort, "getPushTemplateList", "templates", "putPushTemplate"));

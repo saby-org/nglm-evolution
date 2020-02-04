@@ -30,7 +30,7 @@
   "callingChannelTopic"                                  : "${topic.callingchannel}",
   "salesChannelTopic"                                    : "${topic.saleschannel}",
   "supplierTopic"                                        : "${topic.supplier}",
-  "partnerTopic"                                         : "${topic.partner}",
+  "resellerTopic"                                         : "${topic.reseller}",
   "productTopic"                                         : "${topic.product}",
   "catalogCharacteristicTopic"                           : "${topic.catalogcharacteristic}",
   "contactPolicyTopic"                                   : "${topic.contactpolicy}",

@@ -77,7 +77,7 @@ public class Deployment
   private static String callingChannelTopic;
   private static String salesChannelTopic;
   private static String supplierTopic;
-  private static String partnerTopic;
+  private static String resellerTopic;
   private static String productTopic;
   private static String catalogCharacteristicTopic;
   private static String contactPolicyTopic;
@@ -295,7 +295,7 @@ public class Deployment
   public static String getCallingChannelTopic() { return callingChannelTopic; }
   public static String getSalesChannelTopic() { return salesChannelTopic; }
   public static String getSupplierTopic() { return supplierTopic; }
-  public static String getPartnerTopic() { return partnerTopic; }
+  public static String getResellerTopic() { return resellerTopic; }
   public static String getProductTopic() { return productTopic; }
   public static String getCatalogCharacteristicTopic() { return catalogCharacteristicTopic; }
   public static String getContactPolicyTopic() { return contactPolicyTopic; }
@@ -1099,12 +1099,12 @@ public class Deployment
       }
 
     //
-    //  partnerTopic
+    //  resellerTopic
     //
 
     try
       {
-        partnerTopic = JSONUtilities.decodeString(jsonRoot, "partnerTopic", true);
+        resellerTopic = JSONUtilities.decodeString(jsonRoot, "resellerTopic", true);
       }
     catch (JSONUtilitiesException e)
       {

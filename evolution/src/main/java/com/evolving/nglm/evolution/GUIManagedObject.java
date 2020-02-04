@@ -159,7 +159,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CallingChannel.serde());
     guiManagedObjectSerdes.add(SalesChannel.serde());
     guiManagedObjectSerdes.add(Supplier.serde());
-    guiManagedObjectSerdes.add(Partner.serde());
+    guiManagedObjectSerdes.add(Reseller.serde());
     guiManagedObjectSerdes.add(PaymentMean.serde());
     guiManagedObjectSerdes.add(Product.serde());
     guiManagedObjectSerdes.add(CatalogCharacteristic.serde());

@@ -44,10 +44,10 @@ public class SalesChannel extends GUIManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("sales_channel");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),3));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("callingChannelIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
-    schemaBuilder.field("partnerIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("callingChannelIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());    
+    schemaBuilder.field("resellerIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).optional().schema());
     schema = schemaBuilder.build();
   };
 
@@ -70,8 +70,8 @@ public class SalesChannel extends GUIManagedObject
   *
   ****************************************/
 
-  private List<String> callingChannelIDs;
-  private List<String> partnerIDs;
+  private List<String> callingChannelIDs;  
+  private List<String> resellerIDs;
   
   /****************************************
   *
@@ -81,8 +81,9 @@ public class SalesChannel extends GUIManagedObject
 
   public String getSalesChannelID() { return getGUIManagedObjectID(); }
   public String getSalesChannelName() { return getGUIManagedObjectName(); }
-  public List<String> getCallingChannelIDs() { return callingChannelIDs; }
-  public List<String> getPartnerIDs() { return partnerIDs; }
+  public List<String> getCallingChannelIDs() { return callingChannelIDs; } 
+  public List<String> getResellerIDs() { return resellerIDs; }
+  
 
   /*****************************************
   *
@@ -90,11 +91,11 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public SalesChannel(SchemaAndValue schemaAndValue, List<String> callingChannelIDs, List<String> partnerIDs)
+  public SalesChannel(SchemaAndValue schemaAndValue, List<String> callingChannelIDs, List<String> resellerIDs)
   {
     super(schemaAndValue);
-    this.callingChannelIDs = callingChannelIDs;
-    this.partnerIDs = partnerIDs;
+    this.callingChannelIDs = callingChannelIDs;   
+    this.resellerIDs = resellerIDs;
   }
 
   /*****************************************
@@ -108,8 +109,8 @@ public class SalesChannel extends GUIManagedObject
     SalesChannel salesChannel = (SalesChannel) value;
     Struct struct = new Struct(schema);
     packCommon(struct, salesChannel);
-    struct.put("callingChannelIDs", salesChannel.getCallingChannelIDs());
-    struct.put("partnerIDs", salesChannel.getPartnerIDs());
+    struct.put("callingChannelIDs", salesChannel.getCallingChannelIDs());    
+    struct.put("resellerIDs", salesChannel.getResellerIDs());
     return struct;
   }
 
@@ -134,13 +135,13 @@ public class SalesChannel extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    List<String> callingChannelIDs = (List<String>) valueStruct.get("callingChannelIDs");
-    List<String> partnerIDs = (List<String>) valueStruct.get("partnerIDs");
+    List<String> callingChannelIDs = (List<String>) valueStruct.get("callingChannelIDs");    
+    List<String> resellerIDs = (schemaVersion >= 3) ? (List<String>) valueStruct.get("resellerIDs") : new ArrayList<String>();
     //
     //  return
     //
 
-    return new SalesChannel(schemaAndValue, callingChannelIDs, partnerIDs);
+    return new SalesChannel(schemaAndValue, callingChannelIDs, resellerIDs);
   }
   
   /*****************************************
@@ -173,8 +174,8 @@ public class SalesChannel extends GUIManagedObject
     *
     *****************************************/
 
-    this.callingChannelIDs = decodeIDs(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelIDs", true));
-    this.partnerIDs = decodeIDs(JSONUtilities.decodeJSONArray(jsonRoot, "partnerIDs", false));
+    this.callingChannelIDs = decodeIDs(JSONUtilities.decodeJSONArray(jsonRoot, "callingChannelIDs", true));    
+    this.resellerIDs = decodeIDs(JSONUtilities.decodeJSONArray(jsonRoot, "resellerIDs", false));
     
     /*****************************************
     *
@@ -244,8 +245,8 @@ public class SalesChannel extends GUIManagedObject
       {
         boolean epochChanged = false;
         epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingSalesChannel.getGUIManagedObjectID());
-        epochChanged = epochChanged || ! Objects.equals(callingChannelIDs, existingSalesChannel.getCallingChannelIDs());
-        epochChanged = epochChanged || ! Objects.equals(partnerIDs, existingSalesChannel.getPartnerIDs());
+        epochChanged = epochChanged || ! Objects.equals(callingChannelIDs, existingSalesChannel.getCallingChannelIDs());       
+        epochChanged = epochChanged || ! Objects.equals(resellerIDs, existingSalesChannel.getResellerIDs());
         return epochChanged;
       }
     else
@@ -260,7 +261,7 @@ public class SalesChannel extends GUIManagedObject
   *
   *****************************************/
 
-  public void validate(CallingChannelService callingChannelService, PartnerService partnerService, Date date) throws GUIManagerException
+  public void validate(CallingChannelService callingChannelService, ResellerService resellerService, Date date) throws GUIManagerException
   {
     /*****************************************
     *
@@ -282,11 +283,11 @@ public class SalesChannel extends GUIManagedObject
         CallingChannel callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, date);
         if (! callingChannelService.isActiveCallingChannelThroughInterval(callingChannel, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid calling channel (start/end dates)", callingChannelID);
       }
-    
-    if(partnerIDs != null && !partnerIDs.isEmpty())
+   
+    if(resellerIDs != null && !resellerIDs.isEmpty())
       {
-        for(String partnerID : partnerIDs) {
-          if (partnerService.getActivePartner(partnerID, date) == null) throw new GUIManagerException("unknown sales partner", partnerID);
+        for(String resellerID : resellerIDs) {
+          if (resellerService.getActiveReseller(resellerID, date) == null) throw new GUIManagerException("unknown reseller", resellerID);
           
       }
     }
